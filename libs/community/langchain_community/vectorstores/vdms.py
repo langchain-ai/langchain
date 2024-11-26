@@ -9,9 +9,7 @@ from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Iterable,
-    List,
     Literal,
     Optional,
     Sequence,
@@ -25,7 +23,6 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-# from langchain_core.indexing.base import UpsertResponse
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
 
@@ -42,7 +39,7 @@ DEFAULT_K = 3  # Number of Documents to return.
 DEFAULT_FETCH_K = (
     DEFAULT_K * 5
 )  # Number of Documents to fetch to pass to knn when filters applied.
-INVALID_METADATA_VALUE = ["Missing property", None, {}]  # type: List
+INVALID_METADATA_VALUE = ["Missing property", None, {}]  # type: list
 DEFAULT_PROPERTIES = ["_distance", LANGCHAIN_ID_PROPERTY, TEXT_PROPERTY]
 INVALID_DOC_METADATA_KEYS = ["_distance", TEXT_PROPERTY, "blob"]
 
@@ -50,7 +47,7 @@ DISTANCE_METRICS = Literal[
     "L2",  # Euclidean Distance
     "IP",  # Inner Product
 ]
-AVAILABLE_DISTANCE_METRICS: List[DISTANCE_METRICS] = list(get_args(DISTANCE_METRICS))
+AVAILABLE_DISTANCE_METRICS: list[DISTANCE_METRICS] = list(get_args(DISTANCE_METRICS))
 ENGINES = Literal[
     "FaissFlat",  # FAISS IndexFlat
     "FaissHNSWFlat",  # FAISS IndexHNSWFlat
@@ -59,7 +56,7 @@ ENGINES = Literal[
     "TileDBDense",  # TileDB Dense
     "TileDBSparse",  # TileDB Sparse
 ]
-AVAILABLE_ENGINES: List[ENGINES] = list(get_args(ENGINES))
+AVAILABLE_ENGINES: list[ENGINES] = list(get_args(ENGINES))
 
 logger = logging.getLogger(__name__)
 
@@ -155,9 +152,529 @@ class VDMS(VectorStore):
         self.updated_properties_flag = False
         self._add_set()
 
+    """ FUNCTIONS TO OVERRIDE VectorStore METHODS """
+
+    @override
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[list[dict]] = None,
+        *,
+        ids: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        """Run texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of IDs associated with the texts.
+            **kwargs: vectorstore specific parameters.
+                One of the kwargs should be `ids` which is a list of ids
+                associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+
+        Raises:
+            ValueError: If the number of metadatas does not match the number of texts.
+            ValueError: If the number of ids does not match the number of texts.
+        """
+
+        texts_ = list(texts)
+
+        embeddings = self._embed_documents(texts_)
+
+        inserted_ids = self.add_data(
+            texts=texts_,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+
+        return inserted_ids
+
     @property
     def embeddings(self) -> Optional[Embeddings]:
         return self.embedding
+
+    def batch_delete(self, collection_name, constraints, ids, batch_size=100):
+        resp_dict: dict = {}
+        resp_dict.setdefault(
+            "FindDescriptor", {"entities": list(), "returned": 0, "status": 0}
+        )
+        new_response = [
+            # {"FindDescriptor": {"returned": 0, "status": 0, "entities": []}}
+            resp_dict
+        ]
+        for start_idx in range(0, len(ids), batch_size):
+            end_idx = min(start_idx + batch_size - 1, len(ids))
+            batch_ids = ids[start_idx:end_idx]
+
+            all_queries = []
+            for i in batch_ids:
+                tmp_ = {"id": ["==", i]}
+                tmp_.update(constraints)
+
+                query = self.utils.add_descriptor(
+                    "FindDescriptor",
+                    collection_name,
+                    label=None,
+                    ref=None,
+                    props=None,
+                    link=None,
+                    k_neighbors=None,
+                    constraints=tmp_,
+                    results=None,
+                )
+
+                all_queries.append(query)
+            response, _ = self.utils.run_vdms_query(all_queries)
+
+            new_response[0]["FindDescriptor"]["entities"].extend(
+                response[0]["FindDescriptor"]["entities"]
+            )
+        new_response[0]["FindDescriptor"]["returned"] = len(
+            new_response[0]["FindDescriptor"]["entities"]
+        )
+        return new_response
+
+    @override
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+
+        Args:
+            ids: List of ids to delete. If None, delete all. Default is None.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful, False otherwise
+        """
+
+        if "collection_name" in kwargs:
+            collection_name = kwargs.pop("collection_name")
+        else:
+            collection_name = self.collection_name
+
+        if "constraints" in kwargs and isinstance(kwargs["constraints"], dict):
+            constraints = kwargs.pop("constraints")
+            constraints["_deletion"] = ["==", 1]
+        else:
+            constraints = {"_deletion": ["==", 1]}
+
+        response = self.batch_delete(collection_name, constraints, ids, batch_size=DEFAULT_INSERT_BATCH_SIZE)
+
+        # Update/store indices after deletion
+        query = self.utils.add_descriptor_set(
+            "FindDescriptorSet", collection_name, storeIndex=True
+        )
+        _, _ = self.utils.run_vdms_query([query])
+
+        return "FindDescriptor" in response[0]
+
+    @override
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        """Get documents by their IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            documents: List of Document objects found in the vectorstore.
+        """
+
+        collection_name = self.collection_name
+        all_constraints = []
+        for id in ids:
+            constraints = {
+                LANGCHAIN_ID_PROPERTY: ["==", str(id)],
+            }
+            all_constraints.append(constraints)
+
+        results = {"list": self.utils.get_properties(collection_name)}
+
+        docs = []
+        for constraint in all_constraints:
+            query = self.utils.add_descriptor(
+                "FindDescriptor",
+                collection_name,
+                label=None,
+                ref=None,
+                props=None,
+                link=None,
+                k_neighbors=None,
+                constraints=constraint,
+                results=results,
+            )
+
+            response, _ = self.utils.run_vdms_query([query])
+
+            if "FindDescriptor" in response[0]:
+                this_docs = [
+                    self.descriptor2document(doc)
+                    for doc in response[0]["FindDescriptor"].get("entities", [])
+                ]
+                docs.extend(this_docs)
+        return docs
+
+    @override
+    def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
+        """Add or update documents in the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            kwargs: Additional keyword arguments.
+                if kwargs contains ids and documents contain ids,
+                the ids in the kwargs will receive precedence.
+
+        Returns:
+            List of IDs of the added texts.
+
+        Raises:
+            ValueError: If the number of ids does not match the number of documents.
+        """
+        # GET IDS & FORMAT DOCUMENTS
+        ids = None
+        if "ids" in kwargs:
+            # Get IDs
+            ids = kwargs.pop("ids")
+            if ids and len(ids) != len(documents):
+                raise ValueError(
+                    "The number of ids must match the number of documents. "
+                    "Got {len(ids)} ids and {len(documents)} documents."
+                )
+
+            # Get Documents
+            documents_ = []
+            for id_, document in zip(ids, documents):
+                doc_with_id = Document(
+                    page_content=document.page_content,
+                    metadata=document.metadata,
+                    id=id_,
+                )
+                documents_.append(doc_with_id)
+        else:
+            # Get Documents
+            documents_ = documents
+
+        if ids is None:
+            ids = []
+            for doc in documents_:
+                if hasattr(doc, "id") and doc.id is not None:
+                    ids.append(str(doc.id))
+                elif "id" in doc.metadata:
+                    ids.append(str(doc.metadata["id"]))
+                else:
+                    ids.append(str(uuid.uuid4()))
+
+        # Remove IDs if exist-TEST_REMOVAL
+        self.delete(ids=ids, **kwargs)
+
+        kwargs["ids"] = ids
+        texts = [doc.page_content for doc in documents_]
+        metadatas = [doc.metadata for doc in documents_]
+        return self.add_texts(texts, metadatas, **kwargs)
+
+    @override
+    def similarity_search(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        filter: Optional[dict[str, list]] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Query string to search for.
+            k: Number of Documents to return.
+            fetch_k: Number of candidates to fetch for knn (>= k).
+            filter: Filter by metadata. Defaults to None.
+            **kwargs: Arguments to pass to the search method.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        assert self.embedding is not None, "Embedding function is not set"
+        query_embedding = self.get_embedding_from_query(query)
+        return self.similarity_search_by_vector(
+            query_embedding, k, fetch_k=fetch_k, filter=filter, **kwargs
+        )
+
+    @override
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        filter: Optional[dict[str, list]] = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        query_embedding = self.get_embedding_from_query(query)
+        results = self.query_by_embeddings(
+            query_embeddings=[query_embedding],
+            k=k,
+            fetch_k=fetch_k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return self.results2docs_and_scores(results)
+
+    @override
+    def similarity_search_by_vector(
+        self,
+        embedding: list[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        filter: Optional[dict[str, list]] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return.
+            fetch_k: Number of candidates to fetch for knn (>= k).
+            filter: Filter by metadata. Defaults to None.
+            **kwargs: Arguments to pass to the search method.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        start_time = time.time()
+        results = self.query_by_embeddings(
+            query_embeddings=[embedding],
+            k=k,
+            fetch_k=fetch_k,
+            filter=filter,
+            **kwargs,
+        )
+        logger.info(f"VDMS similarity search took {time.time() - start_time} seconds")
+
+        final_docs = []
+        for this_result in results:
+            resp, resp_arr = this_result
+            try:
+                descriptor = resp[0]["FindDescriptor"].get("entities", [])
+            except ValueError:
+                descriptor = []
+            if isinstance(descriptor, dict):
+                final_docs.append(self.descriptor2document(descriptor))
+            elif isinstance(descriptor, list):
+                for desc in descriptor:
+                    final_docs.append(self.descriptor2document(desc))
+            else:
+                pass
+        return final_docs
+
+    def similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        filter: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> list[Tuple[Document, float]]:
+        """Return docs and their similarity scores on a scale from 0 to 1."""
+        if self.override_relevance_score_fn is None:
+            kwargs["normalize_distance"] = True
+        docs_and_scores = self.similarity_search_with_score(
+            query=query,
+            k=k,
+            fetch_k=fetch_k,
+            filter=filter,
+            **kwargs,
+        )
+
+        docs_and_rel_scores: list[Any] = []
+        for doc, score in docs_and_scores:
+            if self.override_relevance_score_fn is None:
+                docs_and_rel_scores.append((doc, score))
+            else:
+                docs_and_rel_scores.append(
+                    (doc, self.override_relevance_score_fn(score))
+                )
+        return docs_and_rel_scores
+
+    @override
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict[str, list]] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Returns similar documents to the query that also have diversity
+
+        This algorithm balances relevance and diversity in the search results.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            **kwargs: Arguments to pass to the search method.
+
+        Returns:
+            List of Document objects ordered by decreasing similarity/diversty.
+        """
+        logger.info(f"Max Marginal Relevance search for query: {query}")
+        query_embedding = self.get_embedding_from_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            query_embedding, k, fetch_k, lambda_mult, filter, **kwargs
+        )
+
+    @override
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: list[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict[str, list]] = None,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding vector to search for.
+            k: Number of Documents to return.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        start_time = time.time()
+        results = self.query_by_embeddings(
+            query_embeddings=[embedding],
+            k=k,
+            fetch_k=fetch_k,
+            filter=filter,
+            include=["metadatas", "documents", "distances", "embeddings"],
+        )
+
+        if len(results[0][1]) == 0:
+            # No results returned
+            return []
+        else:
+            embedding_list = [
+                list(self.utils.bytes2embedding(result)) for result in results[0][1]
+            ]
+
+            mmr_selected = maximal_marginal_relevance(
+                np.array(embedding, dtype=np.float32),
+                embedding_list,
+                k=k,
+                lambda_mult=lambda_mult,
+            )
+
+            logger.info(
+                f"VDMS similarity search mmr took {time.time() - start_time} seconds"
+            )
+            candidates = self.results2docs(results)
+            return [r for i, r in enumerate(candidates) if i in mmr_selected]
+
+    @classmethod
+    @override
+    def from_documents(
+        cls: Type[VDMS],
+        documents: list[Document],
+        embedding: Embeddings,
+        ids: Optional[list[str]] = None,
+        collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
+        **kwargs: Any,
+    ) -> VDMS:
+        """Creates a new vectorstore from a list of documents
+
+        Args:
+            documents: List of documents
+            embedding: Embedding function to use.
+            ids: Optional list of IDs associated with the documents.
+            collection_name (str): Name of the collection to create.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStore: VectorStore initialized from documents and embeddings.
+        """
+        client: vdms.vdms = kwargs.pop("client")
+
+        if "batch_size" not in kwargs:
+            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
+
+        vectorstore = cls(
+            client=client,
+            embedding=embedding,
+            collection_name=collection_name,
+            **kwargs,
+        )
+        vectorstore.add_documents(documents, ids=ids, **kwargs)
+        return vectorstore
+
+    @classmethod
+    @override
+    def from_texts(
+        cls: Type[VDMS],
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
+        collection_name: str = DEFAULT_COLLECTION_NAME,
+        **kwargs: Any,
+    ) -> VDMS:
+        """Creates a new vectorstore from a list of texts
+
+        Args:
+            texts: List of text strings
+            embedding: Embedding function to use.
+            metadatas: Optional list of metadatas associated with the texts.
+                Default is None.
+            ids: Optional list of IDs associated with the texts.
+            collection_name (str): Name of the collection to create.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStore: VectorStore initialized from texts and embeddings.
+        """
+        client: vdms.vdms = kwargs.pop("client")
+
+        if "batch_size" not in kwargs:
+            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
+
+        vdms_store = cls(
+            client=client,
+            embedding=embedding,
+            collection_name=collection_name,
+            **kwargs,
+        )
+
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in texts]
+
+        vdms_store.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+            **kwargs,
+        )
+        return vdms_store
+
+    """ OTHER FUNCS """
 
     def _add_set(self) -> None:
         collection_name = self.collection_name
@@ -234,11 +751,17 @@ class VDMS(VectorStore):
         # Check for properties
         current_props = self.utils.get_properties(collection_name)
         if hasattr(self, "collection_properties"):
-            self.collection_properties.extend(current_props)
+            missing_elements = list(
+                set(current_props) - set(self.collection_properties)
+            )  # element in current not in props
+            if len(missing_elements) > 0:
+                self.collection_properties.extend(missing_elements)
         else:
-            self.collection_properties: List[str] = current_props
+            self.collection_properties: list[str] = current_props
 
-    def _embed_documents(self, texts: List[str]) -> List[List[float]]:
+        self.collection_properties.sort()
+
+    def _embed_documents(self, texts: list[str]) -> list[list[float]]:
         if isinstance(self.embedding, Embeddings):
             return self.embedding.embed_documents(texts)
         else:
@@ -246,7 +769,7 @@ class VDMS(VectorStore):
             p_str += " to be an Embeddings object"
             raise ValueError(p_str)
 
-    def _embed_image(self, uris: List[str]) -> List[List[float]]:
+    def _embed_image(self, uris: list[str]) -> list[list[float]]:
         if self.embedding is not None and hasattr(self.embedding, "embed_image"):
             return self.embedding.embed_image(uris=uris)
         else:
@@ -254,7 +777,7 @@ class VDMS(VectorStore):
                 "Must provide `embedding` which has attribute `embed_image`"
             )
 
-    def _embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> list[float]:
         if isinstance(self.embedding, Embeddings):
             return self.embedding.embed_query(text)
         else:
@@ -263,7 +786,7 @@ class VDMS(VectorStore):
                 " to be an Embeddings object"
             )
 
-    def _embed_video(self, paths: List[str], **kwargs: Any) -> List[List[float]]:
+    def _embed_video(self, paths: list[str], **kwargs: Any) -> list[list[float]]:
         if self.embedding is not None and hasattr(self.embedding, "embed_video"):
             return self.embedding.embed_video(paths=paths, **kwargs)
         else:
@@ -288,13 +811,13 @@ class VDMS(VectorStore):
             )
         return
 
-    def __update(
+    def update(
         self,
         collection_name: str,
-        ids: List[str],
-        texts: List[str],
-        embeddings: List[List[float]],
-        metadatas: Optional[Sequence[Union[dict, None]]] = None,
+        ids: list[str],
+        texts: list[str],
+        embeddings: list[list[float]],
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -302,13 +825,13 @@ class VDMS(VectorStore):
         If more than one collection returned with id, error occurs
         """
 
-        metadatas = metadatas if metadatas is not None else [None for _ in ids]
+        metadatas = metadatas if metadatas is not None else [{} for _ in ids]
         self._len_check_if_sized(ids, texts, "ids", "texts")
         self._len_check_if_sized(ids, embeddings, "ids", "embeddings")
         self._len_check_if_sized(ids, metadatas, "ids", "metadatas")
 
         # Find and delete by ID
-        _ = self.delete(ids, collection_name=collection_name, **kwargs)
+        self.delete(ids=ids)
 
         # Add as batch
         if "batch_size" not in kwargs:
@@ -321,50 +844,47 @@ class VDMS(VectorStore):
             **kwargs,
         )
 
-    def update_properties(
+    def push_update_properties(
         self,
         collection_name: str,
-        current_collection_properties: List,
-        new_collection_properties: Optional[List],
     ) -> None:
-        if new_collection_properties is not None:
-            old_collection_properties = deepcopy(current_collection_properties)
-            for prop in new_collection_properties:
-                if prop not in current_collection_properties:
-                    current_collection_properties.append(prop)
+        pushed_props = self.utils.get_properties(collection_name)
+        missing_elements = list(
+            set(self.collection_properties) - set(pushed_props)
+        )  # element in current not in props
+        if len(missing_elements) > 0:
+            pushed_props.extend(missing_elements)
+        pushed_props.sort()
 
-            if current_collection_properties != old_collection_properties:
-                all_queries, blob_arr = self.utils.build_property_query(
-                    collection_name,
-                    command_type="update",
-                    all_properties=current_collection_properties,
-                )
-                response, _ = self.utils.run_vdms_query(all_queries, [blob_arr])
-                self.updated_properties_flag = True
+        all_queries, blob_arr = self.utils.build_property_query(
+            collection_name,
+            command_type="update",
+            all_properties=pushed_props,
+        )
+        response, _ = self.utils.run_vdms_query(all_queries, [blob_arr])
+        self.updated_properties_flag = True
 
     def add_batch(
         self,
         collection_name: str,
-        texts: List[str],
-        embeddings: List[List[float]],
-        metadatas: Optional[Sequence[Union[dict, None]]] = None,
-        ids: Optional[List[str]] = None,
-    ) -> List:
+        texts: list[str],
+        embeddings: list[list[float]],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
+    ) -> list:
         self._len_check_if_sized(texts, embeddings, "texts", "embeddings")
 
-        metadatas = metadatas if metadatas is not None else [None for _ in texts]
+        metadatas = metadatas if metadatas is not None else [{} for _ in texts]
         self._len_check_if_sized(texts, metadatas, "texts", "metadatas")
 
         ids = ids if ids is not None else [str(uuid.uuid4()) for _ in texts]
         self._len_check_if_sized(texts, ids, "texts", "ids")
 
-        extended_emb: List[Any] = []
-        batch_properties: List[Dict] = []
+        extended_emb: list[Any] = []
+        batch_properties: list[dict] = []
         for meta, emb, doc, id in zip(metadatas, embeddings, texts, ids):
             extended_emb.extend(emb)
-            batch_properties.append(
-                self.get_props_from_metadata(collection_name, doc, meta, id)
-            )
+            batch_properties.append(self.get_props_from_metadata(doc, meta, id))
         all_blobs = [self.utils.embedding2bytes(extended_emb)]
         all_queries = [
             self.utils.add_descriptor(
@@ -383,16 +903,39 @@ class VDMS(VectorStore):
         #     all_queries = [all_queries]
         response, _ = self.utils.run_vdms_query(all_queries, all_blobs)
 
-        return ids if response[0]["AddDescriptor"]["status"] == 0 else []
+        try:
+            return ids if response[0]["AddDescriptor"]["status"] == 0 else []
+        except:
+            if "OutOfJournalSpace" in response[0]["info"]:
+                try:
+                    logger.info("OutOfJournalSpace: Splitting batch in half")
+                    old_batch = len(all_queries)
+                    new_batch_size = old_batch // 2
+                    emb_len = len(emb)
+                    for start_idx in range(0, old_batch, new_batch_size):
+                        end_idx_blob = min(
+                            start_idx * emb_len + new_batch_size - 1, len(all_blobs)
+                        )
+                        blobs = all_blobs[start_idx * emb_len : end_idx_blob]
+
+                        end_idx = min(start_idx + new_batch_size - 1, old_batch)
+                        queries = all_queries[start_idx:end_idx]
+                        response, _ = self.utils.run_vdms_query(queries, blobs)
+                except Exception:
+                    raise ValueError(f"Lower batch_size to < {old_batch} and rerun")
+
+                return ids if response[0]["AddDescriptor"]["status"] == 0 else []
+            else:
+                return []
 
     def add_data(
         self,
-        texts: List[str],
-        embeddings: List[List[float]],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        texts: list[str],
+        embeddings: list[list[float]],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         if metadatas is None:
             metadatas = [{} for _ in texts]
         else:
@@ -419,71 +962,22 @@ class VDMS(VectorStore):
         )
         return inserted_ids
 
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
-        """Add or update documents in the vectorstore.
-
-        Args:
-            documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
-                if kwargs contains ids and documents contain ids,
-                the ids in the kwargs will receive precedence.
-
-        Returns:
-            List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of ids does not match the number of documents.
-        """
-        ids = None
-        if "ids" in kwargs:
-            ids = kwargs.pop("ids")
-            if ids and len(ids) != len(documents):
-                raise ValueError(
-                    "The number of ids must match the number of documents. "
-                    "Got {len(ids)} ids and {len(documents)} documents."
-                )
-
-            documents_ = []
-
-            for id_, document in zip(ids, documents):
-                doc_with_id = Document(
-                    page_content=document.page_content,
-                    metadata=document.metadata,
-                    id=id_,
-                )
-                documents_.append(doc_with_id)
-        else:
-            documents_ = documents
-
-        if ids is None:
-            ids = []
-            for doc in documents_:
-                if hasattr(doc, "id") and doc.id is not None:
-                    ids.append(str(doc.id))
-                elif "id" in doc.metadata:
-                    ids.append(str(doc.metadata["id"]))
-                else:
-                    ids.append(str(uuid.uuid4()))
-            kwargs["ids"] = ids
-
-        # If upsert has been implemented, we can use it to add documents
-        return self.upsert(documents_, **kwargs)["succeeded"]
-
     def add_from(
         self,
-        texts: List[str],
-        embeddings: List[List[float]],
-        ids: List[str],
-        metadatas: Optional[Sequence[Union[dict, None]]] = None,
+        texts: list[str],
+        embeddings: list[list[float]],
+        ids: list[str],
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         # Get initial properties
-        orig_props = self.utils.get_properties(self.collection_name)
-        inserted_ids: List[str] = []
+        inserted_ids: list[str] = []
         batch_size = int(kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE))
+        total_count = len(texts)
+        # start_time = time.time()
 
-        for start_idx in range(0, len(texts), batch_size):
-            end_idx = min(start_idx + batch_size, len(texts))
+        for start_idx in range(0, total_count, batch_size):
+            end_idx = min(start_idx + batch_size - 1, total_count)
 
             batch_texts = texts[start_idx:end_idx]
             batch_embedding_vectors = embeddings[start_idx:end_idx]
@@ -492,30 +986,38 @@ class VDMS(VectorStore):
             if metadatas:
                 batch_metadatas = metadatas[start_idx:end_idx]
 
-            result_ids = self.add_batch(
-                self.collection_name,
-                embeddings=batch_embedding_vectors,
-                texts=batch_texts,
-                metadatas=batch_metadatas,
-                ids=batch_ids,
-            )
+            try:
+                result_ids = self.add_batch(
+                    self.collection_name,
+                    embeddings=batch_embedding_vectors,
+                    texts=batch_texts,
+                    metadatas=batch_metadatas,
+                    ids=batch_ids,
+                )
 
-            inserted_ids.extend(result_ids)
+                inserted_ids.extend(result_ids)
+            except Exception as e:
+                logger.error(
+                    "Failed to insert batch starting at entity: %s-%s",
+                    start_idx,
+                    end_idx - 1,
+                )
+                raise e
 
         # Update Properties
-        self.update_properties(
-            self.collection_name, orig_props, self.collection_properties
+        self.push_update_properties(
+            self.collection_name,
         )
         return inserted_ids
 
     def add_images(
         self,
-        uris: List[str],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        uris: list[str],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
         add_path: Optional[bool] = True,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run images through the embeddings and add to the vectorstore.
 
         Images are added as embeddings (AddDescriptor) instead of separate
@@ -554,46 +1056,15 @@ class VDMS(VectorStore):
         )
         return inserted_ids
 
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Run texts through the embeddings and add to the vectorstore.
-
-        Args:
-            texts: List of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-            ids: Optional list of unique IDs.
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-        """
-
-        texts = list(texts)
-
-        embeddings = self._embed_documents(texts)
-
-        inserted_ids = self.add_data(
-            texts=texts,
-            embeddings=embeddings,
-            metadatas=metadatas,
-            ids=ids,
-            **kwargs,
-        )
-        return inserted_ids
-
     def add_videos(
         self,
-        paths: List[str],
-        texts: Optional[List[str]] = None,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
+        paths: list[str],
+        texts: Optional[list[str]] = None,
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
         add_path: Optional[bool] = True,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run videos through the embeddings and add to the vectorstore.
 
         Videos are added as embeddings (AddDescriptor) instead of separate
@@ -634,19 +1105,21 @@ class VDMS(VectorStore):
 
     def check_and_update_properties(self) -> None:
         if self.updated_properties_flag:
-            updated_props = self.utils.get_properties(self.collection_name)
-            if self.collection_properties != updated_props:
-                self.collection_properties = updated_props
+            pushed_props = self.utils.get_properties(self.collection_name)
+            self.collection_properties.sort()
+            pushed_props.sort()
+            if self.collection_properties != pushed_props:
+                self.collection_properties = pushed_props
             self.updated_properties_flag = False
 
     def count(self, collection_name: str) -> int:
-        all_queries: List[Any] = []
-        all_blobs: List[Any] = []
+        all_queries: list[Any] = []
+        all_blobs: list[Any] = []
 
         results = {
             "count": "",
             "list": [LANGCHAIN_ID_PROPERTY],
-        }  # collection_properties}
+        }
         query = self.utils.add_descriptor(
             "FindDescriptor",
             collection_name,
@@ -667,67 +1140,32 @@ class VDMS(VectorStore):
     def decode_image(self, base64_image: str) -> bytes:
         return base64.b64decode(base64_image)
 
-    @override
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        """Delete by vector ID or other criteria.
-
-        Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
-            **kwargs: Other keyword arguments that subclasses might use.
-
-        Returns:
-            Optional[bool]: True if deletion is successful, False otherwise
-        """
-
-        if "collection_name" in kwargs:
-            collection_name = kwargs.pop("collection_name")
-        else:
-            collection_name = self.collection_name
-
-        if "constraints" in kwargs and isinstance(kwargs["constraints"], dict):
-            constraints = kwargs.pop("constraints")
-            constraints["_deletion"] = ["==", 1]
-        else:
-            constraints = {"_deletion": ["==", 1]}
-
-        if ids is not None:
-            all_constraints = []
-            for id in ids:
-                tmp = deepcopy(constraints)
-                tmp[LANGCHAIN_ID_PROPERTY] = ["==", id]
-                all_constraints.append(tmp)
-        else:
-            all_constraints = [constraints]
-
-        all_queries: List[Any] = []
-        all_blobs: List[Any] = []
-
-        collection_properties = self.utils.get_properties(collection_name)
-        results = kwargs.pop("results", {"list": collection_properties})
-
-        for constraint in all_constraints:
-            query = self.utils.add_descriptor(
-                "FindDescriptor",
-                collection_name,
-                label=None,
-                ref=None,
-                props=None,
-                link=None,
-                k_neighbors=None,
-                constraints=constraint,
-                results=results,
+    def chunk_query_to_minimize_journal_space(
+        self, all_queries: list, response: list[dict]
+    ) -> list[dict]:
+        if "info" in response[0] and "OutOfJournalSpace" in response[0]["info"]:
+            logger.info("OutOfJournalSpace: Deleting using batch_size of 50")
+            new_batch_size = 50
+            resp_dict: dict = {}
+            resp_dict.setdefault(
+                "FindDescriptor", {"entities": list(), "returned": 0, "status": 0}
             )
-
-            all_queries.append(query)
-        response, _ = self.utils.run_vdms_query(all_queries, all_blobs)
-
-        # Update/store indices after deletion
-        query = self.utils.add_descriptor_set(
-            "FindDescriptorSet", collection_name, storeIndex=True
-        )
-        _, _ = self.utils.run_vdms_query([query])
-
-        return "FindDescriptor" in response[0]
+            new_response = [
+                # {"FindDescriptor": {"returned": 0, "status": 0, "entities": []}}
+                resp_dict
+            ]
+            for start_idx in range(0, len(all_queries), new_batch_size):
+                end_idx = min(start_idx + new_batch_size - 1, len(all_queries))
+                queries = all_queries[start_idx:end_idx]
+                response, _ = self.utils.run_vdms_query(queries)
+                new_response[0]["FindDescriptor"]["entities"].extend(
+                    response[0]["FindDescriptor"]["entities"]
+                )
+            new_response[0]["FindDescriptor"]["returned"] = len(
+                new_response[0]["FindDescriptor"]["entities"]
+            )
+            return new_response
+        return response
 
     def descriptor2document(self, d: dict) -> Document:
         metadata = {}
@@ -748,140 +1186,12 @@ class VDMS(VectorStore):
             blob = f.read()
             return base64.b64encode(blob).decode("utf-8")
 
-    @classmethod
-    @override
-    def from_documents(
-        cls: Type[VDMS],
-        documents: List[Document],
-        embedding: Embeddings,
-        ids: Optional[List[str]] = None,
-        collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
-        **kwargs: Any,
-    ) -> VDMS:
-        """Creates a new vectorstore from a list of documents
-
-        Args:
-            documents: List of documents
-            embedding: Embedding function to use.
-            ids: Optional list of IDs associated with the documents.
-            collection_name (str): Name of the collection to create.
-            kwargs: Additional keyword arguments.
-
-        Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
-        """
-        client: vdms.vdms = kwargs.pop("client")
-
-        if "batch_size" not in kwargs:
-            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
-
-        vectorstore = cls(
-            client=client,
-            embedding=embedding,
-            collection_name=collection_name,
-            **kwargs,
-        )
-        vectorstore.add_documents(documents, ids=ids, **kwargs)
-        return vectorstore
-
-    @classmethod
-    @override
-    def from_texts(
-        cls: Type[VDMS],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
-        **kwargs: Any,
-    ) -> VDMS:
-        """Creates a new vectorstore from a list of texts
-
-        Args:
-            texts: List of text strings
-            embedding: Embedding function to use.
-            metadatas: Optional list of metadatas associated with the texts.
-                Default is None.
-            ids: Optional list of IDs associated with the texts.
-            collection_name (str): Name of the collection to create.
-            kwargs: Additional keyword arguments.
-
-        Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
-        """
-        client: vdms.vdms = kwargs.pop("client")
-
-        if "batch_size" not in kwargs:
-            kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
-
-        vdms_store = cls(
-            client=client,
-            embedding=embedding,
-            collection_name=collection_name,
-            **kwargs,
-        )
-        # ids = kwargs.pop("ids", None)
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        vdms_store.add_texts(
-            texts=texts,
-            metadatas=metadatas,
-            ids=ids,
-            **kwargs,
-        )
-        return vdms_store
-
-    @override
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
-        """Get documents by their IDs.
-
-        Args:
-            ids: List of ids to retrieve.
-
-        Returns:
-            documents: List of Document objects found in the vectorstore.
-        """
-
-        collection_name = self.collection_name
-        all_constraints = []
-        for id in ids:
-            constraints = {
-                LANGCHAIN_ID_PROPERTY: ["==", id],
-            }
-            all_constraints.append(constraints)
-
-        collection_properties = self.utils.get_properties(collection_name)
-        results = {"list": collection_properties}
-
-        docs = []
-        for constraint in all_constraints:
-            query = self.utils.add_descriptor(
-                "FindDescriptor",
-                collection_name,
-                label=None,
-                ref=None,
-                props=None,
-                link=None,
-                k_neighbors=None,
-                constraints=constraint,
-                results=results,
-            )
-
-            response, _ = self.utils.run_vdms_query([query])
-
-            this_docs = [
-                self.descriptor2document(doc)
-                for doc in response[0]["FindDescriptor"].get("entities", [])
-            ]
-            docs.extend(this_docs)
-        return docs
-
     def get_by_constraints(
         self,
         collection_name: str,
-        constraints: Optional[Dict] = None,
+        constraints: Optional[dict] = None,
         limit: Optional[int] = None,
-        include: List[str] = ["metadata"],
+        include: list[str] = ["metadata"],
     ) -> Tuple[Any, Any]:
         """Gets the collection.
         Get embeddings and their associated data from the data store.
@@ -896,18 +1206,17 @@ class VDMS(VectorStore):
                      Ids are always included.
                      Defaults to `["metadatas", "documents"]`. Optional.
         """
-        all_queries: List[Any] = []
-        all_blobs: List[Any] = []
+        all_queries: list[Any] = []
+        all_blobs: list[Any] = []
 
-        results: Dict[str, Any] = {"count": ""}
+        results: dict[str, Any] = {"count": ""}
 
         if limit is not None:
             results["limit"] = limit
 
         # Include metadata
         if "metadata" in include:
-            collection_properties = self.utils.get_properties(collection_name)
-            results["list"] = collection_properties
+            results["list"] = self.utils.get_properties(collection_name)
 
         # Include embedding
         if "embeddings" in include:
@@ -926,9 +1235,9 @@ class VDMS(VectorStore):
         response, response_array = self.utils.run_vdms_query(all_queries, all_blobs)
         return response, response_array
 
-    def get_embedding_from_query(self, query: str) -> List[float]:
+    def get_embedding_from_query(self, query: str) -> list[float]:
         if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):
-            query_embedding: List[float] = self._embed_query(query)
+            query_embedding: list[float] = self._embed_query(query)
         elif os.path.isfile(query) and hasattr(self.embedding, "embed_image"):
             query_embedding = self._embed_image(uris=[query])[0]
         elif os.path.isfile(query) and hasattr(self.embedding, "embed_video"):
@@ -942,15 +1251,15 @@ class VDMS(VectorStore):
 
     def get_props_from_metadata(
         self,
-        collection_name: str,
+        # collection_name: str,
         document: str,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[dict] = None,
         id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if id is None:
             props = {}
         else:
-            props = {LANGCHAIN_ID_PROPERTY: id}
+            props = {LANGCHAIN_ID_PROPERTY: str(id)}
             # id_exists, query = self.utils.check_descriptor_exists_by_id(
             #     self._client, collection_name, id
             # )
@@ -973,115 +1282,25 @@ class VDMS(VectorStore):
                     props[k] = v
             # props.update(metadata)
             if LANGCHAIN_ID_PROPERTY not in props and "id" in metadata:
-                metadata[LANGCHAIN_ID_PROPERTY] = metadata["id"]
+                metadata[LANGCHAIN_ID_PROPERTY] = str(metadata["id"])
         if document not in [None, ""]:
             props["content"] = document
 
         for k in props.keys():
             if k not in self.collection_properties:
                 self.collection_properties.append(k)
+        self.collection_properties.sort()
         return props
-
-    @override
-    def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = DEFAULT_K,
-        fetch_k: int = DEFAULT_FETCH_K,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, List]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Returns similar documents to the query that also have diversity
-
-        This algorithm balances relevance and diversity in the search results.
-
-        Args:
-            query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
-            **kwargs: Arguments to pass to the search method.
-
-        Returns:
-            List of Document objects ordered by decreasing similarity/diversty.
-        """
-        logger.info(f"Max Marginal Relevance search for query: {query}")
-        query_embedding = self.get_embedding_from_query(query)
-        return self.max_marginal_relevance_search_by_vector(
-            query_embedding, k, fetch_k, lambda_mult, filter, **kwargs
-        )
-
-    @override
-    def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = DEFAULT_K,
-        fetch_k: int = DEFAULT_FETCH_K,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, List]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
-
-        Maximal marginal relevance optimizes for similarity to query AND diversity
-        among selected documents.
-
-        Args:
-            embedding: Embedding vector to search for.
-            k: Number of Documents to return.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
-
-        Returns:
-            List of Documents selected by maximal marginal relevance.
-        """
-        start_time = time.time()
-        results = self.query_by_embeddings(
-            query_embeddings=[embedding],
-            k=k,
-            fetch_k=fetch_k,
-            filter=filter,
-            include=["metadatas", "documents", "distances", "embeddings"],
-        )
-
-        if len(results[0][1]) == 0:
-            # No results returned
-            return []
-        else:
-            embedding_list = [
-                list(self.utils.bytes2embedding(result)) for result in results[0][1]
-            ]
-
-            mmr_selected = maximal_marginal_relevance(
-                np.array(embedding, dtype=np.float32),
-                embedding_list,
-                k=k,
-                lambda_mult=lambda_mult,
-            )
-
-            logger.info(
-                f"VDMS similarity search mmr took {time.time() - start_time} seconds"
-            )
-            candidates = self.results2docs(results)
-            return [r for i, r in enumerate(candidates) if i in mmr_selected]
 
     def max_marginal_relevance_search_by_vector_with_score(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, List]] = None,
+        filter: Optional[dict[str, list]] = None,
         **kwargs: Any,
-    ) -> List[tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -1095,7 +1314,7 @@ class VDMS(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            filter (Optional[dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -1136,9 +1355,9 @@ class VDMS(VectorStore):
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, List]] = None,
+        filter: Optional[dict[str, list]] = None,
         **kwargs: Any,
-    ) -> List[tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Returns similar documents to the query that also have diversity
 
         This algorithm balances relevance and diversity in the search results.
@@ -1164,18 +1383,18 @@ class VDMS(VectorStore):
 
     def query_by_embeddings(
         self,
-        query_embeddings: Optional[List[List[float]]] = None,
+        query_embeddings: Optional[list[list[float]]] = None,
         collection_name: Optional[str] = None,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
-        filter: Union[None, Dict[str, Any]] = None,
-        results: Union[None, Dict[str, Any]] = None,
+        filter: Union[None, dict[str, Any]] = None,
+        results: Union[None, dict[str, Any]] = None,
         normalize_distance: bool = False,
         **kwargs: Any,
-    ) -> List:
+    ) -> list:
         self.check_and_update_properties()
 
-        all_responses: List[Any] = []
+        all_responses: list[Any] = []
 
         if collection_name is None:
             collection_name = self.collection_name
@@ -1191,17 +1410,29 @@ class VDMS(VectorStore):
             }
 
         for qemb in query_embeddings:
-            response, response_array = self.utils.get_descriptor_response(
-                "FindDescriptor",
-                collection_name,
-                k_neighbors=k,
-                fetch_k=fetch_k,
-                constraints=filter,
-                results=results,
-                normalize_distance=normalize_distance,
-                query_embedding=qemb,
-            )
+            response: list[dict] = []
+            response_array: list[bytes] = []
+            if fetch_k >= k:
+                response, response_array = self.utils.get_descriptor_response(
+                    "FindDescriptor",
+                    collection_name,
+                    k_neighbors=k,
+                    fetch_k=fetch_k,
+                    constraints=filter,
+                    results=results,
+                    normalize_distance=normalize_distance,
+                    query_embedding=qemb,
+                )
+
             try:
+                num_returned = (
+                    len(response[0]["FindDescriptor"].get("entities", []))
+                    if "FindDescriptor" in response[0]
+                    else 0
+                )
+                if num_returned != k:
+                    print(f"# returned: {num_returned}")
+                    print(f"Provide fetch_k > k ({k}); Currently set at {fetch_k}")
                 result_entities = response[0]["FindDescriptor"].get("entities", [])
             except ValueError:
                 result_entities = []
@@ -1214,11 +1445,11 @@ class VDMS(VectorStore):
 
         return all_responses
 
-    def results2docs(self, results: Any) -> List[Document]:
+    def results2docs(self, results: Any) -> list[Document]:
         return [doc for doc, _ in self.results2docs_and_scores(results)]
 
-    def results2docs_and_scores(self, results: Any) -> List[Tuple[Document, float]]:
-        final_res: List[Any] = []
+    def results2docs_and_scores(self, results: Any) -> list[Tuple[Document, float]]:
+        final_res: list[Any] = []
         try:
             responses, blobs = results[0]
             result_entities = responses[0]["FindDescriptor"].get("entities", [])
@@ -1239,106 +1470,8 @@ class VDMS(VectorStore):
                         (Document(page_content=txt_contents, metadata=props), distance)
                     )
         except Exception as e:
-            logger.warning(
-                f"No results returned. Error while parsing results: {e}"
-            )
+            logger.warning(f"No results returned. Error while parsing results: {e}")
         return final_res
-
-    @override
-    def similarity_search(
-        self,
-        query: str,
-        k: int = DEFAULT_K,
-        fetch_k: int = DEFAULT_FETCH_K,
-        filter: Optional[Dict[str, List]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs most similar to query.
-
-        Args:
-            query: Query string to search for.
-            k: Number of Documents to return.
-            fetch_k: Number of candidates to fetch for knn (>= k).
-            filter: Filter by metadata. Defaults to None.
-            **kwargs: Arguments to pass to the search method.
-
-        Returns:
-            List of Documents most similar to the query.
-        """
-        assert self.embedding is not None, "Embedding function is not set"
-        query_embedding = self.get_embedding_from_query(query)
-        return self.similarity_search_by_vector(
-            query_embedding, k, fetch_k=fetch_k, filter=filter, **kwargs
-        )
-
-    @override
-    def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = DEFAULT_K,
-        fetch_k: int = DEFAULT_FETCH_K,
-        filter: Optional[Dict[str, List]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return docs most similar to embedding vector.
-
-        Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return.
-            fetch_k: Number of candidates to fetch for knn (>= k).
-            filter: Filter by metadata. Defaults to None.
-            **kwargs: Arguments to pass to the search method.
-
-        Returns:
-            List of Documents most similar to the query vector.
-        """
-        start_time = time.time()
-        results = self.query_by_embeddings(
-            query_embeddings=[embedding],
-            k=k,
-            fetch_k=fetch_k,
-            filter=filter,
-            **kwargs,
-        )
-        logger.info(
-            f"VDMS similarity search took {time.time() - start_time} seconds"
-        )
-
-        final_docs = []
-        for this_result in results:
-            resp, resp_arr = this_result
-            try:
-                descriptor = resp[0]["FindDescriptor"].get("entities", [])
-            except ValueError:
-                descriptor = []
-            if isinstance(descriptor, dict):
-                final_docs.append(self.descriptor2document(descriptor))
-            elif isinstance(descriptor, list):
-                for desc in descriptor:
-                    final_docs.append(self.descriptor2document(desc))
-            else:
-                pass
-        return final_docs
-
-    @override
-    def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = DEFAULT_K,
-        fetch_k: int = DEFAULT_FETCH_K,
-        filter: Optional[Dict[str, List]] = None,
-        **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
-        query_embedding = self.get_embedding_from_query(query)
-        results = self.query_by_embeddings(
-            query_embeddings=[query_embedding],
-            k=k,
-            fetch_k=fetch_k,
-            filter=filter,
-            **kwargs,
-        )
-
-        return self.results2docs_and_scores(results)
 
     def update_document(
         self, collection_name: str, document_id: str, document: Document, **kwargs: Any
@@ -1356,24 +1489,24 @@ class VDMS(VectorStore):
     def update_documents(
         self,
         collection_name: str,
-        ids: List[str],
-        documents: List[Document],
+        ids: list[str],
+        documents: list[Document],
         **kwargs: Any,
     ) -> None:
         """Update a document in the collection.
 
         Args:
-            ids (List[str]): List of ids of the document to update.
-            documents (List[Document]): List of documents to update.
+            ids (list[str]): List of ids of the document to update.
+            documents (list[Document]): List of documents to update.
         """
-        texts = [document.page_content for document in documents]
+        texts: list[str] = [document.page_content for document in documents]
         metadata = [
             self.utils.validate_vdms_properties(document.metadata)
             for document in documents
         ]
         embeddings = self._embed_documents(texts)
 
-        self.__update(
+        self.update(
             collection_name,
             ids,
             texts=texts,
@@ -1382,23 +1515,27 @@ class VDMS(VectorStore):
             **kwargs,
         )
 
-    def upsert(self, documents: Sequence[Document], /, **kwargs: Any) -> Dict:  #UpsertResponse:
-        """Insert or update items
-
-        Updating documents is dependent on the documents' `id` attribute.
+    def upsert(self, documents: list[Document], /, **kwargs: Any) -> list[str] | None:
+        """Update/Insert documents to the vectorstore.
 
         Args:
-            items: List of Document objects to upsert
+            ids: IDs to update - Let's call get_pks to get ids with expression \n
+            documents (list[Document]): Documents to add to the vectorstore.
 
         Returns:
-            UpsertResponse object with succeeded and failed
+            list[str]: IDs of the added texts.
         """
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
-        ids: List[str]
+        ids: Sequence[str]
+
+        if documents is None or len(documents) == 0:
+            logger.debug("No documents to upsert.")
+            return None
+
         if "ids" in kwargs:
-            ids = kwargs.pop("ids")
+            ids = kwargs.get("ids", [])
             if ids and len(ids) != len(documents):
                 raise ValueError(
                     "The number of ids must match the number of documents. "
@@ -1411,26 +1548,20 @@ class VDMS(VectorStore):
                 if hasattr(item, "id") and item.id is not None
             ]
 
-        text = [document.page_content for document in documents]
-        metadatas = [
-                self.utils.validate_vdms_properties(document.metadata)
-                if getattr(document, "metadata", None) is not None
-                else {}
-            for document in documents
-        ]
-        embeddings = self._embed_documents(text)
-
-        self.__update(
-            self.collection_name,
-            ids,
-            texts=text,
-            embeddings=embeddings,
-            metadatas=metadatas,
-            **kwargs,
-        )
-        # return UpsertResponse(succeeded=ids, failed=[])
-        return {"succeeded": ids,
-                "failed": []}
+        if ids is not None and len(ids):
+            kwargs["ids"] = ids
+            try:
+                # Remove IDs if exist-TEST_REMOVAL
+                self.delete(ids=ids)
+            except Exception:
+                pass
+        try:
+            return self.add_documents(documents=documents, **kwargs)
+        except Exception as e:
+            logger.error(
+                "Failed to upsert entities: %s error: %s", self.collection_name, e
+            )
+            raise e
 
 
 class VDMS_Utils:
@@ -1450,13 +1581,13 @@ class VDMS_Utils:
         setname: str,
         label: Optional[str] = None,
         ref: Optional[int] = None,
-        props: Optional[Union[dict, List]] = None,
+        props: Optional[Union[dict, list]] = None,
         link: Optional[dict] = None,
         k_neighbors: Optional[int] = None,
         constraints: Optional[dict] = None,
         results: Optional[dict] = None,
-    ) -> Dict[str, Dict[str, Any]]:
-        entity: Dict[str, Any] = {"set": setname}
+    ) -> dict[str, dict[str, Any]]:
+        entity: dict[str, Any] = {"set": setname}
 
         if "Add" in command_str and label:
             entity["label"] = label
@@ -1498,16 +1629,16 @@ class VDMS_Utils:
         engine: Optional[str] = None,
         metric: Optional[str] = None,
         ref: Optional[int] = None,
-        props: Optional[Dict] = None,
-        link: Optional[Dict] = None,
+        props: Optional[dict] = None,
+        link: Optional[dict] = None,
         storeIndex: bool = False,
-        constraints: Optional[Dict] = None,
-        results: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        constraints: Optional[dict] = None,
+        results: Optional[dict] = None,
+    ) -> dict[str, Any]:
         if command_str == "AddDescriptorSet" and all(
             var is not None for var in [name, num_dims]
         ):
-            entity: Dict[str, Any] = {
+            entity: dict[str, Any] = {
                 "name": name,
                 "dimensions": num_dims,
             }
@@ -1546,23 +1677,23 @@ class VDMS_Utils:
         return query
 
     def add_entity_with_blob(
-        self, collection_name: str, all_properties: List
-    ) -> Tuple[Dict[str, Any], bytes]:
+        self, collection_name: str, all_properties: list
+    ) -> Tuple[dict[str, Any], bytes]:
         all_properties_str = ",".join(all_properties) if len(all_properties) > 0 else ""
 
         querytype = "AddEntity"
-        entity: Dict[str, Any] = {}
+        entity: dict[str, Any] = {}
         entity["class"] = "properties"
         entity["blob"] = True  # New
 
-        props: Dict[str, Any] = {"name": collection_name}
+        props: dict[str, Any] = {"name": collection_name}
         props["type"] = "queryable properties"
         props[TEXT_PROPERTY] = all_properties_str
         entity["properties"] = props
 
         byte_data = self.str2bytes(all_properties_str)
 
-        query: Dict[str, Any] = {}
+        query: dict[str, Any] = {}
         query[querytype] = entity
         return query, byte_data
 
@@ -1570,11 +1701,11 @@ class VDMS_Utils:
         self,
         collection_name: str,
         command_type: str = "find",
-        all_properties: List = [],
+        all_properties: list = [],
         ref: Optional[int] = None,
     ) -> Tuple[Any, Any]:
-        all_queries: List[Any] = []
-        blob_arr: List[Any] = []
+        all_queries: list[Any] = []
+        blob_arr: list[Any] = []
 
         choices = ["find", "add", "update"]
         if command_type.lower() not in choices:
@@ -1615,7 +1746,7 @@ class VDMS_Utils:
         return in_bytes.decode()
 
     def check_valid_response(
-        self, all_queries: List[dict], response: Any
+        self, all_queries: list[dict], response: Any
     ) -> tuple[Any, bool]:
         cmd_list = self.get_cmds_from_query(all_queries)
         valid_res = isinstance(response, list) and any(
@@ -1658,7 +1789,7 @@ class VDMS_Utils:
     #     return valid_res, findDescriptor
 
     def embedding2bytes(
-        self, embedding: Union[List[float], None]
+        self, embedding: Union[list[float], None]
     ) -> Union[bytes, None]:
         """Convert embedding to bytes."""
 
@@ -1673,30 +1804,30 @@ class VDMS_Utils:
         collection_name: str,
         unique_entity: Optional[bool] = False,
         deletion: Optional[bool] = False,
-    ) -> Dict[str, Dict[str, Any]]:
+    ) -> dict[str, dict[str, Any]]:
         querytype = "FindEntity"
-        entity: Dict[str, Any] = {}
+        entity: dict[str, Any] = {}
         entity["class"] = "properties"
         if unique_entity:
             entity["unique"] = unique_entity
 
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         results["blob"] = True
         results["count"] = ""
         results["list"] = [TEXT_PROPERTY]
         entity["results"] = results
 
-        constraints: Dict[str, Any] = {}
+        constraints: dict[str, Any] = {}
         if deletion:
             constraints["_deletion"] = ["==", 1]
         constraints["name"] = ["==", collection_name]
         entity["constraints"] = constraints
 
-        query: Dict[str, Any] = {}
+        query: dict[str, Any] = {}
         query[querytype] = entity
         return query
 
-    def get_cmds_from_query(self, all_queries: list) -> List[str]:
+    def get_cmds_from_query(self, all_queries: list) -> list[str]:
         return list(set([k for q in all_queries for k in q.keys()]))
 
     def get_descriptor_response(
@@ -1706,11 +1837,13 @@ class VDMS_Utils:
         k_neighbors: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         constraints: Optional[dict] = None,
-        results: Optional[Dict[str, Any]] = None,
-        query_embedding: Optional[List[float]] = None,
+        results: Optional[dict[str, Any]] = None,
+        query_embedding: Optional[list[float]] = None,
         normalize_distance: bool = False,
-    ) -> Tuple[List[Dict[str, Any]], List]:
-        all_blobs: List[Any] = []
+    ) -> Tuple[list[dict[str, Any]], list]:
+        all_blobs: list[Any] = []
+        if k_neighbors >= fetch_k:
+            raise ValueError(f"Provide fetch_k > k; Currently set at {fetch_k}")
         blob = self.embedding2bytes(query_embedding)
         if blob is not None:
             all_blobs.append(blob)
@@ -1723,6 +1856,16 @@ class VDMS_Utils:
                 results=results,
                 all_blobs=all_blobs,
             )
+
+            if (
+                len(response) > 0
+                and command_str in response[0]
+                and "entities" in response[0][command_str]
+            ):
+                new_entities = response[0][command_str]["entities"][:k_neighbors]
+                response[0][command_str]["entities"] = new_entities
+                response[0][command_str]["returned"] = len(new_entities)
+                response_array = response_array[: len(new_entities)]
         else:
             if results is None:
                 results = {"list": [LANGCHAIN_ID_PROPERTY]}
@@ -1760,7 +1903,7 @@ class VDMS_Utils:
                 return [], []
 
             # (3) Intersection of (1) & (2) using ids
-            new_entities: List[Dict] = []
+            new_entities = []
             for ent in response[0][command_str]["entities"]:
                 if ent[LANGCHAIN_ID_PROPERTY] in ids_of_interest:
                     new_entities.append(ent)
@@ -1768,27 +1911,30 @@ class VDMS_Utils:
                     break
             response[0][command_str]["entities"] = new_entities
             response[0][command_str]["returned"] = len(new_entities)
+            response_array = response_array[: len(new_entities)]
             if len(new_entities) < k_neighbors:
                 p_str = "Returned items < k_neighbors; Try increasing fetch_k"
                 logger.warning(p_str)
 
         if normalize_distance:
+            max_dist = max(
+                [ent["_distance"] for ent in response[0][command_str]["entities"]]
+            )
             max_dist = 1.0 if max_dist in [0, np.inf] else max_dist
             for ent_idx, ent in enumerate(response[0][command_str]["entities"]):
                 ent["_distance"] = ent["_distance"] / max_dist
                 response[0][command_str]["entities"][ent_idx]["_distance"] = ent[
                     "_distance"
                 ]
-
         return response, response_array
 
     def get_k_candidates(
         self,
         setname: str,
         k: Optional[int] = None,
-        results: Optional[Dict[str, Any]] = None,
-        all_blobs: Optional[List] = None,
-    ) -> Tuple[List[Dict[str, Any]], List, float]:
+        results: Optional[dict[str, Any]] = None,
+        all_blobs: Optional[list] = None,
+    ) -> Tuple[list[dict[str, Any]], list]:
         command_str = "FindDescriptor"
         query = self.add_descriptor(
             command_str,
@@ -1808,7 +1954,7 @@ class VDMS_Utils:
         collection_name: str,
         unique_entity: Optional[bool] = False,
         deletion: Optional[bool] = False,
-    ) -> List[str]:
+    ) -> list[str]:
         find_query = self.find_property_entity(
             collection_name, unique_entity=unique_entity, deletion=deletion
         )
@@ -1817,12 +1963,13 @@ class VDMS_Utils:
             collection_properties = self.bytes2str(response_blob[0]).split(",")
         else:
             collection_properties = deepcopy(DEFAULT_PROPERTIES)
+        collection_properties.sort()
         return collection_properties
 
     def run_vdms_query(
         self,
-        all_queries: List[Dict],
-        all_blobs: Optional[List] = [],
+        all_queries: list[dict],
+        all_blobs: Optional[list] = [],
         print_last_response: Optional[bool] = False,
     ) -> Tuple[Any, Any]:
         response, response_array = self.client.query(all_queries, all_blobs)
@@ -1835,8 +1982,8 @@ class VDMS_Utils:
     def str2bytes(self, in_str: str) -> bytes:
         return str.encode(in_str)
 
-    def validate_vdms_properties(self, metadata: Dict[str, Any]) -> Dict:
-        new_metadata: Dict[str, Any] = {}
+    def validate_vdms_properties(self, metadata: dict[str, Any]) -> dict:
+        new_metadata: dict[str, Any] = {}
         for key, value in metadata.items():
             if not isinstance(value, list):
                 new_metadata[str(key)] = value
