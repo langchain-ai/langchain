@@ -121,3 +121,4 @@ python = ">=3.9"
 [[tool.poetry.group.typing.dependencies.langchain-core]]
 version = ">=0.1.40,<0.3"
 python = "<3.9"
+
