@@ -284,7 +284,9 @@ class PyPDFium2Loader(BasePDFLoader):
 
 
 class PyPDFium2TocLoader(BasePDFLoader):
-    """Load sections using Table of content entries"""
+    """Load `PDF` using `pypdfium2` and its Table of Contents
+    and chunks at character level.
+    """
 
     def __init__(
         self,
