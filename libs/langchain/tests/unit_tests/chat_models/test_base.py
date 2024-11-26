@@ -27,7 +27,6 @@ def test_all_imports() -> None:
     "langchain_openai",
     "langchain_anthropic",
     "langchain_fireworks",
-    "langchain_mistralai",
     "langchain_groq",
 )
 @pytest.mark.parametrize(

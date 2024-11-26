@@ -468,6 +468,7 @@ def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
+
 def _check_pkg(pkg: str) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg.replace("_", "-")
@@ -858,4 +859,3 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
-
