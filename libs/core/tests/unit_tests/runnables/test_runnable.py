@@ -87,6 +87,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
@@ -223,6 +224,13 @@ class FakeRetriever(BaseRetriever):
         return [Document(page_content="foo"), Document(page_content="bar")]
 
 
+@pytest.mark.skipif(
+    (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10),
+    reason=(
+        "Only test with most recent version of pydantic. "
+        "Pydantic introduced small fixes to generated JSONSchema on minor versions."
+    ),
+)
 def test_schemas(snapshot: SnapshotAssertion) -> None:
     fake = FakeRunnable()  # str -> int
 
@@ -2941,7 +2949,9 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
     assert isinstance(chain.last, RunnableParallel)
-    assert dumps(chain, pretty=True) == snapshot
+
+    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+        assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
