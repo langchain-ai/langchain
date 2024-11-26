@@ -479,11 +479,11 @@ def _package_namespace(package_name: str) -> str:
     Returns:
         modified package_name: Can be either "langchain" or "langchain_{package_name}"
     """
-    return (
-        package_name
-        if package_name == "langchain"
-        else f"langchain_{package_name.replace('-', '_')}"
-    )
+    if package_name == "langchain":
+        return "langchain"
+    if package_name == "standard-tests":
+        return "langchain_tests"
+    return f"langchain_{package_name.replace('-', '_')}"
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
