@@ -180,7 +180,7 @@ class Chroma(VectorStore):
             Embedding function to use.
 
     Key init args — client params:
-        client: Optional[Client]
+        client: Optional[Client | AsyncClient]
             Chroma client to use.
         client_settings: Optional[chromadb.config.Settings]
             Chroma client settings.
@@ -263,6 +263,9 @@ class Chroma(VectorStore):
     Async:
         .. code-block:: python
 
+            # set collection (use after creating vector store from scratch and if async)
+            # await vector_store.aset_collection()
+
             # add documents
             # await vector_store.aadd_documents(documents=documents, ids=ids)
 
@@ -319,6 +322,7 @@ class Chroma(VectorStore):
             collection_metadata: Collection configurations.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/js-client#class:-chromaclient
+                    https://docs.trychroma.com/reference/py-client#class:-AsyncHttpClient
             relevance_score_fn: Function to calculate relevance score from distance.
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
@@ -404,6 +408,7 @@ class Chroma(VectorStore):
         return self._embedding_function
 
     async def aset_collection(self) -> None:
+        """Set the default chroma collection asynchronously"""
         if self._create_collection_if_not_exists:
             await self.__aensure_collection()
         else:
@@ -456,7 +461,7 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> Union[List[Document], chromadb.QueryResult]:
-        """Query the chroma collection.
+        """Query the chroma collection asynchronously.
 
         Args:
             query_texts: List of query texts.
@@ -583,7 +588,7 @@ class Chroma(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more images through the embeddings and add to the vectorstore.
+        """Run more images through the embeddings and add to the vectorstore asynchronously.
 
         Args:
             uris: File path to the image.
@@ -754,7 +759,7 @@ class Chroma(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Run more texts through the embeddings and add to the vectorstore asynchronously.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -860,6 +865,17 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Run similarity search with Chroma asynchronously.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text.
+        """
         docs_and_scores = await self.asimilarity_search_with_score(
             query, k, filter=filter, **kwargs
         )
@@ -904,7 +920,19 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector asynchronously.
 
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
         results = await self.__aquery_collection(
             query_embeddings=embedding,
             n_results=k,
@@ -953,7 +981,20 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        
+        """Return docs most similar to embedding vector and similarity score asynchronously.
+
+        Args:
+            embedding (List[float]): Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text and relevance score
+            in float for each. Lower score represents more similarity.
+        """
         results = await self.__aquery_collection(
             query_embeddings=[embedding],
             n_results=k,
@@ -1014,7 +1055,20 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        
+        """Run similarity search with Chroma with distance asynchronously.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text and
+            distance in float for each. Lower score represents more similarity.
+        """
         if self._embedding_function is None:
             results = await self.__aquery_collection(
                 query_texts=[query],
@@ -1125,6 +1179,24 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Search for similar images based on the given image URI asynchronously.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+
+        Returns:
+            List of Images most similar to the provided image.
+            Each element in list is a Langchain Document Object.
+            The page content is b64 encoded image, metadata is default or
+            as defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
         if self._embedding_function is None or not hasattr(
             self._embedding_function, "embed_image"
         ):
@@ -1195,7 +1267,7 @@ class Chroma(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Search for similar images based on the given image URI.
+        """Search for similar images based on the given image URI asynchronously.
 
         Args:
             uri (str): URI of the image to search for.
@@ -1295,7 +1367,7 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
+        """Return docs selected using the maximal marginal relevance asynchronously.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -1397,7 +1469,7 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
+        """Return docs selected using the maximal marginal relevance asynchronously.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -1443,6 +1515,7 @@ class Chroma(VectorStore):
         self._chroma_collection = None
 
     async def adelete_collection(self) -> None:
+        """Delete the collection asynchronously."""
         await self._client.delete_collection(self._collection.name)
         self._chroma_collection = None
 
@@ -1455,6 +1528,10 @@ class Chroma(VectorStore):
         self.__ensure_collection()
 
     async def areset_collection(self) -> None:
+        """Resets the collection asynchronously.
+
+        Resets the collection by deleting the collection and recreating an empty one.
+        """
         await self.adelete_collection()
         await self.__aensure_collection()
 
@@ -1508,7 +1585,7 @@ class Chroma(VectorStore):
         where_document: Optional[WhereDocument] = None,
         include: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Gets the collection.
+        """Gets the collection asynchronously.
 
         Args:
             ids: The ids of the embeddings to get. Optional.
@@ -1551,7 +1628,7 @@ class Chroma(VectorStore):
         return self.update_documents([document_id], [document])
 
     async def aupdate_document(self, document_id: str, document: Document) -> None:
-        """Update a document in the collection.
+        """Update a document in the collection asynchronously.
 
         Args:
             document_id: ID of the document to update.
@@ -1609,7 +1686,7 @@ class Chroma(VectorStore):
 
     # type: ignore
     async def aupdate_documents(self, ids: List[str], documents: List[Document]) -> None:
-        """Update a document in the collection.
+        """Update a document in the collection asynchronously.
 
         Args:
             ids: List of ids of the document to update.
@@ -1737,7 +1814,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
-        """Create a Chroma vectorstore from a raw documents.
+        """Create a Chroma vectorstore from a raw documents asynchronously.
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
@@ -1856,7 +1933,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
-        """Create a Chroma vectorstore from a list of documents.
+        """Create a Chroma vectorstore from a list of documents asynchronously.
 
         If a persist_directory is specified, the collection will be persisted there.
         Otherwise, the data will be ephemeral in-memory.
@@ -1902,5 +1979,11 @@ class Chroma(VectorStore):
         self._collection.delete(ids=ids, **kwargs)
 
     async def adelete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
+        """Delete by vector IDs asynchronously.
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments.
+        """
         await self._collection.delete(ids=ids, **kwargs)
 
