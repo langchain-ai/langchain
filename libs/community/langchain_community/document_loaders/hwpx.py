@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Iterator, Union
 
-from langchain_core.documents import Document
-from langchain_community.document_loaders.base import BaseLoader
-
 import zipfile
 
-from xml.etree.ElementTree import parse # OK: user-must-opt-in
+from xml.etree.ElementTree import parse  # OK: user-must-opt-in
+
+from langchain_core.documents import Document
+from langchain_community.document_loaders.base import BaseLoader
 
 
 class HwpxLoader(BaseLoader):
@@ -29,16 +29,35 @@ class HwpxLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazily load content from the HWPX file, yielding Documents."""
-        with zipfile.ZipFile(self.file_path, "r") as hwpx_zip:
-            file_list = hwpx_zip.namelist()
-            content_files = [x for x in file_list if x.startswith("Contents/sec") and x.endswith(".xml")]
+        try:
+            with zipfile.ZipFile(self.file_path, "r") as hwpx_zip:
+                file_list = hwpx_zip.namelist()
+                content_files = [x for x in file_list if x.startswith("Contents/sec") and x.endswith(".xml")]
 
-            for content_file in content_files:
-                with hwpx_zip.open(content_file) as f:
-                    tree = parse(f)
-                    root = tree.getroot()
+                for content_file in content_files:
+                    try:
+                        with hwpx_zip.open(content_file) as f:
+                            tree = parse(f)
+                            root = tree.getroot()
 
-                    # Extract text from XML and yield as Document
-                    text = "".join([elem.text or "" for elem in root.iter() if elem.tag.endswith("t")]).strip()
-                    if text:
-                        yield Document(page_content=text, metadata={"source": content_file})
+                            # Extract text from XML and yield as Document
+                            text = self._extract_text_from_xml(root)
+                            if text.strip():
+                                yield Document(page_content=text, metadata={"source": content_file})
+
+                    except Exception as e:
+                        print(f"Error processing file {content_file}: {e}")
+        except Exception as e:
+            print(f"Error opening HWPX file {self.file_path}: {e}")
+
+    def _extract_text_from_xml(self, root) -> str:
+        """
+        Extract meaningful text from the XML tree.
+
+        Args:
+            root: Root of the XML ElementTree.
+
+        Returns:
+            Combined text content of the XML.
+        """
+        return "".join([elem.text or "" for elem in root.iter() if elem.tag.endswith("t")])
