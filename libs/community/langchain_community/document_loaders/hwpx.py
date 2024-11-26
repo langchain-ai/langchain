@@ -1,13 +1,14 @@
+import zipfile
 from pathlib import Path
 from typing import Iterator, Union
-
-import zipfile
-
 from xml.etree.ElementTree import parse  # OK: user-must-opt-in
+import logging
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
+# Logger configuration
+logger = logging.getLogger(__name__)
 
 class HwpxLoader(BaseLoader):
     """
@@ -46,9 +47,13 @@ class HwpxLoader(BaseLoader):
                                 yield Document(page_content=text, metadata={"source": content_file})
 
                     except Exception as e:
-                        print(f"Error processing file {content_file}: {e}")
+                        logger.error(f"Error processing file {content_file}: {e}")
+        except zipfile.BadZipFile as e:
+            logger.error(f"Error opening HWPX file {self.file_path}: Invalid zip format.") 
+            raise RuntimeError(f"Error opening HWPX file {self.file_path}: Invalid zip format.") from e
         except Exception as e:
-            print(f"Error opening HWPX file {self.file_path}: {e}")
+            logger.error(f"Unexpected error opening HWPX file {self.file_path}: {e}")
+            raise RuntimeError(f"Error opening HWPX file {self.file_path}") from e
 
     def _extract_text_from_xml(self, root) -> str:
         """
@@ -60,4 +65,8 @@ class HwpxLoader(BaseLoader):
         Returns:
             Combined text content of the XML.
         """
-        return "".join([elem.text or "" for elem in root.iter() if elem.tag.endswith("t")])
+        text_segments = []
+        for elem in root.iter():
+            if elem.tag.endswith("t"):
+                text_segments.append(elem.text or "")
+        return "".join(text_segments)
