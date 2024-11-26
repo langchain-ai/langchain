@@ -113,7 +113,7 @@ class Marqo(VectorStore):
         if (
             "index_defaults" in settings
             and settings["index_defaults"]["treat_urls_and_pointers_as_images"]
-            or settings.get("treat_urls_and_pointers_as_images"):
+            or settings.get("treat_urls_and_pointers_as_images")
         ):
             raise ValueError(
                 "Marqo.add_texts is disabled for multimodal indexes. To add documents "
