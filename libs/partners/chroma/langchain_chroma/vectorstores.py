@@ -42,24 +42,37 @@ async def _acreate_batches(
     embeddings: Optional[Embeddings] = None,
     metadatas: Optional[chromadb.Metadatas] = None,
     documents: Optional[chromadb.Documents] = None,
-) -> List[Tuple[chromadb.IDs, Embeddings, Optional[chromadb.Metadatas], Optional[chromadb.Documents]]]:
-    """
-    Chroma API does not consider the case where we pass in an AsyncClientAPI to this despite taking BaseAPI.
+) -> List[
+    Tuple[
+        chromadb.IDs,
+        Embeddings,
+        Optional[chromadb.Metadatas],
+        Optional[chromadb.Documents],
+    ]
+]:
+    """Create batches asynchronously.
+
+    Chroma API does not consider the case where we pass in an AsyncClientAPI 
+    to this despite taking BaseAPI.
+
     Remove this once Chroma fixes it.
     """
     _batches: List[
-        Tuple[chromadb.IDs, Embeddings, Optional[chromadb.Metadatas], Optional[chromadb.Documents]]
+        Tuple[
+            chromadb.IDs,
+            Embeddings,
+            Optional[chromadb.Metadatas],
+            Optional[chromadb.Documents],
+        ]
     ] = []
-    max_batch_size = await api.get_max_batch_size();
+    max_batch_size = await api.get_max_batch_size()
     if len(ids) > max_batch_size:
         # create split batches
         for i in range(0, len(ids), max_batch_size):
             _batches.append(
                 (  # type: ignore
                     ids[i : i + max_batch_size],
-                    embeddings[i : i + max_batch_size]
-                    if embeddings
-                    else None,
+                    embeddings[i : i + max_batch_size] if embeddings else None,
                     metadatas[i : i + max_batch_size] if metadatas else None,
                     documents[i : i + max_batch_size] if documents else None,
                 )
@@ -362,7 +375,9 @@ class Chroma(VectorStore):
             if create_collection_if_not_exists:
                 self.__ensure_collection()
             else:
-                self._chroma_collection = self._client.get_collection(name=collection_name)
+                self._chroma_collection = self._client.get_collection(
+                    name=collection_name
+                )
         else:
             self._chroma_collection: Optional[chromadb.AsyncCollection] = None
 
@@ -391,14 +406,13 @@ class Chroma(VectorStore):
             if isinstance(self._client, chromadb.AsyncClientAPI):
                 raise ValueError(
                     "Chroma collection not initialized. "
-                    "For AsyncClientAPI only use `aset_collection` to set the collection. "
-                    "This uses `create_collection_if_not_exists` passed in the constructor. "
-                    "Alternatively use `areset_collection` to re-create and intialize the collection. "
+                    "For AsyncClientAPI only use `aset_collection`"
+                    "Alternatively use `areset_collection`"
                 )
             else:
                 raise ValueError(
                     "Chroma collection not initialized. "
-                    "Use `reset_collection` to re-create and initialize the collection. "
+                    "Use `reset_collection` to re-create the collection. "
                 )
         return self._chroma_collection
 
@@ -408,11 +422,13 @@ class Chroma(VectorStore):
         return self._embedding_function
 
     async def aset_collection(self) -> None:
-        """Set the default chroma collection asynchronously"""
+        """Set the default chroma collection asynchronously."""
         if self._create_collection_if_not_exists:
             await self.__aensure_collection()
         else:
-            self._chroma_collection = await self._client.get_collection(name=self._collection_name)
+            self._chroma_collection = await self._client.get_collection(
+                name=self._collection_name
+            )
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
@@ -588,7 +604,10 @@ class Chroma(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more images through the embeddings and add to the vectorstore asynchronously.
+        """Add images asynchronously.
+
+        Run more images through the embeddings and add to the vectorstore 
+        asynchronously.
 
         Args:
             uris: File path to the image.
@@ -759,7 +778,10 @@ class Chroma(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore asynchronously.
+        """Add text asynchronously.
+
+        Run more texts through the embeddings and add to the 
+        vectorstore asynchronously.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -881,7 +903,6 @@ class Chroma(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-
     def similarity_search_by_vector(
         self,
         embedding: List[float],
@@ -981,7 +1002,10 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to embedding vector and similarity score asynchronously.
+        """Similarity search asynchronously.
+
+        Return docs most similar to embedding vector and 
+        similarity score asynchronously.
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
@@ -1048,7 +1072,7 @@ class Chroma(VectorStore):
         return _results_to_docs_and_scores(results)
 
     async def asimilarity_search_with_score(
-        self, 
+        self,
         query: str,
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
@@ -1088,7 +1112,6 @@ class Chroma(VectorStore):
             )
 
         return _results_to_docs_and_scores(results)
-        
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """Select the relevance score function based on collections distance metric.
@@ -1304,7 +1327,6 @@ class Chroma(VectorStore):
 
         return results
 
-
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -1409,7 +1431,6 @@ class Chroma(VectorStore):
         selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
         return selected_results
 
-
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -1507,7 +1528,6 @@ class Chroma(VectorStore):
             filter=filter,
             where_document=where_document,
         )
-
 
     def delete_collection(self) -> None:
         """Delete the collection."""
@@ -1617,7 +1637,6 @@ class Chroma(VectorStore):
 
         return await self._collection.get(**kwargs)  # type: ignore
 
-
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
 
@@ -1635,7 +1654,6 @@ class Chroma(VectorStore):
             document: Document to update.
         """
         return await self.aupdate_documents([document_id], [document])
-
 
     # type: ignore
     def update_documents(self, ids: List[str], documents: List[Document]) -> None:
@@ -1685,7 +1703,9 @@ class Chroma(VectorStore):
             )
 
     # type: ignore
-    async def aupdate_documents(self, ids: List[str], documents: List[Document]) -> None:
+    async def aupdate_documents(
+        self, ids: List[str], documents: List[Document]
+    ) -> None:
         """Update a document in the collection asynchronously.
 
         Args:
@@ -1708,7 +1728,6 @@ class Chroma(VectorStore):
         ) or hasattr(  # for Chroma 0.5.1 and above
             self._collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
-
             for batch in await _acreate_batches(
                 api=self._collection._client,
                 ids=ids,
@@ -1729,7 +1748,6 @@ class Chroma(VectorStore):
                 documents=text,
                 metadatas=metadata,  # type: ignore
             )
-
 
     @classmethod
     def from_texts(
@@ -1846,8 +1864,7 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
-        await chroma_collection.aset_collection();
-
+        await chroma_collection.aset_collection()
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         if hasattr(
@@ -1855,7 +1872,6 @@ class Chroma(VectorStore):
         ) or hasattr(  # for Chroma 0.5.1 and above
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
-
             for batch in await _acreate_batches(
                 api=chroma_collection._client,
                 ids=ids,
@@ -1868,7 +1884,9 @@ class Chroma(VectorStore):
                     ids=batch[0],
                 )
         else:
-            await chroma_collection.aadd_texts(texts=texts, metadatas=metadatas, ids=ids)
+            await chroma_collection.aadd_texts(
+                texts=texts, metadatas=metadatas, ids=ids
+            )
         return chroma_collection
 
     @classmethod
@@ -1986,4 +2004,3 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         await self._collection.delete(ids=ids, **kwargs)
-

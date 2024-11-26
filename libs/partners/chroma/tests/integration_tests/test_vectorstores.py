@@ -44,6 +44,7 @@ def client() -> Generator[chromadb.ClientAPI, None, None]:
     client = chromadb.Client(chromadb.config.Settings())
     yield client
 
+
 @pytest.mark.requires("chromadb")
 @pytest.mark.skipif(
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
@@ -66,6 +67,7 @@ def test_chroma() -> None:
     docsearch.delete_collection()
     assert output == [Document(page_content="foo")]
 
+
 @pytest.mark.requires("chromadb")
 @pytest.mark.skipif(
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
@@ -76,7 +78,9 @@ async def test_chroma_async(aclient: chromadb.AsyncClientAPI) -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = await Chroma.afrom_texts(
         client=aclient,
-        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output = await docsearch.asimilarity_search("foo", k=1)
     await docsearch.adelete_collection()
@@ -139,7 +143,9 @@ def test_chroma_with_metadatas_with_scores() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_chroma_with_metadatas_with_scores_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_with_metadatas_with_scores_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -180,7 +186,9 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_chroma_with_metadatas_with_scores_using_vector_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_with_metadatas_with_scores_using_vector_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     """Test end to end construction and scored search, using embedding vector."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -233,8 +241,12 @@ async def test_chroma_search_filter_async(aclient: chromadb.AsyncClientAPI) -> N
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
-    output1 = await docsearch.asimilarity_search("far", k=1, filter={"first_letter": "f"})
-    output2 = await docsearch.asimilarity_search("far", k=1, filter={"first_letter": "b"})
+    output1 = await docsearch.asimilarity_search(
+        "far", k=1, filter={"first_letter": "f"}
+    )
+    output2 = await docsearch.asimilarity_search(
+        "far", k=1, filter={"first_letter": "b"}
+    )
     await docsearch.adelete_collection()
     assert output1 == [Document(page_content="far", metadata={"first_letter": "f"})]
     assert output2 == [Document(page_content="bar", metadata={"first_letter": "b"})]
@@ -270,7 +282,9 @@ def test_chroma_search_filter_with_scores() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_chroma_search_filter_with_scores_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_search_filter_with_scores_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     """Test end to end construction and scored search with metadata filtering."""
     texts = ["far", "bar", "baz"]
     metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
@@ -388,9 +402,9 @@ async def test_chroma_mmr_async(aclient: chromadb.AsyncClientAPI) -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = await Chroma.afrom_texts(
         client=aclient,
-        collection_name="test_collection", 
-        texts=texts, 
-        embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output = await docsearch.amax_marginal_relevance_search("foo", k=1)
     await docsearch.adelete_collection()
@@ -421,12 +435,14 @@ async def test_chroma_mmr_by_vector_async(aclient: chromadb.AsyncClientAPI) -> N
     embeddings = FakeEmbeddings()
     docsearch = await Chroma.afrom_texts(
         client=aclient,
-        collection_name="test_collection", 
-        texts=texts, 
-        embedding=embeddings
+        collection_name="test_collection",
+        texts=texts,
+        embedding=embeddings,
     )
     embedded_query = embeddings.embed_query("foo")
-    output = await docsearch.amax_marginal_relevance_search_by_vector(embedded_query, k=1)
+    output = await docsearch.amax_marginal_relevance_search_by_vector(
+        embedded_query, k=1
+    )
     await docsearch.adelete_collection()
     assert output == [Document(page_content="foo")]
 
@@ -449,14 +465,16 @@ def test_chroma_with_include_parameter() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_chroma_with_include_parameter_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_with_include_parameter_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     """Test end to end construction and include parameter."""
     texts = ["foo", "bar", "baz"]
     docsearch = await Chroma.afrom_texts(
         client=aclient,
-        collection_name="test_collection", 
-        texts=texts, 
-        embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     output1 = await docsearch.aget(include=["embeddings"])
     output2 = await docsearch.aget()
@@ -597,7 +615,9 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     reason="API not accessible",
 )
 # TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
-async def test_chroma_with_relevance_score_custom_normalization_fn_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_with_relevance_score_custom_normalization_fn_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     """Test searching with relevance score and custom normalization function."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -651,7 +671,9 @@ def test_chroma_add_documents_no_metadata() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_chroma_add_documents_no_metadata_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_add_documents_no_metadata_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     db = Chroma(client=aclient, embedding_function=FakeEmbeddings())
     await db.aset_collection()
     await db.aadd_documents([Document(page_content="foo")])
@@ -680,7 +702,9 @@ def test_chroma_add_documents_mixed_metadata() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_chroma_add_documents_mixed_metadata_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_add_documents_mixed_metadata_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     db = Chroma(client=aclient, embedding_function=FakeEmbeddings())
     await db.aset_collection()
     docs = [
@@ -807,7 +831,9 @@ def test_chroma_large_batch_update() -> None:
     not batch_support_chroma_version(),
     reason="ChromaDB version does not support batching",
 )
-async def test_chroma_large_batch_update_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_chroma_large_batch_update_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     async_client = aclient
     embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = await async_client.get_or_create_collection(
@@ -833,7 +859,6 @@ async def test_chroma_large_batch_update_async(aclient: chromadb.AsyncClientAPI)
     await db.aupdate_documents(ids=new_ids, documents=new_docs)
 
     await db.adelete_collection()
-
 
 
 @pytest.mark.requires("chromadb")
@@ -878,18 +903,19 @@ def test_create_collection_if_not_exist_default() -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_create_collection_if_not_exist_default_async(aclient: chromadb.AsyncClientAPI) -> None:
+async def test_create_collection_if_not_exist_default_async(
+    aclient: chromadb.AsyncClientAPI,
+) -> None:
     """Tests existing behaviour without the new create_collection_if_not_exists flag."""
     texts = ["foo", "bar", "baz"]
     docsearch = await Chroma.afrom_texts(
         client=aclient,
-        collection_name="test_collection", 
-        texts=texts, 
-        embedding=FakeEmbeddings()
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
     )
     assert await docsearch._client.get_collection("test_collection") is not None
     await docsearch.adelete_collection()
-
 
 
 def test_create_collection_if_not_exist_true_existing(
@@ -913,7 +939,7 @@ def test_create_collection_if_not_exist_true_existing(
     reason="API not accessible",
 )
 async def test_create_collection_if_not_exist_true_existing_async(
-    aclient: chromadb.AsyncClientAPI
+    aclient: chromadb.AsyncClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=True and collection already existing."""
     await aclient.create_collection("test_collection")
@@ -949,7 +975,7 @@ def test_create_collection_if_not_exist_false_existing(
     reason="API not accessible",
 )
 async def test_create_collection_if_not_exist_false_existing_async(
-    aclient: chromadb.AsyncClientAPI
+    aclient: chromadb.AsyncClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=False and collection already existing."""
     await aclient.create_collection("test_collection")
@@ -984,7 +1010,7 @@ def test_create_collection_if_not_exist_false_non_existing(
     reason="API not accessible",
 )
 async def test_create_collection_if_not_exist_false_non_existing_async(
-    aclient: chromadb.AsyncClientAPI
+    aclient: chromadb.AsyncClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=False and collection not-existing,
     should raise."""
@@ -1019,7 +1045,7 @@ def test_create_collection_if_not_exist_true_non_existing(
     reason="API not accessible",
 )
 async def test_create_collection_if_not_exist_true_non_existing_async(
-    aclient: chromadb.AsyncClientAPI
+    aclient: chromadb.AsyncClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=True and collection non-existing. ."""
     vectorstore = Chroma(
@@ -1060,7 +1086,7 @@ def test_collection_none_after_delete(
     reason="API not accessible",
 )
 async def test_collection_none_after_delete_async(
-    aclient: chromadb.AsyncClientAPI
+    aclient: chromadb.AsyncClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=True and collection non-existing. ."""
     vectorstore = Chroma(
@@ -1103,9 +1129,7 @@ def test_reset_collection(client: chromadb.ClientAPI) -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_reset_collection_async(
-    aclient: chromadb.AsyncClientAPI
-) -> None:
+async def test_reset_collection_async(aclient: chromadb.AsyncClientAPI) -> None:
     """Tests ensure_collection method."""
     vectorstore = Chroma(
         client=aclient,
@@ -1149,9 +1173,7 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
     not is_api_accessible("http://localhost:8000/api/v1/heartbeat"),
     reason="API not accessible",
 )
-async def test_delete_where_clause_async(
-    aclient: chromadb.AsyncClientAPI
-) -> None:
+async def test_delete_where_clause_async(aclient: chromadb.AsyncClientAPI) -> None:
     """Tests delete_where_clause method."""
     vectorstore = Chroma(
         client=aclient,
@@ -1170,4 +1192,3 @@ async def test_delete_where_clause_async(
     assert await vectorstore._collection.count() == 1
     # Clean up
     await vectorstore.adelete_collection()
-
