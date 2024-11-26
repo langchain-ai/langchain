@@ -109,3 +109,21 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             yield from self._generate_docs_page(result)
         else:
             raise ValueError(f"Invalid mode: {self.mode}")
+
+    def parse_bytes(self, bytes_source: bytes) -> Iterator[Document]:
+        from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+
+        poller = self.client.begin_analyze_document(
+            self.api_model,
+            analyze_request=AnalyzeDocumentRequest(bytes_source=bytes_source),
+            # content_type="application/octet-stream",
+            output_content_format="markdown" if self.mode == "markdown" else "text",
+        )
+        result = poller.result()
+
+        if self.mode in ["single", "markdown"]:
+            yield from self._generate_docs_single(result)
+        elif self.mode in ["page"]:
+            yield from self._generate_docs_page(result)
+        else:
+            raise ValueError(f"Invalid mode: {self.mode}")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from collections import Counter
+from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
@@ -423,12 +423,19 @@ class Graph:
     def reid(self) -> Graph:
         """Return a new graph with all nodes re-identified,
         using their unique, readable names where possible."""
-        node_labels = {node.id: node.name for node in self.nodes.values()}
-        node_label_counts = Counter(node_labels.values())
+        node_name_to_ids = defaultdict(list)
+        for node in self.nodes.values():
+            node_name_to_ids[node.name].append(node.id)
+
+        unique_labels = {
+            node_id: node_name if len(node_ids) == 1 else f"{node_name}_{i + 1}"
+            for node_name, node_ids in node_name_to_ids.items()
+            for i, node_id in enumerate(node_ids)
+        }
 
         def _get_node_id(node_id: str) -> str:
-            label = node_labels[node_id]
-            if is_uuid(node_id) and node_label_counts[label] == 1:
+            label = unique_labels[node_id]
+            if is_uuid(node_id):
                 return label
             else:
                 return node_id
