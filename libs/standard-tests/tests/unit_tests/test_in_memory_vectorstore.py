@@ -4,7 +4,7 @@ from langchain_core.vectorstores import (
     VectorStore,
 )
 
-from langchain_standard_tests.integration_tests.vectorstores import (
+from langchain_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
@@ -17,7 +17,7 @@ class TestInMemoryVectorStore(ReadWriteTestSuite):
         return InMemoryVectorStore(embedding=embeddings)
 
 
-class TestAysncInMemoryVectorStore(AsyncReadWriteTestSuite):
+class TestAsyncInMemoryVectorStore(AsyncReadWriteTestSuite):
     @pytest.fixture
     async def vectorstore(self) -> VectorStore:
         embeddings = self.get_embeddings()
