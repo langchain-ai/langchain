@@ -1504,7 +1504,7 @@ class BaseChatOpenAI(BaseChatModel):
         return filtered
 
 
-class ChatOpenAI(BaseChatOpenAI):
+class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     """OpenAI chat model integration.
 
     .. dropdown:: Setup
