@@ -10,6 +10,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
+
 class HwpxLoader(BaseLoader):
     """
     Load `hwpx` files and convert their textual contents into LangChain Documents.
@@ -34,7 +35,8 @@ class HwpxLoader(BaseLoader):
             with zipfile.ZipFile(self.file_path, "r") as hwpx_zip:
                 file_list = hwpx_zip.namelist()
                 content_files = [
-                    x for x in file_list
+                    x 
+                    for x in file_list
                     if x.startswith("Contents/sec") and x.endswith(".xml")
                 ]
 
@@ -46,7 +48,7 @@ class HwpxLoader(BaseLoader):
 
                             text = self._extract_text_from_xml(root)
                             if text.strip():
-                                metadata={"source": content_file}
+                                metadata = {"source": content_file}
                                 yield Document(page_content=text, metadata=metadata)
 
                     except Exception as e:
