@@ -103,16 +103,24 @@ def _parse_json_string(
 def _parse_arguments_from_tool_call(
     raw_tool_call: dict[str, Any],
 ) -> Optional[dict[str, Any]]:
-    """Parse arguments by trying to parse any shallowly nested string-encoded JSON."""
+    """Parse arguments by trying to parse any shallowly nested string-encoded JSON.
+
+    Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
+    Should be removed/changed if fixed upstream.
+    See https://github.com/ollama/ollama/issues/6155
+    """
     if "function" not in raw_tool_call:
         return None
     arguments = raw_tool_call["function"]["arguments"]
     parsed_arguments = {}
     if isinstance(arguments, dict):
         for key, value in arguments.items():
-            parsed_arguments[key] = _parse_json_string(
-                value, skip=True, raw_tool_call=raw_tool_call
-            )
+            if isinstance(value, str):
+                parsed_arguments[key] = _parse_json_string(
+                    value, skip=True, raw_tool_call=raw_tool_call
+                )
+            else:
+                parsed_arguments[key] = value
     else:
         parsed_arguments = _parse_json_string(
             arguments, skip=False, raw_tool_call=raw_tool_call
