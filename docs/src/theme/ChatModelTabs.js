@@ -29,7 +29,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
  * @property {boolean} [hideDatabricks] - Whether or not to hide Databricks models.
-* @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
+ * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
 /**
