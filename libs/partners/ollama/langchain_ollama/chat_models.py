@@ -66,8 +66,8 @@ def _get_tool_calls_from_response(
     """Get tool calls from ollama response."""
     tool_calls = []
     if "message" in response:
-        if "tool_calls" in response["message"]:
-            for tc in response["message"]["tool_calls"]:
+        if raw_tool_calls := response["message"].get("tool_calls"):
+            for tc in raw_tool_calls:
                 tool_calls.append(
                     tool_call(
                         id=str(uuid4()),
@@ -728,6 +728,8 @@ class ChatOllama(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -738,6 +740,8 @@ class ChatOllama(BaseChatModel):
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+            tool_choice: If provided, which tool for model to call. **This parameter
+                is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501

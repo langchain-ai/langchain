@@ -47,7 +47,7 @@ version = ">=1.22.4,<2"
 python = "<3.12"
 
 [[tool.poetry.dependencies.numpy]]
-version = ">=1.26.2,<2"
+version = ">=1.26.2,<3"
 python = ">=3.12"
 
 [tool.ruff.lint]
