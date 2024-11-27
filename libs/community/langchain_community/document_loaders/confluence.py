@@ -485,7 +485,7 @@ class ConfluenceLoader(BaseLoader):
                 ),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
             )(retrieval_method)
-            if self.cql and next_url:  # only cql, starting from the second page
+            if self.cql:  # cursor pagination for CQL
                 batch, next_url = get_pages(**kwargs, next_url=next_url)
                 if not next_url:
                     docs.extend(batch)
