@@ -1,6 +1,6 @@
 import os
 from abc import abstractmethod
-from typing import Callable, Tuple, Type, Union
+from typing import Tuple, Type, Union
 from unittest import mock
 
 import pytest
@@ -13,7 +13,7 @@ from langchain_tests.base import BaseStandardTests
 class ToolsTests(BaseStandardTests):
     @property
     @abstractmethod
-    def tool_constructor(self) -> Union[Type[BaseTool], Callable]: ...
+    def tool_constructor(self) -> Union[Type[BaseTool], BaseTool]: ...
 
     @property
     def tool_constructor_params(self) -> dict:
@@ -31,12 +31,23 @@ class ToolsTests(BaseStandardTests):
 
     @pytest.fixture
     def tool(self) -> BaseTool:
+        if isinstance(self.tool_constructor, BaseTool):
+            if self.tool_constructor_params != {}:
+                msg = (
+                    "If tool_constructor is an instance of BaseTool, "
+                    "tool_constructor_params must be empty"
+                )
+                raise ValueError(msg)
+            return self.tool_constructor
         return self.tool_constructor(**self.tool_constructor_params)
 
 
 class ToolsUnitTests(ToolsTests):
     def test_init(self) -> None:
-        tool = self.tool_constructor(**self.tool_constructor_params)
+        if isinstance(self.tool_constructor, BaseTool):
+            tool = self.tool_constructor
+        else:
+            tool = self.tool_constructor(**self.tool_constructor_params)
         assert tool is not None
 
     @property
