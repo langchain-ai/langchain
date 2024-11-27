@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import deque
+from importlib import util
 from typing import (
     Any,
     Callable,
@@ -17,7 +18,6 @@ from typing import (
     Union,
 )
 
-import ijson
 import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -202,6 +202,14 @@ class ChatLindormAI(BaseChatModel):
         return result[RSP_DATA_KEY] if result else None
 
     def __stream_infer(self, model_name: str, input_data: Any, params: Any) -> Any:
+        # 动态查找 ijson 模块
+        ijson_spec = util.find_spec("ijson")
+
+        if ijson_spec is not None:
+            import ijson  # 仅在模块存在的情况下进行导入
+        else:
+            raise ImportError("Module 'ijson' is not available")
+
         @ijson.coroutine
         def recv_output(output_q: Any) -> Any:
             while True:
