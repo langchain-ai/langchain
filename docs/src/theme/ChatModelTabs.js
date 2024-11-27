@@ -60,6 +60,7 @@ export default function ChatModelTabs(props) {
     hideAzure,
     hideNvidia,
     hideAWS,
+    hideDatabricks,
     customVarName,
   } = props;
 
