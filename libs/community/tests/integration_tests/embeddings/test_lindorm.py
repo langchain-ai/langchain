@@ -6,9 +6,9 @@ from langchain_community.embeddings.lindorm_embedding import LindormAIEmbeddings
 
 
 class Config:
-    AI_LLM_ENDPOINT = os.environ.get("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
+    AI_LLM_ENDPOINT = os.environ.get("AI_ENDPOINT", "<AI_ENDPOINT>")
     AI_USERNAME = os.environ.get("AI_USERNAME", "root")
-    AI_PWD = os.environ.get("AI_PWD", "<PASSWORD>")
+    AI_PWD = os.environ.get("AI_PASSWORD", "<PASSWORD>")
 
     AI_DEFAULT_EMBEDDING_MODEL = "bge_m3_model"
 

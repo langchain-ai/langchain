@@ -12,7 +12,7 @@ from langchain_community.document_compressors.lindormai_rerank import LindormAIR
 class Config:
     AI_LLM_ENDPOINT = os.environ.get("AI_LLM_ENDPOINT", "<LLM_ENDPOINT>")
     AI_USERNAME = os.environ.get("AI_USERNAME", "root")
-    AI_PWD = os.environ.get("AI_PWD", "<PASSWORD>")
+    AI_PWD = os.environ.get("AI_PASSWORD", "<PASSWORD>")
 
     AI_DEFAULT_RERANK_MODEL = "rerank_bge_v2_m3"
 

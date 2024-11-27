@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from importlib import util
+from collections import deque
 from typing import (
     Any,
     Callable,
+    Deque,
     Dict,
     Iterator,
     List,
@@ -16,6 +17,8 @@ from typing import (
     Union,
 )
 
+import ijson
+import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -55,6 +58,15 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TEMPERATURE = 0.1
 DEFAULT_NUM_OUTPUTS = 256  # tokens
+
+HTTP_HDR_AK_KEY = "x-ld-ak"
+HTTP_HDR_SK_KEY = "x-ld-sk"
+REST_URL_PATH = "/v1/ai"
+REST_URL_MODELS_PATH = REST_URL_PATH + "/models"
+INFER_INPUT_KEY = "input"
+INFER_PARAMS_KEY = "params"
+RSP_DATA_KEY = "data"
+RSP_MODELS_KEY = "models"
 
 
 def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMessage:
@@ -157,19 +169,79 @@ class ChatLindormAI(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Ensure the client is initialized properly."""
         if not values.get("client"):
-            if util.find_spec("lindormai") is None:
-                raise ImportError(
-                    "Could not import lindormai python package. "
-                    "Please install it with "
-                    "`pip install lindormai`."
-                )
-            else:
-                from lindormai.model_manager import ModelManager
-
-                values["client"] = ModelManager(
-                    values["endpoint"], values["username"], values["password"]
-                )
+            if values.get("username") is None:
+                raise ValueError("username can't be empty")
+            if values.get("password") is None:
+                raise ValueError("password can't be empty")
+            if values.get("endpoint") is None:
+                raise ValueError("endpoint can't be empty")
         return values
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, max=4))
+    def __post_with_retry(
+        self, url: str, data: Any = None, json: Any = None, **kwargs: Any
+    ) -> Any:
+        response = requests.post(url=url, data=data, json=json, **kwargs)
+        response.raise_for_status()
+        return response
+
+    def _infer(self, model_name: str, input_data: Any, params: Any) -> Any:
+        url = f"{self.endpoint}{REST_URL_MODELS_PATH}/{model_name}/infer"
+        infer_dict = {INFER_INPUT_KEY: input_data, INFER_PARAMS_KEY: params}
+        result = None
+        try:
+            headers = {HTTP_HDR_AK_KEY: self.username, HTTP_HDR_SK_KEY: self.password}
+            response = self.__post_with_retry(url, json=infer_dict, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+        except Exception as error:
+            logger.error(
+                f"infer model for {model_name} with "
+                f"input {input_data} and params {params}: {error}"
+            )
+        return result[RSP_DATA_KEY] if result else None
+
+    def __stream_infer(self, model_name: str, input_data: Any, params: Any) -> Any:
+        @ijson.coroutine
+        def recv_output(output_q: Any) -> Any:
+            while True:
+                item = yield
+                output_q.append(item)
+
+        url = f"{self.endpoint}{REST_URL_MODELS_PATH}/{model_name}/infer"
+        infer_dict = {INFER_INPUT_KEY: input_data, INFER_PARAMS_KEY: params}
+        output_q: Deque = deque()
+        try:
+            headers = {HTTP_HDR_AK_KEY: self.username, HTTP_HDR_SK_KEY: self.password}
+            with self.__post_with_retry(
+                url, json=infer_dict, headers=headers, stream=True
+            ) as response:
+                response.raise_for_status()
+
+                ijson_coro = ijson.items_coro(
+                    recv_output(output_q), "data.outputs.item"
+                )
+                for chunk in response.iter_content(
+                    chunk_size=1024, decode_unicode=True
+                ):
+                    logger.debug(
+                        f"stream infer model for {model_name} with "
+                        f"input {input_data} and params {params} result: {chunk}"
+                    )
+                    ijson_coro.send(chunk.encode())
+                    while output_q:
+                        yield output_q.popleft()
+                ijson_coro.close()
+        except Exception as error:
+            logger.error(
+                f"stream infer model for {model_name} with "
+                f"input {input_data} and params {params}: {error}"
+            )
+
+    def _stream_infer(self, model_name: str, input_data: Any, params: Any) -> Any:
+        if params is None:
+            params = {}
+        yield from self.__stream_infer(model_name, input_data, params)
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -193,8 +265,8 @@ class ChatLindormAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**_kwargs: Any) -> Any:
-            return self.client.infer(
-                name=self.model_name,
+            return self._infer(
+                model_name=self.model_name,
                 input_data=str(_kwargs["input_data"]),
                 params=_kwargs,
             )
@@ -207,8 +279,8 @@ class ChatLindormAI(BaseChatModel):
 
         @retry_decorator
         def _stream_completion_with_retry(**_kwargs: Any) -> Any:
-            responses = self.client.stream_infer(
-                name=self.model_name,
+            responses = self._stream_infer(
+                model_name=self.model_name,
                 input_data=str(_kwargs["input_data"]),
                 params=_kwargs,
             )

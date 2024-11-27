@@ -6,15 +6,25 @@ import logging
 from concurrent.futures import Executor
 from concurrent.futures.thread import ThreadPoolExecutor
 from copy import deepcopy
-from importlib import util
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+import requests
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.runnables import run_in_executor
 from pydantic import Field, model_validator
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
+
+HTTP_HDR_AK_KEY = "x-ld-ak"
+HTTP_HDR_SK_KEY = "x-ld-sk"
+REST_URL_PATH = "/v1/ai"
+REST_URL_MODELS_PATH = REST_URL_PATH + "/models"
+INFER_INPUT_KEY = "input"
+INFER_PARAMS_KEY = "params"
+RSP_DATA_KEY = "data"
+RSP_MODELS_KEY = "models"
 
 
 class LindormAIRerank(BaseDocumentCompressor):
@@ -70,23 +80,40 @@ class LindormAIRerank(BaseDocumentCompressor):
     def validate_environment(cls, values: Dict) -> Dict:
         """Ensure the client is initialized properly."""
         if not values.get("client"):
-            if util.find_spec("lindormai") is None:
-                raise ImportError(
-                    "Could not import lindormai python package. "
-                    "Please install it with "
-                    "`pip install lindormai`."
-                )
-            else:
-                from lindormai.model_manager import ModelManager
-
-                values["client"] = ModelManager(
-                    values["endpoint"], values["username"], values["password"]
-                )
-
+            if values.get("username") is None:
+                raise ValueError("username can't be empty")
+            if values.get("password") is None:
+                raise ValueError("password can't be empty")
+            if values.get("endpoint") is None:
+                raise ValueError("endpoint can't be empty")
         if not values.get("executor"):
             max_workers = values.get("max_workers", 5)
             values["executor"] = ThreadPoolExecutor(max_workers=max_workers)
         return values
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, max=4))
+    def __post_with_retry(
+        self, url: str, data: Any = None, json: Any = None, **kwargs: Any
+    ) -> Any:
+        response = requests.post(url=url, data=data, json=json, **kwargs)
+        response.raise_for_status()
+        return response
+
+    def _infer(self, model_name: str, input_data: Any, params: Any) -> Any:
+        url = f"{self.endpoint}{REST_URL_MODELS_PATH}/{model_name}/infer"
+        infer_dict = {INFER_INPUT_KEY: input_data, INFER_PARAMS_KEY: params}
+        result = None
+        try:
+            headers = {HTTP_HDR_AK_KEY: self.username, HTTP_HDR_SK_KEY: self.password}
+            response = self.__post_with_retry(url, json=infer_dict, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+        except Exception as error:
+            logger.error(
+                f"infer model for {model_name} with "
+                f"input {input_data} and params {params}: {error}"
+            )
+        return result[RSP_DATA_KEY] if result else None
 
     def rerank(
         self,
@@ -120,8 +147,8 @@ class LindormAIRerank(BaseDocumentCompressor):
         )
 
         # Call the Lindorm AI client for reranking
-        response = self.client.infer(
-            name=self.model_name,
+        response = self._infer(
+            model_name=self.model_name,
             input_data={"query": query, "chunks": docs},
             params={"topK": top_n, "batchSize": batch_size},
         )
