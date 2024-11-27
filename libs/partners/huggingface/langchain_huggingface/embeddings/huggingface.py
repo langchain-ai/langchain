@@ -26,7 +26,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    model_name: str = DEFAULT_MODEL_NAME
+    model_name: str = Field(
+        default="sentence-transformers/all-mpnet-base-v2", alias="model"
+    )
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 

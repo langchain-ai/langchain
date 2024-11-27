@@ -1,6 +1,7 @@
 from typing import Any, List, Optional, Sequence
 
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
+from pydantic import Field
 
 
 class FastEmbedSparse(SparseEmbeddings):
@@ -8,7 +9,7 @@ class FastEmbedSparse(SparseEmbeddings):
 
     def __init__(
         self,
-        model_name: str = "Qdrant/bm25",
+        model_name: str = Field(default="Qdrant/bm25", alias="model"),
         batch_size: int = 256,
         cache_dir: Optional[str] = None,
         threads: Optional[int] = None,
