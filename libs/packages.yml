@@ -150,3 +150,6 @@ packages:
   - name: langchain-neo4j
     repo: langchain-ai/langchain-neo4j
     path: libs/neo4j
+  - name: langchain-linkup
+    repo: LinkupPlatform/langchain-linkup
+    path: .
