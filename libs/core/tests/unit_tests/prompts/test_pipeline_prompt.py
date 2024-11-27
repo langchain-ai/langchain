@@ -62,19 +62,22 @@ def test_partial_with_prompt_template() -> None:
 
     pipeline_prompt.partial(person="Elon Musk")
     pipeline_prompt.partial(invalid_partial="Hello, I am invalid")
-    
+
     ret = pipeline_prompt.format(
         example_q="What's your favorite car?",
         example_a="Tesla",
         input="What's your favorite social media site?",
     )
-    assert ret == """You are impersonating Elon Musk.
+    assert (
+        ret
+        == """You are impersonating Elon Musk.
       Here's an example of an interaction:
     Q: What's your favorite car?
     A: Tesla
       Now, do this for real!
     Q: What's your favorite social media site?
     A:"""
+    )
 
 
 async def test_partial_with_chat_prompts() -> None:
