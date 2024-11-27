@@ -55,8 +55,11 @@ BETWEEN_OPERATOR = "$between"
 
 LIKE_OPERATOR = "$like"
 
+CONTAINS_OPERATOR = "$contains"
+
 LOGICAL_OPERATORS_TO_SQL = {"$and": "AND", "$or": "OR"}
 
+INTERMEDIATE_TABLE_NAME = "intermediate_result"
 
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
@@ -482,6 +485,73 @@ class HanaDB(VectorStore):
             embedding=embedding, k=k, filter=filter
         )
 
+    def _extract_keyword_search_columns(self, filter: Optional[dict] = None) -> List[str]:
+        """
+        Extract metadata columns used with `$contains` in the filter.
+
+        Scans the filter to find unspecific metadata columns used
+        with the `$contains` operator.
+
+        Args:
+            filter: A dictionary of filter criteria.
+
+        Returns:
+            List of metadata column names for keyword searches.
+
+        Example:
+            filter = {"$or": [{"title": {"$contains": "barbie"}}, {"VEC_TEXT": {"$contains": "fred"}}]}
+            Result: ["title"]
+        """
+        keyword_columns = set()
+
+        def recurse_filters(f, parent_key=None):
+            if isinstance(f, Dict):
+                for key, value in f.items():
+                    if key == "$contains":
+                        # Add the parent key as it's the metadata column being filtered
+                        if parent_key and not (
+                                parent_key == self.content_column or parent_key in self.specific_metadata_columns):
+                            keyword_columns.add(parent_key)
+                    elif key in ["$and", "$or"]:  # Handle logical operators
+                        for subfilter in value:
+                            recurse_filters(subfilter)
+                    else:
+                        recurse_filters(value, parent_key=key)
+
+        recurse_filters(filter)
+        return list(keyword_columns)
+
+    def _create_metadata_projection(self, projected_metadata_columns) -> str:
+        """
+        Generate a SQL `WITH` clause to project metadata columns for keyword search.
+
+        Args:
+            projected_metadata_columns: List of metadata column names for projection.
+
+        Returns:
+            A SQL `WITH` clause string.
+
+        Example:
+            Input: ["title", "author"]
+            Output:
+            WITH intermediate_result AS (
+                SELECT *,
+                JSON_VALUE(metadata_column, '$.title') AS "title",
+                JSON_VALUE(metadata_column, '$.author') AS "author"
+                FROM "table_name"
+            )
+        """
+
+        metadata_columns = [
+            f'JSON_VALUE({self.metadata_column}, \'$.{col}\') AS "{col}"'
+            for col in projected_metadata_columns
+        ]
+        return (
+            f"WITH {INTERMEDIATE_TABLE_NAME} AS ("
+            f"SELECT *, {', '.join(metadata_columns)} "
+            f'FROM "{self.table_name}")'
+        )
+
     def similarity_search_with_score_and_vector_by_vector(
         self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float, List[float]]]:
@@ -501,18 +571,25 @@ class HanaDB(VectorStore):
         k = HanaDB._sanitize_int(k)
         embedding = HanaDB._sanitize_list_float(embedding)
         distance_func_name = HANA_DISTANCE_FUNCTION[self.distance_strategy][0]
-        embedding_as_str = "[" + ",".join(map(str, embedding)) + "]"
+
+        projected_metadata_columns = self._extract_keyword_search_columns(filter)
+        metadata_projection = ""
+        if projected_metadata_columns:
+            metadata_projection = self._create_metadata_projection(projected_metadata_columns)
+
+        from_clause = INTERMEDIATE_TABLE_NAME if metadata_projection else f'"{self.table_name}"'
         sql_str = (
+            f"{metadata_projection} "
             f"SELECT TOP {k}"
             f'  "{self.content_column}", '  # row[0]
             f'  "{self.metadata_column}", '  # row[1]
             f'  TO_NVARCHAR("{self.vector_column}"), '  # row[2]
-            f'  {distance_func_name}("{self.vector_column}", TO_REAL_VECTOR (?)) AS CS '
-            f'FROM "{self.table_name}"'
+            f'  {distance_func_name}("{self.vector_column}", TO_REAL_VECTOR '
+            f"     ('{str(embedding)}')) AS CS "  # row[3]
+            f'FROM {from_clause}'
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
         where_str, query_tuple = self._create_where_by_filter(filter)
-        query_tuple = (embedding_as_str,) + tuple(query_tuple)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
@@ -640,6 +717,10 @@ class HanaDB(VectorStore):
                     elif special_op == LIKE_OPERATOR:
                         operator = "LIKE"
                         query_tuple.append(special_val)
+                    # "$contains"
+                    elif special_op == CONTAINS_OPERATOR:
+                        operator = CONTAINS_OPERATOR
+                        query_tuple.append(special_val)
                     # "$in", "$nin"
                     elif special_op in IN_OPERATORS_TO_SQL:
                         operator = IN_OPERATORS_TO_SQL[special_op]
@@ -664,12 +745,15 @@ class HanaDB(VectorStore):
                         f"Unsupported filter data-type: {type(filter_value)}"
                     )
 
-                selector = (
-                    f' "{key}"'
-                    if key in self.specific_metadata_columns
-                    else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
-                )
-                where_str += f"{selector} " f"{operator} {sql_param}"
+                if operator == CONTAINS_OPERATOR:
+                    where_str += f"SCORE(? IN (\"{key}\" EXACT SEARCH MODE \'text\')) > 0"
+                else:
+                    selector = (
+                        f' "{key}"'
+                        if key in self.specific_metadata_columns
+                        else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
+                    )
+                    where_str += f"{selector} " f"{operator} {sql_param}"
 
         return where_str, query_tuple
 
