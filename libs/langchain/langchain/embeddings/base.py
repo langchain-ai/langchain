@@ -105,54 +105,6 @@ def _infer_model_and_provider(
     return provider, model_name
 
 
-def _init_embeddings_helper(
-    model: str, *, provider: Optional[str] = None, **kwargs: Any
-) -> Embeddings:
-    """Initialize an Embeddings model from the model name and provider.
-
-    Internal helper function that handles the actual model initialization.
-    Use init_embeddings() instead of calling this directly.
-    """
-    provider, model_name = _infer_model_and_provider(model, provider=provider)
-    pkg = _SUPPORTED_PROVIDERS[provider]
-    _check_pkg(pkg)
-
-    if provider == "openai":
-        from langchain_openai import OpenAIEmbeddings
-
-        return OpenAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "azure_openai":
-        from langchain_openai import AzureOpenAIEmbeddings
-
-        return AzureOpenAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "google_vertexai":
-        from langchain_google_vertexai import VertexAIEmbeddings
-
-        return VertexAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "bedrock":
-        from langchain_aws import BedrockEmbeddings
-
-        return BedrockEmbeddings(model_id=model_name, **kwargs)
-    elif provider == "cohere":
-        from langchain_cohere import CohereEmbeddings
-
-        return CohereEmbeddings(model=model_name, **kwargs)
-    elif provider == "mistralai":
-        from langchain_mistralai import MistralAIEmbeddings
-
-        return MistralAIEmbeddings(model=model_name, **kwargs)
-    elif provider == "huggingface":
-        from langchain_huggingface import HuggingFaceEmbeddings
-
-        return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
-    else:
-        raise ValueError(
-            f"Provider '{provider}' is not supported.\n"
-            f"Supported providers and their required packages:\n"
-            f"{_get_provider_list()}"
-        )
-
-
 @functools.lru_cache(maxsize=len(_SUPPORTED_PROVIDERS))
 def _check_pkg(pkg: str) -> None:
     """Check if a package is installed."""
@@ -226,7 +178,44 @@ def init_embeddings(
             f"Supported providers are: {', '.join(providers)}"
         )
 
-    return _init_embeddings_helper(model, provider=provider, **kwargs)
+    provider, model_name = _infer_model_and_provider(model, provider=provider)
+    pkg = _SUPPORTED_PROVIDERS[provider]
+    _check_pkg(pkg)
+
+    if provider == "openai":
+        from langchain_openai import OpenAIEmbeddings
+
+        return OpenAIEmbeddings(model=model_name, **kwargs)
+    elif provider == "azure_openai":
+        from langchain_openai import AzureOpenAIEmbeddings
+
+        return AzureOpenAIEmbeddings(model=model_name, **kwargs)
+    elif provider == "google_vertexai":
+        from langchain_google_vertexai import VertexAIEmbeddings
+
+        return VertexAIEmbeddings(model=model_name, **kwargs)
+    elif provider == "bedrock":
+        from langchain_aws import BedrockEmbeddings
+
+        return BedrockEmbeddings(model_id=model_name, **kwargs)
+    elif provider == "cohere":
+        from langchain_cohere import CohereEmbeddings
+
+        return CohereEmbeddings(model=model_name, **kwargs)
+    elif provider == "mistralai":
+        from langchain_mistralai import MistralAIEmbeddings
+
+        return MistralAIEmbeddings(model=model_name, **kwargs)
+    elif provider == "huggingface":
+        from langchain_huggingface import HuggingFaceEmbeddings
+
+        return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+    else:
+        raise ValueError(
+            f"Provider '{provider}' is not supported.\n"
+            f"Supported providers and their required packages:\n"
+            f"{_get_provider_list()}"
+        )
 
 
 __all__ = [
