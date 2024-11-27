@@ -56,8 +56,9 @@ def test_partial_with_prompt_template() -> None:
         ("example", example_prompt),
         ("start", start_prompt),
     ]
-    pipeline_prompt = PipelinePromptTemplate(
-        final_prompt=full_prompt, pipeline_prompts=input_prompts
+    pipeline_prompt = PipelinePromptTemplate(  # type: ignore[call-arg]
+        final_prompt=full_prompt,
+        pipeline_prompts=input_prompts,  # type: ignore[arg-type]
     )
 
     pipeline_prompt.partial(person="Elon Musk")
