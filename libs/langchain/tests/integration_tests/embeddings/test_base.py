@@ -5,7 +5,7 @@ import importlib
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain.embeddings.base import _SUPPORTED_PROVIDERS, embedding_model
+from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
 
 
 @pytest.mark.parametrize(
@@ -24,12 +24,12 @@ async def test_init_embedding_model(provider: str, model: str) -> None:
     except ImportError:
         pytest.skip(f"Package {package} is not installed")
 
-    model_colon = embedding_model(f"{provider}:{model}")
+    model_colon = init_embeddings(f"{provider}:{model}")
     assert isinstance(model_colon, Embeddings)
 
-    model_explicit = embedding_model(
+    model_explicit = init_embeddings(
         model=model,
-        model_provider=provider,
+        provider=provider,
     )
     assert isinstance(model_explicit, Embeddings)
 
