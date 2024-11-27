@@ -1,7 +1,8 @@
 from typing import Any, List, Optional, Sequence
 
-from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
 from pydantic import Field
+
+from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
 
 
 class FastEmbedSparse(SparseEmbeddings):
