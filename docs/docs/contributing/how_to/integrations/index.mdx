@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+pagination_next: contributing/how_to/integrations/package
 ---
 
 # Contribute Integrations
@@ -66,14 +66,12 @@ that will render on this site (https://python.langchain.com/).
 As a prerequisite to adding your integration to our documentation, you must:
 
 1. Confirm that your integration is in the [list of components](#components-to-integrate) we are currently accepting.
-2. Ensure that your integration is in a separate package that can be installed with `pip install <your-package>`.
-3. [Implement the standard tests](/docs/contributing/how_to/integrations/standard_tests) for your integration and successfully run them.
-3. Write documentation for your integration in the `docs/docs/integrations/<component_type>` directory of the LangChain monorepo.
-4. Add a provider page for your integration in the `docs/docs/integrations/providers` directory of the LangChain monorepo.
+2. [Implement your package](./package.mdx) and publish it to a public github repository.
+3. [Implement the standard tests](./standard_tests) for your integration and successfully run them.
+4. [Publish your integration](./publish.mdx) by publishing the package to PyPi and add docs in the `docs/docs/integrations` directory of the LangChain monorepo.
 
 Once you have completed these steps, you can submit a PR to the LangChain monorepo to add your integration to the documentation.
 
 ## Further Reading
 
-If you're starting from scratch, you can follow the [Integration Template Guide](./from_template.mdx) to create and publish a new integration package
-to the above spec.
+To get started, let's learn [how to bootstrap a new integration package](./package.mdx) for LangChain.
