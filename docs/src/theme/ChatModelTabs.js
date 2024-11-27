@@ -48,6 +48,7 @@ export default function ChatModelTabs(props) {
     azureParams,
     nvidiaParams,
     awsBedrockParams,
+    databricksParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
