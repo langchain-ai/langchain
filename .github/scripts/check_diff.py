@@ -33,8 +33,8 @@ IGNORED_PARTNERS = [
 ]
 
 PY_312_MAX_PACKAGES = [
-    # requires pytorch support for 3.13, see https://github.com/pytorch/pytorch/issues/130249
-    "libs/partners/huggingface",
+    "libs/partners/huggingface",  # https://github.com/pytorch/pytorch/issues/130249
+    "libs/partners/qdrant",
 ]
 
 
