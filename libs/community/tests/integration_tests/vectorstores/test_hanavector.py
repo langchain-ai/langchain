@@ -1622,3 +1622,112 @@ def test_create_hnsw_index_invalid_ef_search(texts: List[str]) -> None:
     # Test invalid `ef_search` value (too high)
     with pytest.raises(ValueError):
         vectorDB.create_hnsw_index(ef_search=100001)
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_keyword_search(texts: List[str], metadatas: List[dict]) -> None:
+    table_name = "TEST_TABLE_KEYWORD_SEARCH_WITHOUT_UNSPECIFIC_METADATA_COL"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"start" INTEGER);'
+    )
+
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality"]
+    )
+
+    # Perform keyword search on content column
+    keyword = "foo"
+    docs = vectorDB.similarity_search(
+        query=keyword, k=3, filter={"VEC_TEXT": {"$contains": keyword}}
+    )
+
+    # Validate the results
+    assert len(docs) == 1
+    assert keyword in docs[0].page_content
+
+    # Perform keyword search with non-existing keyword
+    non_existing_keyword = "nonexistent"
+    docs = vectorDB.similarity_search(
+        query=non_existing_keyword, k=3, filter={"VEC_TEXT": {"$contains": non_existing_keyword}}
+    )
+
+    # Validate the results
+    assert len(docs) == 0, "Expected no results for non-existing keyword"
+
+    # Perform keyword search on specific metadata column
+    keyword = "good"
+    docs = vectorDB.similarity_search(
+        query=keyword, k=3, filter={"quality": {"$contains": keyword}}
+    )
+
+    # Validate the results
+    assert len(docs) == 1
+    assert keyword in docs[0].metadata["quality"]
+
+    # Perform keyword search with non-existing keyword
+    non_existing_keyword = "terrible"
+    docs = vectorDB.similarity_search(
+        query=non_existing_keyword, k=3, filter={"quality": {"$contains": non_existing_keyword}}
+    )
+
+    # Validate the results
+    assert len(docs) == 0, "Expected no results for non-existing keyword"
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_keyword_search_unspecific_metadata_column(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "TEST_TABLE_KEYWORD_SEARCH_WITH_UNSPECIFIC_METADATA_COL"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    keyword = "good"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": keyword})
+    assert len(docs) == 1
+    assert "foo" in docs[0].page_content
+
+    # Perform keyword search on unspecific metadata column
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"quality": {"$contains":keyword}}
+    )
+    assert len(docs) == 1
+    assert "foo" in docs[0].page_content
+    assert "good" in docs[0].metadata["quality"]
+
+    # Perform keyword search with non-existing keyword on unspecific metadata column
+    non_existing_keyword = "terrible"
+    docs = vectorDB.similarity_search(
+        query=non_existing_keyword, k=3, filter={"quality": {"$contains": non_existing_keyword}}
+    )
+
+    # Validate the results
+    assert len(docs) == 0, "Expected no results for non-existing keyword"
