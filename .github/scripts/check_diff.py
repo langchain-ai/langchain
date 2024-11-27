@@ -37,7 +37,6 @@ IGNORED_PARTNERS = [
 PY_312_MAX_PACKAGES = [
     f"libs/partners/{integration}"
     for integration in [
-        "chroma",
         "couchbase",
         "huggingface",
         "mistralai",
@@ -134,7 +133,10 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ in PY_312_MAX_PACKAGES:
         py_versions = ["3.9", "3.12"]
 
-    elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
+    elif dir_ == "libs/langchain" and job == "extended-tests":
+        py_versions = ["3.9", "3.13"]
+
+    elif dir_ == "libs/community" and job == "extended-tests":
         # community extended test resolution in 3.12 is slow
         # even in uv
         py_versions = ["3.9", "3.11"]
