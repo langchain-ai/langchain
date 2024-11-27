@@ -431,11 +431,11 @@ class ConfluenceLoader(BaseLoader):
         self,
         cql: str,
         include_archived_spaces: Optional[bool] = None,
-        nexturl: str = "",
+        next_url: str = "",
         **kwargs: Any,
     ) -> tuple[List[dict], str]:
-        if nexturl:
-            response = self.confluence.get(nexturl)
+        if next_url:
+            response = self.confluence.get(next_url)
         else:
             url = "rest/api/content/search"
 
@@ -446,7 +446,7 @@ class ConfluenceLoader(BaseLoader):
 
             response = self.confluence.get(url, params=params)
 
-        return response.get("results", []), response["_links"].get("next", "")
+        return response.get("results", []), response.get("_links", {}).get("next", "")
 
     def paginate_request(self, retrieval_method: Callable, **kwargs: Any) -> List:
         """Paginate the various methods to retrieve groups of pages.
@@ -471,7 +471,7 @@ class ConfluenceLoader(BaseLoader):
 
         max_pages = kwargs.pop("max_pages")
         docs: List[dict] = []
-        nexturl: str = ""
+        next_url: str = ""
         while len(docs) < max_pages:
             get_pages = retry(
                 reraise=True,
@@ -485,9 +485,9 @@ class ConfluenceLoader(BaseLoader):
                 ),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
             )(retrieval_method)
-            if self.cql:  # only cql
-                batch, nexturl = get_pages(**kwargs, nexturl=nexturl)
-                if not nexturl:
+            if self.cql and next_url:  # only cql, starting from the second page
+                batch, next_url = get_pages(**kwargs, next_url=next_url)
+                if not next_url:
                     docs.extend(batch)
                     break
             else:
