@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Union
 from typing import Optional as Optional
 
 from pydantic import model_validator
@@ -112,7 +112,7 @@ class PipelinePromptTemplate(BasePromptTemplate):
 
     # Ignoring the type below since partial makes modifications rather
     # than returning a new template
-    def partial(self, **kwargs: str | Callable[[], str]) -> None:  # type: ignore[override]
+    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> None:  # type: ignore[override]
         """Add partial arguments to prompts in pipeline_prompts
 
         Args:
