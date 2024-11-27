@@ -270,7 +270,7 @@ class SupabaseVectorStore(VectorStore):
         k: int,
         filter: Optional[Dict[str, Any]] = None,
         postgrest_filter: Optional[str] = None,
-    ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
+    ) -> List[Tuple[Document, float, np.ndarray]]:
         match_documents_params = self.match_args(query, filter)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
