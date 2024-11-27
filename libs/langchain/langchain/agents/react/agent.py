@@ -8,6 +8,10 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
@@ -127,11 +131,29 @@ def create_react_agent(
         tool_names=", ".join([t.name for t in tools]),
     )
     if stop_sequence:
-        stop = ["\nObservation"] if stop_sequence is True else stop_sequence
+        stop = ["\nObservation", "Final Answer:"] if stop_sequence is True else stop_sequence
         llm_with_stop = llm.bind(stop=stop)
     else:
         llm_with_stop = llm
-    output_parser = output_parser or ReActSingleInputOutputParser()
+
+    from langchain.agents.output_parsers import ReActSingleInputOutputParser
+
+    class CustomReActOutputParser(ReActSingleInputOutputParser):
+        def parse(self, text: str):
+            if "iteration limit exceeded" in text.lower():
+                return {"error": "Agent terminated due to iteration limit."}
+
+            # Detect repetitive reasoning or circular loops
+            reasoning_history = getattr(self, "_reasoning_history", [])
+            if text in reasoning_history:
+                raise ValueError("Detected repetitive reasoning. Terminating.")
+            
+            reasoning_history.append(text)
+            setattr(self, "_reasoning_history", reasoning_history[-3:])  # Keep last 3 outputs
+
+            return super().parse(text)
+
+    output_parser = output_parser or CustomReActOutputParser()
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
@@ -140,4 +162,5 @@ def create_react_agent(
         | llm_with_stop
         | output_parser
     )
+    logger.info("Agent created with tools: %s", [t.name for t in tools])
     return agent

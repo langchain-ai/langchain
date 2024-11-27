@@ -57,7 +57,19 @@ class BaseLLMOutputParser(Generic[T], ABC):
         Returns:
             Structured output.
         """
-        return await run_in_executor(None, self.parse_result, result)
+        output_text = result[0].text.strip()
+    
+        # Check for repetitive reasoning or circular patterns
+        reasoning_history = getattr(self, "_reasoning_history", [])
+        if len(reasoning_history) > 2 and reasoning_history[-1] == reasoning_history[-2] == output_text:
+            raise ValueError("Detected repetitive reasoning or circular logic. Terminating.")
+        
+        # Update history for the current generation
+        reasoning_history.append(output_text)
+        setattr(self, "_reasoning_history", reasoning_history[-3:])  # Keep the last 3 outputs
+        
+        # Parse and return the result
+        return self.parse(output_text)
 
 
 class BaseGenerationOutputParser(
@@ -155,6 +167,17 @@ class BaseOutputParser(
                     return "boolean_output_parser"
     """  # noqa: E501
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._reasoning_history = [] # Initialize reasoning history
+
+    def add_to_reasoning_history(self, output_text: str):
+        """Add a new output to the reasoning history."""
+        reasoning_history = getattr(self, "_reasoning_history", [])
+        reasoning_history.append(output_text)
+        setattr(self, "_reasoning_history", reasoning_history[-3:])
+
+
     @property
     @override
     def InputType(self) -> Any:
@@ -182,6 +205,10 @@ class BaseOutputParser(
             "Override the OutputType property to specify the output type."
         )
         raise TypeError(msg)
+    
+    def detect_repetition(self, text: str) -> bool:
+        """Detect if the reasoning is repetitive."""
+        return text in self._reasoning_history
 
     def invoke(
         self,
@@ -244,7 +271,20 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        return self.parse(result[0].text)
+        output_text = result[0].text.strip()
+
+        # Check for repetitive reasoning
+        if output_text in self._reasoning_history:
+            raise ValueError("Detected repetitive reasoning or circular logic. Terminating.")
+
+        # Add to history for future detection
+        self.add_to_history(output_text)
+
+        if self.detect_repetition(output_text):
+            raise ValueError("Detected repetitive reasoning or circular logic. Terminating.")
+
+        # Proceed with parsing logic
+        return self.parse(output_text)
 
     @abstractmethod
     def parse(self, text: str) -> T:
@@ -256,6 +296,14 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
+        if "iteration limit exceeded" in text.lower() or "unable to proceed" in text.lower():
+            return {"error": "Agent terminated due to iteration limit or inability to continue."}
+
+        # Add parsing logic here (e.g., JSON parsing or other formats)
+        try:
+            return text.strip()  # Replace with format-specific logic as needed
+        except Exception as e:
+            raise ValueError(f"Failed to parse output: {e}")
 
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False

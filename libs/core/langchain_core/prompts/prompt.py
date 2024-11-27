@@ -89,6 +89,15 @@ class PromptTemplate(StringPromptTemplate):
         values.setdefault("template_format", "f-string")
         values.setdefault("partial_variables", {})
 
+        if "do not generate additional user input" not in values["template"].lower():
+            raise ValueError(
+                "Prompt template must include constraints for avoiding additional user input generation."
+            )
+        if "avoid infinite loops" not in values["template"].lower():
+            raise ValueError(
+                "Prompt template must include instructions to avoid infinite loops."
+            )
+
         if values.get("validate_template"):
             if values["template_format"] == "mustache":
                 msg = "Mustache templates cannot be validated."
@@ -102,6 +111,8 @@ class PromptTemplate(StringPromptTemplate):
             check_valid_template(
                 values["template"], values["template_format"], all_inputs
             )
+        
+
 
         if values["template_format"]:
             values["input_variables"] = [
@@ -180,7 +191,15 @@ class PromptTemplate(StringPromptTemplate):
             A formatted string.
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+        formatted_string = DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+
+        reasoning_history = kwargs.get("reasoning_history", [])
+        if len(reasoning_history) > 3 and len(set(reasoning_history[-3:])) == 1:
+            formatted_string = "Detected infinite loop. Stopping reasoning."
+
+        return formatted_string
+    
+
 
     @classmethod
     def from_examples(
@@ -254,7 +273,8 @@ class PromptTemplate(StringPromptTemplate):
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
-        """Load a prompt template from a template.
+        """Load a prompt template from a template with constraints to avoid user
+        input prompts and infinite loops.
 
         *Security warning*:
             Prefer using `template_format="f-string"` instead of
@@ -292,10 +312,20 @@ class PromptTemplate(StringPromptTemplate):
             input_variables = [
                 var for var in input_variables if var not in _partial_variables
             ]
+        
+        updated_template = template + """
+        Note: 
+        1. Do not generate additional user input requests during task execution.
+        2. Use only the available tools to perform actions.
+        3. If a solution cannot be determined with the given tools or information, respond: 
+            "I'm unable to complete this task with the current resources."
+        4. Avoid infinite loops by stopping reasoning and returning an appropriate message if progress cannot be made.
+        """
+        
 
         return cls(
             input_variables=input_variables,
-            template=template,
+            template=updated_template,
             template_format=template_format,  # type: ignore[arg-type]
             partial_variables=_partial_variables,
             **kwargs,
