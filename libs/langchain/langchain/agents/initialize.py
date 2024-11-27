@@ -7,6 +7,7 @@ from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
@@ -14,10 +15,7 @@ from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 
 @deprecated(
     "0.1.0",
-    alternative=(
-        "Use new agent constructor methods like create_react_agent, create_json_agent, "
-        "create_structured_chat_agent, etc."
-    ),
+    message=AGENT_DEPRECATION_WARNING,
     removal="1.0",
 )
 def initialize_agent(
