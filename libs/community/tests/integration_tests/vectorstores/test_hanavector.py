@@ -1651,7 +1651,7 @@ def test_hanavector_keyword_search(texts: List[str], metadatas: List[dict]) -> N
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
-        specific_metadata_columns=["quality"]
+        specific_metadata_columns=["quality"],
     )
 
     # Perform keyword search on content column
@@ -1667,7 +1667,9 @@ def test_hanavector_keyword_search(texts: List[str], metadatas: List[dict]) -> N
     # Perform keyword search with non-existing keyword
     non_existing_keyword = "nonexistent"
     docs = vectorDB.similarity_search(
-        query=non_existing_keyword, k=3, filter={"VEC_TEXT": {"$contains": non_existing_keyword}}
+        query=non_existing_keyword,
+        k=3,
+        filter={"VEC_TEXT": {"$contains": non_existing_keyword}},
     )
 
     # Validate the results
@@ -1686,7 +1688,9 @@ def test_hanavector_keyword_search(texts: List[str], metadatas: List[dict]) -> N
     # Perform keyword search with non-existing keyword
     non_existing_keyword = "terrible"
     docs = vectorDB.similarity_search(
-        query=non_existing_keyword, k=3, filter={"quality": {"$contains": non_existing_keyword}}
+        query=non_existing_keyword,
+        k=3,
+        filter={"quality": {"$contains": non_existing_keyword}},
     )
 
     # Validate the results
@@ -1717,7 +1721,7 @@ def test_hanavector_keyword_search_unspecific_metadata_column(
 
     # Perform keyword search on unspecific metadata column
     docs = vectorDB.similarity_search(
-        "hello", k=5, filter={"quality": {"$contains":keyword}}
+        "hello", k=5, filter={"quality": {"$contains": keyword}}
     )
     assert len(docs) == 1
     assert "foo" in docs[0].page_content
@@ -1726,7 +1730,9 @@ def test_hanavector_keyword_search_unspecific_metadata_column(
     # Perform keyword search with non-existing keyword on unspecific metadata column
     non_existing_keyword = "terrible"
     docs = vectorDB.similarity_search(
-        query=non_existing_keyword, k=3, filter={"quality": {"$contains": non_existing_keyword}}
+        query=non_existing_keyword,
+        k=3,
+        filter={"quality": {"$contains": non_existing_keyword}},
     )
 
     # Validate the results

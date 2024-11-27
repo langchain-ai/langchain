@@ -485,7 +485,9 @@ class HanaDB(VectorStore):
             embedding=embedding, k=k, filter=filter
         )
 
-    def _extract_keyword_search_columns(self, filter: Optional[dict] = None) -> List[str]:
+    def _extract_keyword_search_columns(
+        self, filter: Optional[dict] = None
+    ) -> List[str]:
         """
         Extract metadata columns used with `$contains` in the filter.
 
@@ -499,18 +501,24 @@ class HanaDB(VectorStore):
             List of metadata column names for keyword searches.
 
         Example:
-            filter = {"$or": [{"title": {"$contains": "barbie"}}, {"VEC_TEXT": {"$contains": "fred"}}]}
+            filter = {"$or": [
+                {"title": {"$contains": "barbie"}},
+                {"VEC_TEXT": {"$contains": "fred"}}]}
             Result: ["title"]
         """
         keyword_columns = set()
 
-        def recurse_filters(f, parent_key=None):
+        def recurse_filters(
+            f: Optional[dict[Any, Any]], parent_key: Optional[str] = None
+        ) -> None:
             if isinstance(f, Dict):
                 for key, value in f.items():
                     if key == "$contains":
                         # Add the parent key as it's the metadata column being filtered
                         if parent_key and not (
-                                parent_key == self.content_column or parent_key in self.specific_metadata_columns):
+                            parent_key == self.content_column
+                            or parent_key in self.specific_metadata_columns
+                        ):
                             keyword_columns.add(parent_key)
                     elif key in ["$and", "$or"]:  # Handle logical operators
                         for subfilter in value:
@@ -521,7 +529,7 @@ class HanaDB(VectorStore):
         recurse_filters(filter)
         return list(keyword_columns)
 
-    def _create_metadata_projection(self, projected_metadata_columns) -> str:
+    def _create_metadata_projection(self, projected_metadata_columns: List[str]) -> str:
         """
         Generate a SQL `WITH` clause to project metadata columns for keyword search.
 
@@ -543,7 +551,7 @@ class HanaDB(VectorStore):
         """
 
         metadata_columns = [
-            f'JSON_VALUE({self.metadata_column}, \'$.{col}\') AS "{col}"'
+            f"JSON_VALUE({self.metadata_column}, '$.{col}') AS \"{col}\""
             for col in projected_metadata_columns
         ]
         return (
@@ -575,9 +583,13 @@ class HanaDB(VectorStore):
         projected_metadata_columns = self._extract_keyword_search_columns(filter)
         metadata_projection = ""
         if projected_metadata_columns:
-            metadata_projection = self._create_metadata_projection(projected_metadata_columns)
+            metadata_projection = self._create_metadata_projection(
+                projected_metadata_columns
+            )
 
-        from_clause = INTERMEDIATE_TABLE_NAME if metadata_projection else f'"{self.table_name}"'
+        from_clause = (
+            INTERMEDIATE_TABLE_NAME if metadata_projection else f'"{self.table_name}"'
+        )
         sql_str = (
             f"{metadata_projection} "
             f"SELECT TOP {k}"
@@ -586,7 +598,7 @@ class HanaDB(VectorStore):
             f'  TO_NVARCHAR("{self.vector_column}"), '  # row[2]
             f'  {distance_func_name}("{self.vector_column}", TO_REAL_VECTOR '
             f"     ('{str(embedding)}')) AS CS "  # row[3]
-            f'FROM {from_clause}'
+            f"FROM {from_clause}"
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
         where_str, query_tuple = self._create_where_by_filter(filter)
@@ -746,7 +758,7 @@ class HanaDB(VectorStore):
                     )
 
                 if operator == CONTAINS_OPERATOR:
-                    where_str += f"SCORE(? IN (\"{key}\" EXACT SEARCH MODE \'text\')) > 0"
+                    where_str += f"SCORE(? IN (\"{key}\" EXACT SEARCH MODE 'text')) > 0"
                 else:
                     selector = (
                         f' "{key}"'
