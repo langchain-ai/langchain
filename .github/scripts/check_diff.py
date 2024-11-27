@@ -39,7 +39,6 @@ PY_312_MAX_PACKAGES = [
     for integration in [
         "couchbase",
         "huggingface",
-        "mistralai",
         "nomic",
         "qdrant",
     ]
