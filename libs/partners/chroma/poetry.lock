@@ -932,7 +932,7 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "langchain-core"
-version = "0.3.15"
+version = "0.3.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2805,4 +2805,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4"
-content-hash = "2747536a10c5e463604c0ff0024055c186363e673fe755b01df356deb9800435"
+content-hash = "4e3e3152fdc954723a33ffc5cc5c42b763e5aee74f39df8b54f16cdb753b2d13"
