@@ -96,7 +96,7 @@ def test_chroma_with_metadatas_with_vectors() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    embeddings = FakeEmbeddings()
+    embeddings = ConsistentFakeEmbeddings()
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
