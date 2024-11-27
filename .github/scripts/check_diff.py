@@ -38,7 +38,6 @@ PY_312_MAX_PACKAGES = [
     f"libs/partners/{integration}"
     for integration in [
         "huggingface",
-        "mistralai",
         "nomic",
         "qdrant",
     ]
