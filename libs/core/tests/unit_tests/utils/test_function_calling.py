@@ -72,6 +72,19 @@ def function() -> Callable:
 
 
 @pytest.fixture()
+def function_docstring_annotations() -> Callable:
+    def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
+        """dummy function
+
+        Args:
+            arg1 (int): foo
+            arg2: one of 'bar', 'baz'
+        """
+
+    return dummy_function
+
+
+@pytest.fixture()
 def runnable() -> Runnable:
     class Args(ExtensionsTypedDict):
         arg1: ExtensionsAnnotated[int, "foo"]
@@ -278,6 +291,7 @@ class DummyWithClassMethod:
 def test_convert_to_openai_function(
     pydantic: type[BaseModel],
     function: Callable,
+    function_docstring_annotations: Callable,
     dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: dict,
@@ -311,6 +325,7 @@ def test_convert_to_openai_function(
     for fn in (
         pydantic,
         function,
+        function_docstring_annotations,
         dummy_structured_tool,
         dummy_tool,
         json_schema,
