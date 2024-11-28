@@ -3,7 +3,6 @@
 from typing import Any
 
 from langchain_community.embeddings import (
-    SelfHostedEmbeddings,
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
