@@ -30,6 +30,7 @@ from langchain_core.tools.base import (
 )
 from langchain_core.tools.base import (
     InjectedToolArg as InjectedToolArg,
+    InjectedToolArgSchema as InjectedToolArgSchema,
 )
 from langchain_core.tools.base import SchemaAnnotationError as SchemaAnnotationError
 from langchain_core.tools.base import (
