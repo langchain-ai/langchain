@@ -96,6 +96,9 @@ if TYPE_CHECKING:
     from langchain_community.agent_toolkits.zapier.toolkit import (
         ZapierToolkit,
     )
+    from langchain_community.agent_toolkits.google_calendar.toolkit import (
+        GoogleCalendarToolkit,
+    )
 
 __all__ = [
     "AINetworkToolkit",
@@ -127,6 +130,7 @@ __all__ = [
     "create_pbi_chat_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
+    "GoogleCalendarToolkit",
 ]
 
 
@@ -160,6 +164,7 @@ _module_lookup = {
     "create_pbi_chat_agent": "langchain_community.agent_toolkits.powerbi.chat_base",
     "create_spark_sql_agent": "langchain_community.agent_toolkits.spark_sql.base",
     "create_sql_agent": "langchain_community.agent_toolkits.sql.base",
+    "GoogleCalendarToolkit": "langchain_community.agent_toolkits.google_calendar.toolkit",
 }
 
 
