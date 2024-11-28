@@ -527,10 +527,10 @@ class ChatLiteLLM(BaseChatModel):
         # In case of openai if tool_choice is `any` or if bool has been provided we
         # change it to `required` as that is suppored by openai.
         if (
-            "azure" in self.model
-            or "azure" in self.model_name
-            or self.model in _OPENAI_MODELS
-            or self.model_name in _OPENAI_MODELS
+            (self.model is not None and "azure" in self.model)
+            or (self.model_name is not None and "azure" in self.model_name)
+            or (self.model is not None and self.model in _OPENAI_MODELS)
+            or (self.model_name is not None and self.model_name in _OPENAI_MODELS)
         ) and (tool_choice == "any" or isinstance(tool_choice, bool)):
             tool_choice = "required"
         # If tool_choice is bool apart from openai we make it `any`
