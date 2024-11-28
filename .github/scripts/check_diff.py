@@ -32,18 +32,8 @@ IGNORED_PARTNERS = [
     "huggingface",
 ]
 
-# Cap python version at 3.12 for some packages with dependencies that are not yet
-# compatible with python 3.13 (mostly hf tokenizers).
 PY_312_MAX_PACKAGES = [
-    f"libs/partners/{integration}"
-    for integration in [
-        "chroma",
-        "couchbase",
-        "huggingface",
-        "mistralai",
-        "nomic",
-        "qdrant",
-    ]
+    "libs/partners/huggingface",  # https://github.com/pytorch/pytorch/issues/130249
 ]
 
 
@@ -138,9 +128,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         py_versions = ["3.9", "3.13"]
 
     elif dir_ == "libs/community" and job == "extended-tests":
-        # community extended test resolution in 3.12 is slow
-        # even in uv
-        py_versions = ["3.9", "3.11"]
+        py_versions = ["3.9", "3.12"]
 
     elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
