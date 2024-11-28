@@ -36,11 +36,11 @@
     },
     {
       "source": "/docs/expression_language(/?)",
-      "destination": "/docs/concepts/#langchain-expression-language-lcel"
+      "destination": "/docs/concepts/lcel"
     },
     {
       "source": "/docs/expression_language/interface(/?)",
-      "destination": "/docs/concepts/#runnable-interface"
+      "destination": "/docs/concepts/runnables"
     },
     {
       "source": "/docs/versions/overview(/?)",
@@ -49,6 +49,22 @@
     {
       "source": "/docs/how_to/tool_calls_multi_modal(/?)",
       "destination": "/docs/how_to/multimodal_inputs/"
+    },
+    {
+      "source": "/docs/tutorials/pdf_qa",
+      "destination": "/docs/tutorials/retrievers/"
+    },
+    {
+      "source": "/docs/tutorials/query_analysis",
+      "destination": "/docs/tutorials/rag#query-analysis"
+    },
+    {
+      "source": "/docs/tutorials/local_rag",
+      "destination": "/docs/tutorials/rag"
+    },
+    {
+      "source": "/docs/tutorials/data_generation",
+      "destination": "https://python.langchain.com/v0.2/docs/tutorials/data_generation/"
     },
     {
       "source": "/docs/langsmith(/?)",
