@@ -36,6 +36,11 @@ def test_openai_model_param() -> None:
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
+    llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    llm = ChatOpenAI(max_completion_tokens=10)
+    assert llm.max_tokens == 10
+
 
 def test_openai_o1_temperature() -> None:
     llm = ChatOpenAI(model="o1-preview")
@@ -168,7 +173,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                     "Function GenerateUsername arguments:\n\noops\n\nare not "
                     "valid JSON. Received JSONDecodeError Expecting value: line 1 "
                     "column 1 (char 0)\nFor troubleshooting, visit: https://python"
-                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE "
                 ),
                 type="invalid_tool_call",
             )
