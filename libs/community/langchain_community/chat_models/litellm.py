@@ -509,10 +509,14 @@ class ChatLiteLLM(BaseChatModel):
                 their schema dictionary representation.
             tool_choice: Which tool to require the model to call. Options are:
                 - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
-                - ``"auto"``: automatically selects a tool (including no tool).
-                - ``"none"``: does not call a tool.
-                - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
-                - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
+                - ``"auto"``:
+                    automatically selects a tool (including no tool).
+                - ``"none"``:
+                    does not call a tool.
+                - ``"any"`` or ``"required"`` or ``True``:
+                    forces least one tool to be called.
+                - dict of the form:
+                ``{"type": "function", "function": {"name": <<tool_name>>}}``
                 - ``False`` or ``None``: no effect
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
@@ -520,7 +524,8 @@ class ChatLiteLLM(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
 
-        # In case of openai if tool_choice is `any` or if bool has been provided we change it to `required` as that is suppored by openai.
+        # In case of openai if tool_choice is `any` or if bool has been provided we
+        # change it to `required` as that is suppored by openai.
         if (
             "azure" in self.model
             or "azure" in self.model_name
