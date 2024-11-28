@@ -1,5 +1,6 @@
 """Ollama chat models."""
 
+import json
 from typing import (
     Any,
     AsyncIterator,
@@ -21,6 +22,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
@@ -60,6 +62,72 @@ def _get_usage_metadata_from_generation_info(
     return None
 
 
+def _parse_json_string(
+    json_string: str, raw_tool_call: dict[str, Any], skip: bool
+) -> Any:
+    """Attempt to parse a JSON string for tool calling.
+
+    Args:
+        json_string: JSON string to parse.
+        skip: Whether to ignore parsing errors and return the value anyways.
+        raw_tool_call: Raw tool call to include in error message.
+
+    Returns:
+        The parsed JSON string.
+
+    Raises:
+        OutputParserException: If the JSON string wrong invalid and skip=False.
+    """
+    try:
+        return json.loads(json_string)
+    except json.JSONDecodeError as e:
+        if skip:
+            return json_string
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+            f"Received JSONDecodeError {e}"
+        )
+        raise OutputParserException(msg) from e
+    except TypeError as e:
+        if skip:
+            return json_string
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{raw_tool_call['function']['arguments']}\n\nare not a string or a "
+            f"dictionary. Received TypeError {e}"
+        )
+        raise OutputParserException(msg) from e
+
+
+def _parse_arguments_from_tool_call(
+    raw_tool_call: dict[str, Any],
+) -> Optional[dict[str, Any]]:
+    """Parse arguments by trying to parse any shallowly nested string-encoded JSON.
+
+    Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
+    Should be removed/changed if fixed upstream.
+    See https://github.com/ollama/ollama/issues/6155
+    """
+    if "function" not in raw_tool_call:
+        return None
+    arguments = raw_tool_call["function"]["arguments"]
+    parsed_arguments = {}
+    if isinstance(arguments, dict):
+        for key, value in arguments.items():
+            if isinstance(value, str):
+                parsed_arguments[key] = _parse_json_string(
+                    value, skip=True, raw_tool_call=raw_tool_call
+                )
+            else:
+                parsed_arguments[key] = value
+    else:
+        parsed_arguments = _parse_json_string(
+            arguments, skip=False, raw_tool_call=raw_tool_call
+        )
+    return parsed_arguments
+
+
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
 ) -> List[ToolCall]:
@@ -72,7 +140,7 @@ def _get_tool_calls_from_response(
                     tool_call(
                         id=str(uuid4()),
                         name=tc["function"]["name"],
-                        args=tc["function"]["arguments"],
+                        args=_parse_arguments_from_tool_call(tc) or {},
                     )
                 )
     return tool_calls
