@@ -214,15 +214,15 @@ class KDBAI(VectorStore):
             k = kwargs.pop("n")
         elif "index" in kwargs:
             index = kwargs.pop("index")
-        elif "options" in kwargs and ('distanceColumn' in kwargs['options'].keys()):
-            dist = kwargs['options']["distanceColumn"]
+        elif "options" in kwargs and ("distanceColumn" in kwargs["options"].keys()):
+            dist = kwargs["options"]["distanceColumn"]
 
         if filter:
             if kwargs.get("filter"):
                 filter.extend(kwargs.pop("filter"))
-            kwargs["filter"] = filter    
+            kwargs["filter"] = filter
         
-        matches = self._table.search(vectors={index:[embedding]}, n=k, **kwargs)
+        matches = self._table.search(vectors={index: [embedding]}, n=k, **kwargs)
         docs: list = []
         if isinstance(matches, list):
             matches = matches[0]
