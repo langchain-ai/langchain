@@ -70,8 +70,10 @@ def extract_cypher(text: str) -> str:
 
     # Replace node labels with backticks if they contain spaces
     cypher_query = re.sub(
-        r":\s(\s*)([a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)+)(\s*)", 
-        r": `\1\2\3`", cypher_query)
+        r":\s(\s*)([a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)+)(\s*)",
+        r": `\1\2\3`",
+        cypher_query,
+    )
 
     return cypher_query
 

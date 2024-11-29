@@ -209,19 +209,29 @@ def test_extract_cypher_with_backticks() -> None:
     assert output == "MATCH (n) RETURN n"
 
 
+def test_extract_cypher_with_node_name_with_backticks() -> None:
+    """Test if there are backticks in the node name.
+    The original text should be returned."""
+    query = "MATCH (n: `Node Name`) RETURN n"
+    output = extract_cypher(query)
+    assert output == "MATCH (n: `Node Name`) RETURN n"
+
+
 def test_extract_cypher_with_node_name_with_one_space() -> None:
     """Test if there is one space in the node name.
-    node name should be wrapped in backticks."""
+    Node name should be wrapped in backticks."""
     query = "MATCH (n: Node Name) RETURN n"
     output = extract_cypher(query)
     assert output == "MATCH (n: `Node Name`) RETURN n"
 
+
 def test_extract_cypher_with_node_name_with_multi_spaces() -> None:
     """Test if there are multiple spaces in the node name.
-    node name should be wrapped in backticks."""
+    Node name should be wrapped in backticks."""
     query = "MATCH (n: Node Name With Multiple Spaces) RETURN n"
     output = extract_cypher(query)
     assert output == "MATCH (n: `Node Name With Multiple Spaces`) RETURN n"
+
 
 def test_exclude_types() -> None:
     structured_schema = {
