@@ -165,6 +165,7 @@ class YoutubeLoader(BaseLoader):
         chunk_size_seconds: int = 120,
         use_oauth: bool = True,          
         allow_oauth_cache: bool = True,  
+        youtube_url: str = ""
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
@@ -180,7 +181,8 @@ class YoutubeLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.chunk_size_seconds = chunk_size_seconds
         self.use_oauth = use_oauth            
-        self.allow_oauth_cache = allow_oauth_cache  
+        self.allow_oauth_cache = allow_oauth_cache
+        self.youtube_url = youtube_url  
 
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
