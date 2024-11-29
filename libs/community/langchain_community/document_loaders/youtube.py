@@ -195,10 +195,12 @@ class YoutubeLoader(BaseLoader):
         return video_id
 
     @classmethod
-    def from_youtube_url(cls, youtube_url: str, use_oauth=True, allow_oauth_cache=True, **kwargs: Any) -> YoutubeLoader:
+    def from_youtube_url(cls, youtube_url: str, use_oauth=True, 
+        allow_oauth_cache=True, **kwargs: Any) -> YoutubeLoader:
         """Given a YouTube URL, construct a loader."""
         video_id = cls.extract_video_id(youtube_url)
-        return cls(video_id, use_oauth=use_oauth, allow_oauth_cache=allow_oauth_cache, **kwargs)
+        return cls(video_id, use_oauth=use_oauth, 
+        allow_oauth_cache=allow_oauth_cache, **kwargs)
 
 
     def _make_chunk_document(
@@ -324,7 +326,8 @@ class YoutubeLoader(BaseLoader):
                 'Could not import "pytube" Python package. '
                 "Please install it with `pip install pytube`."
             )
-        yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}", use_oauth=self.use_oauth, allow_oauth_cache=self.allow_oauth_cache)
+        yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}", 
+                use_oauth=self.use_oauth, allow_oauth_cache=self.allow_oauth_cache)
         video_info = {
             "title": yt.title or "Unknown",
             "description": yt.description or "Unknown",
