@@ -1,9 +1,9 @@
 """Create an event in Google Calendar."""  # NUEVO
 
 import re
-from uuid import uuid4
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Type, Union
+from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
@@ -250,6 +250,6 @@ class CalendarCreateEvent(GoogleCalendarBaseTool):
                 )
                 .execute()
             )
-            return f"Event created: {event.get("htmlLink")}"
+            return f"Event created: {event.get('htmlLink')}"
         except Exception as error:
             raise Exception(f"An error occurred: {error}") from error

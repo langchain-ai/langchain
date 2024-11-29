@@ -1,11 +1,11 @@
 """Search an event in Google Calendar."""
 
 from datetime import datetime
-from zoneinfo import ZoneInfo  # Python 3.9+
 from typing import Any, Dict, List, Optional, Type
+from zoneinfo import ZoneInfo  # Python 3.9+
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.google_calendar.base import GoogleCalendarBaseTool
 
@@ -47,34 +47,6 @@ class SearchEventsSchema(BaseModel):
             "organizer's displayName, organizer's email."
         ),
     )
-
-    @field_validator("order_by")
-    @classmethod
-    def validate_order_by(cls, v: str) -> str:
-        """Validate the order_by field."""
-        if v not in ["startTime", "updated"]:
-            raise ValueError("order_by must be 'startTime' or 'updated'")
-        return v
-
-    @field_validator("max_results")
-    @classmethod
-    def validate_max_results(cls, v: int) -> int:
-        """Validate the max_results field."""
-        if v <= 0:
-            raise ValueError("max_results must be a positive integer")
-        return v
-
-    @field_validator("max_datetime")
-    @classmethod
-    def validate_datetimes(cls, v: Any, values: Any) -> Any:
-        """Validate the max_datetime field."""
-        min_dt_str = values.get("min_datetime")
-        if min_dt_str:
-            min_dt = datetime.strptime(min_dt_str, "%Y-%m-%d %H:%M:%S")
-            max_dt = datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
-            if max_dt < min_dt:
-                raise ValueError("max_datetime must be after min_datetime")
-        return v
 
 
 class CalendarSearchEvents(GoogleCalendarBaseTool):

@@ -33,6 +33,9 @@ if TYPE_CHECKING:
     from langchain_community.agent_toolkits.gmail.toolkit import (
         GmailToolkit,
     )
+    from langchain_community.agent_toolkits.google_calendar.toolkit import (
+        GoogleCalendarToolkit,
+    )
     from langchain_community.agent_toolkits.jira.toolkit import (
         JiraToolkit,
     )
@@ -96,9 +99,6 @@ if TYPE_CHECKING:
     from langchain_community.agent_toolkits.zapier.toolkit import (
         ZapierToolkit,
     )
-    from langchain_community.agent_toolkits.google_calendar.toolkit import (
-        GoogleCalendarToolkit,
-    )
 
 __all__ = [
     "AINetworkToolkit",
@@ -109,6 +109,7 @@ __all__ = [
     "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
+    "GoogleCalendarToolkit",
     "JiraToolkit",
     "JsonToolkit",
     "MultionToolkit",
@@ -130,7 +131,6 @@ __all__ = [
     "create_pbi_chat_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
-    "GoogleCalendarToolkit",
 ]
 
 
@@ -143,6 +143,7 @@ _module_lookup = {
     "ConneryToolkit": "langchain_community.agent_toolkits.connery",
     "FileManagementToolkit": "langchain_community.agent_toolkits.file_management.toolkit",  # noqa: E501
     "GmailToolkit": "langchain_community.agent_toolkits.gmail.toolkit",
+    "GoogleCalendarToolkit": "langchain_community.agent_toolkits.google_calendar.toolkit",  # noqa: E501
     "JiraToolkit": "langchain_community.agent_toolkits.jira.toolkit",
     "JsonToolkit": "langchain_community.agent_toolkits.json.toolkit",
     "MultionToolkit": "langchain_community.agent_toolkits.multion.toolkit",
@@ -164,7 +165,6 @@ _module_lookup = {
     "create_pbi_chat_agent": "langchain_community.agent_toolkits.powerbi.chat_base",
     "create_spark_sql_agent": "langchain_community.agent_toolkits.spark_sql.base",
     "create_sql_agent": "langchain_community.agent_toolkits.sql.base",
-    "GoogleCalendarToolkit": "langchain_community.agent_toolkits.google_calendar.toolkit",
 }
 
 
