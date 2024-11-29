@@ -221,7 +221,7 @@ class KDBAI(VectorStore):
             if kwargs.get("filter"):
                 filter.extend(kwargs.pop("filter"))
             kwargs["filter"] = filter
-        
+
         matches = self._table.search(vectors={index: [embedding]}, n=k, **kwargs)
         docs: list = []
         if isinstance(matches, list):
