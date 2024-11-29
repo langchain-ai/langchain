@@ -143,8 +143,6 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If None, will use the chunk size
-                specified by the class.
 
         Returns:
             List of embeddings, one for each text.

@@ -3,7 +3,7 @@
 import uuid
 
 import pytest
-from langchain_standard_tests.integration_tests.vectorstores import (
+from langchain_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )

@@ -1,10 +1,10 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.15"
+version = "0.3.21"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,10 +12,16 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
+exclude = [
+    "notebooks",
+    "examples",
+    "example_data",
+    "langchain_core/pydantic",
+    "tests/unit_tests/utils/test_function_calling.py",
+]
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
-module = [ "numpy", "pytest",]
+module = ["numpy", "pytest"]
 ignore_missing_imports = true
 
 [tool.ruff]
@@ -44,17 +50,53 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TID", "UP", "W", "YTT",]
-ignore = [ "COM812", "UP007", "W293", "S101", "S110", "S112",]
+select = [
+    "ASYNC",
+    "B",
+    "C4",
+    "COM",
+    "DJ",
+    "E",
+    "EM",
+    "EXE",
+    "F",
+    "FLY",
+    "FURB",
+    "I",
+    "ICN",
+    "INT",
+    "LOG",
+    "N",
+    "NPY",
+    "PD",
+    "PIE",
+    "Q",
+    "RSE",
+    "S",
+    "SIM",
+    "SLOT",
+    "T10",
+    "T201",
+    "TID",
+    "UP",
+    "W",
+    "YTT",
+]
+ignore = ["COM812", "UP007", "W293", "S101", "S110", "S112"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
-filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
 
 [tool.poetry.group.lint]
 optional = true
@@ -72,17 +114,23 @@ optional = true
 optional = true
 
 [tool.ruff.lint.pep8-naming]
-classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+classmethod-decorators = [
+    "classmethod",
+    "langchain_core.utils.pydantic.pre_init",
+    "pydantic.field_validator",
+    "pydantic.v1.root_validator",
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
-"tests/**" = [ "S",]
-"scripts/**" = [ "S",]
+"tests/unit_tests/prompts/test_chat.py" = ["E501"]
+"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
+"tests/unit_tests/runnables/test_graph.py" = ["E501"]
+"tests/**" = ["S"]
+"scripts/**" = ["S"]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.10,<1.11"
@@ -90,10 +138,12 @@ types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8"
@@ -110,15 +160,18 @@ version = "^1.24.0"
 python = "<3.12"
 
 [[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.26.0"
+version = ">=1.26.0,<3"
 python = ">=3.12"
 
+
 [tool.poetry.group.test_integration.dependencies]
+
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../standard-tests"
 develop = true
