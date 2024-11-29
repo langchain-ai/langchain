@@ -15,7 +15,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from tokenizers import Tokenizer  # type: ignore
+from tokenizers import Tokenizer
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
@@ -113,8 +113,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    client: httpx.Client = Field(default=None)
+    async_client: httpx.AsyncClient = Field(default=None)
     mistral_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
@@ -138,7 +138,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         """Validate configuration."""
 
         api_key_str = self.mistral_api_key.get_secret_value()
-        # todo: handle retries
         if not self.client:
             self.client = httpx.Client(
                 base_url=self.endpoint,
@@ -149,7 +148,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 },
                 timeout=self.timeout,
             )
-        # todo: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.endpoint,
@@ -165,7 +163,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 self.tokenizer = Tokenizer.from_pretrained(
                     "mistralai/Mixtral-8x7B-v0.1"
                 )
-            except IOError:  # huggingface_hub GatedRepoError
+            except IOError:
                 warnings.warn(
                     "Could not download mistral tokenizer from Huggingface for "
                     "calculating batch sizes. Set a Huggingface token via the "
@@ -188,8 +186,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         for text, text_tokens in zip(texts, text_token_lengths):
             if batch_tokens + text_tokens > MAX_TOKENS:
                 if len(batch) > 0:
-                    # edge case where first batch exceeds max tokens
-                    # should not yield an empty batch.
                     yield batch
                 batch = [text]
                 batch_tokens = text_tokens

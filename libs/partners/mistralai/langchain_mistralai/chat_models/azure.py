@@ -130,12 +130,14 @@ class AzureChatMistralAI(ChatMistralAI):
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
         if isinstance(self.mistral_api_key, SecretStr):
-            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value()
+            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value(
+            )
         else:
             api_key_str = self.mistral_api_key
 
         base_url_str = (
-            self.azure_endpoint or os.environ.get("AZURE_MISTRAL_ENDPOINT") or None
+            self.azure_endpoint or os.environ.get(
+                "AZURE_MISTRAL_ENDPOINT") or None
         )
 
         if not base_url_str:
@@ -152,7 +154,6 @@ class AzureChatMistralAI(ChatMistralAI):
                 },
                 timeout=self.timeout,
             )
-        # todo: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,
