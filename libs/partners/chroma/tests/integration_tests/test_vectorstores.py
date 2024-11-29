@@ -1,12 +1,16 @@
 """Test Chroma functionality."""
 
 import uuid
-from typing import Generator
+from typing import (
+    Generator,
+    cast,
+)
 
 import chromadb
 import pytest  # type: ignore[import-not-found]
 import requests
 from chromadb.api.client import SharedSystemClient
+from chromadb.api.types import Embeddable
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import FakeEmbeddings as Fak
 
@@ -15,6 +19,15 @@ from tests.integration_tests.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
+
+
+class MyEmbeddingFunction:
+    def __init__(self, fak: Fak):
+        self.fak = fak
+
+    def __call__(self, input: Embeddable) -> list[list[float]]:
+        texts = cast(list[str], input)
+        return self.fak.embed_documents(texts=texts)
 
 
 @pytest.fixture()
@@ -77,6 +90,24 @@ def test_chroma_with_metadatas_with_scores() -> None:
     output = docsearch.similarity_search_with_score("foo", k=1)
     docsearch.delete_collection()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+
+def test_chroma_with_metadatas_with_vectors() -> None:
+    """Test end to end construction and scored search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    embeddings = ConsistentFakeEmbeddings()
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas,
+    )
+    vec_1 = embeddings.embed_query(texts[0])
+    output = docsearch.similarity_search_with_vectors("foo", k=1)
+    docsearch.delete_collection()
+    assert output[0][0] == Document(page_content="foo", metadata={"page": "0"})
+    assert (output[0][1] == vec_1).all()
 
 
 def test_chroma_with_metadatas_with_scores_using_vector() -> None:
@@ -254,8 +285,8 @@ def test_chroma_update_document() -> None:
     # Assert that the updated document is returned by the search
     assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
 
-    assert new_embedding == embedding.embed_documents([updated_content])[0]
-    assert new_embedding != old_embedding
+    assert list(new_embedding) == list(embedding.embed_documents([updated_content])[0])
+    assert list(new_embedding) != list(old_embedding)
 
 
 # TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
@@ -341,17 +372,17 @@ def batch_support_chroma_version() -> bool:
 )
 def test_chroma_large_batch() -> None:
     client = chromadb.HttpClient()
-    embedding_function = Fak(size=255)
+    embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
+    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)  # type: ignore
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
         texts=docs,
-        embedding=embedding_function,
+        embedding=embedding_function.fak,
         ids=[str(uuid.uuid4()) for _ in range(len(docs))],
     )
 
@@ -369,18 +400,18 @@ def test_chroma_large_batch() -> None:
 )
 def test_chroma_large_batch_update() -> None:
     client = chromadb.HttpClient()
-    embedding_function = Fak(size=255)
+    embedding_function = MyEmbeddingFunction(fak=Fak(size=255))
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=embedding_function,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
+    docs = ["This is a test document"] * (client.get_max_batch_size() + 100)  # type: ignore
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
         texts=docs,
-        embedding=embedding_function,
+        embedding=embedding_function.fak,
         ids=ids,
     )
     new_docs = [
@@ -408,7 +439,7 @@ def test_chroma_legacy_batching() -> None:
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
         "my_collection",
-        embedding_function=embedding_function.embed_documents,  # type: ignore
+        embedding_function=MyEmbeddingFunction,  # type: ignore
     )
     docs = ["This is a test document"] * 100
     db = Chroma.from_texts(
