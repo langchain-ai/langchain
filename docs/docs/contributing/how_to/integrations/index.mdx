@@ -4,14 +4,16 @@ pagination_next: contributing/how_to/integrations/package
 
 # Contribute Integrations
 
-LangChain integrations are packages that provide access to language models, vector stores, and other components that can be used in LangChain.
+Integrations are a core component of LangChain.
+LangChain provides standard interfaces for several different components (language models, vector stores, etc) that are crucial when building LLM applications.
 
-This guide will walk you through how to contribute new integrations to LangChain, by
-publishing an integration package to PyPi, and adding documentation for it
-to the LangChain Monorepo.
 
-These instructions will evolve over the next few months as we improve our integration
-processes.
+## Why contribute an integration to LangChain?
+
+- **Discoverability:** LangChain is the most used framework for building LLM applications, with over 20 million monthly downloads. LangChain integrations are discoverable by a large community of GenAI builders.
+- **Interoptability:** LangChain components expose a standard interface, allowing developers to easily swap them for each other. If you implement a LangChain integration, any developer using a different component will easily be able to swap yours in.
+- **Best Practices:** Through their standard interface, LangChain components encourage and facilitate best practices (streaming, async, etc)
+
 
 ## Components to Integrate
 
@@ -22,8 +24,7 @@ supported in LangChain
 
 :::
 
-While any component can be integrated into LangChain, at this time we are only accepting
-new integrations in the docs of the following kinds:
+While any component can be integrated into LangChain, there are specific types of integrations we encourage more:
 
 <table>
   <tr>
@@ -60,18 +61,52 @@ new integrations in the docs of the following kinds:
 
 ## How to contribute an integration
 
-The only step necessary to "be" a LangChain integration is to add documentation
-that will render on this site (https://python.langchain.com/).
+In order to contribute an integration, you should follow these steps:
 
-As a prerequisite to adding your integration to our documentation, you must:
+1. Confirm that your integration is in the [list of components](#components-to-integrate) we are currently encouraging.
+2. Implement your integration
+3. Implement the standard tests ([see below](#standard-tests)) for your integration and successfully run them.
+4. Publish your integration in a Python package to PyPi.
+5. [Optional] Open and merge a PR to add documentation for your integration to the official LangChain docs.
+6. [Optional] Engage with the LangChain team for joint co-marketing ([see below](#co-marketing)).
 
-1. Confirm that your integration is in the [list of components](#components-to-integrate) we are currently accepting.
-2. [Implement your package](./package.mdx) and publish it to a public github repository.
-3. [Implement the standard tests](./standard_tests) for your integration and successfully run them.
-4. [Publish your integration](./publish.mdx) by publishing the package to PyPi and add docs in the `docs/docs/integrations` directory of the LangChain monorepo.
 
-Once you have completed these steps, you can submit a PR to the LangChain monorepo to add your integration to the documentation.
+## Standard Tests
 
-## Further Reading
+Testing is a critical part of the development process that ensures your code works as expected and meets the desired quality standards.
+In the LangChain ecosystem, we have 2 main types of tests: **unit tests** and **integration tests**.
+These standard tests help maintain compatibility between different components and ensure reliability.
 
-To get started, let's learn [how to bootstrap a new integration package](./package.mdx) for LangChain.
+**Unit Tests**: Unit tests are designed to validate the smallest parts of your code—individual functions or methods—ensuring they work as expected in isolation. They do not rely on external systems or integrations.
+
+**Integration Tests**: Integration tests validate that multiple components or systems work together as expected. For tools or integrations relying on external services, these tests often ensure end-to-end functionality.
+
+Each type of integration has its own set of standard tests. Please see the correct guide for setting up standard tests for your integration:
+
+- [Chat Models]
+- [Tools]
+- [Toolkits]
+- [Retrievers]
+- [Document Loaders]
+- [Retrievers]
+- [Document Loaders]
+- [Vector Stores]
+- [Embedding Models]
+
+## Co-Marketing
+
+With over 20 million monthly downloads, LangChain has a large audience of developers building LLM applications.
+Besides just adding integrations, we also like to show them examples of cool tools or APIs they can use.
+
+While traditionally called "co-marketing", we like to thing of this more as "co-education".
+For that reason, while we are happy to highlight your integration through our social media channels, we prefer to highlight examples that also serve some educational purpose.
+Our main social media channels are Twitter and LinkedIn.
+
+Here are some heuristics for types of content we are excited to promote:
+
+- **Integration announcement:** If you announce the integration with a link to the LangChain documentation page, we are happy to re-tweet/re-share on Twitter/LinkedIn.
+- **Educational content:** We highlight good educational content on the weekends - if you write a good blog or make a good YouTube video, we are happy to share there! Note that we prefer content that is NOT framed as "here's how to use integration XYZ", but rather "here's how to do ABC", as we find that is more educational and helpful for developers.
+- **End-to-end applications:** End-to-end applications are great resources for developers looking to build. We prefer to highlight applications that are more complex/agentic in nature, and that use [LangGraph](https://github.com/langchain-ai/langgraph) as the orchestration framework. We get particularly excited about anything involving long-term memory, human-in-the-loop interaction patterns, or multi-agent architectures.
+- **Research:** We love highlighting novel research! Whether it is research built on top of LangChain or that integrates with it.
+
+// TODO: set up some form to gather these requests.
