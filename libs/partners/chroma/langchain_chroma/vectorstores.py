@@ -53,6 +53,17 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
+def _results_to_docs_and_vectors(results: Any) -> List[Tuple[Document, np.ndarray]]:
+    return [
+        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        for result in zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["embeddings"][0],
+        )
+    ]
+
+
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
 
@@ -687,6 +698,51 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
+    def similarity_search_with_vectors(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, np.ndarray]]:
+        """Run similarity search with Chroma with vectors.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text and
+            embedding vectors for each.
+        """
+        include = ["documents", "metadatas", "embeddings"]
+        if self._embedding_function is None:
+            results = self.__query_collection(
+                query_texts=[query],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                include=include,
+                **kwargs,
+            )
+        else:
+            query_embedding = self._embedding_function.embed_query(query)
+            results = self.__query_collection(
+                query_embeddings=[query_embedding],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                include=include,
+                **kwargs,
+            )
+
+        return _results_to_docs_and_vectors(results)
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """Select the relevance score function based on collections distance metric.
 
@@ -997,6 +1053,8 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
+            self._collection._client, "get_max_batch_size"
+        ) or hasattr(  # for Chroma 0.5.1 and above
             self._collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
@@ -1070,6 +1128,8 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         if hasattr(
+            chroma_collection._client, "get_max_batch_size"
+        ) or hasattr(  # for Chroma 0.5.1 and above
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches

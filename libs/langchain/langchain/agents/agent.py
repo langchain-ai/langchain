@@ -47,6 +47,7 @@ from langchain_core.utils.input import get_color_mapping
 from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
@@ -633,10 +634,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
 @deprecated(
     "0.1.0",
-    message=(
-        "Use new agent constructor methods like create_react_agent, create_json_agent, "
-        "create_structured_chat_agent, etc."
-    ),
+    message=AGENT_DEPRECATION_WARNING,
     removal="1.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
@@ -724,10 +722,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 @deprecated(
     "0.1.0",
-    message=(
-        "Use new agent constructor methods like create_react_agent, create_json_agent, "
-        "create_structured_chat_agent, etc."
-    ),
+    message=AGENT_DEPRECATION_WARNING,
     removal="1.0",
 )
 class Agent(BaseSingleActionAgent):
@@ -1022,7 +1017,7 @@ class Agent(BaseSingleActionAgent):
         }
 
 
-class ExceptionTool(BaseTool):
+class ExceptionTool(BaseTool):  # type: ignore[override]
     """Tool that just returns the query."""
 
     name: str = "_Exception"
@@ -1182,7 +1177,7 @@ class AgentExecutor(Chain):
     def _action_agent(self) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
         """Type cast self.agent.
 
-        The .agent attribute type includes Runnable, but is converted to one of
+        If the `agent` attribute is a Runnable, it will be converted one of
         RunnableAgentType in the validate_runnable_agent root_validator.
 
         To support instantiating with a Runnable, here we explicitly cast the type

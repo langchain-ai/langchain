@@ -261,7 +261,10 @@ class ChatPerplexity(BaseChatModel):
         response = self.client.chat.completions.create(
             model=params["model"], messages=message_dicts
         )
-        message = AIMessage(content=response.choices[0].message.content)
+        message = AIMessage(
+            content=response.choices[0].message.content,
+            additional_kwargs={"citations": response.citations},
+        )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
