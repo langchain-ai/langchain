@@ -20,7 +20,7 @@ else:
         pass
 
 
-class GoogleCalendarBaseTool(BaseTool):
+class GoogleCalendarBaseTool(BaseTool):  # type: ignore[override]
     """Base class for Google Calendar tools."""
 
     api_resource: Resource = Field(default_factory=build_resource_service)

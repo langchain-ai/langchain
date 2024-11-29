@@ -7,7 +7,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_community.tools.google_calendar.base import GoogleCalendarBaseTool
 
 
-class GetCalendarsInfo(GoogleCalendarBaseTool):
+class GetCalendarsInfo(GoogleCalendarBaseTool):  # type: ignore[override, override]
     """Tool that get information about the calendars in Google Calendar."""
 
     name: str = "get_calendars_info"

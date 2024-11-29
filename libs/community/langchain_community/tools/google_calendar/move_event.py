@@ -25,7 +25,7 @@ class MoveEventSchema(BaseModel):
     )
 
 
-class CalendarMoveEvent(GoogleCalendarBaseTool):
+class CalendarMoveEvent(GoogleCalendarBaseTool):  # type: ignore[override, override]
     """Tool that move an event between calendars in Google Calendar."""
 
     name: str = "move_calendar_event"

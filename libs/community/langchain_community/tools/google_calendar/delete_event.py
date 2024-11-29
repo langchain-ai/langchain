@@ -24,7 +24,7 @@ class DeleteEventSchema(BaseModel):
     )
 
 
-class CalendarDeleteEvent(GoogleCalendarBaseTool):
+class CalendarDeleteEvent(GoogleCalendarBaseTool):  # type: ignore[override, override]
     """Tool that delete an event in Google Calendar."""
 
     name: str = "delete_calendar_event"

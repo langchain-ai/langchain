@@ -2,10 +2,10 @@
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Type
-from zoneinfo import ZoneInfo  # Python 3.9+
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
+from zoneinfo import ZoneInfo  # Python 3.9+
 
 from langchain_community.tools.google_calendar.base import GoogleCalendarBaseTool
 
@@ -49,7 +49,7 @@ class SearchEventsSchema(BaseModel):
     )
 
 
-class CalendarSearchEvents(GoogleCalendarBaseTool):
+class CalendarSearchEvents(GoogleCalendarBaseTool):  # type: ignore[override, override]
     """Tool that retrieves events from Google Calendar."""
 
     name: str = "search_events"

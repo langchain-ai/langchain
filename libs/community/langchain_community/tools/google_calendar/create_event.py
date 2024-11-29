@@ -91,7 +91,7 @@ class CreateEventSchema(BaseModel):
     )
 
 
-class CalendarCreateEvent(GoogleCalendarBaseTool):
+class CalendarCreateEvent(GoogleCalendarBaseTool):  # type: ignore[override, override]
     """Tool that creates an event in Google Calendar."""
 
     name: str = "create_calendar_event"

@@ -11,7 +11,7 @@ def test_create_simple_event() -> None:
     tool_input = {
         "summary": "Event summary",
         "start_datetime": "2025-07-11 14:00:00",
-        "end_datetime": "2025-07-11 15:30:00"
+        "end_datetime": "2025-07-11 15:30:00",
     }
     result = tool.run(tool_input)
     assert tool.args_schema is not None
@@ -27,7 +27,7 @@ def test_create_event_with_description_and_location() -> None:
         "start_datetime": "2025-07-11 14:00:00",
         "end_datetime": "2025-07-11 15:30:00",
         "description": "Event description",
-        "location": "Sante Fe, Mexico City"
+        "location": "Sante Fe, Mexico City",
     }
     result = tool.run(tool_input)
     assert tool.args_schema is not None
@@ -42,7 +42,7 @@ def test_create_event_with_attendees() -> None:
         "summary": "Event summary",
         "start_datetime": "2025-07-11 14:00:00",
         "end_datetime": "2025-07-11 15:30:00",
-        "attendees": ["fake123@email.com", "123fake@email.com"]
+        "attendees": ["fake123@email.com", "123fake@email.com"],
     }
     result = tool.run(tool_input)
     assert tool.args_schema is not None
@@ -59,8 +59,8 @@ def test_create_event_with_reminders() -> None:
         "end_datetime": "2025-07-11 15:30:00",
         "reminders": [
             {"method": "email", "minutes": 10},
-            {"method": "popup", "minutes": 30}
-        ]
+            {"method": "popup", "minutes": 30},
+        ],
     }
     result = tool.run(tool_input)
     assert tool.args_schema is not None
@@ -76,13 +76,14 @@ def test_create_event_with_recurrence() -> None:
         "start_datetime": "2025-07-11 14:00:00",
         "end_datetime": "2025-07-11 15:30:00",
         "recurrence": {
-            'FREQ': 'WEEKLY',
-            'COUNT': 10
-        }
+            "FREQ": "WEEKLY",
+            "COUNT": 10,
+        },
     }
     result = tool.run(tool_input)
     assert tool.args_schema is not None
     assert result.startswith("Event created:")
+
 
 def test_create_event_with_conference_data() -> None:
     """Test google calendar create event with conference data."""
@@ -92,7 +93,7 @@ def test_create_event_with_conference_data() -> None:
         "summary": "Event summary",
         "start_datetime": "2025-07-11 14:00:00",
         "end_datetime": "2025-07-11 15:30:00",
-        "conference_data": True
+        "conference_data": True,
     }
     result = tool.run(tool_input)
     assert tool.args_schema is not None

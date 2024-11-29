@@ -93,7 +93,7 @@ class UpdateEventSchema(BaseModel):
     )
 
 
-class CalendarUpdateEvent(GoogleCalendarBaseTool):
+class CalendarUpdateEvent(GoogleCalendarBaseTool):  # type: ignore[override, override]
     """Tool that updates an event in Google Calendar."""
 
     name: str = "update_calendar_event"
