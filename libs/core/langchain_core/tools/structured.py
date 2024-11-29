@@ -10,6 +10,7 @@ from typing import (
     Literal,
     Optional,
     Union,
+    cast,
 )
 
 from pydantic import BaseModel, Field, SkipValidation
@@ -45,8 +46,9 @@ class StructuredTool(BaseTool):
     """The outer self of the tool for methods."""
 
     # --- Runnable ---
-
-    def _add_outer_self(self, input: Union[str, dict, ToolCall]) -> dict | ToolCall:
+    def _add_outer_self(
+        self, input: Union[str, dict, ToolCall]
+    ) -> Union[dict, ToolCall]:
         """Add outer self into arguments for method tools."""
 
         # If input is a string, then it is the first argument
@@ -62,8 +64,9 @@ class StructuredTool(BaseTool):
             return input
 
         # Dict
-        input["self"] = self.outer_self
-        return input
+        new_input = cast(dict, input)  # to avoid mypy error
+        new_input["self"] = self.outer_self
+        return new_input
 
     def invoke(
         self,

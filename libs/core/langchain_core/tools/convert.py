@@ -1,5 +1,13 @@
 import inspect
-from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from pydantic import BaseModel, Field, create_model
 
@@ -73,8 +81,8 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
 ) -> Union[
-    BaseTool,
-    Callable[[Union[Callable, Runnable]], BaseTool],
+    Union[BaseTool, property],
+    Callable[[Union[Callable, Runnable]], Union[BaseTool, property]],
 ]:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -205,7 +213,7 @@ def tool(
 
     def _create_tool_factory(
         tool_name: str,
-    ) -> Callable[[Union[Callable, Runnable]], BaseTool]:
+    ) -> Callable[[Union[Callable, Runnable]], Union[BaseTool, property]]:
         """Create a decorator that takes a callable and returns a tool.
 
         Args:
@@ -217,7 +225,7 @@ def tool(
 
         def _tool_factory(
             dec_func: Union[Callable, Runnable],
-        ) -> BaseTool | Callable[[Callable], BaseTool]:
+        ) -> Union[BaseTool, property]:
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
@@ -256,7 +264,6 @@ def tool(
                     and "self" in inspect.signature(dec_func).parameters
                 ):
 
-                    @property
                     def method_tool(self: Callable) -> StructuredTool:
                         return StructuredTool.from_function(
                             func,
@@ -272,7 +279,7 @@ def tool(
                             outer_self=self,
                         )
 
-                    return method_tool
+                    return property(method_tool)
 
                 return StructuredTool.from_function(
                     func,
@@ -353,7 +360,9 @@ def tool(
         # @tool(parse_docstring=True)
         # def my_tool():
         #    pass
-        def _partial(func: Union[Callable, Runnable]) -> BaseTool:
+        def _partial(
+            func: Union[Callable, Runnable],
+        ) -> Union[BaseTool, property]:
             """Partial function that takes a callable and returns a tool."""
             name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
             tool_factory = _create_tool_factory(name_)
