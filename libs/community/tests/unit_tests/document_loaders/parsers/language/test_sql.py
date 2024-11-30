@@ -23,6 +23,7 @@ class TestSQLSegmenter(unittest.TestCase):
 
         self.expected_simplified_code = """
 
+
 -- Code for: CREATE TABLE users (id INT, name TEXT);
 -- Code for: SELECT id, name FROM users WHERE id = 1;
 -- Code for: INSERT INTO users (id, name) VALUES (2, 'Alice');
