@@ -8,6 +8,7 @@ from langchain_community.document_loaders.parsers.language.sql import SQLSegment
 @pytest.mark.requires("tree_sitter", "tree_sitter_languages")
 class TestSQLSegmenter(unittest.TestCase):
     """Unit tests for the SQLSegmenter class."""
+    
     def setUp(self) -> None:
         """Set up example code and expected results for testing."""
         self.example_code = """
