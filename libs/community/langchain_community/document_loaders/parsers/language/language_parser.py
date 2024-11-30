@@ -24,10 +24,10 @@ from langchain_community.document_loaders.parsers.language.python import PythonS
 from langchain_community.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain_community.document_loaders.parsers.language.rust import RustSegmenter
 from langchain_community.document_loaders.parsers.language.scala import ScalaSegmenter
+from langchain_community.document_loaders.parsers.language.sql import SQLSegmenter
 from langchain_community.document_loaders.parsers.language.typescript import (
     TypeScriptSegmenter,
 )
-from langchain_community.document_loaders.parsers.language.sql import SQLSegmenter
 
 LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "py": "python",
@@ -247,3 +247,4 @@ class LanguageParser(BaseBlobParser):
                 "language": language,
             },
         )
+        
