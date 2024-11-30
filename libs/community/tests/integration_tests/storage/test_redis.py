@@ -8,8 +8,7 @@ import pytest
 
 from langchain_community.storage.redis import RedisStore
 
-if typing.TYPE_CHECKING:
-    from redis import Redis
+
 
 pytest.importorskip("redis")
 
