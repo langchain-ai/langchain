@@ -104,7 +104,7 @@ def _get_filtered_args(
         for i, (k, param) in enumerate(valid_keys.items())
         if k not in filter_args
         and (i > 0 or param.name not in ("self", "cls"))
-        and (include_injected or not _is_injected_arg_type(param.annotation))
+        and (include_injected or not _check_injected_arg_type(param.annotation))
     }
 
 
@@ -280,7 +280,7 @@ def create_schema_from_function(
 
     # add arguments with InjectedToolArg annotation to filter_args_
     for existing_param in existing_params:
-        if not include_injected and _is_injected_arg_type(
+        if not include_injected and _check_injected_arg_type(
             sig.parameters[existing_param].annotation
         ):
             filter_args_.append(existing_param)
@@ -972,6 +972,16 @@ InjectedToolArgSchema = Annotated[
 
 
 def _is_injected_arg_type(type_: type) -> bool:
+    return any(
+        isinstance(arg, InjectedToolArg)
+        or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
+        for arg in get_args(type_)[1:]
+    )
+
+
+# Identify if a type contains an InjectedToolArg annotation
+# Used to filter out injected arguments from the schema
+def _check_injected_arg_type(type_: type) -> bool:
     if type_ is InjectedToolArg:
         return True
     for arg in get_args(type_):
