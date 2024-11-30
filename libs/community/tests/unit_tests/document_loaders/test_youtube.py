@@ -242,18 +242,12 @@ def test_from_youtube_url(
 
 
 def test_oauth_cache():
-    """Test that OAuth caching works and does not prompt for login/authentication."""
+    """Test that OAuth caching works and does not prompt for
+     login/authentication."""
 
-    # Extract the video ID from the YouTube URL (you can manually extract the video ID or use a utility to do it)
-    youtube_url = "https://www.youtube.com/watch?v=1h0y1KsmfbM"
+    # Extract the video ID from the YouTube URL (you can manually extract
+    # the video ID or use a utility to do it)
     video_id = "1h0y1KsmfbM"
-
-    # Initialize the YoutubeLoader with the video_id
-    loader = YoutubeLoader(
-        youtube_url=youtube_url,
-        video_id=video_id,
-        transcript_format=TranscriptFormat.TEXT,
-    )
 
     # Manually simulate the data that would be returned by load()
     content = {
