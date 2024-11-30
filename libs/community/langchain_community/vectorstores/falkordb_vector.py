@@ -9,12 +9,15 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 import redis.exceptions
-from langchain_community.graphs import FalkorDBGraph
-from langchain_community.vectorstores.utils import (DistanceStrategy,
-                                                    maximal_marginal_relevance)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
+from langchain_community.graphs import FalkorDBGraph
+from langchain_community.vectorstores.utils import (
+    DistanceStrategy,
+    maximal_marginal_relevance,
+)
 
 
 def generate_random_string(length: int) -> str:
@@ -37,12 +40,16 @@ class SearchType(str, enum.Enum):
     """
     Enumerator for different search strategies in FalkorDB VectorStore.
 
-    - `SearchType.VECTOR`: This option searches using only the vector indexes in the vectorstore,
-      relying on the similarity between vector embeddings to return relevant results.
+    - `SearchType.VECTOR`: This option searches using only 
+    the vector indexes in the vectorstore, relying on the 
+    similarity between vector embeddings to return 
+    relevant results.
 
-    - `SearchType.HYBRID`: This option performs a combined search, querying both the full-text indexes
-      and the vector indexes. It integrates traditional text search with vector-based search for more
-      comprehensive results.
+    - `SearchType.HYBRID`: This option performs a combined search, 
+    querying both the full-text indexes and the vector indexes. 
+    It integrates traditional text search with vector-based 
+    search for more comprehensive results.
+
     """
 
     VECTOR = "vector"
@@ -90,13 +97,17 @@ def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
 def construct_metadata_filter(
         filter: Optional[Dict[str, Any]] = None) -> Tuple[str, Dict[str, Any]]:
     """
-    Construct a metadata filter by directly injecting the filter values into the query.
+    Construct a metadata filter by directly injecting 
+    the filter values into the query.
 
     Args:
-        filter (Optional[Dict[str, Any]]): Dictionary representing the filter condition.
+        filter (Optional[Dict[str, Any]]): Dictionary 
+        representing the filter condition.
 
     Returns:
-        Tuple[str, Dict[str, Any]]: Filter snippet and an empty dictionary (since we don't need parameters).
+        Tuple[str, Dict[str, Any]]: Filter snippet 
+        and an empty dictionary (since 
+        we don't need parameters).
     """
     if not filter:
         return "", {}
@@ -122,20 +133,24 @@ def _get_search_index_query(search_type: SearchType,
     if index_type == IndexType.NODE:
         if search_type == SearchType.VECTOR:
             return (
-                "CALL db.idx.vector.queryNodes($entity_label, $entity_property, $k, vecf32($embedding)) "
+                "CALL db.idx.vector.queryNodes($entity_label, "
+                "$entity_property, $k, vecf32($embedding)) "
                 "YIELD node, score ")
         elif search_type == SearchType.HYBRID:
             return (
                 "CALL { "
-                "CALL db.idx.vector.queryNodes($entity_label, $entity_property, $k, vecf32($embedding)) "
+                "CALL db.idx.vector.queryNodes($entity_label, "
+                "$entity_property, $k, vecf32($embedding)) "
                 "YIELD node, score "
-                "WITH collect({node: node, score: score}) AS nodes, max(score) AS max_score "
+                "WITH collect({node: node, score: score})"
+                " AS nodes, max(score) AS max_score "
                 "UNWIND nodes AS n "
                 "RETURN n.node AS node, (n.score / max_score) AS score "
                 "UNION "
                 "CALL db.idx.fulltext.queryNodes($entity_label, $query) "
                 "YIELD node, score "
-                "WITH collect({node: node, score: score}) AS nodes, max(score) AS max_score "
+                "WITH collect({node: node, score: score})"
+                " AS nodes, max(score) AS max_score "
                 "UNWIND nodes AS n "
                 "RETURN n.node AS node, (n.score / max_score) AS score "
                 "} "
@@ -143,35 +158,54 @@ def _get_search_index_query(search_type: SearchType,
                 "ORDER BY score DESC LIMIT $k ")
     elif index_type == IndexType.RELATIONSHIP:
         return (
-            "CALL db.idx.vector.queryRelationships($entity_label, $entity_property, $k, vecf32($embedding)) "
+            "CALL db.idx.vector.queryRelationships"
+            "($entity_label, $entity_property, $k, vecf32($embedding)) "
             "YIELD relationship, score ")
 
 
 def process_index_data(data: List[List[Any]]) -> List[Dict[str, Any]]:
     """
-    Processes a nested list of entity data to extract information about  labels, entity types, properties, index types,
+    Processes a nested list of entity data 
+    to extract information about  labels, 
+    entity types, properties, index types,
     and index details (if applicable).
 
     Args:
-        data (List[List[Any]]): A nested list containing details about entitys, their properties,
-                                index types, and configuration information.
+        data (List[List[Any]]): A nested list containing 
+        details about entitys, their properties, index 
+        types, and configuration information.
 
     Returns:
-        List[Dict[str, Any]]: A list of dictionaries where each dictionary contains:
-            - entity_label (str): The label or name of the entity or relationship (e.g., 'Person', 'Song').
-            - entity_property (str): The property of the entity or relationship on which an index was created (e.g., 'first_name').
-            - index_type (str or List[str]): The type(s) of index applied to the property (e.g., 'FULLTEXT', 'VECTOR').
-            - index_status (str): The status of the index (e.g., 'OPERATIONAL', 'PENDING').
-            - index_dimension (Optional[int]): The dimension of the vector index, if applicable.
-            - index_similarityFunction (Optional[str]): The similarity function used by the vector index, if applicable.
-            - entity_type (str): The type of entity. That is either entity or relationship
+        List[Dict[str, Any]]: A list of dictionaries where each dictionary 
+        contains:
+            - entity_label (str): The label or name of the 
+              entity or relationship (e.g., 'Person', 'Song').
+            - entity_property (str): The property of the entity 
+              or relationship on which an index 
+              was created (e.g., 'first_name').
+            - index_type (str or List[str]): The type(s) 
+              of index applied to the property (e.g., 
+              'FULLTEXT', 'VECTOR').
+            - index_status (str): The status of the index 
+              (e.g., 'OPERATIONAL', 'PENDING').
+            - index_dimension (Optional[int]): The dimension 
+              of the vector index, if applicable.
+            - index_similarityFunction (Optional[str]): The 
+              similarity function used by the vector 
+              index, if applicable.
+            - entity_type (str): The type of entity. That is 
+              either entity or relationship
 
     Notes:
-        - The entity label is extracted from the first element of each entity list.
-        - The entity property and associated index types are extracted from the second element.
-        - If the index type includes 'VECTOR', additional details such as dimension and similarity function
+        - The entity label is extracted from the first 
+          element of each entity list.
+        - The entity property and associated index types 
+          are extracted from the second element.
+        - If the index type includes 'VECTOR', additional 
+          details such as dimension and similarity function
           are extracted from the entity configuration.
-        - The function handles cases where entitys have multiple index types (e.g., both 'FULLTEXT' and 'VECTOR').
+        - The function handles cases where entitys have 
+          multiple index types (e.g., both 'FULLTEXT' and 'VECTOR').
     """
 
     result = []
@@ -232,43 +266,71 @@ class FalkorDBVector(VectorStore):
                   FalkorDB Cloud database instance
         embedding: Any embedding function implementing
                 `langchain.embeddings.base.Embeddings` interface.
-        distance_strategy The distance strategy to use. (default: "EUCLIDEAN")
-        pre_delete_collection: If True, will delete existing data if it exists.
-                (default: False). Useful for testing.
-        search_type: Similiarity search type to use. Could be either SearchType.VECTOR or SearchType.HYBRID (default: SearchType.VECTOR)
-        database: Optionally provide the name of the database to use else FalkorDBVector will generate a random database for you.
-        node_label: Provide the label of the node you want the embeddings of your data to be stored in. (default: "Chunk")
-        relation_type: Provide the relationship type of the relationship you want the embeddings of your data to be stored in. (default: "")
-        embedding_node_property: Provide the name of the property in which you want your embeddings to be stored. (default: "embedding")
-        text_node_property: Provide the name of the property in which you want your texts to be stored. (default: "text")
-        embedding_dimension: Provide the dimension of your embeddings or it will be calculated for you.
-        retrieval_query: Optionally a provide a retrieval_query else the default retreival query will be used.
-        index_type: Provide the index type for the VectorStore else the default index type will be used.
-        graph: Optionally provide the graph you would like to use
-        relevance_score_fn: Optionally provide a function that computes a relevance score based on the similarity score returned by the search.
-        ssl: Specify whether the connection to the database should be secured using SSL/TLS encryption (default: False)
+        distance_strategy The distance strategy to use. 
+                (default: "EUCLIDEAN")
+        pre_delete_collection: If True, will delete 
+                existing data if it exists.(default: 
+                False). Useful for testing.
+        search_type: Similiarity search type to use. 
+                Could be either SearchType.VECTOR or 
+                SearchType.HYBRID (default: 
+                SearchType.VECTOR)
+        database: Optionally provide the name of the 
+                database to use else FalkorDBVector will 
+                generate a random database for you.
+        node_label: Provide the label of the node you 
+                want the embeddings of your data to be 
+                stored in. (default: "Chunk")
+        relation_type: Provide the relationship type 
+                of the relationship you want the 
+                embeddings of your data to be stored in. 
+                (default: "")
+        embedding_node_property: Provide the name of 
+                the property in which you want your 
+                embeddings to be stored. (default: "embedding")
+        text_node_property: Provide the name of 
+                the property in which you want your texts
+                to be stored. (default: "text")
+        embedding_dimension: Provide the dimension 
+                of your embeddings or it will be 
+                calculated for you.
+        retrieval_query: Optionally a provide a 
+                retrieval_query else the default 
+                retrieval query will be used.
+        index_type: Provide the index type for the 
+                VectorStore else the default index 
+                type will be used.
+        graph: Optionally provide the graph you 
+                would like to use
+        relevance_score_fn: Optionally provide a 
+                function that computes a relevance score 
+                based on the similarity score returned by 
+                the search.
+        ssl: Specify whether the connection to the
+             database should be secured using SSL/TLS 
+             encryption (default: False)
 
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores.falkordb_vector import FalkorDBVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            from langchain_text_splitters import CharacterTextSplitter
+        from langchain_community.vectorstores.falkordb_vector import FalkorDBVector
+        from langchain_community.embeddings.openai import OpenAIEmbeddings
+        from langchain_text_splitters import CharacterTextSplitter
 
 
-            host="localhost"
-            port=6379
-            raw_documents = TextLoader('../../../state_of_the_union.txt').load()
-            text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-            documents = text_splitter.split_documents(raw_documents)
+        host="localhost"
+        port=6379
+        raw_documents = TextLoader('../../../state_of_the_union.txt').load()
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        documents = text_splitter.split_documents(raw_documents)
 
-            embeddings=OpenAIEmbeddings()
-            vectorstore = FalkorDBVector.from_documents(
-                embedding=embeddings,
-                documents=documents,
-                host=host,
-                port=port,
-            )
+        embeddings=OpenAIEmbeddings()
+        vectorstore = FalkorDBVector.from_documents(
+            embedding=embeddings,
+            documents=documents,
+            host=host,
+            port=port,
+        )
     """
 
     def __init__(
@@ -417,19 +479,25 @@ class FalkorDBVector(VectorStore):
     ) -> Tuple[Optional[int], Optional[str], Optional[str], Optional[str]]:
         """
         Check if the vector index exists in the FalkorDB database
-        and returns its embedding dimension, entity_type, entity_label, entity_property
+        and returns its embedding dimension, entity_type, 
+        entity_label, entity_property
 
         This method;
         1. queries the FalkorDB database for existing indexes
-        2. attempts to retrieve the dimension of the vector index with the specified node label & index type
+        2. attempts to retrieve the dimension of 
+           the vector index with the specified node label 
+           & index type
         3. If the index exists, its dimension is returned.
         4. Else if the index doesn't exist, `None` is returned.
 
         Returns:
-            int or None: The embedding dimension of the existing index if found,
+            int or None: The embedding dimension of the 
+                existing index if found,
             str or None: The entity type found.
-            str or None: The label of the entity that the vector index was created with
-            str or None: The property of the entity for which the vector index was created on
+            str or None: The label of the entity that the 
+                vector index was created with
+            str or None: The property of the entity for 
+                which the vector index was created on
 
 
         """
@@ -477,15 +545,18 @@ class FalkorDBVector(VectorStore):
 
         This method;
         1. queries the FalkorDB database for existing indexes
-        2. attempts to retrieve the dimension of the vector index with the specified label & index type
+        2. attempts to retrieve the dimension of the vector 
+           index with the specified label & index type
         3. If the index exists, its dimension is returned.
         4. Else if the index doesn't exist, `None` is returned.
 
         Returns:
             int or None: The embedding dimension of the existing index if found,
             str or None: The entity type found.
-            str or None: The label of the entity that the vector index was created with
-            str or None: The property of the entity for which the vector index was created on
+            str or None: The label of the entity that 
+              the vector index was created with
+            str or None: The property of the entity for 
+              which the vector index was created on
 
 
         """
@@ -495,7 +566,8 @@ class FalkorDBVector(VectorStore):
             relation_type = self.relation_type
         else:
             raise ValueError(
-                "Couldn't find any specified `relation_type`. Check if you spelled it correctly"
+                "Couldn't find any specified `relation_type`."
+                " Check if you spelled it correctly"
             )
 
         embedding_dimension = None
@@ -659,8 +731,9 @@ class FalkorDBVector(VectorStore):
         This method constructs a Cypher query and executes it
         to create a new full text index in FalkorDB
         Args:
-        text_node_properties (List[str]): List of node properties to be indexed.
-                                          If not provided, defaults to self.text_node_property.
+        text_node_properties (List[str]): List of node properties 
+            to be indexed.If not provided, defaults to 
+            self.text_node_property.
         """
         # Use the provided properties or default to self.text_node_property
         node_props = text_node_properties or [self.text_node_property]
@@ -724,7 +797,9 @@ class FalkorDBVector(VectorStore):
         self._database.query(
             "UNWIND $data AS row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
-            f"SET c.`{self.embedding_node_property}` = vecf32(row.embedding), c.`{self.text_node_property}` = row.text, c += row.metadata",
+            f"SET c.`{self.embedding_node_property}`"
+            f" = vecf32(row.embedding), c.`{self.text_node_property}`"
+            " = row.text, c += row.metadata",
             params=parameters,
         )
 
@@ -818,7 +893,8 @@ class FalkorDBVector(VectorStore):
 
                 except Exception:
                     raise ValueError(
-                        "Your document wasn't added to the store successfully. Check your spellings."
+                        "Your document wasn't added to the store"
+                        " successfully. Check your spellings."
                     )
 
         return result_ids
@@ -1002,7 +1078,8 @@ class FalkorDBVector(VectorStore):
 
         if not index_type:
             raise ValueError(
-                f"The specified vector index on the relationship {relation_type} does not exist. "
+                "The specified vector index on the relationship"
+                f" {relation_type} does not exist. "
                 "Make sure to check if you spelled it correctly")
         # Raise error if not relationship index type
         if index_type == "NODE":
@@ -1035,21 +1112,25 @@ class FalkorDBVector(VectorStore):
         **kwargs: Any,
     ) -> FalkorDBVector:
         """
-        Initialize and return a FalkorDBVector instance from an existing graph using the database name
+        Initialize and return a FalkorDBVector instance 
+        from an existing graph using the database name
 
-        This method initializes a FalkorDBVector instance using the provided
-        parameters and the existing graph. It validates the existence of
-        the indices and creates new ones if they don't exist.
+        This method initializes a FalkorDBVector instance 
+        using the provided parameters and the existing graph. 
+        It validates the existence of the indices and creates 
+        new ones if they don't exist.
 
         Args:
             embedding: The `Embeddings` model you would like to use
-            database: The name of the existing graph/database you would like to intialize
+            database: The name of the existing graph/database you 
+              would like to intialize
             node_label: The label of the node you want to initialize.
-            embedding_node_property: The name of the property you want your embeddings to be stored in.
+            embedding_node_property: The name of the property you 
+              want your embeddings to be stored in.
 
         Returns:
-            FalkorDBVector: An instance of FalkorDBVector initialized with the provided parameters
-                        and existing graph.
+            FalkorDBVector: An instance of FalkorDBVector initialized 
+              with the provided parameters and existing graph.
 
         Example:
         >>> falkordb_vector = FalkorDBVector.from_existing_graph(
@@ -1198,16 +1279,17 @@ class FalkorDBVector(VectorStore):
         Return FalkorDBVector initialized from documents and embeddings.
 
         Example:
-            .. code-block:: python
+        .. code-block:: python
 
-                from langchain_community.vectorstores.falkordb_vector import FalkorDBVector
-                from langchain_community.embeddings import OpenAIEmbeddings
-                embeddings = OpenAIEmbeddings()
-                text_embeddings = embeddings.embed_documents(texts)
-                text_embedding_pairs = list(zip(texts, text_embeddings))
-                vectorstore = FalkorDBVector.from_embeddings(
-                        text_embedding_pairs, embeddings
-                )
+        from langchain_community.vectorstores.falkordb_vector import (
+        FalkorDBVector )
+        from langchain_community.embeddings import OpenAIEmbeddings
+        embeddings = OpenAIEmbeddings()
+        text_embeddings = embeddings.embed_documents(texts)
+        text_embedding_pairs = list(zip(texts, text_embeddings))
+        vectorstore = FalkorDBVector.from_embeddings(
+                text_embedding_pairs, embeddings
+        )
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
@@ -1324,7 +1406,8 @@ class FalkorDBVector(VectorStore):
 
             base_cosine_query = (
                 " WITH n as node, "
-                f" vec.cosineDistance(n.{self.embedding_node_property}, vecf32($embedding)) as score "
+                f" vec.cosineDistance(n.{self.embedding_node_property}"
+                ", vecf32($embedding)) as score "
             )
 
             filter_snippets, filter_params = construct_metadata_filter(filter)
@@ -1342,17 +1425,20 @@ class FalkorDBVector(VectorStore):
                     metadata_fields = ", ".join(f"`{key}`: relationship.{key}"
                                                 for key in self.metadata)
                     default_retrieval = (
-                        f"RETURN relationship.{self.text_node_property} AS text, score, "
+                        f"RETURN relationship.{self.text_node_property} "
+                        "AS text, score, "
                         f"{{text: relationship.{self.text_node_property}, "
                         f"embedding: relationship.{self.embedding_node_property}, "
                         f"id: relationship.id, source: relationship.source, "
                         f"{metadata_fields}}} AS metadata")
                 else:
                     default_retrieval = (
-                        f"RETURN relationship.{self.text_node_property} AS text, score, "
+                        f"RETURN relationship.{self.text_node_property}"
+                        " AS text, score, "
                         f"{{text: relationship.{self.text_node_property}, "
                         f"embedding: relationship.{self.embedding_node_property}, "
-                        f"id: relationship.id, source: relationship.source}} AS metadata"
+                        f"id: relationship.id, source: relationship.source}}"
+                        " AS metadata"
                     )
             else:
                 if self.metadata:
@@ -1360,15 +1446,18 @@ class FalkorDBVector(VectorStore):
                     metadata_fields = ", ".join(f"`{key}`: relationship.{key}"
                                                 for key in self.metadata)
                     default_retrieval = (
-                        f"RETURN relationship.{self.text_node_property} AS text, score, "
+                        f"RETURN relationship.{self.text_node_property} "
+                        "AS text, score, "
                         f"{{text: relationship.{self.text_node_property}, "
                         f"id: relationship.id, source: relationship.source, "
                         f"{metadata_fields}}} AS metadata")
                 else:
                     default_retrieval = (
-                        f"RETURN relationship.{self.text_node_property} AS text, score, "
+                        f"RETURN relationship.{self.text_node_property}"
+                        " AS text, score, "
                         f"{{text: relationship.{self.text_node_property}, "
-                        f"id: relationship.id, source: relationship.source}} AS metadata"
+                        f"id: relationship.id, source: relationship.source}}"
+                        " AS metadata"
                     )
         else:
             if kwargs.get("return_embeddings"):
@@ -1491,7 +1580,7 @@ class FalkorDBVector(VectorStore):
                     ) for result in sorted_results
                 ]
             except Exception as e:
-                print(f"An error occured: {e}")
+                raise ValueError(f"An error occured: {e}")
 
         return docs
 
@@ -1508,11 +1597,11 @@ class FalkorDBVector(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            params (Dict[str, Any]): The search params for the index type.
-                Defaults to empty dict.
-            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
-                filter on metadata.
-                Defaults to None.
+            params (Dict[str, Any]): The search params 
+                for the index type. Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of 
+                argument(s) to filter on metadata. Defaults 
+                to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -1632,11 +1721,13 @@ class FalkorDBVector(VectorStore):
         document: Document,
     ) -> None:
         """
-        This function updates an existing document in the store based on the document_id.
+        This function updates an existing document in 
+        the store based on the document_id.
 
         Args:
             document_id: The id of the document to be updated.
-            document: The new Document instance with the updated content.
+            document: The new Document instance with the 
+                updated content.
 
         Returns:
             None
