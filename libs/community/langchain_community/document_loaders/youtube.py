@@ -195,13 +195,13 @@ class YoutubeLoader(BaseLoader):
         return video_id
 
     @classmethod
-    def from_youtube_url(cls, youtube_url: str, use_oauth=True, 
-        allow_oauth_cache=True, **kwargs: Any) -> YoutubeLoader:
+    def from_youtube_url(cls, youtube_url: str, use_oauth=True,
+                         allow_oauth_cache=True,
+                         **kwargs: Any) -> YoutubeLoader:
         """Given a YouTube URL, construct a loader."""
         video_id = cls.extract_video_id(youtube_url)
-        return cls(video_id, use_oauth=use_oauth, 
-        allow_oauth_cache=allow_oauth_cache, **kwargs)
-
+        return cls(video_id, use_oauth=use_oauth,
+                   allow_oauth_cache=allow_oauth_cache, **kwargs)
 
     def _make_chunk_document(
         self, chunk_pieces: List[Dict], chunk_start_seconds: int

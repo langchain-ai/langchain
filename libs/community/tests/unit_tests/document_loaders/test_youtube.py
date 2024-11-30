@@ -243,12 +243,12 @@ def test_oauth_cache():
     
     # Extract the video ID from the YouTube URL (you can manually extract the video ID or use a utility to do it)
     youtube_url = "https://www.youtube.com/watch?v=1h0y1KsmfbM"
-    video_id = "1h0y1KsmfbM"  # Manually extracted video ID from the URL
+    video_id = "1h0y1KsmfbM" 
     
     # Initialize the YoutubeLoader with the video_id
     loader = YoutubeLoader(
         youtube_url=youtube_url,
-        video_id=video_id,  # Pass the video_id argument here
+        video_id=video_id,  
         transcript_format=TranscriptFormat.TEXT,
     )
     
