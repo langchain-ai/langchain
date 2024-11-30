@@ -49,4 +49,3 @@ class SQLSegmenter(TreeSitterSegmenter):
 
     def make_line_comment(self, text: str) -> str:
         return f"-- {text}"
-    
