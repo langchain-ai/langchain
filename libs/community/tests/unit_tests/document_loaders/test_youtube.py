@@ -241,7 +241,7 @@ def test_from_youtube_url(
     assert loader.allow_oauth_cache == allow_oauth_cache
 
 
-def test_oauth_cache():
+def test_oauth_cache() -> None:
     """Test that OAuth caching works and does not prompt for
     login/authentication."""
 
