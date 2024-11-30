@@ -3,7 +3,7 @@
 import os
 import typing
 import uuid
-
+from redis import Redis
 import pytest
 
 from langchain_community.storage.redis import RedisStore
