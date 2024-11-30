@@ -48,7 +48,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "php": "php",
     "ex": "elixir",
     "exs": "elixir",
-    "sql": "sql"
+    "sql": "sql",
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -69,7 +69,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     "java": JavaSegmenter,
     "php": PHPSegmenter,
     "elixir": ElixirSegmenter,
-    "sql": SQLSegmenter
+    "sql": SQLSegmenter,
 }
 
 Language = Literal[
@@ -96,7 +96,7 @@ Language = Literal[
     "lua",
     "perl",
     "elixir",
-    "sql"
+    "sql",
 ]
 
 
@@ -247,4 +247,3 @@ class LanguageParser(BaseBlobParser):
                 "language": language,
             },
         )
-        
