@@ -218,7 +218,6 @@ def test__get_transcript_chunks() -> None:
     )
 
 
-
 @pytest.mark.parametrize(
     "youtube_url, expected_video_id, use_oauth, allow_oauth_cache",
     [
@@ -227,11 +226,15 @@ def test__get_transcript_chunks() -> None:
         ("https://youtu.be/lalOy8Mbfdc", "lalOy8Mbfdc", True, False),
     ],
 )
-def test_from_youtube_url(youtube_url: str, expected_video_id: str, use_oauth: bool, allow_oauth_cache: bool) -> None:
+def test_from_youtube_url(
+    youtube_url: str, expected_video_id: str, use_oauth: bool, allow_oauth_cache: bool
+) -> None:
     """Test that from_youtube_url correctly creates a YoutubeLoader."""
     # Call the from_youtube_url method
-    loader = YoutubeLoader.from_youtube_url(youtube_url, use_oauth=use_oauth, allow_oauth_cache=allow_oauth_cache)
-    
+    loader = YoutubeLoader.from_youtube_url(
+        youtube_url, use_oauth=use_oauth, allow_oauth_cache=allow_oauth_cache
+    )
+
     # Check if the video_id matches
     assert loader.video_id == expected_video_id
     assert loader.use_oauth == use_oauth
@@ -240,24 +243,24 @@ def test_from_youtube_url(youtube_url: str, expected_video_id: str, use_oauth: b
 
 def test_oauth_cache():
     """Test that OAuth caching works and does not prompt for login/authentication."""
-    
+
     # Extract the video ID from the YouTube URL (you can manually extract the video ID or use a utility to do it)
     youtube_url = "https://www.youtube.com/watch?v=1h0y1KsmfbM"
-    video_id = "1h0y1KsmfbM" 
-    
+    video_id = "1h0y1KsmfbM"
+
     # Initialize the YoutubeLoader with the video_id
     loader = YoutubeLoader(
         youtube_url=youtube_url,
-        video_id=video_id,  
+        video_id=video_id,
         transcript_format=TranscriptFormat.TEXT,
     )
-    
+
     # Manually simulate the data that would be returned by load()
     content = {
         "video_id": video_id,
-        "transcript": "This is a sample transcript text for the video."
+        "transcript": "This is a sample transcript text for the video.",
     }
-    
+
     # Now check the content directly without calling load()
     assert content is not None
     assert content["video_id"] == video_id
