@@ -21,8 +21,8 @@ class TestSQLSegmenter(unittest.TestCase):
         DELETE FROM users WHERE id = 2;
         """
 
-        self.expected_simplified_code = """-- Code
-         -- for: CREATE TABLE users (id INT, name TEXT);
+        self.expected_simplified_code = """
+-- Code for: CREATE TABLE users (id INT, name TEXT);
 -- Code for: SELECT id, name FROM users WHERE id = 1;
 -- Code for: INSERT INTO users (id, name) VALUES (2, 'Alice');
 -- Code for: UPDATE users SET name = 'Bob' WHERE id = 2;
