@@ -19,18 +19,28 @@ CHUNK_QUERY = """
 
 
 class SQLSegmenter(TreeSitterSegmenter):
-    """Code segmenter for SQL."""
+    """Code segmenter for SQL.
+    This class uses Tree-sitter to segment SQL code into its 
+    constituent statements (e.g., SELECT, CREATE TABLE). 
+    It also provides functionality to extract these 
+    statements and simplify the code into commented descriptions.
+    """
 
     def get_language(self) -> "Language":
+        """Return the SQL language grammar for Tree-sitter."""
         from tree_sitter_languages import get_language
 
         return get_language("sql")
 
     def get_chunk_query(self) -> str:
+        """Return the Tree-sitter query for SQL segmentation."""
         return CHUNK_QUERY
 
     def extract_functions_classes(self) -> list[str]:
-        """Extract SQL statements from the code."""
+        """Extract SQL statements from the code.
+        Ensures that all SQL statements end with a semicolon 
+        for consistency.
+        """
         extracted = super().extract_functions_classes()
         # Ensure all statements end with a semicolon
         return [
@@ -39,7 +49,10 @@ class SQLSegmenter(TreeSitterSegmenter):
         ]
 
     def simplify_code(self) -> str:
-        """Simplify the extracted SQL code into comments."""
+        """Simplify the extracted SQL code into comments.
+        Converts SQL statements into commented descriptions 
+        for easy readability.
+        """
         return "\n".join(
             [
                 f"-- Code for: {stmt.strip()}"
@@ -48,4 +61,5 @@ class SQLSegmenter(TreeSitterSegmenter):
         )
 
     def make_line_comment(self, text: str) -> str:
+        """Create a line comment in SQL style."""
         return f"-- {text}"
