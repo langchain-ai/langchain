@@ -163,9 +163,9 @@ class YoutubeLoader(BaseLoader):
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         continue_on_failure: bool = False,
         chunk_size_seconds: int = 120,
-        use_oauth: bool = True,          
-        allow_oauth_cache: bool = True,  
-        youtube_url: str = ""
+        use_oauth: bool = True,
+        allow_oauth_cache: bool = True,
+        youtube_url: str = "",
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
@@ -180,9 +180,9 @@ class YoutubeLoader(BaseLoader):
         self.transcript_format = transcript_format
         self.continue_on_failure = continue_on_failure
         self.chunk_size_seconds = chunk_size_seconds
-        self.use_oauth = use_oauth            
+        self.use_oauth = use_oauth
         self.allow_oauth_cache = allow_oauth_cache
-        self.youtube_url = youtube_url  
+        self.youtube_url = youtube_url
 
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
@@ -195,13 +195,14 @@ class YoutubeLoader(BaseLoader):
         return video_id
 
     @classmethod
-    def from_youtube_url(cls, youtube_url: str, use_oauth=True,
-                         allow_oauth_cache=True,
-                         **kwargs: Any) -> YoutubeLoader:
+    def from_youtube_url(
+        cls, youtube_url: str, use_oauth=True, allow_oauth_cache=True, **kwargs: Any
+    ) -> YoutubeLoader:
         """Given a YouTube URL, construct a loader."""
         video_id = cls.extract_video_id(youtube_url)
-        return cls(video_id, use_oauth=use_oauth,
-                   allow_oauth_cache=allow_oauth_cache, **kwargs)
+        return cls(
+            video_id, use_oauth=use_oauth, allow_oauth_cache=allow_oauth_cache, **kwargs
+        )
 
     def _make_chunk_document(
         self, chunk_pieces: List[Dict], chunk_start_seconds: int
@@ -326,8 +327,11 @@ class YoutubeLoader(BaseLoader):
                 'Could not import "pytube" Python package. '
                 "Please install it with `pip install pytube`."
             )
-        yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}", 
-                use_oauth=self.use_oauth, allow_oauth_cache=self.allow_oauth_cache)
+        yt = YouTube(
+            f"https://www.youtube.com/watch?v={self.video_id}",
+            use_oauth=self.use_oauth,
+            allow_oauth_cache=self.allow_oauth_cache,
+        )
         video_info = {
             "title": yt.title or "Unknown",
             "description": yt.description or "Unknown",
