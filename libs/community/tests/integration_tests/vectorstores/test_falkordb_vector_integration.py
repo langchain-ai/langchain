@@ -1,15 +1,15 @@
 """
 Integration tests for FalkorDB vector store functionality.
 
-These tests validate the end-to-end process of constructing, indexing, 
+These tests validate the end-to-end process of constructing, indexing,
 and searching vector embeddings in a FalkorDB instance. They include:
 - Setting up the FalkorDB vector store with a local instance.
 - Indexing documents with fake embeddings.
 - Performing vector searches and validating results.
 
 Note:
-These tests are conducted using a local FalkorDB instance but can also 
-be run against a Cloud FalkorDB instance. Ensure that appropriate host 
+These tests are conducted using a local FalkorDB instance but can also
+be run against a Cloud FalkorDB instance. Ensure that appropriate host
 and port configurations are set up before running the tests.
 """
 
@@ -146,11 +146,10 @@ def test_falkordbvector_catch_wrong_node_label() -> None:
         )
     except Exception as e:
         assert type(e) is ValueError
-        assert (
-            str(e)
-            == ("The specified vector index node label "+
-                "`test` does not exist. Make sure to"+
-                " check if you spelled the node label correctly")
+        assert str(e) == (
+            "The specified vector index node label "
+            + "`test` does not exist. Make sure to"
+            + " check if you spelled the node label correctly"
         )
         drop_vector_indexes(docsearch)
 
@@ -401,11 +400,10 @@ def test_falkordbvector_missing_keyword() -> None:
             search_type=SearchType.HYBRID,
         )
     except Exception as e:
-        assert (
-            str(e)
-            == ("The specified vector index node label "+
-                f"`{node_label}` does not exist. Make sure"+
-                " to check if you spelled the node label correctly")
+        assert str(e) == (
+            "The specified vector index node label "
+            + f"`{node_label}` does not exist. Make sure"
+            + " to check if you spelled the node label correctly"
         )
 
     drop_vector_indexes(docsearch)
