@@ -324,7 +324,7 @@ if TYPE_CHECKING:
         WikipediaQueryRun,
     )
     from langchain_community.tools.wolfram_alpha.tool import (
-        WolframAlphaQueryRun,
+        WolframAlphaQueryRun,                                                                                                                                                                                                                                
     )
     from langchain_community.tools.yahoo_finance_news import (
         YahooFinanceNewsTool,
@@ -338,6 +338,9 @@ if TYPE_CHECKING:
     from langchain_community.tools.zapier.tool import (
         ZapierNLAListActions,
         ZapierNLARunAction,
+    )
+    from langchain_community.tools.fallback import (
+        FallbackTool
     )
     from langchain_community.tools.zenguard.tool import (
         Detector,
@@ -403,6 +406,7 @@ __all__ = [
     "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
+    "FallbackTool",
     "FileSearchTool",
     "GetElementsTool",
     "GmailCreateDraft",
@@ -556,6 +560,7 @@ _module_lookup = {
     "ElevenLabsText2SpeechTool": "langchain_community.tools.eleven_labs.text2speech",
     "ExtractHyperlinksTool": "langchain_community.tools.playwright",
     "ExtractTextTool": "langchain_community.tools.playwright",
+    "FallbackTool": "langchain_community.tools.fallback",
     "FileSearchTool": "langchain_community.tools.file_management",
     "GetElementsTool": "langchain_community.tools.playwright",
     "GmailCreateDraft": "langchain_community.tools.gmail",
