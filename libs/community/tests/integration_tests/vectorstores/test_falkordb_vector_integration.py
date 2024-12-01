@@ -15,7 +15,7 @@ and port configurations are set up before running the tests.
 
 import os
 from math import isclose
-from typing import List, Any, Dict
+from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 from langchain_core.documents import Document
