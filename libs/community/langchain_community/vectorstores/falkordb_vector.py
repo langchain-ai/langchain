@@ -906,8 +906,8 @@ class FalkorDBVector(VectorStore):
         cls: type[FalkorDBVector],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: List[Dict] = [],
-        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        metadatas: Optional[List[Dict]] = None,  # Optional
+        distance_strategy: Optional[DistanceStrategy] = None,  # Optional
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> FalkorDBVector:
@@ -915,6 +915,12 @@ class FalkorDBVector(VectorStore):
         Return FalkorDBVector initialized from texts and embeddings.
         """
         embeddings = embedding.embed_documents(list(texts))
+
+        # Set default values if None
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+        if distance_strategy is None:
+            distance_strategy = DEFAULT_DISTANCE_STRATEGY
 
         return cls.__from(
             texts,
@@ -1660,7 +1666,7 @@ class FalkorDBVector(VectorStore):
     def similarity_search_with_relevance_scores(
         self,
         query: str,
-        k: Optional[int] = 4,
+        k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -1807,17 +1813,21 @@ class FalkorDBVector(VectorStore):
 
     def delete(
         self,
-        ids: List[str],
-    ) -> None:
+        ids: Optional[List[str]] = None,  # Make `ids` optional
+        **kwargs: Any,
+    ) -> Optional[bool]:  # Return type matches the superclass signature
         """
-        This function deletes a item from the store based on the item_id.
+        This function deletes an item from the store based on the item_id.
 
         Args:
-            item_id: The id of the document to be deleted.
-
+            ids: A list of IDs of the documents to be deleted. If None, deletes all documents.
+        
         Returns:
-            None
+            Optional[bool]: True if documents were deleted, False otherwise.
         """
+        if ids is None:
+            raise ValueError("You must provide at least one ID to delete.")
+        
         for id in ids:
             item_id = id
             # Ensure the document exists in the store
@@ -1838,7 +1848,9 @@ class FalkorDBVector(VectorStore):
                 """
                 MATCH (n)
                 WHERE n.id = $item_id
-                DETACH DELETE n
+                DELETE n
                 """,
                 params={"item_id": item_id},
             )
+
+        return True
