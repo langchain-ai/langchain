@@ -492,8 +492,8 @@ files = [
 jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
 urllib3 = [
-    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
     {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""},
+    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
 ]
 
 [package.extras]
@@ -2792,7 +2792,7 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "langchain"
-version = "0.3.7"
+version = "0.3.9"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2802,12 +2802,12 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.21"
 langchain-text-splitters = "^0.3.0"
 langsmith = "^0.1.17"
 numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.22.4,<2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
 ]
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -2821,7 +2821,7 @@ url = "libs/langchain"
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.2.4"
+version = "0.3.0"
 description = "An integration package connecting AnthropicMessages and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2829,8 +2829,8 @@ files = []
 develop = true
 
 [package.dependencies]
-anthropic = ">=0.30.0,<1"
-langchain-core = "^0.3.15"
+anthropic = ">=0.39.0,<1"
+langchain-core = "^0.3.17"
 pydantic = "^2.7.4"
 
 [package.source]
@@ -2871,8 +2871,8 @@ develop = true
 chromadb = ">=0.4.0,<0.6.0,!=0.5.4,!=0.5.5,!=0.5.7,!=0.5.9,!=0.5.10,!=0.5.11,!=0.5.12"
 langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14"
 numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.22.4,<2.0.0", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.2,<2.0.0", markers = "python_version >= \"3.12\""},
 ]
 
 [package.source]
@@ -2881,7 +2881,7 @@ url = "libs/partners/chroma"
 
 [[package]]
 name = "langchain-community"
-version = "0.3.5"
+version = "0.3.8"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2892,17 +2892,18 @@ develop = true
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
 httpx-sse = "^0.4.0"
-langchain = "^0.3.6"
-langchain-core = "^0.3.15"
+langchain = "^0.3.8"
+langchain-core = "^0.3.21"
 langsmith = "^0.1.125"
 numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.22.4,<2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
 ]
 pydantic-settings = "^2.4.0"
 PyYAML = ">=5.3"
+redis = "^5.2.0"
 requests = "^2"
-SQLAlchemy = ">=1.4,<2.0.36"
+SQLAlchemy = ">=1.4,<3"
 tenacity = ">=8.1.0,!=8.4.0,<10"
 
 [package.source]
@@ -2911,7 +2912,7 @@ url = "libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.15"
+version = "0.3.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3021,7 +3022,7 @@ url = "libs/partners/groq"
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.1"
+version = "0.2.2"
 description = "An integration package connecting Mistral and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3041,7 +3042,7 @@ url = "libs/partners/mistralai"
 
 [[package]]
 name = "langchain-openai"
-version = "0.2.6"
+version = "0.2.10"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3049,7 +3050,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.21"
 openai = "^1.54.0"
 tiktoken = ">=0.7,<1"
 
@@ -6867,8 +6868,8 @@ files = [
 [package.dependencies]
 PyYAML = "*"
 urllib3 = [
-    {version = "<2", markers = "platform_python_implementation == \"PyPy\" or python_version < \"3.10\""},
     {version = "*", markers = "platform_python_implementation != \"PyPy\" and python_version >= \"3.10\""},
+    {version = "<2", markers = "platform_python_implementation == \"PyPy\" or python_version < \"3.10\""},
 ]
 wrapt = "*"
 yarl = "*"
