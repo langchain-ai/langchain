@@ -781,7 +781,6 @@ class FalkorDBVector(VectorStore):
             # Initialize a set to keep track of unique non-empty keys
             unique_non_empty_keys: set[str] = set()
 
-
             # Iterate over each metadata dictionary
             for metadata in metadatas:
                 # Add keys with non-empty values to the set
@@ -833,8 +832,6 @@ class FalkorDBVector(VectorStore):
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
-    
-    
 
     def add_documents(
         self,
