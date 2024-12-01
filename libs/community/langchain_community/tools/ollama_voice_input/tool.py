@@ -159,7 +159,8 @@ class VoiceInputChain(BaseTool):
                                 The following text is a part of a transcribed voice
                                 message or audio file for a voice assistant. Write
                                 summary of this chunk of text and make sure to keep
-                                all the important points. Here comes the text: "{text}"
+                                all the important points. Here comes the text: 
+                                "{text}"
                                 """)
 
         # template for combining summaries from each chunk
@@ -169,7 +170,8 @@ class VoiceInputChain(BaseTool):
                                 Write a summary of the following text, which consists
                                 of summaries of parts from a transcribed voice message
                                 or audio file for a voice assistant. Make sure to keep
-                                all the important points. Here comes the text: "{text}"    
+                                all the important points. Here comes the text: 
+                                "{text}"    
                                 """)
 
         return load_summarize_chain(
