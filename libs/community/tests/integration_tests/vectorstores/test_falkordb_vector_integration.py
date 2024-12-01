@@ -15,7 +15,7 @@ and port configurations are set up before running the tests.
 
 import os
 from math import isclose
-from typing import List
+from typing import List, Any, Dict
 
 from dotenv import load_dotenv
 from langchain_core.documents import Document
@@ -40,9 +40,9 @@ texts = ["foo", "bar", "baz", "It is the end of the world. Take shelter!"]
 
 def drop_vector_indexes(store: FalkorDBVector) -> None:
     """Cleanup all vector indexes"""
-    index_entity_labels = []
-    index_entity_properties = []
-    index_entity_types = []
+    index_entity_labels: List[Any] = []
+    index_entity_properties: List[Any] = []
+    index_entity_types: List[Any] = []
 
     # get all indexes
     result = store._query(
@@ -50,7 +50,7 @@ def drop_vector_indexes(store: FalkorDBVector) -> None:
     CALL db.indexes()
     """
     )
-    result = process_index_data(result)
+    result: List[Dict[str, Any]] = process_index_data(result)
 
     # get all vector indexs entity labels, entity properties, entity_types
     if isinstance(result, list):
