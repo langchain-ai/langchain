@@ -50,11 +50,11 @@ def drop_vector_indexes(store: FalkorDBVector) -> None:
     CALL db.indexes()
     """
     )
-    result: List[Dict[str, Any]] = process_index_data(result)
+    processed_result: List[Dict[str, Any]] = process_index_data(result)
 
     # get all vector indexs entity labels, entity properties, entity_types
-    if isinstance(result, list):
-        for index in result:
+    if isinstance(processed_result, list):
+        for index in processed_result:
             if isinstance(index, dict):
                 if index.get("index_type") == "VECTOR":
                     index_entity_labels.append(index["entity_label"])
@@ -456,6 +456,7 @@ def test_falkordbvector_from_existing_graph() -> None:
     )
     graph._query("MATCH (n) DELETE n")
     graph._query("CREATE (:Test {name:'Foo'}), (:Test {name:'Bar'})")
+    assert graph.database_name, "Database name cannot be empty or None"
     existing = FalkorDBVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),
         database=graph.database_name,
@@ -485,11 +486,9 @@ def test_falkordb_from_existing_graph_mulitiple_properties() -> None:
         text_node_property="info",
         pre_delete_collection=True,
     )
-
     graph._query("MATCH (n) DELETE n")
-
     graph._query("CREATE (:Test {name:'Foo', name2: 'Fooz'}), (:Test {name:'Bar'})")
-
+    assert graph.database_name, "Database name cannot be empty or None"
     existing = FalkorDBVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),
         database=graph.database_name,
@@ -549,9 +548,8 @@ def test_falkordb_from_existing_graph_mulitiple_properties_hybrid() -> None:
     )
 
     graph._query("MATCH (n) DELETE n")
-
     graph._query("CREATE (:Test {name:'Foo', name2: 'Fooz'}), (:Test {name:'Bar'})")
-
+    assert graph.database_name, "Database name cannot be empty or None"
     existing = FalkorDBVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),
         database=graph.database_name,
