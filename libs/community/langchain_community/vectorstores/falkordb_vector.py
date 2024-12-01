@@ -5,7 +5,7 @@ import os
 import random
 import string
 from hashlib import md5
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 import redis.exceptions
@@ -596,7 +596,7 @@ class FalkorDBVector(VectorStore):
                         entity_property = str(dict["entity_property"])
                         break
             if embedding_dimension and entity_type and entity_label and entity_property:
-                self._index_type = entity_type
+                self._index_type = IndexType(entity_type)
                 return embedding_dimension, entity_type, entity_label, entity_property
             else:
                 return None, None, None, None
@@ -779,7 +779,8 @@ class FalkorDBVector(VectorStore):
             pass
         else:
             # Initialize a set to keep track of unique non-empty keys
-            unique_non_empty_keys = set()
+            unique_non_empty_keys: set[str] = set()
+
 
             # Iterate over each metadata dictionary
             for metadata in metadatas:
@@ -832,11 +833,14 @@ class FalkorDBVector(VectorStore):
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
+    
+    
 
     def add_documents(
         self,
         documents: List[Document],
         ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """
         This function takes List[Document] element(s) and populates
