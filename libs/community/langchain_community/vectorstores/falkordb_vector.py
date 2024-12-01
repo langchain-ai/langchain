@@ -5,7 +5,7 @@ import os
 import random
 import string
 from hashlib import md5
-from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 import redis.exceptions
