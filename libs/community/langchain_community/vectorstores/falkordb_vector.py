@@ -1818,17 +1818,14 @@ class FalkorDBVector(VectorStore):
     ) -> Optional[bool]:  # Return type matches the superclass signature
         """
         This function deletes an item from the store based on the item_id.
-
         Args:
             ids: A list of IDs of the documents to be deleted.
                 If None, deletes all documents.
-        
         Returns:
             Optional[bool]: True if documents were deleted, False otherwise.
         """
         if ids is None:
             raise ValueError("You must provide at least one ID to delete.")
-        
         for id in ids:
             item_id = id
             # Ensure the document exists in the store
@@ -1840,10 +1837,8 @@ class FalkorDBVector(VectorStore):
                 """,
                 params={"item_id": item_id},
             )
-
             if not existing_document:
                 raise ValueError(f"Document with id {item_id} not found in the store.")
-
             # Delete the document node from the store
             self._query(
                 """
@@ -1853,5 +1848,4 @@ class FalkorDBVector(VectorStore):
                 """,
                 params={"item_id": item_id},
             )
-
         return True
