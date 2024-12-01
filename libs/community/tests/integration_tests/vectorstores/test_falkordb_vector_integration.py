@@ -53,11 +53,13 @@ def drop_vector_indexes(store: FalkorDBVector) -> None:
     result = process_index_data(result)
 
     # get all vector indexs entity labels, entity properties, entity_types
-    for index in result:
-        if index["index_type"] == "VECTOR":
-            index_entity_labels.append(index["entity_label"])
-            index_entity_properties.append(index["entity_property"])
-            index_entity_types.append(index["entity_type"])
+    if isinstance(result, list):
+        for index in result:
+            if isinstance(index, dict):
+                if index.get("index_type") == "VECTOR":
+                    index_entity_labels.append(index["entity_label"])
+                    index_entity_properties.append(index["entity_property"])
+                    index_entity_types.append(index["entity_type"])
 
     # drop vector indexs
     for entity_label, entity_property, entity_type in zip(
