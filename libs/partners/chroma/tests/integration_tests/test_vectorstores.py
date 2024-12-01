@@ -161,6 +161,7 @@ async def test_chroma_with_metadatas_with_scores_async(
     await docsearch.adelete_collection()
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
+
 def test_chroma_with_metadatas_with_vectors() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
