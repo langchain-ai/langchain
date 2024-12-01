@@ -360,6 +360,7 @@ class FalkorDBVector(VectorStore):
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         ssl: bool = False,
         pre_delete_collection: bool = False,
+        metadata: List[Any] = []
     ) -> None:
         try:
             import falkordb
@@ -431,7 +432,7 @@ class FalkorDBVector(VectorStore):
             self.retrieval_query = retrieval_query
             self.search_type = search_type
             self._index_type = index_type
-            self.metadata = []
+            self.metadata = metadata
 
             # Calculate embedding_dimensions if not given
             if not embedding_dimension:
@@ -471,11 +472,12 @@ class FalkorDBVector(VectorStore):
         except Exception as e:
             if "Invalid input" in str(e):
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
-        except Exception as e:
             if retry_on_timeout:
                 return self._query(query, params=params, retry_on_timeout=False)
             else:
                 raise e
+        
+        raise RuntimeError("Unhandled error occurred during query execution.")
 
     def retrieve_existing_node_index(
         self, node_label: Optional[str] = ""
@@ -533,7 +535,7 @@ class FalkorDBVector(VectorStore):
                         entity_property = str(dict["entity_property"])
                         break
             if embedding_dimension and entity_type and entity_label and entity_property:
-                self._index_type = entity_type
+                self._index_type = IndexType(entity_type)
                 return embedding_dimension, entity_type, entity_label, entity_property
             else:
                 return None, None, None, None
@@ -689,7 +691,7 @@ class FalkorDBVector(VectorStore):
         self,
         relation_type: str = "",
         embedding_node_property: str = "",
-        embedding_dimension: int = None,
+        embedding_dimension: int = 0,
     ) -> None:
         """
         This method creates an new vector index
@@ -709,7 +711,7 @@ class FalkorDBVector(VectorStore):
             raise ValueError(
                 "`embedding_node_property` must be set to use this function"
             )
-        if embedding_dimension:
+        if embedding_dimension and embedding_dimension != 0:
             pass
         elif self.embedding_dimension:
             embedding_dimension = self.embedding_dimension
