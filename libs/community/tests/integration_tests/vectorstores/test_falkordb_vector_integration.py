@@ -17,14 +17,15 @@ import os
 from math import isclose
 from typing import List
 
+from dotenv import load_dotenv
 from langchain_core.documents import Document
+
 from langchain_community.vectorstores.falkordb_vector import (
     FalkorDBVector,
     SearchType,
     process_index_data,
 )
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -147,7 +148,9 @@ def test_falkordbvector_catch_wrong_node_label() -> None:
         assert type(e) is ValueError
         assert (
             str(e)
-            == "The specified vector index node label `test` does not exist. Make sure to check if you spelled the node label correctly"
+            == ("The specified vector index node label "+
+                "`test` does not exist. Make sure to"+
+                " check if you spelled the node label correctly")
         )
         drop_vector_indexes(docsearch)
 
@@ -400,7 +403,9 @@ def test_falkordbvector_missing_keyword() -> None:
     except Exception as e:
         assert (
             str(e)
-            == f"The specified vector index node label `{node_label}` does not exist. Make sure to check if you spelled the node label correctly"
+            == ("The specified vector index node label "+
+                f"`{node_label}` does not exist. Make sure"+
+                " to check if you spelled the node label correctly")
         )
 
     drop_vector_indexes(docsearch)
