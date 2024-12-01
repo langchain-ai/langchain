@@ -270,6 +270,7 @@ class PromptTemplate(StringPromptTemplate):
         template: str,
         *,
         template_format: PromptTemplateFormat = "f-string",
+        constraints: Optional[str] = None,
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -304,7 +305,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-
+    
         input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 
@@ -313,15 +314,23 @@ class PromptTemplate(StringPromptTemplate):
                 var for var in input_variables if var not in _partial_variables
             ]
         
-        updated_template = template + """
-        Note: 
+        default_constraints = """ Note: 
         1. Do not generate additional user input requests during task execution.
         2. Use only the available tools to perform actions.
         3. If a solution cannot be determined with the given tools or information, respond: 
             "I'm unable to complete this task with the current resources."
         4. Avoid infinite loops by stopping reasoning and returning an appropriate message if progress cannot be made.
-        """
-        
+        """ 
+        updated_template = template + (constraints or default_constraints)
+    
+        input_variables = get_template_variables(updated_template, template_format)
+        _partial_variables = partial_variables or {}
+
+        if _partial_variables:
+            input_variables = [
+                var for var in input_variables if var not in _partial_variables
+            ]
+
 
         return cls(
             input_variables=input_variables,
