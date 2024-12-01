@@ -1,10 +1,10 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain"
-version = "0.3.8"
+version = "0.3.9"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,12 +12,12 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.ruff]
-exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
+exclude = [ "tests/integration_tests/examples/non-utf8-encoding.py",]
 
 [tool.mypy]
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
+exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.codespell]
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
@@ -51,24 +51,16 @@ version = ">=1.26.2,<3"
 python = ">=3.12"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = [ "E", "F", "I", "T201",]
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-markers = [
-    "requires: mark tests as requiring a specific library",
-    "scheduled: mark tests to run in scheduled testing",
-    "compile: mark placeholder test used to compile integration tests without running them",
-]
+markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
-filterwarnings = [
-    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
-    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
-    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
-]
+filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning", "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests", "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",]
 
 [tool.poetry.dependencies.async-timeout]
 version = "^4.0.0"
