@@ -1,7 +1,8 @@
-""" Voice input for Ollama models toolkit"""
+"""Voice input for Ollama models toolkit"""
 
 from langchain_community.tools.ollama_voice_input.tool import (
     SpeechToText,
-    VoiceInputChain)
+    VoiceInputChain,
+)
 
 __all__ = ["SpeechToText", "VoiceInputChain"]

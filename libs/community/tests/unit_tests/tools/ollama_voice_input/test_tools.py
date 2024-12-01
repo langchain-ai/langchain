@@ -1,11 +1,14 @@
-""" Tests for VoiceInputChain & SpeechToText module. """
+"""Tests for VoiceInputChain & SpeechToText module."""
 
-from unittest.mock import Mock, patch
 from pathlib import Path
+from unittest.mock import Mock, patch
+
 import pytest
 from langchain_core.documents import Document
 from langchain_core.documents.base import Blob
+
 from langchain_community.tools.ollama_voice_input import SpeechToText, VoiceInputChain
+
 # Replace `module_name` with the actual module name
 
 _THIS_DIR = Path(__file__).parents[3]
@@ -14,12 +17,14 @@ _EXAMPLES_DIR = _THIS_DIR / "examples"
 AUDIO_M4A = _EXAMPLES_DIR / "hello_world.m4a"
 LONG_AUDIO = _EXAMPLES_DIR / "long_audio.wav"
 
+
 # test no audio
 def test_no_audio() -> None:
     """Test that an error is raised when no audio input is provided."""
     with pytest.raises(ValueError):
         parser = SpeechToText()
         SpeechToText().lazy_parse(parser.audio_blob)
+
 
 # test short audio
 @pytest.mark.requires("openai")
@@ -34,6 +39,7 @@ def test_short_audio_transcription() -> None:
     assert isinstance(result[0], Document)
     assert result[0].page_content == "Hello world!"
 
+
 # test long audio
 @pytest.mark.requires("openai")
 def test_long_audio_transcription() -> None:
@@ -45,6 +51,7 @@ def test_long_audio_transcription() -> None:
 
     assert len(result) > 1
     assert all(isinstance(doc, Document) for doc in result)
+
 
 # test VoiceInputChain run on audio input (short)
 @pytest.mark.requires("openai")
