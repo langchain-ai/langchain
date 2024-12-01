@@ -339,9 +339,7 @@ if TYPE_CHECKING:
         ZapierNLAListActions,
         ZapierNLARunAction,
     )
-    from langchain_community.tools.fallback import (
-        FallbackTool
-    )
+
     from langchain_community.tools.zenguard.tool import (
         Detector,
         ZenGuardInput,
@@ -406,7 +404,6 @@ __all__ = [
     "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
-    "FallbackTool",
     "FileSearchTool",
     "GetElementsTool",
     "GmailCreateDraft",
