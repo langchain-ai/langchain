@@ -1820,7 +1820,7 @@ class FalkorDBVector(VectorStore):
         This function deletes an item from the store based on the item_id.
 
         Args:
-            ids: A list of IDs of the documents to 
+            ids: A list of IDs of the documents to
             be deleted. If None, deletes all documents.
         
         Returns:
