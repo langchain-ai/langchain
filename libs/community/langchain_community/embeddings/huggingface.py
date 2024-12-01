@@ -324,9 +324,18 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence_transformers`."
             ) from exc
-
+        extra_model_kwargs_dict = {}
+        extra_model_kwargs = ["torch_dtype","attn_implementation","eager,provider",
+                              "file_name","export"]
+        for extra_model_kwarg in extra_model_kwargs:
+            if extra_model_kwarg in self.model_kwargs:
+                extra_model_kwargs_dict[extra_model_kwarg] = self.model_kwargs[extra_model_kwarg]
+                del self.model_kwargs[extra_model_kwarg]
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            self.model_name,
+            cache_folder=self.cache_folder,
+            **self.model_kwargs,
+            model_kwargs=extra_model_kwargs_dict
         )
 
         if "-zh" in self.model_name:
