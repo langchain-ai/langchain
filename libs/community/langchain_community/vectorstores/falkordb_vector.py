@@ -360,7 +360,7 @@ class FalkorDBVector(VectorStore):
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         ssl: bool = False,
         pre_delete_collection: bool = False,
-        metadata: List[Any] = []
+        metadata: List[Any] = [],
     ) -> None:
         try:
             import falkordb
