@@ -476,8 +476,6 @@ class FalkorDBVector(VectorStore):
                 return self._query(query, params=params, retry_on_timeout=False)
             else:
                 raise e
-        
-        raise RuntimeError("Unhandled error occurred during query execution.")
 
     def retrieve_existing_node_index(
         self, node_label: Optional[str] = ""
