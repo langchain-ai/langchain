@@ -147,3 +147,6 @@ packages:
   - name: langchain-tests
     repo: langchain-ai/langchain
     path: libs/standard-tests
+  - name: langchain-neo4j
+    repo: langchain-ai/langchain-neo4j
+    path: libs/neo4j

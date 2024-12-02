@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.structured_query import (
     Comparator,
     Comparison,
@@ -10,6 +11,11 @@ from langchain_core.structured_query import (
 )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.query_constructors.neo4j.Neo4jTranslator",
+)
 class Neo4jTranslator(Visitor):
     """Translate `Neo4j` internal query language elements to valid filters."""
 
