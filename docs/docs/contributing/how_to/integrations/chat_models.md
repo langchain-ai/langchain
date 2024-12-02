@@ -1,6 +1,6 @@
 ---
 pagination_next: contributing/how_to/integrations/publish/
-pagination_prev: contributing/how_to/integrations/#component-specific-guides
+pagination_prev: contributing/how_to/integrations/
 ---
 # How to implement and test a chat model integration
 
