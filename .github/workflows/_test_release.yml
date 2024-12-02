@@ -14,7 +14,7 @@ on:
         description: "Release from a non-master branch (danger!)"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.10"
 
 jobs:

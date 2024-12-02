@@ -13,7 +13,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
