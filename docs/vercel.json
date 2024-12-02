@@ -113,6 +113,10 @@
     {
       "source": "/docs/contributing/:path((?:faq|repo_structure|review_process)/?)",
       "destination": "/docs/contributing/reference/:path"
+    },
+    {
+      "source": "/docs/contributing/how_to/integrations/standard_tests(/?)",
+      "destination": "/docs/contributing/how_to/integrations/#standard-tests"
     }
   ]
 }
