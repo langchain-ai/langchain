@@ -190,7 +190,7 @@ export default function ChatModelTabs(props) {
     {
       value: "Databricks",
       label: "Databricks",
-      text: `from databricks_langchain import ChatDatabricks\n\n$os.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n{llmVarName} = ChatDatabricks(${databricksParamsOrDefault})`,
+      text: `from databricks_langchain import ChatDatabricks\n\n$os.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(${databricksParamsOrDefault})`,
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
       default: false,
