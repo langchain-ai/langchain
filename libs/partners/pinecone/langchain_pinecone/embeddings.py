@@ -33,7 +33,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
 
     # Clients
     _client: PineconeClient = PrivateAttr(default=None)
-    _async_client: aiohttp.ClientSession = PrivateAttr(default=None)
+    _async_client: aiohttp.ClientSession = PrivateAttr(default=aiohttp.ClientSession())
     model: str
     """Model to use for example 'multilingual-e5-large'."""
     # Config
