@@ -1,0 +1,41 @@
+services:
+
+  integration_tests:
+    image: integration_tests
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - weaviate
+    volumes:
+      - .:/app
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      COHERE_API_KEY: $COHERE_API_KEY
+      OPENAI_API_KEY: $OPENAI_API_KEY
+      WEAVIATE_HOST: weaviate
+      WEAVIATE_PORT: 8080
+      WEAVIATE_AUTHENTICATION_ENABLED: true
+  
+  weaviate:
+    image: semitechnologies/weaviate:latest
+    restart: on-failure
+    working_dir: /app
+    hostname: weaviate
+    ports:
+      - 8080:8080
+    volumes:
+      - .:/app
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      CLUSTER_HOSTNAME: 'node1'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
+      ENABLE_MODULES: 'text2vec-openai'
+      LOG_LEVEL: 'warn'
+      OPENAI_API_KEY: '${OPENAI_API_KEY}'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      QUERY_DEFAULTS_LIMIT: 25
+
