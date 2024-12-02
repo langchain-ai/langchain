@@ -1,6 +1,6 @@
 ---
 pagination_next: contributing/how_to/integrations/publish/
-pagination_prev: contributing/how_to/integrations/
+pagination_prev: null
 ---
 # How to implement and test a chat model integration
 
