@@ -9,6 +9,7 @@ from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Iterable,
     Literal,
     Optional,
@@ -138,6 +139,7 @@ class VDMS(VectorStore):
         collection_name: str = DEFAULT_COLLECTION_NAME,
         engine: ENGINES = "FaissFlat",
         distance_strategy: DISTANCE_METRICS = "L2",
+        relevance_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> None:
         self.collection_name = collection_name
@@ -150,6 +152,7 @@ class VDMS(VectorStore):
         self.utils = VDMS_Utils(client)
         self._check_required_inputs(collection_name, embedding_dimensions, **kwargs)
         self.updated_properties_flag = False
+        self.override_relevance_score_fn = relevance_score_fn
         self._add_set()
 
     """ FUNCTIONS TO OVERRIDE VectorStore METHODS """
@@ -199,7 +202,13 @@ class VDMS(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self.embedding
 
-    def batch_delete(self, collection_name, constraints, ids, batch_size=100):
+    def batch_delete(
+        self,
+        collection_name: str,
+        constraints: dict,
+        ids: Optional[list[str]] = None,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+    ) -> list:
         resp_dict: dict = {}
         resp_dict.setdefault(
             "FindDescriptor", {"entities": list(), "returned": 0, "status": 0}
@@ -208,14 +217,19 @@ class VDMS(VectorStore):
             # {"FindDescriptor": {"returned": 0, "status": 0, "entities": []}}
             resp_dict
         ]
+
+        if ids is None:
+            return new_response
+
         for start_idx in range(0, len(ids), batch_size):
             end_idx = min(start_idx + batch_size - 1, len(ids))
             batch_ids = ids[start_idx:end_idx]
 
             all_queries = []
             for i in batch_ids:
-                tmp_ = {"id": ["==", i]}
-                tmp_.update(constraints)
+                tmp_ = {LANGCHAIN_ID_PROPERTY: ["==", i]}
+                if constraints is not None:
+                    tmp_.update(constraints)
 
                 query = self.utils.add_descriptor(
                     "FindDescriptor",
@@ -230,11 +244,18 @@ class VDMS(VectorStore):
                 )
 
                 all_queries.append(query)
+
+            if all_queries == []:
+                return new_response
+
             response, _ = self.utils.run_vdms_query(all_queries)
 
-            new_response[0]["FindDescriptor"]["entities"].extend(
-                response[0]["FindDescriptor"]["entities"]
-            )
+            for res in response:
+                if "FindDescriptor" in res:
+                    new_response[0]["FindDescriptor"]["entities"].extend(
+                        res["FindDescriptor"]["entities"]
+                    )
+
         new_response[0]["FindDescriptor"]["returned"] = len(
             new_response[0]["FindDescriptor"]["entities"]
         )
@@ -263,7 +284,12 @@ class VDMS(VectorStore):
         else:
             constraints = {"_deletion": ["==", 1]}
 
-        response = self.batch_delete(collection_name, constraints, ids, batch_size=DEFAULT_INSERT_BATCH_SIZE)
+        response = self.batch_delete(
+            collection_name,
+            constraints,
+            ids,
+            batch_size=kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE),
+        )
 
         # Update/store indices after deletion
         query = self.utils.add_descriptor_set(
@@ -325,8 +351,11 @@ class VDMS(VectorStore):
         Args:
             documents: Documents to add to the vectorstore.
             kwargs: Additional keyword arguments.
-                if kwargs contains ids and documents contain ids,
-                the ids in the kwargs will receive precedence.
+                - if kwargs contains ids and documents contain ids,
+                    the ids in the kwargs will receive precedence.
+                - "delete_existing" will delete matching ids prior to adding
+                    new document with same id (True); else add with duplicate
+                    id (False) [Default: True]
 
         Returns:
             List of IDs of the added texts.
@@ -335,6 +364,7 @@ class VDMS(VectorStore):
             ValueError: If the number of ids does not match the number of documents.
         """
         # GET IDS & FORMAT DOCUMENTS
+        delete_existing: bool = kwargs.pop("delete_existing", True)
         ids = None
         if "ids" in kwargs:
             # Get IDs
@@ -369,11 +399,26 @@ class VDMS(VectorStore):
                     ids.append(str(uuid.uuid4()))
 
         # Remove IDs if exist-TEST_REMOVAL
-        self.delete(ids=ids, **kwargs)
+        remove_ids = [doc.id for doc in self.get_by_ids(ids) if doc.id]
+        if len(remove_ids) > 0:
+            if delete_existing:
+                self.delete(ids=remove_ids, **kwargs)
+                remove_ids = []
+            else:
+                pstr = "[!] Embeddings skipped for following ids because "
+                pstr += f"already exists: {remove_ids}\nCan retry with "
+                pstr += "'delete_existing' set to True"
+                logger.info(pstr)
+        valid_ids = []
+        texts = []
+        metadatas = []
+        for id, doc in zip(ids, documents_):
+            if id not in remove_ids:
+                valid_ids.append(id)
+                texts.append(doc.page_content)
+                metadatas.append(doc.metadata)
 
-        kwargs["ids"] = ids
-        texts = [doc.page_content for doc in documents_]
-        metadatas = [doc.metadata for doc in documents_]
+        kwargs["ids"] = valid_ids
         return self.add_texts(texts, metadatas, **kwargs)
 
     @override
@@ -452,7 +497,9 @@ class VDMS(VectorStore):
             filter=filter,
             **kwargs,
         )
-        logger.info(f"VDMS similarity search took {time.time() - start_time} seconds")
+        logger.info(
+            f"VDMS similarity search took {time.time() - start_time:0.4f} seconds"
+        )
 
         final_docs = []
         for this_result in results:
@@ -479,8 +526,11 @@ class VDMS(VectorStore):
         **kwargs: Any,
     ) -> list[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        if self.override_relevance_score_fn is None:
-            kwargs["normalize_distance"] = True
+        if self.override_relevance_score_fn is not None:
+            kwargs["normalize_distance"] = False
+        # else:
+        #     kwargs["normalize_distance"] = True
+
         docs_and_scores = self.similarity_search_with_score(
             query=query,
             k=k,
@@ -526,7 +576,6 @@ class VDMS(VectorStore):
         Returns:
             List of Document objects ordered by decreasing similarity/diversty.
         """
-        logger.info(f"Max Marginal Relevance search for query: {query}")
         query_embedding = self.get_embedding_from_query(query)
         return self.max_marginal_relevance_search_by_vector(
             query_embedding, k, fetch_k, lambda_mult, filter, **kwargs
@@ -585,7 +634,7 @@ class VDMS(VectorStore):
             )
 
             logger.info(
-                f"VDMS similarity search mmr took {time.time() - start_time} seconds"
+                f"VDMS similarity search mmr took {time.time() - start_time:0.4f} secs"
             )
             candidates = self.results2docs(results)
             return [r for i, r in enumerate(candidates) if i in mmr_selected]
@@ -633,6 +682,7 @@ class VDMS(VectorStore):
         texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[list[dict]] = None,
+        *,
         ids: Optional[list[str]] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         **kwargs: Any,
@@ -647,11 +697,15 @@ class VDMS(VectorStore):
             ids: Optional list of IDs associated with the texts.
             collection_name (str): Name of the collection to create.
             kwargs: Additional keyword arguments.
+                - "delete_existing" will delete matching ids prior to adding
+                    new document with same id (True); else add with duplicate
+                    id (False) [Default: True]
 
         Returns:
             VectorStore: VectorStore initialized from texts and embeddings.
         """
         client: vdms.vdms = kwargs.pop("client")
+        delete_existing: bool = kwargs.pop("delete_existing", True)
 
         if "batch_size" not in kwargs:
             kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
@@ -666,10 +720,35 @@ class VDMS(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
 
+        metadatas = metadatas if metadatas is not None else [{} for _ in ids]
+        vdms_store._len_check_if_sized(ids, texts, "ids", "texts")
+        vdms_store._len_check_if_sized(ids, metadatas, "ids", "metadatas")
+
+        # Remove IDs if exist-TEST_REMOVAL
+        remove_ids = [doc.id for doc in vdms_store.get_by_ids(ids) if doc.id]
+        if len(remove_ids) > 0:
+            if delete_existing:
+                vdms_store.delete(ids=remove_ids, **kwargs)
+                remove_ids = []
+            else:
+                pstr = "[!] Embeddings skipped for following ids because "
+                pstr += f"already exists: {remove_ids}. Retry with "
+                pstr += "'delete_existing' set to True"
+                logger.info(pstr)
+
+        valid_ids = []
+        valid_texts = []
+        valid_metadatas = []
+        for id, txt, meta in zip(ids, texts, metadatas):
+            if id not in remove_ids:
+                valid_ids.append(id)
+                valid_texts.append(txt)
+                valid_metadatas.append(meta)
+
         vdms_store.add_texts(
-            texts=texts,
-            metadatas=metadatas,
-            ids=ids,
+            texts=valid_texts,
+            metadatas=valid_metadatas,
+            ids=valid_ids,
             **kwargs,
         )
         return vdms_store
@@ -831,11 +910,14 @@ class VDMS(VectorStore):
         self._len_check_if_sized(ids, metadatas, "ids", "metadatas")
 
         # Find and delete by ID
-        self.delete(ids=ids)
+        remove_ids = [doc.id for doc in self.get_by_ids(ids) if doc.id]
+        if len(remove_ids) > 0:
+            self.delete(ids=remove_ids)
 
         # Add as batch
         if "batch_size" not in kwargs:
             kwargs["batch_size"] = DEFAULT_INSERT_BATCH_SIZE
+
         _ = self.add_from(
             texts=texts,
             embeddings=embeddings,
@@ -905,7 +987,7 @@ class VDMS(VectorStore):
 
         try:
             return ids if response[0]["AddDescriptor"]["status"] == 0 else []
-        except:
+        except Exception:
             if "OutOfJournalSpace" in response[0]["info"]:
                 try:
                     logger.info("OutOfJournalSpace: Splitting batch in half")
@@ -974,7 +1056,6 @@ class VDMS(VectorStore):
         inserted_ids: list[str] = []
         batch_size = int(kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE))
         total_count = len(texts)
-        # start_time = time.time()
 
         for start_idx in range(0, total_count, batch_size):
             end_idx = min(start_idx + batch_size - 1, total_count)
@@ -1192,7 +1273,7 @@ class VDMS(VectorStore):
         constraints: Optional[dict] = None,
         limit: Optional[int] = None,
         include: list[str] = ["metadata"],
-    ) -> Tuple[Any, Any]:
+    ) -> list:
         """Gets the collection.
         Get embeddings and their associated data from the data store.
         If no constraints provided returns all embeddings up to limit.
@@ -1232,8 +1313,15 @@ class VDMS(VectorStore):
 
         all_queries.append(query)
 
-        response, response_array = self.utils.run_vdms_query(all_queries, all_blobs)
-        return response, response_array
+        response, _ = self.utils.run_vdms_query(all_queries, all_blobs)
+
+        if "FindDescriptor" in response[0]:
+            this_docs = [
+                self.descriptor2document(doc)
+                for doc in response[0]["FindDescriptor"].get("entities", [])
+            ]
+            return this_docs
+        return []
 
     def get_embedding_from_query(self, query: str) -> list[float]:
         if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):
@@ -1344,7 +1432,7 @@ class VDMS(VectorStore):
             )
 
             logger.info(
-                f"VDMS similarity search mmr took {time.time() - start_time} seconds"
+                f"VDMS similarity search mmr took {time.time() - start_time:0.4f} secs"
             )
             candidates = self.results2docs_and_scores(results)
             return [(r, s) for i, (r, s) in enumerate(candidates) if i in mmr_selected]
@@ -1375,7 +1463,6 @@ class VDMS(VectorStore):
         Returns:
             List of Document objects ordered by decreasing similarity/diversty.
         """
-        logger.info(f"Max Marginal Relevance search for query: {query}")
         query_embedding = self.get_embedding_from_query(query)
         return self.max_marginal_relevance_search_by_vector_with_score(
             query_embedding, k, fetch_k, lambda_mult, filter, **kwargs
@@ -1431,8 +1518,10 @@ class VDMS(VectorStore):
                     else 0
                 )
                 if num_returned != k:
-                    print(f"# returned: {num_returned}")
-                    print(f"Provide fetch_k > k ({k}); Currently set at {fetch_k}")
+                    logger.info(
+                        f"Only {num_returned} returned. "
+                        "Provide fetch_k > k ({k}); Currently set at {fetch_k}"
+                    )
                 result_entities = response[0]["FindDescriptor"].get("entities", [])
             except ValueError:
                 result_entities = []
@@ -1499,21 +1588,8 @@ class VDMS(VectorStore):
             ids (list[str]): List of ids of the document to update.
             documents (list[Document]): List of documents to update.
         """
-        texts: list[str] = [document.page_content for document in documents]
-        metadata = [
-            self.utils.validate_vdms_properties(document.metadata)
-            for document in documents
-        ]
-        embeddings = self._embed_documents(texts)
-
-        self.update(
-            collection_name,
-            ids,
-            texts=texts,
-            embeddings=embeddings,
-            metadatas=metadata,
-            **kwargs,
-        )
+        kwargs["delete_existing"] = True
+        self.add_documents(documents=documents, ids=ids, **kwargs)
 
     def upsert(self, documents: list[Document], /, **kwargs: Any) -> list[str] | None:
         """Update/Insert documents to the vectorstore.
@@ -1528,7 +1604,7 @@ class VDMS(VectorStore):
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
-        ids: Sequence[str]
+        ids: list[str]
 
         if documents is None or len(documents) == 0:
             logger.debug("No documents to upsert.")
@@ -1548,14 +1624,10 @@ class VDMS(VectorStore):
                 if hasattr(item, "id") and item.id is not None
             ]
 
-        if ids is not None and len(ids):
-            kwargs["ids"] = ids
-            try:
-                # Remove IDs if exist-TEST_REMOVAL
-                self.delete(ids=ids)
-            except Exception:
-                pass
         try:
+            if ids is not None and len(ids):
+                kwargs["ids"] = ids
+            kwargs["delete_existing"] = True
             return self.add_documents(documents=documents, **kwargs)
         except Exception as e:
             logger.error(

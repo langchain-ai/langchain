@@ -7,7 +7,7 @@ import os
 import uuid
 
 import pytest
-from langchain_standard_tests.integration_tests.vectorstores import (
+from langchain_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
@@ -17,11 +17,9 @@ from langchain_community.vectorstores.vdms import VDMS, VDMS_Client
 logging.basicConfig(level=logging.DEBUG)
 
 
-# The connection string matches the default settings in the docker-compose file
-# located in the root of the repository: [root]/docker/docker-compose.yml
 # To spin up a detached VDMS server:
-# cd [root]/docker
-# docker compose up -d vdms
+# docker pull intellabs/vdms:latest
+# docker run -d -p $VDMS_DBPORT:55555 intellabs/vdms:latest
 
 
 class TestVDMSReadWriteTestSuite(ReadWriteTestSuite):
@@ -33,7 +31,9 @@ class TestVDMSReadWriteTestSuite(ReadWriteTestSuite):
             port=int(os.getenv("VDMS_DBPORT", 6025)),
         )
         return VDMS(
-            client=client, embedding=self.get_embeddings(), collection_name=test_name
+            client=client,
+            embedding=self.get_embeddings(),
+            collection_name=test_name,
         )
 
 
@@ -46,5 +46,7 @@ class TestAsyncVDMSReadWriteTestSuite(AsyncReadWriteTestSuite):
             port=int(os.getenv("VDMS_DBPORT", 6025)),
         )
         return VDMS(
-            client=client, embedding=self.get_embeddings(), collection_name=test_name
+            client=client,
+            embedding=self.get_embeddings(),
+            collection_name=test_name,
         )
