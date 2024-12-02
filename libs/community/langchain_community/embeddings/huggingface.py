@@ -328,7 +328,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         extra_model_kwargs = [
             "torch_dtype",
             "attn_implementation",
-            "eager,provider",
+            "provider",
             "file_name",
             "export",
         ]
