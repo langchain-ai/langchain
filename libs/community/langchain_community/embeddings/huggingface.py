@@ -322,7 +322,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
+                "Please install it with `pip install sentence-transformers`."
             ) from exc
         extra_model_kwargs = [
             "torch_dtype",
