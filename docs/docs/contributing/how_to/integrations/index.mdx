@@ -64,12 +64,23 @@ While any component can be integrated into LangChain, there are specific types o
 In order to contribute an integration, you should follow these steps:
 
 1. Confirm that your integration is in the [list of components](#components-to-integrate) we are currently encouraging.
-2. Implement your integration
-3. Implement the standard tests ([see below](#standard-tests)) for your integration and successfully run them.
-4. Publish your integration in a Python package to PyPi.
+2. [Bootstrap your integration](/docs/contributing/how_to/integrations/package/).
+3. Implement and test your integration following the [component-specific guides](#component-specific-guides).
+4. [Publish your integration](/docs/contributing/how_to/integrations/publish/) in a Python package to PyPi.
 5. [Optional] Open and merge a PR to add documentation for your integration to the official LangChain docs.
 6. [Optional] Engage with the LangChain team for joint co-marketing ([see below](#co-marketing)).
 
+## Component-specific guides
+
+The guides below walk you through both implementing and testing specific components:
+
+- [Chat Models](/docs/contributing/how_to/integrations/chat_models)
+- [Tools]
+- [Toolkits]
+- [Retrievers]
+- [Document Loaders]
+- [Vector Stores]
+- [Embedding Models]
 
 ## Standard Tests
 
@@ -81,17 +92,7 @@ These standard tests help maintain compatibility between different components an
 
 **Integration Tests**: Integration tests validate that multiple components or systems work together as expected. For tools or integrations relying on external services, these tests often ensure end-to-end functionality.
 
-Each type of integration has its own set of standard tests. Please see the correct guide for setting up standard tests for your integration:
-
-- [Chat Models]
-- [Tools]
-- [Toolkits]
-- [Retrievers]
-- [Document Loaders]
-- [Retrievers]
-- [Document Loaders]
-- [Vector Stores]
-- [Embedding Models]
+Each type of integration has its own set of standard tests. Please see the relevant [component-specific guide](#component-specific-guides) for details on testing your integration.
 
 ## Co-Marketing
 
