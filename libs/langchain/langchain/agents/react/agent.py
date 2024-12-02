@@ -7,11 +7,9 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
+
 from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
-import logging
-
-logger = logging.getLogger(__name__)
 
 def create_react_agent(
     llm: BaseLanguageModel,
@@ -127,7 +125,11 @@ def create_react_agent(
         tool_names=", ".join([t.name for t in tools]),
     )
     if stop_sequence:
-        stop = ["\nObservation", "Final Answer:"] if stop_sequence is True else stop_sequence
+        stop = (
+            ["\nObservation", "Final Answer:"] 
+            if stop_sequence is True
+            else stop_sequence
+        )
         llm_with_stop = llm.bind(stop=stop)
     else:
         llm_with_stop = llm
@@ -160,5 +162,4 @@ def create_react_agent(
         | llm_with_stop
         | output_parser
     )
-    logger.info("Agent created with tools: %s", [t.name for t in tools])
     return agent

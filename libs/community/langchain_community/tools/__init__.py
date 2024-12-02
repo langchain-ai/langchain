@@ -324,7 +324,7 @@ if TYPE_CHECKING:
         WikipediaQueryRun,
     )
     from langchain_community.tools.wolfram_alpha.tool import (
-        WolframAlphaQueryRun,                                                                                                                                                                                                                                
+        WolframAlphaQueryRun,
     )
     from langchain_community.tools.yahoo_finance_news import (
         YahooFinanceNewsTool,
@@ -556,7 +556,6 @@ _module_lookup = {
     "ElevenLabsText2SpeechTool": "langchain_community.tools.eleven_labs.text2speech",
     "ExtractHyperlinksTool": "langchain_community.tools.playwright",
     "ExtractTextTool": "langchain_community.tools.playwright",
-    "FallbackTool": "langchain_community.tools.fallback",
     "FileSearchTool": "langchain_community.tools.file_management",
     "GetElementsTool": "langchain_community.tools.playwright",
     "GmailCreateDraft": "langchain_community.tools.gmail",
