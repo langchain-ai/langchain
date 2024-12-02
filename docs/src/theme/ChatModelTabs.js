@@ -121,7 +121,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "AWS",
-      label: "AWS",
+      label: "Amazon Bedrock",
       text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
       apiKeyText: "# Ensure your AWS credentials are configured",
       packageName: "langchain-aws",
