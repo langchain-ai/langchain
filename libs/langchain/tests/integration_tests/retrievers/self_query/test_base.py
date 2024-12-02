@@ -1,8 +1,8 @@
 """Integration testing of retrievers/self_query/base.py
 
 # Launch the Weaviate container
-docker compose up --build weaviate 
-pytest -sv tests/integration_tests/retrievers/self_query/test_base.py::test_weaviate 
+docker compose up --build weaviate
+pytest -sv tests/integration_tests/retrievers/self_query/test_base.py::test_weaviate
 
 """
 
@@ -13,8 +13,7 @@ from langchain.retrievers.self_query import base as B
 
 @pytest.mark.requires("langchain_openai", "langchain_weaviate")
 def test_weaviate() -> None:
-    """Test SelfQueryRetriever with Weaviate V4
-    """
+    """Test SelfQueryRetriever with Weaviate V4"""
 
     import weaviate
     from langchain_openai import ChatOpenAI, OpenAIEmbeddings
