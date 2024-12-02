@@ -7,15 +7,11 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
-
+from langchain.agents import AgentOutputParser
+from langchain.agents.format_scratchpad import format_log_to_str
 import logging
 
 logger = logging.getLogger(__name__)
-
-from langchain.agents import AgentOutputParser
-from langchain.agents.format_scratchpad import format_log_to_str
-from langchain.agents.output_parsers import ReActSingleInputOutputParser
-
 
 def create_react_agent(
     llm: BaseLanguageModel,
@@ -149,7 +145,9 @@ def create_react_agent(
                 raise ValueError("Detected repetitive reasoning. Terminating.")
             
             reasoning_history.append(text)
-            setattr(self, "_reasoning_history", reasoning_history[-3:])  # Keep last 3 outputs
+            
+            # Keep last 3 outputs
+            setattr(self, "_reasoning_history", reasoning_history[-3:])
 
             return super().parse(text)
 
