@@ -206,7 +206,7 @@ class ChatParrotLink(BaseChatModel):
 ```
 </details>
 
-::tip
+:::tip
 
 The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
 against the standard unit and integration tests in the LangChain Github repository.
@@ -236,8 +236,8 @@ If you followed the previous [bootstrapping guide](/docs/contributing/how_to/int
 ### Add and configure standard tests
 There are two namespaces in the langchain-tests package:
 
-[unit tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.unit_tests`): designed to be used to test the component in isolation and without access to external services
-[integration tests](../../../concepts/testing.mdx#integration-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
+- [Unit tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.unit_tests`): designed to be used to test the component in isolation and without access to external services
+- [Integration tests](../../../concepts/testing.mdx#integration-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
 
 Both types of tests are implemented as [pytest class-based test suites](https://docs.pytest.org/en/7.1.x/getting-started.html#group-multiple-tests-in-a-class).
 
