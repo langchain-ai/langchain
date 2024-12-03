@@ -135,7 +135,7 @@ def create_react_agent(
     class CustomReActOutputParser(ReActSingleInputOutputParser):
         def parse(self, text: str) -> str:
             if "iteration limit exceeded" in text.lower():
-                return {"error": "Agent terminated due to iteration limit."}
+                raise ValueError("Agent terminated due to iteration limit."}
 
             reasoning_history = getattr(self, "_reasoning_history", [])
             if text in reasoning_history:
