@@ -79,10 +79,22 @@ def my_adder(a: int, b: int) -> int:
 class ChatModelTests(BaseStandardTests):
     @property
     @abstractmethod
-    def chat_model_class(self) -> Type[BaseChatModel]: ...
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        """The chat model class to test, e.g., `ChatParrotLink`."""
+        ...
 
     @property
     def chat_model_params(self) -> dict:
+        """Initialization parameters for the chat model.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def chat_model_params(self) -> dict:
+                return {"model": "bird-brain-001", "temperature": 0}
+        """
         return {}
 
     @property
@@ -103,15 +115,53 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def has_tool_calling(self) -> bool:
+        """Boolean property indicating whether the chat model supports tool calling.
+
+        By default, this is determined by whether the chat model's `bind_tools` method
+        is overridden. It typically does not need to be overridden on the test class.
+        """
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
     def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
+        """Value to use for tool choice when used in tests.
+
+        Some tests for tool calling features attempt to force tool calling via a
+        `tool_choice` parameter. A common value for this parameter is "any". Defaults
+        to `None`.
+
+        Note: if the value is set to "tool_name", the name of the tool used in each
+        test will be set as the value for `tool_choice`.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def tool_choice_value(self) -> Optional[str]:
+                return "any"
+        """
         return None
 
     @property
     def has_structured_output(self) -> bool:
+        """Boolean property indicating whether the chat model supports structured
+        output.
+
+        By default, this is determined by whether the chat model's
+        `with_structured_output` method is overridden. If the base implementation is
+        intended to be used, this method should be overridden.
+
+        See: https://python.langchain.com/docs/concepts/structured_outputs/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def has_structured_output(self) -> bool:
+                return True
+        """
         return (
             self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
@@ -119,22 +169,118 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_inputs(self) -> bool:
+        """Boolean property indicating whether the chat model supports image inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the form
+
+        .. code-block:: python
+
+            [
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ]
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_image_inputs(self) -> bool:
+                return True
+        """
         return False
 
     @property
     def supports_video_inputs(self) -> bool:
+        """Boolean property indicating whether the chat model supports image inputs.
+        Defaults to ``False``. No current tests are written for this feature."""
         return False
 
     @property
     def returns_usage_metadata(self) -> bool:
+        """Boolean property indicating whether the chat model returns usage metadata
+        on invoke and streaming responses.
+
+        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
+        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def returns_usage_metadata(self) -> bool:
+                return False
+        """  # noqa: E501
         return True
 
     @property
     def supports_anthropic_inputs(self) -> bool:
+        """Boolean property indicating whether the chat model supports Anthropic-style
+        inputs.
+
+        These inputs might feature "tool use" and "tool result" content blocks, e.g.,
+
+        .. code-block:: python
+
+            [
+                {"type": "text", "text": "Hmm let me think about that"},
+                {
+                    "type": "tool_use",
+                    "input": {"fav_color": "green"},
+                    "id": "foo",
+                    "name": "color_picker",
+                },
+            ]
+
+        If set to ``True``, the chat model will be tested using content blocks of this
+        form.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_anthropic_inputs(self) -> bool:
+                return False
+        """
         return False
 
     @property
     def supports_image_tool_message(self) -> bool:
+        """Boolean property indicating whether the chat model supports ToolMessages
+        that include image content, e.g.,
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        If set to ``True``, the chat model will be tested with message sequences that
+        include ToolMessages of this form.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_image_tool_message(self) -> bool:
+                return False
+        """
         return False
 
     @property
@@ -152,6 +298,18 @@ class ChatModelTests(BaseStandardTests):
             ]
         ],
     ]:
+        """Property controlling what usage metadata details are emitted in both invoke
+        and stream.
+
+        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
+        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+
+        It includes optional keys ``input_token_details`` and ``output_token_details``
+        that can track usage details associated with special types of tokens, such as
+        cached, audio, or reasoning.
+
+        Only needs to be overridden if these details are supplied.
+        """  # noqa: E501
         return {"invoke": [], "stream": []}
 
 
