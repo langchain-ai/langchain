@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence, Union
 
+from langchain_core.agents import AgentAction, AgentFinish
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
 
-from langchain.agents import AgentAction, AgentFinish, AgentOutputParser
+from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
 
@@ -139,6 +141,7 @@ def create_react_agent(
             reasoning_history = getattr(self, "_reasoning_history", [])
             if text in reasoning_history:
                 raise ValueError("Detected repetitive reasoning. Terminating.")
+
             reasoning_history.append(text)
 
             setattr(self, "_reasoning_history", reasoning_history[-3:])
