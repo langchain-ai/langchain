@@ -10,7 +10,6 @@ import os
 import uuid
 from typing import (
     TYPE_CHECKING,
-    TypedDict,
     Any,
     Callable,
     Dict,
@@ -19,6 +18,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -73,7 +73,7 @@ def _generate_condition(condition: FilterCondition) -> str:
     oper = _convert_oper_to_sql(condition["oper"])
     value = condition["value"]
     if isinstance(value, str):
-        value = f'"{value}"'  # Enclose the value in double quotes for SQL string literals
+        value = f'"{value}"'  # Enclose value in double quotes for SQL string literals
     return f"JSON_EXISTS(metadata, '$.{key}?(@ {oper} {value})')"
 
 
