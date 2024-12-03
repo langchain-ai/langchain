@@ -137,14 +137,12 @@ def create_react_agent(
             if "iteration limit exceeded" in text.lower():
                 return {"error": "Agent terminated due to iteration limit."}
 
-            # Detect repetitive reasoning or circular loops
             reasoning_history = getattr(self, "_reasoning_history", [])
             if text in reasoning_history:
                 raise ValueError("Detected repetitive reasoning. Terminating.")
-            
+
             reasoning_history.append(text)
-            
-            # Keep last 3 outputs
+
             setattr(self, "_reasoning_history", reasoning_history[-3:])
 
             return super().parse(text)
