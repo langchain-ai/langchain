@@ -24,6 +24,8 @@ from typing import (
     cast,
 )
 
+from numpy.typing import NDArray
+
 if TYPE_CHECKING:
     from oracledb import Connection
 
@@ -54,18 +56,15 @@ class FilterCondition(TypedDict):
     oper: str
     value: str
 
-class FilterGroup(TypedDict):
-    _and: List[Union[FilterCondition, 'FilterGroup']]  # Use _and instead of and
-    _or: List[Union[FilterCondition, 'FilterGroup']]   # Use _or instead of or
+
+class FilterGroup(TypedDict, total=False):
+    _and: Optional[List[Union["FilterCondition", "FilterGroup"]]]
+    _or: Optional[List[Union["FilterCondition", "FilterGroup"]]]
+
 
 def _convert_oper_to_sql(oper: str) -> str:
     oper_map = {"EQ": "==", "GT": ">", "LT": "<", "GTE": ">=", "LTE": "<="}
     return oper_map.get(oper, "==")
-
-
-def _validate_condition(condition: FilterCondition) -> None:
-    # FilterCondition is already typed, so validation can be omitted or simplified.
-    pass
 
 
 def _generate_condition(condition: FilterCondition) -> str:
@@ -73,22 +72,31 @@ def _generate_condition(condition: FilterCondition) -> str:
     oper = _convert_oper_to_sql(condition["oper"])
     value = condition["value"]
     if isinstance(value, str):
-        value = f'"{value}"'  # Enclose value in double quotes for SQL string literals
+        value = f'"{value}"'
     return f"JSON_EXISTS(metadata, '$.{key}?(@ {oper} {value})')"
 
 
 def _generate_where_clause(db_filter: Union[FilterCondition, FilterGroup]) -> str:
-    # Check if it's a FilterGroup with "_and"
-    if isinstance(db_filter, dict) and "_and" in db_filter:
-        and_conditions = [_generate_where_clause(cond) for cond in db_filter["_and"]]
+    if "key" in db_filter:  # Identify as FilterCondition
+        return _generate_condition(cast(FilterCondition, db_filter))
+
+    if "_and" in db_filter and db_filter["_and"] is not None:
+        and_conditions = [
+            _generate_where_clause(cond)
+            for cond in db_filter["_and"]
+            if isinstance(cond, dict)
+        ]
         return "(" + " AND ".join(and_conditions) + ")"
-    # Check if it's a FilterGroup with "_or"
-    elif isinstance(db_filter, dict) and "_or" in db_filter:
-        or_conditions = [_generate_where_clause(cond) for cond in db_filter["_or"]]
+
+    if "_or" in db_filter and db_filter["_or"] is not None:
+        or_conditions = [
+            _generate_where_clause(cond)
+            for cond in db_filter["_or"]
+            if isinstance(cond, dict)
+        ]
         return "(" + " OR ".join(or_conditions) + ")"
-    # Otherwise, it's a base condition (FilterCondition)
-    else:
-        return _generate_condition(db_filter)
+
+    raise ValueError(f"Invalid filter structure: {db_filter}")
 
 
 def _get_connection(client: Any) -> Connection | None:
@@ -102,7 +110,7 @@ def _get_connection(client: Any) -> Connection | None:
         ) from e
 
     # check if ConnectionPool exists
-    connection_pool_class = getattr(oracledb, 'ConnectionPool', None)
+    connection_pool_class = getattr(oracledb, "ConnectionPool", None)
 
     if isinstance(client, oracledb.Connection):
         return client
@@ -447,9 +455,7 @@ def drop_table_purge(client: Any, table_name: str) -> None:
 
 
 @_handle_exceptions
-def drop_index_if_exists(
-    client: Any, index_name: str
-) -> None:
+def drop_index_if_exists(client: Any, index_name: str) -> None:
     connection = _get_connection(client)
     if connection is None:
         raise ValueError("Failed to acquire a connection.")
@@ -697,7 +703,7 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query."""
-        embedding: Optional[List[float]] = None
+        embedding: List[float] = []
         if isinstance(self.embedding_function, Embeddings):
             embedding = self.embedding_function.embed_query(query)
         documents = self.similarity_search_by_vector(
@@ -725,7 +731,7 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
-        embedding: Optional[List[float]] = None
+        embedding: List[float] = []
         if isinstance(self.embedding_function, Embeddings):
             embedding = self.embedding_function.embed_query(query)
         docs_and_scores = self.similarity_search_by_vector_with_relevance_scores(
@@ -847,7 +853,7 @@ class OracleVS(VectorStore):
         k: int,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
+    ) -> List[Tuple[Document, float, NDArray[np.float32]]]:
         embedding_arr: Any
         if self.insert_mode == "clob":
             embedding_arr = json.dumps(embedding)
