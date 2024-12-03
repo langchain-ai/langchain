@@ -50,12 +50,22 @@ class ReActSingleInputOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         if "iteration limit exceeded" in text.lower():
-            raise ValueError("Agent terminated due to iteration limit.")
+            raise OutputParserException(
+                "Iteration limit exceeded. Terminating.",
+                observation="Iteration limit exceeded",
+                llm_output=text,
+                send_to_llm=True,
+            )
 
         reasoning_history = getattr(self, "_reasoning_history", [])
         if text in reasoning_history:
-            raise ValueError("Detected repetitive reasoning. Terminating.")
-
+            raise OutputParserException(
+                "Infinite loop detected. Terminating.",
+                observation="Infinite loop detected",
+                llm_output=text,
+                send_to_llm=True,
+            )
+        
         reasoning_history.append(text)
         setattr(self, "_reasoning_history", reasoning_history[-3:])
         
