@@ -56,7 +56,6 @@ class ReActSingleInputOutputParser(AgentOutputParser):
                 llm_output=text,
                 send_to_llm=True,
             )
-
         reasoning_history = getattr(self, "_reasoning_history", [])
         if text in reasoning_history:
             raise OutputParserException(
@@ -65,10 +64,9 @@ class ReActSingleInputOutputParser(AgentOutputParser):
                 llm_output=text,
                 send_to_llm=True,
             )
-        
+
         reasoning_history.append(text)
         setattr(self, "_reasoning_history", reasoning_history[-3:])
-        
         includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
             r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
