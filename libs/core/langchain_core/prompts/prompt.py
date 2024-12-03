@@ -91,7 +91,7 @@ class PromptTemplate(StringPromptTemplate):
 
         # if "do not generate additional user input" not in values["template"].lower():
         #     raise ValueError(
-        #         "Prompt template must include constraints for 
+        #         "Prompt template must include constraints for
         #           avoiding additional user input generation."
         #     )
         # if "avoid infinite loops" not in values["template"].lower():
@@ -317,10 +317,10 @@ class PromptTemplate(StringPromptTemplate):
         default_constraints = """ Note:
         1. Do not generate additional user input requests during task execution.
         2. Use only the available tools to perform actions.
-        3. If a solution cannot be determined with the given tools or 
-            information, respond: 
+        3. If a solution cannot be determined with the given tools or
+            information, respond:
             "I'm unable to complete this task with the current resources."
-        4. Avoid infinite loops by stopping reasoning and returning an 
+        4. Avoid infinite loops by stopping reasoning and returning an
             appropriate message if progress cannot be made.
         """
         updated_template = template + (constraints or default_constraints)

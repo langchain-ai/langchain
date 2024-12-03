@@ -273,8 +273,9 @@ class BaseOutputParser(
         output_text = result[0].text.strip()
 
         if self.update_and_check_repetition(output_text):
-            raise ValueError("Detected repetitive reasoning \
-                            or circular logic. Terminating.")
+            error_message = "Detected repetitive\
+                reasoning or circular logic."
+            raise ValueError(error_message)
         
         if "iteration limit exceeded" in output_text.lower()\
         or"unable to proceed" in output_text.lower():
@@ -285,7 +286,7 @@ class BaseOutputParser(
             return output_text.strip()
         except Exception as e:
             error_message = f"Failed to parse output: {e}"
-            raise ValueError(error_message)
+            raise ValueError(error_message) from e
 
     @abstractmethod
     def parse(self, text: str) -> T:
