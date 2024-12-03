@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import List, Optional, Sequence, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
-
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
@@ -133,22 +132,7 @@ def create_react_agent(
         llm_with_stop = llm.bind(stop=stop)
     else:
         llm_with_stop = llm
-
-    class CustomReActOutputParser(ReActSingleInputOutputParser):
-        def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-            if "iteration limit exceeded" in text.lower():
-                raise ValueError("Agent terminated due to iteration limit.")
-            reasoning_history = getattr(self, "_reasoning_history", [])
-            if text in reasoning_history:
-                raise ValueError("Detected repetitive reasoning. Terminating.")
-
-            reasoning_history.append(text)
-
-            setattr(self, "_reasoning_history", reasoning_history[-3:])
-
-            return super().parse(text)
-
-    output_parser = output_parser or CustomReActOutputParser()
+    output_parser = output_parser or ReActSingleInputOutputParser()
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),

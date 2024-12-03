@@ -49,6 +49,16 @@ class ReActSingleInputOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        if "iteration limit exceeded" in text.lower():
+            raise ValueError("Agent terminated due to iteration limit.")
+
+        reasoning_history = getattr(self, "_reasoning_history", [])
+        if text in reasoning_history:
+            raise ValueError("Detected repetitive reasoning. Terminating.")
+
+        reasoning_history.append(text)
+        setattr(self, "_reasoning_history", reasoning_history[-3:])
+        
         includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
             r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
