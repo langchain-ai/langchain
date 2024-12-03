@@ -298,7 +298,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             query += "TOP @limit "
 
         query += (
-            f"c.id, c[@embeddingKey] as embeddingKey, c.text, c.metadata, "
+            "c.id, c[@embeddingKey] as embeddingKey, c.text, c.metadata, "
             "VectorDistance(c[@embeddingKey], @embeddings) AS SimilarityScore FROM c"
         )
 
