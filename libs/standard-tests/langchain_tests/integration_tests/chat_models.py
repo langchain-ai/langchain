@@ -73,6 +73,43 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+    """Base class for chat model integration tests.
+
+    Test subclasses must implement the following two properties:
+
+    chat_model_class
+        The chat model class to test, e.g., ``ChatParrotLink``.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def chat_model_class(self) -> Type[ChatParrotLink]:
+                return ChatParrotLink
+
+    chat_model_params
+        Initialization parameters for the chat model.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def chat_model_params(self) -> dict:
+                return {"model": "bird-brain-001", "temperature": 0}
+
+    .. note::
+          API references for individual test methods include troubleshooting tips.
+
+    .. note::
+        Test subclasses can control what features are tested (such as tool
+        calling or multi-modality) by selectively overriding the properties on the
+        class. Relevant properties are mentioned in the references for each method.
+        See this page for detail on all properties:
+        https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelTests.html
+    """
+
     @property
     def _standard_chat_model_params(self) -> dict:
         return {}
@@ -800,7 +837,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             translate LangChain tool objects into the appropriate schema for your
             chat model.
 
-           This test may fail if the chat model does not support a ``tool_choice``
+            This test may fail if the chat model does not support a ``tool_choice``
             parameter. This parameter can be used to force a tool call. If
             ``tool_choice`` is not supported and the model consistently fails this
             test, you can ``xfail`` the test:
@@ -1124,7 +1161,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         (e.g. Anthropic format).
 
         These message histories will include AIMessage objects with "tool use" and
-        "tool result" content blocks, e.g.,
+        content blocks, e.g.,
 
         .. code-block:: python
 
@@ -1394,8 +1431,8 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.
 
-        These message histories will include ``AIMessage`` objects with "tool use" and
-        "tool result" content blocks, e.g.,
+        These message histories will include ``AIMessage`` objects with ``tool_use``
+        content blocks, e.g.,
 
         .. code-block:: python
 
