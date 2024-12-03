@@ -52,7 +52,9 @@ jobs:
           if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
             working_directory="[$WORKING_DIRECTORY_FORCE]"
           fi
-          echo 'matrix={"python-version": $python_version, "working-directory": $working_directory}' >> $GITHUB_OUTPUT
+          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
+          echo $matrix
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
   build:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
