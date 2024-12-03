@@ -89,16 +89,6 @@ class PromptTemplate(StringPromptTemplate):
         values.setdefault("template_format", "f-string")
         values.setdefault("partial_variables", {})
 
-        # if "do not generate additional user input" not in values["template"].lower():
-        #     raise ValueError(
-        #         "Prompt template must include constraints for
-        #           avoiding additional user input generation."
-        #     )
-        # if "avoid infinite loops" not in values["template"].lower():
-        #     raise ValueError(
-        #         "Prompt template must include instructions to avoid infinite loops."
-        #     )
-
         if values.get("validate_template"):
             if values["template_format"] == "mustache":
                 msg = "Mustache templates cannot be validated."
