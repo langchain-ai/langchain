@@ -111,7 +111,8 @@ class ChatModelIntegrationTests(ChatModelTests):
     """
 
     @property
-    def _standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict:
+        """:meta private:"""
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:

@@ -289,7 +289,8 @@ class ChatModelTests(BaseStandardTests):
         return {}
 
     @property
-    def _standard_chat_model_params(self) -> dict:
+    def standard_chat_model_params(self) -> dict:
+        """:meta private:"""
         return {
             "temperature": 0,
             "max_tokens": 100,
@@ -303,7 +304,7 @@ class ChatModelTests(BaseStandardTests):
         """Fixture that returns an instance of the chat model. Should not be
         overridden."""
         return self.chat_model_class(
-            **{**self._standard_chat_model_params, **self.chat_model_params}
+            **{**self.standard_chat_model_params, **self.chat_model_params}
         )
 
     @property
@@ -448,8 +449,9 @@ class ChatModelUnitTests(ChatModelTests):
     """  # noqa: E501
 
     @property
-    def _standard_chat_model_params(self) -> dict:
-        params = super()._standard_chat_model_params
+    def standard_chat_model_params(self) -> dict:
+        """:meta private:"""
+        params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params
 
@@ -472,7 +474,7 @@ class ChatModelUnitTests(ChatModelTests):
             2. The model accommodates standard parameters: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
         """  # noqa: E501
         model = self.chat_model_class(
-            **{**self._standard_chat_model_params, **self.chat_model_params}
+            **{**self.standard_chat_model_params, **self.chat_model_params}
         )
         assert model is not None
 
@@ -512,7 +514,7 @@ class ChatModelUnitTests(ChatModelTests):
         """
         model = self.chat_model_class(
             **{
-                **self._standard_chat_model_params,
+                **self.standard_chat_model_params,
                 **self.chat_model_params,
                 "streaming": True,
             }
