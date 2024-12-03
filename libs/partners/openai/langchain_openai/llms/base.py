@@ -113,7 +113,7 @@ class BaseOpenAI(BaseLLM):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
+    logit_bias: Optional[Dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""

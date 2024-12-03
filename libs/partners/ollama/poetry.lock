@@ -309,7 +309,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.20"
+version = "0.3.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"

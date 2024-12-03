@@ -21,7 +21,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
