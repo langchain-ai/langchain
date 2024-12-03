@@ -105,15 +105,6 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         client = PineconeClient(api_key=api_key_str, source_tag="langchain")
         self._client = client
 
-        # # initialize async client
-        # if not self._async_client:
-        #     self._async_client = aiohttp.ClientSession(
-        #         headers={
-        #             "Api-Key": api_key_str,
-        #             "Content-Type": "application/json",
-        #             "X-Pinecone-API-Version": "2024-07",
-        #         }
-        #     )
         # Ensure async_client is lazily initialized
         _ = self.async_client
         return self
