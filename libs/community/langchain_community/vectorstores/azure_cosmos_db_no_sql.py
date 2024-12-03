@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Callable
+from typing import (TYPE_CHECKING, Any, Callable, Dict,
+                    Iterable, List, Optional, Tuple)
 
 import numpy as np
 from langchain_core.documents import Document
