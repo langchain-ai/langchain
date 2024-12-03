@@ -186,10 +186,12 @@ class PromptTemplate(StringPromptTemplate):
 
         reasoning_history = kwargs.get("reasoning_history", [])
         if len(reasoning_history) > 3 and len(set(reasoning_history[-3:])) == 1:
-            formatted_string = "Detected infinite loop. Stopping reasoning."
-
+            kwargs["error_message"] = "Detected infinite loop. Stopping reasoning."
+            error_template = "{error_message}"
+            formatted_string = DEFAULT_FORMATTER_MAPPING[self.template_format](error_template, **kwargs)
         return formatted_string
     
+
     @classmethod
     def from_examples(
         cls,

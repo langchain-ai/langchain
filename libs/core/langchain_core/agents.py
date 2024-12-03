@@ -82,6 +82,7 @@ class AgentAction(Serializable):
         """Return the messages that correspond to this action."""
         return _convert_agent_action_to_messages(self)
 
+
 class AgentActionMessageLog(AgentAction):
     """Representation of an action to be executed by an agent.
 
@@ -121,6 +122,7 @@ class AgentStep(Serializable):
         recent_messages = self.messages[-history_limit:]
         return len(recent_messages) == history_limit and len(set(recent_messages)) == 1
 
+
 class AgentFinish(Serializable):
     """Final return value of an ActionAgent.
 
@@ -157,9 +159,11 @@ class AgentFinish(Serializable):
         """Messages that correspond to this observation."""
         return [AIMessage(content=self.log)]
     
+
     def handle_termination(self, reason: str) -> None:
         self.return_values = {"error": reason}
         self.log += f"\nTermination reason: {reason}"
+
 
 def _convert_agent_action_to_messages(
     agent_action: AgentAction,
@@ -178,6 +182,7 @@ def _convert_agent_action_to_messages(
         return agent_action.message_log
     else:
         return [AIMessage(content=agent_action.log)]
+
 
 def _convert_agent_observation_to_messages(
     agent_action: AgentAction, observation: Any
@@ -204,6 +209,7 @@ def _convert_agent_observation_to_messages(
             except Exception:
                 content = str(observation)
         return [HumanMessage(content=content)]
+
 
 def _create_function_message(
     agent_action: AgentAction, observation: Any
