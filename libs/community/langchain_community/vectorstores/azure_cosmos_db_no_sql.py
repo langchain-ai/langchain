@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Callable
 
 import numpy as np
 from langchain_core.documents import Document
@@ -121,6 +121,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
+        self._distance_strategy = self._vector_embedding_policy[
+            'vectorEmbeddings'][0]['distanceFunction']
 
     def add_texts(
         self,
@@ -260,6 +262,28 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             raise ValueError("No document ids provided to delete.")
         self._container.delete_item(document_id, partition_key=document_id)
 
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self._distance_strategy == 'cosine':
+            return self._cosine_relevance_score_fn
+        elif self._distance_strategy == "euclidean":
+            # Default behavior is to use euclidean distance relevancy
+            return self._euclidean_relevance_score_fn
+        elif self._distance_strategy == "dot product":
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, max_inner_product,"
+                " or euclidean"
+            )
+
     def _similarity_search_with_score(
         self,
         embeddings: List[float],
@@ -274,7 +298,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             query += "TOP @limit "
 
         query += (
-            "c.id, c[@embeddingKey], c.text, c.metadata, "
+            f"c.id, c[@embeddingKey] as embeddingKey, c.text, c.metadata, "
             "VectorDistance(c[@embeddingKey], @embeddings) AS SimilarityScore FROM c"
         )
 
@@ -305,7 +329,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             metadata = item["metadata"]
             score = item["SimilarityScore"]
             if with_embedding:
-                metadata[self._embedding_key] = item[self._embedding_key]
+                metadata[self._embedding_key] = item["embeddingKey"]
             docs_and_scores.append(
                 (Document(page_content=text, metadata=metadata), score)
             )
