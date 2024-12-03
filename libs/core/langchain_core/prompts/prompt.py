@@ -91,7 +91,8 @@ class PromptTemplate(StringPromptTemplate):
 
         # if "do not generate additional user input" not in values["template"].lower():
         #     raise ValueError(
-        #         "Prompt template must include constraints for avoiding additional user input generation."
+        #         "Prompt template must include constraints for 
+        #           avoiding additional user input generation."
         #     )
         # if "avoid infinite loops" not in values["template"].lower():
         #     raise ValueError(
@@ -189,7 +190,8 @@ class PromptTemplate(StringPromptTemplate):
             A formatted string.
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
-        formatted_string = DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+        formatted_string = DEFAULT_FORMATTER_MAPPING\
+            [self.template_format](self.template, **kwargs)
 
         reasoning_history = kwargs.get("reasoning_history", [])
         if len(reasoning_history) > 3 and len(set(reasoning_history[-3:])) == 1:
@@ -312,13 +314,15 @@ class PromptTemplate(StringPromptTemplate):
                 var for var in input_variables if var not in _partial_variables
             ]
         
-        default_constraints = """ Note: 
+        default_constraints = """ Note:
         1. Do not generate additional user input requests during task execution.
         2. Use only the available tools to perform actions.
-        3. If a solution cannot be determined with the given tools or information, respond: 
+        3. If a solution cannot be determined with the given tools or 
+            information, respond: 
             "I'm unable to complete this task with the current resources."
-        4. Avoid infinite loops by stopping reasoning and returning an appropriate message if progress cannot be made.
-        """ 
+        4. Avoid infinite loops by stopping reasoning and returning an 
+            appropriate message if progress cannot be made.
+        """
         updated_template = template + (constraints or default_constraints)
     
         input_variables = get_template_variables(updated_template, template_format)

@@ -13,9 +13,6 @@ from typing import (
 
 from typing_extensions import override
 
-import logging
-logger = logging.getLogger(__name__)
-
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -287,7 +284,8 @@ class BaseOutputParser(
         try:
             return output_text.strip()
         except Exception as e:
-            raise ValueError(f"Failed to parse output: {e}")
+            error_message = f"Failed to parse output: {e}"
+            raise ValueError(error_message)
 
     @abstractmethod
     def parse(self, text: str) -> T:
