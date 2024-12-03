@@ -59,6 +59,24 @@ def test_merge_message_runs_str_without_separator(
     assert messages == messages_model_copy
 
 
+def test_merge_message_runs_response_metadata() -> None:
+    messages = [
+        AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
+        AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
+    ]
+    expected = [
+        AIMessage(
+            "foo\nbar",
+            id="1",
+            response_metadata={"input_tokens": 1},
+        )
+    ]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    # Check it's not mutated
+    assert messages[1].response_metadata == {"input_tokens": 2}
+
+
 def test_merge_message_runs_content() -> None:
     messages = [
         AIMessage("foo", id="1"),

@@ -92,6 +92,7 @@ packages:
   - name: langchain-google-vertexai
     repo: langchain-ai/langchain-google
     path: libs/vertexai
+    disabled: true
   - name: langchain-google-community
     repo: langchain-ai/langchain-google
     path: libs/community
@@ -143,3 +144,9 @@ packages:
   - name: langchain-box
     repo: langchain-ai/langchain-box
     path: libs/box
+  - name: langchain-tests
+    repo: langchain-ai/langchain
+    path: libs/standard-tests
+  - name: langchain-neo4j
+    repo: langchain-ai/langchain-neo4j
+    path: libs/neo4j
