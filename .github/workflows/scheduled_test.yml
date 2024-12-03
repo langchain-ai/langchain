@@ -5,10 +5,10 @@ on:
     inputs:
       working-directory-force:
         type: string
-        description: "From which folder this pipeline executes - defaults to all in matrix"
+        description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
       python-version-force:
         type: string
-        description: "Python version to use - defaults to 3.9 and 3.11 in matrix"
+        description: "Python version to use - defaults to 3.9 and 3.11 in matrix - example value: 3.9"
   schedule:
     - cron:  '0 13 * * *'
 
@@ -47,10 +47,10 @@ jobs:
           python_version='["3.9", "3.11"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_FORCE" ]; then
-            python_version="[$PYTHON_VERSION_FORCE]"
+            python_version="[\"$PYTHON_VERSION_FORCE\"]"
           fi
           if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
-            working_directory="[$WORKING_DIRECTORY_FORCE]"
+            working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
           fi
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo $matrix
