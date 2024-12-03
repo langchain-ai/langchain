@@ -1,5 +1,3 @@
-# tests/integration_tests/agents/test_react_agent.py
-
 import unittest
 from unittest.mock import patch
 from langchain.agents import create_react_agent, AgentExecutor
