@@ -206,6 +206,17 @@ class ChatParrotLink(BaseChatModel):
 ```
 </details>
 
+:::tip
+
+The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
+against the standard unit and integration tests in the LangChain Github repository.
+You can always use this as a starting point.
+
+- [Model implementation](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py)
+- [Tests](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/test_custom_chat_model.py)
+
+:::
+
 ## Testing
 
 To implement our test files, we will subclass test classes from the `langchain_tests` package. These test classes contain the tests that will be run. We will just need to configure what model is tested, what parameters it is tested with, and specify any tests that should be skipped.
@@ -225,8 +236,8 @@ If you followed the previous [bootstrapping guide](/docs/contributing/how_to/int
 ### Add and configure standard tests
 There are two namespaces in the langchain-tests package:
 
-[unit tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.unit_tests`): designed to be used to test the component in isolation and without access to external services
-[integration tests](../../../concepts/testing.mdx#integration-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
+- [Unit tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.unit_tests`): designed to be used to test the component in isolation and without access to external services
+- [Integration tests](../../../concepts/testing.mdx#integration-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
 
 Both types of tests are implemented as [pytest class-based test suites](https://docs.pytest.org/en/7.1.x/getting-started.html#group-multiple-tests-in-a-class).
 
@@ -309,15 +320,36 @@ Our objective is for the pytest run to be successful. That is,
 
 ### Skipping tests
 
-LangChain standard tests test a range of behaviors, from the most basic requirements (generating a response to a query) to optional capabilities like multi-modal support, tool-calling, or support for messages generated from other providers. Tests for "optional" capabilities are controlled via a [set of properties](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelTests.html) that can be overridden on the test model subclass.
+LangChain standard tests test a range of behaviors, from the most basic requirements (generating a response to a query) to optional capabilities like multi-modal support and tool-calling. Tests for "optional" capabilities are controlled via a set of properties that can be overridden on the test model subclass.
+
+You can see the entire list of properties in the API reference [here](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelTests.html). These properties are shared by both unit and integration tests.
+
+For example, to enable integration tests for image inputs, we can implement
+
+```python
+@property
+def supports_image_inputs(self) -> bool:
+    return True
+```
+
+on the integration test class.
+
+The API references for individual test methods include instructions on whether and how
+they can be skipped. See details:
+
+- [Unit tests API reference](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelUnitTests.html)
+- [Integration tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.html)
 
 
 ### Test suite information and troubleshooting
 
-What tests are run to test this integration?
+Each test method documents:
 
-If a test fails, what does that mean?
+1. Troubleshooting tips;
+2. (If applicable) how test can be skipped.
 
-You can find information on the tests run for this integration in the [Standard Tests API Reference](https://python.langchain.com/api_reference/standard_tests/index.html).
+This information along with the full set of tests that run can be found in the API
+reference. See details:
 
-// TODO: link to exact page for this integration test suite information
+- [Unit tests API reference](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelUnitTests.html)
+- [Integration tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.html)
