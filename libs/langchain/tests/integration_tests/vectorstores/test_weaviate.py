@@ -1,4 +1,13 @@
-"""Test Weaviate functionality."""
+"""Test Weaviate functionality.
+
+# Launch the Weaviate pod
+cd tests/integration_tests/vectorstores/docker-compose
+docker compose -f weaviate.yml up
+
+# Run the integration tests inside libs/langchain/
+pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
+
+"""
 
 import logging
 import os
@@ -6,18 +15,20 @@ import uuid
 from typing import Generator, Union
 
 import pytest
+import weaviate
 from langchain_core.documents import Document
-
-from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.vectorstores.weaviate import Weaviate
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_weaviate.vectorstores import WeaviateVectorStore
+from pytest import approx
 
 logging.basicConfig(level=logging.DEBUG)
 
-"""
-cd tests/integration_tests/vectorstores/docker-compose
-docker compose -f weaviate.yml up
-"""
+
+@pytest.fixture(scope="module")
+def embedding_openai() -> OpenAIEmbeddings:
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is not set")
+    return OpenAIEmbeddings()
 
 
 class TestWeaviate:
@@ -212,7 +223,7 @@ class TestWeaviate:
 
     def test_add_texts_with_given_embedding(self, weaviate_url: str) -> None:
         texts = ["foo", "bar", "baz"]
-        embedding = FakeEmbeddings()
+        embedding = OpenAIEmbeddings()
 
         docsearch = Weaviate.from_texts(
             texts, embedding=embedding, weaviate_url=weaviate_url
@@ -229,7 +240,7 @@ class TestWeaviate:
 
     def test_add_texts_with_given_uuids(self, weaviate_url: str) -> None:
         texts = ["foo", "bar", "baz"]
-        embedding = FakeEmbeddings()
+        embedding = OpenAIEmbeddings()
         uuids = [uuid.uuid5(uuid.NAMESPACE_DNS, text) for text in texts]
 
         docsearch = Weaviate.from_texts(
