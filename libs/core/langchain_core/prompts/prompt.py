@@ -180,8 +180,9 @@ class PromptTemplate(StringPromptTemplate):
             A formatted string.
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
-        formatted_string = DEFAULT_FORMATTER_MAPPING\
+        formatted_string = DEFAULT_FORMATTER_MAPPING(
             [self.template_format](self.template, **kwargs)
+        )
 
         reasoning_history = kwargs.get("reasoning_history", [])
         if len(reasoning_history) > 3 and len(set(reasoning_history[-3:])) == 1:
@@ -292,7 +293,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-    
+
         input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 

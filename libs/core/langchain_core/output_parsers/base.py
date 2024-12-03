@@ -171,14 +171,15 @@ class BaseOutputParser(
         """
         reasoning_history = getattr(self, "_reasoning_history", [])
         # Check for repetition (if the last two outputs match the current one)
-        if len(reasoning_history) > 1 and \
-            reasoning_history[-1] == reasoning_history[-2] == output_text:
+        if (
+            len(reasoning_history) > 1 and 
+            reasoning_history[-1] == reasoning_history[-2] == output_text
+        ):
             return True
 
         # Update the reasoning history (keep only the last 3 items)
         reasoning_history.append(output_text)
         self._reasoning_history = reasoning_history[-self._history_size:]
-        
         return False
 
     @property
@@ -276,8 +277,10 @@ class BaseOutputParser(
             error_message = "Detected repetitive reasoning or circular logic."
             raise ValueError(error_message)
         
-        if "iteration limit exceeded" in output_text.lower()\
-        or"unable to proceed" in output_text.lower():
+        if( 
+            "iteration limit exceeded" in output_text.lower()
+            or"unable to proceed" in output_text.lower()
+        ):
             return {"error": "Agent terminated due to iteration\
             limit or inability to continue."}
 

@@ -116,7 +116,7 @@ class AgentStep(Serializable):
     def messages(self) -> Sequence[BaseMessage]:
         """Messages that correspond to this observation."""
         return _convert_agent_observation_to_messages(self.action, self.observation)
-    
+
     def detect_repetition(self, history_limit: int = 3) -> bool:
         recent_messages = self.messages[-history_limit:]
         return len(recent_messages) == history_limit and len(set(recent_messages)) == 1
