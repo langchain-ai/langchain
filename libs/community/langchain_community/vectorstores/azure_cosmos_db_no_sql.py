@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import (TYPE_CHECKING, Any, Callable, Dict,
-                    Iterable, List, Optional, Tuple)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -122,8 +121,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
-        self._distance_strategy = self._vector_embedding_policy[
-            'vectorEmbeddings'][0]['distanceFunction']
+        self._distance_strategy = self._vector_embedding_policy["vectorEmbeddings"][0][
+            "distanceFunction"
+        ]
 
     def add_texts(
         self,
@@ -272,7 +272,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         - embedding dimensionality
         - etc.
         """
-        if self._distance_strategy == 'cosine':
+        if self._distance_strategy == "cosine":
             return self._cosine_relevance_score_fn
         elif self._distance_strategy == "euclidean":
             # Default behavior is to use euclidean distance relevancy
