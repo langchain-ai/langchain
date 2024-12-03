@@ -140,6 +140,8 @@ TEMPLATE_MAP: dict[str, str] = {
     "Retriever": "retrievers.ipynb",
 }
 
+_component_types_str = ", ".join(f"`{k}`" for k in TEMPLATE_MAP.keys())
+
 
 @integration_cli.command()
 def create_doc(
@@ -170,8 +172,7 @@ def create_doc(
         str,
         typer.Option(
             help=(
-                "The type of component. Currently only 'ChatModel', "
-                "'DocumentLoader', 'VectorStore' supported."
+                f"The type of component. Currently supported: {_component_types_str}."
             ),
         ),
     ] = "ChatModel",
@@ -220,8 +221,7 @@ def create_doc(
         docs_template = template_dir / TEMPLATE_MAP[component_type]
     else:
         raise ValueError(
-            f"Unrecognized {component_type=}. Expected one of 'ChatModel', "
-            f"'DocumentLoader', 'Tool'."
+            f"Unrecognized {component_type=}. Expected one of {_component_types_str}."
         )
     shutil.copy(docs_template, destination_path)
 
