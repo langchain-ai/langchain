@@ -8,9 +8,10 @@ services:
     - '8080'
     - --scheme
     - http
-    image: semitechnologies/weaviate:1.27.6
+    image: semitechnologies/weaviate:1.23.7
     ports:
     - 8080:8080
+    - 50051:50051
     restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25

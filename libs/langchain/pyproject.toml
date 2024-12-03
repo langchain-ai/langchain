@@ -42,6 +42,7 @@ requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = ">=8.1.0,!=8.4.0,<10"
+weaviate-client = "^4.9.6"
 [[tool.poetry.dependencies.numpy]]
 version = ">=1.22.4,<2"
 python = "<3.12"
@@ -124,6 +125,8 @@ wrapt = "^1.15.0"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 langchainhub = "^0.1.16"
+weaviate-client = "^4.9.6"
+tiktoken = "^0.8.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
