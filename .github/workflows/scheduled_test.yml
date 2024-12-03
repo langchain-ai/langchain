@@ -13,6 +13,7 @@ jobs:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
