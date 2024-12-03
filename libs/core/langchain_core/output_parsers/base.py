@@ -174,12 +174,13 @@ class BaseOutputParser(
         """
         reasoning_history = getattr(self, "_reasoning_history", [])
         # Check for repetition (if the last two outputs match the current one)
-        if len(reasoning_history) > 1 and reasoning_history[-1] == reasoning_history[-2] == output_text:
+        if len(reasoning_history) > 1 and \
+            reasoning_history[-1] == reasoning_history[-2] == output_text:
             return True
 
         # Update the reasoning history (keep only the last 3 items)
         reasoning_history.append(output_text)
-        setattr(self, "_reasoning_history", reasoning_history[-self._history_size:])
+        self._reasoning_history = reasoning_history[-self._history_size:]
         
         return False
 
@@ -275,11 +276,13 @@ class BaseOutputParser(
         output_text = result[0].text.strip()
 
         if self.update_and_check_repetition(output_text):
-            logger.warning("Detected repetitive reasoning or circular logic: %s", output_text)
-            raise ValueError("Detected repetitive reasoning or circular logic. Terminating.")
+            raise ValueError("Detected repetitive reasoning \
+                            or circular logic. Terminating.")
         
-        if "iteration limit exceeded" in output_text.lower() or "unable to proceed" in output_text.lower():
-            return {"error": "Agent terminated due to iteration limit or inability to continue."}
+        if "iteration limit exceeded" in output_text.lower()\
+        or"unable to proceed" in output_text.lower():
+            return {"error": "Agent terminated due to iteration\
+                    limit or inability to continue."}
 
         try:
             return output_text.strip()
