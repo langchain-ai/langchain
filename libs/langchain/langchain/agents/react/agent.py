@@ -8,7 +8,7 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
 
-from langchain.agents import AgentOutputParser
+from langchain.agents import AgentAction, AgentFinish, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
 
@@ -133,7 +133,7 @@ def create_react_agent(
         llm_with_stop = llm
 
     class CustomReActOutputParser(ReActSingleInputOutputParser):
-        def parse(self, text: str) -> str:
+        def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
             if "iteration limit exceeded" in text.lower():
                 raise ValueError("Agent terminated due to iteration limit.")
             reasoning_history = getattr(self, "_reasoning_history", [])
