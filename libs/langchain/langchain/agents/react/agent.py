@@ -133,7 +133,7 @@ def create_react_agent(
         llm_with_stop = llm
 
     class CustomReActOutputParser(ReActSingleInputOutputParser):
-        def parse(self, text: str):
+        def parse(self, text: str) -> str:
             if "iteration limit exceeded" in text.lower():
                 return {"error": "Agent terminated due to iteration limit."}
 
