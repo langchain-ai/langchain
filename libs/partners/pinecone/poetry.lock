@@ -938,13 +938,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.56.0"
+version = "1.56.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.56.0-py3-none-any.whl", hash = "sha256:0751a6e139a09fca2e9cbbe8a62bfdab901b5865249d2555d005decf966ef9c3"},
-    {file = "openai-1.56.0.tar.gz", hash = "sha256:f7fa159c8e18e7f9a8d71ff4b8052452ae70a4edc6b76a6e97eda00d5364923f"},
+    {file = "openai-1.56.1-py3-none-any.whl", hash = "sha256:38e61183c2a98fedebbbb04a909a052d9f897358b070483fc0caff17300a227c"},
+    {file = "openai-1.56.1.tar.gz", hash = "sha256:8b0449f22a0c318441eae8a8a789753c3b2cac86542be51ca45df788e26aa180"},
 ]
 
 [package.dependencies]
@@ -1214,13 +1214,13 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.10.2"
+version = "2.10.3"
 description = "Data validation using Python type hints"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pydantic-2.10.2-py3-none-any.whl", hash = "sha256:cfb96e45951117c3024e6b67b25cdc33a3cb7b2fa62e239f7af1378358a1d99e"},
-    {file = "pydantic-2.10.2.tar.gz", hash = "sha256:2bc2d7f17232e0841cbba4641e65ba1eb6fafb3a08de3a091ff3ce14a197c4fa"},
+    {file = "pydantic-2.10.3-py3-none-any.whl", hash = "sha256:be04d85bbc7b65651c5f8e6b9976ed9c6f41782a55524cef079a34a0bb82144d"},
+    {file = "pydantic-2.10.3.tar.gz", hash = "sha256:cb5ac360ce894ceacd69c403187900a02c4b20b693a9dd1d643e1effab9eadf9"},
 ]
 
 [package.dependencies]
