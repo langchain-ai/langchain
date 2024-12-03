@@ -4,7 +4,7 @@
 cd tests/integration_tests/vectorstores/docker-compose
 docker compose -f weaviate.yml up
 
-# Run the integration tests
+# Run the integration tests inside libs/community/
 pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
 
 """
