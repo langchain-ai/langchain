@@ -110,7 +110,8 @@ class TestWeaviate:
             k=1,
             additional=["certainty"],
         )
-        # It is likely that certainly is not exactly 1, e.g. [Document(metadata={'_additional': {'certainty': 1.0000001192092896}, 'page': 0}, page_content='foo')]
+        # It is likely that certainly is not exactly 1, e.g. 
+        # Document(metadata={'_additional': {'certainty': 1.000000119}, 'page': 0}, ...)
         assert output == [
             Document(
                 page_content="foo",
