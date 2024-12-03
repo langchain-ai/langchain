@@ -52,6 +52,10 @@ wikipedia = "^1.4.0"
 pypdf = "^5.0.0"
 vcrpy = "^6.0.1"
 
+
+[tool.poetry.group.test_integration.dependencies]
+tiktoken = "^0.8.0"
+
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
 # Ignore latin etc

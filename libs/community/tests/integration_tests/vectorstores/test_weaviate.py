@@ -1,4 +1,13 @@
-"""Test Weaviate functionality."""
+"""Test Weaviate functionality.
+
+# Launch the Weaviate pod
+cd tests/integration_tests/vectorstores/docker-compose
+docker compose -f weaviate.yml up
+
+# Run the integration tests
+pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
+
+"""
 
 import logging
 import os
@@ -7,6 +16,7 @@ from typing import Generator, Union
 
 import pytest
 from langchain_core.documents import Document
+from pytest import approx
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores.weaviate import Weaviate
@@ -14,10 +24,12 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 logging.basicConfig(level=logging.DEBUG)
 
-"""
-cd tests/integration_tests/vectorstores/docker-compose
-docker compose -f weaviate.yml up
-"""
+
+@pytest.fixture(scope="module")
+def embedding_openai() -> OpenAIEmbeddings:
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY is not set")
+    return OpenAIEmbeddings()
 
 
 class TestWeaviate:
@@ -98,10 +110,14 @@ class TestWeaviate:
             k=1,
             additional=["certainty"],
         )
+        # It is likely that certainly is not exactly 1, e.g. [Document(metadata={'_additional': {'certainty': 1.0000001192092896}, 'page': 0}, page_content='foo')]
         assert output == [
             Document(
                 page_content="foo",
-                metadata={"page": 0, "_additional": {"certainty": 1}},
+                metadata={
+                    "page": 0,
+                    "_additional": {"certainty": approx(1)},
+                },
             )
         ]
 

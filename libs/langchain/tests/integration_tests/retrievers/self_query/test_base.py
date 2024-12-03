@@ -1,8 +1,15 @@
 """Integration testing of retrievers/self_query/base.py
 
+########################################
+# Here is a Weaviate example:
 # Launch the Weaviate container
-docker compose up --build weaviate
+cd tests/integration_tests/vectorstores/docker-compose
+docker compose -f weaviate.yml up
+
+# Run the test
 pytest -sv tests/integration_tests/retrievers/self_query/test_base.py::test_weaviate
+
+########################################
 
 """
 
