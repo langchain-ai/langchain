@@ -189,8 +189,6 @@ class PromptTemplate(StringPromptTemplate):
 
         return formatted_string
     
-
-
     @classmethod
     def from_examples(
         cls,
@@ -295,13 +293,6 @@ class PromptTemplate(StringPromptTemplate):
             The prompt template loaded from the template.
         """
     
-        input_variables = get_template_variables(template, template_format)
-        _partial_variables = partial_variables or {}
-
-        if _partial_variables:
-            input_variables = [
-                var for var in input_variables if var not in _partial_variables
-            ]
         input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 
