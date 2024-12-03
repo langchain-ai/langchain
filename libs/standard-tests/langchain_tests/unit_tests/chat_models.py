@@ -109,6 +109,8 @@ class ChatModelTests(BaseStandardTests):
 
     @pytest.fixture
     def model(self) -> BaseChatModel:
+        """Fixture that returns an instance of the chat model. Should not be
+        overridden."""
         return self.chat_model_class(
             **{**self._standard_chat_model_params, **self.chat_model_params}
         )
@@ -172,7 +174,8 @@ class ChatModelTests(BaseStandardTests):
         """Boolean property indicating whether the chat model supports image inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the form
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
 
         .. code-block:: python
 
@@ -323,18 +326,64 @@ class ChatModelUnitTests(ChatModelTests):
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
         """Return env vars, init args, and expected instance attrs for initializing
-        from env vars."""
+        from env vars.
+
+        This property is used in unit tests to test initialization from environment
+        variables. It should return a tuple of three dictionaries that specify the
+        environment variables, additional initialization args, and expected instance
+        attributes to check.
+
+        Defaults to empty dicts. If not overridden, the test is skipped.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+                return (
+                    {
+                        "MY_API_KEY": "api_key",
+                    },
+                    {
+                        "model": "bird-brain-001",
+                    },
+                    {
+                        "my_api_key": "api_key",
+                    },
+                )
+        """
         return {}, {}, {}
 
     def test_init(self) -> None:
+        """Test model initialization. This should pass for all integrations.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, ensure that:
+
+            1. ``chat_model_params`` is specified and the model can be initialized from those params;
+            2. The model accommodates standard parameters: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
+        """  # noqa: E501
         model = self.chat_model_class(
             **{**self._standard_chat_model_params, **self.chat_model_params}
         )
         assert model is not None
 
     def test_init_from_env(self) -> None:
+        """Test initialization from environment variables. Relies on the
+        ``init_from_env_params`` property. Test is skipped if that property is not
+        set.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, ensure that ``init_from_env_params`` is specified
+            correctly.
+        """
         env_params, model_params, expected_attrs = self.init_from_env_params
-        if env_params:
+        if not env_params:
+            pytest.skip("init_from_env_params not specified.")
+        else:
             with mock.patch.dict(os.environ, env_params):
                 model = self.chat_model_class(**model_params)
             assert model is not None
@@ -347,6 +396,14 @@ class ChatModelUnitTests(ChatModelTests):
     def test_init_streaming(
         self,
     ) -> None:
+        """Test that model can be initialized with ``streaming=True``. This is for
+        backward-compatibility purposes.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, ensure that the model can be initialized with a
+            boolean ``streaming`` parameter.
+        """
         model = self.chat_model_class(
             **{
                 **self._standard_chat_model_params,
@@ -360,6 +417,18 @@ class ChatModelUnitTests(ChatModelTests):
         self,
         model: BaseChatModel,
     ) -> None:
+        """Test that chat model correctly handles Pydantic models that are passed
+        into ``bind_tools``. Test is skipped if the ``has_tool_calling`` property
+        on the test class is False.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, ensure that the model's ``bind_tools`` method
+            properly handles Pydantic V2 models. ``langchain_core`` implements
+            a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
+
+            See example implementation of ``bind_tools`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.bind_tools
+        """  # noqa: E501
         if not self.has_tool_calling:
             return
 
@@ -385,12 +454,35 @@ class ChatModelUnitTests(ChatModelTests):
         model: BaseChatModel,
         schema: Any,
     ) -> None:
+        """Test ``with_structured_output`` method. Test is skipped if the
+        ``has_structured_output`` property on the test class is False.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, ensure that the model's ``bind_tools`` method
+            properly handles Pydantic V2 models. ``langchain_core`` implements
+            a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
+
+            See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+        """  # noqa: E501
         if not self.has_structured_output:
             return
 
         assert model.with_structured_output(schema) is not None
 
     def test_standard_params(self, model: BaseChatModel) -> None:
+        """Test that model properly generates standard parameters. These are used
+        for tracing purposes.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the model accommodates standard parameters:
+            https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
+
+            Check also that the model class is named according to convention
+            (e.g., ``ChatProviderName``).
+        """
+
         class ExpectedParams(BaseModelV1):
             ls_provider: str
             ls_model_name: str
@@ -418,10 +510,20 @@ class ChatModelUnitTests(ChatModelTests):
             pytest.fail(f"Validation error: {e}")
 
     def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
+        """Test serialization and deserialization of the model. Test is skipped if the
+        ``is_lc_serializable`` property on the chat model class is not overwritten
+        to return ``True``.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the ``init_from_env_params`` property is
+            correctly set on the test class.
+        """
         if not self.chat_model_class.is_lc_serializable():
-            return
-        env_params, model_params, expected_attrs = self.init_from_env_params
-        with mock.patch.dict(os.environ, env_params):
-            ser = dumpd(model)
-            assert ser == snapshot(name="serialized")
-            assert model.dict() == load(dumpd(model)).dict()
+            pytest.skip("Model is not serializable.")
+        else:
+            env_params, model_params, expected_attrs = self.init_from_env_params
+            with mock.patch.dict(os.environ, env_params):
+                ser = dumpd(model)
+                assert ser == snapshot(name="serialized")
+                assert model.dict() == load(dumpd(model)).dict()
