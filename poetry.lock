@@ -2917,7 +2917,7 @@ url = "libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.13"
+version = "0.3.20"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3140,7 +3140,7 @@ six = "*"
 
 [[package]]
 name = "langgraph"
-version = "0.2.39"
+version = "0.2.52"
 description = "Building stateful, multi-actor applications with LLMs"
 optional = false
 python-versions = ">=3.9.0,<4.0"
@@ -3148,26 +3148,26 @@ files = []
 develop = false
 
 [package.dependencies]
-langchain-core = ">=0.2.39,<0.4"
-langgraph-checkpoint = "^2.0.0"
+langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14"
+langgraph-checkpoint = "^2.0.4"
 langgraph-sdk = "^0.1.32"
 
 [package.source]
 type = "git"
 url = "https://github.com/langchain-ai/langgraph.git"
 reference = "HEAD"
-resolved_reference = "18b91357701563cef265fe97851fbee27f948ecc"
+resolved_reference = "7090d7e9a89f62be7c4bc188667436f3baa3ed3b"
 subdirectory = "libs/langgraph"
 
 [[package]]
 name = "langgraph-checkpoint"
-version = "2.0.2"
+version = "2.0.5"
 description = "Library with base interfaces for LangGraph checkpoint savers."
 optional = false
 python-versions = "<4.0.0,>=3.9.0"
 files = [
-    {file = "langgraph_checkpoint-2.0.2-py3-none-any.whl", hash = "sha256:6e5dfd90e1fc71b91ccff75939ada1114e5d7f824df5f24c62d39bed69039ee2"},
-    {file = "langgraph_checkpoint-2.0.2.tar.gz", hash = "sha256:c1d033e4e4855f580fa56830327eb86513b64ab5be527245363498e76b19a0b9"},
+    {file = "langgraph_checkpoint-2.0.5-py3-none-any.whl", hash = "sha256:0e7e730ea9358577bdcdeb6a17d8f340bad59770e2895a8a7fc853a76e08400b"},
+    {file = "langgraph_checkpoint-2.0.5.tar.gz", hash = "sha256:48612cdaf98c40a998079d222abb196a61e504d04dea65c7820d738d42150cac"},
 ]
 
 [package.dependencies]
