@@ -60,6 +60,7 @@ jobs:
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     runs-on: ubuntu-latest
     needs: [compute-matrix]
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
