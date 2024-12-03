@@ -276,7 +276,6 @@ class BaseOutputParser(
         if self.update_and_check_repetition(output_text):
             error_message = "Detected repetitive reasoning or circular logic."
             raise ValueError(error_message)
-        
         if(
             "iteration limit exceeded" in output_text.lower()
             or "unable to proceed" in output_text.lower()

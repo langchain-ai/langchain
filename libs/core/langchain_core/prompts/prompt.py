@@ -188,8 +188,9 @@ class PromptTemplate(StringPromptTemplate):
         if len(reasoning_history) > 3 and len(set(reasoning_history[-3:])) == 1:
             kwargs["error_message"] = "Detected infinite loop. Stopping reasoning."
             error_template = "{error_message}"
-            formatted_string = DEFAULT_FORMATTER_MAPPING[self.template_format]\
-                (error_template, **kwargs)
+            formatted_string = DEFAULT_FORMATTER_MAPPING[self.template_format](
+                error_template, **kwargs
+            )
         return formatted_string
     
 

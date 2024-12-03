@@ -159,7 +159,6 @@ class AgentFinish(Serializable):
         """Messages that correspond to this observation."""
         return [AIMessage(content=self.log)]
     
-
     def handle_termination(self, reason: str) -> None:
         self.return_values = {"error": reason}
         self.log += f"\nTermination reason: {reason}"
