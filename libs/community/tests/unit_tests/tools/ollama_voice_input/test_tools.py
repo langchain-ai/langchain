@@ -9,8 +9,6 @@ from langchain_core.documents.base import Blob
 
 from langchain_community.tools.ollama_voice_input import SpeechToText, VoiceInputChain
 
-# Replace `module_name` with the actual module name
-
 _THIS_DIR = Path(__file__).parents[3]
 
 _EXAMPLES_DIR = _THIS_DIR / "examples"
