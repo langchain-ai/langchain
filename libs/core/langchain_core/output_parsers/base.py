@@ -276,13 +276,14 @@ class BaseOutputParser(
         if self.update_and_check_repetition(output_text):
             error_message = "Detected repetitive reasoning or circular logic."
             raise ValueError(error_message)
-        if(
+        if (
             "iteration limit exceeded" in output_text.lower()
             or "unable to proceed" in output_text.lower()
         ):
             return {
                 "error": "Agent terminated due to iteration\
-            limit or inability to continue."}
+            limit or inability to continue."
+            }
 
         try:
             return output_text.strip()

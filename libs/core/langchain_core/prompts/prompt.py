@@ -192,7 +192,6 @@ class PromptTemplate(StringPromptTemplate):
                 error_template, **kwargs
             )
         return formatted_string
-    
 
     @classmethod
     def from_examples(

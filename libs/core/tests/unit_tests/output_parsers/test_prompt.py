@@ -1,7 +1,7 @@
-# test_prompt.py
-
 import unittest
+
 from langchain_core.prompts.prompt import PromptTemplate
+
 
 class TestPromptTemplate(unittest.TestCase):
     def test_constraints_appended(self):
@@ -14,6 +14,7 @@ class TestPromptTemplate(unittest.TestCase):
         template = "Answer the following question: {input}"
         prompt_template = PromptTemplate.from_template(template)
         self.assertIn("input", prompt_template.input_variables)
+
 
 if __name__ == "__main__":
     unittest.main()
