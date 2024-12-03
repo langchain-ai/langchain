@@ -98,7 +98,7 @@ class ChatModelTests(BaseStandardTests):
         return {}
 
     @property
-    def standard_chat_model_params(self) -> dict:
+    def _standard_chat_model_params(self) -> dict:
         return {
             "temperature": 0,
             "max_tokens": 100,
@@ -110,7 +110,7 @@ class ChatModelTests(BaseStandardTests):
     @pytest.fixture
     def model(self) -> BaseChatModel:
         return self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
+            **{**self._standard_chat_model_params, **self.chat_model_params}
         )
 
     @property
@@ -315,8 +315,8 @@ class ChatModelTests(BaseStandardTests):
 
 class ChatModelUnitTests(ChatModelTests):
     @property
-    def standard_chat_model_params(self) -> dict:
-        params = super().standard_chat_model_params
+    def _standard_chat_model_params(self) -> dict:
+        params = super()._standard_chat_model_params
         params["api_key"] = "test"
         return params
 
@@ -328,7 +328,7 @@ class ChatModelUnitTests(ChatModelTests):
 
     def test_init(self) -> None:
         model = self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
+            **{**self._standard_chat_model_params, **self.chat_model_params}
         )
         assert model is not None
 
@@ -349,7 +349,7 @@ class ChatModelUnitTests(ChatModelTests):
     ) -> None:
         model = self.chat_model_class(
             **{
-                **self.standard_chat_model_params,
+                **self._standard_chat_model_params,
                 **self.chat_model_params,
                 "streaming": True,
             }

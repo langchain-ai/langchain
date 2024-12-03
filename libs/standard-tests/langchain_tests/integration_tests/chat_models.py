@@ -74,7 +74,7 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 class ChatModelIntegrationTests(ChatModelTests):
     @property
-    def standard_chat_model_params(self) -> dict:
+    def _standard_chat_model_params(self) -> dict:
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:
