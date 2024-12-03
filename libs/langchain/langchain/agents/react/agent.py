@@ -10,6 +10,8 @@ from langchain_core.tools.render import ToolsRenderer, render_text_description
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
+from langchain.agents.output_parsers import ReActSingleInputOutputParser
+
 
 def create_react_agent(
     llm: BaseLanguageModel,
@@ -125,16 +127,10 @@ def create_react_agent(
         tool_names=", ".join([t.name for t in tools]),
     )
     if stop_sequence:
-        stop = (
-            ["\nObservation", "Final Answer:"] 
-            if stop_sequence is True
-            else stop_sequence
-        )
+        stop = ["\nObservation"] if stop_sequence is True else stop_sequence
         llm_with_stop = llm.bind(stop=stop)
     else:
         llm_with_stop = llm
-
-    from langchain.agents.output_parsers import ReActSingleInputOutputParser
 
     class CustomReActOutputParser(ReActSingleInputOutputParser):
         def parse(self, text: str):

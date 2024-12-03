@@ -111,8 +111,6 @@ class PromptTemplate(StringPromptTemplate):
             check_valid_template(
                 values["template"], values["template_format"], all_inputs
             )
-        
-
 
         if values["template_format"]:
             values["input_variables"] = [
