@@ -172,7 +172,7 @@ class BaseOutputParser(
         reasoning_history = getattr(self, "_reasoning_history", [])
         # Check for repetition (if the last two outputs match the current one)
         if (
-            len(reasoning_history) > 1 and 
+            len(reasoning_history) > 1 and
             reasoning_history[-1] == reasoning_history[-2] == output_text
         ):
             return True
@@ -277,7 +277,7 @@ class BaseOutputParser(
             error_message = "Detected repetitive reasoning or circular logic."
             raise ValueError(error_message)
         
-        if( 
+        if(
             "iteration limit exceeded" in output_text.lower()
             or"unable to proceed" in output_text.lower()
         ):
