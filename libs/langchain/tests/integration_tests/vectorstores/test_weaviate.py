@@ -1,4 +1,4 @@
-"""Test Weaviate V4 functionality.
+"""Test Weaviate V4 functionality under libs/langchain/
 
 # Launch the Weaviate pod
 cd tests/integration_tests/vectorstores/docker-compose
@@ -11,7 +11,6 @@ pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
 
 import logging
 import os
-import uuid
 from typing import Generator, Union
 
 import pytest
@@ -19,7 +18,6 @@ import weaviate
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_weaviate.vectorstores import WeaviateVectorStore
-from pytest import approx
 from weaviate.classes.config import DataType, Property
 from weaviate.classes.query import Filter
 
@@ -70,6 +68,7 @@ class TestWeaviate:
             host=weaviate_host, port=weaviate_port
         )
         # Create the collection if not exists
+        # The collection name is assumed to be "test" throughout the test module
         if not weaviate_client.collections.exists("test"):
             weaviate_client.collections.create(
                 name="test", properties=[Property(name="name", data_type=DataType.TEXT)]

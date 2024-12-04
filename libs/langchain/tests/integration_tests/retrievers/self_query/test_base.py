@@ -47,4 +47,3 @@ def test_weaviate() -> None:
 
     # Test the retriever
     retriever.get_relevant_documents("test")
-    print("Successfully passed test_weaviate")
