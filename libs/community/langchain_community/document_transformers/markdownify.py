@@ -81,6 +81,10 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         Transform a single document asynchronously.
         """
         # This logic is copied from the `transform_documents` method.
+        # To reduce redundancy, a transform_document method could be
+        # created to transform a single document, then used in async mode with
+        # asyncio.to_thread(transform_document(...)) or in sync mode with a
+        # list comprehension inside the transform_documents method.
         try:
             from markdownify import markdownify
         except ImportError:
@@ -88,7 +92,7 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
                 """markdownify package not found, please 
                 install it with `pip install markdownify`"""
             )
-    
+
         markdown_content = (
             markdownify(
                 html=document.page_content,
@@ -98,7 +102,7 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
                 heading_style=self.heading_style,
                 **self.additional_options,
             )
-            .replace("\xa0", " ")
+            .replace("\xa0", " ")  # replace non-breaking space with a space
             .strip()
         )
         cleaned_markdown = re.sub(r"\n\s*\n", "\n\n", markdown_content)
@@ -112,9 +116,10 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         """
         Transform a list of documents asynchronously.
         """
-        # TODO: implement progress tracking using tqdm.asyncio.
-        # See an example here: langchain_community/document_loaders/async_html.py:_lazy_fetch_all()
-        # Link: https://github.com/langchain-ai/langchain/blob/33d445550e649b5de25bb2600b9b86c4b3de1b76/libs/community/langchain_community/document_loaders/async_html.py#L173
+        # NOTE: consider implementing progress tracking using tqdm.asyncio,
+        # see an example here:
+        # langchain_community/document_loaders/async_html.py:_lazy_fetch_all()
+        # Direct link: https://github.com/langchain-ai/langchain/blob/33d445550e649b5de25bb2600b9b86c4b3de1b76/libs/community/langchain_community/document_loaders/async_html.py#L173
         tasks = [
             asyncio.create_task(self._atransform_document(doc, **kwargs))
             for doc in documents
