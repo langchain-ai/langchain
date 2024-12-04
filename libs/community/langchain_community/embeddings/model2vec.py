@@ -42,8 +42,7 @@ class Model2vecEmbeddings(Embeddings, BaseModel):
                 "Unable to import model2vec, please install with "
                 "`pip install -U model2vec`."
             ) from e
-        model = StaticModel.from_pretrained(model_name)
-        super().__init__(model=model, **kwargs)
+        self.model = StaticModel.from_pretrained(model_name)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed documents using the model2vec embeddings model.
