@@ -24,6 +24,16 @@ class EscapePreprocessor(Preprocessor):
             # escape ``` in code
             cell.source = cell.source.replace("```", r"\`\`\`")
             # escape ``` in output
+
+            # allow overriding title based on comment at beginning of cell
+            if cell.source.startswith("# title="):
+                lines = cell.source.split("\n")
+                title = lines[0].split("# title=")[1]
+                if title.startswith('"') and title.endswith('"'):
+                    title = title[1:-1]
+                cell.metadata["title"] = title
+                cell.source = "\n".join(lines[1:])
+
             if "outputs" in cell:
                 filter_out = set()
                 for i, output in enumerate(cell["outputs"]):
@@ -174,7 +184,18 @@ if __name__ == "__main__":
         source_paths_stripped = [p.strip() for p in source_path_strs]
         source_paths = [intermediate_docs_dir / p for p in source_paths_stripped if p]
     else:
-        source_paths = intermediate_docs_dir.glob("**/*.ipynb")
+        original_paths = list(intermediate_docs_dir.glob("**/*.ipynb"))
+        # exclude files that exist in output directory and are newer
+        relative_paths = [p.relative_to(intermediate_docs_dir) for p in original_paths]
+        out_paths = [
+            output_docs_dir / p.parent / (p.stem + ".md") for p in relative_paths
+        ]
+        source_paths = [
+            p
+            for p, o in zip(original_paths, out_paths)
+            if not o.exists() or o.stat().st_mtime < p.stat().st_mtime
+        ]
+        print(f"rebuilding {len(source_paths)}/{len(relative_paths)} notebooks")
 
     with multiprocessing.Pool() as pool:
         pool.map(

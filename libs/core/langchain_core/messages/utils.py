@@ -556,6 +556,8 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
+            if curr_chunk.response_metadata:
+                curr_chunk.response_metadata.clear()
             if (
                 isinstance(last_chunk.content, str)
                 and isinstance(curr_chunk.content, str)
@@ -590,7 +592,7 @@ def trim_messages(
     include_system: bool = False,
     text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
 ) -> list[BaseMessage]:
-    """Trim messages to be below a token count.
+    r"""Trim messages to be below a token count.
 
     trim_messages can be used to reduce the size of a chat history to a specified token
     count or specified message count.
