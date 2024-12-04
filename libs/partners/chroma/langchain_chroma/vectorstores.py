@@ -1058,7 +1058,7 @@ class Chroma(VectorStore):
 
         .. versionadded:: 0.2.1
         """
-        results = self.get(ids=ids)
+        results = self.get(ids=list(ids))
         return [
             Document(page_content=doc, metadata=meta, id=doc_id)
             for doc, meta, doc_id in zip(
