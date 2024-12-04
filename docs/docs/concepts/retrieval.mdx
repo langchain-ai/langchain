@@ -221,7 +221,7 @@ They are particularly useful for storing and querying complex relationships betw
 LangChain provides a unified interface for interacting with various retrieval systems through the [retriever](/docs/concepts/retrievers/) concept. The interface is straightforward:
 
 1. Input: A query (string)
-2. Output: A list of documents (standardized LangChain [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects)
+2. Output: A list of documents (standardized LangChain [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html) objects)
 
 You can create a retriever using any of the retrieval systems mentioned earlier. The query analysis techniques we discussed are particularly useful here, as they enable natural language interfaces for databases that typically require structured query languages.
 For example, you can build a retriever for a SQL database using text-to-SQL conversion. This allows a natural language query (string) to be transformed into a SQL query behind the scenes.
