@@ -97,7 +97,7 @@ class RedisVectorField(RedisField):
     dims: int = Field(...)
     algorithm: object = Field(...)
     datatype: str = Field(default="FLOAT32")
-    distance_metric: RedisDistanceMetric = Field(default="COSINE")
+    distance_metric: RedisDistanceMetric = Field(default="COSINE")  # type: ignore[assignment]
     initial_cap: Optional[int] = None
 
     @field_validator("algorithm", "datatype", "distance_metric", mode="before")
@@ -124,7 +124,7 @@ class RedisVectorField(RedisField):
         return field_data
 
 
-class FlatVectorField(RedisVectorField):
+class FlatVectorField(RedisVectorField):  # type: ignore[override]
     """Schema for flat vector fields in Redis."""
 
     algorithm: Literal["FLAT"] = "FLAT"
@@ -139,7 +139,7 @@ class FlatVectorField(RedisVectorField):
         return VectorField(self.name, self.algorithm, field_data)
 
 
-class HNSWVectorField(RedisVectorField):
+class HNSWVectorField(RedisVectorField):  # type: ignore[override]
     """Schema for HNSW vector fields in Redis."""
 
     algorithm: Literal["HNSW"] = "HNSW"

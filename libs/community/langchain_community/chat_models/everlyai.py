@@ -4,9 +4,21 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set
+import warnings
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+)
 
 from langchain_core.messages import BaseMessage
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from pydantic import Field, model_validator
 
@@ -98,7 +110,7 @@ class ChatEverlyAI(ChatOpenAI):
                 "Please install it with `pip install openai`.",
             ) from e
         try:
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         except AttributeError as exc:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
@@ -138,11 +150,21 @@ class ChatEverlyAI(ChatOpenAI):
             encoding = tiktoken_.get_encoding(model)
         return model, encoding
 
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Calculate num tokens with tiktoken package.
 
         Official documentation: https://github.com/openai/openai-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()

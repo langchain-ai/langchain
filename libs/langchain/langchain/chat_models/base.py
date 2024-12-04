@@ -19,7 +19,6 @@ from typing import (
     overload,
 )
 
-from langchain_core._api import beta
 from langchain_core.language_models import (
     BaseChatModel,
     LanguageModelInput,
@@ -30,7 +29,7 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.messages import AnyMessage, BaseMessage
-from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
 from langchain_core.tracers import RunLog, RunLogPatch
@@ -83,7 +82,6 @@ def init_chat_model(
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
 # existing providers.
-@beta()
 def init_chat_model(
     model: Optional[str] = None,
     *,
@@ -96,38 +94,39 @@ def init_chat_model(
 ) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel from the model name and provider.
 
-    Must have the integration package corresponding to the model provider installed.
+    **Note:** Must have the integration package corresponding to the model provider
+    installed.
 
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the
-            corresponding integration package:
+            corresponding integration package are:
 
-            - openai (langchain-openai)
-            - anthropic (langchain-anthropic)
-            - azure_openai (langchain-openai)
-            - google_vertexai (langchain-google-vertexai)
-            - google_genai (langchain-google-genai)
-            - bedrock (langchain-aws)
-            - bedrock_converse (langchain-aws)
-            - cohere (langchain-cohere)
-            - fireworks (langchain-fireworks)
-            - together (langchain-together)
-            - mistralai (langchain-mistralai)
-            - huggingface (langchain-huggingface)
-            - groq (langchain-groq)
-            - ollama (langchain-ollama)  [support added in langchain==0.2.12]
+            - 'openai'              -> langchain-openai
+            - 'anthropic'           -> langchain-anthropic
+            - 'azure_openai'        -> langchain-openai
+            - 'google_vertexai'     -> langchain-google-vertexai
+            - 'google_genai'        -> langchain-google-genai
+            - 'bedrock'             -> langchain-aws
+            - 'bedrock_converse'    -> langchain-aws
+            - 'cohere'              -> langchain-cohere
+            - 'fireworks'           -> langchain-fireworks
+            - 'together'            -> langchain-together
+            - 'mistralai'           -> langchain-mistralai
+            - 'huggingface'         -> langchain-huggingface
+            - 'groq'                -> langchain-groq
+            - 'ollama'              -> langchain-ollama
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - gpt-3..., gpt-4..., or o1... -> openai
-            - claude... -> anthropic
-            - amazon.... -> bedrock
-            - gemini... -> google_vertexai
-            - command... -> cohere
-            - accounts/fireworks... -> fireworks
-            - mistral... -> mistralai
+            - 'gpt-3...' | 'gpt-4...' | 'o1...' -> 'openai'
+            - 'claude...'                       -> 'anthropic'
+            - 'amazon....'                      -> 'bedrock'
+            - 'gemini...'                       -> 'google_vertexai'
+            - 'command...'                      -> 'cohere'
+            - 'accounts/fireworks...'           -> 'fireworks'
+            - 'mistral...'                      -> 'mistralai'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -150,7 +149,16 @@ def init_chat_model(
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
             config_prefix is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
-        kwargs: Additional keyword args to pass to
+        temperature: Model temperature.
+        max_tokens: Max output tokens.
+        timeout: The maximum time (in seconds) to wait for a response from the model
+            before canceling the request.
+        max_retries: The maximum number of attempts the system will make to resend a
+            request if it fails due to issues like network timeouts or rate limits.
+        base_url: The URL of the API endpoint where requests are sent.
+        rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
+            rate limits.
+        kwargs: Additional model-specific keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
     Returns:
@@ -286,6 +294,10 @@ def init_chat_model(
         Support for langchain_aws.ChatBedrockConverse added
         (model_provider="bedrock_converse").
 
+    .. versionchanged:: 0.3.5
+
+        Out of beta.
+
     """  # noqa: E501
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
@@ -316,13 +328,7 @@ def init_chat_model(
 def _init_chat_model_helper(
     model: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
-    model_provider = model_provider or _attempt_infer_model_provider(model)
-    if not model_provider:
-        raise ValueError(
-            f"Unable to infer model provider for {model=}, please specify "
-            f"model_provider directly."
-        )
-    model_provider = model_provider.replace("-", "_").lower()
+    model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
         _check_pkg("langchain_openai")
         from langchain_openai import ChatOpenAI
@@ -449,6 +455,24 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return None
 
 
+def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":")[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":")[0]
+        model = ":".join(model.split(":")[1:])
+    model_provider = model_provider or _attempt_infer_model_provider(model)
+    if not model_provider:
+        raise ValueError(
+            f"Unable to infer model provider for {model=}, please specify "
+            f"model_provider directly."
+        )
+    model_provider = model_provider.replace("-", "_").lower()
+    return model, model_provider
+
+
 def _check_pkg(pkg: str) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg.replace("_", "-")
@@ -530,7 +554,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         return model
 
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
-        config = config or {}
+        config = ensure_config(config)
         model_params = {
             _remove_prefix(k, self._config_prefix): v
             for k, v in config.get("configurable", {}).items()

@@ -18,7 +18,7 @@ for dir; do \
     if find "$$dir" -maxdepth 1 -type f \( -name "pyproject.toml" -o -name "setup.py" \) | grep -q .; then \
         echo "$$dir"; \
     fi \
-done' sh {} + | grep -vE "airbyte|ibm|couchbase|databricks" | tr '\n' ' ')
+done' sh {} + | grep -vE "airbyte|ibm|databricks" | tr '\n' ' ')
 
 PORT ?= 3001
 
@@ -38,7 +38,7 @@ install-py-deps:
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
-	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
+	cp -rp $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
 

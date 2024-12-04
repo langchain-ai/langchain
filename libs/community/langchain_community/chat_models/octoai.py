@@ -46,7 +46,7 @@ class ChatOctoAI(ChatOpenAI):
     """
 
     octoai_api_base: str = Field(default=DEFAULT_API_BASE)
-    octoai_api_token: SecretStr = Field(default=None, alias="api_key")
+    octoai_api_token: SecretStr = Field(default=SecretStr(""), alias="api_key")
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
     @property
@@ -98,7 +98,7 @@ class ChatOctoAI(ChatOpenAI):
             else:
                 values["openai_api_base"] = values["octoai_api_base"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.ChatCompletion
+                values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
