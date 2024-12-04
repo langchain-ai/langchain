@@ -82,7 +82,7 @@ EXPECTED_ALL = [
     "AscendEmbeddings",
     "ZhipuAIEmbeddings",
     "TextEmbedEmbeddings",
-    "Model2vecEmbeddings"
+    "Model2vecEmbeddings",
 ]
 
 
