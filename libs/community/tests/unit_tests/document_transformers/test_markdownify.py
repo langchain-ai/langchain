@@ -50,10 +50,10 @@ def test_extract_html() -> None:
     documents = [Document(page_content=basic_html)]
     docs_transformed = markdownify.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Simple Test Page\n"
-        "# Test Header\n\n"
-        "First paragraph.\n\n"
-        "Second paragraph.\n\n"
+        "Simple Test Page "
+        "# Test Header\n\n "
+        "First paragraph.\n\n "
+        "Second paragraph.\n\n "
         "[Example Link](https://example.com)"
     )
 
@@ -72,10 +72,10 @@ def test_strip_tags() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = markdownify.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# Header\n\n"
-        "1st paragraph.\n\n"
-        "2nd paragraph. Here is [link](http://example.com)\n\n"
-        "![Sample Image](image.jpg)\n"
+        "# Header\n\n "
+        "1st paragraph.\n\n "
+        "2nd paragraph. Here is [link](http://example.com)\n\n "
+        "![Sample Image](image.jpg)"
         "# Ignore at end"
     )
 
@@ -104,8 +104,11 @@ def test_convert_tags() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = markdownify.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Header**1st paragraph.**2nd paragraph. "
-        "Here is [link](http://example.com)Ignore at end"
+        "Header "
+        "**1st paragraph.** "
+        "2nd paragraph. "
+        "Here is [link](http://example.com) "
+        "Ignore at end"
     )
 
     markdownify = MarkdownifyTransformer(convert="p")
@@ -183,10 +186,10 @@ async def test_extract_html_async() -> None:
     documents = [Document(page_content=basic_html)]
     docs_transformed = await markdownify.atransform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Simple Test Page\n"
-        "# Test Header\n\n"
-        "First paragraph.\n\n"
-        "Second paragraph.\n\n"
+        "Simple Test Page "
+        "# Test Header\n\n "
+        "First paragraph.\n\n "
+        "Second paragraph.\n\n "
         "[Example Link](https://example.com)"
     )
 
@@ -205,10 +208,10 @@ async def test_strip_tags_async() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = await markdownify.atransform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# Header\n\n"
-        "1st paragraph.\n\n"
-        "2nd paragraph. Here is [link](http://example.com)\n\n"
-        "![Sample Image](image.jpg)\n"
+        "# Header\n\n "
+        "1st paragraph.\n\n "
+        "2nd paragraph. Here is [link](http://example.com)\n\n "
+        "![Sample Image](image.jpg)"
         "# Ignore at end"
     )
 
@@ -237,8 +240,11 @@ async def test_convert_tags_async() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = await markdownify.atransform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Header**1st paragraph.**2nd paragraph. "
-        "Here is [link](http://example.com)Ignore at end"
+        "Header "
+        "**1st paragraph.** "
+        "2nd paragraph. "
+        "Here is [link](http://example.com) "
+        "Ignore at end"
     )
 
     markdownify = MarkdownifyTransformer(convert="p")
