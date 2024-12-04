@@ -21,7 +21,7 @@ disallow_untyped_defs = "True"
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.21"
 pytest = ">=7,<9"
-httpx = "^0.27.0"
+httpx = "^0.28.0"
 syrupy = "^4"
 
 [tool.ruff.lint]
