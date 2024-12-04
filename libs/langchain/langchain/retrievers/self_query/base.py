@@ -170,6 +170,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return Neo4jTranslator()
 
         try:
+            # Trying chroma import if exists
             from langchain_chroma import Chroma
         except ImportError:
             pass
@@ -187,6 +188,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return NewPGVectorTranslator()
 
         try:
+            # Trying qdrant import if exists
             from langchain_qdrant import QdrantVectorStore
         except ImportError:
             pass
@@ -205,9 +207,9 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return HanaTranslator()
 
         try:
+            # Trying Weaviate import if exists
             from langchain_weaviate.vectorstores import WeaviateVectorStore
 
-            from langchain.retrievers.self_query.weaviate import WeaviateTranslator
         except ImportError:
             pass
         else:
