@@ -2,9 +2,16 @@ import re
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core._api.deprecation import deprecated
+
 Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.chains.graph_qa.cypher_utils.CypherQueryCorrector",
+)
 class CypherQueryCorrector:
     """
     Used to correct relationship direction in generated Cypher statements.

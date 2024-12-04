@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import httpx
 from langchain_core.embeddings import Embeddings
@@ -60,8 +60,8 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             output = embedding.embed_documents(documents)
     """  # noqa: E501
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    client: Optional[httpx.Client] = Field(default=None)  #: :meta private:
+    async_client: Optional[httpx.AsyncClient] = Field(default=None)  #: :meta private:
 
     ncp_clovastudio_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
@@ -69,7 +69,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: str = Field(default=None, alias="base_url")
+    base_url: Optional[str] = Field(default=None, alias="base_url")
     """
     Automatically inferred from env are  `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -168,13 +168,15 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
     def _embed_text(self, text: str) -> List[float]:
         payload = {"text": text}
-        response = self.client.post(url=self._api_url, json=payload)
+        client = cast(httpx.Client, self.client)
+        response = client.post(url=self._api_url, json=payload)
         _raise_on_error(response)
         return response.json()["result"]["embedding"]
 
     async def _aembed_text(self, text: str) -> List[float]:
         payload = {"text": text}
-        response = await self.async_client.post(url=self._api_url, json=payload)
+        async_client = cast(httpx.AsyncClient, self.client)
+        response = await async_client.post(url=self._api_url, json=payload)
         await _araise_on_error(response)
         return response.json()["result"]["embedding"]
 
