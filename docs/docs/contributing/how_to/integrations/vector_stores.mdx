@@ -568,8 +568,8 @@ that will generate short, arbitrary vectors for documents. You can use a differe
 embeddings object if desired.
 
 In the `finally` block, we call whatever integration-specific logic is needed to
-bring the vector store to a clean state. This logic is executed when the test run
-ends (e.g., even if tests fail).
+bring the vector store to a clean state. This logic is executed in between each test
+(e.g., even if tests fail).
 
 ### Run standard tests
 
