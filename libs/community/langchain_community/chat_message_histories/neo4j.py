@@ -1,5 +1,6 @@
 from typing import List, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, messages_from_dict
 from langchain_core.utils import get_from_dict_or_env
@@ -7,6 +8,11 @@ from langchain_core.utils import get_from_dict_or_env
 from langchain_community.graphs import Neo4jGraph
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.Neo4jChatMessageHistory",
+)
 class Neo4jChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in a Neo4j database."""
 
