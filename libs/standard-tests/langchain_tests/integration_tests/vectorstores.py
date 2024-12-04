@@ -15,10 +15,10 @@ EMBEDDING_SIZE = 6
 
 
 class ReadWriteTestSuite(BaseStandardTests):
-    """Test suite for checking the synchronous read-write API of a vectorstore.
+    """Test suite for checking the synchronous read-write API of a vector store.
 
     Implementers should subclass this test suite and provide a fixture
-    that returns an empty vectorstore for each test.
+    that returns an empty vector store for each test.
 
     The fixture should use the ``get_embeddings`` method to get a pre-defined
     embeddings model that should be used for this test suite.
@@ -384,10 +384,10 @@ class ReadWriteTestSuite(BaseStandardTests):
 
 
 class AsyncReadWriteTestSuite(BaseStandardTests):
-    """Test suite for checking the async read-write API of a vectorstore.
+    """Test suite for checking the async read-write API of a vector store.
 
     Implementers should subclass this test suite and provide a fixture
-    that returns an empty vectorstore for each test.
+    that returns an empty vector store for each test.
 
     The fixture should use the ``get_embeddings`` method to get a pre-defined
     embeddings model that should be used for this test suite.
