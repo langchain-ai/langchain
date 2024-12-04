@@ -21,7 +21,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
@@ -167,6 +167,7 @@ jobs:
       - release-notes
       - test-pypi-publish
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -308,6 +309,7 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
