@@ -32,17 +32,8 @@ IGNORED_PARTNERS = [
     "huggingface",
 ]
 
-# Cap python version at 3.12 for some packages with dependencies that are not yet
-# compatible with python 3.13 (mostly hf tokenizers).
 PY_312_MAX_PACKAGES = [
-    f"libs/partners/{integration}"
-    for integration in [
-        "couchbase",
-        "huggingface",
-        "mistralai",
-        "nomic",
-        "qdrant",
-    ]
+    "libs/partners/huggingface",  # https://github.com/pytorch/pytorch/issues/130249
 ]
 
 
