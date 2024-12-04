@@ -73,7 +73,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                 headers={
                     "Api-Key": self.pinecone_api_key.get_secret_value(),
                     "Content-Type": "application/json",
-                    "X-Pinecone-API-Version": "2024-07",
+                    "X-Pinecone-API-Version": "2024-10",
                 }
             )
         return self._async_client
