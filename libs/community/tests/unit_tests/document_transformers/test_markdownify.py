@@ -115,7 +115,7 @@ def test_convert_tags() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = markdownify.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Header\n\n "
+        "Header "
         "1st paragraph.\n\n "
         "2nd paragraph. Here is link\n\n "
         "Ignore at end"
@@ -251,7 +251,7 @@ async def test_convert_tags_async() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = await markdownify.atransform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Header\n\n "
+        "Header "
         "1st paragraph.\n\n "
         "2nd paragraph. Here is link\n\n "
         "Ignore at end"
