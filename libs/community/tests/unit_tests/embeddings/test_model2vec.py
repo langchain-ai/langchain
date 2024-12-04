@@ -6,6 +6,6 @@ def test_hugginggface_inferenceapi_embedding_documents_init() -> None:
     try:
         embedding = Model2vecEmbeddings()
         assert len(embedding.embed_query("hi")) == 256
-    except Exception as e:
+    except Exception:
         # model2vec is not installed
         assert True
