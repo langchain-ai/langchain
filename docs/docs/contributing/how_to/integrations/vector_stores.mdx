@@ -431,37 +431,23 @@ nearest-neighbor or maximum marginal relevance), as well as interfaces for addin
 documents to the store. See the [API Reference](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
 for all supported methods. The required methods are tabulated below:
 
-| Method/Property                           | Description                                                 | Required/Optional |
-|-------------------------------------------|-------------------------------------------------------------|-------------------|
-| `add_documents`                           | Add documents to the vector store.                          | Required          |
-| `delete`                                  | Delete selected documents from vector store (by IDs)        | Required          |
-| `get_by_ids`                              | Get selected documents from vector store (by IDs)           | Required          |
-| `similarity_search                        | Get documents most similar to a query.                      | Required          |
-| `embeddings` (property)                   | Embeddings object for vector store.                         | Required          |
-| `from_texts`                              | Instantiate vector store via adding texts.                  | Required          |
-| `similarity_search_with_score`            | Similarity search, returning score.                         | Optional          |
-| `asimilarity_search_with_score`           | Async variant of `similarity_search_with_score`.            | Optional          |
-| `similarity_search_by_vector`             | Similarity search from an embedding vector.                 | Optional          |
-| `asimilarity_search_by_vector`            | Async variant of `similarity_search_by_vector`.             | Optional          |
-| `max_marginal_relevance_search`           | Maximum marginal relevance search.                          | Optional          |
-| `amax_marginal_relevance_search`          | Async variant of `max_marginal_relevance_search`.           | Optional          |
-| `max_marginal_relevance_search_by_vector` | Maximum marginal relevance search from an embedding vector. | Optional          |
-| `amax_marginal_relevance_search`          | Async variant of `max_marginal_relevance_search_by_vector`. | Optional          |
-| `add_texts`                               | Add documents to vector store via iterable of strings       | Optional          |
-| `aadd_texts`                              | Async variant of `add_texts`.                               | Optional          |
-| `aadd_documents`                          | Async variant of `add_documents`.                           | Optional          |
-| `adelete`                                 | Async variant of `delete`.                                  | Optional          |
-| `aget_by_ids`                             | Async variant of `get_by_ids`.                              | Optional          |
-| `from_documents`                          | Instantiate vector store via adding Documents.              | Optional          |
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `add_documents`         | Add documents to the vector store.                   |
+| `delete`                | Delete selected documents from vector store (by IDs) |
+| `get_by_ids`            | Get selected documents from vector store (by IDs)    |
+| `similarity_search      | Get documents most similar to a query.               |
+| `embeddings` (property) | Embeddings object for vector store.                  |
+| `from_texts`            | Instantiate vector store via adding texts.           |
 
-Note that `InMemoryVectorStore` implements some of the optional search types, as well
-as convenience methods for loading and dumping the object to a file, but this is not
+Note that `InMemoryVectorStore` implements some optional search types, as well as
+convenience methods for loading and dumping the object to a file, but this is not
 necessary for all implementations.
 
 :::tip
 
 The in-memory vector store is tested against the standard tests in the LangChain
-Github repository. You can always use this as a starting point.
+Github repository. You can always use this a 
 
 - [Model implementation](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py)
 - [Tests](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/test_in_memory_vectorstore.py)
