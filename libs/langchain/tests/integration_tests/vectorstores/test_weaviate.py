@@ -1,4 +1,4 @@
-"""Test Weaviate functionality.
+"""Test Weaviate V4 functionality.
 
 # Launch the Weaviate pod
 cd tests/integration_tests/vectorstores/docker-compose
