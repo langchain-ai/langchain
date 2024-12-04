@@ -77,7 +77,7 @@ The central concept to understand is that LangChain provides a standardized inte
 The `.bind_tools()` method can be used to specify which tools are available for a model to call. 
 
 ```python
-model_with_tools = model.bind_tools([tools_list])
+model_with_tools = model.bind_tools(tools_list)
 ```
 
 As a specific example, let's take a function `multiply` and bind it as a tool to a model that supports tool calling.
@@ -128,7 +128,7 @@ For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
 
 [Tools](/docs/concepts/tools/) implement the [Runnable](/docs/concepts/runnables/) interface, which means that they can be invoked (e.g., `tool.invoke(args)`) directly.
 
-[LangGraph](https://langchain-ai.github.io/langgraph/) offers pre-built components (e.g., [`ToolNode`](https://langchain-ai.github.io/langgraph/reference/prebuilt/#toolnode)) that will often invoke the tool in behalf of the user.
+[LangGraph](https://langchain-ai.github.io/langgraph/) offers pre-built components (e.g., [`ToolNode`](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.tool_node.ToolNode)) that will often invoke the tool in behalf of the user.
 
 :::info[Further reading]
 

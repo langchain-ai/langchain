@@ -27,7 +27,7 @@ These systems accommodate various data formats:
 - Unstructured text (e.g., documents) is often stored in vector stores or lexical search indexes.
 - Structured data is typically housed in relational or graph databases with defined schemas.
 
-Despite this diversity in data formats, modern AI applications increasingly aim to make all types of data accessible through natural language interfaces. 
+Despite the growing diversity in data formats, modern AI applications increasingly aim to make all types of data accessible through natural language interfaces. 
 Models play a crucial role in this process by translating natural language queries into formats compatible with the underlying search index or database. 
 This translation enables more intuitive and flexible interactions with complex data structures.
 
@@ -41,7 +41,7 @@ This translation enables more intuitive and flexible interactions with complex d
 
 ## Query analysis 
 
-While users typically prefer to interact with retrieval systems using natural language, retrieval systems can specific query syntax or benefit from particular keywords. 
+While users typically prefer to interact with retrieval systems using natural language, these systems may require specific query syntax or benefit from certain keywords. 
 Query analysis serves as a bridge between raw user input and optimized search queries. Some common applications of query analysis include:
 
 1. **Query Re-writing**: Queries can be re-written or expanded to improve semantic or lexical searches.
@@ -143,7 +143,7 @@ retriever = SelfQueryRetriever.from_llm(
 
 :::info[Further reading]
 
-* See our tutorials on [text-to-SQL](/docs/tutorials/sql_qa/), [text-to-Cypher](/docs/tutorials/graph/), and [query analysis for metadata filters](/docs/tutorials/query_analysis/).
+* See our tutorials on [text-to-SQL](/docs/tutorials/sql_qa/), [text-to-Cypher](/docs/tutorials/graph/), and [query analysis for metadata filters](/docs/tutorials/rag/#query-analysis).
 * See our [blog post overview](https://blog.langchain.dev/query-construction/).
 * See our RAG from Scratch video on [query construction](https://youtu.be/kl6NwWYxvbM?feature=shared).
 

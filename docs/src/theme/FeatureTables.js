@@ -227,6 +227,17 @@ const FEATURE_TABLES = {
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
             },
+            {
+                "name": "ChatXAI",
+                "package": "langchain-xai",
+                "link": "xai",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/xai/chat_models/langchain_xai.chat_models.ChatXAI.html"
+            },
         ],
     },
     llms: {
@@ -395,7 +406,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "NVIDIA",
-                link: "NVIDIAEmbeddings",
+                link: "nvidia_ai_endpoints",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
