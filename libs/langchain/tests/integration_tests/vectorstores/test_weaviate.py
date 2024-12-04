@@ -11,13 +11,13 @@ pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
 
 import logging
 import os
+import pytest
 from typing import Generator, Union
 
-import pytest
-import weaviate
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_weaviate.vectorstores import WeaviateVectorStore
+import weaviate
 from weaviate.classes.config import DataType, Property
 from weaviate.classes.query import Filter
 
