@@ -31,7 +31,7 @@ all of these files should already exist, except for
 `vectorstores.py` and `test_vectorstores.py`. We will implement these files in this guide.
 
 First we need an implementation for our vector store. This implementation will depend
-on the details of your chosen technology. `langchain-core` includes a minimal
+on your chosen database technology. `langchain-core` includes a minimal
 [in-memory vector store](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html)
 that we can use as a guide. You can access the code [here](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py).
 For convenience, we also provide it below.
@@ -447,7 +447,7 @@ necessary for all implementations.
 :::tip
 
 The in-memory vector store is tested against the standard tests in the LangChain
-Github repository. You can always use this a 
+Github repository. You can always use this as a starting point.
 
 - [Model implementation](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py)
 - [Tests](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/test_in_memory_vectorstore.py)
@@ -475,9 +475,17 @@ these should already be installed.
 ### Add and configure standard tests
 
 The `langchain-test` package implements suites of tests for testing vector store
-integrations. By subclassing the base classes for each standard test (see below), you
-get all of the standard tests for that type, and you can override the properties that
-the test suite uses to configure the tests.
+integrations. By subclassing the base classes for each standard test, you
+get all of the standard tests for that type.
+
+:::note
+
+The full set of tests that run can be found in the API reference. See details:
+
+- [Sync tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.vectorstores.ReadWriteTestSuite.html)
+- [Async tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.vectorstores.AsyncReadWriteTestSuite.html)
+
+:::
 
 Here's how you would configure the standard tests for a typical vector store (using
 `ParrotVectorStore` as a placeholder):
