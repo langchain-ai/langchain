@@ -15,26 +15,6 @@ This page covers how to use the `AI21` ecosystem within `LangChain`.
 pip install langchain-ai21
 ```
 
-## LLMs
-
-See a [usage example](/docs/integrations/llms/ai21).
-
-### AI21 LLM
-
-```python
-from langchain_ai21 import AI21LLM
-```
-
-### AI21 Contextual Answer
-
-You can use AI21’s contextual answers model to receive text or document, 
-serving as a context, and a question and return an answer based entirely on this context.
-
-```python
-from langchain_ai21 import AI21ContextualAnswers
-```
-
-
 ## Chat models
 
 ### AI21 Chat 
@@ -45,23 +25,32 @@ See a [usage example](/docs/integrations/chat/ai21).
 from langchain_ai21 import ChatAI21
 ```
 
-## Embedding models
+## Deprecated features
+
+:::caution The following features are deprecated. 
+:::
+
+### AI21 LLM
+
+```python
+from langchain_ai21 import AI21LLM
+```
+
+### AI21 Contextual Answer
+
+```python
+from langchain_ai21 import AI21ContextualAnswers
+```
 
 ### AI21 Embeddings
-
-See a [usage example](/docs/integrations/text_embedding/ai21).
 
 ```python
 from langchain_ai21 import AI21Embeddings
 ```
-
 ## Text splitters
 
 ### AI21 Semantic Text Splitter
 
-See a [usage example](/docs/integrations/document_transformers/ai21_semantic_text_splitter).
-
 ```python
 from langchain_ai21 import AI21SemanticTextSplitter
 ```
-
