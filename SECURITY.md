@@ -39,7 +39,7 @@ Before reporting a vulnerability, please review:
 
 1) In-Scope Targets and Out-of-Scope Targets below.
 2) The [langchain-ai/langchain](https://python.langchain.com/docs/contributing/repo_structure) monorepo structure.
-3) LangChain [security guidelines](https://python.langchain.com/docs/security) to
+3) The [Best practicies](#best-practices) above to
    understand what we consider to be a security vulnerability vs. developer
    responsibility.
 
@@ -58,13 +58,13 @@ The following packages and repositories are eligible for bug bounties:
 All out of scope targets defined by huntr as well as:
 
 - **langchain-experimental**: This repository is for experimental code and is not
-  eligible for bug bounties, bug reports to it will be marked as interesting or waste of
+  eligible for bug bounties (see [package warning](https://pypi.org/project/langchain-experimental/)), bug reports to it will be marked as interesting or waste of
   time and published with no bounty attached.
 - **tools**: Tools in either langchain or langchain-community are not eligible for bug
   bounties. This includes the following directories
-  - langchain/tools
-  - langchain-community/tools
-  - Please review our [security guidelines](https://python.langchain.com/docs/security)
+  - libs/langchain/langchain/tools
+  - libs/community/langchain_community/tools
+  - Please review the [best practices](#best-practices)
     for more details, but generally tools interact with the real world. Developers are
     expected to understand the security implications of their code and are responsible
     for the security of their tools.
@@ -72,7 +72,7 @@ All out of scope targets defined by huntr as well as:
   case basis, but likely will not be eligible for a bounty as the code is already
   documented with guidelines for developers that should be followed for making their
   application secure.
-- Any LangSmith related repositories or APIs see below.
+- Any LangSmith related repositories or APIs (see [Reporting LangSmith Vulnerabilities](#reporting-langsmith-vulnerabilities)).
 
 ## Reporting LangSmith Vulnerabilities
 
