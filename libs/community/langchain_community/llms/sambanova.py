@@ -175,7 +175,7 @@ class SambaStudio(LLM):
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
         """
-        if "openai" in url:
+        if "chat/completions" in url:
             base_url = url
             stream_url = url
         else:
@@ -214,7 +214,7 @@ class SambaStudio(LLM):
             _model_kwargs["stop_sequences"] = _stop_sequences
 
         # set the parameters structure depending of the API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             if "select_expert" in _model_kwargs.keys():
                 _model_kwargs["model"] = _model_kwargs.pop("select_expert")
             if "max_tokens_to_generate" in _model_kwargs.keys():
@@ -279,7 +279,7 @@ class SambaStudio(LLM):
         params = self._get_tuning_params(stop)
 
         # create request payload for openAI v1 API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dict = [{"role": "user", "content": prompt[0]}]
             data = {"messages": messages_dict, "stream": streaming, **params}
             data = {key: value for key, value in data.items() if value is not None}
@@ -378,7 +378,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             completion = response_dict["choices"][0]["message"]["content"]
         # process response payload for generic v2 API
         elif "api/v2/predict/generic" in self.sambastudio_url:
@@ -413,7 +413,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             client = sseclient.SSEClient(response)
             for event in client.events():
                 if event.event == "error_event":
