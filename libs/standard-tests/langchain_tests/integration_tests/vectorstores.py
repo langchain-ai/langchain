@@ -76,6 +76,8 @@ class ReadWriteTestSuite(BaseStandardTests):
                     store.delete_collection()
                     pass
 
+    .. note::
+          API references for individual test methods include troubleshooting tips.
     """  # noqa: E501
 
     @abstractmethod
@@ -445,6 +447,8 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
                     store.delete_collection()
                     pass
 
+    .. note::
+          API references for individual test methods include troubleshooting tips.
     """  # noqa: E501
 
     @abstractmethod

@@ -75,29 +75,30 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 class ChatModelIntegrationTests(ChatModelTests):
     """Base class for chat model integration tests.
 
-    Test subclasses must implement the following two properties:
+    Test subclasses must implement the ``chat_model_class`` and
+    ``chat_model_params`` properties to specify what model to test and its
+    initialization parameters.
 
-    chat_model_class
-        The chat model class to test, e.g., ``ChatParrotLink``.
+    Example:
 
-        Example:
+    .. code-block:: python
 
-        .. code-block:: python
+        from typing import Type
 
+        from langchain_tests.integration_tests import ChatModelIntegrationTests
+        from my_package.chat_models import MyChatModel
+
+
+        class TestMyChatModelIntegration(ChatModelIntegrationTests):
             @property
-            def chat_model_class(self) -> Type[ChatParrotLink]:
-                return ChatParrotLink
-
-    chat_model_params
-        Initialization parameters for the chat model.
-
-        Example:
-
-        .. code-block:: python
+            def chat_model_class(self) -> Type[MyChatModel]:
+                # Return the chat model class to test here
+                return MyChatModel
 
             @property
             def chat_model_params(self) -> dict:
-                return {"model": "bird-brain-001", "temperature": 0}
+                # Return initialization parameters for the model.
+                return {"model": "model-001", "temperature": 0}
 
     .. note::
           API references for individual test methods include troubleshooting tips.
