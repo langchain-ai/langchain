@@ -11,13 +11,12 @@ pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
 
 import logging
 import os
-import pytest
-from typing import Generator, Union
 
+import pytest
+import weaviate
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_weaviate.vectorstores import WeaviateVectorStore
-import weaviate
 from weaviate.classes.config import DataType, Property
 from weaviate.classes.query import Filter
 
@@ -36,18 +35,6 @@ class TestWeaviate:
     def setup_class(cls) -> None:
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError("OPENAI_API_KEY environment variable is not set")
-
-    @pytest.fixture(scope="class", autouse=True)
-    def weaviate_url(self) -> Union[str, Generator[str, None, None]]:  # type: ignore[return]
-        """Return the weaviate url."""
-        from weaviate import Client
-
-        url = "http://localhost:8080"
-        yield url
-
-        # Clear the test index
-        client = Client(url)
-        client.schema.delete_all()
 
     @pytest.fixture(scope="class", autouse=True)
     def weaviate_host(self) -> str:  # type: ignore[return]
