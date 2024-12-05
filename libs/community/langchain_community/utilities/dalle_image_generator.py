@@ -31,7 +31,7 @@ class DallEAPIWrapper(BaseModel):
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    openai_api_key: SecretStr = Field(
+    openai_api_key: Optional[SecretStr] = Field(
         alias="api_key",
         default_factory=secret_from_env(
             "OPENAI_API_KEY",

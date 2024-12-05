@@ -4,7 +4,7 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
@@ -52,6 +52,10 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_tool_calling(self, model: BaseChatModel) -> None:
         super().test_tool_calling(model)
+
+    @pytest.mark.xfail(reason=("Not implemented"))
+    async def test_tool_calling_async(self, model: BaseChatModel) -> None:
+        await super().test_tool_calling_async(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests  # type: ignore
 from langchain_core.document_loaders import BaseLoader
@@ -13,9 +13,7 @@ from pydantic import Field
 
 from langchain_community.document_loaders.base_o365 import (
     O365BaseLoader,
-    _FileType,
 )
-from langchain_community.document_loaders.parsers.registry import get_parser
 
 
 class SharePointLoader(O365BaseLoader, BaseLoader):
@@ -35,14 +33,6 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
     """ The path to the token to make api calls"""
     load_extended_metadata: Optional[bool] = False
     """ Whether to load extended metadata. Size, Owner and full_path."""
-
-    @property
-    def _file_types(self) -> Sequence[_FileType]:
-        """Return supported file types.
-        Returns:
-            A sequence of supported file types.
-        """
-        return _FileType.DOC, _FileType.DOCX, _FileType.PDF
 
     @property
     def _scopes(self) -> List[str]:
@@ -67,7 +57,6 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         drive = self._auth().storage().get_drive(self.document_library_id)
         if not isinstance(drive, Drive):
             raise ValueError(f"There isn't a Drive with id {self.document_library_id}.")
-        blob_parser = get_parser("default")
         if self.folder_path:
             target_folder = drive.get_item_by_path(self.folder_path)
             if not isinstance(target_folder, Folder):
@@ -79,7 +68,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 if self.load_extended_metadata is True:
                     extended_metadata = self.get_extended_metadata(file_id)
                     extended_metadata.update({"source_full_url": target_folder.web_url})
-                for parsed_blob in blob_parser.lazy_parse(blob):
+                for parsed_blob in self._blob_parser.lazy_parse(blob):
                     if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                     if self.load_extended_metadata is True:
@@ -96,7 +85,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 if self.load_extended_metadata is True:
                     extended_metadata = self.get_extended_metadata(file_id)
                     extended_metadata.update({"source_full_url": target_folder.web_url})
-                for parsed_blob in blob_parser.lazy_parse(blob):
+                for parsed_blob in self._blob_parser.lazy_parse(blob):
                     if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                     if self.load_extended_metadata is True:
@@ -109,7 +98,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     auth_identities = self.authorized_identities(file_id)
                 if self.load_extended_metadata is True:
                     extended_metadata = self.get_extended_metadata(file_id)
-                for parsed_blob in blob_parser.lazy_parse(blob):
+                for parsed_blob in self._blob_parser.lazy_parse(blob):
                     if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                     if self.load_extended_metadata is True:
@@ -126,7 +115,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     auth_identities = self.authorized_identities(file_id)
                 if self.load_extended_metadata is True:
                     extended_metadata = self.get_extended_metadata(file_id)
-                for blob_part in blob_parser.lazy_parse(blob):
+                for blob_part in self._blob_parser.lazy_parse(blob):
                     blob_part.metadata.update(blob.metadata)
                     if self.load_auth is True:
                         blob_part.metadata["authorized_identities"] = auth_identities
@@ -182,7 +171,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         data = json.loads(s)
         return data
 
-    def get_extended_metadata(self, file_id: str) -> dict:
+    def get_extended_metadata(self, file_id: str) -> Dict:
         """
         Retrieve extended metadata for a file in SharePoint.
         As of today, following fields are supported in the extended metadata:
