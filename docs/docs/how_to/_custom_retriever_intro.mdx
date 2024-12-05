@@ -1,0 +1,23 @@
+To create your own retriever, you need to extend the `BaseRetriever` class and implement the following methods:
+
+| Method                         | Description                                      | Required/Optional |
+|--------------------------------|--------------------------------------------------|-------------------|
+| `_get_relevant_documents`      | Get documents relevant to a query.               | Required          |
+| `_aget_relevant_documents`     | Implement to provide async native support.       | Optional          |
+
+
+The logic inside of `_get_relevant_documents` can involve arbitrary calls to a database or to the web using requests.
+
+:::tip
+By inherting from `BaseRetriever`, your retriever automatically becomes a LangChain [Runnable](/docs/concepts/runnables) and will gain the standard `Runnable` functionality out of the box!
+:::
+
+
+:::info
+You can use a `RunnableLambda` or `RunnableGenerator` to implement a retriever.
+
+The main benefit of implementing a retriever as a `BaseRetriever` vs. a `RunnableLambda` (a custom [runnable function](/docs/how_to/functions)) is that a `BaseRetriever` is a well
+known LangChain entity so some tooling for monitoring may implement specialized behavior for retrievers. Another difference
+is that a `BaseRetriever` will behave slightly differently from `RunnableLambda` in some APIs; e.g., the `start` event
+in `astream_events` API will be `on_retriever_start` instead of `on_chain_start`.
+:::
