@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -517,6 +518,11 @@ class Chroma(VectorStore):
         """
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            # Assign strings to any null IDs
+            for idx, _id in enumerate(ids):
+                if _id is None:
+                    ids[idx] = str(uuid.uuid4())
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -1027,6 +1033,38 @@ class Chroma(VectorStore):
             kwargs["include"] = include
 
         return self._collection.get(**kwargs)  # type: ignore
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        """Get documents by their IDs.
+
+        The returned documents are expected to have the ID field set to the ID of the
+        document in the vector store.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            List of Documents.
+
+        .. versionadded:: 0.2.1
+        """
+        results = self.get(ids=list(ids))
+        return [
+            Document(page_content=doc, metadata=meta, id=doc_id)
+            for doc, meta, doc_id in zip(
+                results["documents"], results["metadatas"], results["ids"]
+            )
+        ]
 
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
