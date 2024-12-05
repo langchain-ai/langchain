@@ -6,7 +6,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, cast
 
 import typer
 from typing_extensions import Annotated, TypedDict
@@ -15,19 +15,17 @@ from langchain_cli.utils.find_replace import replace_file, replace_glob
 
 integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
-Replacements = TypedDict(
-    "Replacements",
-    {
-        "__package_name__": str,
-        "__module_name__": str,
-        "__ModuleName__": str,
-        "__MODULE_NAME__": str,
-        "__package_name_short__": str,
-    },
-)
+
+class Replacements(TypedDict):
+    __package_name__: str
+    __module_name__: str
+    __ModuleName__: str
+    __MODULE_NAME__: str
+    __package_name_short__: str
+    __package_name_short_snake__: str
 
 
-def _process_name(name: str, *, community: bool = False):
+def _process_name(name: str, *, community: bool = False) -> Replacements:
     preprocessed = name.replace("_", "-").lower()
 
     if preprocessed.startswith("langchain-"):
@@ -42,7 +40,7 @@ def _process_name(name: str, *, community: bool = False):
         raise ValueError("Name should not end with `-`.")
     if preprocessed.find("--") != -1:
         raise ValueError("Name should not contain consecutive hyphens.")
-    replacements = {
+    replacements: Replacements = {
         "__package_name__": f"langchain-{preprocessed}",
         "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
         "__ModuleName__": preprocessed.title().replace("-", ""),
@@ -52,7 +50,7 @@ def _process_name(name: str, *, community: bool = False):
     }
     if community:
         replacements["__module_name__"] = preprocessed.replace("-", "_")
-    return Replacements(replacements)
+    return replacements
 
 
 @integration_cli.command()
@@ -74,16 +72,7 @@ def new(
 ):
     """
     Creates a new integration package.
-
-    Should be run from libs/partners
     """
-    # confirm that we are in the right directory
-    if not Path.cwd().name == "partners" or not Path.cwd().parent.name == "libs":
-        typer.echo(
-            "This command should be run from the `libs/partners` directory in the "
-            "langchain-ai/langchain monorepo. Continuing is NOT recommended."
-        )
-        typer.confirm("Are you sure you want to continue?", abort=True)
 
     try:
         replacements = _process_name(name)
@@ -104,7 +93,7 @@ def new(
             "Name of integration in PascalCase", default=replacements["__ModuleName__"]
         )
 
-    destination_dir = Path.cwd() / replacements["__package_name_short__"]
+    destination_dir = Path.cwd() / replacements["__package_name__"]
     if destination_dir.exists():
         typer.echo(f"Folder {destination_dir} exists.")
         raise typer.Exit(code=1)
@@ -118,7 +107,7 @@ def new(
     shutil.move(destination_dir / "integration_template", package_dir)
 
     # replacements in files
-    replace_glob(destination_dir, "**/*", replacements)
+    replace_glob(destination_dir, "**/*", cast(Dict[str, str], replacements))
 
     # poetry install
     subprocess.run(
@@ -226,4 +215,4 @@ def create_doc(
     shutil.copy(docs_template, destination_path)
 
     # replacements in file
-    replace_file(destination_path, replacements)
+    replace_file(destination_path, cast(Dict[str, str], replacements))
