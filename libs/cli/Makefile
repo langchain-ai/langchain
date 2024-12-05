@@ -21,14 +21,16 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I --fix $(PYTHON_FILES)
 
-test tests: e2e_test
-	poetry run pytest tests
+test tests: _test _e2e_test
 
 PYTHON = .venv/bin/python
 
+_test:
+	poetry run pytest tests
+
 # custom integration testing for cli integration flow
 # currently ignores vectorstores test because lacks implementation
-e2e_test:
+_e2e_test:
 	rm -rf .integration_test
 	mkdir .integration_test
 	cd .integration_test && \
