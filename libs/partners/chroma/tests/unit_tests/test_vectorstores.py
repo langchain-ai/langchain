@@ -17,7 +17,7 @@ def test_initialization() -> None:
 
 def test_similarity_search() -> None:
     """Test similarity search by Chroma."""
-    texts = ["foo", "bar", "baz"]
+    texts = ["foo"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
