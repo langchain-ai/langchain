@@ -392,12 +392,12 @@ div.deprecated {
   margin-top: 0.5em;
   margin-bottom: 2em;
 
-  background-color: var(--pst-color-warning-bg);
-  border-color: var(--pst-color-warning);
+  background-color: var(--pst-color-info-bg);
+  border-color: var(--pst-color-info);
 }
 
 span.versionmodified.deprecated:before {
-  color: var(--pst-color-warning);
+  color: var(--pst-color-info);
 }
 
 .admonition-beta.admonition, div.admonition-beta.admonition {
