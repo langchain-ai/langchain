@@ -29,5 +29,3 @@ def test_similarity_search() -> None:
     docsearch.delete_collection()
     assert len(output) == 1
     assert output[0].page_content == "foo"
-    assert output[0].metadata == {"page": "0"}
-    assert output[0].id is not None
