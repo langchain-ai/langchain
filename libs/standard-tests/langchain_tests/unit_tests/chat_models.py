@@ -487,7 +487,8 @@ class ChatModelUnitTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, ensure that ``init_from_env_params`` is specified
-            correctly.
+            correctly and that model parameters are properly set from environment
+            variables during initialization.
         """
         env_params, model_params, expected_attrs = self.init_from_env_params
         if not env_params:
