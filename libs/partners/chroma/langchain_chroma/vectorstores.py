@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -44,11 +45,26 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
+        (
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[2]),
+            result[3],
+        )
+        for result in zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["ids"][0],
+            results["distances"][0],
+        )
+    ]
+
+
+def _results_to_docs_and_vectors(results: Any) -> List[Tuple[Document, np.ndarray]]:
+    return [
         (Document(page_content=result[0], metadata=result[1] or {}), result[2])
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
-            results["distances"][0],
+            results["embeddings"][0],
         )
     ]
 
@@ -502,6 +518,11 @@ class Chroma(VectorStore):
         """
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            # Assign strings to any null IDs
+            for idx, _id in enumerate(ids):
+                if _id is None:
+                    ids[idx] = str(uuid.uuid4())
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -687,12 +708,57 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
+    def similarity_search_with_vectors(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, np.ndarray]]:
+        """Run similarity search with Chroma with vectors.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text and
+            embedding vectors for each.
+        """
+        include = ["documents", "metadatas", "embeddings"]
+        if self._embedding_function is None:
+            results = self.__query_collection(
+                query_texts=[query],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                include=include,
+                **kwargs,
+            )
+        else:
+            query_embedding = self._embedding_function.embed_query(query)
+            results = self.__query_collection(
+                query_embeddings=[query_embedding],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                include=include,
+                **kwargs,
+            )
+
+        return _results_to_docs_and_vectors(results)
+
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """Select the relevance score function based on collections distance metric.
 
         The most similar documents will have the lowest relevance score. Default
         relevance score function is euclidean distance. Distance metric must be
-        provided in `collection_metadata` during initizalition of Chroma object.
+        provided in `collection_metadata` during initialization of Chroma object.
         Example: collection_metadata={"hnsw:space": "cosine"}. Available distance
         metrics are: 'cosine', 'l2' and 'ip'.
 
@@ -968,6 +1034,38 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)  # type: ignore
 
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        """Get documents by their IDs.
+
+        The returned documents are expected to have the ID field set to the ID of the
+        document in the vector store.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            List of Documents.
+
+        .. versionadded:: 0.2.1
+        """
+        results = self.get(ids=list(ids))
+        return [
+            Document(page_content=doc, metadata=meta, id=doc_id)
+            for doc, meta, doc_id in zip(
+                results["documents"], results["metadatas"], results["ids"]
+            )
+        ]
+
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
 
@@ -1129,6 +1227,8 @@ class Chroma(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
+        if ids is None:
+            ids = [doc.id if doc.id else str(uuid.uuid4()) for doc in documents]
         return cls.from_texts(
             texts=texts,
             embedding=embedding,

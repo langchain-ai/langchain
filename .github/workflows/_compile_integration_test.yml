@@ -13,7 +13,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
@@ -21,6 +21,7 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     name: "poetry run pytest -m compile tests/integration_tests #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4
