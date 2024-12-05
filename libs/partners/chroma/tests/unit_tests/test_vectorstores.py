@@ -22,7 +22,7 @@ def test_similarity_search() -> None:
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
         texts=texts,
-        embedding=FakeEmbeddings(),
+        embedding=FakeEmbeddings(size=10),
         metadatas=metadatas,
     )
     output = docsearch.similarity_search("foo", k=1)
