@@ -11,6 +11,7 @@ modules = [
     "vectorstores",
     "embeddings",
     "tools",
+    "retrievers",
 ]
 
 for module in modules:

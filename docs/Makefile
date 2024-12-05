@@ -47,6 +47,7 @@ generate-files:
 	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
 
 	curl https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md | sed 's/<=/\&lt;=/g' > $(INTERMEDIATE_DIR)/langserve.md
+	cp ../SECURITY.md $(INTERMEDIATE_DIR)/security.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
 
 copy-infra:
