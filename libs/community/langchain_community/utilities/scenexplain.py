@@ -23,7 +23,7 @@ class SceneXplainAPIWrapper(BaseModel):
       and create a new API key.
     """
 
-    scenex_api_key: str = Field(..., default_factory=from_env("SCENEX_API_KEY"))
+    scenex_api_key: str = Field(..., default_factory=from_env("SCENEX_API_KEY"))  # type: ignore[call-overload]
     scenex_api_url: str = "https://api.scenex.jina.ai/v1/describe"
 
     def _describe_image(self, image: str) -> str:

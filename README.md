@@ -123,13 +123,13 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 - [Tutorials](https://python.langchain.com/docs/tutorials/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
 - [How-to guides](https://python.langchain.com/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
 - [Conceptual guide](https://python.langchain.com/docs/concepts/): Conceptual explanations of the key parts of the framework.
-- [API Reference](https://api.python.langchain.com): Thorough documentation of every class and method.
+- [API Reference](https://python.langchain.com/api_reference/): Thorough documentation of every class and method.
 
 ## 🌐 Ecosystem
 
 - [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
 - [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
+- [🦜🕸️ LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform): Deploy LLM applications built with LangGraph into production.
 
 ## 💁 Contributing
 

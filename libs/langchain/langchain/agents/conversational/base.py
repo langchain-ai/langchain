@@ -11,6 +11,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import Field
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
@@ -19,7 +20,11 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="1.0")
+@deprecated(
+    "0.1.0",
+    message=AGENT_DEPRECATION_WARNING,
+    removal="1.0",
+)
 class ConversationalAgent(Agent):
     """An agent that holds a conversation in addition to using tools."""
 

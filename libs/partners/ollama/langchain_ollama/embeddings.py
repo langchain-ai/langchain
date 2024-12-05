@@ -1,4 +1,5 @@
 """Ollama embeddings models."""
+
 from typing import (
     List,
     Optional,
@@ -133,12 +134,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = PrivateAttr(default=None)
+    _client: Client = PrivateAttr(default=None)  # type: ignore
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
     """
     The async client to use for making requests.
     """
