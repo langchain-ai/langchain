@@ -13,4 +13,4 @@ class TestParrotLinkEmbeddingsUnit(EmbeddingsUnitTests):
 
     @property
     def embedding_model_params(self) -> dict:
-        return {"model": "nest-embed-001", "temperature": 0}
+        return {"model": "nest-embed-001"}

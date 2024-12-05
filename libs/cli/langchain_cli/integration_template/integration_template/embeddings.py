@@ -71,6 +71,9 @@ class __ModuleName__Embeddings(Embeddings):
 
     """
 
+    def __init__(self, model: str):
+        self.model = model
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
         return [[0.5, 0.6, 0.7] for _ in texts]

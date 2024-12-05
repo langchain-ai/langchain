@@ -37,6 +37,7 @@ integration_test integration_tests:
 		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
 		cd langchain-parrot-link && \
 			poetry install --with lint,typing,test && \
+			poetry run pip install -e ../../../standard-tests && \
 			make format lint tests && \
 			poetry install --with test_integration && \
 			make integration_test

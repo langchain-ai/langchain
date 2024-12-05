@@ -3,7 +3,7 @@ from typing import AsyncGenerator, Generator
 import pytest
 from __module_name__.vectorstores import __ModuleName__VectorStore
 from langchain_core.vectorstores import VectorStore
-from langchain_standard_tests.integration_tests.vectorstores import (
+from langchain_tests.integration_tests import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
