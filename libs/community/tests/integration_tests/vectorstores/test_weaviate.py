@@ -11,12 +11,13 @@ pytest -sv tests/integration_tests/vectorstores/test_weaviate.py
 
 import logging
 import os
-import pytest
-from pytest import approx
 import uuid
 from typing import Generator, Union
 
+import pytest
 from langchain_core.documents import Document
+from pytest import approx
+
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores.weaviate import Weaviate
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
@@ -109,7 +110,7 @@ class TestWeaviate:
             k=1,
             additional=["certainty"],
         )
-        # It is likely that certainly is not exactly 1, e.g. 
+        # It is likely that certainly is not exactly 1, e.g.
         # Document(metadata={'_additional': {'certainty': 1.000000119}, 'page': 0}, ...)
         assert output == [
             Document(

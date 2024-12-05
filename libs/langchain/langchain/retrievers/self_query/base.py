@@ -162,11 +162,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return MongoDBAtlasTranslator()
 
         try:
-            from langchain_neo4j import Neo4jVector
+            from langchain_neo4j import Neo4jVector as NewNeo4jVector
         except ImportError:
             pass
         else:
-            if isinstance(vectorstore, Neo4jVector):
+            if isinstance(vectorstore, NewNeo4jVector):
                 return Neo4jTranslator()
 
         try:

@@ -40,16 +40,16 @@ class TestWeaviate:
     def weaviate_host(self) -> str:  # type: ignore[return]
         # localhost or weaviate
         host = "localhost"
-        yield host
+        return host
 
     @pytest.fixture(scope="class", autouse=True)
-    def weaviate_port(self) -> str:  # type: ignore[return]
-        port = "8080"
-        yield port
+    def weaviate_port(self) -> int:  # type: ignore[return]
+        port = 8080
+        return port
 
     @pytest.fixture(scope="class", autouse=True)
     def weaviate_client(
-        self, weaviate_host: str, weaviate_port: str
+        self, weaviate_host: str, weaviate_port: int
     ) -> weaviate.WeaviateClient:
         weaviate_client = weaviate.connect_to_local(
             host=weaviate_host, port=weaviate_port
@@ -60,11 +60,13 @@ class TestWeaviate:
             weaviate_client.collections.create(
                 name="test", properties=[Property(name="name", data_type=DataType.TEXT)]
             )
-        yield weaviate_client
+        return weaviate_client
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_similarity_search_with_metadata(
-        self, weaviate_client: str, embedding_openai: OpenAIEmbeddings
+        self,
+        weaviate_client: weaviate.WeaviateClient,
+        embedding_openai: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search with metadata."""
         texts = ["foo", "bar", "baz"]
