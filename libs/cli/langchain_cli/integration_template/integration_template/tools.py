@@ -22,7 +22,7 @@ class __ModuleName__ToolInput(BaseModel):
     b: int = Field(..., description="second number to add")
 
 
-class __ModuleName__Tool(BaseTool):
+class __ModuleName__Tool(BaseTool):  # type: ignore[override]
     """__ModuleName__ tool.
 
     Setup:
