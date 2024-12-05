@@ -80,6 +80,8 @@
 html {
     --pst-font-family-base: 'Inter';
     --pst-font-family-heading: 'Inter Tight', sans-serif;
+
+    --pst-icon-versionmodified-deprecated: var(--pst-icon-exclamation-triangle);
 }
 
 /*******************************************************************************
@@ -389,6 +391,13 @@ html[data-theme=dark] .MathJax_SVG * {
 div.deprecated {
   margin-top: 0.5em;
   margin-bottom: 2em;
+
+  background-color: var(--pst-color-warning-bg);
+  border-color: var(--pst-color-warning);
+}
+
+span.versionmodified.deprecated:before {
+  color: var(--pst-color-warning);
 }
 
 .admonition-beta.admonition, div.admonition-beta.admonition {

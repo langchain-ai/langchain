@@ -38,7 +38,7 @@ install-py-deps:
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
-	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
+	cp -rp $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
 
@@ -47,6 +47,7 @@ generate-files:
 	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
 
 	curl https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md | sed 's/<=/\&lt;=/g' > $(INTERMEDIATE_DIR)/langserve.md
+	cp ../SECURITY.md $(INTERMEDIATE_DIR)/security.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
 
 copy-infra:
