@@ -4,6 +4,8 @@ pagination_prev: contributing/how_to/integrations/index
 ---
 # How to implement an integration package
 
+import CodeBlock from '@theme/CodeBlock';
+
 This guide walks through the process of implementing a LangChain integration 
 package.
 
@@ -82,12 +84,16 @@ is tested against the standard tests in the LangChain Github repository.
 
 </details>
 
-<!-- <details>
-<summary>Embeddings</summary>
+<details>
+    <summary>Embeddings</summary>
+
+import ChatSource from '!!raw-loader!../../../../../libs/cli/langchain_cli/integration_template/integration_template/chat_models.py';
+
+<CodeBlock language="jsx">{ChatSource}</CodeBlock>
 
 </details>
 
-<details>
+<!-- <details>
 <summary>Tools</summary>
 
 </details>
