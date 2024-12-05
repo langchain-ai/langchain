@@ -60,6 +60,7 @@ copy-infra:
 	cp package.json $(OUTPUT_NEW_DIR)
 	cp sidebars.js $(OUTPUT_NEW_DIR)
 	cp -r static $(OUTPUT_NEW_DIR)
+	cp -r ../libs/cli/langchain_cli/integration_template $(OUTPUT_NEW_DIR)/src/theme
 	cp yarn.lock $(OUTPUT_NEW_DIR)
 
 render:
