@@ -1,5 +1,6 @@
 """Test embedding model integration."""
-from typing import Tuple, Type
+
+from typing import Type
 
 from __module_name__.embeddings import __ModuleName__Embeddings
 from langchain_tests.unit_tests import EmbeddingsUnitTests

@@ -86,5 +86,7 @@ class __ModuleName__Retriever(BaseRetriever):
     """  # noqa: E501
 
     # TODO: This method must be implemented to retrieve documents.
-    def _get_relevant_documents(self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> List[Document]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
         raise NotImplementedError()
