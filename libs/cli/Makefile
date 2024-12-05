@@ -30,9 +30,13 @@ PYTHON = .venv/bin/python
 integration_test integration_tests:
 	rm -rf .integration_test
 	mkdir .integration_test
-	cd .integration_test
-	python3 -m venv .venv
-	$(PYTHON) -m pip install --upgrade poetry
-	$(PYTHON) -m pip install -e ../
-	$(PYTHON) -m langchain integration new --name parrot-link --name-class ParrotLink
-	cd langchain-parrot-link
+	cd .integration_test && \
+		python3 -m venv .venv && \
+		$(PYTHON) -m pip install --upgrade poetry && \
+		$(PYTHON) -m pip install -e .. && \
+		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
+		cd langchain-parrot-link && \
+			poetry install --with lint,typing,test && \
+			make format lint tests && \
+			poetry install --with test_integration && \
+			make integration_test
