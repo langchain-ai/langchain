@@ -74,16 +74,7 @@ def new(
 ):
     """
     Creates a new integration package.
-
-    Should be run from libs/partners
     """
-    # confirm that we are in the right directory
-    if not Path.cwd().name == "partners" or not Path.cwd().parent.name == "libs":
-        typer.echo(
-            "This command should be run from the `libs/partners` directory in the "
-            "langchain-ai/langchain monorepo. Continuing is NOT recommended."
-        )
-        typer.confirm("Are you sure you want to continue?", abort=True)
 
     try:
         replacements = _process_name(name)
@@ -104,7 +95,7 @@ def new(
             "Name of integration in PascalCase", default=replacements["__ModuleName__"]
         )
 
-    destination_dir = Path.cwd() / replacements["__package_name_short__"]
+    destination_dir = Path.cwd() / replacements["__package_name__"]
     if destination_dir.exists():
         typer.echo(f"Folder {destination_dir} exists.")
         raise typer.Exit(code=1)
