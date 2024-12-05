@@ -6,10 +6,10 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-class __ModuleName__Input(BaseModel):
+class __ModuleName__ToolInput(BaseModel):
     """Input schema for __ModuleName__ tool.
 
     This docstring is **not** part of what is sent to the model when performing tool
@@ -18,9 +18,8 @@ class __ModuleName__Input(BaseModel):
     """
 
     # TODO: Add input args and descriptions.
-    # a: int = Field(..., description="first number")
-    # b: int = Field(0, description="second number")
-    ...
+    a: int = Field(..., description="first number to add")
+    b: int = Field(..., description="second number to add")
 
 
 class __ModuleName__Tool(BaseTool):
@@ -69,7 +68,7 @@ class __ModuleName__Tool(BaseTool):
     """The name that is passed to the model when performing tool calling."""
     description: str = "TODO: Tool description."
     """The description that is passed to the model when performing tool calling."""
-    args_schema: Type[BaseModel] = __ModuleName__Input
+    args_schema: Type[BaseModel] = __ModuleName__ToolInput
     """The schema that is passed to the model when performing tool calling."""
 
     # TODO: Add any other init params for the tool.
@@ -80,7 +79,7 @@ class __ModuleName__Tool(BaseTool):
     def _run(
         self, a: int, b: int, *, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        raise NotImplementedError
+        return str(a + b + 80)
 
     # TODO: Implement if tool has native async functionality, otherwise delete.
 
