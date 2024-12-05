@@ -33,6 +33,7 @@ ruff = "^0.5"
 mypy = "^1.13.0"
 
 [tool.poetry.group.test.dependencies]
+langchain = {path = "../langchain", develop = true}
 
 [tool.poetry.group.typing.dependencies]
 
