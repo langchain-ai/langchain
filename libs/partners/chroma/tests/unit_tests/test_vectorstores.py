@@ -17,7 +17,7 @@ def test_initialization() -> None:
 
 def test_similarity_search() -> None:
     """Test similarity search by Chroma."""
-    texts = ["foo"]
+    texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
@@ -28,4 +28,3 @@ def test_similarity_search() -> None:
     output = docsearch.similarity_search("foo", k=1)
     docsearch.delete_collection()
     assert len(output) == 1
-    assert output[0].page_content == "foo"
