@@ -80,6 +80,8 @@
 html {
     --pst-font-family-base: 'Inter';
     --pst-font-family-heading: 'Inter Tight', sans-serif;
+
+    --pst-icon-versionmodified-deprecated: var(--pst-icon-exclamation-triangle);
 }
 
 /*******************************************************************************
@@ -408,4 +410,13 @@ dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.
 p {
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
+}
+
+div.deprecated {
+  background-color: var(--pst-color-warning-bg);
+  border-color: var(--pst-color-warning);
+}
+
+span.versionmodified.deprecated:before {
+  color: var(--pst-color-warning);
 }
