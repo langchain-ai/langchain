@@ -758,7 +758,7 @@ class Chroma(VectorStore):
 
         The most similar documents will have the lowest relevance score. Default
         relevance score function is euclidean distance. Distance metric must be
-        provided in `collection_metadata` during initizalition of Chroma object.
+        provided in `collection_metadata` during initialization of Chroma object.
         Example: collection_metadata={"hnsw:space": "cosine"}. Available distance
         metrics are: 'cosine', 'l2' and 'ip'.
 

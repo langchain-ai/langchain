@@ -13,3 +13,21 @@ def test_initialization() -> None:
         texts=texts,
         embedding=FakeEmbeddings(size=10),
     )
+
+
+def test_similarity_search() -> None:
+    """Test similarity search by Chroma."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    docsearch.delete_collection()
+    assert len(output) == 1
+    assert output[0].page_content == "foo"
+    assert output[0].metadata == {"page": "0"}
+    assert output[0].id is not None
