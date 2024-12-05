@@ -265,7 +265,7 @@ class Chat__ModuleName__(BaseChatModel):
              # TODO: Example output.
 
     """  # noqa: E501
-    
+
     model_name: str = Field(alias="model")
     """The name of the model"""
     parrot_buffer_length: int

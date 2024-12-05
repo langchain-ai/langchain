@@ -18,7 +18,8 @@ class __ModuleName__LLM(BaseLLM):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install ``__package_name__`` and set environment variable
+        ``__MODULE_NAME___API_KEY``.
 
         .. code-block:: bash
 
@@ -41,7 +42,8 @@ class __ModuleName__LLM(BaseLLM):
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            __ModuleName__ API key. If not passed in will be read from env var __MODULE_NAME___API_KEY.
+            __ModuleName__ API key. If not passed in will be read from env var
+            ``__MODULE_NAME___API_KEY``.
 
     See full list of supported init args and their descriptions in the params section.
 

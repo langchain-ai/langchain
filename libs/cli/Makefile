@@ -1,8 +1,28 @@
-lint lint_diff:
-	poetry run poe lint
 
-test:
-	poetry run poe test
+######################
+# LINTING AND FORMATTING
+######################
+
+# Define a variable for Python and notebook files.
+PYTHON_FILES=.
+MYPY_CACHE=.mypy_cache
+lint format: PYTHON_FILES=.
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/cli --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_cli
+lint_tests: PYTHON_FILES=tests
+lint_tests: MYPY_CACHE=.mypy_cache_test
+
+lint lint_diff lint_package lint_tests:
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+
+format format_diff:
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I --fix $(PYTHON_FILES)
+
+test tests:
+	poetry run pytest tests
 
 PYTHON = .venv/bin/python
 
@@ -16,7 +36,3 @@ integration_test integration_tests:
 	$(PYTHON) -m pip install -e ../
 	$(PYTHON) -m langchain integration new --name parrot-link --name-class ParrotLink
 	cd langchain-parrot-link
-
-
-format:
-	poetry run poe format
