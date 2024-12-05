@@ -1228,7 +1228,7 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         if ids is None:
-            ids = [doc.id if doc.id else "" for doc in documents]
+            ids = [doc.id if doc.id else str(uuid.uuid4()) for doc in documents]
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
