@@ -10,11 +10,10 @@ class TestFakeEmbeddingsUnit(EmbeddingsUnitTests):
     @property
     def embeddings_class(self) -> Type[Embeddings]:
         return DeterministicFakeEmbedding
-    
+
     @property
     def embedding_model_params(self) -> dict:
         return {"size": 6}  # embedding dimension
-
 
 
 class TestFakeEmbeddingsIntegration(EmbeddingsIntegrationTests):
