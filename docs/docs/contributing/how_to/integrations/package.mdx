@@ -89,7 +89,14 @@ is tested against the standard tests in the LangChain Github repository.
 
 import ChatSource from '!!raw-loader!/../../../../libs/cli/langchain_cli/integration_template/integration_template/chat_models.py';
 
-<CodeBlock language="jsx">{ChatSource}</CodeBlock>
+<CodeBlock language="jsx">
+    {
+        ChatSource.replaceAll('__ModuleName__', 'ParrotLink')
+            .replaceAll('__package_name__', 'langchain-parrot-link')
+            .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+            .replaceAll('__module_name__', 'langchain_parrot_link')
+    }
+</CodeBlock>
 
 </details>
 
