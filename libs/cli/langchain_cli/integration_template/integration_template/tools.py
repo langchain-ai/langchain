@@ -76,9 +76,9 @@ class __ModuleName__Tool(BaseTool):
     # param1: Optional[str]
     # """param1 determines foobar"""
 
-    # TODO: Replaced *args with real tool arguments.
+    # TODO: Replaced (a, b) with real tool arguments.
     def _run(
-        self, *args, run_manager: Optional[CallbackManagerForToolRun] = None
+        self, a: int, b: int, *, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         raise NotImplementedError
 
@@ -86,7 +86,9 @@ class __ModuleName__Tool(BaseTool):
 
     # async def _arun(
     #     self,
-    #     *args,
+    #     a: int,
+    #     b: int,
+    #     *,
     #     run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     # ) -> str:
     #     ...

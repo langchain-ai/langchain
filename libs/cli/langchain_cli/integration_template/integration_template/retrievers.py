@@ -2,6 +2,7 @@
 
 from typing import List
 
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
@@ -85,5 +86,5 @@ class __ModuleName__Retriever(BaseRetriever):
     """  # noqa: E501
 
     # TODO: This method must be implemented to retrieve documents.
-    def _get_relevant_documents(self, query: str) -> List[Document]:
+    def _get_relevant_documents(self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> List[Document]:
         raise NotImplementedError()
