@@ -65,7 +65,7 @@ class Outlines(LLM):
     This can be useful for generating structured outputs like IP addresses, dates, etc.
     
     Example: (valid IP address)
-        regex = r"((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)"
+    regex = r"((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)"
     
     Note: Computing the regex index can take some time, so it's recommended to reuse
     the same regex for multiple generations if possible.
@@ -114,7 +114,7 @@ class Outlines(LLM):
     programming languages, or custom domain-specific languages.
     
     Example:
-        grammar = '''
+        grammar = r'''
             ?start: expression
             ?expression: term (("+" | "-") term)*
             ?term: factor (("*" | "/") factor)*

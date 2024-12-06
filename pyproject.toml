@@ -10,6 +10,7 @@ repository = "https://www.github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
+redis = "^5.1.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5.0"

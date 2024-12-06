@@ -1,15 +1,12 @@
 """Implement integration tests for Redis storage."""
 
 import os
-import typing
 import uuid
 
 import pytest
+from redis import Redis
 
 from langchain_community.storage.redis import RedisStore
-
-if typing.TYPE_CHECKING:
-    from redis import Redis
 
 pytest.importorskip("redis")
 
