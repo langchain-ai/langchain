@@ -82,6 +82,7 @@ build: install-py-deps generate-files copy-infra render md-sync append-related
 vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
+	cp -r ../libs/cli/langchain_cli/integration_template src/theme
 	rm -rf build
 	mkdir static/api_reference
 	git clone --depth=1 https://github.com/langchain-ai/langchain-api-docs-html.git
