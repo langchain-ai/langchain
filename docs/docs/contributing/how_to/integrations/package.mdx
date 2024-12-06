@@ -26,25 +26,202 @@ Examples include [chat models](/docs/concepts/chat_models/),
 Your integration package will typically implement a subclass of at least one of these
 components. Expand the tabs below to see details on each.
 
-<details>
-    <summary>Chat models</summary>
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+
+  <TabItem value="chat-models" label="Chat models" default>
 
 Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
 detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
 
-:::tip
+The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
+for major LangChain components that are tested against the standard unit and
+integration tests in the LangChain Github repository. You can access the starter
+chat model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/chat_models.py).
+For convenience, we also include the code below.
 
-The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
-against the standard unit and integration tests in the LangChain Github repository.
-You can also access that implementation directly from Github
-[here](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py).
+<details>
+    <summary>chat_models.py</summary>
 
-:::
+```python
+from typing import Any, Dict, Iterator, List, Optional
+
+from langchain_core.callbacks import (
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+)
+from langchain_core.messages.ai import UsageMetadata
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from pydantic import Field
+
+
+class Chat__ModuleName__(BaseChatModel):
+    """__ModuleName__ chat model integration."""
+
+    model_name: str = Field(alias="model")
+    """The name of the model"""
+    parrot_buffer_length: int
+    """The number of characters from the last message of the prompt to be echoed."""
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    timeout: Optional[int] = None
+    stop: Optional[List[str]] = None
+    max_retries: int = 2
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "chat-__package_name_short__"
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Return a dictionary of identifying parameters.
+
+        This information is used by the LangChain callback system, which
+        is used for tracing purposes make it possible to monitor LLMs.
+        """
+        return {
+            # The model name allows users to specify custom token counting
+            # rules in LLM monitoring applications (e.g., in LangSmith users
+            # can provide per token pricing for their model and monitor
+            # costs for the given LLM.)
+            "model_name": self.model_name,
+        }
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Override the _generate method to implement the chat model logic.
+
+        This can be a call to an API, a call to a local model, or any other
+        implementation that generates a response to the input prompt.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+            run_manager: A run manager with callbacks for the LLM.
+        """
+        # Replace this with actual logic to generate a response from a list
+        # of messages.
+        last_message = messages[-1]
+        tokens = last_message.content[: self.parrot_buffer_length]
+        ct_input_tokens = sum(len(message.content) for message in messages)
+        ct_output_tokens = len(tokens)
+        message = AIMessage(
+            content=tokens,
+            additional_kwargs={},  # Used to add additional payload to the message
+            response_metadata={  # Use for response metadata
+                "time_in_seconds": 3,
+            },
+            usage_metadata={
+                "input_tokens": ct_input_tokens,
+                "output_tokens": ct_output_tokens,
+                "total_tokens": ct_input_tokens + ct_output_tokens,
+            },
+        )
+        ##
+
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        """Stream the output of the model.
+
+        This method should be implemented if the model can generate output
+        in a streaming fashion. If the model does not support streaming,
+        do not implement it. In that case streaming requests will be automatically
+        handled by the _generate method.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+            run_manager: A run manager with callbacks for the LLM.
+        """
+        last_message = messages[-1]
+        tokens = str(last_message.content[: self.parrot_buffer_length])
+        ct_input_tokens = sum(len(message.content) for message in messages)
+
+        for token in tokens:
+            usage_metadata = UsageMetadata(
+                {
+                    "input_tokens": ct_input_tokens,
+                    "output_tokens": 1,
+                    "total_tokens": ct_input_tokens + 1,
+                }
+            )
+            ct_input_tokens = 0
+            chunk = ChatGenerationChunk(
+                message=AIMessageChunk(content=token, usage_metadata=usage_metadata)
+            )
+
+            if run_manager:
+                # This is optional in newer versions of LangChain
+                # The on_llm_new_token will be called automatically
+                run_manager.on_llm_new_token(token, chunk=chunk)
+
+            yield chunk
+
+        # Let's add some other information (e.g., response metadata)
+        chunk = ChatGenerationChunk(
+            message=AIMessageChunk(content="", response_metadata={"time_in_sec": 3})
+        )
+        if run_manager:
+            # This is optional in newer versions of LangChain
+            # The on_llm_new_token will be called automatically
+            run_manager.on_llm_new_token(token, chunk=chunk)
+        yield chunk
+
+    # TODO: Implement if Chat__ModuleName__ supports async streaming. Otherwise delete.
+    # async def _astream(
+    #     self,
+    #     messages: List[BaseMessage],
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> AsyncIterator[ChatGenerationChunk]:
+
+    # TODO: Implement if Chat__ModuleName__ supports async generation. Otherwise delete.
+    # async def _agenerate(
+    #     self,
+    #     messages: List[BaseMessage],
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> ChatResult:
+```
 
 </details>
 
-<details>
-    <summary>Vector stores</summary>
+  </TabItem>
+
+  <TabItem value="vector-stores" label="Vector stores">
 
 Your vector store implementation will depend on your chosen database technology.
 `langchain-core` includes a minimal
@@ -80,14 +257,72 @@ is tested against the standard tests in the LangChain Github repository.
 
 :::
 
-</details>
+  </TabItem>
 
-<!-- <details>
-<summary>Embeddings</summary>
+  </TabItem>
 
-</details>
+  <TabItem value="embeddings" label="Embeddings">
+
+To implement our embeddings model, we need to:
+
+1. Create a subclass of [langchain_core.embeddings.Embeddings](https://python.langchain.com/api_reference/core/embeddings/langchain_core.embeddings.embeddings.Embeddings.html)
+2. Implement the class `__init__` method
+3. Implement the `embed_query` method, which converts a string query to a list of floats
+4. Implement the `embed_documents` method, which converts a list of strings to a list of lists of floats.
+
+Optionally, we can also implement async versions of the `embed_query` and
+`embed_documents` methods.
+
+The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
+for major LangChain components that are tested against the standard unit and
+integration tests in the LangChain Github repository. You can access the starter
+embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/embeddings.py).
+For convenience, we also include the code below.
 
 <details>
+    <summary>embeddings.py</summary>
+
+```python
+from typing import List
+
+from langchain_core.embeddings import Embeddings
+
+
+class __ModuleName__Embeddings(Embeddings):
+    """__ModuleName__ embedding model integration."""
+
+    def __init__(self, model: str):
+        self.model = model
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed search docs."""
+        return [[0.5, 0.6, 0.7] for _ in texts]
+
+    def embed_query(self, text: str) -> List[float]:
+        """Embed query text."""
+        return self.embed_documents([text])[0]
+
+    # optional: add custom async implementations here
+    # you can also delete these, and the base class will
+    # use the default implementation, which calls the sync
+    # version in an async executor:
+
+    # async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    #     """Asynchronous Embed search docs."""
+    #     ...
+
+    # async def aembed_query(self, text: str) -> List[float]:
+    #     """Asynchronous Embed query text."""
+    #     ...
+```
+
+</details>
+
+  </TabItem>
+
+</Tabs>
+
+<!-- <details>
 <summary>Tools</summary>
 
 </details>
@@ -101,6 +336,8 @@ is tested against the standard tests in the LangChain Github repository.
 <summary>Document Loaders</summary>
 
 </details> -->
+
+---
 
 ## (Optional) bootstrapping a new integration package
 
