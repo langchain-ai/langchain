@@ -1813,21 +1813,21 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
-        """:hidden:"""
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
-        """:hidden:"""
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
-        """:hidden:"""
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        """:hidden:"""
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
-        """:hidden:"""
+        """:private:"""
         raise NotImplementedError()

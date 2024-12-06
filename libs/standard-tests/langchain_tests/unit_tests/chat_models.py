@@ -120,7 +120,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:meta private:"""
+        """:private:"""
         return {
             "temperature": 0,
             "max_tokens": 100,
@@ -131,8 +131,7 @@ class ChatModelTests(BaseStandardTests):
 
     @pytest.fixture
     def model(self) -> BaseChatModel:
-        """Fixture that returns an instance of the chat model. Should not be
-        overridden."""
+        """:private:"""
         return self.chat_model_class(
             **{**self.standard_chat_model_params, **self.chat_model_params}
         )
