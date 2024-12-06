@@ -72,9 +72,14 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
     Returns:
         list: A list of loaded module objects.
     """
+
     classes_: List[ClassInfo] = []
     functions: List[FunctionInfo] = []
     module = importlib.import_module(module_path)
+
+    if ":private:" in (module.__doc__ or ""):
+        return ModuleMembers(classes_=[], functions=[])
+
     for name, type_ in inspect.getmembers(module):
         if not hasattr(type_, "__module__"):
             continue
