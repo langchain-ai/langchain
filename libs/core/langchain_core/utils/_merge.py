@@ -39,7 +39,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                     " but with a different type."
                 )
                 raise TypeError(msg)
-            elif isinstance(merged[right_k], str):
+            elif isinstance(merged[right_k], (int, float, str)):
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
                 #

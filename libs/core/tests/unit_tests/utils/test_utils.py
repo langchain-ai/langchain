@@ -111,10 +111,20 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # Number related merging
+        (
+            {"a": [{"int": 1, "float": 0.25, "str": "some"}]},
+            {"a": [{"int": 3, "float": 0.75, "str": "thing"}]},
+            {"a": [{"int": 4, "float": 1.0, "str": "something"}]},
+            True,
+        ),
     ),
 )
 def test_merge_dicts(
-    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+    left: dict,
+    right: dict,
+    expected: Union[dict, AbstractContextManager],
+    float_comparison: bool = False,
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -122,7 +132,15 @@ def test_merge_dicts(
     right_copy = deepcopy(right)
     with err:
         actual = merge_dicts(left, right)
-        assert actual == expected
+        if float_comparison:
+            for a, e in zip(actual["a"].values(), expected["a"].values()):
+                if isinstance(a, float):
+                    assert abs(a - e) < 1e-6
+                else:
+                    assert a == e
+
+        else:
+            assert actual == expected
         # no mutation
         assert left == left_copy
         assert right == right_copy
