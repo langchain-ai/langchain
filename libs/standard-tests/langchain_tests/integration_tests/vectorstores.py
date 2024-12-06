@@ -15,7 +15,7 @@ EMBEDDING_SIZE = 6
 
 
 class VectorStoreIntegrationTests(BaseStandardTests):
-    """Test suite for checking the synchronous read-write API of a vector store.
+    """Test suite for checking the read-write API of a vector store.
 
     Implementers should subclass this test suite and provide a fixture
     that returns an empty vector store for each test.
@@ -424,7 +424,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
 
-    async def test_vectorstore_still_empty_async(self, vectorstore: VectorStore) -> None:
+    async def test_vectorstore_still_empty_async(
+        self, vectorstore: VectorStore
+    ) -> None:
         """This test should follow a test that adds documents.
 
         This just verifies that the fixture is set up properly to be empty
@@ -457,7 +459,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         documents = await vectorstore.asimilarity_search("foo", k=1)
         assert documents == [Document(page_content="bar", metadata={"id": 2}, id="2")]
 
-    async def test_deleting_bulk_documents_async(self, vectorstore: VectorStore) -> None:
+    async def test_deleting_bulk_documents_async(
+        self, vectorstore: VectorStore
+    ) -> None:
         """Test that we can delete several documents at once.
 
         .. dropdown:: Troubleshooting
@@ -602,7 +606,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         # This should not raise an exception
         assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
 
-    async def test_add_documents_documents_async(self, vectorstore: VectorStore) -> None:
+    async def test_add_documents_documents_async(
+        self, vectorstore: VectorStore
+    ) -> None:
         """Run add_documents tests.
 
         .. dropdown:: Troubleshooting
