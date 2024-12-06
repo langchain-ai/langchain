@@ -82,7 +82,7 @@ def test_check_package_version(
         # Merge lists.
         ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}, False),
         ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}, False),
-        ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}, False)
+        ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}, False),
         #
         # Invalid inputs.
         #
