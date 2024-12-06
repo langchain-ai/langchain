@@ -106,6 +106,17 @@ class ChatModelIntegrationTests(ChatModelTests):
     Skipping tests
         Test subclasses can control what features are tested (such as tool
         calling or multi-modality) by selectively overriding the following properties.
+
+        For example, to enable integration tests for image inputs, we can implement
+
+        .. code-block:: python
+
+            @property
+            def supports_image_inputs(self) -> bool:
+                return True
+
+        on the test class.
+
         Relevant properties are mentioned in the references for each method. Expand to
         see details:
 
@@ -113,8 +124,17 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             Boolean property indicating whether the chat model supports tool calling.
 
-            By default, this is determined by whether the chat model's `bind_tools` method
-            is overridden. It typically does not need to be overridden on the test class.
+            By default, this is determined by whether the chat model's ``bind_tools``
+            method is overridden. It typically does not need to be overridden on the
+            test class.
+
+            Example override:
+
+            .. code-block:: python
+
+                @property
+                def has_tool_calling(self) -> bool:
+                    return True
 
         .. dropdown:: tool_choice_value
 
@@ -275,11 +295,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             cached, audio, or reasoning.
 
             Only needs to be overridden if these details are supplied.
-    """
+    """  # noqa: E501
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:meta private:"""
+        """:private:"""
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:

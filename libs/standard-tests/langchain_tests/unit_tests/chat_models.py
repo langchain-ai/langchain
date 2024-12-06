@@ -110,7 +110,7 @@ class ChatModelTests(BaseStandardTests):
     @property
     @abstractmethod
     def chat_model_class(self) -> Type[BaseChatModel]:
-        """The chat model class to test, e.g., `ChatParrotLink`."""
+        """The chat model class to test, e.g., ``ChatParrotLink``."""
         ...
 
     @property
@@ -138,18 +138,17 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def has_tool_calling(self) -> bool:
-        """Boolean property indicating whether the model supports tool calling."""
+        """(bool) whether the model supports tool calling."""
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
     def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
+        """(None or str) to use for tool choice when used in tests."""
         return None
 
     @property
     def has_structured_output(self) -> bool:
-        """Boolean property indicating whether the chat model supports structured
-        output."""
+        """(bool) whether the chat model supports structured output."""
         return (
             self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
@@ -157,32 +156,31 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_inputs(self) -> bool:
-        """Boolean property indicating whether the chat model supports image inputs.
-        Defaults to ``False``."""
+        """(bool) whether the chat model supports image inputs, defaults to
+        ``False``."""
         return False
 
     @property
     def supports_video_inputs(self) -> bool:
-        """Boolean property indicating whether the chat model supports image inputs.
-        Defaults to ``False``. No current tests are written for this feature."""
+        """(bool) whether the chat model supports video inputs, efaults to ``False``.
+        No current tests are written for this feature."""
         return False
 
     @property
     def returns_usage_metadata(self) -> bool:
-        """Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses."""
+        """(bool) whether the chat model returns usage metadata on invoke and streaming
+        responses."""
         return True
 
     @property
     def supports_anthropic_inputs(self) -> bool:
-        """Boolean property indicating whether the chat model supports Anthropic-style
-        inputs."""
+        """(bool) whether the chat model supports Anthropic-style inputs."""
         return False
 
     @property
     def supports_image_tool_message(self) -> bool:
-        """Boolean property indicating whether the chat model supports ToolMessages
-        that include image content."""
+        """(bool) whether the chat model supports ToolMessages that include image
+        content."""
         return False
 
     @property
@@ -200,9 +198,8 @@ class ChatModelTests(BaseStandardTests):
             ]
         ],
     ]:
-        """Property controlling what usage metadata details are emitted in both invoke
-        and stream. Only needs to be overridden if these details are returned by the
-        model."""
+        """(dict) what usage metadata details are emitted in invoke and stream. Only
+        needs to be overridden if these details are returned by the model."""
         return {"invoke": [], "stream": []}
 
 
@@ -247,8 +244,17 @@ class ChatModelUnitTests(ChatModelTests):
 
             Boolean property indicating whether the chat model supports tool calling.
 
-            By default, this is determined by whether the chat model's `bind_tools` method
-            is overridden. It typically does not need to be overridden on the test class.
+            By default, this is determined by whether the chat model's ``bind_tools``
+            method is overridden. It typically does not need to be overridden on the
+            test class.
+
+            Example override:
+
+            .. code-block:: python
+
+                @property
+                def has_tool_calling(self) -> bool:
+                    return True
 
         .. dropdown:: tool_choice_value
 
@@ -446,17 +452,15 @@ class ChatModelUnitTests(ChatModelTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:meta private:"""
+        """:private:"""
         params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-        """This property is used in unit tests to test initialization from environment
-        variables. It should return a tuple of three dictionaries that specify the
-        environment variables, additional initialization args, and expected instance
-        attributes to check."""
+        """(tuple) environment variables, additional initialization args, and expected
+        instance attributes for testing initialization from environment variables."""
         return {}, {}, {}
 
     def test_init(self) -> None:
