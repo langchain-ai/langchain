@@ -42,7 +42,7 @@ For these applications, LangChain simplifies the entire application lifecycle:
 - **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel), [components](https://python.langchain.com/docs/concepts/), and [third-party integrations](https://python.langchain.com/docs/integrations/providers/).
   Use [LangGraph](https://langchain-ai.github.io/langgraph/) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
-- **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
+- **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph PLatform](https://langchain-ai.github.io/langgraph/cloud/).
 
 ### Open-source libraries
 
@@ -58,7 +58,7 @@ For these applications, LangChain simplifies the entire application lifecycle:
 
 ### Deployment:
 
-- **[LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/)**: Turn your LangGraph applications into production-ready APIs and Assistants.
+- **[LangGraph Platform](https://langchain-ai.github.io/langgraph/cloud/)**: Turn your LangGraph applications into production-ready APIs and Assistants.
 
 ![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_112024.svg#gh-light-mode-only "LangChain Architecture Overview")
 ![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_112024_dark.svg#gh-dark-mode-only "LangChain Architecture Overview")
