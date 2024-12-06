@@ -26,81 +26,193 @@ Examples include [chat models](/docs/concepts/chat_models/),
 Your integration package will typically implement a subclass of at least one of these
 components. Expand the tabs below to see details on each.
 
-<details>
-    <summary>Chat models</summary>
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
 
-Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
-detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
+<Tabs>
 
-:::tip
+    <TabItem value="chat_models" label="Chat models">
+        
+        Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
+        detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
 
-The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
-against the standard unit and integration tests in the LangChain Github repository.
-You can also access that implementation directly from Github
-[here](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py).
+        :::tip
 
-:::
+        The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
+        against the standard unit and integration tests in the LangChain Github repository.
+        You can also access that implementation directly from Github
+        [here](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py).
 
-</details>
+        :::
 
-<details>
-    <summary>Vector stores</summary>
+        <details>
+            <summary>Example chat model code</summary>
 
-Your vector store implementation will depend on your chosen database technology.
-`langchain-core` includes a minimal
-[in-memory vector store](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html)
-that we can use as a guide. You can access the code [here](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py).
+import ChatModelSource from '../../../../src/theme/integration_template/integration_template/chat_models.py';
 
-All vector stores must inherit from the [VectorStore](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
-base class. This interface consists of methods for writing, deleting and searching
-for documents in the vector store.
+        <CodeBlock language="jsx" title="langchain_parrot_link/chat_models.py">
+            {
+                ChatModelSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
 
-`VectorStore` supports a variety of synchronous and asynchronous search types (e.g., 
-nearest-neighbor or maximum marginal relevance), as well as interfaces for adding
-documents to the store. See the [API Reference](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
-for all supported methods. The required methods are tabulated below:
+        </details>
+
+    </TabItem>
+    <TabItem value="vector_stores" label="Vector stores">
+
+        Your vector store implementation will depend on your chosen database technology.
+        `langchain-core` includes a minimal
+        [in-memory vector store](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html)
+        that we can use as a guide. You can access the code [here](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py).
+
+        All vector stores must inherit from the [VectorStore](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
+        base class. This interface consists of methods for writing, deleting and searching
+        for documents in the vector store.
+
+        `VectorStore` supports a variety of synchronous and asynchronous search types (e.g., 
+        nearest-neighbor or maximum marginal relevance), as well as interfaces for adding
+        documents to the store. See the [API Reference](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
+        for all supported methods. The required methods are tabulated below:
+
+        | Method/Property         | Description                                          |
+        |------------------------ |------------------------------------------------------|
+        | `add_documents`         | Add documents to the vector store.                   |
+        | `delete`                | Delete selected documents from vector store (by IDs) |
+        | `get_by_ids`            | Get selected documents from vector store (by IDs)    |
+        | `similarity_search`     | Get documents most similar to a query.               |
+        | `embeddings` (property) | Embeddings object for vector store.                  |
+        | `from_texts`            | Instantiate vector store via adding texts.           |
+
+        Note that `InMemoryVectorStore` implements some optional search types, as well as
+        convenience methods for loading and dumping the object to a file, but this is not
+        necessary for all implementations.
+
+        :::tip
+
+        The [in-memory vector store](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py)
+        is tested against the standard tests in the LangChain Github repository.
+
+        :::
+
+        <details>
+            <summary>Example vector store code</summary>
+
+import VectorstoreSource from '../../../../src/theme/integration_template/integration_template/vectorstores.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/vectorstores.py">
+            {
+                VectorstoreSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+    <TabItem value="embeddings" label="Embeddings">
+
+        <details>
+            <summary>Example embeddings code</summary>
+
+Embeddings are used to convert `str` objects from `Document.page_content` fields
+into a vector representation (represented as a list of floats).
+
+The `Embeddings` class must inherit from the [Embeddings](https://python.langchain.com/api_reference/core/embeddings/langchain_core.embeddings.embeddings.Embeddings.html#langchain_core.embeddings.embeddings.Embeddings)
+base class. This interface has 5 methods that can be implemented.
 
 | Method/Property         | Description                                          |
 |------------------------ |------------------------------------------------------|
-| `add_documents`         | Add documents to the vector store.                   |
-| `delete`                | Delete selected documents from vector store (by IDs) |
-| `get_by_ids`            | Get selected documents from vector store (by IDs)    |
-| `similarity_search`     | Get documents most similar to a query.               |
-| `embeddings` (property) | Embeddings object for vector store.                  |
-| `from_texts`            | Instantiate vector store via adding texts.           |
+| `__init__`              | Initialize the embeddings object. (optional)         |
+| `embed_query`           | Embed a list of texts. (required)                    |
+| `embed_documents`       | Embed a list of documents. (required)                |
+| `aembed_query`          | Asynchronously embed a list of texts. (optional)     |
+| `aembed_documents`      | Asynchronously embed a list of documents. (optional) |
 
-Note that `InMemoryVectorStore` implements some optional search types, as well as
-convenience methods for loading and dumping the object to a file, but this is not
-necessary for all implementations.
+### Constructor
 
-:::tip
+The `__init__` constructor is optional but common, but can be used to set up any necessary attributes
+that a user can pass in when initializing the embeddings object. Common attributes include
 
-The [in-memory vector store](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py)
-is tested against the standard tests in the LangChain Github repository.
+- `model` - the id of the model to use for embeddings
 
-:::
+### Embedding queries vs documents
 
-</details>
+The `embed_query` and `embed_documents` methods are required. These methods both operate
+on string inputs (the accessing of `Document.page_content` attributes) is handled
+by the VectorStore using the embedding model for legacy reasons.
 
-<!-- <details>
-<summary>Embeddings</summary>
+`embed_query` takes in a single string and returns a single embedding as a list of floats.
+If your model has different modes for embedding queries vs the underlying documents, you can
+implement this method to handle that. 
 
-</details>
+`embed_documents` takes in a list of strings and returns a list of embeddings as a list of lists of floats.
 
-<details>
-<summary>Tools</summary>
 
-</details>
+### Async methods
 
-<details>
-<summary>Retrievers</summary>
 
-</details>
+import EmbeddingsSource from '/src/theme/integration_template/integration_template/embeddings.py';
 
-<details>
-<summary>Document Loaders</summary>
+        <CodeBlock language="jsx" title="langchain_parrot_link/embeddings.py">
+            {
+                EmbeddingsSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
 
-</details> -->
+        </details>
+
+    </TabItem>
+    <TabItem value="tools" label="Tools">
+
+        <details>
+            <summary>Example tool code</summary>
+
+import ToolSource from '/src/theme/integration_template/integration_template/tools.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/tools.py">
+            {
+                ToolSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+    <TabItem value="retrievers" label="Retrievers">
+
+        <details>
+            <summary>Example retriever code</summary>
+
+import RetrieverSource from '/src/theme/integration_template/integration_template/retrievers.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/retrievers.py">
+            {
+                RetrieverSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+</Tabs>
+
+---
 
 ## (Optional) bootstrapping a new integration package
 

@@ -21,8 +21,10 @@ disallow_untyped_defs = "True"
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.21"
 pytest = ">=7,<9"
-httpx = "^0.27.0"
+pytest-asyncio = ">=0.20,<1"
+httpx = ">=0.25.0,<1"
 syrupy = "^4"
+pytest-socket = ">=0.6.0,<1"
 
 [[tool.poetry.dependencies.numpy]]
 version = "^1.24.0"
@@ -60,7 +62,6 @@ optional = true
 optional = true
 
 [tool.poetry.group.test.dependencies]
-pytest-asyncio = "^0.23.7"
 
 [tool.poetry.group.test_integration.dependencies]
 
