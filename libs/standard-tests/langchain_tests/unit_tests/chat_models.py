@@ -380,29 +380,30 @@ class ChatModelTests(BaseStandardTests):
 class ChatModelUnitTests(ChatModelTests):
     """Base class for chat model unit tests.
 
-    Test subclasses must implement the following two properties:
+    Test subclasses must implement the ``chat_model_class`` and
+    ``chat_model_params`` properties to specify what model to test and its
+    initialization parameters.
 
-    chat_model_class
-        The chat model class to test, e.g., ``ChatParrotLink``.
+    Example:
 
-        Example:
+    .. code-block:: python
 
-        .. code-block:: python
+        from typing import Type
 
+        from langchain_tests.unit_tests import ChatModelUnitTests
+        from my_package.chat_models import MyChatModel
+
+
+        class TestMyChatModelUnit(ChatModelUnitTests):
             @property
-            def chat_model_class(self) -> Type[ChatParrotLink]:
-                return ChatParrotLink
-
-    chat_model_params
-        Initialization parameters for the chat model.
-
-        Example:
-
-        .. code-block:: python
+            def chat_model_class(self) -> Type[MyChatModel]:
+                # Return the chat model class to test here
+                return MyChatModel
 
             @property
             def chat_model_params(self) -> dict:
-                return {"model": "bird-brain-001", "temperature": 0}
+                # Return initialization parameters for the model.
+                return {"model": "model-001", "temperature": 0}
 
     .. note::
           API references for individual test methods include troubleshooting tips.
@@ -486,7 +487,8 @@ class ChatModelUnitTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, ensure that ``init_from_env_params`` is specified
-            correctly.
+            correctly and that model parameters are properly set from environment
+            variables during initialization.
         """
         env_params, model_params, expected_attrs = self.init_from_env_params
         if not env_params:

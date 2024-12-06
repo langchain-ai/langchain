@@ -17,7 +17,7 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 class ImportExtractor(ast.NodeVisitor):
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
-        self.imports = []
+        self.imports: list = []
         self.package = from_package
 
     def visit_ImportFrom(self, node):
@@ -68,7 +68,7 @@ def find_subclasses_in_module(module, classes_: List[Type]) -> List[str]:
     return subclasses
 
 
-def _get_all_classnames_from_file(file: str, pkg: str) -> List[Tuple[str, str]]:
+def _get_all_classnames_from_file(file: Path, pkg: str) -> List[Tuple[str, str]]:
     """Extract all class names from a file."""
     with open(file, encoding="utf-8") as f:
         code = f.read()
@@ -145,7 +145,7 @@ def find_imports_from_package(
     return extractor.imports
 
 
-def _get_current_module(path: str, pkg_root: str) -> str:
+def _get_current_module(path: Path, pkg_root: str) -> str:
     """Convert a path to a module name."""
     path_as_pathlib = pathlib.Path(os.path.abspath(path))
     relative_path = path_as_pathlib.relative_to(pkg_root).with_suffix("")
