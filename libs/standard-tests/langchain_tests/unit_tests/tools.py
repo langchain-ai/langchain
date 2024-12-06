@@ -1,8 +1,3 @@
-"""
-.. autosummary::
-    :exclude-members: ToolsTests
-"""
-
 import os
 from abc import abstractmethod
 from typing import Tuple, Type, Union
@@ -64,6 +59,10 @@ class ToolsTests(BaseStandardTests):
 
 
 class ToolsUnitTests(ToolsTests):
+    """
+    Base class for tools unit tests.
+    """
+
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
         """Return env vars, init args, and expected instance attrs for initializing
