@@ -59,6 +59,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
+        redis_client: Optional[object] = None,
     ):
         """Initialize with a RedisChatMessageHistory instance.
 
@@ -71,6 +72,8 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
                 The prefix of the key, combined with `session id` to form the key.
             ttl: Optional[int]
                 Set the expiration time of `key`, the unit is seconds.
+            redis_client: Optional[object]
+                Set the redis client
         """
         try:
             import redis
@@ -81,7 +84,10 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
             )
 
         try:
-            self.redis_client = get_client(redis_url=url)
+            if redis_client is not None:
+                self.redis_client = redis_client
+            else:
+                self.redis_client = get_client(redis_url=url)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 
