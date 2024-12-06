@@ -241,6 +241,10 @@ if TYPE_CHECKING:
         ZhipuAIEmbeddings,
     )
 
+    from langchain_community.embeddings.hunyuan import (
+        HunyuanEmbeddings,
+    )
+
 __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
@@ -323,6 +327,7 @@ __all__ = [
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
     "ZhipuAIEmbeddings",
+    "HunyuanEmbeddings",
 ]
 
 _module_lookup = {
@@ -407,6 +412,7 @@ _module_lookup = {
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
     "AscendEmbeddings": "langchain_community.embeddings.ascend",
     "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
+    "HunyuanEmbeddings": "langchain_community.embeddings.hunyuan",
 }
 
 
