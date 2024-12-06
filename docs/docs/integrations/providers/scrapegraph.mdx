@@ -8,15 +8,15 @@
 
 Install the required packages:
 
-"""bash
+```bash
 pip install langchain-scrapegraph
-"""
+```
 
 Set up your API key:
 
-"""bash
+```bash
 export SGAI_API_KEY="your-scrapegraph-api-key"
-"""
+```
 
 ## Tools
 
@@ -24,14 +24,14 @@ See a [usage example](/docs/integrations/tools/scrapegraph).
 
 There are four tools available:
 
-"""python
+```python
 from langchain_scrapegraph.tools import (
     SmartScraperTool,    # Extract structured data from websites
     MarkdownifyTool,     # Convert webpages to markdown
     LocalScraperTool,    # Process local HTML content
     GetCreditsTool,      # Check remaining API credits
 )
-"""
+```
 
 Each tool serves a specific purpose:
 
