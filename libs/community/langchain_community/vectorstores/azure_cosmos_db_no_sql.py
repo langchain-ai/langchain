@@ -281,7 +281,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             return self._max_inner_product_relevance_score_fn
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product,"
+                "Unknown distance strategy, must be cosine, dot product,"
                 " or euclidean"
             )
 
