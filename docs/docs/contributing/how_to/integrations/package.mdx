@@ -121,6 +121,23 @@ import VectorstoreSource from '../../../../src/theme/integration_template/integr
         <details>
             <summary>Example embeddings code</summary>
 
+Embeddings are used to convert `Document` objects, which currently represent their
+`document.page_content` as a string, into a vector representation (represented
+as a list of floats).
+
+The `Embeddings` class must inherit from the [Embeddings](https://python.langchain.com/api_reference/core/embeddings/langchain_core.embeddings.embeddings.Embeddings.html#langchain_core.embeddings.embeddings.Embeddings)
+base class. This interface has 5 methods that can be implemented.
+
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `__init__`              | Initialize the embeddings object.                    |
+| `embed_query`           | Embed a list of texts. (required)                    |
+| `embed_documents`       | Embed a list of documents.                           |
+| `aembed_query`          | Asynchronously embed a list of texts.                |
+| `aembed_documents`      | Asynchronously embed a list of documents.            |
+
+
+
 import EmbeddingsSource from '/src/theme/integration_template/integration_template/embeddings.py';
 
         <CodeBlock language="jsx" title="langchain_parrot_link/embeddings.py">
@@ -135,15 +152,44 @@ import EmbeddingsSource from '/src/theme/integration_template/integration_templa
         </details>
 
     </TabItem>
-    {/*<TabItem value="tools" label="Tools">
+    <TabItem value="tools" label="Tools">
+
+        <details>
+            <summary>Example tool code</summary>
+
+import ToolSource from '/src/theme/integration_template/integration_template/tools.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/tools.py">
+            {
+                ToolSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
 
     </TabItem>
     <TabItem value="retrievers" label="Retrievers">
 
-    </TabItem>
-    <TabItem value="document_loaders" label="Document loaders">
+        <details>
+            <summary>Example retriever code</summary>
 
-    </TabItem> */}
+import RetrieverSource from '/src/theme/integration_template/integration_template/retrievers.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/retrievers.py">
+            {
+                RetrieverSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
 </Tabs>
 
 ---
