@@ -45,36 +45,45 @@ def test_check_package_version(
 
 
 @pytest.mark.parametrize(
-    ("left", "right", "expected"),
+    ("left", "right", "expected", "float_comparison"),
     (
         # Merge `None` and `1`.
-        ({"a": None}, {"a": 1}, {"a": 1}),
+        ({"a": None}, {"a": 1}, {"a": 1}, False),
         # Merge `1` and `None`.
-        ({"a": 1}, {"a": None}, {"a": 1}),
+        ({"a": 1}, {"a": None}, {"a": 1}, False),
         # Merge `None` and a value.
-        ({"a": None}, {"a": 0}, {"a": 0}),
-        ({"a": None}, {"a": "txt"}, {"a": "txt"}),
+        ({"a": None}, {"a": 0}, {"a": 0}, False),
+        ({"a": None}, {"a": "txt"}, {"a": "txt"}, False),
         # Merge equal values.
-        ({"a": 1}, {"a": 1}, {"a": 1}),
-        ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
-        ({"a": True}, {"a": True}, {"a": True}),
-        ({"a": False}, {"a": False}, {"a": False}),
+        ({"a": 1}, {"a": 1}, {"a": 1}, False),
+        ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}, False),
+        ({"a": True}, {"a": True}, {"a": True}, False),
+        ({"a": False}, {"a": False}, {"a": False}, False),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
-        ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
-        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
+        ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}, False),
+        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}, False),
         # Merge strings.
-        ({"a": "one"}, {"a": "two"}, {"a": "onetwo"}),
+        ({"a": "one"}, {"a": "two"}, {"a": "onetwo"}, False),
+        # Number related merging when value changes
+        (
+            {"a": [{"int": 1, "float": 0.25, "str": "some"}]},
+            {"a": [{"int": 3, "float": 0.75, "str": "thing"}]},
+            {"a": [{"int": 4, "float": 1.0, "str": "something"}]},
+            True,
+        ),
         # Merge dicts.
         ({"a": {"b": 1}}, {"a": {"c": 2}}, {"a": {"b": 1, "c": 2}}),
         (
             {"function_call": {"arguments": None}},
             {"function_call": {"arguments": "{\n"}},
             {"function_call": {"arguments": "{\n"}},
+            False,
         ),
         # Merge lists.
         ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
         ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
         ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
+        False
         #
         # Invalid inputs.
         #
@@ -88,6 +97,7 @@ def test_check_package_version(
                     "but with a different type."
                 ),
             ),
+            False,
         ),
         (
             {"a": (1, 2)},
@@ -99,24 +109,20 @@ def test_check_package_version(
                     "has unsupported type .+tuple.+."
                 ),
             ),
+            False,
         ),
         # 'index' keyword has special handling
         (
             {"a": [{"index": 0, "b": "{"}]},
             {"a": [{"index": 0, "b": "f"}]},
             {"a": [{"index": 0, "b": "{f"}]},
+            False,
         ),
         (
             {"a": [{"idx": 0, "b": "{"}]},
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
-        ),
-        # Number related merging
-        (
-            {"a": [{"int": 1, "float": 0.25, "str": "some"}]},
-            {"a": [{"int": 3, "float": 0.75, "str": "thing"}]},
-            {"a": [{"int": 4, "float": 1.0, "str": "something"}]},
-            True,
+            False,
         ),
     ),
 )
@@ -124,7 +130,7 @@ def test_merge_dicts(
     left: dict,
     right: dict,
     expected: Union[dict, AbstractContextManager],
-    float_comparison: bool = False,
+    float_comparison: bool,
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
