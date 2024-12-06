@@ -347,7 +347,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         )
         for item in items:
             text = item["text"]
-            metadata = item["metadata"]
+            metadata = item.pop("metadata", {})
             metadata["id"] = item["id"]
             score = item["SimilarityScore"]
             if with_embedding:
