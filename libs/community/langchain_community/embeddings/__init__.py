@@ -31,6 +31,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.azure_openai import (
         AzureOpenAIEmbeddings,
     )
+    from langchain_community.embeddings.azure_ml_endpoint import (
+        AzureMLEndpointEmbeddings,
+    )
     from langchain_community.embeddings.baichuan import (
         BaichuanTextEmbeddings,
     )
@@ -248,6 +251,7 @@ __all__ = [
     "AscendEmbeddings",
     "AwaEmbeddings",
     "AzureOpenAIEmbeddings",
+    "AzureMLEndpointEmbeddings"
     "BaichuanTextEmbeddings",
     "BedrockEmbeddings",
     "BookendEmbeddings",
@@ -331,6 +335,7 @@ _module_lookup = {
     "AnyscaleEmbeddings": "langchain_community.embeddings.anyscale",
     "AwaEmbeddings": "langchain_community.embeddings.awa",
     "AzureOpenAIEmbeddings": "langchain_community.embeddings.azure_openai",
+    "AzureMLEndpointEmbeddings": "langchain_community.embeddings.azure_ml_endpoint",
     "BaichuanTextEmbeddings": "langchain_community.embeddings.baichuan",
     "BedrockEmbeddings": "langchain_community.embeddings.bedrock",
     "BookendEmbeddings": "langchain_community.embeddings.bookend",
