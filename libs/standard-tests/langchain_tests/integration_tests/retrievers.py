@@ -9,6 +9,10 @@ from langchain_tests.base import BaseStandardTests
 
 
 class RetrieversIntegrationTests(BaseStandardTests):
+    """
+    Base class for retrievers integration tests.
+    """
+
     @property
     @abstractmethod
     def retriever_constructor(self) -> Type[BaseRetriever]: ...
