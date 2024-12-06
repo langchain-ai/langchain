@@ -80,8 +80,8 @@ def new(
     dst: Annotated[
         Optional[list[str]],
         typer.Option(
-            help="The relative path to the integration package to place the new file in."
-            " e.g. `my-integration/my_integration.py`",
+            help="The relative path to the integration package to place the new file in"
+            ". e.g. `my-integration/my_integration.py`",
         ),
     ] = None,
 ):
