@@ -2,23 +2,117 @@
 pagination_next: contributing/how_to/integrations/standard_tests
 pagination_prev: contributing/how_to/integrations/index
 ---
-# How to bootstrap a new integration package
+# How to implement an integration package
 
-This guide walks through the process of publishing a new LangChain integration 
-package to PyPi.
+This guide walks through the process of implementing a LangChain integration 
+package.
 
 Integration packages are just Python packages that can be installed with `pip install <your-package>`,
 which contain classes that are compatible with LangChain's core interfaces.
 
+We will cover:
+
+1. How to implement components, such as [chat models](/docs/concepts/chat_models/) and [vector stores](/docs/concepts/vectorstores/), that adhere
+to the LangChain interface;  
+2. (Optional) How to bootstrap a new integration package.
+
+## Implementing LangChain components
+
+LangChain components are subclasses of base classes in [langchain-core](/docs/concepts/architecture/#langchain-core).
+Examples include [chat models](/docs/concepts/chat_models/),
+[vector stores](/docs/concepts/vectorstores/), [tools](/docs/concepts/tools/),
+[embedding models](/docs/concepts/embedding_models/) and [retrievers](/docs/concepts/retrievers/).
+
+Your integration package will typically implement a subclass of at least one of these
+components. Expand the tabs below to see details on each.
+
+<details>
+    <summary>Chat models</summary>
+
+Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
+detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
+
+:::tip
+
+The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
+against the standard unit and integration tests in the LangChain Github repository.
+You can also access that implementation directly from Github
+[here](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py).
+
+:::
+
+</details>
+
+<details>
+    <summary>Vector stores</summary>
+
+Your vector store implementation will depend on your chosen database technology.
+`langchain-core` includes a minimal
+[in-memory vector store](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html)
+that we can use as a guide. You can access the code [here](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py).
+
+All vector stores must inherit from the [VectorStore](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
+base class. This interface consists of methods for writing, deleting and searching
+for documents in the vector store.
+
+`VectorStore` supports a variety of synchronous and asynchronous search types (e.g., 
+nearest-neighbor or maximum marginal relevance), as well as interfaces for adding
+documents to the store. See the [API Reference](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
+for all supported methods. The required methods are tabulated below:
+
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `add_documents`         | Add documents to the vector store.                   |
+| `delete`                | Delete selected documents from vector store (by IDs) |
+| `get_by_ids`            | Get selected documents from vector store (by IDs)    |
+| `similarity_search`     | Get documents most similar to a query.               |
+| `embeddings` (property) | Embeddings object for vector store.                  |
+| `from_texts`            | Instantiate vector store via adding texts.           |
+
+Note that `InMemoryVectorStore` implements some optional search types, as well as
+convenience methods for loading and dumping the object to a file, but this is not
+necessary for all implementations.
+
+:::tip
+
+The [in-memory vector store](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py)
+is tested against the standard tests in the LangChain Github repository.
+
+:::
+
+</details>
+
+<!-- <details>
+<summary>Embeddings</summary>
+
+</details>
+
+<details>
+<summary>Tools</summary>
+
+</details>
+
+<details>
+<summary>Retrievers</summary>
+
+</details>
+
+<details>
+<summary>Document Loaders</summary>
+
+</details> -->
+
+## (Optional) bootstrapping a new integration package
+
 In this guide, we will be using [Poetry](https://python-poetry.org/) for
 dependency management and packaging, and you're welcome to use any other tools you prefer.
 
-## **Prerequisites**
+### **Prerequisites**
 
 - [GitHub](https://github.com) account
 - [PyPi](https://pypi.org/) account
 
-## Boostrapping a new Python package with Poetry
+### Boostrapping a new Python package with Poetry
 
 First, install Poetry:
 
@@ -64,7 +158,7 @@ poetry install --with test
 
 You're now ready to start writing your integration package!
 
-## Writing your integration
+### Writing your integration
 
 Let's say you're building a simple integration package that provides a `ChatParrotLink`
 chat model integration for LangChain. Here's a simple example of what your project
@@ -86,183 +180,10 @@ All of these files should already exist from step 1, except for
 `chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py` 
 later, following the [standard tests](../standard_tests) guide.
 
-To implement `chat_models.py`, let's copy the implementation from our
-[Custom Chat Model Guide](../../../../how_to/custom_chat_model).
+For `chat_models.py`, simply paste the contents of the chat model implementation
+[above](#implementing-langchain-components).
 
-<details>
-    <summary>chat_models.py</summary>
-```python title="langchain_parrot_link/chat_models.py"
-from typing import Any, Dict, Iterator, List, Optional
-
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-)
-from langchain_core.messages.ai import UsageMetadata
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field
-
-
-class ChatParrotLink(BaseChatModel):
-    """A custom chat model that echoes the first `parrot_buffer_length` characters
-    of the input.
-
-    When contributing an implementation to LangChain, carefully document
-    the model including the initialization parameters, include
-    an example of how to initialize the model and include any relevant
-    links to the underlying models documentation or API.
-
-    Example:
-
-        .. code-block:: python
-
-            model = ChatParrotLink(parrot_buffer_length=2, model="bird-brain-001")
-            result = model.invoke([HumanMessage(content="hello")])
-            result = model.batch([[HumanMessage(content="hello")],
-                                 [HumanMessage(content="world")]])
-    """
-
-    model_name: str = Field(alias="model")
-    """The name of the model"""
-    parrot_buffer_length: int
-    """The number of characters from the last message of the prompt to be echoed."""
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    timeout: Optional[int] = None
-    stop: Optional[List[str]] = None
-    max_retries: int = 2
-
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        """Override the _generate method to implement the chat model logic.
-
-        This can be a call to an API, a call to a local model, or any other
-        implementation that generates a response to the input prompt.
-
-        Args:
-            messages: the prompt composed of a list of messages.
-            stop: a list of strings on which the model should stop generating.
-                  If generation stops due to a stop token, the stop token itself
-                  SHOULD BE INCLUDED as part of the output. This is not enforced
-                  across models right now, but it's a good practice to follow since
-                  it makes it much easier to parse the output of the model
-                  downstream and understand why generation stopped.
-            run_manager: A run manager with callbacks for the LLM.
-        """
-        # Replace this with actual logic to generate a response from a list
-        # of messages.
-        last_message = messages[-1]
-        tokens = last_message.content[: self.parrot_buffer_length]
-        ct_input_tokens = sum(len(message.content) for message in messages)
-        ct_output_tokens = len(tokens)
-        message = AIMessage(
-            content=tokens,
-            additional_kwargs={},  # Used to add additional payload to the message
-            response_metadata={  # Use for response metadata
-                "time_in_seconds": 3,
-            },
-            usage_metadata={
-                "input_tokens": ct_input_tokens,
-                "output_tokens": ct_output_tokens,
-                "total_tokens": ct_input_tokens + ct_output_tokens,
-            },
-        )
-        ##
-
-        generation = ChatGeneration(message=message)
-        return ChatResult(generations=[generation])
-
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        """Stream the output of the model.
-
-        This method should be implemented if the model can generate output
-        in a streaming fashion. If the model does not support streaming,
-        do not implement it. In that case streaming requests will be automatically
-        handled by the _generate method.
-
-        Args:
-            messages: the prompt composed of a list of messages.
-            stop: a list of strings on which the model should stop generating.
-                  If generation stops due to a stop token, the stop token itself
-                  SHOULD BE INCLUDED as part of the output. This is not enforced
-                  across models right now, but it's a good practice to follow since
-                  it makes it much easier to parse the output of the model
-                  downstream and understand why generation stopped.
-            run_manager: A run manager with callbacks for the LLM.
-        """
-        last_message = messages[-1]
-        tokens = str(last_message.content[: self.parrot_buffer_length])
-        ct_input_tokens = sum(len(message.content) for message in messages)
-
-        for token in tokens:
-            usage_metadata = UsageMetadata(
-                {
-                    "input_tokens": ct_input_tokens,
-                    "output_tokens": 1,
-                    "total_tokens": ct_input_tokens + 1,
-                }
-            )
-            ct_input_tokens = 0
-            chunk = ChatGenerationChunk(
-                message=AIMessageChunk(content=token, usage_metadata=usage_metadata)
-            )
-
-            if run_manager:
-                # This is optional in newer versions of LangChain
-                # The on_llm_new_token will be called automatically
-                run_manager.on_llm_new_token(token, chunk=chunk)
-
-            yield chunk
-
-        # Let's add some other information (e.g., response metadata)
-        chunk = ChatGenerationChunk(
-            message=AIMessageChunk(content="", response_metadata={"time_in_sec": 3})
-        )
-        if run_manager:
-            # This is optional in newer versions of LangChain
-            # The on_llm_new_token will be called automatically
-            run_manager.on_llm_new_token(token, chunk=chunk)
-        yield chunk
-
-    @property
-    def _llm_type(self) -> str:
-        """Get the type of language model used by this chat model."""
-        return "echoing-chat-model-advanced"
-
-    @property
-    def _identifying_params(self) -> Dict[str, Any]:
-        """Return a dictionary of identifying parameters.
-
-        This information is used by the LangChain callback system, which
-        is used for tracing purposes make it possible to monitor LLMs.
-        """
-        return {
-            # The model name allows users to specify custom token counting
-            # rules in LLM monitoring applications (e.g., in LangSmith users
-            # can provide per token pricing for their model and monitor
-            # costs for the given LLM.)
-            "model_name": self.model_name,
-        }
-```
-</details>
-
-## Push your package to a public Github repository
+### Push your package to a public Github repository
 
 This is only required if you want to publish your integration in the LangChain documentation.
 
