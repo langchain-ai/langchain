@@ -10,12 +10,13 @@ from pydantic import model_validator
 
 def _import_elevenlabs() -> Any:
     try:
-        import elevenlabs
+        from elevenlabs import play, stream
+        from elevenlabs.client import ElevenLabs
     except ImportError as e:
         raise ImportError(
             "Cannot import elevenlabs, please install `pip install elevenlabs`."
         ) from e
-    return elevenlabs
+    return ElevenLabs, play, stream
 
 
 class ElevenLabsModel(str, Enum):
@@ -41,41 +42,62 @@ class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
         "It supports multiple languages, including English, German, Polish, "
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
+    eleven_api_key: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
-        """Validate that api key exists in environment."""
-        _ = get_from_dict_or_env(values, "eleven_api_key", "ELEVEN_API_KEY")
-
+        """Validate that API key exists in environment or is provided directly."""
+        if not values.get("eleven_api_key"):
+            values["eleven_api_key"] = get_from_dict_or_env(
+                {}, "eleven_api_key", "ELEVEN_API_KEY"
+            )
         return values
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
-        elevenlabs = _import_elevenlabs()
+        ElevenLabs, _, _ = _import_elevenlabs()
         try:
-            speech = elevenlabs.generate(text=query, model=self.model)
+            # Use the API key provided during initialization
+            api_key = self.eleven_api_key or get_from_dict_or_env(
+                {}, "eleven_api_key", "ELEVEN_API_KEY"
+            )
+            client = ElevenLabs(api_key=api_key)
+            speech = client.generate(text=query, model=self.model)
+
+            # Write the generator audio output to a file
             with tempfile.NamedTemporaryFile(
                 mode="bx", suffix=".wav", delete=False
             ) as f:
-                f.write(speech)
+                for chunk in speech:
+                    f.write(chunk)
             return f.name
         except Exception as e:
             raise RuntimeError(f"Error while running ElevenLabsText2SpeechTool: {e}")
 
     def play(self, speech_file: str) -> None:
         """Play the text as speech."""
-        elevenlabs = _import_elevenlabs()
+        _, play, _ = _import_elevenlabs()
         with open(speech_file, mode="rb") as f:
             speech = f.read()
 
-        elevenlabs.play(speech)
+        play(speech)
 
     def stream_speech(self, query: str) -> None:
         """Stream the text as speech as it is generated.
         Play the text in your speakers."""
-        elevenlabs = _import_elevenlabs()
-        speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
-        elevenlabs.stream(speech_stream)
+        ElevenLabs, _, stream = _import_elevenlabs()
+        try:
+            # Use the API key provided during initialization
+            api_key = self.eleven_api_key or get_from_dict_or_env(
+                {}, "eleven_api_key", "ELEVEN_API_KEY"
+            )
+            client = ElevenLabs(api_key=api_key)
+            # Generate the audio stream
+            speech_stream = client.generate(text=query, model=self.model, stream=True)
+            # Stream the generated audio
+            stream(speech_stream)
+        except Exception as e:
+            raise RuntimeError(f"Error while streaming ElevenLabsText2SpeechTool: {e}")
