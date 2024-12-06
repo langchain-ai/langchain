@@ -802,3 +802,34 @@ def test_faiss_with_duplicate_ids() -> None:
         FAISS.from_texts(texts, FakeEmbeddings(), ids=duplicate_ids)
 
     assert "Duplicate ids found in the ids list." in str(exc_info.value)
+
+
+@pytest.mark.requires("faiss")
+def test_faiss_document_ids() -> None:
+    """Test whether FAISS assigns the correct document ids."""
+    ids = ["id1", "id2", "id3"]
+    texts = ["foo", "bar", "baz"]
+
+    vstore = FAISS.from_texts(texts, FakeEmbeddings(), ids=ids)
+    for id_, text in (ids, texts):
+        doc = vstore.docstore.search(id_)
+        assert isinstance(doc, Document)
+        assert doc.id == id_
+        assert doc.page_content == text
+
+
+@pytest.mark.requires("faiss")
+def test_faiss_get_by_ids() -> None:
+    """Test FAISS `get_by_ids` method."""
+    ids = ["id1", "id2", "id3"]
+    texts = ["foo", "bar", "baz"]
+
+    vstore = FAISS.from_texts(texts, FakeEmbeddings(), ids=ids)
+    docs = vstore.get_by_ids(ids)
+    assert len(docs) == 3
+    assert {doc.id for doc in docs} == set(ids)
+
+    for id_ in ids:
+        res = vstore.get_by_ids([id_])
+        assert len(res) == 1
+        assert res[0] == id_
