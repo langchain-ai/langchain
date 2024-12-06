@@ -24,10 +24,10 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Optional, Self
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
