@@ -15,7 +15,7 @@ EMBEDDING_SIZE = 6
 
 
 class VectorStoreIntegrationTests(BaseStandardTests):
-    """Base class for vector store integration tests.
+    """Base class for checking the read-write API of a vector store.
 
     Implementers should subclass this test suite and provide a fixture
     that returns an empty vector store for each test.
