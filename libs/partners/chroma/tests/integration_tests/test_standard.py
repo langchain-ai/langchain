@@ -7,7 +7,7 @@ from langchain_tests.integration_tests.vectorstores import VectorStoreIntegratio
 from langchain_chroma import Chroma
 
 
-class TestSync(VectorStoreIntegrationTests):
+class TestChromaStandard(VectorStoreIntegrationTests):
     @pytest.fixture()
     def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
         """Get an empty vectorstore for unit tests."""
