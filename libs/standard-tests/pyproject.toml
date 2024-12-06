@@ -26,6 +26,14 @@ httpx = ">=0.25.0,<1"
 syrupy = "^4"
 pytest-socket = ">=0.6.0,<1"
 
+[[tool.poetry.dependencies.numpy]]
+version = "^1.24.0"
+python = "<3.12"
+
+[[tool.poetry.dependencies.numpy]]
+version = ">=1.26.2,<3"
+python = ">=3.12"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
 
@@ -54,14 +62,6 @@ optional = true
 optional = true
 
 [tool.poetry.group.test.dependencies]
-
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.24.0"
-python = "<3.12"
-
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.26.0"
-python = ">=3.12"
 
 [tool.poetry.group.test_integration.dependencies]
 
