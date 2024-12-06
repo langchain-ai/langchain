@@ -30,7 +30,7 @@ def test_short_audio_transcription() -> None:
     """Test lazy parsing of short audio files using SpeechToText."""
 
     # Env variable should be set to avoid OpenAI API key error
-    parser = SpeechToText(api_key="key", audio_path=AUDIO_M4A)
+    parser = SpeechToText(api_key="key", audio_path=str(AUDIO_M4A))
     result = list(parser.lazy_parse(parser.audio_blob))
 
     assert len(result) == 1
@@ -44,7 +44,7 @@ def test_long_audio_transcription() -> None:
     """Test lazy parsing of long audio files using SpeechToText."""
 
     # Env variable should be set to avoid OpenAI API key error
-    parser = SpeechToText(api_key="key", audio_path=LONG_AUDIO)
+    parser = SpeechToText(api_key="key", audio_path=str(LONG_AUDIO))
     result = list(parser.lazy_parse(parser.audio_blob))
 
     assert len(result) > 1
