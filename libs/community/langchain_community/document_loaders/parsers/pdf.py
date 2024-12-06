@@ -236,14 +236,20 @@ class PDFMinerParser(BaseBlobParser):
 
         images = []
 
-        for img in list(filter(bool, map(get_image, page))):
-            if img.stream["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
+        for img in filter(bool, map(get_image, page)):
+            img_filter = img.stream["Filter"]
+            if isinstance(img_filter, list):
+                filter_names = [f.name for f in img_filter]
+            else:
+                filter_names = [img_filter.name]
+
+            if any(name in _PDF_FILTER_WITHOUT_LOSS for name in filter_names):
                 images.append(
                     np.frombuffer(img.stream.get_data(), dtype=np.uint8).reshape(
                         img.stream["Height"], img.stream["Width"], -1
                     )
                 )
-            elif img.stream["Filter"].name in _PDF_FILTER_WITH_LOSS:
+            elif any(name in _PDF_FILTER_WITH_LOSS for name in filter_names):
                 images.append(img.stream.get_data())
             else:
                 warnings.warn("Unknown PDF Filter!")
