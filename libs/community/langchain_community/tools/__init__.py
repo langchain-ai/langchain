@@ -183,6 +183,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.metaphor_search import (
         MetaphorSearchResults,
     )
+    from langchain_community.tools.mindsdb import AIMindTool
     from langchain_community.tools.mojeek_search.tool import (
         MojeekSearch,
     )
@@ -346,6 +347,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "AIMindTool",
     "BaseTool",
     "Tool",
     "tool",
@@ -501,6 +503,7 @@ __all__ = [
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 _module_lookup = {
+    "AIMindTool": "langchain_community.tools.mindsdb.tool",
     "AINAppOps": "langchain_community.tools.ainetwork.app",
     "AINOwnerOps": "langchain_community.tools.ainetwork.owner",
     "AINRuleOps": "langchain_community.tools.ainetwork.rule",
