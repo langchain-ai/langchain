@@ -38,6 +38,7 @@ conda install langchain -c conda-forge
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
+
 - **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel), [components](https://python.langchain.com/docs/concepts/), and [third-party integrations](https://python.langchain.com/docs/integrations/providers/).
   Use [LangGraph](https://langchain-ai.github.io/langgraph/) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
@@ -46,10 +47,11 @@ For these applications, LangChain simplifies the entire application lifecycle:
 ### Open-source libraries
 
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
-- **`langchain-community`**: Third party integrations.
-  - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
+- **Integration packages** (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it. To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).
+- Integration packages: Popular third-party integrations have their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc) so that they can be properly versioned and appropriately lightweight.
+- **`langchain-community`**: Third-party integrations that are community maintained.
+- **[LangGraph](https://langchain-ai.github.io/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it. To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).
 
 ### Productionization:
 
