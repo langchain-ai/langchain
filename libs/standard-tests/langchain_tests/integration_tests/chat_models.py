@@ -145,6 +145,14 @@ class ChatModelIntegrationTests(ChatModelTests):
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
 
+        Example override:
+
+        .. code-block:: python
+
+            @property
+            def has_tool_calling(self) -> bool:
+                return True
+
     .. dropdown:: tool_choice_value
 
         Value to use for tool choice when used in tests.
