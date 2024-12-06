@@ -120,7 +120,7 @@ class VoiceInputChain(BaseTool):
     description: str = "Transcribe audio inputs and run on Ollama models."
     """ Description of the tool. Examples in the docs. """
 
-    llm: Optional[Runnable] = None
+    llm: Optional[Any] = None
     """ Ollama model to run on. """
     text_splitter: Optional[Any] = None
     """ Text splitter to split voice input into chunks. """
@@ -136,19 +136,21 @@ class VoiceInputChain(BaseTool):
         self.loader = self._initialize_loader()
         self.summarize_chain = self._initialize_summarize_chain()
 
-    def _initialize_llm(self, chain):
+    def _initialize_llm(self, chain: Optional[Runnable]) -> Any:
         if chain:
             return chain
         return ollama.Ollama(base_url=self.base_url, model=self.model)
 
-    def _initialize_loader(self):
+    def _initialize_loader(self) -> Any:
+        if not self.stt.audio_blob.path:
+            raise ValueError("No audio input has been provided.")
         return GenericLoader.from_filesystem(
             path=self.stt.audio_blob.path, parser=self.stt
         )
 
     def _initialize_text_splitter(
         self, chunk_size: int = 4000 * 4, chunk_overlap: int = 50
-    ):
+    ) -> Any:
         """Initialize text splitter for voice input to improve response
         quality.
 
@@ -162,7 +164,7 @@ class VoiceInputChain(BaseTool):
             chunk_size=chunk_size, chunk_overlap=chunk_overlap
         )
 
-    def _initialize_summarize_chain(self):
+    def _initialize_summarize_chain(self) -> Any:
         """Initialize load summarize chain for voice input that is
         extremely long.
         """
@@ -191,7 +193,7 @@ class VoiceInputChain(BaseTool):
         )
 
         return load_summarize_chain(
-            llm=self.llm,
+            llm=ollama.Ollama(base_url=self.base_url, model=self.model),
             chain_type="map_reduce",
             map_prompt=map_prompt,
             combine_prompt=combine_prompt,
@@ -202,17 +204,19 @@ class VoiceInputChain(BaseTool):
         Note: To edit models further, can create unique chain
         and pass to class instance during initialization.
         """
-        prompt = self.loader.load()
-        documents = self.text_splitter.transform_documents(prompt)
-        response = None
-        # check for if prompt is greater than context window,
-        # if so map_reduce prompt to make it eligible
-        if len(documents) == 1:
-            response = self.llm.invoke(documents[0].page_content)
-        else:
-            prompt = self.summarize_chain.invoke(documents)
-            response = self.llm.invoke(prompt["output_text"])
-        return response
+        if self.loader and self.llm and self.text_splitter and self.summarize_chain:
+            prompt = self.loader.load()
+            documents = self.text_splitter.transform_documents(prompt)
+            response = None
+            # check for if prompt is greater than context window,
+            # if so map_reduce prompt to make it eligible
+            if len(documents) == 1:
+                response = self.llm.invoke(documents[0].page_content)
+            else:
+                prompt = self.summarize_chain.invoke(documents)
+                response = self.llm.invoke(prompt["output_text"])
+            return response
+        raise ValueError("Required components are not properly initialized.")
 
     def run(self, *args: Any, **kwargs: Any) -> str:
         """Run the voice input through the Ollama model."""
