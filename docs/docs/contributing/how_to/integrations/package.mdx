@@ -37,11 +37,14 @@ import CodeBlock from '@theme/CodeBlock';
         Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
         detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
 
-        The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
-        for major LangChain components that are tested against the standard unit and
-        integration tests in the LangChain Github repository. You can access the starter
-        chat model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/chat_models.py).
-        For convenience, we also include the code below.
+        :::tip
+
+        The model from the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) is tested
+        against the standard unit and integration tests in the LangChain Github repository.
+        You can also access that implementation directly from Github
+        [here](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py).
+
+        :::
 
         <details>
             <summary>Example chat model code</summary>
@@ -115,6 +118,9 @@ import VectorstoreSource from '../../../../src/theme/integration_template/integr
     </TabItem>
     <TabItem value="embeddings" label="Embeddings">
 
+        <details>
+            <summary>Example embeddings code</summary>
+
 Embeddings are used to convert `str` objects from `Document.page_content` fields
 into a vector representation (represented as a list of floats).
 
@@ -148,16 +154,9 @@ implement this method to handle that.
 
 `embed_documents` takes in a list of strings and returns a list of embeddings as a list of lists of floats.
 
-### Implementation
 
-The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
-for major LangChain components that are tested against the standard unit and
-integration tests in the LangChain Github repository. You can access the starter
-embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/embeddings.py).
-For convenience, we also include the code below.
+### Async methods
 
-        <details>
-            <summary>Example embeddings code</summary>
 
 import EmbeddingsSource from '/src/theme/integration_template/integration_template/embeddings.py';
 
