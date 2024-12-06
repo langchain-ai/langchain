@@ -31,6 +31,7 @@ import TabItem from '@theme/TabItem';
 import CodeBlock from '@theme/CodeBlock';
 
 <Tabs>
+
     <TabItem value="chat_models" label="Chat models">
         
         Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
@@ -44,6 +45,22 @@ import CodeBlock from '@theme/CodeBlock';
         [here](https://github.com/langchain-ai/langchain/blob/master/libs/standard-tests/tests/unit_tests/custom_chat_model.py).
 
         :::
+
+        <details>
+            <summary>Example chat model code</summary>
+
+import ChatModelSource from '../../../../src/theme/integration_template/integration_template/chat_models.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/chat_models.py">
+            {
+                ChatModelSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
 
     </TabItem>
     <TabItem value="vector_stores" label="Vector stores">
@@ -82,19 +99,40 @@ import CodeBlock from '@theme/CodeBlock';
 
         :::
 
+        <details>
+            <summary>Example vector store code</summary>
+
+import VectorstoreSource from '../../../../src/theme/integration_template/integration_template/vectorstores.py';
+
+        <CodeBlock language="jsx" title="langchain_parrot_link/vectorstores.py">
+            {
+                VectorstoreSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
     </TabItem>
     <TabItem value="embeddings" label="Embeddings">
 
+        <details>
+            <summary>Example embeddings code</summary>
+
 import EmbeddingsSource from '../../../../src/theme/integration_template/integration_template/embeddings.py';
 
-            <CodeBlock language="jsx" title="langchain_parrot_link/embeddings.py">
-                {
-                    EmbeddingsSource.replaceAll('__ModuleName__', 'ParrotLink')
-                        .replaceAll('__package_name__', 'langchain-parrot-link')
-                        .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
-                        .replaceAll('__module_name__', 'langchain_parrot_link')
-                }
-            </CodeBlock>
+        <CodeBlock language="jsx" title="langchain_parrot_link/embeddings.py">
+            {
+                EmbeddingsSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
 
     </TabItem>
     {/*<TabItem value="tools" label="Tools">
