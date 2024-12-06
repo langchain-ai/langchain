@@ -79,7 +79,10 @@ def my_adder(a: int, b: int) -> int:
 
 
 class ChatModelTests(BaseStandardTests):
-    """Base class for chat model tests.
+    """
+    .. _yourclass-label:
+    
+    Base class for chat model tests.
 
     Test subclasses must implement the following two properties:
 
@@ -285,7 +288,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def chat_model_params(self) -> dict:
-        """Initialization parameters for the chat mobdel."""
+        """Initialization parameters for the chat model."""
         return {}
 
     @property
@@ -309,7 +312,8 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def has_tool_calling(self) -> bool:
-        """Boolean property indicating whether the model supports tool calling."""
+        """Boolean property indicating whether the model supports tool calling
+        (:class:`details <.ChatModelTests>`)"""
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
