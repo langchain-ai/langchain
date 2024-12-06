@@ -6,7 +6,7 @@ from langchain_core.vectorstores import VectorStore
 from langchain_tests.integration_tests import VectorStoreIntegrationTests
 
 
-class Test__ModuleName__VectorStoreSync(VectorStoreIntegrationTests):
+class Test__ModuleName__VectorStore(VectorStoreIntegrationTests):
     @pytest.fixture()
     def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
         """Get an empty vectorstore for unit tests."""
