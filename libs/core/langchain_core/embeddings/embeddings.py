@@ -33,7 +33,6 @@ class Embeddings(ABC):
     an async native implementation for performance reasons.
     """
 
-    @abstractmethod
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs.
 
@@ -43,6 +42,7 @@ class Embeddings(ABC):
         Returns:
             List of embeddings.
         """
+        return [self.embed_query(text) for text in texts]
 
     @abstractmethod
     def embed_query(self, text: str) -> list[float]:
