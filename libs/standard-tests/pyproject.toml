@@ -24,7 +24,7 @@ pytest = ">=7,<9"
 pytest-asyncio = ">=0.20,<1"
 httpx = ">=0.25.0,<1"
 syrupy = "^4"
-pytest-socket = ">=0.6.0"
+pytest-socket = ">=0.6.0,<1"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
