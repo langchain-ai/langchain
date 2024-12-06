@@ -162,14 +162,15 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return MongoDBAtlasTranslator()
 
         try:
-            from langchain_neo4j import Neo4jVector
+            from langchain_neo4j import Neo4jVector as NewNeo4jVector
         except ImportError:
             pass
         else:
-            if isinstance(vectorstore, Neo4jVector):
+            if isinstance(vectorstore, NewNeo4jVector):
                 return Neo4jTranslator()
 
         try:
+            # Trying chroma import if exists
             from langchain_chroma import Chroma
         except ImportError:
             pass
@@ -187,6 +188,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return NewPGVectorTranslator()
 
         try:
+            # Trying qdrant import if exists
             from langchain_qdrant import QdrantVectorStore
         except ImportError:
             pass
@@ -203,6 +205,16 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         else:
             if isinstance(vectorstore, HanaDB):
                 return HanaTranslator()
+
+        try:
+            # Trying Weaviate import if exists
+            from langchain_weaviate.vectorstores import WeaviateVectorStore
+
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, WeaviateVectorStore):
+                return WeaviateTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"

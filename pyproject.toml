@@ -7,7 +7,6 @@ license = "MIT"
 readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
-
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 
@@ -51,6 +50,10 @@ unstructured = { version = "^0.15.12", extras = ["md"], python = "<3.13" }
 wikipedia = "^1.4.0"
 pypdf = "^5.0.0"
 vcrpy = "^6.0.1"
+
+
+[tool.poetry.group.test_integration.dependencies]
+tiktoken = "^0.8.0"
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
