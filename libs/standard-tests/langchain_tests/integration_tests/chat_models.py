@@ -16,7 +16,7 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import tool_example_to_messages
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -24,16 +24,29 @@ from pydantic.v1 import Field as FieldV1
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
-    my_adder_tool,
 )
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-class MagicFunctionSchema(BaseModel):
+def _get_joke_class() -> type[BaseModel]:
+    """
+    :private:
+    """
+
+    class Joke(BaseModel):
+        """Joke to tell user."""
+
+        setup: str = Field(description="question to set up a joke")
+        punchline: str = Field(description="answer to resolve the joke")
+
+    return Joke
+
+
+class _MagicFunctionSchema(BaseModel):
     input: int = Field(..., gt=-1000, lt=1000)
 
 
-@tool(args_schema=MagicFunctionSchema)
+@tool(args_schema=_MagicFunctionSchema)
 def magic_function(input: int) -> int:
     """Applies a magic function to an input."""
     return input + 2
@@ -43,13 +56,6 @@ def magic_function(input: int) -> int:
 def magic_function_no_args() -> int:
     """Calculates a magic function."""
     return 5
-
-
-class Joke(BaseModel):
-    """Joke to tell user."""
-
-    setup: str = Field(description="question to set up a joke")
-    punchline: str = Field(description="answer to resolve the joke")
 
 
 def _validate_tool_call_message(message: BaseMessage) -> None:
@@ -103,12 +109,201 @@ class ChatModelIntegrationTests(ChatModelTests):
     .. note::
           API references for individual test methods include troubleshooting tips.
 
-    .. note::
-        Test subclasses can control what features are tested (such as tool
-        calling or multi-modality) by selectively overriding the properties on the
-        class. Relevant properties are mentioned in the references for each method.
-        See this page for detail on all properties:
-        https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelTests.html
+
+    Test subclasses must implement the following two properties:
+
+    chat_model_class
+        The chat model class to test, e.g., ``ChatParrotLink``.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def chat_model_class(self) -> Type[ChatParrotLink]:
+                return ChatParrotLink
+
+    chat_model_params
+        Initialization parameters for the chat model.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def chat_model_params(self) -> dict:
+                return {"model": "bird-brain-001", "temperature": 0}
+
+    In addition, test subclasses can control what features are tested (such as tool
+    calling or multi-modality) by selectively overriding the following properties.
+    Expand to see details:
+
+    .. dropdown:: has_tool_calling
+
+        Boolean property indicating whether the chat model supports tool calling.
+
+        By default, this is determined by whether the chat model's `bind_tools` method
+        is overridden. It typically does not need to be overridden on the test class.
+
+    .. dropdown:: tool_choice_value
+
+        Value to use for tool choice when used in tests.
+
+        Some tests for tool calling features attempt to force tool calling via a
+        `tool_choice` parameter. A common value for this parameter is "any". Defaults
+        to `None`.
+
+        Note: if the value is set to "tool_name", the name of the tool used in each
+        test will be set as the value for `tool_choice`.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def tool_choice_value(self) -> Optional[str]:
+                return "any"
+
+    .. dropdown:: has_structured_output
+
+        Boolean property indicating whether the chat model supports structured
+        output.
+
+        By default, this is determined by whether the chat model's
+        `with_structured_output` method is overridden. If the base implementation is
+        intended to be used, this method should be overridden.
+
+        See: https://python.langchain.com/docs/concepts/structured_outputs/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def has_structured_output(self) -> bool:
+                return True
+
+    .. dropdown:: supports_image_inputs
+
+        Boolean property indicating whether the chat model supports image inputs.
+        Defaults to ``False``.
+
+        If set to ``True``, the chat model will be tested using content blocks of the
+        form
+
+        .. code-block:: python
+
+            [
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ]
+
+        See https://python.langchain.com/docs/concepts/multimodality/
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_image_inputs(self) -> bool:
+                return True
+
+    .. dropdown:: supports_video_inputs
+
+        Boolean property indicating whether the chat model supports image inputs.
+        Defaults to ``False``. No current tests are written for this feature.
+
+    .. dropdown:: returns_usage_metadata
+
+        Boolean property indicating whether the chat model returns usage metadata
+        on invoke and streaming responses.
+
+        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
+        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def returns_usage_metadata(self) -> bool:
+                return False
+
+    .. dropdown:: supports_anthropic_inputs
+
+        Boolean property indicating whether the chat model supports Anthropic-style
+        inputs.
+
+        These inputs might feature "tool use" and "tool result" content blocks, e.g.,
+
+        .. code-block:: python
+
+            [
+                {"type": "text", "text": "Hmm let me think about that"},
+                {
+                    "type": "tool_use",
+                    "input": {"fav_color": "green"},
+                    "id": "foo",
+                    "name": "color_picker",
+                },
+            ]
+
+        If set to ``True``, the chat model will be tested using content blocks of this
+        form.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_anthropic_inputs(self) -> bool:
+                return False
+
+    .. dropdown:: supports_image_tool_message
+
+        Boolean property indicating whether the chat model supports ToolMessages
+        that include image content, e.g.,
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+                tool_call_id="1",
+                name="random_image",
+            )
+
+        If set to ``True``, the chat model will be tested with message sequences that
+        include ToolMessages of this form.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_image_tool_message(self) -> bool:
+                return False
+
+    .. dropdown:: supported_usage_metadata_details
+
+        Property controlling what usage metadata details are emitted in both invoke
+        and stream.
+
+        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
+        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+
+        It includes optional keys ``input_token_details`` and ``output_token_details``
+        that can track usage details associated with special types of tokens, such as
+        cached, audio, or reasoning.
+
+        Only needs to be overridden if these details are supplied.
     """
 
     @property
@@ -908,6 +1103,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
+        Joke = _get_joke_class()
         # Pydantic class
         # Type ignoring since the interface only officially supports pydantic 1
         # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
@@ -959,6 +1155,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
+
+        Joke = _get_joke_class()
 
         # Pydantic class
         # Type ignoring since the interface only officially supports pydantic 1
@@ -1089,7 +1287,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
         assert isinstance(joke_result, Joke)
 
-    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
+    def test_tool_message_histories_string_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
         """Test that message histories are compatible with string tool contents
         (e.g. OpenAI format). If a model passes this test, it should be compatible
         with messages generated from providers following OpenAI format.
@@ -1158,6 +1358,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_message_histories_list_content(
         self,
         model: BaseChatModel,
+        my_adder_tool: BaseTool,
     ) -> None:
         """Test that message histories are compatible with list tool contents
         (e.g. Anthropic format).
@@ -1246,7 +1447,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         result_list_content = model_with_tools.invoke(messages_list_content)
         assert isinstance(result_list_content, AIMessage)
 
-    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
+    def test_structured_few_shot_examples(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
         """Test that the model can process few-shot examples with tool calls.
 
         These are represented as a sequence of messages of the following form:
@@ -1557,7 +1760,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         model.bind_tools([color_picker]).invoke(messages)
 
-    def test_tool_message_error_status(self, model: BaseChatModel) -> None:
+    def test_tool_message_error_status(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
         """Test that ToolMessage with ``status="error"`` can be handled.
 
         These messages may take the form:
