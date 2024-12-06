@@ -528,7 +528,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "twilio": (_get_twilio, ["account_sid", "auth_token", "from_number"]),
-    "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
+    "searx-search": (_get_searx_search, ["searx_host", "unsecure", "engines", "aiosession", "unsecure", "k", "params", "headers"]),
     "merriam-webster": (_get_merriam_webster, ["merriam_webster_api_key"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "arxiv": (
