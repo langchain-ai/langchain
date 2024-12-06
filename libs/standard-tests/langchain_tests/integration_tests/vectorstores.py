@@ -14,7 +14,7 @@ from langchain_tests.base import BaseStandardTests
 EMBEDDING_SIZE = 6
 
 
-class ReadWriteTestSuite(BaseStandardTests):
+class VectorStoreIntegrationTests(BaseStandardTests):
     """Test suite for checking the synchronous read-write API of a vector store.
 
     Implementers should subclass this test suite and provide a fixture
@@ -32,10 +32,10 @@ class ReadWriteTestSuite(BaseStandardTests):
         import pytest
         from langchain_core.vectorstores import VectorStore
         from langchain_parrot_link.vectorstores import ParrotVectorStore
-        from langchain_tests.integration_tests.vectorstores import ReadWriteTestSuite
+        from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 
-        class TestSync(ReadWriteTestSuite):
+        class TestParrotVectorStore(VectorStoreIntegrationTests):
             @pytest.fixture()
             def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
                 \"\"\"Get an empty vectorstore.\"\"\"
@@ -60,15 +60,15 @@ class ReadWriteTestSuite(BaseStandardTests):
 
         import pytest
         from langchain_core.vectorstores import VectorStore
-        from langchain_tests.integration_tests.vectorstores import ReadWriteTestSuite
+        from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
         from langchain_chroma import Chroma
 
 
-        class TestSync(ReadWriteTestSuite):
+        class TestSync(VectorStoreIntegrationTests):
             @pytest.fixture()
             def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore.\"\"\"
+                \"\"\"Get an empty vectorstore for unit tests.\"\"\"
                 store = Chroma(embedding_function=self.get_embeddings())
                 try:
                     yield store
@@ -107,7 +107,7 @@ class ReadWriteTestSuite(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``ReadWriteTestSuite``) initializes an empty vector store in the
+            ``VectorStoreIntegrationTests``) initializes an empty vector store in the
             ``vectorestore`` fixture.
         """
         assert vectorstore.similarity_search("foo", k=1) == []
@@ -149,7 +149,7 @@ class ReadWriteTestSuite(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``ReadWriteTestSuite``) correctly clears the vector store in the
+            ``VectorStoreIntegrationTests``) correctly clears the vector store in the
             ``finally`` block.
         """
         assert vectorstore.similarity_search("foo", k=1) == []
@@ -384,106 +384,18 @@ class ReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-
-class AsyncReadWriteTestSuite(BaseStandardTests):
-    """Test suite for checking the async read-write API of a vector store.
-
-    Implementers should subclass this test suite and provide a fixture
-    that returns an empty vector store for each test.
-
-    The fixture should use the ``get_embeddings`` method to get a pre-defined
-    embeddings model that should be used for this test suite.
-
-    Here is a template:
-
-    .. code-block:: python
-
-        from typing import AsyncGenerator
-
-        import pytest
-        from langchain_core.vectorstores import VectorStore
-        from langchain_parrot_link.vectorstores import ParrotVectorStore
-        from langchain_tests.integration_tests.vectorstores import AsyncReadWriteTestSuite
-
-
-        class TestAsync(AsyncReadWriteTestSuite):
-            @pytest.fixture()
-            def vectorstore(self) -> AsyncGenerator[VectorStore, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore.\"\"\"
-                store = ParrotVectorStore(self.get_embeddings())
-                # note: store should be EMPTY at this point
-                # if you need to delete data, you may do so here
-                try:
-                    yield store
-                finally:
-                    # cleanup operations, or deleting data
-                    pass
-
-    In the fixture, before the ``yield`` we instantiate an empty vector store. In the
-    ``finally`` block, we call whatever logic is necessary to bring the vector store
-    to a clean state.
-
-    Example:
-
-    .. code-block:: python
-
-        from typing import AsyncGenerator, Generator
-
-        import pytest
-        from langchain_core.vectorstores import VectorStore
-        from langchain_tests.integration_tests.vectorstores import AsyncReadWriteTestSuite
-
-        from langchain_chroma import Chroma
-
-
-        class TestAsync(AsyncReadWriteTestSuite):
-            @pytest.fixture()
-            async def vectorstore(self) -> AsyncGenerator[VectorStore, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore for unit tests.\"\"\"
-                store = Chroma(embedding_function=self.get_embeddings())
-                try:
-                    yield store
-                finally:
-                    store.delete_collection()
-                    pass
-
-    .. note::
-          API references for individual test methods include troubleshooting tips.
-    """  # noqa: E501
-
-    @abstractmethod
-    @pytest.fixture
-    async def vectorstore(self) -> VectorStore:
-        """Get the vectorstore class to test.
-
-        The returned vectorstore should be EMPTY.
-        """
-
-    @staticmethod
-    def get_embeddings() -> Embeddings:
-        """A pre-defined embeddings model that should be used for this test.
-
-        This currently uses ``DeterministicFakeEmbedding`` from ``langchain-core``,
-        which uses numpy to generate random numbers based on a hash of the input text.
-
-        The resulting embeddings are not meaningful, but they are deterministic.
-        """
-        return DeterministicFakeEmbedding(
-            size=EMBEDDING_SIZE,
-        )
-
-    async def test_vectorstore_is_empty(self, vectorstore: VectorStore) -> None:
+    async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
         """Test that the vectorstore is empty.
 
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``AsyncReadWriteTestSuite``) initializes an empty vector store in the
+            ``VectorStoreIntegrationTests``) initializes an empty vector store in the
             ``vectorestore`` fixture.
         """
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
-    async def test_add_documents(self, vectorstore: VectorStore) -> None:
+    async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore.
 
         .. dropdown:: Troubleshooting
@@ -512,7 +424,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
 
-    async def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
+    async def test_vectorstore_still_empty_async(self, vectorstore: VectorStore) -> None:
         """This test should follow a test that adds documents.
 
         This just verifies that the fixture is set up properly to be empty
@@ -521,12 +433,12 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``AsyncReadWriteTestSuite``) correctly clears the vector store in the
+            ``VectorStoreIntegrationTests``) correctly clears the vector store in the
             ``finally`` block.
         """
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
-    async def test_deleting_documents(self, vectorstore: VectorStore) -> None:
+    async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
         """Test deleting documents from the vectorstore.
 
         .. dropdown:: Troubleshooting
@@ -545,7 +457,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         documents = await vectorstore.asimilarity_search("foo", k=1)
         assert documents == [Document(page_content="bar", metadata={"id": 2}, id="2")]
 
-    async def test_deleting_bulk_documents(self, vectorstore: VectorStore) -> None:
+    async def test_deleting_bulk_documents_async(self, vectorstore: VectorStore) -> None:
         """Test that we can delete several documents at once.
 
         .. dropdown:: Troubleshooting
@@ -564,7 +476,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         documents = await vectorstore.asimilarity_search("foo", k=1)
         assert documents == [Document(page_content="baz", metadata={"id": 3}, id="3")]
 
-    async def test_delete_missing_content(self, vectorstore: VectorStore) -> None:
+    async def test_delete_missing_content_async(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception.
 
         .. dropdown:: Troubleshooting
@@ -575,7 +487,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         await vectorstore.adelete(["1"])
         await vectorstore.adelete(["1", "2", "3"])
 
-    async def test_add_documents_with_ids_is_idempotent(
+    async def test_add_documents_with_ids_is_idempotent_async(
         self, vectorstore: VectorStore
     ) -> None:
         """Adding by ID should be idempotent.
@@ -598,7 +510,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="foo", metadata={"id": 1}, id="1"),
         ]
 
-    async def test_add_documents_by_id_with_mutation(
+    async def test_add_documents_by_id_with_mutation_async(
         self, vectorstore: VectorStore
     ) -> None:
         """Test that we can overwrite by ID using add_documents.
@@ -636,7 +548,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(id="2", page_content="bar", metadata={"id": 2}),
         ]
 
-    async def test_get_by_ids(self, vectorstore: VectorStore) -> None:
+    async def test_get_by_ids_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs.
 
         This test requires that ``get_by_ids`` be implemented on the vector store.
@@ -668,7 +580,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
+    async def test_get_by_ids_missing_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
 
         .. dropdown:: Troubleshooting
@@ -690,7 +602,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         # This should not raise an exception
         assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
 
-    async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
+    async def test_add_documents_documents_async(self, vectorstore: VectorStore) -> None:
         """Run add_documents tests.
 
         .. dropdown:: Troubleshooting
@@ -722,7 +634,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_add_documents_with_existing_ids(
+    async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
     ) -> None:
         """Test that add_documents with existing IDs is idempotent.
