@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import uuid
 from typing import (
     Any,
@@ -18,9 +19,23 @@ from typing import (
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 
 VST = TypeVar("VST", bound=VectorStore)
+
+
+# This similarity function is for demonstration purposes and should not be used
+# in production.
+def _cosine_similarity(
+    vector: List[float], vector_list: List[List[float]]
+) -> List[float]:
+    def dot_product(v1: List[float], v2: List[float]) -> float:
+        return sum(x * y for x, y in zip(v1, v2))
+
+    def magnitude(vector: List[float]) -> float:
+        return math.sqrt(sum(x * x for x in vector))
+
+    mag_vec = magnitude(vector)
+    return [dot_product(vector, v) / (mag_vec * magnitude(v)) for v in vector_list]
 
 
 class __ModuleName__VectorStore(VectorStore):
@@ -303,10 +318,12 @@ class __ModuleName__VectorStore(VectorStore):
         if not docs:
             return []
 
-        similarity = cosine_similarity([embedding], [doc["vector"] for doc in docs])[0]
+        similarity = _cosine_similarity(embedding, [doc["vector"] for doc in docs])
 
         # get the indices ordered by similarity score
-        top_k_idx = similarity.argsort()[::-1][:k]
+        top_k_idx = sorted(
+            range(len(similarity)), key=lambda i: similarity[i], reverse=True
+        )[:k]
 
         return [
             (
@@ -317,7 +334,7 @@ class __ModuleName__VectorStore(VectorStore):
                     metadata=doc_dict["metadata"],
                 ),
                 # Score
-                float(similarity[idx].item()),
+                similarity[idx],
                 # Embedding vector
                 doc_dict["vector"],
             )
