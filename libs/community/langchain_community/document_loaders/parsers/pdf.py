@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 
 import numpy as np
 from langchain_core.documents import Document
+from PIL import Image
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
@@ -453,8 +454,12 @@ class PDFPlumberParser(BaseBlobParser):
         for img in page.images:
             if img["stream"]["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
                 images.append(
-                    np.frombuffer(img["stream"].get_data(), dtype=np.uint8).reshape(
-                        img["stream"]["Height"], img["stream"]["Width"], -1
+                    np.array(
+                        Image.frombytes(
+                            "1",
+                            (img["stream"]["Width"], img["stream"]["Height"]),
+                            img["stream"].get_data(),
+                        ).convert("L")
                     )
                 )
             elif img["stream"]["Filter"].name in _PDF_FILTER_WITH_LOSS:
