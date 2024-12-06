@@ -1331,8 +1331,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
-                    super().test_tool_message_histories_string_content(model)
+                def test_tool_message_histories_string_content(self, *args: Any) -> None:
+                    super().test_tool_message_histories_string_content(*args)
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1415,8 +1415,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
-                    super().test_tool_message_histories_list_content(model)
+                def test_tool_message_histories_list_content(self, *args: Any) -> None:
+                    super().test_tool_message_histories_list_content(*args)
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1497,8 +1497,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
-                    super().test_structured_few_shot_examples(model)
+                def test_structured_few_shot_examples(self, *args: Any) -> None:
+                    super().test_structured_few_shot_examples(*args)
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
