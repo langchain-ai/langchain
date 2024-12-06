@@ -72,7 +72,7 @@ def test_check_package_version(
             True,
         ),
         # Merge dicts.
-        ({"a": {"b": 1}}, {"a": {"c": 2}}, {"a": {"b": 1, "c": 2}}),
+        ({"a": {"b": 1}}, {"a": {"c": 2}}, {"a": {"b": 1, "c": 2}}, False),
         (
             {"function_call": {"arguments": None}},
             {"function_call": {"arguments": "{\n"}},
@@ -80,10 +80,9 @@ def test_check_package_version(
             False,
         ),
         # Merge lists.
-        ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
-        ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
-        ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
-        False
+        ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}, False),
+        ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}, False),
+        ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}, False)
         #
         # Invalid inputs.
         #
