@@ -1,5 +1,6 @@
 """Module for voice input for Ollama models"""
 
+from pathlib import Path
 from typing import Any, Iterator, Literal, Optional, Union
 
 import sounddevice as sd
@@ -145,7 +146,7 @@ class VoiceInputChain(BaseTool):
         if not self.stt.audio_blob.path:
             raise ValueError("No audio input has been provided.")
         return GenericLoader.from_filesystem(
-            path=self.stt.audio_blob.path, parser=self.stt
+            path=Path(self.stt.audio_blob.path), parser=self.stt
         )
 
     def _initialize_text_splitter(
