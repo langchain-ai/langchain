@@ -1532,11 +1532,15 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A new Runnable with the config bound.
         """
+        config_ = {**(config or {}), **kwargs}
+        if "name" in config_ and "run_name" not in config_:
+            config_["run_name"] = config_["name"]
+
         return RunnableBinding(
             bound=self,
             config=cast(
                 RunnableConfig,
-                {**(config or {}), **kwargs},
+                config_,
             ),  # type: ignore[misc]
             kwargs={},
         )
