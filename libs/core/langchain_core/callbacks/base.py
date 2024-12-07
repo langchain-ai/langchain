@@ -257,6 +257,7 @@ class CallbackManagerMixin:
         parent_run_id: Optional[UUID] = None,
         tags: Optional[list[str]] = None,
         metadata: Optional[dict[str, Any]] = None,
+        tools: Optional[Sequence[_ToolSchema]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running.
@@ -1070,3 +1071,12 @@ class BaseCallbackManager(CallbackManagerMixin):
 
 
 Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]
+
+
+from typing_extensions import TypedDict
+
+
+class _ToolSchema(TypedDict):
+    name: str
+    description: str
+    parameters: dict
