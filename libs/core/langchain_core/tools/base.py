@@ -450,7 +450,7 @@ class ChildTool(BaseTool):
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
-            if not _is_injected_arg_type(type_):
+            if not _is_injected_arg_type(type_) and name != "tool_call_id":
                 fields.append(name)
         return _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
@@ -494,7 +494,9 @@ class ChildTool(BaseTool):
 
     # --- Tool ---
 
-    def _parse_input(self, tool_input: Union[str, dict]) -> Union[str, dict[str, Any]]:
+    def _parse_input(
+        self, tool_input: Union[str, dict], tool_call_id: str
+    ) -> Union[str, dict[str, Any]]:
         """Convert tool input to a pydantic model.
 
         Args:
@@ -512,9 +514,13 @@ class ChildTool(BaseTool):
         else:
             if input_args is not None:
                 if issubclass(input_args, BaseModel):
+                    if "tool_call_id" in input_args.model_fields:
+                        tool_input["tool_call_id"] = tool_call_id
                     result = input_args.model_validate(tool_input)
                     result_dict = result.model_dump()
                 elif issubclass(input_args, BaseModelV1):
+                    if "tool_call_id" in get_fields(input_args):
+                        tool_input["tool_call_id"] = tool_call_id
                     result = input_args.parse_obj(tool_input)
                     result_dict = result.dict()
                 else:
@@ -570,8 +576,10 @@ class ChildTool(BaseTool):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
-        tool_input = self._parse_input(tool_input)
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: str
+    ) -> tuple[tuple, dict]:
+        tool_input = self._parse_input(tool_input, tool_call_id)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
         if isinstance(tool_input, str):
@@ -648,10 +656,9 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             if signature(self._run).parameters.get("run_manager"):
                 tool_kwargs["run_manager"] = run_manager
-
             if config_param := _get_runnable_config_param(self._run):
                 tool_kwargs[config_param] = config
             response = context.run(self._run, *tool_args, **tool_kwargs)
@@ -687,7 +694,9 @@ class ChildTool(BaseTool):
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id, self.name, status)
+        output = _format_output(
+            content, artifact, tool_call_id, self.name, status, config
+        )
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -755,7 +764,7 @@ class ChildTool(BaseTool):
         artifact = None
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
@@ -805,7 +814,9 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id, self.name, status)
+        output = _format_output(
+            content, artifact, tool_call_id, self.name, status, config
+        )
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -889,10 +900,19 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
+    content: Any,
+    artifact: Any,
+    tool_call_id: Optional[str],
+    name: str,
+    status: str,
+    config: RunnableConfig,
 ) -> Union[ToolMessage, Any]:
+    if isinstance(content, ToolMessage):
+        return content
     if tool_call_id:
-        if not _is_message_content_type(content):
+        if not _is_message_content_type(content) and config.get("configurable", {}).get(
+            "coerce_tool_content", True
+        ):
             content = _stringify(content)
         return ToolMessage(
             content,
