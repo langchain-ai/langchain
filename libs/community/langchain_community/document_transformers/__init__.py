@@ -69,9 +69,9 @@ __all__ = [
     "Html2TextTransformer",
     "LongContextReorder",
     "MarkdownifyTransformer",
-    "ReadabilityTransformer",
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
+    "ReadabilityTransformer",
     "get_stateful_documents",
 ]
 
@@ -86,9 +86,9 @@ _module_lookup = {
     "Html2TextTransformer": "langchain_community.document_transformers.html2text",
     "LongContextReorder": "langchain_community.document_transformers.long_context_reorder",  # noqa: E501
     "MarkdownifyTransformer": "langchain_community.document_transformers.markdownify",
-    "ReadabilityTransformer": "langchain_community.document_transformers.mozilla_readability",  # noqa: E501
     "NucliaTextTransformer": "langchain_community.document_transformers.nuclia_text_transform",  # noqa: E501
     "OpenAIMetadataTagger": "langchain_community.document_transformers.openai_functions",  # noqa: E501
+    "ReadabilityTransformer": "langchain_community.document_transformers.mozilla_readability",  # noqa: E501
     "get_stateful_documents": "langchain_community.document_transformers.embeddings_redundant_filter",  # noqa: E501
 }
 
