@@ -152,6 +152,9 @@ import ChatIntegrationSource from '../../../../src/theme/integration_template/te
 Here's how you would configure the standard tests for a typical vector store (using
 `ParrotVectorStore` as a placeholder):
 
+Note that unlike chat models, vector stores do not have optional capabilities that
+can be enabled or disabled at this time.
+
 import VectorStoreIntegrationSource from '../../../../src/theme/integration_template/tests/integration_tests/test_vectorstores.py';
 
 <CodeBlock language="python" title="tests/integration_tests/test_vectorstores.py">
@@ -274,6 +277,30 @@ import EmbeddingsIntegrationSource from '../../../../src/theme/integration_templ
     </TabItem>
     <TabItem value="tools" label="Tools">
 
+To configure standard tests for a tool, we subclass `ToolsUnitTests` and
+`ToolsIntegrationTests`. On each subclass, we override the following `@property` methods
+to specify the tool to be tested and the tool's configuration:
+
+| Property | Description |
+| --- | --- |
+| `tool_constructor` | The constructor for the tool to be tested, or an instantiated tool. |
+| `tool_constructor_params` | The parameters to pass to the tool (optional). |
+| `tool_invoke_params_example` | An example of the parameters to pass to the tool's `invoke` method. |
+
+If you are testing a tool class and pass a class like `MyTool` to `tool_constructor`, you can pass the parameters to the constructor in `tool_constructor_params`. 
+
+If you are testing an instantiated tool, you can pass the instantiated tool to `tool_constructor` and do not
+override `tool_constructor_params`.
+
+:::note
+
+Details on what tests are run, how each test can be skipped, and troubleshooting tips for each test can be found in the API references. See details:
+
+- [Unit tests API reference](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.tools.ToolsUnitTests.html)
+- [Integration tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.tools.ToolsIntegrationTests.html)
+
+:::
+
 import ToolsUnitSource from '../../../../src/theme/integration_template/tests/unit_tests/test_tools.py';
 
 <CodeBlock language="python" title="tests/unit_tests/test_tools.py">
@@ -299,6 +326,21 @@ import ToolsIntegrationSource from '../../../../src/theme/integration_template/t
     </TabItem>
 
     <TabItem value="retrievers" label="Retrievers">
+
+To configure standard tests for a retriever, we subclass `RetrieversUnitTests` and
+`RetrieversIntegrationTests`. On each subclass, we override the following `@property` methods
+
+| Property | Description |
+| --- | --- |
+| `retriever_constructor` | The class for the retriever to be tested |
+| `retriever_constructor_params` | The parameters to pass to the retriever's constructor |
+| `retriever_query_example` | An example of the query to pass to the retriever's `invoke` method |
+
+:::note
+
+Details on what tests are run and troubleshooting tips for each test can be found in the [API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.retrievers.RetrieversIntegrationTests.html).
+
+:::
 
 import RetrieverIntegrationSource from '../../../../src/theme/integration_template/tests/integration_tests/test_retrievers.py';
 
