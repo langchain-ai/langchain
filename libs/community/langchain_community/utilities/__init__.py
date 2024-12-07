@@ -42,6 +42,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.duckduckgo_search import (
         DuckDuckGoSearchAPIWrapper,
     )
+    from langchain_community.utilities.finance_polygon import (
+        FinancePolygonAPIWrapper,
+    )
     from langchain_community.utilities.golden_query import (
         GoldenQueryAPIWrapper,
     )
@@ -187,6 +190,7 @@ __all__ = [
     "DataheraldAPIWrapper",
     "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "FinancePolygonAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleBooksAPIWrapper",
     "GoogleFinanceAPIWrapper",
@@ -251,6 +255,7 @@ _module_lookup = {
     "DataheraldAPIWrapper": "langchain_community.utilities.dataherald",
     "DriaAPIWrapper": "langchain_community.utilities.dria_index",
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
+    "FinancePolygonAPIWrapper": "langchain_community.utilities.finance_polygon",
     "GoldenQueryAPIWrapper": "langchain_community.utilities.golden_query",
     "GoogleBooksAPIWrapper": "langchain_community.utilities.google_books",
     "GoogleFinanceAPIWrapper": "langchain_community.utilities.google_finance",
