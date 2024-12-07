@@ -67,105 +67,26 @@ langchain-parrot-link/
 There are 2 namespaces in the `langchain-tests` package: 
 
 - [unit tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.unit_tests`): designed to be used to test the component in isolation and without access to external services
-- [integration tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
+- [integration tests](../../../concepts/testing.mdx#integration-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
 
 Both types of tests are implemented as [`pytest` class-based test suites](https://docs.pytest.org/en/7.1.x/getting-started.html#group-multiple-tests-in-a-class).
 
 By subclassing the base classes for each type of standard test (see below), you get all of the standard tests for that type, and you
 can override the properties that the test suite uses to configure the tests.
 
-### Standard chat model tests
+### Implementing standard tests
+
+import CodeBlock from '@theme/CodeBlock';
+
+In the following tabs, we show how to implement the standard tests for
+each component type:
+
+<Tabs>
+
+    <TabItem value="chat_models" label="Chat models">
 
 Here's how you would configure the standard unit tests for the custom chat model:
 
-
-```python title="tests/unit_tests/test_chat_models.py"
-from typing import Tuple, Type
-
-from langchain_parrot_link.chat_models import ChatParrotLink
-from langchain_tests.unit_tests import ChatModelUnitTests
-
-
-class TestChatParrotLinkUnit(ChatModelUnitTests):
-    @property
-    def chat_model_class(self) -> Type[ChatParrotLink]:
-        return ChatParrotLink
-
-    @property
-    def chat_model_params(self) -> dict:
-        return {
-            "model": "bird-brain-001",
-            "temperature": 0,
-            "parrot_buffer_length": 50,
-        }
-```
-
-
-```python title="tests/integration_tests/test_chat_models.py"
-from typing import Type
-
-from langchain_parrot_link.chat_models import ChatParrotLink
-from langchain_tests.integration_tests import ChatModelIntegrationTests
-
-
-class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
-    @property
-    def chat_model_class(self) -> Type[ChatParrotLink]:
-        return ChatParrotLink
-
-    @property
-    def chat_model_params(self) -> dict:
-        return {
-            "model": "bird-brain-001",
-            "temperature": 0,
-            "parrot_buffer_length": 50,
-        }
-```
-
-and you would run these with the following commands from your project root
-
-<Tabs>
-    <TabItem value="poetry" label="Poetry" default>
-
-```bash
-# run unit tests without network access
-poetry run pytest --disable-socket --allow-unix-socket --asyncio-mode=auto tests/unit_tests
-
-# run integration tests
-poetry run pytest --asyncio-mode=auto tests/integration_tests
-```
-
-    </TabItem>
-    <TabItem value="pip" label="Pip">
-
-```bash
-# run unit tests without network access
-pytest --disable-socket --allow-unix-socket --asyncio-mode=auto tests/unit_tests
-
-# run integration tests
-pytest --asyncio-mode=auto tests/integration_tests
-```
-
-    </TabItem>
-</Tabs>
-
-## Test suite information and troubleshooting
-
-For a full list of the standard test suites that are available, as well as
-information on which tests are included and how to troubleshoot common issues,
-see the [Standard Tests API Reference](https://python.langchain.com/api_reference/standard_tests/index.html).
-
-An increasing number of troubleshooting guides are being added to this documentation,
-and if you're interested in contributing, feel free to add docstrings to tests in 
-[Github](https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests/langchain_tests)!
-
-## Standard test templates per component:
-
-Above, we implement the **unit** and **integration** standard tests for a tool. Below are the templates for implementing the standard tests for each component:
-
-<details>
-    <summary>Chat Models</summary>
-    <p>Note: The standard tests for chat models are implemented in the example in the main body of this guide too.</p>
 
 Chat model standard tests test a range of behaviors, from the most basic requirements (generating a response to a query) to optional capabilities like multi-modal support and tool-calling. For a test run to be successful:
 
@@ -199,180 +120,34 @@ Details on what tests are run, how each test can be skipped, and troubleshooting
 
 Unit test example:
 
+import ChatUnitSource from '../../../../src/theme/integration_template/tests/unit_tests/test_chat_models.py';
 
-```python title="tests/unit_tests/test_chat_models.py"
-from typing import Type
-
-from langchain_parrot_link.chat_models import ChatParrotLink
-from langchain_tests.unit_tests import ChatModelUnitTests
-
-
-class TestChatParrotLinkUnit(ChatModelUnitTests):
-    @property
-    def chat_model_class(self) -> Type[ChatParrotLink]:
-        return ChatParrotLink
-
-    @property
-    def chat_model_params(self) -> dict:
-        return {
-            "model": "bird-brain-001",
-            "temperature": 0,
-            "parrot_buffer_length": 50,
-        }
-```
+<CodeBlock language="python" title="tests/unit_tests/test_chat_models.py">
+{
+    ChatUnitSource.replaceAll('__ModuleName__', 'ParrotLink')
+        .replaceAll('__package_name__', 'langchain-parrot-link')
+        .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+        .replaceAll('__module_name__', 'langchain_parrot_link')
+}
+</CodeBlock>
 
 Integration test example:
 
 
-```python title="tests/integration_tests/test_chat_models.py"
-from typing import Type
+import ChatIntegrationSource from '../../../../src/theme/integration_template/tests/integration_tests/test_chat_models.py';
 
-from langchain_parrot_link.chat_models import ChatParrotLink
-from langchain_tests.integration_tests import ChatModelIntegrationTests
+<CodeBlock language="python" title="tests/integration_tests/test_chat_models.py">
+{
+    ChatIntegrationSource.replaceAll('__ModuleName__', 'ParrotLink')
+        .replaceAll('__package_name__', 'langchain-parrot-link')
+        .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+        .replaceAll('__module_name__', 'langchain_parrot_link')
+}
+</CodeBlock>
 
+    </TabItem>
+    <TabItem value="vector_stores" label="Vector stores">
 
-class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
-    @property
-    def chat_model_class(self) -> Type[ChatParrotLink]:
-        return ChatParrotLink
-
-    @property
-    def chat_model_params(self) -> dict:
-        return {
-            "model": "bird-brain-001",
-            "temperature": 0,
-            "parrot_buffer_length": 50,
-        }
-```
-
-</details>
-<details>
-    <summary>Embedding Models</summary>
-
-To configure standard tests for an embeddings model, we subclass
-`EmbeddingsUnitTests` and `EmbeddingsIntegrationTests`. On each subclass, we
-implement the `embeddings_class` property to specify the embeddings model to be
-tested. We can also override the embedding_model_params property to specify
-initialization parameters. See examples below.
-
-:::note
-
-Details on what tests are run, how each test can be skipped, and troubleshooting tips for each test can be found in the API references. See details:
-
-- [Unit tests API reference](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.embeddings.EmbeddingsUnitTests.html)
-- [Integration tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.embeddings.EmbeddingsIntegrationTests.html)
-
-:::
-
-Unit test example:
-
-
-```python title="tests/unit_tests/test_embeddings.py"
-from typing import Tuple, Type
-
-from langchain_parrot_link.embeddings import ParrotLinkEmbeddings
-from langchain_tests.unit_tests import EmbeddingsUnitTests
-
-
-class TestParrotLinkEmbeddingsUnit(EmbeddingsUnitTests):
-    @property
-    def embeddings_class(self) -> Type[ParrotLinkEmbeddings]:
-        return ParrotLinkEmbeddings
-
-    @property
-    def embedding_model_params(self) -> dict:
-        return {"model": "nest-embed-001", "temperature": 0}
-```
-
-Integration test example:
-
-
-```python title="tests/integration_tests/test_embeddings.py"
-from typing import Type
-
-from langchain_parrot_link.embeddings import ParrotLinkEmbeddings
-from langchain_tests.integration_tests import EmbeddingsIntegrationTests
-
-
-class TestParrotLinkEmbeddingsIntegration(EmbeddingsIntegrationTests):
-    @property
-    def embeddings_class(self) -> Type[ParrotLinkEmbeddings]:
-        return ParrotLinkEmbeddings
-
-    @property
-    def embedding_model_params(self) -> dict:
-        return {"model": "nest-embed-001"}
-```
-
-</details>
-<details>
-    <summary>Tools/Toolkits</summary>
-
-
-```python title="tests/unit_tests/test_tools.py"
-from typing import Type
-
-from langchain_parrot_link.tools import ParrotMultiplyTool
-from langchain_tests.unit_tests import ToolsUnitTests
-
-
-class TestParrotMultiplyToolUnit(ToolsUnitTests):
-    @property
-    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
-        return ParrotMultiplyTool
-
-    @property
-    def tool_constructor_params(self) -> dict:
-        # if your tool constructor instead required initialization arguments like
-        # `def __init__(self, some_arg: int):`, you would return those here
-        # as a dictionary, e.g.: `return {'some_arg': 42}`
-        return {}
-
-    @property
-    def tool_invoke_params_example(self) -> dict:
-        """
-        Returns a dictionary representing the "args" of an example tool call.
-
-        This should NOT be a ToolCall dict - i.e. it should not
-        have {"name", "id", "args"} keys.
-        """
-        return {"a": 2, "b": 3}
-```
-
-
-```python title="tests/integration_tests/test_tools.py"
-from typing import Type
-
-from langchain_parrot_link.tools import ParrotMultiplyTool
-from langchain_tests.integration_tests import ToolsIntegrationTests
-
-
-class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
-    @property
-    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
-        return ParrotMultiplyTool
-
-    @property
-    def tool_constructor_params(self) -> dict:
-        # if your tool constructor instead required initialization arguments like
-        # `def __init__(self, some_arg: int):`, you would return those here
-        # as a dictionary, e.g.: `return {'some_arg': 42}`
-        return {}
-
-    @property
-    def tool_invoke_params_example(self) -> dict:
-        """
-        Returns a dictionary representing the "args" of an example tool call.
-
-        This should NOT be a ToolCall dict - i.e. it should not
-        have {"name", "id", "args"} keys.
-        """
-        return {"a": 2, "b": 3}
-```
-
-</details>
-<details>
-    <summary>Vector Stores</summary>
 
 Here's how you would configure the standard tests for a typical vector store (using
 `ParrotVectorStore` as a placeholder):
@@ -449,4 +224,171 @@ Details on what tests are run and troubleshooting tips for each test can be foun
 
 :::
 
-</details>
+
+    </TabItem>
+    <TabItem value="embeddings" label="Embeddings">
+
+To configure standard tests for an embeddings model, we subclass
+`EmbeddingsUnitTests` and `EmbeddingsIntegrationTests`. On each subclass, we
+implement the `embeddings_class` property to specify the embeddings model to be
+tested. We can also override the embedding_model_params property to specify
+initialization parameters. See examples below.
+
+:::note
+
+Details on what tests are run, how each test can be skipped, and troubleshooting tips for each test can be found in the API references. See details:
+
+- [Unit tests API reference](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.embeddings.EmbeddingsUnitTests.html)
+- [Integration tests API reference](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.embeddings.EmbeddingsIntegrationTests.html)
+
+:::
+
+Unit test example:
+
+
+```python title="tests/unit_tests/test_embeddings.py"
+from typing import Tuple, Type
+
+from langchain_parrot_link.embeddings import ParrotLinkEmbeddings
+from langchain_tests.unit_tests import EmbeddingsUnitTests
+
+
+class TestParrotLinkEmbeddingsUnit(EmbeddingsUnitTests):
+    @property
+    def embeddings_class(self) -> Type[ParrotLinkEmbeddings]:
+        return ParrotLinkEmbeddings
+
+    @property
+    def embedding_model_params(self) -> dict:
+        return {"model": "nest-embed-001", "temperature": 0}
+```
+
+Integration test example:
+
+
+```python title="tests/integration_tests/test_embeddings.py"
+from typing import Type
+
+from langchain_parrot_link.embeddings import ParrotLinkEmbeddings
+from langchain_tests.integration_tests import EmbeddingsIntegrationTests
+
+
+class TestParrotLinkEmbeddingsIntegration(EmbeddingsIntegrationTests):
+    @property
+    def embeddings_class(self) -> Type[ParrotLinkEmbeddings]:
+        return ParrotLinkEmbeddings
+
+    @property
+    def embedding_model_params(self) -> dict:
+        return {"model": "nest-embed-001"}
+```
+
+    </TabItem>
+    <TabItem value="tools" label="Tools">
+
+
+```python title="tests/unit_tests/test_tools.py"
+from typing import Type
+
+from langchain_parrot_link.tools import ParrotMultiplyTool
+from langchain_tests.unit_tests import ToolsUnitTests
+
+
+class TestParrotMultiplyToolUnit(ToolsUnitTests):
+    @property
+    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
+        return ParrotMultiplyTool
+
+    @property
+    def tool_constructor_params(self) -> dict:
+        # if your tool constructor instead required initialization arguments like
+        # `def __init__(self, some_arg: int):`, you would return those here
+        # as a dictionary, e.g.: `return {'some_arg': 42}`
+        return {}
+
+    @property
+    def tool_invoke_params_example(self) -> dict:
+        """
+        Returns a dictionary representing the "args" of an example tool call.
+
+        This should NOT be a ToolCall dict - i.e. it should not
+        have {"name", "id", "args"} keys.
+        """
+        return {"a": 2, "b": 3}
+```
+
+
+```python title="tests/integration_tests/test_tools.py"
+from typing import Type
+
+from langchain_parrot_link.tools import ParrotMultiplyTool
+from langchain_tests.integration_tests import ToolsIntegrationTests
+
+
+class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
+    @property
+    def tool_constructor(self) -> Type[ParrotMultiplyTool]:
+        return ParrotMultiplyTool
+
+    @property
+    def tool_constructor_params(self) -> dict:
+        # if your tool constructor instead required initialization arguments like
+        # `def __init__(self, some_arg: int):`, you would return those here
+        # as a dictionary, e.g.: `return {'some_arg': 42}`
+        return {}
+
+    @property
+    def tool_invoke_params_example(self) -> dict:
+        """
+        Returns a dictionary representing the "args" of an example tool call.
+
+        This should NOT be a ToolCall dict - i.e. it should not
+        have {"name", "id", "args"} keys.
+        """
+        return {"a": 2, "b": 3}
+```
+
+    </TabItem>
+
+    <TabItem value="retrievers" label="Retrievers">
+
+    </TabItem>
+</Tabs>
+
+### Running the tests
+
+You can run these with the following commands from your project root
+
+<Tabs>
+    <TabItem value="poetry" label="Poetry" default>
+
+```bash
+# run unit tests without network access
+poetry run pytest --disable-socket --allow-unix-socket --asyncio-mode=auto tests/unit_tests
+
+# run integration tests
+poetry run pytest --asyncio-mode=auto tests/integration_tests
+```
+
+    </TabItem>
+    <TabItem value="pip" label="Pip">
+
+```bash
+# run unit tests without network access
+pytest --disable-socket --allow-unix-socket --asyncio-mode=auto tests/unit_tests
+
+# run integration tests
+pytest --asyncio-mode=auto tests/integration_tests
+```
+
+    </TabItem>
+</Tabs>
+
+## Test suite information and troubleshooting
+
+For a full list of the standard test suites that are available, as well as
+information on which tests are included and how to troubleshoot common issues,
+see the [Standard Tests API Reference](https://python.langchain.com/api_reference/standard_tests/index.html).
+
+You can see troubleshooting guides under the individual test suites listed in that API Reference. For example,
+[here is the guide for `ChatModelIntegrationTests.test_usage_metadata`](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.html#langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_usage_metadata).
