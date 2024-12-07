@@ -106,6 +106,7 @@ class ChatModelTests(BaseStandardTests):
     @pytest.fixture
     def my_adder_tool(self) -> BaseTool:
         """:private:"""
+
         @tool
         def my_adder_tool(a: int, b: int) -> int:
             """Takes two integers, a and b, and returns their sum."""
