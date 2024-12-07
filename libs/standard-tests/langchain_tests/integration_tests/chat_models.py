@@ -145,6 +145,14 @@ class ChatModelIntegrationTests(ChatModelTests):
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
 
+        Example override:
+
+        .. code-block:: python
+
+            @property
+            def has_tool_calling(self) -> bool:
+                return True
+
     .. dropdown:: tool_choice_value
 
         Value to use for tool choice when used in tests.
@@ -308,7 +316,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:meta private:"""
+        """:private:"""
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:
@@ -1323,8 +1331,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
-                    super().test_tool_message_histories_string_content(model)
+                def test_tool_message_histories_string_content(self, *args: Any) -> None:
+                    super().test_tool_message_histories_string_content(*args)
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1407,8 +1415,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
-                    super().test_tool_message_histories_list_content(model)
+                def test_tool_message_histories_list_content(self, *args: Any) -> None:
+                    super().test_tool_message_histories_list_content(*args)
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1489,8 +1497,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
-                    super().test_structured_few_shot_examples(model)
+                def test_structured_few_shot_examples(self, *args: Any) -> None:
+                    super().test_structured_few_shot_examples(*args)
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1852,16 +1860,21 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
+        """:private:"""
         raise NotImplementedError()
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
+        """:private:"""
         raise NotImplementedError()
