@@ -175,6 +175,60 @@ import EmbeddingsSource from '/src/theme/integration_template/integration_templa
     </TabItem>
     <TabItem value="tools" label="Tools">
 
+Tools are used in 2 main ways:
+
+1. To define an "input schema" or "args schema" to pass to a chat model's tool calling
+feature along with a text request, such that the chat model can generate a "tool call",
+or parameters to call the tool with.
+2. To take a "tool call" as generated above, and take some action and return a response
+that can be passed back to the chat model as a ToolMessage.
+
+The `Tools` class must inherit from the [BaseTool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.base.BaseTool.html#langchain_core.tools.base.BaseTool) base class. This interface has 3 properties and 2 methods that should be implemented in a 
+subclass.
+
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `name`                  | Name of the tool (passed to the LLM too).            |
+| `description`           | Description of the tool (passed to the LLM too).     |
+| `args_schema`           | Define the schema for the tool's input arguments.    |
+| `_run`                  | Run the tool with the given arguments.               |
+| `_arun`                 | Asynchronously run the tool with the given arguments.|
+
+### Properties
+
+`name`, `description`, and `args_schema` are all properties that should be implemented
+in the subclass. `name` and `description` are strings that are used to identify the tool
+and provide a description of what the tool does. Both of these are passed to the LLM,
+and users may override these values depending on the LLM they are using as a form of
+"prompt engineering." Giving these a concise and LLM-usable name and description is
+important for the initial user experience of the tool.
+
+`args_schema` is a Pydantic `BaseModel` that defines the schema for the tool's input
+arguments. This is used to validate the input arguments to the tool, and to provide
+a schema for the LLM to fill out when calling the tool. Similar to the `name` and
+`description` of the overall Tool class, the fields' names (the variable name) and
+description (part of `Field(..., description="description")`) are passed to the LLM, 
+and the values in these fields should be concise and LLM-usable.
+
+### Run Methods
+
+`_run` is the main method that should be implemented in the subclass. This method
+takes in the arguments from `args_schema` and runs the tool, returning a string
+response. This method is usually called in a LangGraph [`ToolNode`](https://langchain-ai.github.io/langgraph/how-tos/tool-calling/), and can also be called in a legacy
+`langchain.agents.AgentExecutor`.
+
+`_arun` is optional because by default, `_run` will be run in an async executor.
+However, if your tool is calling any apis or doing any async work, you should implement
+this method to run the tool asynchronously in addition to `_run`.
+
+### Implementation
+
+The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
+for major LangChain components that are tested against the standard unit and
+integration tests in the LangChain Github repository. You can access the starter
+embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/tools.py).
+For convenience, we also include the code below.
+
         <details>
             <summary>Example tool code</summary>
 
@@ -193,6 +247,50 @@ import ToolSource from '/src/theme/integration_template/integration_template/too
 
     </TabItem>
     <TabItem value="retrievers" label="Retrievers">
+
+Retrievers are used to retrieve documents from APIs, databases, or other sources
+based on a query. The `Retriever` class must inherit from the [BaseRetriever](https://python.langchain.com/api_reference/core/retrievers/langchain_core.retrievers.BaseRetriever.html) base class. This interface has 1 attribute and 2 methods that should be implemented in a subclass.
+
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `k`                     | Default number of documents to retrieve (configurable). |
+| `_get_relevant_documents`| Retrieve documents based on a query.                 |
+| `_aget_relevant_documents`| Asynchronously retrieve documents based on a query.  |
+
+### Attributes
+
+`k` is an attribute that should be implemented in the subclass. This attribute
+can simply be defined at the top of the class with a default value like
+`k: int = 5`. This attribute is the default number of documents to retrieve
+from the retriever, and can be overridden by the user when constructing or calling
+the retriever.
+
+### Methods
+
+`_get_relevant_documents` is the main method that should be implemented in the subclass.
+
+This method takes in a query and returns a list of `Document` objects, which have 2
+main properties:
+
+- `page_content` - the text content of the document
+- `metadata` - a dictionary of metadata about the document
+
+Retrievers are typically directly invoked by a user, e.g. as
+`MyRetriever(k=4).invoke("query")`, which will automatically call `_get_relevant_documents`
+under the hood.
+
+`_aget_relevant_documents` is optional because by default, `_get_relevant_documents` will
+be run in an async executor. However, if your retriever is calling any apis or doing
+any async work, you should implement this method to run the retriever asynchronously
+in addition to `_get_relevant_documents` for performance reasons.
+
+### Implementation
+
+The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
+for major LangChain components that are tested against the standard unit and
+integration tests in the LangChain Github repository. You can access the starter
+embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/retrievers.py).
+For convenience, we also include the code below.
 
         <details>
             <summary>Example retriever code</summary>
