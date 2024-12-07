@@ -195,6 +195,36 @@ class TestConfluenceLoader:
         assert mock_confluence.cql.call_count == 0
         assert mock_confluence.get_page_child_by_type.call_count == 0
 
+    @pytest.mark.requires("markdownify")
+    def test_confluence_loader_when_include_lables_set_to_true(
+        self, mock_confluence: MagicMock
+    ) -> None:
+        # one response with two pages
+        mock_confluence.get_all_pages_from_space.return_value = [
+            self._get_mock_page("123", include_labels=True),
+            self._get_mock_page("456", include_labels=False),
+        ]
+        mock_confluence.get_all_restrictions_for_content.side_effect = [
+            self._get_mock_page_restrictions("123"),
+            self._get_mock_page_restrictions("456"),
+        ]
+
+        conflence_loader = self._get_mock_confluence_loader(
+            mock_confluence,
+            space_key=self.MOCK_SPACE_KEY,
+            include_labels=True,
+            max_pages=2,
+        )
+
+        documents = conflence_loader.load()
+
+        assert mock_confluence.get_all_pages_from_space.call_count == 1
+
+        assert len(documents) == 2
+        assert all(isinstance(doc, Document) for doc in documents)
+        assert documents[0].metadata["labels"] == ["l1", "l2"]
+        assert documents[1].metadata["labels"] == []
+
     def _get_mock_confluence_loader(
         self, mock_confluence: MagicMock, **kwargs: Any
     ) -> ConfluenceLoader:
@@ -208,7 +238,10 @@ class TestConfluenceLoader:
         return confluence_loader
 
     def _get_mock_page(
-        self, page_id: str, content_format: ContentFormat = ContentFormat.STORAGE
+        self,
+        page_id: str,
+        content_format: ContentFormat = ContentFormat.STORAGE,
+        include_labels: bool = False,
     ) -> Dict:
         return {
             "id": f"{page_id}",
@@ -216,6 +249,20 @@ class TestConfluenceLoader:
             "body": {
                 f"{content_format.name.lower()}": {"value": f"<p>Content {page_id}</p>"}
             },
+            **(
+                {
+                    "metadata": {
+                        "labels": {
+                            "results": [
+                                {"prefix": "global", "name": "l1", "id": "111"},
+                                {"prefix": "global", "name": "l2", "id": "222"},
+                            ]
+                        }
+                    }
+                    if include_labels
+                    else {},
+                }
+            ),
             "status": "current",
             "type": "page",
             "_links": {
