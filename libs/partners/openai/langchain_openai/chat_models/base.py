@@ -700,11 +700,12 @@ class BaseChatOpenAI(BaseChatModel):
         if stop is not None:
             kwargs["stop"] = stop
 
-        return {
+        payload = {
             "messages": [_convert_message_to_dict(m) for m in messages],
             **self._default_params,
             **kwargs,
         }
+        return self._filter_disabled_params(**payload)
 
     def _create_chat_result(
         self,
