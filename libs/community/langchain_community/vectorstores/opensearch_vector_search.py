@@ -22,6 +22,7 @@ Please install it with `pip install opensearch-py`."""
 SCRIPT_SCORING_SEARCH = "script_scoring"
 PAINLESS_SCRIPTING_SEARCH = "painless_scripting"
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
+HYBRID_SEARCH = "hybrid_search"
 
 if TYPE_CHECKING:
     from opensearchpy import AsyncOpenSearch, OpenSearch
@@ -372,6 +373,65 @@ def _default_painless_scripting_query(
     }
 
 
+def _default_hybrid_search_query(
+    query_text: str, query_vector: List[float], k: int = 4
+) -> Dict:
+    """Returns payload for performing hybrid search for given options.
+
+    Args:
+        query_text: The query text to search for.
+        query_vector: The embedding vector (query) to search for.
+        k: Number of Documents to return. Defaults to 4.
+
+    Returns:
+        dict: The payload for hybrid search.
+    """
+    payload = {
+        "_source": {"exclude": ["vector_field"]},
+        "query": {
+            "hybrid": {
+                "queries": [
+                    {
+                        "match": {
+                            "text": {
+                                "query": query_text,
+                            }
+                        }
+                    },
+                    {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
+                ]
+            }
+        },
+        "size": k,
+    }
+
+    return payload
+
+
+def _hybrid_search_query_with_post_filter(
+    query_text: str,
+    query_vector: List[float],
+    k: int,
+    post_filter: Dict,
+) -> Dict:
+    """Returns payload for performing hybrid search with post filter.
+
+    Args:
+        query_text: The query text to search for.
+        query_vector: The embedding vector to search for.
+        k: Number of Documents to return.
+        post_filter: The post filter to apply.
+
+    Returns:
+        dict: The payload for hybrid search with post filter.
+    """
+    search_query = _default_hybrid_search_query(query_text, query_vector, k)
+
+    search_query["post_filter"] = post_filter
+
+    return search_query
+
+
 class OpenSearchVectorSearch(VectorStore):
     """`Amazon OpenSearch Vector Engine` vector store.
 
@@ -707,6 +767,123 @@ class OpenSearchVectorSearch(VectorStore):
             item.get("delete", {}).get("error") for item in response["items"]
         )
 
+    def configure_search_pipelines(
+        self,
+        pipeline_name: str,
+        keyword_weight: float = 0.7,
+        vector_weight: float = 0.3,
+    ) -> dict:
+        """
+        Configures a search pipeline for hybrid search.
+        Args:
+            pipeline_name: Name of the pipeline
+            keyword_weight: Weight for keyword search
+            vector_weight: Weight for vector search
+        Returns:
+            response: Acknowledgement of the pipeline creation.
+            (if there is any error while configuring the pipeline, it will return None)
+        Raises:
+            Exception: If an error occurs
+        """
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+        
+        path = f"/_search/pipeline/{pipeline_name}"
+
+        payload = {
+            "description": "Post processor for hybrid search",
+            "phase_results_processors": [
+                {
+                    "normalization-processor": {
+                        "normalization": {"technique": "min_max"},
+                        "combination": {
+                            "technique": "arithmetic_mean",
+                            "parameters": {"weights": [keyword_weight, vector_weight]},
+                        },
+                    }
+                }
+            ],
+        }
+        
+        response = self.client.transport.perform_request(
+            method="PUT", url=path, body=payload
+        )
+        return response
+        
+
+    def search_pipeline_exists(self, pipeline_name: str) -> bool:
+        """
+        Checks if a search pipeline exists.
+
+        Args:
+            pipeline_name: Name of the pipeline
+
+        Returns:
+            bool: True if the pipeline exists, False otherwise
+
+        Raises:
+            Exception: If an error occurs
+
+        Example:
+            >>> search_pipeline_exists("my_pipeline_1")
+            True
+            >>> search_pipeline_exists("my_pipeline_2")
+            False
+        """
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+        
+        existed_pipelines = self.client.transport.perform_request(
+            method="GET", url="/_search/pipeline/"
+        )
+
+        return pipeline_name in existed_pipelines
+
+    def get_search_pipeline_info(self, pipeline_name: str) -> Optional[Dict]:
+        """
+        Get information about a search pipeline.
+
+        Args:
+            pipeline_name: Name of the pipeline
+
+        Returns:
+            dict: Information about the pipeline
+            None: If pipeline does not exist
+
+        Raises:
+            Exception: If an error occurs
+
+        Example:
+            >>> get_search_pipeline_info("my_pipeline_1")
+            {'search_pipeline_1': {
+                "description": "Post processor for hybrid search",
+                "phase_results_processors": [
+                    {
+                        "normalization-processor": {
+                            "normalization": {"technique": "min_max"},
+                            "combination": {
+                                "technique": "arithmetic_mean",
+                                "parameters": {"weights": [0.7, 0.3]}
+                            }
+                        }
+                    }
+                ]
+            }
+            }
+            >>> get_search_pipeline_info("my_pipeline_2")
+            None
+        """
+        response = None
+
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+        
+        response = self.client.transport.perform_request(
+            method="GET", url=f"/_search/pipeline/{pipeline_name}"
+        )
+
+        return response
+      
     @staticmethod
     def _identity_fn(score: float) -> float:
         return score
@@ -831,6 +1008,8 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args:
             same as `similarity_search`
         """
+        # added query_text to kwargs for Hybrid Search
+        kwargs["query_text"] = query
         embedding = self.embedding_function.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding, k, score_threshold, **kwargs
@@ -1018,6 +1197,39 @@ class OpenSearchVectorSearch(VectorStore):
                 vector_field,
                 score_threshold=score_threshold,
             )
+
+        elif search_type == HYBRID_SEARCH:
+            search_pipeline = kwargs.get("search_pipeline")
+            post_filter = kwargs.get("post_filter", {})
+            query_text = kwargs.get("query_text")
+            path = f"/{index_name}/_search?search_pipeline={search_pipeline}"
+
+            if query_text is None:
+                raise ValueError("query_text must be provided for hybrid search")
+            
+            if search_pipeline is None:
+                raise ValueError("search_pipeline must be provided for hybrid search")
+
+            # embedding the query_text
+            embeded_query = self.embedding_function.embed_query(query_text)
+
+            # if post filter is provided
+            if post_filter != {}:
+                # hybrid search with post filter
+                payload = _hybrid_search_query_with_post_filter(
+                    query_text, embeded_query, k, post_filter
+                )
+            else:
+                # hybrid search without post filter
+                payload = _default_hybrid_search_query(query_text, embeded_query, k)
+            
+            response = self.client.transport.perform_request(
+                method="GET", url=path, body=payload
+            )
+            
+            return [hit for hit in response["hits"]["hits"]]
+
+
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
