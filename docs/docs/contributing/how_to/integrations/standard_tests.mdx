@@ -4,7 +4,7 @@ pagination_prev: contributing/how_to/integrations/package
 ---
 # How to add standard tests to an integration
 
-When creating either a custom class for yourself or to publish in a LangChain integration, it is important to add standard tests to ensure it works as expected. This guide will show you how to add standard tests to a custom chat model, and you can **[Skip to the test templates](#standard-test-templates-per-component)** for implementing tests for each integration type.
+When creating either a custom class for yourself or to publish in a LangChain integration, it is important to add standard tests to ensure it works as expected. This guide will show you how to add standard tests to each integration type.
 
 ## Setup
 
@@ -57,7 +57,12 @@ langchain-parrot-link/
 │   └── chat_models.py
 ├── tests/
 │   ├── __init__.py
-│   └── test_chat_models.py
+│   ├── unit_tests/
+│   │   ├── __init__.py
+│   │   └── test_chat_models.py
+│   └── integration_tests/
+│       ├── __init__.py
+│       └── test_chat_models.py
 ├── pyproject.toml
 └── README.md
 ```
