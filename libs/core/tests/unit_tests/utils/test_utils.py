@@ -113,9 +113,9 @@ def test_check_package_version(
         ),
         # int replacing
         (
-            {"a": [{"index": 1, "b": "a"}]},
-            {"a": [{"index": 5, "b": "b"}]},
-            {"a": [{"index": 5, "b": "ab"}]},
+            {"index": 1, "b": "a"},
+            {"index": 5, "b": "b"},
+            {"index": 5, "b": "ab"},
         ),
     ),
 )
