@@ -39,7 +39,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                     " but with a different type."
                 )
                 raise TypeError(msg)
-            elif isinstance(merged[right_k], (int, float, str)):
+            elif isinstance(merged[right_k], str):
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
                 #
@@ -60,6 +60,8 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+            elif isinstance(merged[right_k], int):
+                merged[right_k] = right_v
             else:
                 msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "

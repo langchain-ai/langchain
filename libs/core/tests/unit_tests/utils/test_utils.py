@@ -45,44 +45,36 @@ def test_check_package_version(
 
 
 @pytest.mark.parametrize(
-    ("left", "right", "expected", "float_comparison"),
+    ("left", "right", "expected"),
     (
         # Merge `None` and `1`.
-        ({"a": None}, {"a": 1}, {"a": 1}, False),
+        ({"a": None}, {"a": 1}, {"a": 1}),
         # Merge `1` and `None`.
-        ({"a": 1}, {"a": None}, {"a": 1}, False),
+        ({"a": 1}, {"a": None}, {"a": 1}),
         # Merge `None` and a value.
-        ({"a": None}, {"a": 0}, {"a": 0}, False),
-        ({"a": None}, {"a": "txt"}, {"a": "txt"}, False),
+        ({"a": None}, {"a": 0}, {"a": 0}),
+        ({"a": None}, {"a": "txt"}, {"a": "txt"}),
         # Merge equal values.
-        ({"a": 1}, {"a": 1}, {"a": 1}, False),
-        ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}, False),
-        ({"a": True}, {"a": True}, {"a": True}, False),
-        ({"a": False}, {"a": False}, {"a": False}, False),
+        ({"a": 1}, {"a": 1}, {"a": 1}),
+        ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
+        ({"a": True}, {"a": True}, {"a": True}),
+        ({"a": False}, {"a": False}, {"a": False}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
-        ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}, False),
-        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}, False),
+        ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
+        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
         # Merge strings.
-        ({"a": "one"}, {"a": "two"}, {"a": "onetwo"}, False),
-        # Number related merging when value changes
-        (
-            {"a": [{"int": 1, "float": 0.25, "str": "some"}]},
-            {"a": [{"int": 3, "float": 0.75, "str": "thing"}]},
-            {"a": [{"int": 4, "float": 1.0, "str": "something"}]},
-            True,
-        ),
+        ({"a": "one"}, {"a": "two"}, {"a": "onetwo"}),
         # Merge dicts.
-        ({"a": {"b": 1}}, {"a": {"c": 2}}, {"a": {"b": 1, "c": 2}}, False),
+        ({"a": {"b": 1}}, {"a": {"c": 2}}, {"a": {"b": 1, "c": 2}}),
         (
             {"function_call": {"arguments": None}},
             {"function_call": {"arguments": "{\n"}},
             {"function_call": {"arguments": "{\n"}},
-            False,
         ),
         # Merge lists.
-        ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}, False),
-        ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}, False),
-        ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}, False),
+        ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
+        ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
+        ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
         #
         # Invalid inputs.
         #
@@ -96,7 +88,6 @@ def test_check_package_version(
                     "but with a different type."
                 ),
             ),
-            False,
         ),
         (
             {"a": (1, 2)},
@@ -108,20 +99,17 @@ def test_check_package_version(
                     "has unsupported type .+tuple.+."
                 ),
             ),
-            False,
         ),
         # 'index' keyword has special handling
         (
             {"a": [{"index": 0, "b": "{"}]},
-            {"a": [{"index": 0, "b": "f"}]},
-            {"a": [{"index": 0, "b": "{f"}]},
-            False,
+            {"a": [{"index": 1, "b": "f"}]},
+            {"a": [{"index": 1, "b": "{f"}]},
         ),
         (
             {"a": [{"idx": 0, "b": "{"}]},
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
-            False,
         ),
     ),
 )
@@ -129,7 +117,6 @@ def test_merge_dicts(
     left: dict,
     right: dict,
     expected: Union[dict, AbstractContextManager],
-    float_comparison: bool,
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -137,15 +124,7 @@ def test_merge_dicts(
     right_copy = deepcopy(right)
     with err:
         actual = merge_dicts(left, right)
-        if float_comparison:
-            for a, e in zip(actual["a"].values(), expected["a"].values()):
-                if isinstance(a, float):
-                    assert abs(a - e) < 1e-6
-                else:
-                    assert a == e
-
-        else:
-            assert actual == expected
+        assert actual == expected
         # no mutation
         assert left == left_copy
         assert right == right_copy
