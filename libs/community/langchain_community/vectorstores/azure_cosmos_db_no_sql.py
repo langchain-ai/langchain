@@ -12,7 +12,10 @@ from langchain_core.vectorstores import VectorStore
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from azure.cosmos.cosmos_client import CosmosClient
+    from azure.cosmos import ContainerProxy, CosmosClient
+    from azure.identity import ClientSecretCredential
+
+USER_AGENT = ("LangChain-CDBNoSql-VectorStore-Python",)
 
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
@@ -242,6 +245,46 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         )
         return vectorstore
 
+    @classmethod
+    def from_connection_string_and_aad(
+        cls,
+        connection_string: str,
+        clientSecretCredential: ClientSecretCredential,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        cosmos_client = CosmosClient(
+            connection_string, clientSecretCredential, user_agent=USER_AGENT
+        )
+        kwargs["cosmos_client"] = cosmos_client
+        vectorstore = cls._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+        )
+        return vectorstore
+
+    @classmethod
+    def from_connection_string_and_key(
+        cls,
+        connection_string: str,
+        key: str,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        cosmos_client = CosmosClient(connection_string, key, user_agent=USER_AGENT)
+        kwargs["cosmos_client"] = cosmos_client
+        vectorstore = cls._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+        )
+        return vectorstore
+
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         if ids is None:
             raise ValueError("No document ids provided to delete.")
@@ -297,12 +340,15 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         items = list(
             self._container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True,
             )
         )
         for item in items:
             text = item["text"]
-            metadata = item["metadata"]
+            metadata = item.pop("metadata", {})
+            metadata["id"] = item["id"]
             score = item["SimilarityScore"]
             if with_embedding:
                 metadata[self._embedding_key] = item[self._embedding_key]
@@ -403,3 +449,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             with_embedding=with_embedding,
         )
         return docs
+
+    def get_container(self) -> ContainerProxy:
+        return self._container
