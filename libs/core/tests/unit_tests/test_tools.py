@@ -856,6 +856,7 @@ def test_validation_error_handling_non_validation_error(
         def _parse_input(
             self,
             tool_input: Union[str, dict],
+            tool_call_id: str,
         ) -> Union[str, dict[str, Any]]:
             raise NotImplementedError
 
@@ -920,6 +921,7 @@ async def test_async_validation_error_handling_non_validation_error(
         def _parse_input(
             self,
             tool_input: Union[str, dict],
+            tool_call_id: str,
         ) -> Union[str, dict[str, Any]]:
             raise NotImplementedError
 
@@ -2110,3 +2112,26 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+
+
+def test_tool_returns_tool_message() -> None:
+    @tool
+    def foo(x: int, tool_call_id: str) -> ToolMessage:
+        """foo"""
+        return ToolMessage("x", tool_call_id=tool_call_id)
+
+    assert foo.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == ToolMessage("x", tool_call_id="bar")
+
+
+def test_tool_dont_coerce_content() -> None:
+    @tool
+    def foo(x: int) -> int:
+        """foo"""
+        return x
+
+    assert foo.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"},
+        config={"coerce_tool_content": False},
+    ) == ToolMessage(0, tool_call_id="bar", name="foo")
