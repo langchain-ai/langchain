@@ -476,6 +476,7 @@ _module_lookup = {
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
     "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
+    "ObjectBox": "langchain_community.vectorstores.objectbox",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
     "OracleVS": "langchain_community.vectorstores.oraclevs",
     "PathwayVectorClient": "langchain_community.vectorstores.pathway",
