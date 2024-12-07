@@ -29,22 +29,27 @@ class CloudflareWorkersAI(LLM):
             cf_ai = CloudflareWorkersAI(
                 account_id=my_account_id,
                 api_token=my_api_token,
+                ai_gateway=my_cfai_gateway_token,
                 model=llm_model
             )
     """  # noqa: E501
 
     account_id: str
     api_token: str
+    ai_gateway: str = ""
     model: str = "@cf/meta/llama-2-7b-chat-int8"
     base_url: str = "https://api.cloudflare.com/client/v4/accounts"
+    gateway_url: str = "https://gateway.ai.cloudflare.com/v1"
     streaming: bool = False
     endpoint_url: str = ""
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the Cloudflare Workers AI class."""
         super().__init__(**kwargs)
-
-        self.endpoint_url = f"{self.base_url}/{self.account_id}/ai/run/{self.model}"
+        if self.gateway:
+            self.endpoint_url = f"{self.gateway_url}/{self.account_id}/{self.ai_gateway}/workers-ai/run/{self.model}"
+        else:
+            self.endpoint_url = f"{self.base_url}/{self.account_id}/ai/run/{self.model}"
 
     @property
     def _llm_type(self) -> str:
