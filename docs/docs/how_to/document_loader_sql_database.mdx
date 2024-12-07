@@ -1,0 +1,165 @@
+# SQLDatabaseLoader
+
+
+## About
+
+The `SQLDatabaseLoader` loads records from any database supported by
+[SQLAlchemy], see [SQLAlchemy dialects] for the whole list of supported
+SQL databases and dialects.
+
+You can either use plain SQL for querying, or use an SQLAlchemy `Select`
+statement object, if you are using SQLAlchemy-Core or -ORM.
+
+You can select which columns to place into the document, which columns
+to place into its metadata, which columns to use as a `source` attribute
+in metadata, and whether to include the result row number and/or the SQL
+query expression into the metadata.
+
+
+## Example
+
+This example uses PostgreSQL, and the `psycopg2` driver.
+
+
+### Prerequisites
+
+```shell
+psql postgresql://postgres@localhost/ --command "CREATE DATABASE testdrive;"
+psql postgresql://postgres@localhost/testdrive < ./libs/langchain/tests/integration_tests/examples/mlb_teams_2012.sql
+```
+
+
+### Basic loading
+
+```python
+from langchain_community.document_loaders.sql_database import SQLDatabaseLoader
+from pprint import pprint
+
+
+loader = SQLDatabaseLoader(
+    query="SELECT * FROM mlb_teams_2012 LIMIT 3;",
+    url="postgresql+psycopg2://postgres@localhost:5432/testdrive",
+)
+docs = loader.load()
+```
+
+```python
+pprint(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+[Document(page_content='Team: Nationals\nPayroll (millions): 81.34\nWins: 98', metadata={}),
+ Document(page_content='Team: Reds\nPayroll (millions): 82.2\nWins: 97', metadata={}),
+ Document(page_content='Team: Yankees\nPayroll (millions): 197.96\nWins: 95', metadata={})]
+```
+
+</CodeOutputBlock>
+
+
+## Enriching metadata
+
+Use the `include_rownum_into_metadata` and `include_query_into_metadata` options to
+optionally populate the `metadata` dictionary with corresponding information.
+
+Having the `query` within metadata is useful when using documents loaded from
+database tables for chains that answer questions using their origin queries.
+
+```python
+loader = SQLDatabaseLoader(
+    query="SELECT * FROM mlb_teams_2012 LIMIT 3;",
+    url="postgresql+psycopg2://postgres@localhost:5432/testdrive",
+    include_rownum_into_metadata=True,
+    include_query_into_metadata=True,
+)
+docs = loader.load()
+```
+
+```python
+pprint(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+[Document(page_content='Team: Nationals\nPayroll (millions): 81.34\nWins: 98', metadata={'row': 0, 'query': 'SELECT * FROM mlb_teams_2012 LIMIT 3;'}),
+ Document(page_content='Team: Reds\nPayroll (millions): 82.2\nWins: 97', metadata={'row': 1, 'query': 'SELECT * FROM mlb_teams_2012 LIMIT 3;'}),
+ Document(page_content='Team: Yankees\nPayroll (millions): 197.96\nWins: 95', metadata={'row': 2, 'query': 'SELECT * FROM mlb_teams_2012 LIMIT 3;'})]
+```
+
+</CodeOutputBlock>
+
+
+## Customizing metadata
+
+Use the `page_content_columns`, and `metadata_columns` options to optionally populate
+the `metadata` dictionary with corresponding information. When `page_content_columns`
+is empty, all columns will be used.
+
+```python
+import functools
+
+row_to_content = functools.partial(
+    SQLDatabaseLoader.page_content_default_mapper, column_names=["Payroll (millions)", "Wins"]
+)
+row_to_metadata = functools.partial(
+    SQLDatabaseLoader.metadata_default_mapper, column_names=["Team"]
+)
+
+loader = SQLDatabaseLoader(
+    query="SELECT * FROM mlb_teams_2012 LIMIT 3;",
+    url="postgresql+psycopg2://postgres@localhost:5432/testdrive",
+    page_content_mapper=row_to_content,
+    metadata_mapper=row_to_metadata,
+)
+docs = loader.load()
+```
+
+```python
+pprint(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+[Document(page_content='Payroll (millions): 81.34\nWins: 98', metadata={'Team': 'Nationals'}),
+ Document(page_content='Payroll (millions): 82.2\nWins: 97', metadata={'Team': 'Reds'}),
+ Document(page_content='Payroll (millions): 197.96\nWins: 95', metadata={'Team': 'Yankees'})]
+```
+
+</CodeOutputBlock>
+
+
+## Specify column(s) to identify the document source
+
+Use the `source_columns` option to specify the columns to use as a "source" for the
+document created from each row. This is useful for identifying documents through
+their metadata. Typically, you may use the primary key column(s) for that purpose.
+
+```python
+loader = SQLDatabaseLoader(
+    query="SELECT * FROM mlb_teams_2012 LIMIT 3;",
+    url="postgresql+psycopg2://postgres@localhost:5432/testdrive",
+    source_columns=["Team"],
+)
+docs = loader.load()
+```
+
+```python
+pprint(docs)
+```
+
+<CodeOutputBlock lang="python">
+
+```
+[Document(page_content='Team: Nationals\nPayroll (millions): 81.34\nWins: 98', metadata={'source': 'Nationals'}),
+ Document(page_content='Team: Reds\nPayroll (millions): 82.2\nWins: 97', metadata={'source': 'Reds'}),
+ Document(page_content='Team: Yankees\nPayroll (millions): 197.96\nWins: 95', metadata={'source': 'Yankees'})]
+```
+
+</CodeOutputBlock>
+
+
+[SQLAlchemy]: https://www.sqlalchemy.org/
+[SQLAlchemy dialects]: https://docs.sqlalchemy.org/en/20/dialects/
