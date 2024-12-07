@@ -9,8 +9,10 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 if TYPE_CHECKING:
+    from replicate.client import Client
     from replicate.prediction import Prediction
 
 logger = logging.getLogger(__name__)
@@ -56,6 +58,8 @@ class Replicate(LLM):
     stop: List[str] = Field(default_factory=list)
     """Stop sequences to early-terminate generation."""
 
+    _client: Client = None
+
     model_config = ConfigDict(
         populate_by_name=True,
         extra="forbid",
@@ -97,6 +101,19 @@ class Replicate(LLM):
                 extra[field_name] = values.pop(field_name)
         values["model_kwargs"] = extra
         return values
+
+    @model_validator(mode="after")
+    def set_client(self) -> Self:
+        """Add a client to the values."""
+        try:
+            from replicate.client import Client
+        except ImportError:
+            raise ImportError(
+                "Could not import replicate python package. "
+                "Please install it with `pip install replicate`."
+            )
+        self._client = Client(api_token=self.replicate_api_token)
+        return self
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
@@ -188,22 +205,14 @@ class Replicate(LLM):
                 break
 
     def _create_prediction(self, prompt: str, **kwargs: Any) -> Prediction:
-        try:
-            import replicate as replicate_python
-        except ImportError:
-            raise ImportError(
-                "Could not import replicate python package. "
-                "Please install it with `pip install replicate`."
-            )
-
         # get the model and version
         if self.version_obj is None:
             if ":" in self.model:
                 model_str, version_str = self.model.split(":")
-                model = replicate_python.models.get(model_str)
+                model = self._client.models.get(model_str)
                 self.version_obj = model.versions.get(version_str)
             else:
-                model = replicate_python.models.get(self.model)
+                model = self._client.models.get(self.model)
                 self.version_obj = model.latest_version
 
         if self.prompt_key is None:
@@ -225,8 +234,8 @@ class Replicate(LLM):
 
         # if it's an official model
         if ":" not in self.model:
-            return replicate_python.models.predictions.create(self.model, input=input_)
+            return self._client.models.predictions.create(self.model, input=input_)
         else:
-            return replicate_python.predictions.create(
+            return self._client.predictions.create(
                 version=self.version_obj, input=input_
             )
