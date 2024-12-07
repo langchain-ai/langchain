@@ -1437,7 +1437,10 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             bind_kwargs = self._filter_disabled_params(
-                tool_choice=tool_name, parallel_tool_calls=False, strict=strict
+                tool_choice=tool_name,
+                parallel_tool_calls=False,
+                strict=strict,
+                _raise_warning=False,
             )
 
             llm = self.bind_tools([schema], **bind_kwargs)
@@ -1489,7 +1492,9 @@ class BaseChatOpenAI(BaseChatModel):
         else:
             return llm | output_parser
 
-    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+    def _filter_disabled_params(
+        self, *, _raise_warning: bool = True, **kwargs: Any
+    ) -> Dict[str, Any]:
         if not self.disabled_params:
             return kwargs
         filtered = {}
@@ -1498,6 +1503,9 @@ class BaseChatOpenAI(BaseChatModel):
             if k in self.disabled_params and (
                 self.disabled_params[k] is None or v in self.disabled_params[k]
             ):
+                if _raise_warning:
+                    msg = f"Parameter {k}: {v} is disabled and being ignored."
+                    logger.warning(msg)
                 continue
             # Keep param
             else:
