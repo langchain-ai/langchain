@@ -750,6 +750,7 @@ class BaseChatOpenAI(BaseChatModel):
             message = response.choices[0].message  # type: ignore[attr-defined]
             if hasattr(message, "parsed"):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
+                cast(AIMessage, generations[0].message).parsed = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
 
@@ -1146,10 +1147,18 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
-        include_raw: bool = False,
+        include_raw: Union[
+            bool, Literal["raw_only", "parsed_only", "raw_and_parsed"]
+        ] = False,
         strict: Optional[bool] = None,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+    ) -> Runnable[LanguageModelInput, Union[_DictOrPydantic, BaseMessage]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -1434,12 +1443,19 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            bind_kwargs = self._filter_disabled_params(
-                tool_choice=tool_name, parallel_tool_calls=False, strict=strict
-            )
+            if not tools:
+                tool_name = convert_to_openai_tool(schema)["function"]["name"]
+                bind_kwargs = self._filter_disabled_params(
+                    tool_choice=tool_name, parallel_tool_calls=False, strict=strict
+                )
 
-            llm = self.bind_tools([schema], **bind_kwargs)
+                llm = self.bind_tools([schema], **bind_kwargs)
+            else:
+                bind_kwargs = self._filter_disabled_params(
+                    strict=strict, tool_choice=tool_choice
+                )
+                llm = self.bind_tools([schema, *tools], **bind_kwargs)
+
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1450,7 +1466,15 @@ class BaseChatOpenAI(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            if not tools:
+                llm = self.bind(response_format={"type": "json_object"})
+            else:
+                bind_kwargs = self._filter_disabled_params(
+                    strict=strict,
+                    tool_choice=tool_choice,
+                    response_format={"type": "json_object"},
+                )
+                llm = self.bind_tools(tools, **bind_kwargs)
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
@@ -1463,7 +1487,15 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(response_format=response_format)
+            if not tools:
+                llm = self.bind(response_format=response_format)
+            else:
+                bind_kwargs = self._filter_disabled_params(
+                    strict=True,
+                    tool_choice=tool_choice,
+                    response_format=response_format,
+                )
+                llm = self.bind_tools(tools, **bind_kwargs)
             if is_pydantic_schema:
                 output_parser = _oai_structured_outputs_parser.with_types(
                     output_type=cast(type, schema)
@@ -1476,7 +1508,7 @@ class BaseChatOpenAI(BaseChatModel):
                 f"'json_mode'. Received: '{method}'"
             )
 
-        if include_raw:
+        if include_raw is True or include_raw == "raw_and_parsed":
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
             )
@@ -1485,6 +1517,8 @@ class BaseChatOpenAI(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
+        elif include_raw == "raw_only":
+            return llm
         else:
             return llm | output_parser
 
@@ -2202,7 +2236,9 @@ def _convert_to_openai_response_format(
 
 @chain
 def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
-    if ai_msg.additional_kwargs.get("parsed"):
+    if ai_msg.parsed:
+        return cast(PydanticBaseModel, ai_msg.parsed)
+    elif ai_msg.additional_kwargs.get("parsed"):
         return ai_msg.additional_kwargs["parsed"]
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
