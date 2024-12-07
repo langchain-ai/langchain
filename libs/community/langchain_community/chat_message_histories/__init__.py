@@ -28,6 +28,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_message_histories.cosmos_db import (
         CosmosDBChatMessageHistory,
     )
+    from langchain_community.chat_message_histories.cratedb import (
+        CrateDBChatMessageHistory,
+    )
     from langchain_community.chat_message_histories.dynamodb import (
         DynamoDBChatMessageHistory,
     )
@@ -94,6 +97,7 @@ __all__ = [
     "CassandraChatMessageHistory",
     "ChatMessageHistory",
     "CosmosDBChatMessageHistory",
+    "CrateDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",
     "FileChatMessageHistory",
@@ -120,6 +124,7 @@ _module_lookup = {
     "CassandraChatMessageHistory": "langchain_community.chat_message_histories.cassandra",  # noqa: E501
     "ChatMessageHistory": "langchain_community.chat_message_histories.in_memory",
     "CosmosDBChatMessageHistory": "langchain_community.chat_message_histories.cosmos_db",  # noqa: E501
+    "CrateDBChatMessageHistory": "langchain_community.chat_message_histories.cratedb",  # noqa: E501
     "DynamoDBChatMessageHistory": "langchain_community.chat_message_histories.dynamodb",
     "ElasticsearchChatMessageHistory": "langchain_community.chat_message_histories.elasticsearch",  # noqa: E501
     "FileChatMessageHistory": "langchain_community.chat_message_histories.file",
