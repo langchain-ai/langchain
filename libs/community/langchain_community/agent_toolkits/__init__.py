@@ -33,6 +33,9 @@ if TYPE_CHECKING:
     from langchain_community.agent_toolkits.gmail.toolkit import (
         GmailToolkit,
     )
+    from langchain_community.agent_toolkits.google_calendar.toolkit import (
+        GoogleCalendarToolkit,
+    )
     from langchain_community.agent_toolkits.jira.toolkit import (
         JiraToolkit,
     )
@@ -106,6 +109,7 @@ __all__ = [
     "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
+    "GoogleCalendarToolkit",
     "JiraToolkit",
     "JsonToolkit",
     "MultionToolkit",
@@ -139,6 +143,7 @@ _module_lookup = {
     "ConneryToolkit": "langchain_community.agent_toolkits.connery",
     "FileManagementToolkit": "langchain_community.agent_toolkits.file_management.toolkit",  # noqa: E501
     "GmailToolkit": "langchain_community.agent_toolkits.gmail.toolkit",
+    "GoogleCalendarToolkit": "langchain_community.agent_toolkits.google_calendar.toolkit",  # noqa: E501
     "JiraToolkit": "langchain_community.agent_toolkits.jira.toolkit",
     "JsonToolkit": "langchain_community.agent_toolkits.json.toolkit",
     "MultionToolkit": "langchain_community.agent_toolkits.multion.toolkit",
