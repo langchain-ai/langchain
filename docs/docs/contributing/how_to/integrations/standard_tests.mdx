@@ -300,6 +300,17 @@ import ToolsIntegrationSource from '../../../../src/theme/integration_template/t
 
     <TabItem value="retrievers" label="Retrievers">
 
+import RetrieverIntegrationSource from '../../../../src/theme/integration_template/tests/integration_tests/test_retrievers.py';
+
+<CodeBlock language="python" title="tests/integration_tests/test_retrievers.py">
+{
+    RetrieverIntegrationSource.replaceAll('__ModuleName__', 'Parrot')
+        .replaceAll('__package_name__', 'langchain-parrot-link')
+        .replaceAll('__MODULE_NAME__', 'PARROT')
+        .replaceAll('__module_name__', 'langchain_parrot_link')
+}
+</CodeBlock>
+
     </TabItem>
 </Tabs>
 
