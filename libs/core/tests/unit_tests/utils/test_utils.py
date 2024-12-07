@@ -103,13 +103,19 @@ def test_check_package_version(
         # 'index' keyword has special handling
         (
             {"a": [{"index": 0, "b": "{"}]},
-            {"a": [{"index": 1, "b": "f"}]},
-            {"a": [{"index": 1, "b": "{f"}]},
+            {"a": [{"index": 0, "b": "f"}]},
+            {"a": [{"index": 0, "b": "{f"}]},
         ),
         (
             {"a": [{"idx": 0, "b": "{"}]},
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
+        ),
+        # int replacing
+        (
+            {"a": [{"index": 1, "b": "a"}]},
+            {"a": [{"index": 5, "b": "b"}]},
+            {"a": [{"index": 5, "b": "ab"}]},
         ),
     ),
 )
