@@ -12,6 +12,7 @@ EXPECTED_ALL = [
     "LongContextReorder",
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
+    "ReadabilityTransformer",
     "Html2TextTransformer",
     "MarkdownifyTransformer",
 ]
