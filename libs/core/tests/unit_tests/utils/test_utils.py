@@ -111,10 +111,18 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # int replacing
+        (
+            {"index": 1, "b": "a"},
+            {"index": 5, "b": "b"},
+            {"index": 5, "b": "ab"},
+        ),
     ),
 )
 def test_merge_dicts(
-    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+    left: dict,
+    right: dict,
+    expected: Union[dict, AbstractContextManager],
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
