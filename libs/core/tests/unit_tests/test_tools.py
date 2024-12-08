@@ -2110,3 +2110,94 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+
+
+def test_method_tool_self_ref() -> None:
+    """Test that a method tool can reference self."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @tool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+    assert a.foo.invoke({"a": 1, "b": 2}) == 13
+
+
+def test_method_tool_args() -> None:
+    """Test that a method tool's args do not include self."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @tool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+    assert "self" not in a.foo.args
+
+
+async def test_method_tool_async() -> None:
+    """Test that a method tool can be async."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @tool
+        async def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+    async_response = await a.foo.ainvoke({"a": 1, "b": 2})
+    assert async_response == 13
+
+
+def test_method_tool_string_invoke() -> None:
+    """Test that a method tool can be invoked with a string."""
+
+    class A:
+        def __init__(self, a: str):
+            self.a = a
+
+        @tool
+        def foo(self, b: str) -> str:
+            """Concatenate a and b."""
+            return self.a + b
+
+    a = A("a")
+    assert a.foo.invoke("b") == "ab"
+
+
+def test_method_tool_toolcall_invoke() -> None:
+    """Test that a method tool can be invoked with a ToolCall."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @tool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+
+    tool_call = {
+        "name": a.foo.name,
+        "args": {"a": 1, "b": 2},
+        "id": "123",
+        "type": "tool_call",
+    }
+
+    tool_message = a.foo.invoke(tool_call)
+
+    assert int(tool_message.content) == 13

@@ -1,5 +1,13 @@
 import inspect
-from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from pydantic import BaseModel, Field, create_model
 
@@ -73,8 +81,8 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
 ) -> Union[
-    BaseTool,
-    Callable[[Union[Callable, Runnable]], BaseTool],
+    Union[BaseTool, property],
+    Callable[[Union[Callable, Runnable]], Union[BaseTool, property]],
 ]:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -102,6 +110,9 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        is_method: Whether the tool is a method. This allows the tool to be used
+            without manually passing the `self` argument.
+            Defaults to False.
 
     Returns:
         The tool.
@@ -202,7 +213,7 @@ def tool(
 
     def _create_tool_factory(
         tool_name: str,
-    ) -> Callable[[Union[Callable, Runnable]], BaseTool]:
+    ) -> Callable[[Union[Callable, Runnable]], Union[BaseTool, property]]:
         """Create a decorator that takes a callable and returns a tool.
 
         Args:
@@ -212,7 +223,9 @@ def tool(
             A function that takes a callable or Runnable and returns a tool.
         """
 
-        def _tool_factory(dec_func: Union[Callable, Runnable]) -> BaseTool:
+        def _tool_factory(
+            dec_func: Union[Callable, Runnable],
+        ) -> Union[BaseTool, property]:
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
@@ -246,6 +259,28 @@ def tool(
                 description = None
 
             if infer_schema or args_schema is not None:
+                if (
+                    not isinstance(dec_func, Runnable)
+                    and "self" in inspect.signature(dec_func).parameters
+                ):
+
+                    def method_tool(self: Callable) -> StructuredTool:
+                        return StructuredTool.from_function(
+                            func,
+                            coroutine,
+                            name=tool_name,
+                            description=description,
+                            return_direct=return_direct,
+                            args_schema=schema,
+                            infer_schema=infer_schema,
+                            response_format=response_format,
+                            parse_docstring=parse_docstring,
+                            error_on_invalid_docstring=error_on_invalid_docstring,
+                            outer_self=self,
+                        )
+
+                    return property(method_tool)
+
                 return StructuredTool.from_function(
                     func,
                     coroutine,
@@ -325,7 +360,9 @@ def tool(
         # @tool(parse_docstring=True)
         # def my_tool():
         #    pass
-        def _partial(func: Union[Callable, Runnable]) -> BaseTool:
+        def _partial(
+            func: Union[Callable, Runnable],
+        ) -> Union[BaseTool, property]:
             """Partial function that takes a callable and returns a tool."""
             name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
             tool_factory = _create_tool_factory(name_)
