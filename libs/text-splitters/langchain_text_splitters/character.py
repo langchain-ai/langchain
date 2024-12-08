@@ -122,6 +122,15 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         cls, language: Language, **kwargs: Any
     ) -> RecursiveCharacterTextSplitter:
         separators = cls.get_separators_for_language(language)
+        if any(sep in ["\n", " "] for sep in separators) and kwargs.get(
+            "keep_separator"
+        ):
+            return cls(
+                separators=separators, 
+                is_separator_regex=True, 
+                strip_whitespace=False, 
+                **kwargs,
+            )
         return cls(separators=separators, is_separator_regex=True, **kwargs)
 
     @staticmethod
