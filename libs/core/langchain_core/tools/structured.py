@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import textwrap
 from collections.abc import Awaitable
 from inspect import signature
@@ -164,7 +165,7 @@ class StructuredTool(BaseTool):
         """
 
         if func is not None:
-            source_function = func
+            source_function = func.func if isinstance(func, functools.partial) else func
         elif coroutine is not None:
             source_function = coroutine
         else:
