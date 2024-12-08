@@ -398,3 +398,162 @@ def test_backticks() -> None:
 
     assert nodes == expected_nodes
     assert rels == expected_rels
+
+
+def test_neo4j_context_manager() -> None:
+    """Test that Neo4jGraph works correctly with context manager."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    with Neo4jGraph(url=url, username=username, password=password) as graph:
+        # Test that the connection is working
+        graph.query("RETURN 1 as n")
+
+    # Test that the connection is closed after exiting context
+    try:
+        graph.query("RETURN 1 as n")
+        assert False, "Expected RuntimeError when using closed connection"
+    except RuntimeError:
+        pass
+
+
+def test_neo4j_explicit_close() -> None:
+    """Test that Neo4jGraph can be explicitly closed."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(url=url, username=username, password=password)
+    # Test that the connection is working
+    graph.query("RETURN 1 as n")
+
+    # Close the connection
+    graph.close()
+
+    # Test that the connection is closed
+    try:
+        graph.query("RETURN 1 as n")
+        assert False, "Expected RuntimeError when using closed connection"
+    except RuntimeError:
+        pass
+
+
+def test_neo4j_error_after_close() -> None:
+    """Test that Neo4jGraph operations raise proper errors after closing."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(url=url, username=username, password=password)
+    graph.query("RETURN 1")  # Should work
+    graph.close()
+
+    # Test various operations after close
+    try:
+        graph.refresh_schema()
+        assert (
+            False
+        ), "Expected RuntimeError when refreshing schema on closed connection"
+    except RuntimeError as e:
+        assert "connection has been closed" in str(e)
+
+    try:
+        graph.query("RETURN 1")
+        assert False, "Expected RuntimeError when querying closed connection"
+    except RuntimeError as e:
+        assert "connection has been closed" in str(e)
+
+    try:
+        graph.add_graph_documents([test_data[0]])
+        assert False, "Expected RuntimeError when adding documents to closed connection"
+    except RuntimeError as e:
+        assert "connection has been closed" in str(e)
+
+
+def test_neo4j_concurrent_connections() -> None:
+    """Test that multiple Neo4jGraph instances can be used independently."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph1 = Neo4jGraph(url=url, username=username, password=password)
+    graph2 = Neo4jGraph(url=url, username=username, password=password)
+
+    # Both connections should work independently
+    assert graph1.query("RETURN 1 as n") == [{"n": 1}]
+    assert graph2.query("RETURN 2 as n") == [{"n": 2}]
+
+    # Closing one shouldn't affect the other
+    graph1.close()
+    try:
+        graph1.query("RETURN 1")
+        assert False, "Expected RuntimeError when using closed connection"
+    except RuntimeError:
+        pass
+    assert graph2.query("RETURN 2 as n") == [{"n": 2}]
+
+    graph2.close()
+
+
+def test_neo4j_nested_context_managers() -> None:
+    """Test that nested context managers work correctly."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    with Neo4jGraph(url=url, username=username, password=password) as graph1:
+        with Neo4jGraph(url=url, username=username, password=password) as graph2:
+            # Both connections should work
+            assert graph1.query("RETURN 1 as n") == [{"n": 1}]
+            assert graph2.query("RETURN 2 as n") == [{"n": 2}]
+
+        # Inner connection should be closed, outer still works
+        try:
+            graph2.query("RETURN 2")
+            assert False, "Expected RuntimeError when using closed connection"
+        except RuntimeError:
+            pass
+        assert graph1.query("RETURN 1 as n") == [{"n": 1}]
+
+    # Both connections should be closed
+    try:
+        graph1.query("RETURN 1")
+        assert False, "Expected RuntimeError when using closed connection"
+    except RuntimeError:
+        pass
+    try:
+        graph2.query("RETURN 2")
+        assert False, "Expected RuntimeError when using closed connection"
+    except RuntimeError:
+        pass
+
+
+def test_neo4j_multiple_close() -> None:
+    """Test that Neo4jGraph can be closed multiple times without error."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(url=url, username=username, password=password)
+    # Test that multiple closes don't raise errors
+    graph.close()
+    graph.close()  # This should not raise an error

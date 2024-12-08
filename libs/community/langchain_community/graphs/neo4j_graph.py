@@ -446,6 +446,20 @@ class Neo4jGraph(GraphStore):
         """Returns the structured schema of the Graph"""
         return self.structured_schema
 
+    def close(self) -> None:
+        """Close all the active resources."""
+        if hasattr(self, "_driver"):
+            self._driver.close()
+            delattr(self, "_driver")  # Remove the driver to prevent usage after close
+
+    def __enter__(self) -> "Neo4jGraph":
+        """Enter context manager by returning self."""
+        return self
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        """Close all active resources when exiting context manager."""
+        self.close()
+
     def query(
         self,
         query: str,
@@ -459,9 +473,15 @@ class Neo4jGraph(GraphStore):
 
         Returns:
             List[Dict[str, Any]]: The list of dictionaries containing the query results.
+
+        Raises:
+            RuntimeError: If attempting to query after the connection is closed.
         """
         from neo4j import Query
         from neo4j.exceptions import Neo4jError
+
+        if not hasattr(self, "_driver"):
+            raise RuntimeError("Cannot query Neo4j - connection has been closed")
 
         try:
             data, _, _ = self._driver.execute_query(
@@ -710,10 +730,8 @@ class Neo4jGraph(GraphStore):
                         )
                     )
                     return_clauses.append(
-                        (
-                            f"values:`{prop_name}_values`[..{DISTINCT_VALUE_LIMIT}],"
-                            f" distinct_count: size(`{prop_name}_values`)"
-                        )
+                        f"values:`{prop_name}_values`[..{DISTINCT_VALUE_LIMIT}], "
+                        f"distinct_count: size(`{prop_name}_values`)"
                     )
                 elif prop_type in [
                     "INTEGER",
@@ -728,11 +746,9 @@ class Neo4jGraph(GraphStore):
                         f"count(distinct n.`{prop_name}`) AS `{prop_name}_distinct`"
                     )
                     return_clauses.append(
-                        (
-                            f"min: toString(`{prop_name}_min`), "
-                            f"max: toString(`{prop_name}_max`), "
-                            f"distinct_count: `{prop_name}_distinct`"
-                        )
+                        f"min: toString(`{prop_name}_min`), "
+                        f"max: toString(`{prop_name}_max`), "
+                        f"distinct_count: `{prop_name}_distinct`"
                     )
                 elif prop_type == "LIST":
                     with_clauses.append(
@@ -774,10 +790,8 @@ class Neo4jGraph(GraphStore):
                             f"'{label_or_type}', '{prop_name}') YIELD value"
                         )[0]["value"]
                         return_clauses.append(
-                            (
-                                f"values: {distinct_values},"
-                                f" distinct_count: {len(distinct_values)}"
-                            )
+                            f"values: {distinct_values}, "
+                            f"distinct_count: {len(distinct_values)}"
                         )
                     else:
                         with_clauses.append(
@@ -811,11 +825,9 @@ class Neo4jGraph(GraphStore):
                             f"count(distinct n.`{prop_name}`) AS `{prop_name}_distinct`"
                         )
                         return_clauses.append(
-                            (
-                                f"min: toString(`{prop_name}_min`), "
-                                f"max: toString(`{prop_name}_max`), "
-                                f"distinct_count: `{prop_name}_distinct`"
-                            )
+                            f"min: toString(`{prop_name}_min`), "
+                            f"max: toString(`{prop_name}_max`), "
+                            f"distinct_count: `{prop_name}_distinct`"
                         )
 
                 elif prop_type == "LIST":
@@ -826,10 +838,8 @@ class Neo4jGraph(GraphStore):
                         )
                     )
                     return_clauses.append(
-                        (
-                            f"min_size: `{prop_name}_size_min`, "
-                            f"max_size: `{prop_name}_size_max`"
-                        )
+                        f"min_size: `{prop_name}_size_min`, "
+                        f"max_size: `{prop_name}_size_max`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
