@@ -154,6 +154,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.naver import (
         ClovaXEmbeddings,
     )
+    from langchain_community.embeddings.nebius_ai_studio import (
+        NebiusAIStudioEmbeddings,
+    )
     from langchain_community.embeddings.nemo import (
         NeMoEmbeddings,
     )
@@ -292,6 +295,7 @@ __all__ = [
     "ModelScopeEmbeddings",
     "MosaicMLInstructorEmbeddings",
     "NLPCloudEmbeddings",
+    "NebiusAIStudioEmbeddings",
     "NeMoEmbeddings",
     "OCIGenAIEmbeddings",
     "OctoAIEmbeddings",
@@ -375,6 +379,7 @@ _module_lookup = {
     "ModelScopeEmbeddings": "langchain_community.embeddings.modelscope_hub",
     "MosaicMLInstructorEmbeddings": "langchain_community.embeddings.mosaicml",
     "NLPCloudEmbeddings": "langchain_community.embeddings.nlpcloud",
+    "NebiusAIStudioEmbeddings": "langchain_community.embeddings.nebius_ai_studio",
     "NeMoEmbeddings": "langchain_community.embeddings.nemo",
     "OCIGenAIEmbeddings": "langchain_community.embeddings.oci_generative_ai",
     "OctoAIEmbeddings": "langchain_community.embeddings.octoai_embeddings",
