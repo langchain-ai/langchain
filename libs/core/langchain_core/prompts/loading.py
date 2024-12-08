@@ -51,9 +51,13 @@ def _load_template(var_name: str, config: dict) -> dict:
             raise ValueError(msg)
         # Pop the template path from the config.
         template_path = Path(config.pop(f"{var_name}_path"))
+        if f"{var_name}_encoding" in config:
+            encoding = config.pop(f"{var_name}_encoding")
+        else:
+            encoding = None
         # Load the template.
         if template_path.suffix == ".txt":
-            with open(template_path) as f:
+            with open(template_path, encoding=encoding) as f:
                 template = f.read()
         else:
             raise ValueError
