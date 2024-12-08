@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from operator import itemgetter
 from typing import Any, Callable, Optional, Union
 
 import pytest
@@ -12,7 +13,11 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
-from langchain_core.runnables.base import RunnableBinding, RunnableLambda
+from langchain_core.runnables.base import (
+    RunnableBinding,
+    RunnableLambda,
+    RunnableParallel,
+)
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
@@ -425,7 +430,7 @@ def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
 
-    runnable = RunnableLambda(
+    runnable_unspecified_schema = RunnableLambda(
         lambda input: {
             "output": [
                 AIMessage(
@@ -444,7 +449,7 @@ def test_get_input_schema_input_dict() -> None:
     )
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
-        runnable,
+        runnable_unspecified_schema,
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
@@ -453,6 +458,83 @@ def test_get_input_schema_input_dict() -> None:
     assert _schema(with_history.get_input_schema()) == _schema(
         RunnableWithChatHistoryInput
     )
+
+    runnable_specified_schema = RunnableParallel(
+        {
+            "input": itemgetter("input"),
+            "ability": itemgetter("ability"),
+            "history": itemgetter("history"),
+        }
+    )
+    get_session_history = _get_get_session_history()
+    with_history = RunnableWithMessageHistory(
+        runnable_specified_schema,
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_key="output",
+    )
+    assert _schema(with_history.get_input_schema()) == {
+        "properties": {
+            "input": {
+                "anyOf": [
+                    {"type": "string"},
+                    {"$ref": "#/definitions/BaseMessage"},
+                    {"items": {"$ref": "#/definitions/BaseMessage"}, "type": "array"},
+                ],
+                "title": "Input",
+            },
+            "ability": {"title": "Ability"},
+        },
+        "required": ["input", "ability"],
+        "title": "RunnableWithChatHistoryInput",
+        "type": "object",
+        "definitions": {
+            "BaseMessage": {
+                "additionalProperties": True,
+                "description": (
+                    "Base abstract message class."
+                    "\n\nMessages are the inputs and outputs of ChatModels."
+                ),
+                "properties": {
+                    "content": {
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "items": {
+                                    "anyOf": [{"type": "string"}, {"type": "object"}]
+                                },
+                                "type": "array",
+                            },
+                        ],
+                        "title": "Content",
+                    },
+                    "additional_kwargs": {
+                        "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
+                    "type": {"title": "Type", "type": "string"},
+                    "name": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Name",
+                    },
+                    "id": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Id",
+                    },
+                },
+                "required": ["content", "type"],
+                "title": "BaseMessage",
+                "type": "object",
+            }
+        },
+    }
 
 
 def test_get_output_schema() -> None:
