@@ -1,6 +1,8 @@
 import io
+import json
 import logging
 import os
+import subprocess
 import time
 from typing import Any, Callable, Dict, Iterator, Literal, Optional, Tuple, Union
 
@@ -644,7 +646,6 @@ class FasterWhisperParser(BaseBlobParser):
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
-
         try:
             from pydub import AudioSegment
         except ImportError:
@@ -690,3 +691,143 @@ class FasterWhisperParser(BaseBlobParser):
                     **blob.metadata,
                 },
             )
+
+
+class RemoteFasterWhisperParser(BaseBlobParser):
+    """
+    Remotely transcribe audio with faster-whisper-server
+
+    This parser enables audio transcription by interacting with a remote
+    `faster-whisper-server`, an OpenAI API-compatible transcription server that uses
+    `faster-whisper` as its backend. By sending audio data to the remote server, this
+    parser eliminates the need for GPU dependencies and heavy processing within the
+    LangChain container, making it ideal for microservice-based architectures.
+
+    For more information visit: https://github.com/fedirz/faster-whisper-server
+
+    Example: Load a local audio file and remotely transcribe it into a document.
+        .. code-block:: python
+        from langchain.document_loaders.generic import GenericLoader
+        from langchain_community.document_loaders.parsers.audio import (
+            RemoteFasterWhisperParser
+        )
+
+        server_url = 'http://localhost:8000'  # add you server url here
+
+        loader = GenericLoader.from_filesystem(
+            path='./my-audio-file.mp3',
+            parser=RemoteFasterWhisperParser(base_url=server_url),
+        )
+
+        print(loader.load())
+
+    """
+
+    TRANSCRIPTION_ENDPOINT = "v1/audio/transcriptions"
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        model_size: Optional[str] = "Systran/faster-distil-whisper-large-v3",
+    ) -> None:
+        """
+        Initialize the RemoteFasterWhisperParser.
+
+        Args:
+            base_url (str): The base URL of the remote Faster Whisper server.
+            model_size (Optional[str]): The model size to use for transcription.
+                Defaults to 'Systran/faster-distil-whisper-large-v3'.
+        """
+        self.base_url = base_url
+        self.model_size = model_size
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """
+        Lazily parse the audio blob and yield transcribed text.
+
+        Args:
+            blob (Blob): The audio blob to be transcribed.
+
+        Yields:
+            Document: A Document object containing the transcribed text and
+            associated metadata.
+        """
+        audio_bytes = self._load_audio_from_blob(blob=blob)
+        transcription = self._transcribe_audio(file_bytes=audio_bytes)
+        yield Document(
+            page_content=transcription["text"],
+            metadata={
+                "source": blob.source,
+                **blob.metadata,
+            },
+        )
+
+    def _transcribe_audio(self, file_bytes: io.BytesIO) -> dict[str, str]:
+        """
+        Transcribe the audio file by sending it to the remote Faster Whisper server.
+
+        Args:
+            file_bytes (io.BytesIO): The audio file data in bytes format.
+
+        Returns:
+            dict[str, str]: A dictionary containing the transcription result.
+
+        Raises:
+            RuntimeError: If the transcription process fails.
+        """
+
+        process = subprocess.Popen(
+            [
+                "curl",
+                self.transcription_url,
+                "-F",
+                "file=@-;type=audio/mp3",
+                "-F",
+                f"model={self.model_size}",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        stdout, stderr = process.communicate(input=file_bytes.read())
+
+        if process.returncode != 0:
+            raise RuntimeError(f"Error: {stderr.decode()}")
+
+        return json.loads(stdout.decode())
+
+    @property
+    def transcription_url(self) -> str:
+        return f"{self.base_url}/{self.TRANSCRIPTION_ENDPOINT}"
+
+    def _load_audio_from_blob(self, blob: Blob) -> io.BytesIO:
+        """
+        Load the audio data from the given blob and convert it to MP3 format.
+
+        Args:
+            blob (Blob): The audio blob containing the data to be converted.
+
+        Returns:
+            bytes: The audio data in MP3 format.
+
+        Raises:
+            ImportError: If the `pydub` package is not installed.
+            ValueError: If the audio data cannot be extracted from the blob.
+        """
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
+
+        if isinstance(blob.data, bytes):
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
+
+        return io.BytesIO(audio.export(format="mp3").read())
