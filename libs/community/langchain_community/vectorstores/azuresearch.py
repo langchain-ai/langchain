@@ -1561,6 +1561,9 @@ class AzureSearch(VectorStore):
         Returns:
             AzureSearchVectorStoreRetriever: Retriever class for VectorStore.
         """
+        search_type = kwargs.get("search_type", "similarity")
+        kwargs["search_type"] = search_type
+
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         return AzureSearchVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
