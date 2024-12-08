@@ -38,6 +38,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.airtable import (
         AirtableLoader,
     )
+    from langchain_community.document_loaders.apache_opendal_s3 import (
+        UnstructuredApacheOpendalS3FileLoader,
+    )
     from langchain_community.document_loaders.apify_dataset import (
         ApifyDatasetLoader,
     )
@@ -730,6 +733,8 @@ _module_lookup = {
     "YoutubeAudioLoader": "langchain_community.document_loaders.blob_loaders",
     "YoutubeLoader": "langchain_community.document_loaders.youtube",
     "YuqueLoader": "langchain_community.document_loaders.yuque",
+    "UnstructuredApacheOpendalS3FileLoader": "langchain_community"
+    ".document_loaders.apache_opendal_s3",
 }
 
 
@@ -937,4 +942,5 @@ __all__ = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
+    "UnstructuredApacheOpendalS3FileLoader",
 ]
