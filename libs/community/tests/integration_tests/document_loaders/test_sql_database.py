@@ -47,6 +47,14 @@ except ImportError:
     warnings.warn("psycopg2 not installed, skipping corresponding tests", UserWarning)
     psycopg2_installed = False
 
+try:
+    import sqlalchemy_cratedb  # noqa: F401
+
+    cratedb_installed = True
+except ImportError:
+    warnings.warn("cratedb not installed, skipping corresponding tests", UserWarning)
+    cratedb_installed = False
+
 
 @pytest.fixture()
 def engine(db_uri: str) -> sa.Engine:
@@ -74,6 +82,9 @@ def provision_database(engine: sa.Engine) -> None:
             if not statement:
                 continue
             connection.execute(sa.text(statement))
+            connection.commit()
+        if engine.dialect.name.startswith("crate"):
+            connection.execute(sa.text("REFRESH TABLE mlb_teams_2012;"))
             connection.commit()
 
 
@@ -103,6 +114,16 @@ def pytest_generate_tests(metafunc: "Metafunc") -> None:
                 "postgresql+psycopg2://langchain:langchain@localhost:6023/langchain"
             )
             ids.append("postgresql")
+        if cratedb_installed:
+            # We use non-standard port for testing purposes.
+            # The easiest way to spin up the PostgreSQL instance is to use
+            # the docker compose file at the root of the repo located at
+            # langchain/docker/docker-compose.yml
+            # use `docker compose up postgres` to start the instance
+            # it will have the appropriate credentials set up including
+            # being exposed on the appropriate port.
+            urls.append("crate://crate@localhost/?schema=testdrive")
+            ids.append("cratedb")
 
         metafunc.parametrize("db_uri", urls, ids=ids)
 

@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  postgresql:
+    image: postgres:16
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - "5432:5432"
+    command: |
+      postgres -c log_statement=all
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "psql postgresql://postgres@localhost --command 'SELECT 1;' || exit 1",
+        ]
+      interval: 5s
+      retries: 60
