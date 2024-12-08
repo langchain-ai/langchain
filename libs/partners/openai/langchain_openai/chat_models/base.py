@@ -131,6 +131,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if context := _dict.get("context"):
+            additional_kwargs["context"] = context
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -232,6 +234,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 else raw_audio
             )
             message_dict["audio"] = audio
+        if "context" in message.additional_kwargs:
+            message_dict["context"] = message.additional_kwargs["context"]
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
