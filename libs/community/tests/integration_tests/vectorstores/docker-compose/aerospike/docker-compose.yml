@@ -10,14 +10,14 @@ services:
     command:
       - "--config-file"
       - "/opt/aerospike/etc/aerospike/aerospike.conf"
-  proximus:
-    image: aerospike/aerospike-proximus:0.4.0
+  avs:
+    image: aerospike/aerospike-vector-search:0.11.1
     ports:
       - "5002:5002"
     networks:
       - aerospike-test
     volumes:
-      - .:/etc/aerospike-proximus
+      - .:/etc/aerospike-vector-search
   
 networks:
   aerospike-test: {}
