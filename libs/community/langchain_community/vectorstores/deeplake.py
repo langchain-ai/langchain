@@ -7,10 +7,15 @@ import numpy as np
 
 try:
     import deeplake
-    from deeplake import VectorStore as DeepLakeVectorStore
-    from deeplake.core.fast_forwarding import version_compare
-    from deeplake.util.exceptions import SampleExtendError
 
+    if deeplake.__version__.startswith("3."):
+        from deeplake import VectorStore as DeepLakeVectorStore
+        from deeplake.core.fast_forwarding import version_compare
+        from deeplake.util.exceptions import SampleExtendError
+    else:
+        from langchain_community.vectorstores.deeplake_vector_search import (
+            DeepLakeVectorStore,
+        )
     _DEEPLAKE_INSTALLED = True
 except ImportError:
     _DEEPLAKE_INSTALLED = False
@@ -931,7 +936,8 @@ class DeepLake(VectorStore):
         return self.vectorstore.dataset
 
     @classmethod
-    def _validate_kwargs(cls, kwargs, method_name):  # type: ignore[no-untyped-def]
+    # type: ignore[no-untyped-def]
+    def _validate_kwargs(cls, kwargs, method_name):
         if kwargs:
             valid_items = cls._get_valid_args(method_name)
             unsupported_items = cls._get_unsupported_items(kwargs, valid_items)
@@ -950,7 +956,8 @@ class DeepLake(VectorStore):
             return []
 
     @staticmethod
-    def _get_unsupported_items(kwargs, valid_items):  # type: ignore[no-untyped-def]
+    # type: ignore[no-untyped-def]
+    def _get_unsupported_items(kwargs, valid_items):
         kwargs = {k: v for k, v in kwargs.items() if k not in valid_items}
         unsupported_items = None
         if kwargs:
