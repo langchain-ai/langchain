@@ -573,6 +573,21 @@ def test_structured_tool_from_function_with_run_manager() -> None:
     )
 
 
+def test_structured_tool_from_parameterless_function() -> None:
+    """Test parameterless function of structured tool."""
+
+    def foo() -> str:
+        """Docstring thing.
+
+        """
+        return "invoke foo"
+
+    structured_tool = StructuredTool.from_function(foo)
+
+    assert structured_tool.run("") == "invoke foo"
+    assert structured_tool.run({}) == "invoke foo"
+
+
 def test_named_tool_decorator() -> None:
     """Test functionality when arguments are provided as input to decorator."""
 
