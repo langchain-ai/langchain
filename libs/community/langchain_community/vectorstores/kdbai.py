@@ -8,8 +8,6 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from langchain_community.vectorstores.utils import DistanceStrategy
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,8 +22,6 @@ class KDBAI(VectorStore):
         table: kdbai_client.Table object to use as storage,
         embedding: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface,
-        distance_strategy: One option from DistanceStrategy.EUCLIDEAN_DISTANCE,
-            DistanceStrategy.DOT_PRODUCT or DistanceStrategy.COSINE.
 
     See the example [notebook](https://github.com/KxSystems/langchain/blob/KDB.AI/docs/docs/integrations/vectorstores/kdbai.ipynb).
     """
@@ -34,9 +30,6 @@ class KDBAI(VectorStore):
         self,
         table: Any,
         embedding: Embeddings,
-        distance_strategy: Optional[
-            DistanceStrategy
-        ] = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         try:
             import kdbai_client  # noqa
@@ -47,7 +40,6 @@ class KDBAI(VectorStore):
             )
         self._table = table
         self._embedding = embedding
-        self.distance_strategy = distance_strategy
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -94,7 +86,7 @@ class KDBAI(VectorStore):
         df["embeddings"] = [np.array(e, dtype="float32") for e in embeds]
         if metadata is not None:
             df = pd.concat([df, metadata], axis=1)
-        self._table.insert(df, warn=False)
+        self._table.insert(df)
 
     def add_texts(
         self,
@@ -179,6 +171,7 @@ class KDBAI(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
+        index: str,
         k: int = 1,
         filter: Optional[List] = [],
         **kwargs: Any,
@@ -194,15 +187,16 @@ class KDBAI(VectorStore):
             List[Document]: List of similar documents.
         """
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k, filter=filter, **kwargs
+            self._embed_query(query), index=index, k=k, filter=filter, **kwargs
         )
 
     def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
         *,
+        index: str,
         k: int = 1,
-        filter: Optional[List] = [],
+        filter: Optional[List],
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return documents most similar to embedding, along with scores.
@@ -215,9 +209,20 @@ class KDBAI(VectorStore):
         Returns:
             List[Document]: List of similar documents.
         """
+        dist = "__nn_distance"
         if "n" in kwargs:
             k = kwargs.pop("n")
-        matches = self._table.search(vectors=[embedding], n=k, filter=filter, **kwargs)
+        elif "index" in kwargs:
+            index = kwargs.pop("index")
+        elif "options" in kwargs and ("distanceColumn" in kwargs["options"].keys()):
+            dist = kwargs["options"]["distanceColumn"]
+
+        if filter:
+            if kwargs.get("filter"):
+                filter.extend(kwargs.pop("filter"))
+            kwargs["filter"] = filter
+
+        matches = self._table.search(vectors={index: [embedding]}, n=k, **kwargs)
         docs: list = []
         if isinstance(matches, list):
             matches = matches[0]
@@ -225,7 +230,7 @@ class KDBAI(VectorStore):
             return docs
         for row in matches.to_dict(orient="records"):
             text = row.pop("text")
-            score = row.pop("__nn_distance")
+            score = row.pop(dist)
             docs.append(
                 (
                     Document(
