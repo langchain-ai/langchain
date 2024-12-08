@@ -32,6 +32,55 @@ def test_multi_variable_pipeline() -> None:
     assert output == "okay jim deep"
 
 
+def test_partial_with_prompt_template() -> None:
+    full_template = """{introduction}
+      {example}
+      {start}"""
+    full_prompt = PromptTemplate.from_template(full_template)
+
+    introduction_template = """You are impersonating {person}."""
+    introduction_prompt = PromptTemplate.from_template(introduction_template)
+
+    example_template = """Here's an example of an interaction:
+    Q: {example_q}
+    A: {example_a}"""
+    example_prompt = PromptTemplate.from_template(example_template)
+
+    start_template = """Now, do this for real!
+    Q: {input}
+    A:"""
+    start_prompt = PromptTemplate.from_template(start_template)
+
+    input_prompts = [
+        ("introduction", introduction_prompt),
+        ("example", example_prompt),
+        ("start", start_prompt),
+    ]
+    pipeline_prompt = PipelinePromptTemplate(  # type: ignore[call-arg]
+        final_prompt=full_prompt,
+        pipeline_prompts=input_prompts,  # type: ignore[arg-type]
+    )
+
+    pipeline_prompt.partial(person="Elon Musk")
+    pipeline_prompt.partial(invalid_partial="Hello, I am invalid")
+
+    ret = pipeline_prompt.format(
+        example_q="What's your favorite car?",
+        example_a="Tesla",
+        input="What's your favorite social media site?",
+    )
+    assert (
+        ret
+        == """You are impersonating Elon Musk.
+      Here's an example of an interaction:
+    Q: What's your favorite car?
+    A: Tesla
+      Now, do this for real!
+    Q: What's your favorite social media site?
+    A:"""
+    )
+
+
 async def test_partial_with_chat_prompts() -> None:
     prompt_a = ChatPromptTemplate(
         input_variables=["foo"], messages=[MessagesPlaceholder(variable_name="foo")]

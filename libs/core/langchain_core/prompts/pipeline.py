@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable, Union
 from typing import Optional as Optional
 
 from pydantic import model_validator
@@ -9,7 +9,11 @@ from langchain_core.prompts.chat import BaseChatPromptTemplate
 
 
 def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
-    return {k: inputs[k] for k in input_variables}
+    ret = {}
+    for k in input_variables:
+        if k in inputs:
+            ret[k] = inputs[k]
+    return ret
 
 
 class PipelinePromptTemplate(BasePromptTemplate):
@@ -105,6 +109,23 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         return (await self.aformat_prompt(**kwargs)).to_string()
+
+    # Ignoring the type below since partial makes modifications rather
+    # than returning a new template
+    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> None:  # type: ignore[override]
+        """Add partial arguments to prompts in pipeline_prompts
+
+        Args:
+            kwargs: dict[str, str], partial variables to set.
+        """
+        for i, string_and_prompt in enumerate(self.pipeline_prompts):
+            k, prompt = string_and_prompt
+            prompt_kwargs = {}
+            for partial_var, partial_input in kwargs.items():
+                if partial_var in prompt.input_variables:
+                    prompt_kwargs[partial_var] = partial_input
+            if len(prompt_kwargs) > 0:
+                self.pipeline_prompts[i] = (k, prompt.partial(**prompt_kwargs))
 
     @property
     def _prompt_type(self) -> str:
