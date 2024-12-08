@@ -128,6 +128,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.naver import (
         ChatClovaX,
     )
+    from langchain_community.chat_models.novita import (
+        ChatNovita,
+    )
     from langchain_community.chat_models.oci_data_science import (
         ChatOCIModelDeployment,
         ChatOCIModelDeploymentTGI,
@@ -194,6 +197,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.zhipuai import (
         ChatZhipuAI,
     )
+
 __all__ = [
     "AzureChatOpenAI",
     "BedrockChat",
@@ -258,6 +262,7 @@ __all__ = [
     "SolarChat",
     "VolcEngineMaasChat",
     "ChatYi",
+    "ChatNovita",
 ]
 
 
@@ -325,6 +330,7 @@ _module_lookup = {
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
     "ChatYi": "langchain_community.chat_models.yi",
+    "ChatNovita": "langchain_community.chat_models.novita",
 }
 
 
