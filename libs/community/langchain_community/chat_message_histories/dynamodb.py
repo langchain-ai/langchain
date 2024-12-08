@@ -62,6 +62,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         ttl_key_name: str = "expireAt",
         history_size: Optional[int] = None,
         history_messages_key: Optional[str] = "History",
+        *,
+        vertical_partition: Optional[bool] = None,
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -83,6 +85,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.ttl_key_name = ttl_key_name
         self.history_size = history_size
         self.history_messages_key = history_messages_key
+        self.vertical_partition = vertical_partition
 
         if kms_key_id:
             try:
@@ -123,18 +126,45 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             ) from e
 
         response = None
-        try:
-            response = self.table.get_item(Key=self.key)
-        except ClientError as error:
-            if error.response["Error"]["Code"] == "ResourceNotFoundException":
-                logger.warning("No record found with session id: %s", self.session_id)
-            else:
-                logger.error(error)
+        if not self.vertical_partition:
+            try:
+                response = self.table.get_item(Key=self.key)
+            except ClientError as error:
+                if error.response["Error"]["Code"] == "ResourceNotFoundException":
+                    logger.warning(
+                        "No record found with session id: %s", self.session_id
+                    )
+                else:
+                    logger.error(error)
 
-        if response and "Item" in response:
-            items = response["Item"][self.history_messages_key]
+            if response and "Item" in response:
+                items = response["Item"][self.history_messages_key]
+            else:
+                items = []
         else:
-            items = []
+            try:
+                from boto3.dynamodb.conditions import Key
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import boto3.dynamodb.conditions, please install with `pip install boto3`."
+                ) from e
+            try:
+                key, value = next(iter(self.key.items()))
+                response = self.table.query(KeyConditionExpression=Key(key).eq(value))
+            except ClientError as error:
+                if error.response["Error"]["Code"] == "ResourceNotFoundException":
+                    logger.warning(
+                        "No record found with session id: %s", self.session_id
+                    )
+                else:
+                    logger.error(error)
+
+            if response and "Items" in response:
+                items = []
+                for item in response["Items"]:
+                    items.append(item["History"][0])
+            else:
+                items = []
 
         messages = messages_from_dict(items)
         return messages
@@ -154,10 +184,14 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             raise ImportError(
                 "Unable to import botocore, please install with `pip install botocore`."
             ) from e
-
-        messages = messages_to_dict(self.messages)
-        _message = message_to_dict(message)
-        messages.append(_message)
+        if not self.vertical_partition:
+            messages = messages_to_dict(self.messages)
+            _message = message_to_dict(message)
+            messages.append(_message)
+        else:
+            messages = []
+            _message = message_to_dict(message)
+            messages.append(_message)
 
         if self.history_size:
             messages = messages[-self.history_size :]
@@ -189,8 +223,29 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             raise ImportError(
                 "Unable to import botocore, please install with `pip install botocore`."
             ) from e
-
-        try:
-            self.table.delete_item(Key=self.key)
-        except ClientError as err:
-            logger.error(err)
+        if not self.vertical_partition:
+            try:
+                self.table.delete_item(Key=self.key)
+            except ClientError as err:
+                logger.error(err)
+        else:
+            try:
+                from boto3.dynamodb.conditions import Key
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import boto3.dynamodb.conditions, please install with `pip install boto3`."
+                ) from e
+            try:
+                key, value = next(iter(self.key.items()))
+                response = self.table.query(KeyConditionExpression=Key(key).eq(value))
+                items = response.get("Items", [])
+            except ClientError as error:
+                if error.response["Error"]["Code"] == "ResourceNotFoundException":
+                    logger.warning(
+                        "No record found with session id: %s", self.session_id
+                    )
+                else:
+                    logger.error(error)
+            with self.table.batch_writer() as batch:
+                for item in items:
+                    batch.delete_item(Key={k: item[k] for k in self.key})
