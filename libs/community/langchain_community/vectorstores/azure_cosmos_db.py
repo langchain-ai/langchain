@@ -44,6 +44,8 @@ class CosmosDBVectorSearchType(str, Enum):
     """IVF vector index"""
     VECTOR_HNSW = "vector-hnsw"
     """HNSW vector index"""
+    VECTOR_DISKANN = "vector-diskann"
+    """DISKANN vector index"""
 
 
 logger = logging.getLogger(__name__)
@@ -181,6 +183,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
         kind: str = "vector-ivf",
         m: int = 16,
         ef_construction: int = 64,
+        max_degree: int = 32,
+        l_build: int = 50,
     ) -> dict[str, Any]:
         """Creates an index using the index name specified at
             instance construction
@@ -215,6 +219,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
                     - vector-ivf
                     - vector-hnsw: available as a preview feature only,
                                    to enable visit https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/preview-features
+                    - vector-diskann: available as a preview feature only
             num_lists: This integer is the number of clusters that the
                 inverted file (IVF) index uses to group the vector data.
                 We recommend that numLists is set to documentCount/1000
@@ -239,6 +244,12 @@ class AzureCosmosDBVectorSearch(VectorStore):
                             better index quality and higher accuracy, but it will
                             also increase the time required to build the index.
                             ef_construction has to be at least 2 * m
+            max_degree: Max number of neighbors.
+                Default value is 32, range from 20 to 2048.
+                Only vector-diskann search supports this for now.
+            l_build: l value for index building.
+                Default value is 50, range from 10 to 500.
+                Only vector-diskann search supports this for now.
         Returns:
             An object describing the created index
 
@@ -253,6 +264,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
             create_index_commands = self._get_vector_index_hnsw(
                 kind, m, ef_construction, similarity, dimensions
+            )
+        elif kind == CosmosDBVectorSearchType.VECTOR_DISKANN:
+            create_index_commands = self._get_vector_index_diskann(
+                kind, max_degree, l_build, similarity, dimensions
             )
 
         # retrieve the database object
@@ -298,6 +313,27 @@ class AzureCosmosDBVectorSearch(VectorStore):
                         "kind": kind,
                         "m": m,
                         "efConstruction": ef_construction,
+                        "similarity": similarity,
+                        "dimensions": dimensions,
+                    },
+                }
+            ],
+        }
+        return command
+
+    def _get_vector_index_diskann(
+        self, kind: str, max_degree: int, l_build: int, similarity: str, dimensions: int
+    ) -> Dict[str, Any]:
+        command = {
+            "createIndexes": self._collection.name,
+            "indexes": [
+                {
+                    "name": self._index_name,
+                    "key": {self._embedding_key: "cosmosSearch"},
+                    "cosmosSearchOptions": {
+                        "kind": kind,
+                        "maxDegree": max_degree,
+                        "lBuild": l_build,
                         "similarity": similarity,
                         "dimensions": dimensions,
                     },
@@ -421,6 +457,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        l_search: int = 40,
         with_embedding: bool = False,
     ) -> List[Tuple[Document, float]]:
         """Returns a list of documents with their scores
@@ -433,12 +470,16 @@ class AzureCosmosDBVectorSearch(VectorStore):
                     - vector-ivf
                     - vector-hnsw: available as a preview feature only,
                                    to enable visit https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/preview-features
+                    - vector-diskann: available as a preview feature only
             ef_search: The size of the dynamic candidate list for search
                        (40 by default). A higher value provides better
                        recall at the cost of speed.
             score_threshold: (Optional[float], optional): Maximum vector distance
                 between selected documents and the query vector. Defaults to None.
                 Only vector-ivf search supports this for now.
+            l_search: l value for index searching.
+                Default value is 40, range from 10 to 10000.
+                Only vector-diskann search supports this.
 
         Returns:
             A list of documents closest to the query vector
@@ -449,6 +490,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
             pipeline = self._get_pipeline_vector_hnsw(
                 embeddings, k, ef_search, pre_filter
+            )
+        elif kind == CosmosDBVectorSearchType.VECTOR_DISKANN:
+            pipeline = self._get_pipeline_vector_diskann(
+                embeddings, k, l_search, pre_filter
             )
 
         cursor = self._collection.aggregate(pipeline)
@@ -461,6 +506,9 @@ class AzureCosmosDBVectorSearch(VectorStore):
             document_object_field = res.pop("document")
             text = document_object_field.pop(self._text_key)
             metadata = document_object_field.pop("metadata", {})
+            metadata["_id"] = document_object_field.pop(
+                "_id"
+            )  # '_id' is in new position
             if with_embedding:
                 metadata[self._embedding_key] = document_object_field.pop(
                     self._embedding_key
@@ -527,6 +575,37 @@ class AzureCosmosDBVectorSearch(VectorStore):
         ]
         return pipeline
 
+    def _get_pipeline_vector_diskann(
+        self,
+        embeddings: List[float],
+        k: int = 4,
+        l_search: int = 40,
+        pre_filter: Optional[Dict] = None,
+    ) -> List[dict[str, Any]]:
+        params = {
+            "vector": embeddings,
+            "path": self._embedding_key,
+            "k": k,
+            "lSearch": l_search,
+        }
+        if pre_filter:
+            params["filter"] = pre_filter
+
+        pipeline: List[dict[str, Any]] = [
+            {
+                "$search": {
+                    "cosmosSearch": params,
+                }
+            },
+            {
+                "$project": {
+                    "similarityScore": {"$meta": "searchScore"},
+                    "document": "$$ROOT",
+                }
+            },
+        ]
+        return pipeline
+
     def similarity_search_with_score(
         self,
         query: str,
@@ -535,6 +614,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        l_search: int = 40,
         with_embedding: bool = False,
     ) -> List[Tuple[Document, float]]:
         embeddings = self._embedding.embed_query(query)
@@ -545,6 +625,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            l_search=l_search,
             with_embedding=with_embedding,
         )
         return docs
@@ -557,6 +638,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        l_search: int = 40,
         with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
@@ -567,6 +649,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            l_search=l_search,
             with_embedding=with_embedding,
         )
         return [doc for doc, _ in docs_and_scores]
@@ -581,6 +664,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        l_search: int = 40,
         with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
@@ -593,6 +677,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            l_search=l_search,
             with_embedding=with_embedding,
         )
 
@@ -616,6 +701,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        l_search: int = 40,
         with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
@@ -631,6 +717,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            l_search=l_search,
             with_embedding=with_embedding,
         )
         return docs
