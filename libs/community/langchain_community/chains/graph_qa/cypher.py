@@ -65,7 +65,17 @@ def extract_cypher(text: str) -> str:
     # Find all matches in the input text
     matches = re.findall(pattern, text, re.DOTALL)
 
-    return matches[0] if matches else text
+    # Extracted Cypher query
+    cypher_query = matches[0] if matches else text
+
+    # Replace node labels with backticks if they contain spaces
+    cypher_query = re.sub(
+        r":\s(\s*)([a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)+)(\s*)",
+        r": `\1\2\3`",
+        cypher_query,
+    )
+
+    return cypher_query
 
 
 @deprecated(

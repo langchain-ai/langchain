@@ -195,18 +195,42 @@ def test_graph_cypher_qa_chain() -> None:
     assert True
 
 
-def test_no_backticks() -> None:
+def test_extract_cypher_with_no_backticks() -> None:
     """Test if there are no backticks, so the original text should be returned."""
     query = "MATCH (n) RETURN n"
     output = extract_cypher(query)
     assert output == query
 
 
-def test_backticks() -> None:
+def test_extract_cypher_with_backticks() -> None:
     """Test if there are backticks. Query from within backticks should be returned."""
     query = "You can use the following query: ```MATCH (n) RETURN n```"
     output = extract_cypher(query)
     assert output == "MATCH (n) RETURN n"
+
+
+def test_extract_cypher_with_node_name_with_backticks() -> None:
+    """Test if there are backticks in the node name.
+    The original text should be returned."""
+    query = "MATCH (n: `Node Name`) RETURN n"
+    output = extract_cypher(query)
+    assert output == "MATCH (n: `Node Name`) RETURN n"
+
+
+def test_extract_cypher_with_node_name_with_one_space() -> None:
+    """Test if there is one space in the node name.
+    Node name should be wrapped in backticks."""
+    query = "MATCH (n: Node Name) RETURN n"
+    output = extract_cypher(query)
+    assert output == "MATCH (n: `Node Name`) RETURN n"
+
+
+def test_extract_cypher_with_node_name_with_multi_spaces() -> None:
+    """Test if there are multiple spaces in the node name.
+    Node name should be wrapped in backticks."""
+    query = "MATCH (n: Node Name With Multiple Spaces) RETURN n"
+    output = extract_cypher(query)
+    assert output == "MATCH (n: `Node Name With Multiple Spaces`) RETURN n"
 
 
 def test_exclude_types() -> None:
