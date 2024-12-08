@@ -180,7 +180,18 @@ class PromptTemplate(StringPromptTemplate):
             A formatted string.
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+        formatted_string = DEFAULT_FORMATTER_MAPPING(
+            [self.template_format](self.template, **kwargs)
+        )
+
+        reasoning_history = kwargs.get("reasoning_history", [])
+        if len(reasoning_history) > 3 and len(set(reasoning_history[-3:])) == 1:
+            kwargs["error_message"] = "Detected infinite loop. Stopping reasoning."
+            error_template = "{error_message}"
+            formatted_string = DEFAULT_FORMATTER_MAPPING[self.template_format](
+                error_template, **kwargs
+            )
+        return formatted_string
 
     @classmethod
     def from_examples(
@@ -254,7 +265,8 @@ class PromptTemplate(StringPromptTemplate):
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
-        """Load a prompt template from a template.
+        """Load a prompt template from a template with constraints to avoid user
+        input prompts and infinite loops.
 
         *Security warning*:
             Prefer using `template_format="f-string"` instead of
