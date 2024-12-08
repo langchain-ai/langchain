@@ -385,7 +385,7 @@ class ChatOllama(BaseChatModel):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
-    format: Literal["", "json"] = ""
+    format: Optional[Literal["json"]] = None
     """Specify the format of the output (options: json)"""
 
     keep_alive: Optional[Union[int, str]] = None
