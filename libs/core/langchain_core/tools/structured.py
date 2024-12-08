@@ -173,12 +173,14 @@ class StructuredTool(BaseTool):
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
             # schema name is appended within function
+            # Use include_injected to exclude injected args in the schema
             args_schema = create_schema_from_function(
                 name,
                 source_function,
                 parse_docstring=parse_docstring,
                 error_on_invalid_docstring=error_on_invalid_docstring,
                 filter_args=_filter_schema_args(source_function),
+                # include_injected=False,
             )
         description_ = description
         if description is None and not parse_docstring:
