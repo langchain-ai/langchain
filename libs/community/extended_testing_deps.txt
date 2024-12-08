@@ -7,6 +7,7 @@ atlassian-python-api>=3.36.0,<4
 azure-ai-documentintelligence>=1.0.0b1,<2
 azure-identity>=1.15.0,<2
 azure-search-documents==11.4.0
+azure.ai.vision.imageanalysis>=1.0.0
 beautifulsoup4>=4,<5
 bibtexparser>=1.4.0,<2
 cassio>=0.1.6,<0.2
