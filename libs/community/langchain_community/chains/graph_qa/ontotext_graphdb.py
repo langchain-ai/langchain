@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import json
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    import rdflib
-
+    import SPARQLWrapper
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
@@ -131,34 +131,63 @@ class OntotextGraphDBQAChain(Chain):
             self.sparql_generation_chain.output_key
         ]
 
-        generated_sparql = self._get_prepared_sparql_query(
-            _run_manager, callbacks, generated_sparql, ontology_schema
+        query_results = self.__execute_query(
+            generated_sparql, ontology_schema, _run_manager, callbacks
         )
-        query_results = self._execute_query(generated_sparql)
+        query_results_str = self.query_results_to_string(query_results, _run_manager)
 
         qa_chain_result = self.qa_chain.invoke(
-            {"prompt": prompt, "context": query_results}, callbacks=callbacks
+            {"prompt": prompt, "context": query_results_str}, callbacks=callbacks
         )
         result = qa_chain_result[self.qa_chain.output_key]
         return {self.output_key: result}
 
-    def _get_prepared_sparql_query(
+    def __execute_query(
         self,
-        _run_manager: CallbackManagerForChainRun,
-        callbacks: CallbackManager,
         generated_sparql: str,
         ontology_schema: str,
-    ) -> str:
+        _run_manager: CallbackManagerForChainRun,
+        callbacks: CallbackManager,
+    ) -> Union[str, SPARQLWrapper.SmartWrapper.Bindings]:
+        """
+        Executes the generated SPARQL query.
+        In case of invalid SPARQL query in terms of syntax,
+        try to generate the query again up to a certain number of times.
+        """
+
+        from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
+
         try:
-            return self._prepare_sparql_query(_run_manager, generated_sparql)
-        except Exception as e:
-            retries = 0
+            _run_manager.on_text(
+                "Generated query:",
+                end="\n",
+                verbose=self.verbose,
+            )
+            _run_manager.on_text(
+                generated_sparql,
+                end="\n",
+                verbose=self.verbose,
+            )
+            return self.graph.query(generated_sparql)
+        except QueryBadFormed as e:  # status code 400
+            retries = 1
             error_message = str(e)
-            self._log_invalid_sparql_query(
-                _run_manager, generated_sparql, error_message
+            _run_manager.on_text(
+                f"QueryBadFormed (status code 400): {error_message}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
             )
 
-            while retries < self.max_fix_retries:
+            if retries > self.max_fix_retries:
+                raise e
+            while retries <= self.max_fix_retries:
+                _run_manager.on_text(
+                    f"Retrying to generate the query {retries}/{self.max_fix_retries}",
+                    color="red",
+                    end="\n",
+                    verbose=self.verbose,
+                )
                 try:
                     sparql_fix_chain_result = self.sparql_fix_chain.invoke(
                         {
@@ -171,52 +200,70 @@ class OntotextGraphDBQAChain(Chain):
                     generated_sparql = sparql_fix_chain_result[
                         self.sparql_fix_chain.output_key
                     ]
-                    return self._prepare_sparql_query(_run_manager, generated_sparql)
-                except Exception as e:
-                    retries += 1
-                    parse_exception = str(e)
-                    self._log_invalid_sparql_query(
-                        _run_manager, generated_sparql, parse_exception
+                    _run_manager.on_text(
+                        "Generated query:",
+                        end="\n",
+                        verbose=self.verbose,
                     )
+                    _run_manager.on_text(
+                        generated_sparql,
+                        end="\n",
+                        verbose=self.verbose,
+                    )
+                    return self.graph.query(generated_sparql)
+                except QueryBadFormed as e:
+                    retries += 1
+                    error_message = str(e)
+                    _run_manager.on_text(
+                        f"QueryBadFormed (status code 400): {error_message}",
+                        color="red",
+                        end="\n",
+                        verbose=self.verbose,
+                    )
+                    if retries > self.max_fix_retries:
+                        raise e
 
-        raise ValueError("The generated SPARQL query is invalid.")
+        except Exception as e:
+            _run_manager.on_text(
+                f"Exception: {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
 
-    def _prepare_sparql_query(
-        self, _run_manager: CallbackManagerForChainRun, generated_sparql: str
-    ) -> str:
-        from rdflib.plugins.sparql import prepareQuery
-
-        prepareQuery(generated_sparql)
-        self._log_prepared_sparql_query(_run_manager, generated_sparql)
-        return generated_sparql
-
-    def _log_prepared_sparql_query(
-        self, _run_manager: CallbackManagerForChainRun, generated_query: str
-    ) -> None:
-        _run_manager.on_text("Generated SPARQL:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
-            generated_query, color="green", end="\n", verbose=self.verbose
+            "Unable to execute query",
+            color="red",
+            end="\n",
+            verbose=self.verbose,
         )
+        raise Exception
 
-    def _log_invalid_sparql_query(
+    def query_results_to_string(
         self,
+        query_results: Union[str, SPARQLWrapper.SmartWrapper.Bindings],
         _run_manager: CallbackManagerForChainRun,
-        generated_query: str,
-        error_message: str,
-    ) -> None:
-        _run_manager.on_text("Invalid SPARQL query: ", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            generated_query, color="red", end="\n", verbose=self.verbose
-        )
-        _run_manager.on_text(
-            "SPARQL Query Parse Error: ", end="\n", verbose=self.verbose
-        )
-        _run_manager.on_text(
-            error_message, color="red", end="\n\n", verbose=self.verbose
-        )
+    ) -> str:
+        """
+        Returns the query results as string
+        """
 
-    def _execute_query(self, query: str) -> List[rdflib.query.ResultRow]:
-        try:
-            return self.graph.query(query)
-        except Exception:
-            raise ValueError("Failed to execute the generated SPARQL query.")
+        if isinstance(query_results, str):
+            return query_results
+
+        res = [{k: v.value for k, v in d.items()} for d in query_results.bindings]
+        query_results_str = json.dumps(res)
+        _run_manager.on_text(
+            "Query results:",
+            color="green",
+            end="\n",
+            verbose=self.verbose,
+        )
+        _run_manager.on_text(
+            query_results_str,
+            color="green",
+            end="\n",
+            verbose=self.verbose,
+        )
+        return query_results_str
