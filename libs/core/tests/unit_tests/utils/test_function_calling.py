@@ -2,6 +2,7 @@
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from enum import Enum
 from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
@@ -25,6 +26,7 @@ except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
 from pydantic import BaseModel, Field
+from pydantic.version import VERSION as PYDANTICVERSION
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -456,6 +458,128 @@ def test_convert_to_openai_function_nested_strict() -> None:
     }
 
     actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected
+
+
+@pytest.mark.skipif(
+    tuple(map(int, PYDANTICVERSION.split("."))) < (2, 9, 0),
+    reason="Expected based on pydantic version >= 2.9.",
+)
+def test_convert_to_openai_function_enum_description() -> None:
+    class MyEnum(Enum):
+        ENUM_ARG1 = "enum1"
+        ENUM_ARG2 = "enum2"
+
+    class DesciptionModel(BaseModel):
+        descriptionmodel: MyEnum = Field(..., description="description")
+
+    def my_function(arg1: DesciptionModel) -> None:
+        """dummy function"""
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "properties": {
+                "arg1": {
+                    "properties": {
+                        "descriptionmodel": {
+                            "enum": ["enum1", "enum2"],
+                            "type": "string",
+                            "description": "description",
+                        }
+                    },
+                    "required": ["descriptionmodel"],
+                    "type": "object",
+                }
+            },
+            "required": ["arg1"],
+            "type": "object",
+        },
+    }
+
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
+
+
+@pytest.mark.skipif(
+    tuple(map(int, PYDANTICVERSION.split("."))) < (2, 9, 0),
+    reason="Expected based on pydantic version >= 2.9.",
+)
+def test_convert_to_openai_function_enum_alias() -> None:
+    class MyEnum(Enum):
+        ENUM_ARG1 = "enum1"
+        ENUM_ARG2 = "enum2"
+
+    class AliasModel(BaseModel):
+        aliasmodel: MyEnum = Field(..., alias="alias")
+
+    def my_function(arg1: AliasModel) -> None:
+        """dummy function"""
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "properties": {
+                "arg1": {
+                    "properties": {
+                        "alias": {
+                            "enum": ["enum1", "enum2"],
+                            "type": "string",
+                        }
+                    },
+                    "required": ["alias"],
+                    "type": "object",
+                }
+            },
+            "required": ["arg1"],
+            "type": "object",
+        },
+    }
+
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
+
+
+@pytest.mark.skipif(
+    tuple(map(int, PYDANTICVERSION.split("."))) < (2, 9, 0),
+    reason="Expected based on pydantic version >= 2.9.",
+)
+def test_convert_to_openai_function_enum_description_and_alias() -> None:
+    class MyEnum(Enum):
+        ENUM_ARG1 = "enum1"
+        ENUM_ARG2 = "enum2"
+
+    class AliasModel(BaseModel):
+        aliasmodel: MyEnum = Field(..., description="description", alias="alias")
+
+    def my_function(arg1: AliasModel) -> None:
+        """dummy function"""
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "properties": {
+                "arg1": {
+                    "properties": {
+                        "alias": {
+                            "enum": ["enum1", "enum2"],
+                            "type": "string",
+                            "description": "description",
+                        }
+                    },
+                    "required": ["alias"],
+                    "type": "object",
+                }
+            },
+            "required": ["arg1"],
+            "type": "object",
+        },
+    }
+
+    actual = convert_to_openai_function(my_function)
     assert actual == expected
 
 
