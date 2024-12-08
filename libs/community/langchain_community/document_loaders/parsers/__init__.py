@@ -2,6 +2,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.document_loaders.parsers.adobe_pdf_extract import (
+        AdobePDFExtractParser,
+    )
     from langchain_community.document_loaders.parsers.audio import (
         OpenAIWhisperParser,
     )
@@ -33,6 +36,7 @@ if TYPE_CHECKING:
 
 
 _module_lookup = {
+    "AdobePDFExtractionParser": "langchain_community.document_loaders.parsers.adobe_pdf_services",  # noqa: E501
     "AzureAIDocumentIntelligenceParser": "langchain_community.document_loaders.parsers.doc_intelligence",  # noqa: E501
     "BS4HTMLParser": "langchain_community.document_loaders.parsers.html",
     "DocAIParser": "langchain_community.document_loaders.parsers.docai",
@@ -56,6 +60,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "AdobePDFExtractParser",
     "AzureAIDocumentIntelligenceParser",
     "BS4HTMLParser",
     "DocAIParser",
