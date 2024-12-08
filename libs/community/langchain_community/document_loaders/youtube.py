@@ -12,6 +12,7 @@ from xml.etree.ElementTree import ParseError  # OK: trusted-source
 from langchain_core.documents import Document
 from pydantic import model_validator
 from pydantic.dataclasses import dataclass
+from pydantic_core import ArgsKwargs
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -52,13 +53,18 @@ class GoogleApiClient:
 
     @model_validator(mode="before")
     @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
-        """Validate that either folder_id or document_ids is set, but not both."""
-
-        if not values.get("credentials_path") and not values.get(
+    def validate_credentials_path_or_service_account_path_is_set(
+        cls, values: ArgsKwargs
+    ) -> Any:
+        """Validate that either folder_id or document_ids is set."""
+        if not values.kwargs:
+            raise ValueError("No kwargs provided")
+        if not values.kwargs.get("credentials_path") and not values.kwargs.get(
             "service_account_path"
         ):
-            raise ValueError("Must specify either channel_name or video_ids")
+            raise ValueError(
+                "Must specify either credentials_path or service_account_path"
+            )
         return values
 
     def _load_credentials(self) -> Any:
@@ -392,9 +398,11 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
-        """Validate that either folder_id or document_ids is set, but not both."""
-        if not values.get("channel_name") and not values.get("video_ids"):
+    def validate_channel_or_videoIds_is_set(cls, values: ArgsKwargs) -> Any:
+        """Validate that either channel_name or video_ids is set."""
+        if not values.kwargs:
+            raise ValueError("No kwargs provided")
+        if not values.kwargs.get("channel_name") and not values.kwargs.get("video_ids"):
             raise ValueError("Must specify either channel_name or video_ids")
         return values
 
