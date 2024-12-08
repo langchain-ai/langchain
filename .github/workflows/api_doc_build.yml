@@ -5,7 +5,7 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 env:
-  POETRY_VERSION: "1.8.1"
+  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.11"
 
 jobs:
