@@ -182,7 +182,7 @@ class ArxivAPIWrapper(BaseModel):
         Args:
             query: a plaintext search query
         """
-        return list(self.lazy_load(query))
+        return list(self.lazy_load(query))[: self.load_max_docs]
 
     def lazy_load(self, query: str) -> Iterator[Document]:
         """
@@ -220,7 +220,7 @@ class ArxivAPIWrapper(BaseModel):
                 doc_file_name: str = result.download_pdf()
                 with fitz.open(doc_file_name) as doc_file:
                     text: str = "".join(page.get_text() for page in doc_file)
-            except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
+            except (FileNotFoundError, fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
             except Exception as e:
