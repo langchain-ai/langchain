@@ -547,6 +547,7 @@ class ChatTongyi(BaseChatModel):
                 if _kwargs.get("stream") and not _kwargs.get(
                     "incremental_output", False
                 ):
+                    resp = self.fix_response_text(resp)
                     if prev_resp is None:
                         delta_resp = resp
                     else:
@@ -557,6 +558,24 @@ class ChatTongyi(BaseChatModel):
                     yield check_response(resp)
 
         return _stream_completion_with_retry(**kwargs)
+
+    def fix_response_text(self, resp: Any) -> Any:
+        """reponse ` {"role": "assistant", "content": [{"text": "图像"}]}}]}`
+        is not working for langchain
+        """
+
+        resp_copy = json.loads(json.dumps(resp))
+        choice = resp_copy["output"]["choices"][0]
+        message = choice["message"]
+        if isinstance(message.get("content"), list):
+            content_text = "".join(
+                item.get("text", "")
+                for item in message["content"]
+                if isinstance(item, dict)
+            )
+            message["content"] = content_text
+
+        return resp_copy
 
     def subtract_client_response(self, resp: Any, prev_resp: Any) -> Any:
         """Subtract prev response from curr response.
