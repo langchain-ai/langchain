@@ -89,14 +89,18 @@ class ChatSnowflakeCortex(BaseChatModel):
             chat = ChatSnowflakeCortex()
     """
 
-    _sp_session: Any = None
+    _session_handled_outside: bool = False  #: :meta private:
+    """Flag to indicate if the session was handled outside of the class.
+    This is used to determine if the session should be closed when the class is deleted.
+    """
+    sp_session: Any = Field(default=None, exclude=True)  #: :meta private:
     """Snowpark session object."""
 
-    model: str = "snowflake-arctic"
+    model: str = Field(default="snowflake-arctic", alias="model")
     """Snowflake cortex hosted LLM model name, defaulted to `snowflake-arctic`.
         Refer to docs for more options."""
 
-    cortex_function: str = "complete"
+    cortex_function: str = Field(default="complete", alias="cortex_function")
     """Cortex function to use, defaulted to `complete`.
         Refer to docs for more options."""
 
@@ -110,12 +114,18 @@ class ChatSnowflakeCortex(BaseChatModel):
     """top_p adjusts the number of choices for each predicted tokens based on
         cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
     """
-
-    snowflake_username: Optional[str] = Field(default=None, alias="username")
+    snowflake_username: str = Field(default=None, alias="username")
     """Automatically inferred from env var `SNOWFLAKE_USERNAME` if not provided."""
     snowflake_password: Optional[SecretStr] = Field(default=None, alias="password")
     """Automatically inferred from env var `SNOWFLAKE_PASSWORD` if not provided."""
-    snowflake_account: Optional[str] = Field(default=None, alias="account")
+    snowflake_key_file: Optional[SecretStr] = Field(default=None, alias="key_file")
+    """Automatically inferred from env var `SNOWFLAKE_KEY_FILE` if not provided."""
+    snowflake_key_file_password: Optional[SecretStr] = Field(
+        default=None, alias="key_file_password"
+    )
+    """Automatically inferred from env var `SNOWFLAKE_KEY_FILE_PASSWORD` \
+if not provided."""
+    snowflake_account: str = Field(default=None, alias="account")
     """Automatically inferred from env var `SNOWFLAKE_ACCOUNT` if not provided."""
     snowflake_database: Optional[str] = Field(default=None, alias="database")
     """Automatically inferred from env var `SNOWFLAKE_DATABASE` if not provided."""
@@ -143,49 +153,95 @@ class ChatSnowflakeCortex(BaseChatModel):
                 "`snowflake-snowpark-python` package not found, please install it with "
                 "`pip install snowflake-snowpark-python`"
             )
-
+        if values["sp_session"] is not None:
+            values["_session_handled_outside"] = True
+            return values
         values["snowflake_username"] = get_from_dict_or_env(
             values, "snowflake_username", "SNOWFLAKE_USERNAME"
         )
-        values["snowflake_password"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "snowflake_password", "SNOWFLAKE_PASSWORD")
+        potential_key_file = get_from_dict_or_env(
+            values, "snowflake_key_file", "SNOWFLAKE_KEY_FILE", default=""
         )
+        if potential_key_file:
+            values["snowflake_key_file"] = convert_to_secret_str(potential_key_file)
+            del potential_key_file
+        potential_key_file_password = get_from_dict_or_env(
+            values,
+            "snowflake_key_file_password",
+            "SNOWFLAKE_KEY_FILE_PASSWORD",
+            default="",
+        )
+        if potential_key_file_password:
+            values["snowflake_key_file_password"] = convert_to_secret_str(
+                potential_key_file_password
+            )
+            del potential_key_file_password
+        potential_password = get_from_dict_or_env(
+            values, "snowflake_password", "SNOWFLAKE_PASSWORD", default=""
+        )
+        if potential_password:
+            values["snowflake_password"] = convert_to_secret_str(potential_password)
+            del potential_password
         values["snowflake_account"] = get_from_dict_or_env(
             values, "snowflake_account", "SNOWFLAKE_ACCOUNT"
         )
         values["snowflake_database"] = get_from_dict_or_env(
-            values, "snowflake_database", "SNOWFLAKE_DATABASE"
+            values, "snowflake_database", "SNOWFLAKE_DATABASE", default=""
         )
         values["snowflake_schema"] = get_from_dict_or_env(
-            values, "snowflake_schema", "SNOWFLAKE_SCHEMA"
+            values, "snowflake_schema", "SNOWFLAKE_SCHEMA", default=""
         )
         values["snowflake_warehouse"] = get_from_dict_or_env(
-            values, "snowflake_warehouse", "SNOWFLAKE_WAREHOUSE"
+            values, "snowflake_warehouse", "SNOWFLAKE_WAREHOUSE", default=""
         )
         values["snowflake_role"] = get_from_dict_or_env(
-            values, "snowflake_role", "SNOWFLAKE_ROLE"
+            values, "snowflake_role", "SNOWFLAKE_ROLE", default=""
         )
+        if (values["snowflake_password"] and values["snowflake_key_file"]) or (
+            not values["snowflake_password"] and not values["snowflake_key_file"]
+        ):
+            raise ValueError(
+                "Either `snowflake_password` or `snowflake_key_file` should be provided"
+            )
 
         connection_params = {
             "account": values["snowflake_account"],
             "user": values["snowflake_username"],
-            "password": values["snowflake_password"].get_secret_value(),
-            "database": values["snowflake_database"],
-            "schema": values["snowflake_schema"],
-            "warehouse": values["snowflake_warehouse"],
-            "role": values["snowflake_role"],
         }
+        if values["snowflake_password"]:
+            connection_params["password"] = values[
+                "snowflake_password"
+            ].get_secret_value()
+        if values["snowflake_key_file"]:
+            connection_params["private_key_file"] = values[
+                "snowflake_key_file"
+            ].get_secret_value()
+        if values["snowflake_key_file_password"]:
+            connection_params["private_key_file_pwd"] = values[
+                "snowflake_key_file_password"
+            ].get_secret_value()
+        if values["snowflake_database"]:
+            connection_params["database"] = values["snowflake_database"]
+        if values["snowflake_schema"]:
+            connection_params["schema"] = values["snowflake_schema"]
+        if values["snowflake_warehouse"]:
+            connection_params["warehouse"] = values["snowflake_warehouse"]
+        if values["snowflake_role"]:
+            connection_params["role"] = values["snowflake_role"]
 
         try:
-            values["_sp_session"] = Session.builder.configs(connection_params).create()
+            values["sp_session"] = Session.builder.configs(connection_params).create()
         except Exception as e:
             raise ChatSnowflakeCortexError(f"Failed to create session: {e}")
 
         return values
 
     def __del__(self) -> None:
-        if getattr(self, "_sp_session", None) is not None:
-            self._sp_session.close()
+        if (
+            getattr(self, "sp_session", None) is not None
+            and not self._session_handled_outside
+        ):
+            self.sp_session.close()
 
     @property
     def _llm_type(self) -> str:
@@ -213,7 +269,7 @@ class ChatSnowflakeCortex(BaseChatModel):
                 ,{message_str},{options_str}) as llm_response;"""
 
         try:
-            l_rows = self._sp_session.sql(sql_stmt).collect()
+            l_rows = self.sp_session.sql(sql_stmt).collect()
         except Exception as e:
             raise ChatSnowflakeCortexError(
                 f"Error while making request to Snowflake Cortex via Snowpark: {e}"
