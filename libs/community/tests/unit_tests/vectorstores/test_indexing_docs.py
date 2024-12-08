@@ -16,7 +16,7 @@ def test_compatible_vectorstore_documentation() -> None:
     case and 1) update docs in [1] and 2) update the `documented`
     dict in this test case.
 
-    [1] langchain/docs/docs/modules/data_connection/indexing.ipynb
+    [1] langchain/docs/docs/how_to/indexing.ipynb
     """
 
     # Check if a vectorstore is compatible with the indexing API
@@ -60,6 +60,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Cassandra",
         "Chroma",
         "CouchbaseVectorStore",
+        "CrateDBVectorStore",
         "DashVector",
         "DatabricksVectorSearch",
         "TiDBVectorStore",
