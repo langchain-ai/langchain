@@ -528,7 +528,8 @@ class ChildTool(BaseTool):
                     for k, v in result_dict.items()
                     if k in tool_input
                 }
-            return tool_input
+            # make sure tool input keys won't be modified during following process
+            return tool_input.copy()
 
     @model_validator(mode="before")
     @classmethod
