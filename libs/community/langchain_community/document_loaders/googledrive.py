@@ -335,7 +335,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             return docs
 
         else:
-            from PyPDF2 import PdfReader
+            from pypdf import PdfReader
 
             content = fh.getvalue()
             pdf_reader = PdfReader(BytesIO(content))
