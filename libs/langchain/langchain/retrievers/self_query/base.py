@@ -94,6 +94,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.vectorstores import (
         Pinecone as CommunityPinecone,
     )
+    from langchain_weaviate.vectorstores import WeaviateVectorStore
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
@@ -103,6 +104,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         DashVector: DashvectorTranslator,
         Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
+        WeaviateVectorStore: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
