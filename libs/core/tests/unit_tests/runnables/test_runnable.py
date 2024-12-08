@@ -4633,6 +4633,7 @@ async def test_tool_from_runnable() -> None:
     assert await chain_tool.arun({"question": "What up"}) == await chain.ainvoke(
         {"question": "What up"}
     )
+    assert chain_tool.description
     assert chain_tool.description.endswith(repr(chain))
     assert _schema(chain_tool.args_schema) == chain.get_input_jsonschema()
     assert _schema(chain_tool.args_schema) == {
