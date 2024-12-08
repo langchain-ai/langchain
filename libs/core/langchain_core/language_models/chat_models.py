@@ -219,6 +219,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     - If False (default), will always use streaming case if available.
     """
 
+    coerce_input: bool = False
+    """"""
+
     @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: dict) -> Any:
@@ -260,17 +263,26 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):
-            return input
+            prompt_val = input
         elif isinstance(input, str):
-            return StringPromptValue(text=input)
+            prompt_val = StringPromptValue(text=input)
         elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
+            prompt_val = ChatPromptValue(messages=convert_to_messages(input))
         else:
             msg = (
                 f"Invalid input type {type(input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
             raise ValueError(msg)
+
+        if self.coerce_input:
+            messages = prompt_val.to_messages()
+            return ChatPromptValue(messages=self._coerce_messages(messages))
+        else:
+            return prompt_val
+
+    def _coerce_messages(self, messages: list[BaseMessage]) -> list[BaseMessage]:
+        return messages
 
     def invoke(
         self,
