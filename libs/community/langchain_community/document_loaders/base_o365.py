@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 import mimetypes
 import os
+import re
 import tempfile
+import urllib
 from abc import abstractmethod
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
@@ -186,9 +188,18 @@ class O365BaseLoader(BaseLoader, BaseModel):
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
+                        source = file.web_url
+                        if re.search(
+                            r"Doc.aspx\?sourcedoc=.*file=([^&]+)", file.web_url
+                        ):
+                            source = (
+                                file._parent.web_url
+                                + "/"
+                                + urllib.parse.quote(file.name)
+                            )
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
                         metadata_dict[file.name] = {
-                            "source": file.web_url,
+                            "source": source,
                             "mime_type": file.mime_type,
                             "created": str(file.created),
                             "modified": str(file.modified),
@@ -241,9 +252,18 @@ class O365BaseLoader(BaseLoader, BaseModel):
                     continue
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
+                        source = file.web_url
+                        if re.search(
+                            r"Doc.aspx\?sourcedoc=.*file=([^&]+)", file.web_url
+                        ):
+                            source = (
+                                file._parent.web_url
+                                + "/"
+                                + urllib.parse.quote(file.name)
+                            )
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
                         metadata_dict[file.name] = {
-                            "source": file.web_url,
+                            "source": source,
                             "mime_type": file.mime_type,
                             "created": file.created,
                             "modified": file.modified,
