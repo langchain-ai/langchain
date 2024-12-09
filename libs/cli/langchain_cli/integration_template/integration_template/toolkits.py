@@ -2,10 +2,10 @@
 
 from typing import List
 
-from langchain_core.tools import BaseTool, BaseToolKit
+from langchain_core.tools import BaseTool, BaseToolkit
 
 
-class __ModuleName__Toolkit(BaseToolKit):
+class __ModuleName__Toolkit(BaseToolkit):
     # TODO: Replace all TODOs in docstring. See example docstring:
     # https://github.com/langchain-ai/langchain/blob/c123cb2b304f52ab65db4714eeec46af69a861ec/libs/community/langchain_community/agent_toolkits/sql/toolkit.py#L19
     """__ModuleName__ toolkit.

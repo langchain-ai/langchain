@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
@@ -119,6 +119,7 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
       fail-fast: false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}

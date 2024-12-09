@@ -353,7 +353,9 @@ def _convert_message_to_mistral_chat_message(
             "role": "tool",
             "content": message.content,
             "name": message.name,
-            "tool_call_id": message.tool_call_id,
+            "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
+                message.tool_call_id
+            ),
         }
     else:
         raise ValueError(f"Got unknown type {message}")
@@ -386,7 +388,7 @@ class ChatMistralAI(BaseChatModel):
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
-    safe_mode: bool = False
+    safe_mode: Optional[bool] = None
     streaming: bool = False
 
     model_config = ConfigDict(
