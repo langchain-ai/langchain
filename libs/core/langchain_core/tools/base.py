@@ -655,8 +655,11 @@ class ChildTool(BaseTool):
             if config_param := _get_runnable_config_param(self._run):
                 tool_kwargs[config_param] = config
 
+            # For method tools, change name of self or cls to outer_instance
             if "self" in tool_kwargs:
-                tool_kwargs["outer_self"] = tool_kwargs.pop("self")
+                tool_kwargs["outer_instance"] = tool_kwargs.pop("self")
+            if "cls" in tool_kwargs:
+                tool_kwargs["outer_instance"] = tool_kwargs.pop("cls")
 
             response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
@@ -771,8 +774,11 @@ class ChildTool(BaseTool):
             if config_param := _get_runnable_config_param(func_to_check):
                 tool_kwargs[config_param] = config
 
+            # For method tools, change name of self or cls to outer_instance
             if "self" in tool_kwargs:
-                tool_kwargs["outer_self"] = tool_kwargs.pop("self")
+                tool_kwargs["outer_instance"] = tool_kwargs.pop("self")
+            if "cls" in tool_kwargs:
+                tool_kwargs["outer_instance"] = tool_kwargs.pop("cls")
 
             coro = context.run(self._arun, *tool_args, **tool_kwargs)
             if asyncio_accepts_context():

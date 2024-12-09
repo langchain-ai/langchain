@@ -259,10 +259,15 @@ def tool(
                 description = None
 
             if infer_schema or args_schema is not None:
-                if (
-                    not isinstance(dec_func, Runnable)
-                    and "self" in inspect.signature(dec_func).parameters
+                if not isinstance(dec_func, Runnable) and (
+                    "self" in inspect.signature(dec_func).parameters
+                    or "cls" in inspect.signature(dec_func).parameters
                 ):
+                    outer_instance_name: Literal["self", "cls"] = (
+                        "self"
+                        if "self" in inspect.signature(dec_func).parameters
+                        else "cls"
+                    )
 
                     def method_tool(self: Callable) -> StructuredTool:
                         return StructuredTool.from_function(
@@ -276,7 +281,8 @@ def tool(
                             response_format=response_format,
                             parse_docstring=parse_docstring,
                             error_on_invalid_docstring=error_on_invalid_docstring,
-                            outer_self=self,
+                            outer_instance=self,
+                            outer_instance_name=outer_instance_name,
                         )
 
                     return property(method_tool)

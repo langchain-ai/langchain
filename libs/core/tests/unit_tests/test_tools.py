@@ -2201,3 +2201,18 @@ def test_method_tool_toolcall_invoke() -> None:
     tool_message = a.foo.invoke(tool_call)
 
     assert int(tool_message.content) == 13
+
+
+def test_method_tool_classmethod() -> None:
+    """Test that a method tool can be a classmethod."""
+
+    class A:
+        c = 5
+
+        @classmethod
+        @tool
+        def foo(cls, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + cls.c
+
+    assert A.foo.invoke({"a": 1, "b": 2}) == 8
