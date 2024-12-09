@@ -39,14 +39,16 @@ conda install langchain -c conda-forge
 For these applications, LangChain simplifies the entire application lifecycle:
 
 
-- **Open-source libraries**: Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel), [components](https://python.langchain.com/docs/concepts/), and [third-party integrations](https://python.langchain.com/docs/integrations/providers/).
+- **Open-source libraries**: Build your applications using LangChain's open-source
+[components](https://python.langchain.com/docs/concepts/) and
+[third-party integrations](https://python.langchain.com/docs/integrations/providers/).
   Use [LangGraph](https://langchain-ai.github.io/langgraph/) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Platform](https://langchain-ai.github.io/langgraph/cloud/).
 
 ### Open-source libraries
 
-- **`langchain-core`**: Base abstractions and LangChain Expression Language.
+- **`langchain-core`**: Base abstractions.
 - **Integration packages** (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 - **`langchain-community`**: Third-party integrations that are community maintained.
@@ -86,19 +88,12 @@ And much more! Head to the [Tutorials](https://python.langchain.com/docs/tutoria
 
 The main value props of the LangChain libraries are:
 
-1. **Components**: composable building blocks, tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
-2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
-
-Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
-
-## LangChain Expression Language (LCEL)
-
-LCEL is a key part of LangChain, allowing you to build and organize chains of processes in a straightforward, declarative manner. It was designed to support taking prototypes directly into production without needing to alter any code. This means you can use LCEL to set up everything from basic "prompt + LLM" setups to intricate, multi-step workflows.
-
-- **[Overview](https://python.langchain.com/docs/concepts/#langchain-expression-language-lcel)**: LCEL and its benefits
-- **[Interface](https://python.langchain.com/docs/concepts/#runnable-interface)**: The standard Runnable interface for LCEL objects
-- **[Primitives](https://python.langchain.com/docs/how_to/#langchain-expression-language-lcel)**: More on the primitives LCEL includes
-- **[Cheatsheet](https://python.langchain.com/docs/how_to/lcel_cheatsheet/)**: Quick overview of the most common usage patterns
+1. **Components**: composable building blocks, tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not.
+2. **Easy orchestration with LangGraph**: [LangGraph](https://langchain-ai.github.io/langgraph/),
+built on top of `langchain-core`, has built-in support for [messages](https://python.langchain.com/docs/concepts/messages/), [tools](https://python.langchain.com/docs/concepts/tools/),
+and other LangChain abstractions. This makes it easy to combine components into
+production-ready applications with persistence, streaming, and other key features.
+Check out the LangChain [tutorials page](https://python.langchain.com/docs/tutorials/#orchestration) for examples.
 
 ## Components
 
@@ -114,7 +109,7 @@ Retrieval Augmented Generation involves [loading data](https://python.langchain.
 
 **🤖 Agents**
 
-Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/docs/concepts/#agents), along with [LangGraph](https://github.com/langchain-ai/langgraph) for building custom agents.
+Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/docs/concepts/#agents), along with [LangGraph](https://langchain-ai.github.io/langgraph/) for building custom agents.
 
 ## 📖 Documentation
 
