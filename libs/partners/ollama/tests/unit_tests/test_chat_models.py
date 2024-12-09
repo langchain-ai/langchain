@@ -2,7 +2,7 @@
 
 from typing import Dict, Type
 
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import ChatOllama
 
