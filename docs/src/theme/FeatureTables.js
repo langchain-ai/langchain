@@ -406,7 +406,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "NVIDIA",
-                link: "NVIDIAEmbeddings",
+                link: "nvidia_ai_endpoints",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
