@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
@@ -13,6 +14,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from azure.cosmos.cosmos_client import CosmosClient
+
+logger = logging.getLogger(__name__)
 
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
@@ -30,7 +33,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         *,
         cosmos_client: CosmosClient,
         embedding: Embeddings,
-        vector_embedding_policy: Dict[str, Any],
+        vector_embedding_policy: Optional[Dict[str, Any]],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
@@ -50,12 +53,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy: Indexing Policy for the container.
             cosmos_container_properties: Container Properties for the container.
             cosmos_database_properties: Database Properties for the container.
+            create_container: If True validates Properties for container creation.
         """
         self._cosmos_client = cosmos_client
         self._database_name = database_name
         self._container_name = container_name
         self._embedding = embedding
-        self._vector_embedding_policy = vector_embedding_policy
         self._indexing_policy = indexing_policy
         self._cosmos_container_properties = cosmos_container_properties
         self._cosmos_database_properties = cosmos_database_properties
@@ -115,9 +118,27 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             match_condition=self._cosmos_container_properties.get("match_condition"),
             session_token=self._cosmos_container_properties.get("session_token"),
             initial_headers=self._cosmos_container_properties.get("initial_headers"),
-            vector_embedding_policy=self._vector_embedding_policy,
+            vector_embedding_policy=vector_embedding_policy,
         )
 
+        # Validate that the created container has the correct vector embedding policy properties
+        properties = self._container.read()
+        container_vector_embedding_policy = properties.get("vector_embedding_policy")
+        if container_vector_embedding_policy is None:
+            raise ValueError(
+                "The created container does not have vector search enabled."
+            )
+        if vector_embedding_policy is not None and not all(
+            key in container_vector_embedding_policy
+            and container_vector_embedding_policy[key] == vector_embedding_policy[key]
+            for key in vector_embedding_policy
+        ):
+            logger.warning(
+                "The created container's vector embedding policy does not match the specified configuration."
+            )
+
+        # Set vector embedding policy fields
+        self._vector_embedding_policy = container_vector_embedding_policy
         self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
@@ -298,8 +319,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
             query += "TOP @limit "
 
+        embedding_field = ""
+        if with_embedding:
+            embedding_field = "c[@embeddingKey] as embeddingKey, "
+
         query += (
-            "c.id, c[@embeddingKey] as embeddingKey, c.text, c.metadata, "
+            f"c.id, {embedding_field}c.text, c.metadata, "
             "VectorDistance(c[@embeddingKey], @embeddings) AS SimilarityScore FROM c"
         )
 
