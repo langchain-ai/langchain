@@ -2216,3 +2216,18 @@ def test_method_tool_classmethod() -> None:
             return a + b + cls.c
 
     assert A.foo.invoke({"a": 1, "b": 2}) == 8
+
+
+def test_method_tool_classmethod_args() -> None:
+    """Test that a classmethod tool's args do not include cls."""
+
+    class A:
+        c = 5
+
+        @classmethod
+        @tool
+        def foo(cls, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + cls.c
+
+    assert "cls" not in A.foo.args
