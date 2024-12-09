@@ -1329,7 +1329,7 @@ def _make_message_chunk_from_anthropic_event(
     return message_chunk
 
 
-@deprecated(since="0.1.0", removal="0.3.0", alternative="ChatAnthropic")
+@deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
 class ChatAnthropicMessages(ChatAnthropic):
     pass
 

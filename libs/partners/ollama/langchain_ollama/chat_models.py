@@ -1,5 +1,6 @@
 """Ollama chat models."""
 
+import json
 from typing import (
     Any,
     AsyncIterator,
@@ -21,6 +22,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
@@ -60,19 +62,85 @@ def _get_usage_metadata_from_generation_info(
     return None
 
 
+def _parse_json_string(
+    json_string: str, raw_tool_call: dict[str, Any], skip: bool
+) -> Any:
+    """Attempt to parse a JSON string for tool calling.
+
+    Args:
+        json_string: JSON string to parse.
+        skip: Whether to ignore parsing errors and return the value anyways.
+        raw_tool_call: Raw tool call to include in error message.
+
+    Returns:
+        The parsed JSON string.
+
+    Raises:
+        OutputParserException: If the JSON string wrong invalid and skip=False.
+    """
+    try:
+        return json.loads(json_string)
+    except json.JSONDecodeError as e:
+        if skip:
+            return json_string
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+            f"Received JSONDecodeError {e}"
+        )
+        raise OutputParserException(msg) from e
+    except TypeError as e:
+        if skip:
+            return json_string
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{raw_tool_call['function']['arguments']}\n\nare not a string or a "
+            f"dictionary. Received TypeError {e}"
+        )
+        raise OutputParserException(msg) from e
+
+
+def _parse_arguments_from_tool_call(
+    raw_tool_call: dict[str, Any],
+) -> Optional[dict[str, Any]]:
+    """Parse arguments by trying to parse any shallowly nested string-encoded JSON.
+
+    Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
+    Should be removed/changed if fixed upstream.
+    See https://github.com/ollama/ollama/issues/6155
+    """
+    if "function" not in raw_tool_call:
+        return None
+    arguments = raw_tool_call["function"]["arguments"]
+    parsed_arguments = {}
+    if isinstance(arguments, dict):
+        for key, value in arguments.items():
+            if isinstance(value, str):
+                parsed_arguments[key] = _parse_json_string(
+                    value, skip=True, raw_tool_call=raw_tool_call
+                )
+            else:
+                parsed_arguments[key] = value
+    else:
+        parsed_arguments = _parse_json_string(
+            arguments, skip=False, raw_tool_call=raw_tool_call
+        )
+    return parsed_arguments
+
+
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
 ) -> List[ToolCall]:
     """Get tool calls from ollama response."""
     tool_calls = []
     if "message" in response:
-        if "tool_calls" in response["message"]:
-            for tc in response["message"]["tool_calls"]:
+        if raw_tool_calls := response["message"].get("tool_calls"):
+            for tc in raw_tool_calls:
                 tool_calls.append(
                     tool_call(
                         id=str(uuid4()),
                         name=tc["function"]["name"],
-                        args=tc["function"]["arguments"],
+                        args=_parse_arguments_from_tool_call(tc) or {},
                     )
                 )
     return tool_calls
@@ -327,27 +395,36 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client. 
+    """Additional kwargs to pass to the httpx Client.
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = PrivateAttr(default=None)
+    _client: Client = PrivateAttr(default=None)  # type: ignore
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
     """
     The async client to use for making requests.
     """
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Ollama."""
-        return {
-            "model": self.model,
-            "format": self.format,
-            "options": {
+    def _chat_params(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            stop = self.stop
+
+        options_dict = kwargs.pop(
+            "options",
+            {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
                 "mirostat_tau": self.mirostat_tau,
@@ -359,13 +436,30 @@ class ChatOllama(BaseChatModel):
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
                 "seed": self.seed,
-                "stop": self.stop,
+                "stop": self.stop if stop is None else stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
             },
-            "keep_alive": self.keep_alive,
+        )
+
+        tools = kwargs.get("tools")
+        default_stream = not bool(tools)
+
+        params = {
+            "messages": ollama_messages,
+            "stream": kwargs.pop("stream", default_stream),
+            "model": kwargs.pop("model", self.model),
+            "format": kwargs.pop("format", self.format),
+            "options": Options(**options_dict),
+            "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
+            **kwargs,
         }
+
+        if tools:
+            params["tools"] = tools
+
+        return params
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
@@ -464,37 +558,13 @@ class ChatOllama(BaseChatModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
-        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+        chat_params = self._chat_params(messages, stop, **kwargs)
 
-        stop = stop if stop is not None else self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            yield await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=False,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )  # type:ignore
-        else:
-            async for part in await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            ):  # type:ignore
+        if chat_params["stream"]:
+            async for part in await self._async_client.chat(**chat_params):
                 yield part
+        else:
+            yield await self._async_client.chat(**chat_params)
 
     def _create_chat_stream(
         self,
@@ -502,36 +572,12 @@ class ChatOllama(BaseChatModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
-        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+        chat_params = self._chat_params(messages, stop, **kwargs)
 
-        stop = stop if stop is not None else self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            yield self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=False,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )
+        if chat_params["stream"]:
+            yield from self._client.chat(**chat_params)
         else:
-            yield from self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            )
+            yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
@@ -750,6 +796,8 @@ class ChatOllama(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -760,6 +808,8 @@ class ChatOllama(BaseChatModel):
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+            tool_choice: If provided, which tool for model to call. **This parameter
+                is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501

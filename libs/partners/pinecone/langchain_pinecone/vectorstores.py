@@ -74,6 +74,7 @@ class PineconeVectorStore(VectorStore):
                     dimension=1536,
                     metric="cosine",
                     spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+                    deletion_protection="enabled",  # Defaults to "disabled"
                 )
                 while not pc.describe_index(index_name).status["ready"]:
                     time.sleep(1)
@@ -640,7 +641,7 @@ class PineconeVectorStore(VectorStore):
         return None
 
 
-@deprecated(since="0.0.3", removal="0.3.0", alternative="PineconeVectorStore")
+@deprecated(since="0.0.3", removal="1.0.0", alternative="PineconeVectorStore")
 class Pinecone(PineconeVectorStore):
     """Deprecated. Use PineconeVectorStore instead."""
 
