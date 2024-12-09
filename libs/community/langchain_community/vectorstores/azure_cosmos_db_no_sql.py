@@ -71,7 +71,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         ):
             raise ValueError(
                 "vectorEmbeddings must be present and cannot be null or empty"
-                 " in the vector_embedding_policy if specified."
+                " in the vector_embedding_policy if specified."
             )
 
         if self._create_container:
@@ -140,12 +140,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 and container_vector_embedding_policy != vector_embedding_policy
             ):
                 logger.warning(
-                    "The specified container's vector embedding policy" 
+                    "The specified container's vector embedding policy"
                     f" '{self._container_name}'"
                     " does not match the specified configuration."
                 )
         else:
-            # Container doesn't have vector search exposed 
+            # Container doesn't have vector search exposed
             # (may be available but not exposed), use specified policy
             if vector_embedding_policy is None:
                 raise ValueError(
