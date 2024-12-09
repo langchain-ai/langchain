@@ -36,7 +36,7 @@ export default function EmbeddingTabs(props) {
       `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
     const googleParamsOrDefault = googleParams ?? `model="text-embedding-004"`;
     const awsParamsOrDefault = awsParams ?? `model_id="amazon.titan-embed-text-v2:0"`;
-    const huggingFaceParamsOrDefault = huggingFaceParams ?? `model="sentence-transformers/all-mpnet-base-v2"`;
+    const huggingFaceParamsOrDefault = huggingFaceParams ?? `model_name="sentence-transformers/all-mpnet-base-v2"`;
     const ollamaParamsOrDefault = ollamaParams ?? `model="llama3"`;
     const cohereParamsOrDefault = cohereParams ?? `model="embed-english-v3.0"`;
     const mistralParamsOrDefault = mistralParams ?? `model="mistral-embed"`;
