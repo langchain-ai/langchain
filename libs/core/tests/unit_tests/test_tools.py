@@ -2177,6 +2177,10 @@ def test_method_tool_string_invoke() -> None:
     assert a.foo.invoke("b") == "ab"
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason="Class methods wrapping properties was removed with Python 3.13",
+)
 def test_method_tool_toolcall_invoke() -> None:
     """Test that a method tool can be invoked with a ToolCall."""
 
@@ -2203,6 +2207,10 @@ def test_method_tool_toolcall_invoke() -> None:
     assert int(tool_message.content) == 13
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason="Class methods wrapping properties was removed with Python 3.13",
+)
 def test_method_tool_classmethod() -> None:
     """Test that a method tool can be a classmethod."""
 
