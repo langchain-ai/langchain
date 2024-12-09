@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel
 
 
-class Model2vecEmbeddings(Embeddings, BaseModel):
+class Model2vecEmbeddings(Embeddings):
     """model2v embedding models.
 
     Install model2vec first, run 'pip install -U model2vec'.
@@ -15,9 +15,9 @@ class Model2vecEmbeddings(Embeddings, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings.model2v import Model2vecEmbeddings
+            from langchain_community.embeddings import Model2vecEmbeddings
 
-            embedding = Model2vecEmbeddings()
+            embedding = Model2vecEmbeddings("minishlab/potion-base-8M")
             embedding.embed_documents([
                 "It's dangerous to go alone!",
                 "It's a secret to everybody.",
@@ -27,14 +27,12 @@ class Model2vecEmbeddings(Embeddings, BaseModel):
             )
     """
 
-    model_name: Optional[str] = None
+    def __init__(self, model: str):
+        """Initialize embeddings.
 
-    def __init__(
-        self,
-        *,
-        model_name: Optional[str] = "minishlab/potion-base-8M",
-        **kwargs: Any,
-    ):
+        Args:
+            model: Model name.
+        """
         try:
             from model2vec import StaticModel
         except ImportError as e:
@@ -42,7 +40,7 @@ class Model2vecEmbeddings(Embeddings, BaseModel):
                 "Unable to import model2vec, please install with "
                 "`pip install -U model2vec`."
             ) from e
-        self.model = StaticModel.from_pretrained(model_name)
+        self._model = StaticModel.from_pretrained(model)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed documents using the model2vec embeddings model.
@@ -54,7 +52,7 @@ class Model2vecEmbeddings(Embeddings, BaseModel):
             List of embeddings, one for each text.
         """
 
-        return self.model.encode_as_sequence(texts)
+        return self._model.encode_as_sequence(texts)
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the model2vec embeddings model.
@@ -66,4 +64,4 @@ class Model2vecEmbeddings(Embeddings, BaseModel):
             Embeddings for the text.
         """
 
-        return self.model.encode(text)
+        return self._model.encode(text)
