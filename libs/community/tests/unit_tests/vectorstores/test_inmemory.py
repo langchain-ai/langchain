@@ -3,10 +3,7 @@ from typing import Any
 
 import pytest
 from langchain_core.documents import Document
-from langchain_tests.integration_tests.vectorstores import (
-    AsyncReadWriteTestSuite,
-    ReadWriteTestSuite,
-)
+from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -26,15 +23,9 @@ def _AnyDocument(**kwargs: Any) -> Document:
     return doc
 
 
-class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
+class TestInMemoryStandard(VectorStoreIntegrationTests):
     @pytest.fixture
     def vectorstore(self) -> InMemoryVectorStore:
-        return InMemoryVectorStore(embedding=self.get_embeddings())
-
-
-class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
-    @pytest.fixture
-    async def vectorstore(self) -> InMemoryVectorStore:
         return InMemoryVectorStore(embedding=self.get_embeddings())
 
 
