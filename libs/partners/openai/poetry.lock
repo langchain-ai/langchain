@@ -495,7 +495,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.21"
+version = "0.3.22"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -520,7 +520,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.4"
+version = "0.3.6"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -528,9 +528,15 @@ files = []
 develop = true
 
 [package.dependencies]
-httpx = "^0.27.0"
-langchain-core = "^0.3.19"
+httpx = ">=0.25.0,<1"
+langchain-core = "^0.3.22"
+numpy = [
+    {version = ">=1.24.0,<2.0.0", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
+]
 pytest = ">=7,<9"
+pytest-asyncio = ">=0.20,<1"
+pytest-socket = ">=0.6.0,<1"
 syrupy = "^4"
 
 [package.source]
@@ -1639,4 +1645,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "ded25b72c77fad9a869f3308c1bba084b58f54eb13df2785f061bc340d6ec748"
+content-hash = "6fb8c9f98c76ba402d53234ac2ac78bcebafbe818e64cd849e0ae26cafcd5ba4"

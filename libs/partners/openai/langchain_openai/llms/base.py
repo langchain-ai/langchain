@@ -205,10 +205,12 @@ class BaseOpenAI(BaseLLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "logit_bias": self.logit_bias,
             "seed": self.seed,
             "logprobs": self.logprobs,
         }
+
+        if self.logit_bias is not None:
+            normal_params["logit_bias"] = self.logit_bias
 
         if self.max_tokens is not None:
             normal_params["max_tokens"] = self.max_tokens
