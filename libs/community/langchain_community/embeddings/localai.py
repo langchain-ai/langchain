@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], Any]:
-    
     # Attempt importing openai.error first to for older versions of openai
     try:
         from openai.error import (
@@ -57,7 +56,6 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         from openai import (
             Timeout as OpenAITimeout,
         )
-
 
     min_seconds = 4
     max_seconds = 10
@@ -100,7 +98,6 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         from openai import (
             Timeout as OpenAITimeout,
         )
-
 
     min_seconds = 4
     max_seconds = 10

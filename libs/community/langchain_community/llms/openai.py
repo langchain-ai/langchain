@@ -119,7 +119,6 @@ def _create_retry_decorator(
             Timeout as OpenAITimeout,
         )
 
-
     errors = [
         OpenAITimeout,  # type: ignore[attr-defined]
         APIError,  # type: ignore[attr-defined]

@@ -64,7 +64,6 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             Timeout as OpenAITimeout,
         )
 
-
     # Wait 2^x * 1 second between each retry starting with
     # retry_min_seconds seconds, then up to retry_max_seconds seconds,
     # then retry_max_seconds seconds afterwards
@@ -111,7 +110,6 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
         from openai import (
             Timeout as OpenAITimeout,
         )
-
 
     # Wait 2^x * 1 second between each retry starting with
     # retry_min_seconds seconds, then up to retry_max_seconds seconds,

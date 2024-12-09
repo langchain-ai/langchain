@@ -81,7 +81,6 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
             Timeout as OpenAITimeout,
         )
 
-
     min_seconds = 1
     max_seconds = 60
     # Wait 2^x * 1 second between each retry starting with
