@@ -1439,6 +1439,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                tool_call_id=agent_action.tool_call_id,
                 **tool_run_kwargs,
             )
         else:
