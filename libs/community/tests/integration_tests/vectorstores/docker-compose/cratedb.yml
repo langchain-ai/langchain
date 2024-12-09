@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  postgresql:
+    image: crate/crate:nightly
+    environment:
+      - CRATE_HEAP_SIZE=4g
+    ports:
+      - "4200:4200"
+      - "5432:5432"
+    command: |
+      crate -Cdiscovery.type=single-node
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail http://localhost:4200/ || exit 1",
+        ]
+      interval: 5s
+      retries: 60
