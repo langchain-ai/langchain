@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
-    # Attempt importing openai.error first to for older versions of openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
     try:
         from openai.error import (
             APIConnectionError,
@@ -275,7 +275,7 @@ class JinaChat(BaseChatModel):
         }
 
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        # Attempt importing openai.error first to for older versions of openai
+        # Attempt importing openai.error first for 0.x versions of the openai library
         try:
             from openai.error import (
                 APIConnectionError,

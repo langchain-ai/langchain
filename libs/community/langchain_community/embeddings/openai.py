@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any]:
-    # Attempt importing openai.error first to for older versions of openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
     try:
         from openai.error import (
             APIConnectionError,
@@ -89,7 +89,7 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
 
 
 def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
-    # Attempt importing openai.error first to for older versions of openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
     try:
         from openai.error import (
             APIConnectionError,

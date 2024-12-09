@@ -97,7 +97,7 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    # Attempt importing openai.error first to for older versions of openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
     try:
         from openai.error import (
             APIConnectionError,
