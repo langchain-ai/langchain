@@ -138,7 +138,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 and container_vector_embedding_policy != vector_embedding_policy
             ):
                 logger.warning(
-                    "The created container's vector embedding policy does not match the specified configuration."
+                    f"The specified container's vector embedding policy '{self._container_name}'"
+                    " does not match the specified configuration."
                 )
         else:
             # Container doesn't have vector search exposed 
