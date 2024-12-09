@@ -1,6 +1,7 @@
 -- Provisioning table "mlb_teams_2012".
 --
 -- psql postgresql://postgres@localhost < mlb_teams_2012.sql
+-- crash < mlb_teams_2012.sql
 
 DROP TABLE IF EXISTS mlb_teams_2012;
 CREATE TABLE mlb_teams_2012 ("Team" VARCHAR, "Payroll (millions)" FLOAT, "Wins" BIGINT);
