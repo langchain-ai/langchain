@@ -141,10 +141,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                     "The created container's vector embedding policy does not match the specified configuration."
                 )
         else:
-            # Container doesn't have vector search exposed, assume specified policy
+            # Container doesn't have vector search exposed 
+            # (may be available but not exposed), use specified policy
             if vector_embedding_policy is None:
                 raise ValueError(
-                    "The created container does not have vector search enabled and no vector_embedding_policy was specified."
+                    "The created container does not have vector search exposed"
+                    " and no vector_embedding_policy was specified."
                 )
             container_vector_embedding_policy = vector_embedding_policy
 
