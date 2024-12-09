@@ -96,7 +96,7 @@ def test_no_more_changes_to_proxy_community() -> None:
         # most cases.
         hash_ += len(str(sorted(deprecated_lookup.items())))
 
-    evil_magic_number = 38620
+    evil_magic_number = 38697
 
     assert hash_ == evil_magic_number, (
         "If you're triggering this test, you're likely adding a new import "
