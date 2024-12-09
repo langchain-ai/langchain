@@ -35,7 +35,12 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], Any]:
-    import openai
+    
+    # Attempt importing openai.error first to for older versions of openai
+    try:
+        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+    except ImportError:
+        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
 
     min_seconds = 4
     max_seconds = 10
@@ -46,18 +51,22 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(OpenAITimeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
 
 def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
-    import openai
+    # Attempt importing openai.error first to for older versions of openai
+    try:
+        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+    except ImportError:
+        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
 
     min_seconds = 4
     max_seconds = 10
@@ -68,11 +77,11 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(OpenAITimeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -93,7 +102,7 @@ def _check_response(response: dict) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]):
         import openai
 
-        raise openai.error.APIError("LocalAI API returned an empty embedding")  # type: ignore[attr-defined]
+        raise openai.APIError("LocalAI API returned an empty embedding")  # type: ignore[attr-defined]
     return response
 
 

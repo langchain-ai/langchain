@@ -59,7 +59,11 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
-    import openai
+    # Attempt importing openai.error first to for older versions of openai
+    try:
+        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+    except ImportError:
+        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
 
     min_seconds = 1
     max_seconds = 60
@@ -70,11 +74,11 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
         stop=stop_after_attempt(llm.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(OpenAITimeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -255,7 +259,11 @@ class JinaChat(BaseChatModel):
         }
 
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        import openai
+        # Attempt importing openai.error first to for older versions of openai
+        try:
+            from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        except ImportError:
+            from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
 
         min_seconds = 1
         max_seconds = 60
@@ -266,11 +274,11 @@ class JinaChat(BaseChatModel):
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
             retry=(
-                retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-                | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-                | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-                | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+                retry_if_exception_type(OpenAITimeout)  # type: ignore[attr-defined]
+                | retry_if_exception_type(APIError)  # type: ignore[attr-defined]
+                | retry_if_exception_type(APIConnectionError)  # type: ignore[attr-defined]
+                | retry_if_exception_type(RateLimitError)  # type: ignore[attr-defined]
+                | retry_if_exception_type(ServiceUnavailableError)  # type: ignore[attr-defined]
             ),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
