@@ -37,6 +37,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
+  Select a provider:
   <TabItem value="chat_models" label="Chat models" default>
 
 import ChatModelTabs from "@theme/ChatModelTabs";
@@ -68,6 +69,12 @@ See integrations [here](/docs/integrations/text_embedding/).
 import VectorStoreTabs from "@theme/VectorStoreTabs";
 
 <VectorStoreTabs useFakeEmbeddings={true} />
+
+```python
+vector_store.add_texts(["Hello", "world!"])
+
+vector_store.similarity_search("Hello")
+```
 
 See integrations [here](/docs/integrations/vectorstores/).
 
@@ -102,15 +109,14 @@ These docs focus on the Python LangChain library. [Head here](https://js.langcha
 
 ## Architecture
 
-The LangChain framework consists of the following open-source libraries:
+The LangChain framework consists of multiple open-source libraries. Read more in the
+[Architecture](/docs/concepts/architecture/) page.
 
-- **`langchain-core`**: Base abstractions and LangChain Expression Language.
+- **`langchain-core`**: Base abstractions for chat models and other components.
 - **Integration packages** (e.g. `langchain-openai`, `langchain-anthropic`, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 - **`langchain-community`**: Third-party integrations that are community maintained.
-- **[LangGraph](https://langchain-ai.github.io/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it. To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).
-- **[LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform)**: Deploy LLM applications built with LangGraph to production.
-- **[LangSmith](https://docs.smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
+- **`langgraph`**: Orchestration framework for combining LangChain components into production-ready applications with persistence, streaming, and other key features. See [LangGraph documentation](https://langchain-ai.github.io/langgraph/).
 
 ## Guides
 
