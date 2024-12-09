@@ -37,11 +37,11 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
-  Select a provider:
   <TabItem value="chat_models" label="Chat models" default>
 
 import ChatModelTabs from "@theme/ChatModelTabs";
 
+Select a provider:
 <ChatModelTabs openaiParams={`model="gpt-4o-mini"`} />
 
 ```python
@@ -55,6 +55,7 @@ See integrations [here](/docs/integrations/chat/).
 
 import EmbeddingTabs from "@theme/EmbeddingTabs";
 
+Select a provider:
 <EmbeddingTabs/>
 
 ```python
@@ -68,6 +69,7 @@ See integrations [here](/docs/integrations/text_embedding/).
 
 import VectorStoreTabs from "@theme/VectorStoreTabs";
 
+Select a provider:
 <VectorStoreTabs useFakeEmbeddings={true} />
 
 ```python
