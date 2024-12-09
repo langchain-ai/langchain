@@ -1,6 +1,7 @@
 """Callback Handler that prints to std out."""
 
 import threading
+from enum import Enum, auto
 from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -10,26 +11,34 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 MODEL_COST_PER_1K_TOKENS = {
     # OpenAI o1-preview input
     "o1-preview": 0.015,
+    "o1-preview-cached": 0.0075,
     "o1-preview-2024-09-12": 0.015,
+    "o1-preview-2024-09-12-cached": 0.0075,
     # OpenAI o1-preview output
     "o1-preview-completion": 0.06,
     "o1-preview-2024-09-12-completion": 0.06,
     # OpenAI o1-mini input
     "o1-mini": 0.003,
+    "o1-mini-cached": 0.0015,
     "o1-mini-2024-09-12": 0.003,
+    "o1-mini-2024-09-12-cached": 0.0015,
     # OpenAI o1-mini output
     "o1-mini-completion": 0.012,
     "o1-mini-2024-09-12-completion": 0.012,
     # GPT-4o-mini input
     "gpt-4o-mini": 0.00015,
+    "gpt-4o-mini-cached": 0.000075,
     "gpt-4o-mini-2024-07-18": 0.00015,
+    "gpt-4o-mini-2024-07-18-cached": 0.000075,
     # GPT-4o-mini output
     "gpt-4o-mini-completion": 0.0006,
     "gpt-4o-mini-2024-07-18-completion": 0.0006,
     # GPT-4o input
     "gpt-4o": 0.0025,
+    "gpt-4o-cached": 0.00125,
     "gpt-4o-2024-05-13": 0.005,
     "gpt-4o-2024-08-06": 0.0025,
+    "gpt-4o-2024-08-06-cached": 0.00125,
     # GPT-4o output
     "gpt-4o-completion": 0.01,
     "gpt-4o-2024-05-13-completion": 0.015,
@@ -138,9 +147,17 @@ MODEL_COST_PER_1K_TOKENS = {
 }
 
 
+class TokenType(Enum):
+    """Token type enum."""
+
+    PROMPT = auto()
+    PROMPT_CACHED = auto()
+    COMPLETION = auto()
+
+
 def standardize_model_name(
     model_name: str,
-    is_completion: bool = False,
+    token_type: TokenType = TokenType.PROMPT,
 ) -> str:
     """
     Standardize the model name to a format that can be used in the OpenAI API.
@@ -161,7 +178,7 @@ def standardize_model_name(
         model_name = model_name.split(":")[0] + "-finetuned-legacy"
     if "ft:" in model_name:
         model_name = model_name.split(":")[1] + "-finetuned"
-    if is_completion and (
+    if token_type == TokenType.COMPLETION and (
         model_name.startswith("gpt-4")
         or model_name.startswith("gpt-3.5")
         or model_name.startswith("gpt-35")
@@ -169,12 +186,16 @@ def standardize_model_name(
         or ("finetuned" in model_name and "legacy" not in model_name)
     ):
         return model_name + "-completion"
+    if token_type == TokenType.PROMPT_CACHED and (
+        model_name.startswith("gpt-4o") or model_name.startswith("o1")
+    ):
+        return model_name + "-cached"
     else:
         return model_name
 
 
 def get_openai_token_cost_for_model(
-    model_name: str, num_tokens: int, is_completion: bool = False
+    model_name: str, num_tokens: int, token_type: TokenType = TokenType.PROMPT
 ) -> float:
     """
     Get the cost in USD for a given model and number of tokens.
@@ -188,7 +209,7 @@ def get_openai_token_cost_for_model(
     Returns:
         Cost in USD.
     """
-    model_name = standardize_model_name(model_name, is_completion=is_completion)
+    model_name = standardize_model_name(model_name, token_type=token_type)
     if model_name not in MODEL_COST_PER_1K_TOKENS:
         raise ValueError(
             f"Unknown model: {model_name}. Please provide a valid OpenAI model name."
@@ -202,7 +223,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
 
     total_tokens: int = 0
     prompt_tokens: int = 0
+    prompt_tokens_cached: int = 0
     completion_tokens: int = 0
+    reasoning_tokens: int = 0
     successful_requests: int = 0
     total_cost: float = 0.0
 
@@ -214,7 +237,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         return (
             f"Tokens Used: {self.total_tokens}\n"
             f"\tPrompt Tokens: {self.prompt_tokens}\n"
+            f"\t\tPrompt Tokens Cached: {self.prompt_tokens_cached}\n"
             f"\tCompletion Tokens: {self.completion_tokens}\n"
+            f"\t\tReasoning Tokens: {self.reasoning_tokens}\n"
             f"Successful Requests: {self.successful_requests}\n"
             f"Total Cost (USD): ${self.total_cost}"
         )
@@ -256,6 +281,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         else:
             usage_metadata = None
             response_metadata = None
+
+        prompt_tokens_cached = 0
+        reasoning_tokens = 0
+
         if usage_metadata:
             token_usage = {"total_tokens": usage_metadata["total_tokens"]}
             completion_tokens = usage_metadata["output_tokens"]
@@ -268,7 +297,12 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 model_name = standardize_model_name(
                     response.llm_output.get("model_name", "")
                 )
-
+            match usage_metadata:
+                case {"input_token_details": {"cache_read": cached_tokens}}:
+                    prompt_tokens_cached = cached_tokens
+            match usage_metadata:
+                case {"output_token_details": {"reasoning": reasoning}}:
+                    reasoning_tokens = reasoning
         else:
             if response.llm_output is None:
                 return None
@@ -285,11 +319,19 @@ class OpenAICallbackHandler(BaseCallbackHandler):
             model_name = standardize_model_name(
                 response.llm_output.get("model_name", "")
             )
+
         if model_name in MODEL_COST_PER_1K_TOKENS:
-            completion_cost = get_openai_token_cost_for_model(
-                model_name, completion_tokens, is_completion=True
+            uncached_prompt_tokens = prompt_tokens - prompt_tokens_cached
+            uncached_prompt_cost = get_openai_token_cost_for_model(
+                model_name, uncached_prompt_tokens, token_type=TokenType.PROMPT
             )
-            prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
+            cached_prompt_cost = get_openai_token_cost_for_model(
+                model_name, prompt_tokens_cached, token_type=TokenType.PROMPT_CACHED
+            )
+            prompt_cost = uncached_prompt_cost + cached_prompt_cost
+            completion_cost = get_openai_token_cost_for_model(
+                model_name, completion_tokens, token_type=TokenType.COMPLETION
+            )
         else:
             completion_cost = 0
             prompt_cost = 0
@@ -299,7 +341,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
             self.total_cost += prompt_cost + completion_cost
             self.total_tokens += token_usage.get("total_tokens", 0)
             self.prompt_tokens += prompt_tokens
+            self.prompt_tokens_cached += prompt_tokens_cached
             self.completion_tokens += completion_tokens
+            self.reasoning_tokens += reasoning_tokens
             self.successful_requests += 1
 
     def __copy__(self) -> "OpenAICallbackHandler":
