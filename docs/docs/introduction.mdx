@@ -10,7 +10,7 @@ sidebar_class_name: hidden
 LangChain simplifies every stage of the LLM application lifecycle:
 - **Development**: Build your applications using LangChain's open-source [components](/docs/concepts) and [third-party integrations](/docs/integrations/providers/).
 Use [LangGraph](/docs/concepts/architecture/#langgraph) to build stateful agents with first-class streaming and human-in-the-loop support.
-- **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your chains, so that you can continuously optimize and deploy with confidence.
+- **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your applications, so that you can continuously optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Platform](https://langchain-ai.github.io/langgraph/cloud/).
 
 import ThemedImage from '@theme/ThemedImage';
@@ -41,7 +41,6 @@ import TabItem from '@theme/TabItem';
 
 import ChatModelTabs from "@theme/ChatModelTabs";
 
-Select a provider:
 <ChatModelTabs openaiParams={`model="gpt-4o-mini"`} />
 
 ```python
@@ -55,7 +54,6 @@ See integrations [here](/docs/integrations/chat/).
 
 import EmbeddingTabs from "@theme/EmbeddingTabs";
 
-Select a provider:
 <EmbeddingTabs/>
 
 ```python
@@ -69,7 +67,6 @@ See integrations [here](/docs/integrations/text_embedding/).
 
 import VectorStoreTabs from "@theme/VectorStoreTabs";
 
-Select a provider:
 <VectorStoreTabs useFakeEmbeddings={true} />
 
 ```python
