@@ -99,9 +99,22 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     # Attempt importing openai.error first to for older versions of openai
     try:
-        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
     except ImportError:
-        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
+
 
     errors = [
         OpenAITimeout,  # type: ignore[attr-defined]

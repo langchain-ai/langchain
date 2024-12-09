@@ -44,9 +44,22 @@ logger = logging.getLogger(__name__)
 def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any]:
     # Attempt importing openai.error first to for older versions of openai
     try:
-        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
     except ImportError:
-        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
+
 
     # Wait 2^x * 1 second between each retry starting with
     # retry_min_seconds seconds, then up to retry_max_seconds seconds,
@@ -75,9 +88,22 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
 def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
     # Attempt importing openai.error first to for older versions of openai
     try:
-        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
     except ImportError:
-        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
+
 
     # Wait 2^x * 1 second between each retry starting with
     # retry_min_seconds seconds, then up to retry_max_seconds seconds,

@@ -38,9 +38,22 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
     
     # Attempt importing openai.error first to for older versions of openai
     try:
-        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
     except ImportError:
-        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
+
 
     min_seconds = 4
     max_seconds = 10
@@ -64,9 +77,22 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
 def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
     # Attempt importing openai.error first to for older versions of openai
     try:
-        from openai.error import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
     except ImportError:
-        from openai import Timeout as OpenAITimeout, APIError, APIConnectionError, RateLimitError, ServiceUnavailableError
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+            Timeout as OpenAITimeout,
+        )
+
 
     min_seconds = 4
     max_seconds = 10
