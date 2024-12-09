@@ -175,6 +175,22 @@ def _deduplicate_in_order(
             yield hashed_doc
 
 
+def _delete(
+    vector_store: Union[VectorStore, DocumentIndex],
+    ids: list[str],
+) -> None:
+    if isinstance(vector_store, VectorStore):
+        delete_ok = vector_store.delete(ids)
+        if delete_ok is not None and delete_ok is False:
+            msg = "delete failed"
+            raise Exception(msg)
+    elif isinstance(vector_store, DocumentIndex):
+        delete_response = vector_store.delete(ids)
+        if "num_failed" in delete_response and delete_response["num_failed"] > 0:
+            msg = "delete failed"
+            raise Exception(msg)
+
+
 # PUBLIC API
 
 
@@ -421,7 +437,7 @@ def index(
             )
             if indexed_source_ids and uids_to_delete:
                 # Then delete from vector store.
-                destination.delete(uids_to_delete)
+                _delete(destination, uids_to_delete)
                 # First delete from record store.
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
@@ -431,7 +447,7 @@ def index(
             before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
-            destination.delete(uids_to_delete)
+            _delete(destination, uids_to_delete)
             # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
             num_deleted += len(uids_to_delete)
@@ -449,6 +465,22 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
     """Convert an iterable to an async iterator."""
     for item in iterator:
         yield item
+
+
+async def _adelete(
+    vector_store: Union[VectorStore, DocumentIndex],
+    ids: list[str],
+) -> None:
+    if isinstance(vector_store, VectorStore):
+        delete_ok = await vector_store.adelete(ids)
+        if delete_ok is not None and delete_ok is False:
+            msg = "delete failed"
+            raise Exception(msg)
+    elif isinstance(vector_store, DocumentIndex):
+        delete_response = await vector_store.adelete(ids)
+        if "num_failed" in delete_response and delete_response["num_failed"] > 0:
+            msg = "delete failed"
+            raise Exception(msg)
 
 
 async def aindex(
@@ -682,7 +714,7 @@ async def aindex(
             )
             if indexed_source_ids and uids_to_delete:
                 # Then delete from vector store.
-                await destination.adelete(uids_to_delete)
+                await _adelete(destination, uids_to_delete)
                 # First delete from record store.
                 await record_manager.adelete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
@@ -692,7 +724,7 @@ async def aindex(
             before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
-            await destination.adelete(uids_to_delete)
+            await _adelete(destination, uids_to_delete)
             # Then delete from record manager.
             await record_manager.adelete_keys(uids_to_delete)
             num_deleted += len(uids_to_delete)
