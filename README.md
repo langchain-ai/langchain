@@ -101,15 +101,19 @@ Components fall into the following **modules**:
 
 **📃 Model I/O**
 
-This includes [prompt management](https://python.langchain.com/docs/concepts/#prompt-templates), [prompt optimization](https://python.langchain.com/docs/concepts/#example-selectors), a generic interface for [chat models](https://python.langchain.com/docs/concepts/#chat-models) and [LLMs](https://python.langchain.com/docs/concepts/#llms), and common utilities for working with [model outputs](https://python.langchain.com/docs/concepts/#output-parsers).
+This includes [prompt management](https://python.langchain.com/docs/concepts/prompt_templates/)
+and a generic interface for [chat models](https://python.langchain.com/docs/concepts/chat_models/), including a consistent interface for [tool-calling](https://python.langchain.com/docs/concepts/tool_calling/) and [structured output](https://python.langchain.com/docs/concepts/structured_outputs/) across model providers.
 
 **📚 Retrieval**
 
-Retrieval Augmented Generation involves [loading data](https://python.langchain.com/docs/concepts/#document-loaders) from a variety of sources, [preparing it](https://python.langchain.com/docs/concepts/#text-splitters), then [searching over (a.k.a. retrieving from)](https://python.langchain.com/docs/concepts/#retrievers) it for use in the generation step.
+Retrieval Augmented Generation involves [loading data](https://python.langchain.com/docs/concepts/document_loaders/) from a variety of sources, [preparing it](https://python.langchain.com/docs/concepts/text_splitters/), then [searching over (a.k.a. retrieving from)](https://python.langchain.com/docs/concepts/retrievers/) it for use in the generation step.
 
 **🤖 Agents**
 
-Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/docs/concepts/#agents), along with [LangGraph](https://langchain-ai.github.io/langgraph/) for building custom agents.
+Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. [LangGraph](https://langchain-ai.github.io/langgraph/) makes it easy to use
+LangChain components to build both [custom](https://langchain-ai.github.io/langgraph/tutorials/)
+and [built-in](https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/)
+LLM agents.
 
 ## 📖 Documentation
 
