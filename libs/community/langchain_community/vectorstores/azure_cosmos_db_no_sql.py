@@ -64,6 +64,16 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._cosmos_database_properties = cosmos_database_properties
         self._create_container = create_container
 
+        # validate vector_embedding_policy if specified
+        if (vector_embedding_policy is not None) and (
+            "vectorEmbeddings" not in vector_embedding_policy
+            or len(vector_embedding_policy["vectorEmbeddings"]) == 0
+        ):
+            raise ValueError(
+                "vectorEmbeddings must be present and cannot be null or empty"
+                 " in the vector_embedding_policy if specified."
+            )
+
         if self._create_container:
             if (
                 indexing_policy["vectorIndexes"] is None
@@ -72,13 +82,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 raise ValueError(
                     "vectorIndexes cannot be null or empty in the indexing_policy."
                 )
-            if (
-                vector_embedding_policy is None
-                or len(vector_embedding_policy["vectorEmbeddings"]) == 0
-            ):
+            if vector_embedding_policy is None:
                 raise ValueError(
-                    "vectorEmbeddings cannot be null "
-                    "or empty in the vector_embedding_policy."
+                    "vector_embedding_policy cannot be null when creating a container."
                 )
             if self._cosmos_container_properties["partition_key"] is None:
                 raise ValueError(
@@ -122,20 +128,25 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         )
 
         # Validate that the created container has the correct vector embedding policy properties
-        properties = self._container.read()
-        container_vector_embedding_policy = properties.get("vector_embedding_policy")
-        if container_vector_embedding_policy is None:
-            raise ValueError(
-                "The created container does not have vector search enabled."
-            )
-        if vector_embedding_policy is not None and not all(
-            key in container_vector_embedding_policy
-            and container_vector_embedding_policy[key] == vector_embedding_policy[key]
-            for key in vector_embedding_policy
-        ):
-            logger.warning(
-                "The created container's vector embedding policy does not match the specified configuration."
-            )
+        container_vector_embedding_policy = self._container.read().get(
+            "vector_embedding_policy"
+        )
+        if container_vector_embedding_policy is not None:
+            # Container already has vector search exposed, verify it matches if specified
+            if (
+                vector_embedding_policy is not None
+                and container_vector_embedding_policy != vector_embedding_policy
+            ):
+                logger.warning(
+                    "The created container's vector embedding policy does not match the specified configuration."
+                )
+        else:
+            # Container doesn't have vector search exposed, assume specified policy
+            if vector_embedding_policy is None:
+                raise ValueError(
+                    "The created container does not have vector search enabled and no vector_embedding_policy was specified."
+                )
+            container_vector_embedding_policy = vector_embedding_policy
 
         # Set vector embedding policy fields
         self._vector_embedding_policy = container_vector_embedding_policy
