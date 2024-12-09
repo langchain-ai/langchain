@@ -829,6 +829,7 @@ MessageLikeRepresentation = Union[
         Union[str, type],
         Union[str, list[dict], list[object]],
     ],
+    dict[str, Union[str, dict[str, Union[str, bool]], list[Union[str, bool]]]],
     str,
 ]
 
@@ -1445,6 +1446,8 @@ def _convert_to_message(
     - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
     - 2-tuple of (message class, template)
     - string: shorthand for ("human", template); e.g., "{user_input}"
+    - dict with a single key with the role and template as value;
+         e.g., {"human": "{user_input}"}
 
     Args:
         message: a representation of a message in one of the supported formats.
@@ -1482,8 +1485,83 @@ def _convert_to_message(
                     cast(str, template), template_format=template_format
                 )
             )
+    elif isinstance(message, dict):
+        _message = _create_template_from_dict(message)
     else:
         msg = f"Unsupported message type: {type(message)}"
         raise NotImplementedError(msg)
 
     return _message
+
+
+def _create_template_from_dict(
+    message: dict[str, Union[str, dict[str, Union[str, bool]], list[Union[str, bool]]]],
+) -> BaseMessagePromptTemplate:
+    """Create a message prompt template from a dictionary.
+
+    The dictionary must have only one key, which is the message type.
+    The value is the template.
+
+    For type "placeholder", the value can be:
+    - a string with the variable name without curly braces
+    - a dictionary with keys "variable_name" and "optional"
+    - a list with two elements, variable name and optional
+
+    The format is intended to be easy to read and write in YAML.
+    """
+    if len(message) != 1:
+        msg = (
+            "Invalid message format. "
+            "Message should be a dictionary with only one key, with the message type"
+        )
+        raise ValueError(msg)
+
+    key = next(iter(message.keys()))
+
+    if key not in ["human", "user", "ai", "assistant", "system", "placeholder"]:
+        msg = f"Invalid message type: {key}."
+        raise ValueError(msg)
+
+    if key == "placeholder":
+        placeholder = message[key]
+        if isinstance(placeholder, dict):
+            if "variable_name" not in placeholder:
+                msg = "Placeholder message should have a variable_name key"
+                raise ValueError(msg)
+            var_name = f"{{{placeholder['variable_name']}}}"
+
+            if "optional" in message[key]:
+                if not isinstance(placeholder["optional"], bool):
+                    msg = "Optional key should be a boolean"
+                    raise ValueError(msg)
+                return _create_template_from_message_type(
+                    key, [var_name, placeholder["optional"]]
+                )
+
+            return _create_template_from_message_type(key, var_name)
+        if isinstance(placeholder, list):
+            if (
+                len(placeholder) != 2
+                or not isinstance(placeholder[0], str)
+                or not isinstance(placeholder[1], bool)
+            ):
+                msg = (
+                    "Placeholder message should be a list with two elements, "
+                    "variable_name and optional"
+                )
+                raise ValueError(msg)
+            return _create_template_from_message_type(
+                key, [f"{{{placeholder[0]}}}", placeholder[1]]
+            )
+
+        if not isinstance(message[key], str):
+            msg = "Placeholder message should be a string or a dictionary"
+            raise ValueError(msg)
+
+        return _create_template_from_message_type(key, placeholder)
+
+    template = message[key]
+    if not isinstance(template, str):
+        msg = "Message should be a string"
+        raise ValueError(msg)
+    return _create_template_from_message_type(key, template)
