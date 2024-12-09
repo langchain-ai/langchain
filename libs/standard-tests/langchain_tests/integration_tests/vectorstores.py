@@ -76,6 +76,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     store.delete_collection()
                     pass
 
+    Note that by default we enable both sync and async tests. To disable either,
+    override the ``has_sync`` or ``has_async`` properties to ``False`` in the
+    subclass. For example:
+
+    .. code-block:: python
+
+       class TestParrotVectorStore(VectorStoreIntegrationTests):
+            @pytest.fixture()
+            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+                ...
+
+            @property
+            def has_async(self) -> bool:
+                return False
+
     .. note::
           API references for individual test methods include troubleshooting tips.
     """  # noqa: E501
