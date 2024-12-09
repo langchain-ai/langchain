@@ -1,9 +1,8 @@
 """Wrapper around model2vec embedding models."""
 
-from typing import Any, List, Optional
+from typing import List
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
 
 
 class Model2vecEmbeddings(Embeddings):
