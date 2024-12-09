@@ -3,7 +3,6 @@
 ########################################
 # Here is a Weaviate v4 example:
 # Step 1: Launch the Weaviate v4 container
-
 cd tests/integration_tests/vectorstores/docker-compose
 docker compose -f weaviate.yml up
 
@@ -102,6 +101,6 @@ class TestWeaviate:
         )
         input_question = "A product name similar to 'foo'"
 
-        vectorstore.similarity_search(input_question, k=1)
-        retriever.invoke(input_question)
-        retriever.get_relevant_documents(input_question)
+        _ = vectorstore.similarity_search(input_question, k=1)
+        _ = retriever.invoke(input_question)
+        _ = retriever.get_relevant_documents(input_question)
