@@ -104,6 +104,8 @@ def _create_retry_decorator(
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai.error import (
             Timeout as OpenAITimeout,
         )
     except ImportError:
@@ -112,6 +114,8 @@ def _create_retry_decorator(
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai import (
             Timeout as OpenAITimeout,
         )
 

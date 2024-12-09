@@ -66,6 +66,8 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai.error import (
             Timeout as OpenAITimeout,
         )
     except ImportError:
@@ -74,6 +76,8 @@ def _create_retry_decorator(llm: JinaChat) -> Callable[[Any], Any]:
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai import (
             Timeout as OpenAITimeout,
         )
 
@@ -279,6 +283,8 @@ class JinaChat(BaseChatModel):
                 APIError,
                 RateLimitError,
                 ServiceUnavailableError,
+            )
+            from openai.error import (
                 Timeout as OpenAITimeout,
             )
         except ImportError:
@@ -287,6 +293,8 @@ class JinaChat(BaseChatModel):
                 APIError,
                 RateLimitError,
                 ServiceUnavailableError,
+            )
+            from openai import (
                 Timeout as OpenAITimeout,
             )
 

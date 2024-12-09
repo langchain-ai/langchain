@@ -49,6 +49,8 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai.error import (
             Timeout as OpenAITimeout,
         )
     except ImportError:
@@ -57,6 +59,8 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai import (
             Timeout as OpenAITimeout,
         )
 
@@ -93,6 +97,8 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai.error import (
             Timeout as OpenAITimeout,
         )
     except ImportError:
@@ -101,6 +107,8 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             APIError,
             RateLimitError,
             ServiceUnavailableError,
+        )
+        from openai import (
             Timeout as OpenAITimeout,
         )
 
