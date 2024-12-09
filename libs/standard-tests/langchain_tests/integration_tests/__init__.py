@@ -11,6 +11,7 @@ modules = [
     "vectorstores",
     "embeddings",
     "tools",
+    "retrievers",
 ]
 
 for module in modules:
@@ -22,7 +23,7 @@ from .chat_models import ChatModelIntegrationTests
 from .embeddings import EmbeddingsIntegrationTests
 from .retrievers import RetrieversIntegrationTests
 from .tools import ToolsIntegrationTests
-from .vectorstores import AsyncReadWriteTestSuite, ReadWriteTestSuite
+from .vectorstores import VectorStoreIntegrationTests
 
 __all__ = [
     "ChatModelIntegrationTests",
@@ -32,7 +33,6 @@ __all__ = [
     "BaseStoreSyncTests",
     "AsyncCacheTestSuite",
     "SyncCacheTestSuite",
-    "AsyncReadWriteTestSuite",
-    "ReadWriteTestSuite",
+    "VectorStoreIntegrationTests",
     "RetrieversIntegrationTests",
 ]

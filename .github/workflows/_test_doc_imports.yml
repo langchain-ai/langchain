@@ -14,6 +14,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     name: "check doc imports #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4

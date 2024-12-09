@@ -26,7 +26,20 @@ python = ">=3.9,<4.0"
 langchain-core = "^0.3.15"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = [
+    "E",        # pycodestyle
+    "F",        # Pyflakes
+    "I",        # isort
+    "T201",     # print
+    "D",        # pydocstyle
+]
+ignore = ["D100"]  # ignore missing module docstring
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]  # ignore docstring checks for tests
 
 [tool.coverage.run]
 omit = [ "tests/*",]

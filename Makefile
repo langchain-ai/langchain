@@ -69,7 +69,11 @@ lint lint_package lint_tests:
 	poetry run ruff check docs cookbook
 	poetry run ruff format docs cookbook cookbook --diff
 	poetry run ruff check --select I docs cookbook
-	git grep 'from langchain import' docs/docs cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
+	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && echo "Error: no importing langchain from root in docs, except for hub" && exit 1 || exit 0
+	
+	git --no-pager grep 'api.python.langchain.com' -- docs/docs ':!docs/docs/additional_resources/arxiv_references.mdx' ':!docs/docs/integrations/document_loaders/sitemap.ipynb' || exit 0 && \
+	echo "Error: you should link python.langchain.com/api_reference, not api.python.langchain.com in the docs" && \
+	exit 1
 
 ## format: Format the project files.
 format format_diff:
