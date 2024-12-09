@@ -127,18 +127,21 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             vector_embedding_policy=vector_embedding_policy,
         )
 
-        # Validate that the created container has the correct vector embedding policy properties
+        # Validate that the created container has the correct vector embedding policy
+        # properties
         container_vector_embedding_policy = self._container.read().get(
             "vector_embedding_policy"
         )
         if container_vector_embedding_policy is not None:
-            # Container already has vector search exposed, verify it matches if specified
+            # Container already has vector search exposed, verify it matches if
+            # specified
             if (
                 vector_embedding_policy is not None
                 and container_vector_embedding_policy != vector_embedding_policy
             ):
                 logger.warning(
-                    f"The specified container's vector embedding policy '{self._container_name}'"
+                    "The specified container's vector embedding policy" 
+                    f" '{self._container_name}'"
                     " does not match the specified configuration."
                 )
         else:
