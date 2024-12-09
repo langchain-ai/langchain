@@ -39,8 +39,6 @@ NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/how_to/tools_human.ipynb",  # Requires human input()
     "docs/docs/how_to/tools_prompting.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
-    "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
-    "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
     "docs/docs/tutorials/summarization.ipynb",  # TODO: source of non-determinism somewhere, fix or add to no cassettes
 ]
 

@@ -19,7 +19,7 @@ class SearchEmailsInput(BaseModel):
     """From https://learn.microsoft.com/en-us/graph/search-query-parameter"""
 
     folder: str = Field(
-        default=None,
+        default="",
         description=(
             " If the user wants to search in only one folder, the name of the folder. "
             'Default folders are "inbox", "drafts", "sent items", "deleted ttems", but '

@@ -65,6 +65,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 defusedxml = "^0.7.1"
+pytest-timeout = "^2.3.1"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -79,7 +80,7 @@ mypy = "^1.10"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../../standard-tests"
 develop = true
 
