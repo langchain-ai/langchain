@@ -25,6 +25,7 @@ if TYPE_CHECKING:
         PDFPlumberParser,
         PyMuPDFParser,
         PyPDFium2Parser,
+        PyPDFium2TocParser,
         PyPDFParser,
     )
     from langchain_community.document_loaders.parsers.vsdx import (
@@ -43,6 +44,7 @@ _module_lookup = {
     "PDFPlumberParser": "langchain_community.document_loaders.parsers.pdf",
     "PyMuPDFParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFParser": "langchain_community.document_loaders.parsers.pdf",
+    "PyPDFium2TocParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFium2Parser": "langchain_community.document_loaders.parsers.pdf",
     "VsdxParser": "langchain_community.document_loaders.parsers.vsdx",
 }
@@ -66,6 +68,7 @@ __all__ = [
     "PDFPlumberParser",
     "PyMuPDFParser",
     "PyPDFParser",
+    "PyPDFium2TocParser",
     "PyPDFium2Parser",
     "VsdxParser",
 ]
