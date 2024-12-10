@@ -63,7 +63,7 @@ class Tool(BaseTool):
         return {"tool_input": {"type": "string"}}
 
     def _to_args_and_kwargs(
-        self, tool_input: Union[str, dict], tool_call_id: str
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
         """Convert tool input to pydantic model."""
         args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
