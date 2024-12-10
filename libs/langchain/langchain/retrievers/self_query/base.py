@@ -94,7 +94,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.vectorstores import (
         Pinecone as CommunityPinecone,
     )
-    
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
