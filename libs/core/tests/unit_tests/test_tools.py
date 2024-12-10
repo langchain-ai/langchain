@@ -651,13 +651,21 @@ def test_tool_with_kwargs() -> None:
 
 
 def test_missing_docstring() -> None:
-    """Test error is raised when docstring is missing."""
-    # expect to throw a value error if there's no docstring
-    with pytest.raises(ValueError, match="Function must have a docstring"):
+    """Test error is not raised when docstring is missing."""
 
-        @tool
-        def search_api(query: str) -> str:
-            return "API result"
+    @tool
+    def search_api(query: str) -> str:
+        return "API result"
+
+    assert search_api.name == "search_api"
+    assert search_api.description is None
+    assert search_api.args_schema
+    assert search_api.args_schema.model_json_schema() == {
+        "properties": {"query": {"title": "Query", "type": "string"}},
+        "required": ["query"],
+        "title": "search_api",
+        "type": "object",
+    }
 
 
 def test_create_tool_positional_args() -> None:
