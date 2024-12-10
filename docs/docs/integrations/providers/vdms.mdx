@@ -18,7 +18,8 @@ There are two ways to get started with VDMS:
 
 #### Install VDMS on your local machine via docker
 ```bash
-    docker run -d -p 55555:55555 intellabs/vdms:latest
+docker pull intellabs/vdms:latest
+docker run -d -p 55555:55555 intellabs/vdms:latest
 ```
 
 #### Install VDMS directly on your local machine
@@ -49,7 +50,7 @@ vectorstore = VDMS.from_documents(
     docs,
     client=client,
     collection_name="langchain-demo",
-    embedding_function=HuggingFaceEmbeddings(model_name=model_name),
+    embedding=HuggingFaceEmbeddings(model_name=model_name),
     engine="FaissFlat"
     distance_strategy="L2",
 )
