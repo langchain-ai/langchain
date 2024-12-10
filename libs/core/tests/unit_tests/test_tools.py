@@ -46,6 +46,7 @@ from langchain_core.tools import (
 )
 from langchain_core.tools.base import (
     InjectedToolArg,
+    InjectedToolCallID,
     SchemaAnnotationError,
     _is_message_content_block,
     _is_message_content_type,
@@ -2114,24 +2115,49 @@ def test_injected_arg_with_complex_type() -> None:
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
 
 
-def test_tool_returns_tool_message() -> None:
+def test_tool_injected_tool_call_id() -> None:
     @tool
-    def foo(x: int, tool_call_id: str) -> ToolMessage:
+    def foo(x: int, tool_call_id: InjectedToolCallID) -> ToolMessage:
         """foo"""
-        return ToolMessage("x", tool_call_id=tool_call_id)
+        return ToolMessage(x, tool_call_id=tool_call_id)
 
     assert foo.invoke(
         {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
-    ) == ToolMessage("x", tool_call_id="bar")
+    ) == ToolMessage(0, tool_call_id="bar")
 
-
-def test_tool_dont_coerce_content() -> None:
     @tool
-    def foo(x: int) -> int:
+    def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallID]) -> ToolMessage:
         """foo"""
-        return x
+        return ToolMessage(x, tool_call_id=tool_call_id)
+
+    assert foo2.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == ToolMessage(0, tool_call_id="bar")
+
+    @tool
+    def foo3(x: int, tool_call_id: Annotated[str, InjectedToolCallID()]) -> ToolMessage:
+        """foo"""
+        return ToolMessage(x, tool_call_id=tool_call_id)
+
+    assert foo3.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == ToolMessage(0, tool_call_id="bar")
+
+
+def test_tool_uninjected_tool_call_id() -> None:
+    @tool
+    def foo(x: int, tool_call_id: str) -> ToolMessage:
+        """foo"""
+        return ToolMessage(x, tool_call_id=tool_call_id)
+
+    with pytest.raises(ValueError):
+        foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
 
     assert foo.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"},
-        config={"coerce_tool_content": False},
-    ) == ToolMessage(0, tool_call_id="bar", name="foo")
+        {
+            "type": "tool_call",
+            "args": {"x": 0, "tool_call_id": "zap"},
+            "name": "foo",
+            "id": "bar",
+        }
+    ) == ToolMessage(0, tool_call_id="zap")
