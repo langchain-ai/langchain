@@ -1,4 +1,3 @@
-# OopCompanion:suppressRename
 from __future__ import annotations
 
 import array
