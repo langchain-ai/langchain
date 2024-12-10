@@ -1,4 +1,12 @@
-"""Test suite to check index implementations."""
+"""Test suite to check index implementations.
+
+Standard tests for the DocumentIndex abstraction
+
+We don't recommend implementing externally managed DocumentIndex abstractions at this
+time.
+
+:private:
+"""
 
 import inspect
 import uuid

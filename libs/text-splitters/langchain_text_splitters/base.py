@@ -249,6 +249,21 @@ class TokenTextSplitter(TextSplitter):
         self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> List[str]:
+        """Splits the input text into smaller chunks based on tokenization.
+
+        This method uses a custom tokenizer configuration to encode the input text
+        into tokens, processes the tokens in chunks of a specified size with overlap,
+        and decodes them back into text chunks. The splitting is performed using the
+        `split_text_on_tokens` function.
+
+        Args:
+            text (str): The input text to be split into smaller chunks.
+
+        Returns:
+            List[str]: A list of text chunks, where each chunk is derived from a portion
+            of the input text based on the tokenization and chunking rules.
+        """
+
         def _encode(_text: str) -> List[int]:
             return self._tokenizer.encode(
                 _text,
