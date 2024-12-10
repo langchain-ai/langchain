@@ -7,12 +7,12 @@ from langchain_community.chains.graph_qa.ontotext_graphdb import OntotextGraphDB
 from langchain_community.graphs import OntotextGraphDBGraph
 
 """
-cd libs/langchain/tests/integration_tests/chains/docker-compose-ontotext-graphdb
+cd libs/community/tests/integration_tests/chains/docker-compose-ontotext-graphdb
 ./start.sh
 """
 
 
-@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.requires("langchain_openai", "rdflib", "SPARQLWrapper")
 @pytest.mark.parametrize("max_fix_retries", [-2, -1, 0, 1, 2])
 def test_valid_sparql(max_fix_retries: int) -> None:
     from langchain_openai import ChatOpenAI
@@ -29,6 +29,7 @@ def test_valid_sparql(max_fix_retries: int) -> None:
         Mock(ChatOpenAI),
         graph=graph,
         max_fix_retries=max_fix_retries,
+        allow_dangerous_requests=True,
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -61,7 +62,7 @@ def test_valid_sparql(max_fix_retries: int) -> None:
     assert result == {chain.output_key: answer, chain.input_key: question}
 
 
-@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.requires("langchain_openai", "rdflib", "SPARQLWrapper")
 @pytest.mark.parametrize("max_fix_retries", [-2, -1, 0])
 def test_invalid_sparql_non_positive_max_fix_retries(
     max_fix_retries: int,
@@ -79,6 +80,7 @@ def test_invalid_sparql_non_positive_max_fix_retries(
         Mock(ChatOpenAI),
         graph=graph,
         max_fix_retries=max_fix_retries,
+        allow_dangerous_requests=True,
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -97,17 +99,25 @@ def test_invalid_sparql_non_positive_max_fix_retries(
     chain.qa_chain.output_key = "text"
     chain.qa_chain.invoke = MagicMock()
 
-    with pytest.raises(ValueError) as e:
+    from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
+
+    with pytest.raises(QueryBadFormed) as e:
         chain.invoke({chain.input_key: question})
 
-    assert str(e.value) == "The generated SPARQL query is invalid."
+    assert str(e.value) == (
+        "QueryBadFormed: A bad request has been sent to the endpoint: "
+        "probably the SPARQL query is badly formed. \n\n"
+        "Response:\n"
+        'b"MALFORMED QUERY: Lexical error at line 1, column 1.  '
+        "Encountered: '96' (96),\""
+    )
 
     assert chain.sparql_generation_chain.invoke.call_count == 1
     assert chain.sparql_fix_chain.invoke.call_count == 0
     assert chain.qa_chain.invoke.call_count == 0
 
 
-@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.requires("langchain_openai", "rdflib", "SPARQLWrapper")
 @pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
 def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
     from langchain_openai import ChatOpenAI
@@ -125,6 +135,7 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
         Mock(ChatOpenAI),
         graph=graph,
         max_fix_retries=max_fix_retries,
+        allow_dangerous_requests=True,
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -166,66 +177,7 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
     assert result == {chain.output_key: answer, chain.input_key: question}
 
 
-@pytest.mark.requires("langchain_openai", "rdflib")
-@pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
-def test_invalid_sparql_server_response_400(max_fix_retries: int) -> None:
-    from langchain_openai import ChatOpenAI
-
-    question = "Who is the oldest character?"
-    generated_invalid_sparql = (
-        "PREFIX : <https://swapi.co/vocabulary/> "
-        "PREFIX owl: <http://www.w3.org/2002/07/owl#> "
-        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
-        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> "
-        "SELECT ?character (MAX(?lifespan) AS ?maxLifespan) "
-        "WHERE {"
-        "  ?species a :Species ;"
-        "    :character ?character ;"
-        "    :averageLifespan ?lifespan ."
-        "  FILTER(xsd:integer(?lifespan))"
-        "} "
-        "ORDER BY DESC(?maxLifespan) "
-        "LIMIT 1"
-    )
-
-    graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/starwars",
-        query_ontology="CONSTRUCT {?s ?p ?o} "
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
-    )
-    chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
-    )
-    chain.sparql_generation_chain = Mock(LLMChain)
-    chain.sparql_fix_chain = Mock(LLMChain)
-    chain.qa_chain = Mock(LLMChain)
-
-    chain.sparql_generation_chain.output_key = "text"
-    chain.sparql_generation_chain.invoke = MagicMock(
-        return_value={
-            "text": generated_invalid_sparql,
-            "prompt": question,
-            "schema": "",
-        }
-    )
-    chain.sparql_fix_chain.output_key = "text"
-    chain.sparql_fix_chain.invoke = MagicMock()
-    chain.qa_chain.output_key = "text"
-    chain.qa_chain.invoke = MagicMock()
-
-    with pytest.raises(ValueError) as e:
-        chain.invoke({chain.input_key: question})
-
-    assert str(e.value) == "Failed to execute the generated SPARQL query."
-
-    assert chain.sparql_generation_chain.invoke.call_count == 1
-    assert chain.sparql_fix_chain.invoke.call_count == 0
-    assert chain.qa_chain.invoke.call_count == 0
-
-
-@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.requires("langchain_openai", "rdflib", "SPARQLWrapper")
 @pytest.mark.parametrize("max_fix_retries", [1, 2, 3])
 def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
     from langchain_openai import ChatOpenAI
@@ -242,6 +194,7 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
         Mock(ChatOpenAI),
         graph=graph,
         max_fix_retries=max_fix_retries,
+        allow_dangerous_requests=True,
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -269,17 +222,25 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
     chain.qa_chain.output_key = "text"
     chain.qa_chain.invoke = MagicMock()
 
-    with pytest.raises(ValueError) as e:
+    from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
+
+    with pytest.raises(QueryBadFormed) as e:
         chain.invoke({chain.input_key: question})
 
-    assert str(e.value) == "The generated SPARQL query is invalid."
+    assert str(e.value) == (
+        "QueryBadFormed: A bad request has been sent to the endpoint: "
+        "probably the SPARQL query is badly formed. \n\n"
+        "Response:\n"
+        'b"MALFORMED QUERY: Lexical error at line 1, column 1.  '
+        "Encountered: '96' (96),\""
+    )
 
     assert chain.sparql_generation_chain.invoke.call_count == 1
     assert chain.sparql_fix_chain.invoke.call_count == max_fix_retries
     assert chain.qa_chain.invoke.call_count == 0
 
 
-@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.requires("langchain_openai", "rdflib", "SPARQLWrapper")
 @pytest.mark.parametrize(
     "max_fix_retries,number_of_invalid_responses",
     [(1, 0), (2, 0), (2, 1), (10, 6)],
@@ -303,6 +264,7 @@ def test_valid_sparql_after_some_retries(
         Mock(ChatOpenAI),
         graph=graph,
         max_fix_retries=max_fix_retries,
+        allow_dangerous_requests=True,
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -354,7 +316,7 @@ def test_valid_sparql_after_some_retries(
     assert result == {chain.output_key: answer, chain.input_key: question}
 
 
-@pytest.mark.requires("langchain_openai", "rdflib")
+@pytest.mark.requires("langchain_openai", "rdflib", "SPARQLWrapper")
 @pytest.mark.parametrize(
     "model_name,question",
     [
@@ -378,6 +340,7 @@ def test_chain(model_name: str, question: str) -> None:
         ChatOpenAI(temperature=0, model_name=model_name),  # type: ignore[call-arg]
         graph=graph,
         verbose=True,  # type: ignore[call-arg]
+        allow_dangerous_requests=True,
     )
     try:
         chain.invoke({chain.input_key: question})

@@ -26,9 +26,12 @@ def test_query_method_with_valid_query() -> None:
         "    voc:eyeColor ?eyeColor ."
         "}"
     )
-    assert len(query_results) == 1
-    assert len(query_results[0]) == 1
-    assert str(query_results[0][0]) == "yellow"
+    query_bindings = query_results.bindings  # type: ignore[union-attr]
+    res = [{k: v.value} for d in query_bindings for k, v in d.items()]
+
+    assert len(res) == 1
+    assert len(res[0]) == 1
+    assert res[0]["eyeColor"] == "yellow"
 
 
 def test_query_method_with_invalid_query() -> None:
@@ -38,7 +41,9 @@ def test_query_method_with_invalid_query() -> None:
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
-    with pytest.raises(ValueError) as e:
+    from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
+
+    with pytest.raises(QueryBadFormed) as e:
         graph.query(
             "PREFIX : <https://swapi.co/vocabulary/> "
             "PREFIX owl: <http://www.w3.org/2002/07/owl#> "
@@ -55,9 +60,12 @@ def test_query_method_with_invalid_query() -> None:
             "LIMIT 1"
         )
 
-    assert (
-        str(e.value)
-        == "You did something wrong formulating either the URI or your SPARQL query"
+    assert str(e.value) == (
+        "QueryBadFormed: A bad request has been sent to the endpoint: "
+        "probably the SPARQL query is badly formed. \n\n"
+        "Response:\n"
+        "b\"MALFORMED QUERY: variable 'character' in projection "
+        'not present in GROUP BY."'
     )
 
 
