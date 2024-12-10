@@ -1732,18 +1732,18 @@ test = ["jupyter-server (>=2.0.0)", "pytest (>=7.0)", "pytest-jupyter[server] (>
 
 [[package]]
 name = "jupyterlab"
-version = "4.3.2"
+version = "4.3.3"
 description = "JupyterLab computational environment"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyterlab-4.3.2-py3-none-any.whl", hash = "sha256:e87100cbab8b886ff7a4f325c856100ba6fdfe916162a85409daf0e707e19d1d"},
-    {file = "jupyterlab-4.3.2.tar.gz", hash = "sha256:3c0a6882dbddcc0a7bfdd5e2236f351b2b263e48780236e6996c2aca13ac5b22"},
+    {file = "jupyterlab-4.3.3-py3-none-any.whl", hash = "sha256:32a8fd30677e734ffcc3916a4758b9dab21b02015b668c60eb36f84357b7d4b1"},
+    {file = "jupyterlab-4.3.3.tar.gz", hash = "sha256:76fa39e548fdac94dc1204af5956c556f54c785f70ee26aa47ea08eda4d5bbcd"},
 ]
 
 [package.dependencies]
 async-lru = ">=1.0.0"
-httpx = ">=0.28.0,<0.29.0"
+httpx = ">=0.25.0"
 importlib-metadata = {version = ">=4.8.3", markers = "python_version < \"3.10\""}
 ipykernel = ">=6.5.0"
 jinja2 = ">=3.0.3"
@@ -1815,7 +1815,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.3.10"
+version = "0.3.11"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1825,7 +1825,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.22"
+langchain-core = "^0.3.24"
 langchain-text-splitters = "^0.3.0"
 langsmith = ">=0.1.17,<0.3"
 numpy = [
@@ -1844,7 +1844,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.22"
+version = "0.3.24"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1869,7 +1869,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.6"
+version = "0.3.7"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -4675,4 +4675,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "67b850cc68471b3b1fab7b3932cd9ddf29c96c220fd3c2657e773295413a8a3a"
+content-hash = "e568a316587981dd9d690ebd21fb490c40ef6292233592dcd6681f1c44ce91e8"
