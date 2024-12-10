@@ -134,7 +134,7 @@ class VDMS(VectorStore):
         self,
         client: vdms.vdms,
         *,
-        embedding: Embeddings,
+        embedding: Optional[Embeddings] = None,
         embedding_dimensions: Optional[int] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         engine: ENGINES = "FaissFlat",
