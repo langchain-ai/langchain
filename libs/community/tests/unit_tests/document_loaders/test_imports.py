@@ -105,6 +105,7 @@ EXPECTED_ALL = [
     "MergedDataLoader",
     "ModernTreasuryLoader",
     "MongodbLoader",
+    "NeedleLoader",
     "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",

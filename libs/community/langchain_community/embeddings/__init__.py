@@ -145,6 +145,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.mlflow_gateway import (
         MlflowAIGatewayEmbeddings,
     )
+    from langchain_community.embeddings.model2vec import (
+        Model2vecEmbeddings,
+    )
     from langchain_community.embeddings.modelscope_hub import (
         ModelScopeEmbeddings,
     )
@@ -289,6 +292,7 @@ __all__ = [
     "MlflowAIGatewayEmbeddings",
     "MlflowCohereEmbeddings",
     "MlflowEmbeddings",
+    "Model2vecEmbeddings",
     "ModelScopeEmbeddings",
     "MosaicMLInstructorEmbeddings",
     "NLPCloudEmbeddings",
@@ -372,6 +376,7 @@ _module_lookup = {
     "MlflowAIGatewayEmbeddings": "langchain_community.embeddings.mlflow_gateway",
     "MlflowCohereEmbeddings": "langchain_community.embeddings.mlflow",
     "MlflowEmbeddings": "langchain_community.embeddings.mlflow",
+    "Model2vecEmbeddings": "langchain_community.embeddings.model2vec",
     "ModelScopeEmbeddings": "langchain_community.embeddings.modelscope_hub",
     "MosaicMLInstructorEmbeddings": "langchain_community.embeddings.mosaicml",
     "NLPCloudEmbeddings": "langchain_community.embeddings.nlpcloud",
