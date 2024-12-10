@@ -519,6 +519,15 @@ class ChildTool(BaseTool):
                             _is_injected_arg_type(v, injected_type=InjectedToolCallId)
                             and k not in tool_input
                         ):
+                            if tool_call_id is None:
+                                msg = (
+                                    "When tool includes an InjectedToolCallId "
+                                    "argument, tool must always be invoked with a full "
+                                    "model ToolCall of the form: {'args': {...}, "
+                                    "'name': '...', 'type': 'tool_call', "
+                                    "'tool_call_id': '...'}"
+                                )
+                                raise ValueError(msg)
                             tool_input[k] = tool_call_id
                     result = input_args.model_validate(tool_input)
                     result_dict = result.model_dump()
@@ -528,6 +537,15 @@ class ChildTool(BaseTool):
                             _is_injected_arg_type(v, injected_type=InjectedToolCallId)
                             and k not in tool_input
                         ):
+                            if tool_call_id is None:
+                                msg = (
+                                    "When tool includes an InjectedToolCallId "
+                                    "argument, tool must always be invoked with a full "
+                                    "model ToolCall of the form: {'args': {...}, "
+                                    "'name': '...', 'type': 'tool_call', "
+                                    "'tool_call_id': '...'}"
+                                )
+                                raise ValueError(msg)
                             tool_input[k] = tool_call_id
                     result = input_args.parse_obj(tool_input)
                     result_dict = result.dict()
