@@ -45,7 +45,8 @@ class MarkdownHeaderTextSplitter:
         self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
-        """Combine lines with common metadata into chunks
+        """Combine lines with common metadata into chunks.
+
         Args:
             lines: Line of text / associated header metadata
         """
@@ -87,10 +88,11 @@ class MarkdownHeaderTextSplitter:
         ]
 
     def split_text(self, text: str) -> List[Document]:
-        """Split markdown file
-        Args:
-            text: Markdown file"""
+        """Split markdown file.
 
+        Args:
+            text: Markdown file
+        """
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
         # Final output
@@ -225,8 +227,7 @@ class HeaderType(TypedDict):
 
 
 class ExperimentalMarkdownSyntaxTextSplitter:
-    """
-    An experimental text splitter for handling Markdown syntax.
+    """An experimental text splitter for handling Markdown syntax.
 
     This splitter aims to retain the exact whitespace of the original text while
     extracting structured metadata, such as headers. It is a re-implementation of the
@@ -280,6 +281,22 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         return_each_line: bool = False,
         strip_headers: bool = True,
     ):
+        """Initialize the text splitter with header splitting and formatting options.
+
+        This constructor sets up the required configuration for splitting text into
+        chunks based on specified headers and formatting preferences.
+
+        Args:
+            headers_to_split_on (Union[List[Tuple[str, str]], None]):
+                A list of tuples, where each tuple contains a header tag (e.g., "h1")
+                and its corresponding metadata key. If None, default headers are used.
+            return_each_line (bool):
+                Whether to return each line as an individual chunk.
+                Defaults to False, which aggregates lines into larger chunks.
+            strip_headers (bool):
+                Whether to exclude headers from the resulting chunks.
+                Defaults to True.
+        """
         self.chunks: List[Document] = []
         self.current_chunk = Document(page_content="")
         self.current_header_stack: List[Tuple[int, str]] = []
@@ -292,6 +309,21 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.return_each_line = return_each_line
 
     def split_text(self, text: str) -> List[Document]:
+        """Split the input text into structured chunks.
+
+        This method processes the input text line by line, identifying and handling
+        specific patterns such as headers, code blocks, and horizontal rules to
+        split it into structured chunks based on headers, code blocks, and
+        horizontal rules.
+
+        Args:
+            text (str): The input text to be split into chunks.
+
+        Returns:
+            List[Document]: A list of `Document` objects representing the structured
+            chunks of the input text. If `return_each_line` is enabled, each line
+            is returned as a separate `Document`.
+        """
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:

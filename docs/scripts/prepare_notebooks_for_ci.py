@@ -25,8 +25,6 @@ NOTEBOOKS_NO_EXECUTION = [
     "docs/docs/how_to/example_selectors_langsmith.ipynb",  # TODO: add langchain-benchmarks; fix cassette issue
     "docs/docs/how_to/extraction_long_text.ipynb",  # Non-determinism due to batch
     "docs/docs/how_to/graph_constructing.ipynb",  # Requires local neo4j
-    "docs/docs/how_to/graph_mapping.ipynb",  # Requires local neo4j
-    "docs/docs/how_to/graph_prompting.ipynb",  # Requires local neo4j
     "docs/docs/how_to/graph_semantic.ipynb",  # Requires local neo4j
     "docs/docs/how_to/hybrid.ipynb",  # Requires AstraDB instance
     "docs/docs/how_to/indexing.ipynb",  # Requires local Elasticsearch

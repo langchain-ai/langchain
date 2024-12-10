@@ -43,3 +43,42 @@ def test_repr() -> None:
     ]
     bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
     assert "I have a pen" not in repr(bm25_retriever)
+
+
+@pytest.mark.requires("rank_bm25")
+def test_doc_id() -> None:
+    docs_with_ids = [
+        Document(page_content="I have a pen.", id="1"),
+        Document(page_content="Do you have a pen?", id="2"),
+        Document(page_content="I have a bag.", id="3"),
+    ]
+    docs_without_ids = [
+        Document(page_content="I have a pen."),
+        Document(page_content="Do you have a pen?"),
+        Document(page_content="I have a bag."),
+    ]
+    docs_with_some_ids = [
+        Document(page_content="I have a pen.", id="1"),
+        Document(page_content="Do you have a pen?"),
+        Document(page_content="I have a bag.", id="3"),
+    ]
+    bm25_retriever_with_ids = BM25Retriever.from_documents(documents=docs_with_ids)
+    bm25_retriever_without_ids = BM25Retriever.from_documents(
+        documents=docs_without_ids
+    )
+    bm25_retriever_with_some_ids = BM25Retriever.from_documents(
+        documents=docs_with_some_ids
+    )
+    for doc in bm25_retriever_with_ids.docs:
+        assert doc.id is not None
+    for doc in bm25_retriever_without_ids.docs:
+        assert doc.id is None
+    for doc in bm25_retriever_with_some_ids.docs:
+        if doc.page_content == "I have a pen.":
+            assert doc.id == "1"
+        elif doc.page_content == "Do you have a pen?":
+            assert doc.id is None
+        elif doc.page_content == "I have a bag.":
+            assert doc.id == "3"
+        else:
+            raise ValueError("Unexpected document")
