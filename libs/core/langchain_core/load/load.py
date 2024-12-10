@@ -24,6 +24,7 @@ DEFAULT_NAMESPACES = [
     "langchain_google_vertexai",
     "langchain_mistralai",
     "langchain_fireworks",
+    "langchain_xai",
 ]
 # Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
 # Load by path is not allowed.

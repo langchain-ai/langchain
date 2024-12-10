@@ -13,7 +13,8 @@ class FileCallbackHandler(BaseCallbackHandler):
     """Callback Handler that writes to a file.
 
     Parameters:
-        file: The file to write to.
+        filename: The file to write to.
+        mode: The mode to open the file in. Defaults to "a".
         color: The color to use for the text.
     """
 
