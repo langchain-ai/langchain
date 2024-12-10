@@ -306,8 +306,6 @@ class ChatOllama(BaseChatModel):
             '{"location": "Pune, India", "time_of_day": "morning"}'
 
     Tool Calling:
-        .. warning::
-            Ollama currently does not support streaming for tools
 
         .. code-block:: python
 
@@ -459,12 +457,9 @@ class ChatOllama(BaseChatModel):
             },
         )
 
-        tools = kwargs.get("tools")
-        default_stream = not bool(tools)
-
         params = {
             "messages": ollama_messages,
-            "stream": kwargs.pop("stream", default_stream),
+            "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
             "format": kwargs.pop("format", self.format),
             "options": Options(**options_dict),
@@ -472,7 +467,7 @@ class ChatOllama(BaseChatModel):
             **kwargs,
         }
 
-        if tools:
+        if tools := kwargs.get("tools"):
             params["tools"] = tools
 
         return params
