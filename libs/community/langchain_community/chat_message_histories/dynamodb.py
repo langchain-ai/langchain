@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -15,6 +16,16 @@ if TYPE_CHECKING:
     from boto3.session import Session
 
 logger = logging.getLogger(__name__)
+
+
+def convert_messages(item: List) -> List:
+    if isinstance(item, list):
+        return [convert_messages(i) for i in item]
+    elif isinstance(item, dict):
+        return {k: convert_messages(v) for k, v in item.items()}
+    elif isinstance(item, float):
+        return Decimal(str(item))
+    return item
 
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
@@ -158,6 +169,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_to_dict(self.messages)
         _message = message_to_dict(message)
         messages.append(_message)
+
+        messages = convert_messages(messages)
 
         if self.history_size:
             messages = messages[-self.history_size :]
