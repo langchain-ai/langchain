@@ -27,8 +27,9 @@ logger = logging.getLogger(__name__)
 PINECONE = "Pinecone"
 QDRANT = "Qdrant"
 PGVECTOR = "PGVector"
+PINECONE_VECTOR_STORE = "PineconeVectorStore"
 
-SUPPORTED_VECTORSTORES = {PINECONE, QDRANT, PGVECTOR}
+SUPPORTED_VECTORSTORES = {PINECONE, QDRANT, PGVECTOR, PINECONE_VECTOR_STORE}
 
 
 def clear_enforcement_filters(retriever: VectorStoreRetriever) -> None:
@@ -505,7 +506,7 @@ def _set_identity_enforcement_filter(
     of the retriever based on the type of the vectorstore.
     """
     search_kwargs = retriever.search_kwargs
-    if retriever.vectorstore.__class__.__name__ == PINECONE:
+    if retriever.vectorstore.__class__.__name__ in [PINECONE, PINECONE_VECTOR_STORE]:
         _apply_pinecone_authorization_filter(search_kwargs, auth_context)
     elif retriever.vectorstore.__class__.__name__ == QDRANT:
         _apply_qdrant_authorization_filter(search_kwargs, auth_context)

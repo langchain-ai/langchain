@@ -51,6 +51,22 @@ def test_chroma() -> None:
     assert output[0].id is not None
 
 
+def test_from_documents() -> None:
+    """Test init using .from_documents."""
+    documents = [
+        Document(page_content="foo"),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+    ]
+    docsearch = Chroma.from_documents(documents=documents, embedding=FakeEmbeddings())
+    output = docsearch.similarity_search("foo", k=1)
+
+    docsearch.delete_collection()
+    assert len(output) == 1
+    assert output[0].page_content == "foo"
+    assert output[0].id is not None
+
+
 def test_chroma_with_ids() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
