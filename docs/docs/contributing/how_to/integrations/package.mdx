@@ -12,9 +12,178 @@ which contain classes that are compatible with LangChain's core interfaces.
 
 We will cover:
 
-1. How to implement components, such as [chat models](/docs/concepts/chat_models/) and [vector stores](/docs/concepts/vectorstores/), that adhere
+1. (Optional) How to bootstrap a new integration package
+2. How to implement components, such as [chat models](/docs/concepts/chat_models/) and [vector stores](/docs/concepts/vectorstores/), that adhere
 to the LangChain interface;  
-2. (Optional) How to bootstrap a new integration package.
+
+## (Optional) bootstrapping a new integration package
+
+In this section, we will outline 2 options for bootstrapping a new integration package, 
+and you're welcome to use other tools if you prefer!
+
+1. **langchain-cli**: This is a command-line tool that can be used to bootstrap a new integration package with a template for LangChain components and Poetry for dependency management.
+2. **Poetry**: This is a Python dependency management tool that can be used to bootstrap a new Python package with dependencies. You can then add LangChain components to this package.
+
+<details>
+    <summary>Option 1: langchain-cli (recommended)</summary>
+
+In this guide, we will be using the `langchain-cli` to create a new integration package
+from a template, which can be edited to implement your LangChain components.
+
+### **Prerequisites**
+
+- [GitHub](https://github.com) account
+- [PyPi](https://pypi.org/) account
+
+### Boostrapping a new Python package with langchain-cli
+
+First, install `langchain-cli` and `poetry`:
+
+```bash
+pip install langchain-cli poetry
+```
+
+Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
+You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
+
+Next, create your new Python package with `langchain-cli`, and navigate into the new directory with `cd`:
+
+```bash
+langchain-cli integration new
+
+> The name of the integration to create (e.g. `my-integration`): parrot-link
+> Name of integration in PascalCase [ParrotLink]:
+
+cd parrot-link
+```
+
+Next, let's add any dependencies we need
+
+```bash
+poetry add my-integration-sdk
+```
+
+We can also add some `typing` or `test` dependencies in a separate poetry dependency group.
+
+```
+poetry add --group typing my-typing-dep
+poetry add --group test my-test-dep
+```
+
+And finally, have poetry set up a virtual environment with your dependencies, as well
+as your integration package:
+
+```bash
+poetry install --with lint,typing,test,test_integration
+```
+
+You now have a new Python package with a template for LangChain components! This
+template comes with files for each integration type, and you're welcome to duplicate or
+delete any of these files as needed (including the associated test files).
+
+To create any individual files from the [template], you can run e.g.:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/chat_models.py \
+    --dst langchain_parrot_link/chat_models_2.py
+```
+
+</details>
+
+<details>
+    <summary>Option 2: Poetry (manual)</summary>
+
+In this guide, we will be using [Poetry](https://python-poetry.org/) for
+dependency management and packaging, and you're welcome to use any other tools you prefer.
+
+### **Prerequisites**
+
+- [GitHub](https://github.com) account
+- [PyPi](https://pypi.org/) account
+
+### Boostrapping a new Python package with Poetry
+
+First, install Poetry:
+
+```bash
+pip install poetry
+```
+
+Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
+You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
+
+Next, create your new Python package with Poetry, and navigate into the new directory with `cd`:
+
+```bash
+poetry new langchain-parrot-link
+cd langchain-parrot-link
+```
+
+Add main dependencies using Poetry, which will add them to your `pyproject.toml` file:
+
+```bash
+poetry add langchain-core
+```
+
+We will also add some `test` dependencies in a separate poetry dependency group. If
+you are not using Poetry, we recommend adding these in a way that won't package them
+with your published package, or just installing them separately when you run tests.
+
+`langchain-tests` will provide the [standard tests](../standard_tests) we will use later. 
+We recommended pinning these to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
+
+Note: Replace `<latest_version>` with the latest version of `langchain-tests` below.
+
+```bash
+poetry add --group test pytest pytest-socket pytest-asyncio langchain-tests==<latest_version>
+```
+
+And finally, have poetry set up a virtual environment with your dependencies, as well
+as your integration package:
+
+```bash
+poetry install --with test
+```
+
+You're now ready to start writing your integration package!
+
+### Writing your integration
+
+Let's say you're building a simple integration package that provides a `ChatParrotLink`
+chat model integration for LangChain. Here's a simple example of what your project
+structure might look like:
+
+```plaintext
+langchain-parrot-link/
+├── langchain_parrot_link/
+│   ├── __init__.py
+│   └── chat_models.py
+├── tests/
+│   ├── __init__.py
+│   └── test_chat_models.py
+├── pyproject.toml
+└── README.md
+```
+
+All of these files should already exist from step 1, except for 
+`chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py` 
+later, following the [standard tests](../standard_tests) guide.
+
+For `chat_models.py`, simply paste the contents of the chat model implementation
+[above](#implementing-langchain-components).
+
+</details>
+
+### Push your package to a public Github repository
+
+This is only required if you want to publish your integration in the LangChain documentation.
+
+1. Create a new repository on GitHub.
+2. Push your code to the repository.
+3. Confirm that your repository is viewable by the public (e.g. in a private browsing window, where you're not logged into Github).
 
 ## Implementing LangChain components
 
@@ -37,11 +206,15 @@ import CodeBlock from '@theme/CodeBlock';
         Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
         detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
 
-        The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
-        for major LangChain components that are tested against the standard unit and
-        integration tests in the LangChain Github repository. You can access the starter
-        chat model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/chat_models.py).
-        For convenience, we also include the code below.
+        You can start from the following template or langchain-cli command:
+
+        ```bash
+        langchain-cli integration new \
+            --name parrot-link \
+            --name-class ParrotLink \
+            --src integration_template/chat_models.py \
+            --dst langchain_parrot_link/chat_models.py
+        ```
 
         <details>
             <summary>Example chat model code</summary>
@@ -150,11 +323,15 @@ implement this method to handle that.
 
 ### Implementation
 
-The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
-for major LangChain components that are tested against the standard unit and
-integration tests in the LangChain Github repository. You can access the starter
-embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/embeddings.py).
-For convenience, we also include the code below.
+You can start from the following template or langchain-cli command:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/embeddings.py \
+    --dst langchain_parrot_link/embeddings.py
+```
 
         <details>
             <summary>Example embeddings code</summary>
@@ -223,11 +400,15 @@ this method to run the tool asynchronously in addition to `_run`.
 
 ### Implementation
 
-The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
-for major LangChain components that are tested against the standard unit and
-integration tests in the LangChain Github repository. You can access the starter
-embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/tools.py).
-For convenience, we also include the code below.
+You can start from the following template or langchain-cli command:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/tools.py \
+    --dst langchain_parrot_link/tools.py
+```
 
         <details>
             <summary>Example tool code</summary>
@@ -286,11 +467,15 @@ in addition to `_get_relevant_documents` for performance reasons.
 
 ### Implementation
 
-The `langchain-cli` package contains [template integrations](https://github.com/langchain-ai/langchain/tree/master/libs/cli/langchain_cli/integration_template/integration_template)
-for major LangChain components that are tested against the standard unit and
-integration tests in the LangChain Github repository. You can access the starter
-embedding model implementation [here](https://github.com/langchain-ai/langchain/blob/master/libs/cli/langchain_cli/integration_template/integration_template/retrievers.py).
-For convenience, we also include the code below.
+You can start from the following template or langchain-cli command:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/retrievers.py \
+    --dst langchain_parrot_link/retrievers.py
+```
 
         <details>
             <summary>Example retriever code</summary>
@@ -312,95 +497,6 @@ import RetrieverSource from '/src/theme/integration_template/integration_templat
 </Tabs>
 
 ---
-
-## (Optional) bootstrapping a new integration package
-
-In this guide, we will be using [Poetry](https://python-poetry.org/) for
-dependency management and packaging, and you're welcome to use any other tools you prefer.
-
-### **Prerequisites**
-
-- [GitHub](https://github.com) account
-- [PyPi](https://pypi.org/) account
-
-### Boostrapping a new Python package with Poetry
-
-First, install Poetry:
-
-```bash
-pip install poetry
-```
-
-Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
-You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
-
-Next, create your new Python package with Poetry, and navigate into the new directory with `cd`:
-
-```bash
-poetry new langchain-parrot-link
-cd langchain-parrot-link
-```
-
-Add main dependencies using Poetry, which will add them to your `pyproject.toml` file:
-
-```bash
-poetry add langchain-core
-```
-
-We will also add some `test` dependencies in a separate poetry dependency group. If
-you are not using Poetry, we recommend adding these in a way that won't package them
-with your published package, or just installing them separately when you run tests.
-
-`langchain-tests` will provide the [standard tests](../standard_tests) we will use later. 
-We recommended pinning these to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
-
-Note: Replace `<latest_version>` with the latest version of `langchain-tests` below.
-
-```bash
-poetry add --group test pytest pytest-socket pytest-asyncio langchain-tests==<latest_version>
-```
-
-And finally, have poetry set up a virtual environment with your dependencies, as well
-as your integration package:
-
-```bash
-poetry install --with test
-```
-
-You're now ready to start writing your integration package!
-
-### Writing your integration
-
-Let's say you're building a simple integration package that provides a `ChatParrotLink`
-chat model integration for LangChain. Here's a simple example of what your project
-structure might look like:
-
-```plaintext
-langchain-parrot-link/
-├── langchain_parrot_link/
-│   ├── __init__.py
-│   └── chat_models.py
-├── tests/
-│   ├── __init__.py
-│   └── test_chat_models.py
-├── pyproject.toml
-└── README.md
-```
-
-All of these files should already exist from step 1, except for 
-`chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py` 
-later, following the [standard tests](../standard_tests) guide.
-
-For `chat_models.py`, simply paste the contents of the chat model implementation
-[above](#implementing-langchain-components).
-
-### Push your package to a public Github repository
-
-This is only required if you want to publish your integration in the LangChain documentation.
-
-1. Create a new repository on GitHub.
-2. Push your code to the repository.
-3. Confirm that your repository is viewable by the public (e.g. in a private browsing window, where you're not logged into Github).
 
 ## Next Steps
 

@@ -1545,10 +1545,9 @@ class AzureSearch(VectorStore):
         """Return AzureSearchVectorStoreRetriever initialized from this VectorStore.
 
         Args:
-            search_type (Optional[str]): Defines the type of search that
-                the Retriever should perform.
-                Can be "similarity" (default), "hybrid", or
-                    "semantic_hybrid".
+            search_type (Optional[str]): Overrides the type of search that
+                the Retriever should perform. Defaults to `self.search_type`.
+                Can be "similarity", "hybrid", or "semantic_hybrid".
             search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                 search function. Can include things like:
                     score_threshold: Minimum relevance threshold
@@ -1561,6 +1560,9 @@ class AzureSearch(VectorStore):
         Returns:
             AzureSearchVectorStoreRetriever: Retriever class for VectorStore.
         """
+        search_type = kwargs.get("search_type", self.search_type)
+        kwargs["search_type"] = search_type
+
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         return AzureSearchVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
