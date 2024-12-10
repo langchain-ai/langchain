@@ -208,7 +208,9 @@ class WebBaseLoader(BaseLoader):
                     )
                     if not self.session.verify:
                         kwargs["ssl"] = False
-                    async with session.get(url, **kwargs) as response:
+                    async with session.get(
+                        url, **kwargs, **self.requests_kwargs
+                    ) as response:
                         if self.raise_for_status:
                             response.raise_for_status()
                         return await response.text()
