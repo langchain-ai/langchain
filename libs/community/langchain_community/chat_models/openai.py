@@ -85,14 +85,34 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    import openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
+    try:
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+        )
+        from openai.error import (
+            Timeout as OpenAITimeout,
+        )
+    except ImportError:
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+        )
+        from openai import (
+            Timeout as OpenAITimeout,
+        )
 
     errors = [
-        openai.error.Timeout,  # type: ignore[attr-defined]
-        openai.error.APIError,  # type: ignore[attr-defined]
-        openai.error.APIConnectionError,  # type: ignore[attr-defined]
-        openai.error.RateLimitError,  # type: ignore[attr-defined]
-        openai.error.ServiceUnavailableError,  # type: ignore[attr-defined]
+        OpenAITimeout,  # type: ignore[attr-defined]
+        APIError,  # type: ignore[attr-defined]
+        APIConnectionError,  # type: ignore[attr-defined]
+        RateLimitError,  # type: ignore[attr-defined]
+        ServiceUnavailableError,  # type: ignore[attr-defined]
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager

@@ -42,7 +42,27 @@ logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any]:
-    import openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
+    try:
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+        )
+        from openai.error import (
+            Timeout as OpenAITimeout,
+        )
+    except ImportError:
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+        )
+        from openai import (
+            Timeout as OpenAITimeout,
+        )
 
     # Wait 2^x * 1 second between each retry starting with
     # retry_min_seconds seconds, then up to retry_max_seconds seconds,
@@ -58,18 +78,38 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(OpenAITimeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
 
 def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
-    import openai
+    # Attempt importing openai.error first for 0.x versions of the openai library
+    try:
+        from openai.error import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+        )
+        from openai.error import (
+            Timeout as OpenAITimeout,
+        )
+    except ImportError:
+        from openai import (
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            ServiceUnavailableError,
+        )
+        from openai import (
+            Timeout as OpenAITimeout,
+        )
 
     # Wait 2^x * 1 second between each retry starting with
     # retry_min_seconds seconds, then up to retry_max_seconds seconds,
@@ -85,11 +125,11 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
+            retry_if_exception_type(OpenAITimeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -110,7 +150,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
-        raise openai.error.APIError("OpenAI API returned an empty embedding")  # type: ignore[attr-defined]
+        raise openai.APIError("OpenAI API returned an empty embedding")  # type: ignore[attr-defined]
     return response
 
 
