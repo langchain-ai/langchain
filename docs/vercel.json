@@ -123,7 +123,7 @@
       "destination": "/docs/contributing/reference/:path"
     },
     {
-      "source": "/docs/integrations/retrievers/weaviate-hybrid/?",
+      "source": "/docs/integrations/retrievers/weaviate-hybrid(/?)",
       "destination": "/docs/integrations/vectorstores/weaviate/#search-mechanism"
     }
   ]
