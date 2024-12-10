@@ -272,6 +272,9 @@ if __name__ == "__main__":
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
             # note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
+            dirs_to_run["test"].add("libs/standard-tests")
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
@@ -279,8 +282,9 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
-            # todo: add cli makefile
-            pass
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
+            
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
