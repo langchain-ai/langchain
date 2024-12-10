@@ -71,7 +71,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             yield d
 
     def _generate_docs_single(self, result: Any) -> Iterator[Document]:
-        yield Document(page_content=result.content, metadata={})
+        yield Document(page_content=result.content, metadata=result.as_dict())
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
