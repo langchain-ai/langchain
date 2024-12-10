@@ -10,6 +10,7 @@ from typing import (
     Literal,
     Optional,
     Union,
+    cast,
 )
 
 from pydantic import BaseModel, Field, SkipValidation
@@ -41,8 +42,42 @@ class StructuredTool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
+    outer_instance: Optional[Any] = None
+    """The outer self of the tool for methods."""
+    outer_instance_name: Union[Literal["self"], Literal["cls"]] = "self"
 
     # --- Runnable ---
+    def _add_outer_instance(
+        self, input: Union[str, dict, ToolCall]
+    ) -> Union[dict, ToolCall]:
+        """Add outer self into arguments for method tools."""
+
+        # If input is a string, then it is the first argument
+        if isinstance(input, str):
+            args = {self.outer_instance_name: self.outer_instance}
+            for x in self.args:  # loop should only happen once
+                args[x] = input
+            return args
+
+        # ToolCall
+        if "type" in input and input["type"] == "tool_call":
+            input["args"][self.outer_instance_name] = self.outer_instance
+            return input
+
+        # Dict
+        new_input = cast(dict, input)  # to avoid mypy error
+        new_input[self.outer_instance_name] = self.outer_instance
+        return new_input
+
+    def invoke(
+        self,
+        input: Union[str, dict, ToolCall],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        if self.outer_instance is not None:
+            input = self._add_outer_instance(input)
+        return super().invoke(input, config, **kwargs)
 
     # TODO: Is this needed?
     async def ainvoke(
@@ -55,6 +90,8 @@ class StructuredTool(BaseTool):
             # If the tool does not implement async, fall back to default implementation
             return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
+        if self.outer_instance is not None:
+            input = self._add_outer_instance(input)
         return await super().ainvoke(input, config, **kwargs)
 
     # --- Tool ---
@@ -62,7 +99,10 @@ class StructuredTool(BaseTool):
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
-        return self.args_schema.model_json_schema()["properties"]
+        properties = self.args_schema.model_json_schema()["properties"]
+        if self.outer_instance is not None:
+            properties.pop(self.outer_instance_name)
+        return properties
 
     def _run(
         self,
@@ -77,6 +117,8 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
+            if "outer_instance" in kwargs:
+                kwargs[self.outer_instance_name] = kwargs.pop("outer_instance")
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -94,6 +136,8 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
+            if "outer_instance" in kwargs:
+                kwargs[self.outer_instance_name] = kwargs.pop("outer_instance")
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default
@@ -116,6 +160,8 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
+        outer_instance: Optional[Any] = None,
+        outer_instance_name: Union[Literal["self"], Literal["cls"]] = "self",
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -203,6 +249,8 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
+            outer_instance=outer_instance,
+            outer_instance_name=outer_instance_name,
             **kwargs,
         )
 
