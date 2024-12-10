@@ -19,7 +19,19 @@ class KuzuGraph:
         See https://python.langchain.com/docs/security for more information.
     """
 
-    def __init__(self, db: Any, database: str = "kuzu") -> None:
+    def __init__(
+        self, db: Any, database: str = "kuzu", allow_dangerous_requests: bool = False
+    ) -> None:
+        """Initializes the Kùzu graph database connection."""
+
+        if allow_dangerous_requests is not True:
+            raise ValueError(
+                "The KuzuGraph class is a powerful tool that can be used to execute "
+                "arbitrary queries on the database. To enable this functionality, "
+                "set the `allow_dangerous_requests` parameter to `True` when "
+                "constructing the KuzuGraph object."
+            )
+
         try:
             import kuzu
         except ImportError:
