@@ -111,7 +111,7 @@ class SemaDB(VectorStore):
             embed_matrix = embed_matrix / np.linalg.norm(
                 embed_matrix, axis=1, keepdims=True
             )
-            embeddings = cast(List[float], embed_matrix.tolist())
+            embeddings = cast(List[List[float]], embed_matrix.tolist())
         # Create points
         ids: List[str] = []
         points = []
