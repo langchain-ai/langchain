@@ -119,6 +119,7 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
       fail-fast: false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}

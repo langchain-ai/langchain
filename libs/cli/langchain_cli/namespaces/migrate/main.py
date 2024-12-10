@@ -4,7 +4,7 @@ from pathlib import Path
 
 import rich
 import typer
-from gritql import run
+from gritql import run  # type: ignore
 from typer import Option
 
 
