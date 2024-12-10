@@ -414,9 +414,11 @@ class OpenSearchVectorSearch(VectorStore):
         embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
-        _validate_embeddings_and_bulk_size(len(embeddings), self.bulk_size)
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
@@ -454,9 +456,11 @@ class OpenSearchVectorSearch(VectorStore):
         embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
-        _validate_embeddings_and_bulk_size(len(embeddings), self.bulk_size)
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
@@ -558,6 +562,7 @@ class OpenSearchVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -580,12 +585,13 @@ class OpenSearchVectorSearch(VectorStore):
             to "text".
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         return self.__add(
             texts,
             embeddings,
             metadatas=metadatas,
             ids=ids,
-            bulk_size=self.bulk_size,
+            bulk_size=bulk_size,
             **kwargs,
         )
 
@@ -594,6 +600,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -601,12 +608,13 @@ class OpenSearchVectorSearch(VectorStore):
         and add to the vectorstore.
         """
         embeddings = await self.embedding_function.aembed_documents(list(texts))
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         return await self.__aadd(
             texts,
             embeddings,
             metadatas=metadatas,
             ids=ids,
-            bulk_size=self.bulk_size,
+            bulk_size=bulk_size,
             **kwargs,
         )
 
@@ -615,6 +623,7 @@ class OpenSearchVectorSearch(VectorStore):
         text_embeddings: Iterable[Tuple[str, List[float]]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add the given texts and embeddings to the vectorstore.
@@ -637,12 +646,13 @@ class OpenSearchVectorSearch(VectorStore):
             to "text".
         """
         texts, embeddings = zip(*text_embeddings)
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         return self.__add(
             list(texts),
             list(embeddings),
             metadatas=metadatas,
             ids=ids,
-            bulk_size=self.bulk_size,
+            bulk_size=bulk_size,
             **kwargs,
         )
 
@@ -1082,6 +1092,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
         """Construct OpenSearchVectorSearch wrapper from raw texts.
@@ -1129,12 +1140,13 @@ class OpenSearchVectorSearch(VectorStore):
 
         """
         embeddings = embedding.embed_documents(texts)
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
         return cls.from_embeddings(
             embeddings,
             texts,
             embedding,
             metadatas=metadatas,
-            bulk_size=cls.bulk_size,
+            bulk_size=bulk_size,
             ids=ids,
             **kwargs,
         )
@@ -1146,6 +1158,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
         """Asynchronously construct OpenSearchVectorSearch wrapper from raw texts.
@@ -1193,12 +1206,13 @@ class OpenSearchVectorSearch(VectorStore):
 
         """
         embeddings = await embedding.aembed_documents(texts)
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
         return await cls.afrom_embeddings(
             embeddings,
             texts,
             embedding,
             metadatas=metadatas,
-            bulk_size=cls.bulk_size,
+            bulk_size=bulk_size,
             ids=ids,
             **kwargs,
         )
@@ -1210,6 +1224,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
@@ -1278,7 +1293,8 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        _validate_embeddings_and_bulk_size(len(embeddings), cls.bulk_size)
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
         # before falling back to random generation
@@ -1339,6 +1355,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
@@ -1409,7 +1426,8 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        _validate_embeddings_and_bulk_size(len(embeddings), cls.bulk_size)
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
         # before falling back to random generation
