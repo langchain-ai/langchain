@@ -1,3 +1,4 @@
+# type: ignore
 """Script to generate migrations for the migration script."""
 
 import json
