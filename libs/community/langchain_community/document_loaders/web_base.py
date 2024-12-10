@@ -271,11 +271,13 @@ class WebBaseLoader(BaseLoader):
                 "`parser` must be one of " + ", ".join(valid_parsers) + "."
             )
 
-    def scrape_all(self, urls: List[str], parser: Union[str, None] = None) -> List[Any]:
+    async def scrape_all(
+        self, urls: List[str], parser: Union[str, None] = None
+    ) -> List[Any]:
         """Fetch all urls, then return soups for all results."""
         from bs4 import BeautifulSoup
 
-        results = asyncio.run(self.fetch_all(urls))
+        results = await self.fetch_all(urls)
         final_results = []
         for i, result in enumerate(results):
             url = urls[i]
@@ -331,10 +333,10 @@ class WebBaseLoader(BaseLoader):
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
-    def aload(self) -> List[Document]:  # type: ignore
+    async def aload(self) -> List[Document]:  # type: ignore
         """Load text from the urls in web_path async into Documents."""
 
-        results = self.scrape_all(self.web_paths)
+        results = await self.scrape_all(self.web_paths)
         docs = []
         for path, soup in zip(self.web_paths, results):
             text = soup.get_text(**self.bs_get_text_kwargs)
