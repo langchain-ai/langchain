@@ -188,6 +188,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.ovhcloud import (
         OVHCloudEmbeddings,
     )
+    from langchain_community.embeddings.predictionguard import (
+        PredictionGuardEmbeddings,
+    )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )
@@ -305,6 +308,7 @@ __all__ = [
     "OpenVINOEmbeddings",
     "OracleEmbeddings",
     "OVHCloudEmbeddings",
+    "PredictionGuardEmbeddings",
     "PremAIEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "QuantizedBgeEmbeddings",
@@ -392,6 +396,7 @@ _module_lookup = {
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "OracleEmbeddings": "langchain_community.embeddings.oracleai",
     "OVHCloudEmbeddings": "langchain_community.embeddings.ovhcloud",
+    "PredictionGuardEmbeddings": "langchain_community.embeddings.predictionguard",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
