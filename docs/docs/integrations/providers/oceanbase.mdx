@@ -1,0 +1,44 @@
+# OceanBase
+
+[OceanBase Database](https://github.com/oceanbase/oceanbase) is a distributed relational database. 
+It is developed entirely by Ant Group. The OceanBase Database is built on a common server cluster. 
+Based on the Paxos protocol and its distributed structure, the OceanBase Database provides high availability and linear scalability.
+
+OceanBase currently has the ability to store vectors. Users can easily perform the following operations with SQL:
+
+- Create a table containing vector type fields;
+- Create a vector index table based on the HNSW algorithm;
+- Perform vector approximate nearest neighbor queries;
+- ...
+
+## Limitations
+
+The vector storage capability of OceanBase is still being enhanced, and currently has the following limitations:
+
+- Cosine vector distance function is not yet supported. Currently only inner product distance and Euclidean distance are supported, and Euclidean distance is used by default.
+- Currently only HNSW algorithm is supported as a vector index algorithm.
+- It should be noted that `OceanBase` currently only supports post-filtering (i.e., filtering based on metadata after performing an approximate nearest neighbor search).
+
+## Install dependencies
+
+We use `pyobvector` to integrate OceanBase vector store into LangChain.
+So it is necessary to install it with `pip install pyobvector` before starting.
+
+## Setup OceanBase
+
+We recommend using Docker to deploy OceanBase:
+
+```shell
+docker run --name=ob433 -e MODE=slim -p 2881:2881 -d oceanbase/oceanbase-ce:4.3.3.0-100000132024100711
+```
+
+## Wrappers
+
+To import OceanBase vectorstore:
+```python
+from langchain_community.vectorstores.oceanbase import OceanBase
+```
+
+### Usage
+
+For a more detailed walkthrough of the OceanBase Wrapper, see [this notebook](/docs/integrations/vectorstores/oceanbase)
