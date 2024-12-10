@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Sized,
     Tuple,
     Union,
@@ -292,13 +293,17 @@ class FAISS(VectorStore):
             )
 
         _len_check_if_sized(texts, metadatas, "texts", "metadatas")
+
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        _len_check_if_sized(texts, ids, "texts", "ids")
+
         _metadatas = metadatas or ({} for _ in texts)
         documents = [
-            Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas)
+            Document(id=id_, page_content=t, metadata=m)
+            for id_, t, m in zip(ids, texts, _metadatas)
         ]
 
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
-        _len_check_if_sized(documents, ids, "documents", "ids")
 
         if ids and len(ids) != len(set(ids)):
             raise ValueError("Duplicate ids found in the ids list.")
@@ -310,7 +315,6 @@ class FAISS(VectorStore):
         self.index.add(vector)
 
         # Add information to docstore and index.
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
         self.docstore.add({id_: doc for id_, doc in zip(ids, documents)})
         starting_len = len(self.index_to_docstore_id)
         index_to_id = {starting_len + j: id_ for j, id_ in enumerate(ids)}
@@ -1359,10 +1363,16 @@ class FAISS(VectorStore):
 
         def filter_func(metadata: Dict[str, Any]) -> bool:
             return all(
-                metadata.get(key) in value
-                if isinstance(value, list)
-                else metadata.get(key) == value
+                (
+                    metadata.get(key) in value
+                    if isinstance(value, list)
+                    else metadata.get(key) == value
+                )
                 for key, value in filter.items()  # type: ignore
             )
 
         return filter_func
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        docs = [self.docstore.search(id_) for id_ in ids]
+        return [doc for doc in docs if isinstance(doc, Document)]
