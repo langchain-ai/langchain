@@ -10,7 +10,12 @@ from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
 class ToolOutputMixin:
-    """Mixin for objects that tools can return directly."""
+    """Mixin for objects that tools can return directly.
+
+    If a custom BaseTool is invoked with a ToolCall and the output of custom code is
+    not an instance of ToolOutputMixin, the output will automatically be coerced to a
+    string and wrapped in a ToolMessage.
+    """
 
 
 class ToolMessage(BaseMessage, ToolOutputMixin):
