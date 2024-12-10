@@ -2163,7 +2163,7 @@ def test_tool_return_output_mixin() -> None:
         def __init__(self, x: int) -> None:
             self.x = x
 
-        def __eq__(self, other):
+        def __eq__(self, other: Any) -> bool:
             return isinstance(other, self.__class__) and self.x == other.x
 
     @tool
