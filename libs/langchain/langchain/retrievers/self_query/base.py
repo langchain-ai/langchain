@@ -94,7 +94,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.vectorstores import (
         Pinecone as CommunityPinecone,
     )
-    from langchain_weaviate.vectorstores import WeaviateVectorStore
+    
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
@@ -104,7 +104,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         DashVector: DashvectorTranslator,
         Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
-        WeaviateVectorStore: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
@@ -205,6 +204,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         else:
             if isinstance(vectorstore, HanaDB):
                 return HanaTranslator()
+
+        try:
+            from langchain_weaviate.vectorstores import WeaviateVectorStore
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, WeaviateVectorStore):
+                return WeaviateTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
