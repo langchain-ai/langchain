@@ -1,5 +1,6 @@
 """Hugging Face Chat Wrapper."""
 
+import json
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -106,9 +107,10 @@ def _convert_TGI_message_to_LC_message(
     additional_kwargs: Dict = {}
     if tool_calls := _message.tool_calls:
         if "arguments" in tool_calls[0]["function"]:
-            functions_string = str(tool_calls[0]["function"].pop("arguments"))
-            corrected_functions = functions_string.replace("'", '"')
-            tool_calls[0]["function"]["arguments"] = corrected_functions
+            functions = tool_calls[0]["function"].pop("arguments")
+            tool_calls[0]["function"]["arguments"] = json.dumps(
+                functions, ensure_ascii=False
+            )
         additional_kwargs["tool_calls"] = tool_calls
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
