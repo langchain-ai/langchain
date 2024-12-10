@@ -308,7 +308,7 @@ class ChatAnthropic(BaseChatModel):
     Key init args — client params:
         timeout: Optional[float]
             Timeout for requests.
-        max_retries: int
+        max_retries: Optional[int]
             Max number of retries if a request fails.
         api_key: Optional[str]
             Anthropic API key. If not passed in will be read from env var ANTHROPIC_API_KEY.
@@ -562,8 +562,7 @@ class ChatAnthropic(BaseChatModel):
     default_request_timeout: Optional[float] = Field(None, alias="timeout")
     """Timeout for requests to Anthropic Completion API."""
 
-    # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
-    max_retries: int = 2
+    max_retries: Optional[int] = None
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
     stop_sequences: Optional[List[str]] = Field(None, alias="stop")
@@ -668,15 +667,15 @@ class ChatAnthropic(BaseChatModel):
         client_params: Dict[str, Any] = {
             "api_key": api_key,
             "base_url": api_url,
-            "max_retries": self.max_retries,
             "default_headers": (self.default_headers or None),
         }
+        if self.max_retries is not None:
+            client_params["max_retries"] = self.max_retries
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
         # all.
         if self.default_request_timeout is None or self.default_request_timeout > 0:
             client_params["timeout"] = self.default_request_timeout
-
         self._client = anthropic.Client(**client_params)
         self._async_client = anthropic.AsyncClient(**client_params)
         return self
