@@ -1127,6 +1127,19 @@ const FEATURE_TABLES = {
                 idsInAddDocuments: false,
             },
             {
+                name: "Weaviate",
+                link: "weaviate",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: true,
+                local: true,
+                idsInAddDocuments: false,
+            },
+            {
                 name: "SQLServer",
                 link: "sqlserver",
                 deleteById: true,
@@ -1139,19 +1152,6 @@ const FEATURE_TABLES = {
                 local: false,
                 idsInAddDocuments: false,
             }, 
-            {
-                name: "Weaviate",
-                link: "weaviate",
-                deleteById: true,
-                filtering: true,
-                searchByVector: true,
-                searchWithScore: true,
-                async: true,
-                passesStandardTests: false,
-                multiTenancy: true,
-                local: true,
-                idsInAddDocuments: false,
-            }
         ],
     }
 };
