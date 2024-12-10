@@ -595,7 +595,7 @@ class ChatMistralAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -621,7 +621,7 @@ class ChatMistralAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
