@@ -556,6 +556,8 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
+            if curr_chunk.response_metadata:
+                curr_chunk.response_metadata.clear()
             if (
                 isinstance(last_chunk.content, str)
                 and isinstance(curr_chunk.content, str)
