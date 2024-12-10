@@ -192,7 +192,7 @@ def modify_serialized_iterative(
         serialized = remove_exact_and_partial_keys(serialized)
         return serialized
 
-    def transform_run(run: Dict[str, Any]) -> Dict[str, Any]:
+    def transform_run(run: Dict[str, Any]) -> Dict:
         """Transforms a run dictionary to be compatible with WBTraceTree.
         :param run: The run dictionary to transform.
         :return: The transformed run dictionary.
@@ -200,6 +200,8 @@ def modify_serialized_iterative(
         transformed_dict = transform_serialized(run)
 
         serialized = transformed_dict.pop("serialized")
+        if not serialized:
+            return {}
         for k, v in serialized.items():
             transformed_dict[k] = v
 
