@@ -48,6 +48,9 @@ if TYPE_CHECKING:
     from langchain_community.document_transformers.markdownify import (
         MarkdownifyTransformer,
     )
+    from langchain_community.document_transformers.mozilla_readability import (
+        ReadabilityTransformer,
+    )
     from langchain_community.document_transformers.nuclia_text_transform import (
         NucliaTextTransformer,
     )
@@ -68,6 +71,7 @@ __all__ = [
     "MarkdownifyTransformer",
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
+    "ReadabilityTransformer",
     "get_stateful_documents",
 ]
 
@@ -84,6 +88,7 @@ _module_lookup = {
     "MarkdownifyTransformer": "langchain_community.document_transformers.markdownify",
     "NucliaTextTransformer": "langchain_community.document_transformers.nuclia_text_transform",  # noqa: E501
     "OpenAIMetadataTagger": "langchain_community.document_transformers.openai_functions",  # noqa: E501
+    "ReadabilityTransformer": "langchain_community.document_transformers.mozilla_readability",  # noqa: E501
     "get_stateful_documents": "langchain_community.document_transformers.embeddings_redundant_filter",  # noqa: E501
 }
 
