@@ -1,0 +1,8 @@
+Document Name: https://www.example.com/about-us/team
+Document Name: https://www.example.com/about/us/team
+Document Name: https://example.com/this-is-a-very/long-url/to-test-breaks-in-new-lines
+Document Name: https://sub.domain.example.com/path/to/resource/
+Some non-URL text that should be preserved.
+Another random line.
+Document Name: https://example.com/special_chars?query=param&another=param
+Document Name: https://www.kinecta.org/about-us/executive-staff
