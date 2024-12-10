@@ -2125,6 +2125,9 @@ def test_tool_injected_tool_call_id() -> None:
         {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
 
+    with pytest.raises(ValueError):
+        assert foo.invoke({"x": 0})
+
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """foo"""
