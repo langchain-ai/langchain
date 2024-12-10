@@ -31,6 +31,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
+from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -2155,3 +2156,21 @@ def test_tool_uninjected_tool_call_id() -> None:
             "id": "bar",
         }
     ) == ToolMessage(0, tool_call_id="zap")  # type: ignore
+
+
+def test_tool_return_output_mixin() -> None:
+    class Bar(ToolOutputMixin):
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+        def __eq__(self, other):
+            return isinstance(other, self.__class__) and self.x == other.x
+
+    @tool
+    def foo(x: int) -> Bar:
+        """Foo."""
+        return Bar(x=x)
+
+    assert foo.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == Bar(x=0)
