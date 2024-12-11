@@ -609,7 +609,8 @@ _module_lookup = {
     "QueryPowerBITool": "langchain_community.tools.powerbi.tool",
     "QuerySQLCheckerTool": "langchain_community.tools.sql_database.tool",
     "QuerySQLDatabaseTool": "langchain_community.tools.sql_database.tool",
-    "QuerySQLDataBaseTool": "langchain_community.tools.sql_database.tool",  # Legacy, kept for backwards compatibility.
+    # Legacy, kept for backwards compatibility.
+    "QuerySQLDataBaseTool": "langchain_community.tools.sql_database.tool",
     "QuerySparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "ReadFileTool": "langchain_community.tools.file_management",
     "RedditSearchRun": "langchain_community.tools.reddit_search.tool",
