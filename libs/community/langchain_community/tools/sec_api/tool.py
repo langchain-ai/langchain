@@ -1,9 +1,9 @@
 """Tool for the SEC API."""
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.tools import BaseTool
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
 
@@ -21,10 +21,10 @@ class SECAPITool(BaseTool):
 
     api_key: str = Field(description="API key for SEC API access")
 
-    def __init__(self, api_key: str, **kwargs):
+    def __init__(self, api_key: str, **kwargs: Any) -> None:
         """Initialize the SEC API tool."""
-        super().__init__(api_key=api_key, **kwargs)
-        self._api_wrapper = CustomSECAPI(api_key=api_key)
+        super().__init__(api_key=SecretStr(api_key), **kwargs)
+        self._api_wrapper = CustomSECAPI(api_key=SecretStr(api_key))
 
     @property
     def api_wrapper(self) -> CustomSECAPI:
@@ -38,7 +38,7 @@ class SECAPITool(BaseTool):
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         limit: int = 50,
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Search the full text content of SEC filings."""
         try:
             results = self.api_wrapper.full_text_search(
@@ -50,7 +50,7 @@ class SECAPITool(BaseTool):
             )
             return results
         except Exception as e:
-            return f"Error in full text search: {str(e)}"
+            raise ValueError(f"Error in full text search: {str(e)}")
 
     def filing_search(
         self,
@@ -59,7 +59,7 @@ class SECAPITool(BaseTool):
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         limit: int = 50,
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Search SEC filings by company ticker."""
         try:
             results = self.api_wrapper.get_filings(
@@ -71,7 +71,7 @@ class SECAPITool(BaseTool):
             )
             return results
         except Exception as e:
-            return f"Error in filing search: {str(e)}"
+            raise ValueError(f"Error in filing search: {str(e)}")
 
     def _run(self, query: str) -> str:
         """Process natural language query for SEC filings."""
