@@ -5,6 +5,7 @@ arxiv>=1.4,<2
 assemblyai>=0.17.0,<0.18
 atlassian-python-api>=3.36.0,<4
 azure-ai-documentintelligence>=1.0.0b1,<2
+azure.ai.vision.face>=1.0.0b1
 azure-identity>=1.15.0,<2
 azure-search-documents==11.4.0
 beautifulsoup4>=4,<5
