@@ -76,7 +76,7 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
         metadatas=metadatas,
     )
     embedded_query = embeddings.embed_query("foo")
-    output = docsearch.similarity_search_by_vector_with_relevance_scores(
+    output = docsearch.similarity_search_by_vector_with_scores(
         embedding=embedded_query, k=1
     )
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
