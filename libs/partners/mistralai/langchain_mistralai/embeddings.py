@@ -235,8 +235,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                         input=batch,
                     ),
                 )
-                if response.status_code == 429:
-                    raise httpx.TimeoutException("Requests rate limit exceeded")
+                response.raise_for_status()
                 return response
 
             for batch in self._get_batches(texts):
