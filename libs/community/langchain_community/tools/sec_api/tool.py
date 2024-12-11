@@ -1,4 +1,5 @@
 """Tool for the SEC API."""
+
 from typing import List, Optional
 
 from langchain_core.tools import BaseTool
@@ -9,7 +10,7 @@ from langchain_community.utilities.secapi import CustomSECAPI
 
 class SECAPITool(BaseTool):
     """Tool that provides access to various SEC API endpoints."""
-    
+
     name: str = "sec_api"
     description: str = (
         "Use this tool to search SEC filings. "
@@ -17,9 +18,9 @@ class SECAPITool(BaseTool):
         "For text search, provide keywords like 'artificial intelligence'. "
         "You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."
     )
-    
+
     api_key: str = Field(description="API key for SEC API access")
-    
+
     def __init__(self, api_key: str, **kwargs):
         """Initialize the SEC API tool."""
         super().__init__(api_key=api_key, **kwargs)
@@ -36,7 +37,7 @@ class SECAPITool(BaseTool):
         form_types: Optional[List[str]] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> dict:
         """Search the full text content of SEC filings."""
         try:
@@ -45,7 +46,7 @@ class SECAPITool(BaseTool):
                 form_types=form_types,
                 date_from=date_from,
                 date_to=date_to,
-                limit=limit
+                limit=limit,
             )
             return results
         except Exception as e:
@@ -57,7 +58,7 @@ class SECAPITool(BaseTool):
         form_type: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
-        limit: int = 50
+        limit: int = 50,
     ) -> dict:
         """Search SEC filings by company ticker."""
         try:
@@ -66,7 +67,7 @@ class SECAPITool(BaseTool):
                 form_type=form_type,
                 date_from=date_from,
                 date_to=date_to,
-                limit=limit
+                limit=limit,
             )
             return results
         except Exception as e:
@@ -80,7 +81,7 @@ class SECAPITool(BaseTool):
                 return f"Recent SEC filings for {query}: {str(results)}"
             except Exception as e:
                 return f"Error searching filings: {str(e)}"
-        
+
         try:
             results = self.api_wrapper.full_text_search(search_query=query, limit=5)
             return f"SEC filings containing '{query}': {str(results)}"

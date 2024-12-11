@@ -99,3 +99,4 @@ class CustomSECAPI(BaseModel):
         )
         
         return response.json()
+    
