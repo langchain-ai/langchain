@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-ollama = ">=0.3.0,<1"
+ollama = ">=0.4.4,<1"
 langchain-core = "^0.3.20"
 
 [tool.ruff.lint]

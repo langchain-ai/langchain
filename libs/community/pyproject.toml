@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-community"
-version = "0.3.10"
+version = "0.3.11"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -30,8 +30,8 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.22"
-langchain = "^0.3.10"
+langchain-core = "^0.3.24"
+langchain = "^0.3.11"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -39,7 +39,7 @@ aiohttp = "^3.8.3"
 tenacity = ">=8.1.0,!=8.4.0,<10"
 dataclasses-json = ">= 0.5.7, < 0.7"
 pydantic-settings = "^2.4.0"
-langsmith = "^0.1.125"
+langsmith = ">=0.1.125,<0.3"
 httpx-sse = "^0.4.0"
 [[tool.poetry.dependencies.numpy]]
 version = ">=1.22.4,<2"

@@ -3,6 +3,7 @@ from typing import Optional as Optional
 
 from pydantic import model_validator
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
@@ -12,8 +13,28 @@ def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
     return {k: inputs[k] for k in input_variables}
 
 
+@deprecated(
+    since="0.3.22",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the docstring below or at the link"
+        " for a replacement option: "
+        "https://python.langchain.com/api_reference/core/prompts/langchain_core.prompts.pipeline.PipelinePromptTemplate.html"
+    ),
+)
 class PipelinePromptTemplate(BasePromptTemplate):
-    """Prompt template for composing multiple prompt templates together.
+    """
+    This has been deprecated in favor of chaining individual prompts together in your
+    code. E.g. using a for loop, you could do:
+
+    .. code-block:: python
+
+        my_input = {"key": "value"}
+        for name, prompt in pipeline_prompts:
+            my_input[name] = prompt.invoke(my_input).to_string()
+        my_output = final_prompt.invoke(my_input)
+
+    Prompt template for composing multiple prompt templates together.
 
     This can be useful when you want to reuse parts of prompts.
 
