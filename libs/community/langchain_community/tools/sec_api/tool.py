@@ -1,12 +1,19 @@
 """Tool for the SEC API."""
 
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+from typing_extensions import Literal
 
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool, ToolException
-from pydantic import ConfigDict, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
+
+
+class SECAPIInput(BaseModel):
+    """Input for SEC API tool."""
+
+    query: str = Field(description="The search query or ticker symbol")
 
 
 class SECAPITool(BaseTool):
@@ -20,13 +27,13 @@ class SECAPITool(BaseTool):
         "You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."
     )
     api_key: str = Field(description="API key for SEC API access")
-    return_direct: bool = False
-    model_config: ClassVar[ConfigDict] = ConfigDict(arbitrary_types_allowed=True)
+    args_schema: type[BaseModel] = SECAPIInput
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, api_key: Optional[str] = None, **kwargs: Any) -> None:
         """Initialize the SEC API tool."""
-        super().__init__(**data)
-        self._api_wrapper = CustomSECAPI(api_key=SecretStr(self.api_key))
+        super().__init__(api_key=api_key, **kwargs)
+        api_key_value = api_key or self.api_key
+        self._api_wrapper = CustomSECAPI(api_key=SecretStr(api_key_value))
 
     @property
     def api_wrapper(self) -> CustomSECAPI:
@@ -79,8 +86,18 @@ class SECAPITool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Process natural language query for SEC filings."""
+        """Process natural language query for SEC filings.
+
+        Args:
+            query: The search query or ticker symbol
+            run_manager: Optional callback manager
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            Dict containing search results
+        """
         if query.isupper() and len(query) <= 5:
             try:
                 results = self.api_wrapper.get_filings(ticker=query, limit=5)
