@@ -9,11 +9,12 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     name: "check doc imports #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4

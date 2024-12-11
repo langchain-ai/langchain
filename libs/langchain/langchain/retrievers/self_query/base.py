@@ -162,6 +162,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return MongoDBAtlasTranslator()
 
         try:
+            from langchain_neo4j import Neo4jVector
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, Neo4jVector):
+                return Neo4jTranslator()
+
+        try:
             from langchain_chroma import Chroma
         except ImportError:
             pass

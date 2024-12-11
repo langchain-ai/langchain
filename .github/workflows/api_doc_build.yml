@@ -5,7 +5,7 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 env:
-  POETRY_VERSION: "1.8.1"
+  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -73,7 +73,7 @@ jobs:
         working-directory: langchain
         run: |
           python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}")
-          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental
+          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
           python -m uv pip install -r docs/api_reference/requirements.txt
 
       - name: Set Git config
