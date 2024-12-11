@@ -377,7 +377,7 @@ class Chroma(VectorStore):
         )
         return _results_to_docs(results)
 
-    def similarity_search_by_vector_with_relevance_scores(
+    def similarity_search_by_vector_with_scores(
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
@@ -557,7 +557,7 @@ class Chroma(VectorStore):
         image_embedding = self._embedding_function.embed_image(uris=[uri])
 
         # Perform similarity search based on the obtained embedding
-        results = self.similarity_search_by_vector_with_relevance_scores(
+        results = self.similarity_search_by_vector_with_scores(
             embedding=image_embedding,
             k=k,
             filter=filter,
