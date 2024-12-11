@@ -1,16 +1,14 @@
 """Tool for the SEC API."""
 
-from typing import Any, Dict, List, Optional, TypeVar, Union
-from typing_extensions import Literal
+from typing import Any, Dict, List, Optional, TypeVar
 
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool, ToolException
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
 
 T = TypeVar("T", bound="SECAPITool")
-
 
 
 class SECAPITool(BaseTool):
