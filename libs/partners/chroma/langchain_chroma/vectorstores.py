@@ -45,11 +45,11 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-==== BASE ====
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
-==== BASE ====
+        (
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[2]),
+            result[3],
+        )
         for result in zip(
-            results["ids"][0],
             results["documents"][0],
             results["metadatas"][0],
             results["ids"][0],
