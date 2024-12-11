@@ -1,2 +1,3 @@
 lxml>=4.9.3,<6.0
 beautifulsoup4>=4.12.3,<5
+nltk>=3.9.1,<4

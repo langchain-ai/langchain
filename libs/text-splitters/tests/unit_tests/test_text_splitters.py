@@ -23,6 +23,7 @@ from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
     MarkdownHeaderTextSplitter,
 )
+from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.python import PythonCodeTextSplitter
 
 FAKE_PYTHON_TEXT = """
@@ -2051,3 +2052,43 @@ $csvContent | ForEach-Object {
         "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
         "# End of script",
     ]
+
+
+@pytest.mark.requires("nltk")
+def test_nltk_text_splitter_args() -> None:
+    """Test invalid arguments for NLTKTextSplitter."""
+    import nltk  # type: ignore[import-not-found]
+
+    nltk.download("punkt_tab")
+    with pytest.raises(ValueError):
+        NLTKTextSplitter(
+            chunk_size=80,
+            chunk_overlap=0,
+            separator="\n\n",
+            use_span_tokenize=True,
+        )
+
+
+@pytest.mark.requires("nltk")
+def test_nltk_text_splitter_with_add_start_index() -> None:
+    import nltk  # type: ignore[import-not-found]
+
+    nltk.download("punkt_tab")
+    splitter = NLTKTextSplitter(
+        chunk_size=80,
+        chunk_overlap=0,
+        separator="",
+        use_span_tokenize=True,
+        add_start_index=True,
+    )
+    txt = (
+        "Innovation drives our success.        "
+        "Collaboration fosters creative solutions. "
+        "Efficiency enhances data management."
+    )
+    docs = [Document(txt)]
+    chunks = splitter.split_documents(docs)
+    assert len(chunks) == 2
+    for chunk in chunks:
+        s_i = chunk.metadata["start_index"]
+        assert chunk.page_content == txt[s_i : s_i + len(chunk.page_content)]
