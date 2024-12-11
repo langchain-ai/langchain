@@ -1,4 +1,5 @@
 """Tool for the SEC API."""
+
 from typing import Any, Dict, List, Optional, TypeVar
 
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
