@@ -69,7 +69,6 @@ class SECAPITool(BaseTool):
 
     def _run(self, query: str) -> str:
         """Process natural language query for SEC filings."""
-        # If query looks like a ticker (all caps, 1-5 chars)
         if query.isupper() and len(query) <= 5:
             try:
                 results = self.api_wrapper.get_filings(ticker=query, limit=5)
