@@ -1,10 +1,12 @@
 """Hugging Face Chat Wrapper."""
 
 from dataclasses import dataclass
+from inspect import signature
 from typing import (
     Any,
     Callable,
     Dict,
+    Final,
     List,
     Literal,
     Optional,
@@ -39,6 +41,18 @@ from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
+
+LLM_INFERENCE_CLIENT_MAP: Final[dict[str, str]] = {"max_new_tokens": "max_tokens"}
+LLM_INFERENCE_CLIENT_EXCLUDED_KWARGS: Final[set[str]] = {
+    "top_k",
+    "typical_p",
+    "repetition_penalty",
+    "return_full_text",
+    "truncate",
+    "stop_sequences",
+    "do_sample",
+    "watermark",
+}
 
 
 @dataclass
@@ -111,6 +125,33 @@ def _convert_TGI_message_to_LC_message(
             tool_calls[0]["function"]["arguments"] = corrected_functions
         additional_kwargs["tool_calls"] = tool_calls
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
+
+
+def _convert_hf_kwargs_llm_to_chat_completions(
+    **kwargs: Any,
+) -> Any:
+    """
+    Convert a set of keyword arguments to be compatible with [InferenceClient.chat_completion](https://huggingface.co/docs/huggingface_hub/v0.26.2/en/package_reference/inference_client#huggingface_hub.InferenceClient.chat_completion)
+    Overrides mapped keyword arguments and omits incompatible keyword arguments.
+    """
+    from huggingface_hub import InferenceClient  # type: ignore[import-untyped]
+
+    for k, v in LLM_INFERENCE_CLIENT_MAP.items():
+        if k in kwargs:
+            kwargs[v] = kwargs.pop(k)
+
+    sig = set(signature(InferenceClient.chat_completion).parameters)
+    valid_kwargs = {k: v for k, v in kwargs.items() if k in sig}
+    invalid_kwargs = {
+        k: v
+        for k, v in kwargs.items()
+        if k not in sig and k not in LLM_INFERENCE_CLIENT_EXCLUDED_KWARGS
+    }
+    if invalid_kwargs:
+        raise ValueError(
+            "Could not convert arguments to HF format", list(invalid_kwargs.keys())
+        )
+    return valid_kwargs
 
 
 def _is_huggingface_hub(llm: Any) -> bool:
@@ -354,6 +395,18 @@ class ChatHuggingFace(BaseChatModel):
         llm_output = {"token_usage": token_usage, "model": model_object}
         return ChatResult(generations=generations, llm_output=llm_output)
 
+    def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> Any:
+        """
+        Convert to params from the inference endpoint config
+        to the `/chat_completions` format to preserve endpoint config.
+        https://github.com/langchain-ai/langchain/issues/23586
+        """
+        llm_kwargs = self.llm._invocation_params(stop, **kwargs)
+        chat_completion_kwargs = _convert_hf_kwargs_llm_to_chat_completions(
+            **llm_kwargs
+        )
+        return chat_completion_kwargs
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -367,6 +420,7 @@ class ChatHuggingFace(BaseChatModel):
             return self._create_chat_result(answer)
         elif _is_huggingface_endpoint(self.llm):
             message_dicts = self._create_message_dicts(messages, stop)
+            kwargs = self._invocation_params(stop, **kwargs)
             answer = self.llm.client.chat_completion(messages=message_dicts, **kwargs)
             return self._create_chat_result(answer)
         else:
