@@ -87,6 +87,18 @@ class Beta(BaseAdmonition):
 def setup(app):
     app.add_directive("example_links", ExampleLinksDirective)
     app.add_directive("beta", Beta)
+    app.connect("autodoc-skip-member", skip_private_members)
+
+
+def skip_private_members(app, what, name, obj, skip, options):
+    if skip:
+        return True
+    if hasattr(obj, "__doc__") and obj.__doc__ and ":private:" in obj.__doc__:
+        return True
+    if name == "__init__" and obj.__objclass__ is object:
+        # dont document default init
+        return True
+    return None
 
 
 # -- Project information -----------------------------------------------------

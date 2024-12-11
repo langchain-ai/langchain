@@ -6,7 +6,7 @@
 
 ## Overview
 
-The **tool** abstraction in LangChain associates a python **function** with a **schema** that defines the function's **name**, **description** and **input**. 
+The **tool** abstraction in LangChain associates a Python **function** with a **schema** that defines the function's **name**, **description** and **expected arguments**. 
 
 **Tools** can be passed to [chat models](/docs/concepts/chat_models) that support [tool calling](/docs/concepts/tool_calling) allowing the model to request the execution of a specific function with specific inputs.
 
@@ -14,7 +14,7 @@ The **tool** abstraction in LangChain associates a python **function** with a **
 
 - Tools are a way to encapsulate a function and its schema in a way that can be passed to a chat model.
 - Create tools using the [@tool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.convert.tool.html) decorator, which simplifies the process of tool creation, supporting the following:
-   - Automatically infer the tool's **name**, **description** and **inputs**, while also supporting customization.
+   - Automatically infer the tool's **name**, **description** and **expected arguments**, while also supporting customization.
    - Defining tools that return **artifacts** (e.g. images, dataframes, etc.)
    - Hiding input arguments from the schema (and hence from the model) using **injected tool arguments**.
 

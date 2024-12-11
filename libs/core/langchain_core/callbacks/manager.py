@@ -1298,7 +1298,7 @@ class CallbackManager(BaseCallbackManager):
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
-        """Run when LLM starts running.
+        """Run when chat model starts running.
 
         Args:
             serialized (Dict[str, Any]): The serialized LLM.
