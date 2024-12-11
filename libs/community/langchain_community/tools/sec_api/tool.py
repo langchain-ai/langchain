@@ -1,10 +1,10 @@
 """Tool for the SEC API."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool, ToolException
-from pydantic import Field, SecretStr
+from pydantic import ConfigDict, Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
 
@@ -21,8 +21,7 @@ class SECAPITool(BaseTool):
     )
     api_key: str = Field(description="API key for SEC API access")
     return_direct: bool = False
-
-    model_config = {"arbitrary_types_allowed": True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **data: Any) -> None:
         """Initialize the SEC API tool."""
