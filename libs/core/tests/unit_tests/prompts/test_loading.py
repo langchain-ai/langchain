@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.prompt import PromptTemplate
@@ -36,12 +37,40 @@ def test_loading_from_yaml() -> None:
     assert prompt == expected_prompt
 
 
+def test_loading_chat_from_yaml() -> None:
+    """Test loading from yaml file."""
+    prompt = load_prompt(EXAMPLE_DIR / "simple_chat_prompt.yaml")
+    expected_prompt = ChatPromptTemplate(
+        input_variables=["adjective"],
+        partial_variables={"content": "dogs"},
+        messages=[
+            ("system", "You are a comedian"),
+            ("human", "Tell me a {adjective} joke about {content}."),
+        ],
+    )
+    assert prompt == expected_prompt
+
+
 def test_loading_from_json() -> None:
     """Test loading from json file."""
     prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.json")
     expected_prompt = PromptTemplate(
         input_variables=["adjective", "content"],
         template="Tell me a {adjective} joke about {content}.",
+    )
+    assert prompt == expected_prompt
+
+
+def test_loading_chat_from_json() -> None:
+    """Test loading from json file."""
+    prompt = load_prompt(EXAMPLE_DIR / "simple_chat_prompt.json")
+    expected_prompt = ChatPromptTemplate(
+        input_variables=["adjective"],
+        partial_variables={"content": "dogs"},
+        messages=[
+            ("system", "You are a comedian"),
+            ("human", "Tell me a {adjective} joke about {content}."),
+        ],
     )
     assert prompt == expected_prompt
 
