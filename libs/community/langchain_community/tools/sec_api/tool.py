@@ -5,6 +5,7 @@ from langchain_community.utilities.secapi import CustomSECAPI
 from langchain_core.tools import BaseTool
 from pydantic import Field
 
+
 class SECAPITool(BaseTool):
     """Tool that provides access to various SEC API endpoints."""
     
