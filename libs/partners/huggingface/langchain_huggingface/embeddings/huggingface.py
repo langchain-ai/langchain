@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
+DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
@@ -24,9 +26,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    model_name: str = Field(
-        default="sentence-transformers/all-mpnet-base-v2", alias="model"
-    )
+    model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 
