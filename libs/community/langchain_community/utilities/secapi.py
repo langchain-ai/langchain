@@ -1,8 +1,9 @@
 """Custom SEC API wrapper for accessing various SEC EDGAR endpoints."""
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 import requests
-from pydantic import BaseModel, SecretStr, model_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, SecretStr, model_validator
 
 class CustomSECAPI(BaseModel):
     """Wrapper for SEC EDGAR API endpoints.
