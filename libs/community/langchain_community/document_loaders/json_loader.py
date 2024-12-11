@@ -186,12 +186,13 @@ class JSONLoader(BaseLoader):
             )
 
         # In case the text is None, set it to an empty string
-        elif isinstance(content, str):
-            return content
-        elif isinstance(content, dict):
-            return json.dumps(content) if content else ""
-        else:
-            return str(content) if content is not None else ""
+        match content:
+            case list() | dict():
+                return json.dumps(content) if content else ""
+            case str():
+                return content
+            case _:
+                return str(content) if content is not None else ""
 
     def _get_metadata(
         self, sample: Dict[str, Any], **additional_fields: Any
