@@ -55,7 +55,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
             # Try to load the spaCy model
             import spacy
 
-            values["nlp"] = spacy.load(model_name)
+            values["nlp"] = spacy.load(model_name)  # type: ignore[arg-type]
         except OSError:
             # If the model is not found, raise a ValueError
             raise ValueError(

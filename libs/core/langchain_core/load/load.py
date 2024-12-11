@@ -24,6 +24,7 @@ DEFAULT_NAMESPACES = [
     "langchain_google_vertexai",
     "langchain_mistralai",
     "langchain_fireworks",
+    "langchain_xai",
 ]
 # Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
 # Load by path is not allowed.
@@ -96,17 +97,19 @@ class Reviver:
             else:
                 if self.secrets_from_env and key in os.environ and os.environ[key]:
                     return os.environ[key]
-                raise KeyError(f'Missing key "{key}" in load(secrets_map)')
+                msg = f'Missing key "{key}" in load(secrets_map)'
+                raise KeyError(msg)
 
         if (
             value.get("lc") == 1
             and value.get("type") == "not_implemented"
             and value.get("id") is not None
         ):
-            raise NotImplementedError(
+            msg = (
                 "Trying to load an object that doesn't implement "
                 f"serialization: {value}"
             )
+            raise NotImplementedError(msg)
 
         if (
             value.get("lc") == 1
@@ -121,7 +124,8 @@ class Reviver:
                 # The root namespace ["langchain"] is not a valid identifier.
                 or namespace == ["langchain"]
             ):
-                raise ValueError(f"Invalid namespace: {value}")
+                msg = f"Invalid namespace: {value}"
+                raise ValueError(msg)
             # Has explicit import path.
             elif mapping_key in self.import_mappings:
                 import_path = self.import_mappings[mapping_key]
@@ -130,11 +134,12 @@ class Reviver:
                 # Import module
                 mod = importlib.import_module(".".join(import_dir))
             elif namespace[0] in DISALLOW_LOAD_FROM_PATH:
-                raise ValueError(
+                msg = (
                     "Trying to deserialize something that cannot "
                     "be deserialized in current version of langchain-core: "
                     f"{mapping_key}."
                 )
+                raise ValueError(msg)
             # Otherwise, treat namespace as path.
             else:
                 mod = importlib.import_module(".".join(namespace))
@@ -143,7 +148,8 @@ class Reviver:
 
             # The class must be a subclass of Serializable.
             if not issubclass(cls, Serializable):
-                raise ValueError(f"Invalid namespace: {value}")
+                msg = f"Invalid namespace: {value}"
+                raise ValueError(msg)
 
             # We don't need to recurse on kwargs
             # as json.loads will do that for us.

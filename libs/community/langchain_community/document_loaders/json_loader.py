@@ -1,4 +1,5 @@
 import json
+from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, Optional, Union
 
@@ -82,7 +83,7 @@ class JSONLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, Path],
+        file_path: Union[str, PathLike],
         jq_schema: str,
         content_key: Optional[str] = None,
         is_content_key_jq_parsable: Optional[bool] = False,
@@ -93,7 +94,7 @@ class JSONLoader(BaseLoader):
         """Initialize the JSONLoader.
 
         Args:
-            file_path (Union[str, Path]): The path to the JSON or JSON Lines file.
+            file_path (Union[str, PathLike]): The path to the JSON or JSON Lines file.
             jq_schema (str): The jq schema to use to extract the data or text from
                 the JSON.
             content_key (str): The key to use to extract the content from

@@ -65,7 +65,8 @@ class ChatGeneration(Generation):
                 pass
             self.text = text
         except (KeyError, AttributeError) as e:
-            raise ValueError("Error while initializing ChatGeneration") from e
+            msg = "Error while initializing ChatGeneration"
+            raise ValueError(msg) from e
         return self
 
     @classmethod
@@ -114,6 +115,7 @@ class ChatGenerationChunk(ChatGeneration):
                 generation_info=generation_info or None,
             )
         else:
-            raise TypeError(
+            msg = (
                 f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
             )
+            raise TypeError(msg)

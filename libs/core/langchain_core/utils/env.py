@@ -73,8 +73,9 @@ def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
     elif default is not None:
         return default
     else:
-        raise ValueError(
+        msg = (
             f"Did not find {key}, please add an environment variable"
             f" `{env_key}` which contains it, or pass"
             f" `{key}` as a named parameter."
         )
+        raise ValueError(msg)

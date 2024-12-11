@@ -25,10 +25,11 @@ class StrictFormatter(Formatter):
             ValueError: If any arguments are provided.
         """
         if len(args) > 0:
-            raise ValueError(
+            msg = (
                 "No arguments should be provided, "
                 "everything should be passed as keyword arguments."
             )
+            raise ValueError(msg)
         return super().vformat(format_string, args, kwargs)
 
     def validate_input_variables(

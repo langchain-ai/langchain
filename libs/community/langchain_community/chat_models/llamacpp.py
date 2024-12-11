@@ -342,7 +342,7 @@ class ChatLlamaCpp(BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[Dict[str, Dict], bool, str]] = None,
+        tool_choice: Optional[Union[dict, bool, str]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model
@@ -538,7 +538,8 @@ class ChatLlamaCpp(BaseChatModel):
                 "Received None."
             )
         tool_name = convert_to_openai_tool(schema)["function"]["name"]
-        llm = self.bind_tools([schema], tool_choice=tool_name)
+        tool_choice = {"type": "function", "function": {"name": tool_name}}
+        llm = self.bind_tools([schema], tool_choice=tool_choice)
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[cast(Type, schema)], first_tool_only=True

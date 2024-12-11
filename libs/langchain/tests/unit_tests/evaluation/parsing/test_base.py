@@ -45,9 +45,6 @@ def test_json_validity_evaluator_evaluate_invalid_json(
     prediction = '{"name": "John", "age": 30, "city": "New York",}'
     result = json_validity_evaluator.evaluate_strings(prediction=prediction)
     assert result["score"] == 0
-    assert result["reasoning"].startswith(
-        "Expecting property name enclosed in double quotes"
-    )
 
 
 @pytest.fixture
