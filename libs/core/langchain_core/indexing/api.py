@@ -36,14 +36,14 @@ T = TypeVar("T")
 
 def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
     """Hashes a string and returns the corresponding UUID."""
-    hash_value = hashlib.sha1(input_string.encode("utf-8")).hexdigest()
+    hash_value = hashlib.sha1(input_string.encode("utf-8")).hexdigest()  # noqa: S324
     return uuid.uuid5(NAMESPACE_UUID, hash_value)
 
 
 def _hash_nested_dict_to_uuid(data: dict[Any, Any]) -> uuid.UUID:
     """Hashes a nested dictionary and returns the corresponding UUID."""
     serialized_data = json.dumps(data, sort_keys=True)
-    hash_value = hashlib.sha1(serialized_data.encode("utf-8")).hexdigest()
+    hash_value = hashlib.sha1(serialized_data.encode("utf-8")).hexdigest()  # noqa: S324
     return uuid.uuid5(NAMESPACE_UUID, hash_value)
 
 
@@ -484,7 +484,7 @@ async def aindex(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        vectorstore: Vector store or Document Index to index the documents into
+        vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND

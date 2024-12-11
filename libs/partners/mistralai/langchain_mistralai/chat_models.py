@@ -353,6 +353,9 @@ def _convert_message_to_mistral_chat_message(
             "role": "tool",
             "content": message.content,
             "name": message.name,
+            "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
+                message.tool_call_id
+            ),
         }
     else:
         raise ValueError(f"Got unknown type {message}")
@@ -361,8 +364,13 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None, exclude=True)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(
+    # The type for client and async_client is ignored because the type is not
+    # an Optional after the model is initialized and the model_validator
+    # is run.
+    client: httpx.Client = Field(  # type: ignore # : meta private:
+        default=None, exclude=True
+    )
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
         default=None, exclude=True
     )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
@@ -380,7 +388,7 @@ class ChatMistralAI(BaseChatModel):
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
-    safe_mode: bool = False
+    safe_mode: Optional[bool] = None
     streaming: bool = False
 
     model_config = ConfigDict(
@@ -587,7 +595,7 @@ class ChatMistralAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -613,7 +621,7 @@ class ChatMistralAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk

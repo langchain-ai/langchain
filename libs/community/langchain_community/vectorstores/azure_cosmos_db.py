@@ -460,7 +460,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
                 continue
             document_object_field = res.pop("document")
             text = document_object_field.pop(self._text_key)
-            metadata = document_object_field.pop("metadata")
+            metadata = document_object_field.pop("metadata", {})
             if with_embedding:
                 metadata[self._embedding_key] = document_object_field.pop(
                     self._embedding_key

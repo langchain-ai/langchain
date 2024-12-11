@@ -193,6 +193,7 @@ class TestCouchbaseVectorStore:
         time.sleep(SLEEP_DURATION)
 
         output = vectorstore.similarity_search("foo", k=1)
+        assert output[0].id == "a"
         assert output[0].page_content == "foo"
         assert output[0].metadata["a"] == 1
 
@@ -364,3 +365,32 @@ class TestCouchbaseVectorStore:
 
         assert result == hybrid_result
         assert score <= hybrid_score
+
+    def test_id_in_results(self, cluster: Any) -> None:
+        """Test that the id is returned in the result documents."""
+
+        texts = [
+            "foo",
+            "bar",
+            "baz",
+        ]
+
+        metadatas = [{"a": 1}, {"b": 2}, {"c": 3}]
+
+        vectorstore = CouchbaseVectorStore(
+            cluster=cluster,
+            embedding=ConsistentFakeEmbeddings(),
+            index_name=INDEX_NAME,
+            bucket_name=BUCKET_NAME,
+            scope_name=SCOPE_NAME,
+            collection_name=COLLECTION_NAME,
+        )
+
+        ids = vectorstore.add_texts(texts, metadatas=metadatas)
+        assert len(ids) == len(texts)
+
+        # Wait for the documents to be indexed
+        time.sleep(SLEEP_DURATION)
+
+        output = vectorstore.similarity_search("foo", k=1)
+        assert output[0].id == ids[0]

@@ -47,7 +47,6 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
         "langserve",
-        "langgraph",
         "langsmith",
     ]
 
@@ -55,8 +54,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
+    langgraph_pkgs = [
+        name for _, name, _ in pkgutil.iter_modules() if name.startswith("langgraph")
+    ]
+
     all_packages = sorted(
-        set(langchain_pkgs + other_langchain_packages + list(additional_pkgs))
+        set(
+            langchain_pkgs
+            + langgraph_pkgs
+            + other_langchain_packages
+            + list(additional_pkgs)
+        )
     )
 
     # Always surface these packages to the top

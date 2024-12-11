@@ -14,6 +14,7 @@ PLATFORMS = {
 EXTERNAL_PACKAGES = {
     "astradb",
     "aws",
+    "box",
     "cohere",
     "databricks",
     "elasticsearch",
@@ -25,6 +26,13 @@ EXTERNAL_PACKAGES = {
     "redis",
     "weaviate",
     "upstage",
+    "mongodb",
+    "azure-dynamic-sessions",
+    "ibm",
+    "unstructured",
+    "milvus",
+    "together",
+    "ai21",
 }
 
 JS_PACKAGES = {
@@ -56,6 +64,7 @@ JS_PACKAGES = {
     "nomic",
     "google-common",
     "ollama",
+    "ibm",
 }
 
 
@@ -68,7 +77,7 @@ ALL_PACKAGES = IN_REPO_PACKAGES.union(EXTERNAL_PACKAGES)
 CUSTOM_NAME = {
     "google-genai": "Google Generative AI",
     "aws": "AWS",
-    "airbyte": "Airbyte",
+    "ibm": "IBM",
 }
 CUSTOM_PROVIDER_PAGES = {
     "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",
@@ -122,7 +131,7 @@ sidebar_class_name: hidden
 :::info
 
 If you'd like to write your own integration, see [Extending LangChain](/docs/how_to/#custom).
-If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/how_to/integrations/).
 
 :::
 
