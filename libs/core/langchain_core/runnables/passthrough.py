@@ -364,21 +364,21 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         .. code-block:: python
 
             # This is a RunnableAssign
-            from typing import Dict
-            from langchain_core.runnables.passthrough import (
-                RunnableAssign,
-                RunnableParallel,
-            )
-            from langchain_core.runnables.base import RunnableLambda
+from typing import Dict
+from langchain_core.runnables.passthrough import (
+    RunnableAssign,
+    RunnableParallel,
+)
+from langchain_core.runnables.base import RunnableLambda
 
-            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
-                return {"added": x["input"] + 10}
+def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+    return {"added": x["input"] + 10}
 
-            mapper = RunnableParallel(
-                {"add_step": RunnableLambda(add_ten),}
-            )
+mapper = RunnableParallel(
+    {"add_step": RunnableLambda(add_ten),}
+)
 
-            runnable_assign = RunnableAssign(mapper)
+runnable_assign = RunnableAssign(mapper)
 
             # Synchronous example
             runnable_assign.invoke({"input": 5})
