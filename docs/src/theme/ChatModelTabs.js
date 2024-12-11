@@ -3,52 +3,74 @@ import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
 
 // Create a custom dropdown since Docusaurus's dropdown component isn't easily accessible
-const CustomDropdown = ({ selectedOption, options, onSelect }) => (
-  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
-    <span style={{ 
-      fontSize: '1rem',  // Updated to match dropdown
-      fontWeight: '500',
-      color: 'var(--ifm-color-primary)',
-    }}>
-      Select Model:
-    </span>
-    <div className="dropdown dropdown--hoverable">
-      <button 
-        className="button button--secondary" 
-        style={{ 
-          backgroundColor: 'var(--ifm-background-color)',
-          border: '1px solid var(--ifm-color-emphasis-300)',
-          fontWeight: 'normal',
-          fontSize: '1rem',
-          padding: '0.5rem 1rem',
-          color: 'var(--ifm-font-color-base)',
-        }}
-      >
-        {selectedOption.label}
-        <span style={{ 
-          marginLeft: '0.4rem',
-          fontSize: '0.875rem'
-        }}>▾</span>
-      </button>
-      <ul className="dropdown__menu">
-        {options.map((option) => (
-          <li key={option.value}>
-            <a 
-              className="dropdown__link" 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                onSelect(option.value);
-              }}
-            >
-              {option.label}
-            </a>
-          </li>
-        ))}
-      </ul>
+const CustomDropdown = ({ selectedOption, options, onSelect }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && !event.target.closest('.dropdown')) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
+      <span style={{ 
+        fontSize: '1rem',
+        fontWeight: '500',
+      }}>
+        Select <a href="/docs/integrations/chat/">chat model</a>:
+      </span>
+      <div className={`dropdown ${isOpen ? 'dropdown--show' : ''}`}>
+        <button 
+          className="button button--secondary" 
+          onClick={() => setIsOpen(!isOpen)}
+          style={{ 
+            backgroundColor: 'var(--ifm-background-color)',
+            border: '1px solid var(--ifm-color-emphasis-300)',
+            fontWeight: 'normal',
+            fontSize: '1rem',
+            padding: '0.5rem 1rem',
+            color: 'var(--ifm-font-color-base)',
+          }}
+        >
+          {selectedOption.label}
+          <span style={{ 
+            marginLeft: '0.4rem',
+            fontSize: '0.875rem'
+          }}>▾</span>
+        </button>
+        <div className="dropdown__menu" style={{
+          maxHeight: '210px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          marginBottom: 0,
+        }}>
+          {options.map((option) => (
+            <li key={option.value}>
+              <a 
+                className={`dropdown__link ${option.value === selectedOption.value ? 'dropdown__link--active' : ''}`}
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelect(option.value);
+                  setIsOpen(false);
+                }}
+              >
+                {option.label}
+              </a>
+            </li>
+          ))}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 
 /**
@@ -201,7 +223,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "FireworksAI",
-      label: "FireworksAI",
+      label: "Fireworks AI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
       apiKeyName: "FIREWORKS_API_KEY",
       packageName: "langchain-fireworks",
@@ -219,7 +241,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "MistralAI",
-      label: "MistralAI",
+      label: "Mistral AI",
       text: `from langchain_mistralai import ChatMistralAI\n\n${llmVarName} = ChatMistralAI(${mistralParamsOrDefault})`,
       apiKeyName: "MISTRAL_API_KEY",
       packageName: "langchain-mistralai",
@@ -228,7 +250,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "TogetherAI",
-      label: "TogetherAI",
+      label: "Together AI",
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
       packageName: "langchain-openai",
@@ -266,10 +288,11 @@ if (selectedOption.apiKeyName) {
   apiKeyText = `import getpass
 import os
 
-os.environ["${selectedOption.apiKeyName}"] = getpass.getpass()`;
-} else if (selectedOption.apiKeyText) {
-  apiKeyText = selectedOption.apiKeyText;
-}
+if not os.environ.get("${selectedOption.apiKeyName}"):
+  os.environ["${selectedOption.apiKeyName}"] = getpass.getpass("Enter API key for ${selectedOption.label}: ")`;
+  } else if (selectedOption.apiKeyText) {
+    apiKeyText = selectedOption.apiKeyText;
+  }
 
 return (
   <div>
