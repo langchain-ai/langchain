@@ -122,7 +122,7 @@ const config = {
     ({
       announcementBar: {
         content:
-          'A newer LangChain version is out! Check out the <a href="https://python.langchain.com/docs/introduction">latest version</a>.',
+          'This is documentation for LangChain v0.1, which is no longer actively maintained. Check out the docs for the <a href="https://python.langchain.com/docs/introduction">latest version here</a>.',
         backgroundColor: "#FF0000",
         textColor: "#FFFFFF",
         isCloseable: false,
