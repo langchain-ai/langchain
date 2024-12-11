@@ -1,14 +1,17 @@
 """Tool for the SEC API."""
+from typing import Any, Dict, List, Optional, TypeVar
 
-from typing import Any, Dict, List, Optional
-
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
+    BaseCallbackManager,
     CallbackManagerForToolRun,
 )
 from langchain_core.tools import BaseTool, ToolException
 from pydantic import Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
+
+T = TypeVar("T", bound="SECAPITool")
 
 
 class SECAPITool(BaseTool):
@@ -25,7 +28,7 @@ class SECAPITool(BaseTool):
 
     def __init__(self, api_key: str, **kwargs: Any) -> None:
         """Initialize the SEC API tool."""
-        super().__init__(api_key=SecretStr(api_key), **kwargs)
+        super().__init__(api_key=api_key, **kwargs)
         self._api_wrapper = CustomSECAPI(api_key=SecretStr(api_key))
 
     @property
