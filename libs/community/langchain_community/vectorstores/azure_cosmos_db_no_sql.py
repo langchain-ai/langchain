@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -13,6 +14,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from azure.cosmos.cosmos_client import CosmosClient
+
+logger = logging.getLogger(__name__)
 
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
@@ -30,7 +33,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         *,
         cosmos_client: CosmosClient,
         embedding: Embeddings,
-        vector_embedding_policy: Dict[str, Any],
+        vector_embedding_policy: Optional[Dict[str, Any]],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
@@ -50,16 +53,26 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy: Indexing Policy for the container.
             cosmos_container_properties: Container Properties for the container.
             cosmos_database_properties: Database Properties for the container.
+            create_container: If True validates Properties for container creation.
         """
         self._cosmos_client = cosmos_client
         self._database_name = database_name
         self._container_name = container_name
         self._embedding = embedding
-        self._vector_embedding_policy = vector_embedding_policy
         self._indexing_policy = indexing_policy
         self._cosmos_container_properties = cosmos_container_properties
         self._cosmos_database_properties = cosmos_database_properties
         self._create_container = create_container
+
+        # validate vector_embedding_policy if specified
+        if (vector_embedding_policy is not None) and (
+            "vectorEmbeddings" not in vector_embedding_policy
+            or len(vector_embedding_policy["vectorEmbeddings"]) == 0
+        ):
+            raise ValueError(
+                "vectorEmbeddings must be present and cannot be null or empty"
+                " in the vector_embedding_policy if specified."
+            )
 
         if self._create_container:
             if (
@@ -69,13 +82,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 raise ValueError(
                     "vectorIndexes cannot be null or empty in the indexing_policy."
                 )
-            if (
-                vector_embedding_policy is None
-                or len(vector_embedding_policy["vectorEmbeddings"]) == 0
-            ):
+            if vector_embedding_policy is None:
                 raise ValueError(
-                    "vectorEmbeddings cannot be null "
-                    "or empty in the vector_embedding_policy."
+                    "vector_embedding_policy cannot be null when creating a container."
                 )
             if self._cosmos_container_properties["partition_key"] is None:
                 raise ValueError(
@@ -115,12 +124,44 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             match_condition=self._cosmos_container_properties.get("match_condition"),
             session_token=self._cosmos_container_properties.get("session_token"),
             initial_headers=self._cosmos_container_properties.get("initial_headers"),
-            vector_embedding_policy=self._vector_embedding_policy,
+            vector_embedding_policy=vector_embedding_policy,
         )
 
+        # Validate that the created container has the correct vector embedding policy
+        # properties
+        container_vector_embedding_policy = self._container.read().get(
+            "vector_embedding_policy"
+        )
+        if container_vector_embedding_policy is not None:
+            # Container already has vector search exposed, verify it matches if
+            # specified
+            if (
+                vector_embedding_policy is not None
+                and container_vector_embedding_policy != vector_embedding_policy
+            ):
+                logger.warning(
+                    "The specified container's vector embedding policy"
+                    f" '{self._container_name}'"
+                    " does not match the specified configuration."
+                )
+        else:
+            # Container doesn't have vector search exposed
+            # (may be available but not exposed), use specified policy
+            if vector_embedding_policy is None:
+                raise ValueError(
+                    "The created container does not have vector search exposed"
+                    " and no vector_embedding_policy was specified."
+                )
+            container_vector_embedding_policy = vector_embedding_policy
+
+        # Set vector embedding policy fields
+        self._vector_embedding_policy = container_vector_embedding_policy
         self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
+        self._distance_strategy = self._vector_embedding_policy["vectorEmbeddings"][0][
+            "distanceFunction"
+        ]
 
     def add_texts(
         self,
@@ -260,6 +301,28 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             raise ValueError("No document ids provided to delete.")
         self._container.delete_item(document_id, partition_key=document_id)
 
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+        """
+        if self._distance_strategy == "cosine":
+            return self._cosine_relevance_score_fn
+        elif self._distance_strategy == "euclidean":
+            # Default behavior is to use euclidean distance relevancy
+            return self._euclidean_relevance_score_fn
+        elif self._distance_strategy == "dot product":
+            return self._max_inner_product_relevance_score_fn
+        else:
+            raise ValueError(
+                "Unknown distance strategy, must be cosine, dot product,"
+                " or euclidean"
+            )
+
     def _similarity_search_with_score(
         self,
         embeddings: List[float],
@@ -273,8 +336,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
             query += "TOP @limit "
 
+        embedding_field = ""
+        if with_embedding:
+            embedding_field = "c[@embeddingKey] as embeddingKey, "
+
         query += (
-            "c.id, c[@embeddingKey], c.text, c.metadata, "
+            f"c.id, {embedding_field}c.text, c.metadata, "
             "VectorDistance(c[@embeddingKey], @embeddings) AS SimilarityScore FROM c"
         )
 
@@ -305,7 +372,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             metadata = item["metadata"]
             score = item["SimilarityScore"]
             if with_embedding:
-                metadata[self._embedding_key] = item[self._embedding_key]
+                metadata[self._embedding_key] = item["embeddingKey"]
             docs_and_scores.append(
                 (Document(page_content=text, metadata=metadata), score)
             )
