@@ -1,12 +1,10 @@
 """Tool for the SEC API."""
-
 from typing import List, Optional
 
+from langchain_core.tools import BaseTool
 from pydantic import Field
 
-from langchain_core.tools import BaseTool
 from langchain_community.utilities.secapi import CustomSECAPI
-
 
 
 class SECAPITool(BaseTool):
