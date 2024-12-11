@@ -10,10 +10,12 @@ class SECAPITool(BaseTool):
     """Tool that provides access to various SEC API endpoints."""
     
     name: str = "sec_api"
-    description: str = """Use this tool to search SEC filings. 
-    For company filings, provide a ticker symbol like 'TSLA' or 'AAPL'.
-    For text search, provide keywords like 'artificial intelligence' or 'revenue growth'.
-    You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."""
+    description: str = (
+        "Use this tool to search SEC filings. "
+        "For company filings, provide a ticker symbol like 'TSLA' or 'AAPL'. "
+        "For text search, provide keywords like 'artificial intelligence'. "
+        "You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."
+    )
     
     api_key: str = Field(description="API key for SEC API access")
     

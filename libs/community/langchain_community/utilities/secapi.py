@@ -2,19 +2,12 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+import logging
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, SecretStr, model_validator
 
 class CustomSECAPI(BaseModel):
-    """Wrapper for SEC EDGAR API endpoints.
-    
-    Provides access to various SEC API endpoints including:
-    - Full text search
-    - Filing search
-    - Company search
-    
-    For more information, see: https://sec-api.io/docs
-    """
+    """Wrapper for SEC EDGAR API endpoints."""
     
     api_key: SecretStr
     base_url: str = "https://api.sec-api.io"
@@ -23,11 +16,9 @@ class CustomSECAPI(BaseModel):
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["api_key"] = get_from_dict_or_env(
-            values, "api_key", "SEC_API_KEY"
-        )
+        values["api_key"] = get_from_dict_or_env(values, "api_key", "SEC_API_KEY")
         return values
-
+    
     def full_text_search(
         self,
         search_query: str,
@@ -88,12 +79,16 @@ class CustomSECAPI(BaseModel):
         if form_type:
             json_data["query"] = f"{json_data['query']} AND formType:{form_type}"
         if date_from:
-            json_data["query"] = f"{json_data['query']} AND filedAt:[{date_from} TO {date_to or '*'}]"
+            json_data["query"] = (
+                f"{json_data['query']} AND filedAt:[{date_from} TO {date_to or '*'}]"
+            )
 
         headers = {
             "Authorization": self.api_key.get_secret_value(),
             "Content-Type": "application/json"
         }
+        
+        logging.debug("Request: %s", json_data)
         
         response = requests.post(
             "https://api.sec-api.io",
@@ -102,5 +97,4 @@ class CustomSECAPI(BaseModel):
             timeout=10
         )
         
-        print(f"Request: {json_data}")  
         return response.json()
