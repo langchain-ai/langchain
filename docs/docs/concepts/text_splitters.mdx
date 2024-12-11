@@ -29,13 +29,13 @@ There are several reasons to split documents:
 - **Improving representation quality**: For longer documents, the quality of embeddings or other representations may degrade as they try to capture too much information. Splitting can lead to more focused and accurate representations of each section.
 - **Enhancing retrieval precision**: In information retrieval systems, splitting can improve the granularity of search results, allowing for more precise matching of queries to relevant document sections.
 - **Optimizing computational resources**: Working with smaller chunks of text can be more memory-efficient and allow for better parallelization of processing tasks.
+- **Preserving text structure**: New experimental splitters, like the `ExperimentalMarkdownSyntaxTextSplitter`, retain the original whitespace and formatting, which can be crucial for maintaining the integrity of code blocks and other structured text elements.
 
 Now, the next question is *how* to split the documents into chunks! There are several strategies, each with its own advantages.
 
 :::info[Further reading]
 * See Greg Kamradt's [chunkviz](https://chunkviz.up.railway.app/) to visualize different splitting strategies discussed below.
 :::
-
 ## Approaches
 
 ### Length-based
@@ -100,7 +100,7 @@ Key benefits of structure-based splitting:
 - Can be more effective for downstream tasks like retrieval or summarization
 
 Examples of structure-based splitting:
-- **Markdown**: Split based on headers (e.g., #, ##, ###)
+- **Markdown**: Split based on headers (e.g., #, ##, ###) or use the `ExperimentalMarkdownSyntaxTextSplitter` to preserve whitespace and extract metadata like code blocks.
 - **HTML**: Split using tags
 - **JSON**: Split by object or array elements
 - **Code**: Split by functions, classes, or logical blocks
