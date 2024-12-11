@@ -55,7 +55,6 @@ class CustomSECAPI(BaseModel):
             "size": limit
         }
 
-        # Remove None values
         json_data = {k: v for k, v in json_data.items() if v is not None}
 
         headers = {"Authorization": self.api_key.get_secret_value()}
@@ -102,7 +101,5 @@ class CustomSECAPI(BaseModel):
             timeout=10
         )
         
-        print(f"Request: {json_data}")  # Debug print
+        print(f"Request: {json_data}")  
         return response.json()
-
-    # Add more methods for other SEC API endpoints as needed

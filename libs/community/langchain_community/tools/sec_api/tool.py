@@ -1,6 +1,6 @@
 """Tool for the SEC API."""
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import Field
 from langchain_core.tools import BaseTool
 from langchain_community.utilities.secapi import CustomSECAPI
 
@@ -8,11 +8,16 @@ class SECAPITool(BaseTool):
     """Tool that provides access to various SEC API endpoints."""
     
     name: str = "sec_api"
-    description: str = """Tool for accessing SEC EDGAR data including full text search and filing search."""
+    description: str = """Use this tool to search SEC filings. 
+    For company filings, provide a ticker symbol like 'TSLA' or 'AAPL'.
+    For text search, provide keywords like 'artificial intelligence' or 'revenue growth'.
+    You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."""
     
-    def __init__(self, api_key: str = "50ccec65f402053834331285c5702a5bdd3febeb66c8e25ce34b51259b5b735f", **kwargs):
+    api_key: str = Field(description="API key for SEC API access")
+    
+    def __init__(self, api_key: str, **kwargs):
         """Initialize the SEC API tool."""
-        super().__init__(**kwargs)
+        super().__init__(api_key=api_key, **kwargs)
         self._api_wrapper = CustomSECAPI(api_key=api_key)
 
     @property
@@ -27,7 +32,7 @@ class SECAPITool(BaseTool):
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         limit: int = 50
-    ) -> str:
+    ) -> dict:
         """Search the full text content of SEC filings."""
         try:
             results = self.api_wrapper.full_text_search(
@@ -37,7 +42,7 @@ class SECAPITool(BaseTool):
                 date_to=date_to,
                 limit=limit
             )
-            return str(results)
+            return results
         except Exception as e:
             return f"Error in full text search: {str(e)}"
 
@@ -48,7 +53,7 @@ class SECAPITool(BaseTool):
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         limit: int = 50
-    ) -> str:
+    ) -> dict:
         """Search SEC filings by company ticker."""
         try:
             results = self.api_wrapper.get_filings(
@@ -58,12 +63,22 @@ class SECAPITool(BaseTool):
                 date_to=date_to,
                 limit=limit
             )
-            return str(results)
+            return results
         except Exception as e:
             return f"Error in filing search: {str(e)}"
 
-    def _run(self, *args, **kwargs) -> str:
-        """Use tool."""
-        raise NotImplementedError(
-            "SECAPITool cannot be run directly. Please use full_text_search() or filing_search() methods."
-        )
+    def _run(self, query: str) -> str:
+        """Process natural language query for SEC filings."""
+        # If query looks like a ticker (all caps, 1-5 chars)
+        if query.isupper() and len(query) <= 5:
+            try:
+                results = self.api_wrapper.get_filings(ticker=query, limit=5)
+                return f"Recent SEC filings for {query}: {str(results)}"
+            except Exception as e:
+                return f"Error searching filings: {str(e)}"
+        
+        try:
+            results = self.api_wrapper.full_text_search(search_query=query, limit=5)
+            return f"SEC filings containing '{query}': {str(results)}"
+        except Exception as e:
+            return f"Error searching text: {str(e)}"
