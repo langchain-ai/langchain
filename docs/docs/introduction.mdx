@@ -26,18 +26,10 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
   title="LangChain Framework Overview"
 />
 
-## [Components](/docs/concepts)
-
 LangChain implements a standard interface for large language models and related
 technologies, such as embedding models and vector stores, and integrates with
 hundreds of providers. See the [integrations](/docs/integrations/providers/) page for
 more.
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-<Tabs>
-  <TabItem value="chat_models" label="Chat models" default>
 
 import ChatModelTabs from "@theme/ChatModelTabs";
 
@@ -46,59 +38,6 @@ import ChatModelTabs from "@theme/ChatModelTabs";
 ```python
 model.invoke("Hello, world!")
 ```
-
-See integrations [here](/docs/integrations/chat/).
-
-  </TabItem>
-  <TabItem value="embedding_models" label="Embedding models">
-
-import EmbeddingTabs from "@theme/EmbeddingTabs";
-
-<EmbeddingTabs/>
-
-```python
-embeddings.embed_query("Hello, world!")
-```
-
-See integrations [here](/docs/integrations/text_embedding/).
-
-  </TabItem>
-  <TabItem value="vector_stores" label="Vector Stores">
-
-import VectorStoreTabs from "@theme/VectorStoreTabs";
-
-<VectorStoreTabs useFakeEmbeddings={true} />
-
-```python
-vector_store.add_texts(["Hello", "world!"])
-
-vector_store.similarity_search("Hello")
-```
-
-See integrations [here](/docs/integrations/vectorstores/).
-
-  </TabItem>
-  <TabItem value="tools" label="Tools">
-
-```python
-from langchain_core.tools import tool
-
-@tool
-def get_info(query: str) -> str:
-    """Get information from external resource.
-
-    Args:
-        query: (str) search query
-
-    Returns: (str) retrieved information.
-    """
-    pass
-```
-
-See integrations and built-in tools [here](/docs/integrations/tools/).
-
-  </TabItem>
-</Tabs>
 
 :::note
 
