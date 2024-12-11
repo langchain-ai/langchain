@@ -787,7 +787,7 @@ class OpenSearchVectorSearch(VectorStore):
         """
         if not pipeline_name.isidentifier():
             raise ValueError(f"Invalid pipeline name: {pipeline_name}")
-        
+
         path = f"/_search/pipeline/{pipeline_name}"
 
         payload = {
@@ -804,12 +804,11 @@ class OpenSearchVectorSearch(VectorStore):
                 }
             ],
         }
-        
+
         response = self.client.transport.perform_request(
             method="PUT", url=path, body=payload
         )
         return response
-        
 
     def search_pipeline_exists(self, pipeline_name: str) -> bool:
         """
@@ -832,7 +831,7 @@ class OpenSearchVectorSearch(VectorStore):
         """
         if not pipeline_name.isidentifier():
             raise ValueError(f"Invalid pipeline name: {pipeline_name}")
-        
+
         existed_pipelines = self.client.transport.perform_request(
             method="GET", url="/_search/pipeline/"
         )
@@ -877,13 +876,13 @@ class OpenSearchVectorSearch(VectorStore):
 
         if not pipeline_name.isidentifier():
             raise ValueError(f"Invalid pipeline name: {pipeline_name}")
-        
+
         response = self.client.transport.perform_request(
             method="GET", url=f"/_search/pipeline/{pipeline_name}"
         )
 
         return response
-      
+
     @staticmethod
     def _identity_fn(score: float) -> float:
         return score
@@ -1206,7 +1205,7 @@ class OpenSearchVectorSearch(VectorStore):
 
             if query_text is None:
                 raise ValueError("query_text must be provided for hybrid search")
-            
+
             if search_pipeline is None:
                 raise ValueError("search_pipeline must be provided for hybrid search")
 
@@ -1222,13 +1221,12 @@ class OpenSearchVectorSearch(VectorStore):
             else:
                 # hybrid search without post filter
                 payload = _default_hybrid_search_query(query_text, embeded_query, k)
-            
+
             response = self.client.transport.perform_request(
                 method="GET", url=path, body=payload
             )
-            
-            return [hit for hit in response["hits"]["hits"]]
 
+            return [hit for hit in response["hits"]["hits"]]
 
         else:
             raise ValueError("Invalid `search_type` provided as an argument")

@@ -1,13 +1,14 @@
 """Test OpenSearch functionality."""
 
 import pytest
+from langchain_core.documents import Document
+
 from langchain_community.vectorstores.opensearch_vector_search import (
     HYBRID_SEARCH,
     PAINLESS_SCRIPTING_SEARCH,
     SCRIPT_SCORING_SEARCH,
     OpenSearchVectorSearch,
 )
-from langchain_core.documents import Document
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
