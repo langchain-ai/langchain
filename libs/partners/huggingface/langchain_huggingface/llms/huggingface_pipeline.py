@@ -344,23 +344,28 @@ class HuggingFacePipeline(BaseLLM):
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", True)
 
-        if stop is not None:
-            stop = self.pipeline.tokenizer.convert_tokens_to_ids(stop)
-        stopping_ids_list = stop or []
+        stopping_list = stop or []
 
-        class StopOnTokens(StoppingCriteria):
+        class StopSequenceCriteria(StoppingCriteria):
+            def __init__(self, stop_sequences: List[str]):
+                if isinstance(stop_sequences, str):
+                    stop_sequences = [stop_sequences]
+                self.stop_sequences = stop_sequences
+                self.tokenizer = self.pipeline.tokenizer
+
             def __call__(
                 self,
                 input_ids: torch.LongTensor,
                 scores: torch.FloatTensor,
                 **kwargs: Any,
             ) -> bool:
-                for stop_id in stopping_ids_list:
-                    if input_ids[0][-1] == stop_id:
-                        return True
-                return False
+                decoded_output = self.tokenizer.decode(input_ids.tolist()[0])
+                return any(
+                    decoded_output.endswith(stop_sequence)
+                    for stop_sequence in self.stop_sequences
+                )
 
-        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+        stopping_criteria = StoppingCriteriaList([StopSequenceCriteria(stopping_list)])
 
         streamer = TextIteratorStreamer(
             self.pipeline.tokenizer,
