@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.tools import BaseTool
+from langchain_core.callbacks.manager import (
+    CallbackManagerForToolRun,
+)
+from langchain_core.tools import BaseTool, ToolException
 from pydantic import Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
@@ -18,7 +21,6 @@ class SECAPITool(BaseTool):
         "For text search, provide keywords like 'artificial intelligence'. "
         "You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."
     )
-
     api_key: str = Field(description="API key for SEC API access")
 
     def __init__(self, api_key: str, **kwargs: Any) -> None:
@@ -73,17 +75,21 @@ class SECAPITool(BaseTool):
         except Exception as e:
             raise ValueError(f"Error in filing search: {str(e)}")
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> Dict[str, Any]:
         """Process natural language query for SEC filings."""
         if query.isupper() and len(query) <= 5:
             try:
                 results = self.api_wrapper.get_filings(ticker=query, limit=5)
-                return f"Recent SEC filings for {query}: {str(results)}"
+                return results
             except Exception as e:
-                return f"Error searching filings: {str(e)}"
+                raise ToolException(f"Error searching filings: {str(e)}")
 
         try:
             results = self.api_wrapper.full_text_search(search_query=query, limit=5)
-            return f"SEC filings containing '{query}': {str(results)}"
+            return results
         except Exception as e:
-            return f"Error searching text: {str(e)}"
+            raise ToolException(f"Error searching text: {str(e)}")
