@@ -1,8 +1,55 @@
 /* eslint-disable react/jsx-props-no-spreading, react/destructuring-assignment */
-import React from "react";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
+
+// Create a custom dropdown since Docusaurus's dropdown component isn't easily accessible
+const CustomDropdown = ({ selectedOption, options, onSelect }) => (
+  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
+    <span style={{ 
+      fontSize: '1rem',  // Updated to match dropdown
+      fontWeight: '500',
+      color: 'var(--ifm-color-primary)',
+    }}>
+      Select Model:
+    </span>
+    <div className="dropdown dropdown--hoverable">
+      <button 
+        className="button button--secondary" 
+        style={{ 
+          backgroundColor: 'var(--ifm-background-color)',
+          border: '1px solid var(--ifm-color-emphasis-300)',
+          fontWeight: 'normal',
+          fontSize: '1rem',
+          padding: '0.5rem 1rem',
+          color: 'var(--ifm-font-color-base)',
+        }}
+      >
+        {selectedOption.label}
+        <span style={{ 
+          marginLeft: '0.4rem',
+          fontSize: '0.875rem'
+        }}>▾</span>
+      </button>
+      <ul className="dropdown__menu">
+        {options.map((option) => (
+          <li key={option.value}>
+            <a 
+              className="dropdown__link" 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                onSelect(option.value);
+              }}
+            >
+              {option.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
+
 
 /**
  * @typedef {Object} ChatModelTabsProps - Component props.
@@ -36,6 +83,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
+  const [selectedModel, setSelectedModel] = useState("OpenAI");
   const {
     openaiParams,
     anthropicParams,
@@ -198,38 +246,45 @@ export default function ChatModelTabs(props) {
     },
   ];
 
-  return (
-    <Tabs groupId="modelTabs">
-      {tabItems
-        .filter((tabItem) => !tabItem.shouldHide)
-        .map((tabItem) => {
-          let apiKeyText = "";
-          if (tabItem.apiKeyName) {
-            apiKeyText = `import getpass
+  const modelOptions = tabItems
+  .filter((item) => !item.shouldHide)
+  .map((item) => ({
+    value: item.value,
+    label: item.label,
+    text: item.text,
+    apiKeyName: item.apiKeyName,
+    apiKeyText: item.apiKeyText,
+    packageName: item.packageName,
+  }));
+
+const selectedOption = modelOptions.find(
+  (option) => option.value === selectedModel
+);
+
+let apiKeyText = "";
+if (selectedOption.apiKeyName) {
+  apiKeyText = `import getpass
 import os
 
-os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
-          } else if (tabItem.apiKeyText) {
-            apiKeyText = tabItem.apiKeyText;
-          }
+os.environ["${selectedOption.apiKeyName}"] = getpass.getpass()`;
+} else if (selectedOption.apiKeyText) {
+  apiKeyText = selectedOption.apiKeyText;
+}
 
-          return (
-            <TabItem
-              key={tabItem.value}
-              value={tabItem.value}
-              label={tabItem.label}
-              default={tabItem.default}
-            >
-              <CodeBlock language="bash">
-                {`pip install -qU ${tabItem.packageName}`}
-              </CodeBlock>
-              <CodeBlock language="python">
-                {apiKeyText ? apiKeyText + "\n\n" + tabItem.text : tabItem.text}
-              </CodeBlock>
-            </TabItem>
-          );
-        })
-      }
-    </Tabs>
-  );
+return (
+  <div>
+    <CustomDropdown 
+      selectedOption={selectedOption}
+      options={modelOptions}
+      onSelect={setSelectedModel}
+    />
+
+    <CodeBlock language="bash">
+      {`pip install -qU ${selectedOption.packageName}`}
+    </CodeBlock>
+    <CodeBlock language="python">
+      {apiKeyText ? apiKeyText + "\n\n" + selectedOption.text : selectedOption.text}
+    </CodeBlock>
+  </div>
+);
 }
