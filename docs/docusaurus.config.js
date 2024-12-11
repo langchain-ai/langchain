@@ -121,8 +121,9 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'LangChain v0.2 is out! You are currently viewing the old v0.1 docs. <strong>View the latest docs <a href="/v0.2/docs/introduction/">here</a>.</strong>',
-        isCloseable: true,
+        content:
+          'A newer LangChain version is out! Check out the <a href="https://python.langchain.com/docs/introduction">latest version</a>.',
+        isCloseable: false,
       },
       docs: {
         sidebar: {
@@ -216,6 +217,10 @@ const config = {
             label: "v0.1",
             position: "right",
             items: [
+              {
+                label: "Latest",
+                href: "https://python.langchain.com/docs/introduction"
+              },
               {
                 label: "v0.2",
                 href: "https://python.langchain.com/v0.2/docs/introduction"
