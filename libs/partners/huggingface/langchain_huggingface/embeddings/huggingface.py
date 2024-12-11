@@ -68,6 +68,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_config = ConfigDict(
         extra="forbid",
         protected_namespaces=(),
+        populate_by_name=True,
     )
 
     def _embed(
