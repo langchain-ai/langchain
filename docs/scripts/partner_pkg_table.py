@@ -14,6 +14,7 @@ PLATFORMS = {
 EXTERNAL_PACKAGES = {
     "astradb",
     "aws",
+    "box",
     "cohere",
     "databricks",
     "elasticsearch",
