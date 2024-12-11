@@ -1,14 +1,16 @@
 """Tool for the SEC API."""
 
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing_extensions import Literal
 
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool, ToolException
-from pydantic import Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 from langchain_community.utilities.secapi import CustomSECAPI
 
 T = TypeVar("T", bound="SECAPITool")
+
 
 
 class SECAPITool(BaseTool):
@@ -22,11 +24,14 @@ class SECAPITool(BaseTool):
         "You can optionally specify form types (10-K, 10-Q, 8-K) and date ranges."
     )
     api_key: str = Field(description="API key for SEC API access")
+    return_direct: bool = False
 
-    def __init__(self, api_key: str, **kwargs: Any) -> None:
+    model_config = {"arbitrary_types_allowed": True}
+
+    def __init__(self, **data: Any) -> None:
         """Initialize the SEC API tool."""
-        super().__init__(api_key=api_key, **kwargs)
-        self._api_wrapper = CustomSECAPI(api_key=SecretStr(api_key))
+        super().__init__(**data)
+        self._api_wrapper = CustomSECAPI(api_key=SecretStr(self.api_key))
 
     @property
     def api_wrapper(self) -> CustomSECAPI:
