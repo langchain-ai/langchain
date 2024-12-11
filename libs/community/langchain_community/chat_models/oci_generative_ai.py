@@ -378,7 +378,10 @@ class MetaProvider(Provider):
             "SYSTEM": models.SystemMessage,
             "ASSISTANT": models.AssistantMessage,
         }
-        self.oci_chat_message_content = models.TextContent
+        self.oci_chat_message_content = models.ChatContent
+        self.oci_chat_message_text_content = models.TextContent
+        self.oci_chat_message_image_content = models.ImageContent
+        self.oci_chat_message_image_url = models.ImageUrl
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
 
     def chat_response_to_text(self, response: Any) -> str:
@@ -415,19 +418,81 @@ class MetaProvider(Provider):
     def messages_to_oci_params(
         self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
-        oci_messages = [
-            self.oci_chat_message[self.get_role(msg)](
-                content=[self.oci_chat_message_content(text=msg.content)]
-            )
-            for msg in messages
-        ]
-        oci_params = {
+        """Convert LangChain messages to OCI chat parameters.
+        
+        Args:
+            messages: List of LangChain BaseMessage objects
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            Dict containing OCI chat parameters
+            
+        Raises:
+            ValueError: If message content is invalid
+        """
+        oci_messages = []
+
+        for message in messages:
+            content = self._process_message_content(message.content)
+            oci_message = self.oci_chat_message[self.get_role(message)](content=content)
+            oci_messages.append(oci_message)
+
+        return {
             "messages": oci_messages,
             "api_format": self.chat_api_format,
             "top_k": -1,
         }
 
-        return oci_params
+    def _process_message_content(
+        self, content: Union[str, List[Union[str, Dict]]]
+    ) -> List[Any]:
+        """Process message content into OCI chat content format.
+        
+        Args:
+            content: Message content as string or list
+            
+        Returns:
+            List of OCI chat content objects
+            
+        Raises:
+            ValueError: If content format is invalid
+        """
+        if isinstance(content, str):
+            return [self.oci_chat_message_text_content(text=content)]
+
+        if not isinstance(content, list):
+            raise ValueError("Message content must be str or list of items")
+
+        processed_content = []
+        for item in content:
+            if isinstance(item, str):
+                processed_content.append(
+                    self.oci_chat_message_text_content(text=item)
+                )
+                continue
+
+            if not isinstance(item, dict):
+                raise ValueError(f"Content items must be str or dict, got: {type(item)}")
+
+            if "type" not in item:
+                raise ValueError("Dict content item must have a type key")
+
+            if item["type"] == "image_url":
+                processed_content.append(
+                    self.oci_chat_message_image_content(
+                        image_url=self.oci_chat_message_image_url(
+                            url=item["image_url"]["url"]
+                        )
+                    )
+                )
+            elif item["type"] == "text":
+                processed_content.append(
+                    self.oci_chat_message_text_content(text=item["text"])
+                )
+            else:
+                raise ValueError(f"Unsupported content type: {item['type']}")
+
+        return processed_content
 
     def convert_to_oci_tool(
         self,
