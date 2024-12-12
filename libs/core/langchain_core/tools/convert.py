@@ -448,6 +448,7 @@ class MethodTool:
         outer_instance = owner if isinstance(self.func, classmethod) else instance
 
         new_func = functools.partial(tool_func, outer_instance)
+        new_func.__doc__ = tool_func.__doc__
 
         # remove the first argument (typically 'self' or 'cls') from the schema
         args_schema = create_schema_from_function(

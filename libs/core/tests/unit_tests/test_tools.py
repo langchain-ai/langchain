@@ -2268,6 +2268,28 @@ def test_method_tool_toolcall_invoke() -> None:
     assert int(tool_message.content) == 13
 
 
+def test_method_tool_metadata() -> None:
+    """Test that a method tools have correct name/description/args schema."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @MethodTool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    args = {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+
+    assert A.foo.name == "foo"
+    assert A.foo.description == "Add two numbers to c."
+    assert A.foo.args == args
+
+
 def test_method_tool_classmethod() -> None:
     """Test that a method tool can be a classmethod."""
 
