@@ -64,7 +64,7 @@ def test_lazy_load(mock_get: Any) -> None:
 
 @pytest.mark.requires("bs4")
 @patch("aiohttp.ClientSession.get")
-def test_aload(mock_get: Any) -> None:
+async def test_aload(mock_get: Any) -> None:
     async def mock_text() -> str:
         return "<html><body><p>Test content</p></body></html>"
 
@@ -76,7 +76,7 @@ def test_aload(mock_get: Any) -> None:
         web_paths=["https://www.example.com"],
         header_template={"User-Agent": "test-user-agent"},
     )
-    results = loader.aload()
+    results = await loader.aload()
     assert len(results) == 1
     assert results[0].page_content == "Test content"
     mock_get.assert_called_with(
