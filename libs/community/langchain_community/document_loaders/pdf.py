@@ -1020,6 +1020,116 @@ class ZeroxPDFLoader(BasePDFLoader):
                         "num_pages": num_pages,
                     },
                 )
+                
+
+class AdobeExtractLoader(BaseLoader):
+    def __init__(
+        self,
+        file_path: str,
+        *,
+        client_id: str,
+        client_secret: str
+    ):
+        try:
+            from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
+            from adobe.pdfservices.operation.pdf_services import PDFServices
+            from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_pdf_params import ExtractPDFParams
+            from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_element_type import ExtractElementType
+        except ImportError:
+            raise ImportError(
+                "`pdfservices` package not found, please install it with "
+                "`pip install pdfservices-sdk`"
+            )
+
+        self.file_path = file_path
+        credentials = ServicePrincipalCredentials( client_id=client_id, client_secret=client_secret )
+        self.pdf_services = PDFServices(credentials=credentials)
+        self.extract_pdf_params = ExtractPDFParams( elements_to_extract=[ExtractElementType.TEXT])
+        self.documents = []
+        
+
+    def _upload_pdf(self):
+        try:
+            from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
+            from adobe.pdfservices.operation.pdf_services_media_type import PDFServicesMediaType
+        except ImportError:
+            raise ImportError(
+                "`pdfservices` package not found, please install it with "
+                "`pip install pdfservices-sdk`"
+            )
+
+        file = open(self.file_path, 'rb')
+        input_stream = file.read()
+        file.close()
+        self.input_asset = self.pdf_services.upload(input_stream=input_stream, mime_type=PDFServicesMediaType.PDF)
+
+    def _submit_job(self):
+        try:
+            from adobe.pdfservices.operation.pdfjobs.jobs.extract_pdf_job import ExtractPDFJob
+        except ImportError:
+            raise ImportError(
+                "`pdfservices` package not found, please install it with "
+                "`pip install pdfservices-sdk`"
+            )
+        
+        extract_pdf_job = ExtractPDFJob(input_asset=self.input_asset, extract_pdf_params=self.extract_pdf_params)
+        self.location = self.pdf_services.submit(extract_pdf_job)
+        
+
+    def _fetch_results_json(self):
+        import zipfile
+        import io
+        try:
+            from adobe.pdfservices.operation.pdfjobs.result.extract_pdf_result import ExtractPDFResult
+            from adobe.pdfservices.operation.io.cloud_asset import CloudAsset
+            from adobe.pdfservices.operation.io.stream_asset import StreamAsset
+        except ImportError:
+            raise ImportError(
+                "`pdfservices` package not found, please install it with "
+                "`pip install pdfservices-sdk`"
+            )
+        
+        pdf_services_response = self.pdf_services.get_job_result(self.location, ExtractPDFResult)
+        result_asset: CloudAsset = pdf_services_response.get_result().get_resource()
+        stream_asset: StreamAsset = self.pdf_services.get_content(result_asset)
+        zip_file_bytes = io.BytesIO(stream_asset.get_input_stream())
+        self.extract_output = None
+        with zipfile.ZipFile(zip_file_bytes, 'r') as z:
+            file_names = z.namelist()
+            for file_name in file_names:
+                if file_name == 'structuredData.json':  # Process only structuredData.json file
+                    with z.open(file_name) as f:
+                        self.extract_output = json.load(f)
+    
+    def _convert_output_to_document(self):
+        text_per_page = {}
+        for element in self.extract_output["elements"]:
+            if "Text" in element:
+                text_in_element = element["Text"]
+                page_number = element["Page"]
+                if page_number not in text_per_page:
+                    text_per_page[page_number] = ""
+                text_per_page[page_number] += text_in_element
+
+        for page_number, text in text_per_page.items():
+            document = Document(
+                page_content=text,
+                metadata={
+                    "page_number": page_number
+                }
+            )
+            self.documents.append(document)
+
+
+    def load(self):
+        """
+        Extracts content from the PDF and converts it into LangChain Documents.
+        """
+        self._upload_pdf()
+        self._submit_job()
+        self._fetch_results_json()
+        self._convert_output_to_document()
+        return self.documents
 
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
