@@ -11,7 +11,6 @@ EXPECTED_ALL = [
     "BraveSearchWrapper",
     "DataheraldAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
-    "DriaAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleBooksAPIWrapper",
     "GoogleFinanceAPIWrapper",

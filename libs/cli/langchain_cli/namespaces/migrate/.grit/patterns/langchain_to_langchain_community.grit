@@ -1183,7 +1183,6 @@ pattern langchain_migrate_langchain_to_langchain_community() {
     [`langchain.retrievers`, `ChatGPTPluginRetriever`, `langchain_community.retrievers`, `ChatGPTPluginRetriever`],
     [`langchain.retrievers`, `CohereRagRetriever`, `langchain_community.retrievers`, `CohereRagRetriever`],
     [`langchain.retrievers`, `DocArrayRetriever`, `langchain_community.retrievers`, `DocArrayRetriever`],
-    [`langchain.retrievers`, `DriaRetriever`, `langchain_community.retrievers`, `DriaRetriever`],
     [`langchain.retrievers`, `ElasticSearchBM25Retriever`, `langchain_community.retrievers`, `ElasticSearchBM25Retriever`],
     [`langchain.retrievers`, `EmbedchainRetriever`, `langchain_community.retrievers`, `EmbedchainRetriever`],
     [`langchain.retrievers`, `GoogleCloudEnterpriseSearchRetriever`, `langchain_community.retrievers`, `GoogleCloudEnterpriseSearchRetriever`],

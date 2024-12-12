@@ -36,9 +36,6 @@ if TYPE_CHECKING:
         BraveSearchWrapper,
     )
     from langchain_community.utilities.dataherald import DataheraldAPIWrapper
-    from langchain_community.utilities.dria_index import (
-        DriaAPIWrapper,
-    )
     from langchain_community.utilities.duckduckgo_search import (
         DuckDuckGoSearchAPIWrapper,
     )
@@ -185,7 +182,6 @@ __all__ = [
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
     "DataheraldAPIWrapper",
-    "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleBooksAPIWrapper",
@@ -249,7 +245,6 @@ _module_lookup = {
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
     "BraveSearchWrapper": "langchain_community.utilities.brave_search",
     "DataheraldAPIWrapper": "langchain_community.utilities.dataherald",
-    "DriaAPIWrapper": "langchain_community.utilities.dria_index",
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
     "GoldenQueryAPIWrapper": "langchain_community.utilities.golden_query",
     "GoogleBooksAPIWrapper": "langchain_community.utilities.google_books",
