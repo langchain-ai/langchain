@@ -1,18 +1,32 @@
 import glob
 import sys
 from pathlib import Path
+
 import yaml
 
 DOCS_DIR = Path(__file__).parents[1]
 PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
+IGNORE_PACKGAGES = {"langchain-experimental"}
 
 # for now, only include packages that are in the langchain-ai org
 # because we don't have a policy for inclusion in this table yet,
 # and including all packages will make the list too long
 with open(PACKAGE_YML) as f:
     data = yaml.safe_load(f)
-    EXTERNAL_PACKAGES = set(p["name"][10:] for p in data["packages"] if p["repo"].startswith("langchain-ai/") and p["repo"] != "langchain-ai/langchain")
-    IN_REPO_PACKAGES = set(p["name"][10:] for p in data["packages"] if p["repo"] == "langchain-ai/langchain" and p['path'].startswith("libs/partners"))
+    EXTERNAL_PACKAGES = set(
+        p["name"][10:]
+        for p in data["packages"]
+        if p["repo"].startswith("langchain-ai/")
+        and p["repo"] != "langchain-ai/langchain"
+        and p["name"] not in IGNORE_PACKGAGES
+    )
+    IN_REPO_PACKAGES = set(
+        p["name"][10:]
+        for p in data["packages"]
+        if p["repo"] == "langchain-ai/langchain"
+        and p["path"].startswith("libs/partners")
+        and p["name"] not in IGNORE_PACKGAGES
+    )
 
 JS_PACKAGES = {
     "google-gauth",
@@ -55,12 +69,16 @@ CUSTOM_NAME = {
 }
 CUSTOM_PROVIDER_PAGES = {
     "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",
+    "prompty": "/docs/integrations/providers/microsoft/",
+    "sqlserver": "/docs/integrations/providers/microsoft/",
     "google-community": "/docs/integrations/providers/google/",
     "google-genai": "/docs/integrations/providers/google/",
     "google-vertexai": "/docs/integrations/providers/google/",
     "nvidia-ai-endpoints": "/docs/integrations/providers/nvidia/",
     "exa": "/docs/integrations/providers/exa_search/",
     "mongodb": "/docs/integrations/providers/mongodb_atlas/",
+    "sema4": "/docs/integrations/providers/robocorp/",
+    "postgres": "/docs/integrations/providers/pgvector/",
 }
 PROVIDER_PAGES = {
     name: f"/docs/integrations/providers/{name}/"
