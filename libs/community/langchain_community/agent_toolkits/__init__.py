@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from langchain_community.agent_toolkits.amadeus.toolkit import (
         AmadeusToolkit,
     )
+    from langchain_community.agent_toolkits.atlassian.toolkit import (
+        AtlassianToolkit,
+    )
     from langchain_community.agent_toolkits.azure_ai_services import (
         AzureAiServicesToolkit,
     )
@@ -100,6 +103,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AINetworkToolkit",
     "AmadeusToolkit",
+    "AtlassianToolkit",
     "AzureAiServicesToolkit",
     "AzureCognitiveServicesToolkit",
     "CogniswitchToolkit",
@@ -133,6 +137,7 @@ __all__ = [
 _module_lookup = {
     "AINetworkToolkit": "langchain_community.agent_toolkits.ainetwork.toolkit",
     "AmadeusToolkit": "langchain_community.agent_toolkits.amadeus.toolkit",
+    "AtlassianToolkit": "langchain_community.agent_toolkits.atlassian.toolkit",
     "AzureAiServicesToolkit": "langchain_community.agent_toolkits.azure_ai_services",
     "AzureCognitiveServicesToolkit": "langchain_community.agent_toolkits.azure_cognitive_services",  # noqa: E501
     "CogniswitchToolkit": "langchain_community.agent_toolkits.cogniswitch.toolkit",
