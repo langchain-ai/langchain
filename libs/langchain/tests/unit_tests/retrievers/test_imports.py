@@ -13,7 +13,6 @@ EXPECTED_ALL = [
     "CohereRagRetriever",
     "ContextualCompressionRetriever",
     "DocArrayRetriever",
-    "DriaRetriever",
     "ElasticSearchBM25Retriever",
     "EmbedchainRetriever",
     "EnsembleRetriever",
