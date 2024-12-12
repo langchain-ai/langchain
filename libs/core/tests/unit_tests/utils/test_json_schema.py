@@ -264,3 +264,27 @@ def test_dereference_refs_cyclical_refs() -> None:
     }
     actual = dereference_refs(schema)
     assert actual == expected
+
+
+def test_dereference_refs_enum_with_description() -> None:
+    schema = {
+        "$defs": {"Enum": {"enum": ["name", "age"], "title": "Enum", "type": "string"}},
+        "properties": {"user": {"$ref": "#/$defs/Enum", "description": "description"}},
+        "required": ["user"],
+        "type": "object",
+    }
+    expected = {
+        "$defs": {"Enum": {"enum": ["name", "age"], "title": "Enum", "type": "string"}},
+        "properties": {
+            "user": {
+                "description": "description",
+                "enum": ["name", "age"],
+                "title": "Enum",
+                "type": "string",
+            }
+        },
+        "required": ["user"],
+        "type": "object",
+    }
+    actual = dereference_refs(schema)
+    assert actual == expected

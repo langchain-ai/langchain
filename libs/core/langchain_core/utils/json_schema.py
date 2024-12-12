@@ -48,7 +48,11 @@ def _dereference_refs_helper(
                     ref, full_schema, skip_keys, processed_refs
                 )
                 processed_refs.remove(v)
-                return full_ref
+
+                # Merge the referenced object with the current one
+                obj_out.update(full_ref)
+                obj_out.update({key: val for key, val in obj.items() if key != "$ref"})
+                return obj_out
             elif isinstance(v, (list, dict)):
                 obj_out[k] = _dereference_refs_helper(
                     v, full_schema, skip_keys, processed_refs
