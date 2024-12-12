@@ -392,7 +392,7 @@ class BaseChatOpenAI(BaseChatModel):
     root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
-    temperature: float = 0.7
+    temperature: Optional[float] = None
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -413,7 +413,7 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    max_retries: int = 2
+    max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
     presence_penalty: Optional[float] = None
     """Penalizes repeated tokens."""
@@ -431,7 +431,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: int = 1
+    n: Optional[int] = None
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
@@ -505,9 +505,9 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if self.n < 1:
+        if self.n is not None and self.n < 1:
             raise ValueError("n must be at least 1.")
-        if self.n > 1 and self.streaming:
+        elif self.n is not None and self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
         # Check OPENAI_ORGANIZATION for backwards compatibility.
@@ -524,10 +524,12 @@ class BaseChatOpenAI(BaseChatModel):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "max_retries": self.max_retries,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.max_retries is not None:
+            client_params["max_retries"] = self.max_retries
+
         if self.openai_proxy and (self.http_client or self.http_async_client):
             openai_proxy = self.openai_proxy
             http_client = self.http_client
@@ -582,13 +584,13 @@ class BaseChatOpenAI(BaseChatModel):
             "stop": self.stop or None,  # also exclude empty list for this
             "max_tokens": self.max_tokens,
             "extra_body": self.extra_body,
+            "n": self.n,
+            "temperature": self.temperature,
         }
 
         params = {
             "model": self.model_name,
             "stream": self.streaming,
-            "n": self.n,
-            "temperature": self.temperature,
             **{k: v for k, v in exclude_if_none.items() if v is not None},
             **self.model_kwargs,
         }
@@ -1537,7 +1539,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries: int
+        max_retries: Optional[int]
             Max number of retries.
         api_key: Optional[str]
             OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
