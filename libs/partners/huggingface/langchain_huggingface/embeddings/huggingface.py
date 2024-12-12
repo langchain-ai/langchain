@@ -36,9 +36,14 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
     See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method of the Sentence
-    Transformer model, such as `prompt_name`, `prompt`, `batch_size`, `precision`,
-    `normalize_embeddings`, and more.
+    """Keyword arguments to pass when calling the `encode` method for the documents of
+    the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`, 
+    `precision`, `normalize_embeddings`, and more.
+    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
+    query_encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Keyword arguments to pass when calling the `encode` method for the query of
+    the Sentence Transformer model, such as `prompt_name`, `prompt`, `batch_size`, 
+    `precision`, `normalize_embeddings`, and more.
     See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
     multi_process: bool = False
     """Run encode() on multiple GPUs."""
@@ -65,11 +70,17 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         protected_namespaces=(),
     )
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using a HuggingFace transformer model.
+    def _embed(
+        self, texts: list[str], encode_kwargs: Dict[str, Any]
+    ) -> List[List[float]]:
+        """
+        Embed a text using the HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.
+            encode_kwargs: Keyword arguments to pass when calling the
+                `encode` method for the documents of the SentenceTransformer
+                 encode method.
 
         Returns:
             List of embeddings, one for each text.
@@ -85,7 +96,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             embeddings = self._client.encode(
                 texts,
                 show_progress_bar=self.show_progress,
-                **self.encode_kwargs,  # type: ignore
+                **encode_kwargs,  # type: ignore
             )
 
         if isinstance(embeddings, list):
@@ -96,6 +107,17 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         return embeddings.tolist()
 
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Compute doc embeddings using a HuggingFace transformer model.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
+        return self._embed(texts, self.encode_kwargs)
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
@@ -105,4 +127,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed_documents([text])[0]
+        embed_kwargs = (
+            self.query_encode_kwargs
+            if len(self.query_encode_kwargs) > 0
+            else self.encode_kwargs
+        )
+        return self._embed([text], embed_kwargs)[0]

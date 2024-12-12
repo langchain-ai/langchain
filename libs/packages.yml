@@ -23,10 +23,6 @@ packages:
   - name: langchain-ai21
     repo: langchain-ai/langchain-ai21
     path: libs/ai21
-  - name: langchain-airbyte
-    repo: langchain-ai/langchain
-    path: libs/partners/airbyte
-    disabled: true # dependency issues / stale
   - name: langchain-anthropic
     repo: langchain-ai/langchain
     path: libs/partners/anthropic
@@ -72,6 +68,9 @@ packages:
   - name: langchain-qdrant
     repo: langchain-ai/langchain
     path: libs/partners/qdrant
+  - name: langchain-scrapegraph
+    repo: ScrapeGraphAI/langchain-scrapegraph
+    path: .
   - name: langchain-sema4
     repo: langchain-ai/langchain-sema4
     path: libs/sema4
@@ -96,6 +95,7 @@ packages:
   - name: langchain-google-vertexai
     repo: langchain-ai/langchain-google
     path: libs/vertexai
+    disabled: true
   - name: langchain-google-community
     repo: langchain-ai/langchain-google
     path: libs/community
@@ -145,5 +145,14 @@ packages:
     repo: langchain-ai/langchain
     path: libs/partners/ollama
   - name: langchain-box
+    repo: langchain-ai/langchain-box
+    path: libs/box
+  - name: langchain-tests
     repo: langchain-ai/langchain
-    path: libs/partners/box
+    path: libs/standard-tests
+  - name: langchain-neo4j
+    repo: langchain-ai/langchain-neo4j
+    path: libs/neo4j
+  - name: langchain-linkup
+    repo: LinkupPlatform/langchain-linkup
+    path: .
