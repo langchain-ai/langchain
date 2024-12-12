@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 
 
 class Model2vecEmbeddings(Embeddings):
-    """model2v embedding models.
+    """Model2Vec embedding models.
 
     Install model2vec first, run 'pip install -U model2vec'.
     The github repository for model2vec is : https://github.com/MinishLab/model2vec
@@ -51,7 +51,7 @@ class Model2vecEmbeddings(Embeddings):
             List of embeddings, one for each text.
         """
 
-        return self._model.encode_as_sequence(texts)
+        return self._model.encode(texts).tolist()
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the model2vec embeddings model.
@@ -63,4 +63,4 @@ class Model2vecEmbeddings(Embeddings):
             Embeddings for the text.
         """
 
-        return self._model.encode(text)
+        return self._model.encode(text).tolist()
