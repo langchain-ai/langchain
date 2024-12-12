@@ -1,6 +1,6 @@
 """GitLab Toolkit."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
@@ -24,6 +24,20 @@ from langchain_community.tools.gitlab.prompt import (
 from langchain_community.tools.gitlab.tool import GitLabAction
 from langchain_community.utilities.gitlab import GitLabAPIWrapper
 
+# only include a subset of tools by default to avoid a breaking change, where
+# new tools are added to the toolkit and the user's code breaks because of
+# the new tools
+DEFAULT_INCLUDED_TOOLS = [
+    "get_issues",
+    "get_issue",
+    "comment_on_issue",
+    "create_pull_request",
+    "create_file",
+    "read_file",
+    "update_file",
+    "delete_file",
+]
+
 
 class GitLabToolkit(BaseToolkit):
     """GitLab Toolkit.
@@ -45,7 +59,10 @@ class GitLabToolkit(BaseToolkit):
 
     @classmethod
     def from_gitlab_api_wrapper(
-        cls, gitlab_api_wrapper: GitLabAPIWrapper
+        cls,
+        gitlab_api_wrapper: GitLabAPIWrapper,
+        *,
+        included_tools: Optional[List[str]] = None,
     ) -> "GitLabToolkit":
         """Create a GitLabToolkit from a GitLabAPIWrapper.
 
@@ -55,6 +72,10 @@ class GitLabToolkit(BaseToolkit):
         Returns:
             GitLabToolkit. The GitLab toolkit.
         """
+
+        tools_to_include = (
+            included_tools if included_tools is not None else DEFAULT_INCLUDED_TOOLS
+        )
 
         operations: List[Dict] = [
             {
@@ -128,6 +149,11 @@ class GitLabToolkit(BaseToolkit):
                 "description": GET_REPO_FILES_FROM_DIRECTORY,
             },
         ]
+        operations_filtered = [
+            operation
+            for operation in operations
+            if operation["mode"] in tools_to_include
+        ]
         tools = [
             GitLabAction(
                 name=action["name"],
@@ -135,7 +161,7 @@ class GitLabToolkit(BaseToolkit):
                 mode=action["mode"],
                 api_wrapper=gitlab_api_wrapper,
             )
-            for action in operations
+            for action in operations_filtered
         ]
         return cls(tools=tools)  # type: ignore[arg-type]
 
