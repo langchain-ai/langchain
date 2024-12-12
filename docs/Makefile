@@ -18,7 +18,7 @@ for dir; do \
     if find "$$dir" -maxdepth 1 -type f \( -name "pyproject.toml" -o -name "setup.py" \) | grep -q .; then \
         echo "$$dir"; \
     fi \
-done' sh {} + | grep -vE "airbyte|ibm|couchbase|databricks" | tr '\n' ' ')
+done' sh {} + | grep -vE "airbyte|ibm|databricks" | tr '\n' ' ')
 
 PORT ?= 3001
 
@@ -38,7 +38,7 @@ install-py-deps:
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
-	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
+	cp -rp $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
 
@@ -47,6 +47,7 @@ generate-files:
 	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
 
 	curl https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md | sed 's/<=/\&lt;=/g' > $(INTERMEDIATE_DIR)/langserve.md
+	cp ../SECURITY.md $(INTERMEDIATE_DIR)/security.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
 
 copy-infra:
@@ -59,6 +60,7 @@ copy-infra:
 	cp package.json $(OUTPUT_NEW_DIR)
 	cp sidebars.js $(OUTPUT_NEW_DIR)
 	cp -r static $(OUTPUT_NEW_DIR)
+	cp -r ../libs/cli/langchain_cli/integration_template $(OUTPUT_NEW_DIR)/src/theme
 	cp yarn.lock $(OUTPUT_NEW_DIR)
 
 render:
@@ -80,6 +82,7 @@ build: install-py-deps generate-files copy-infra render md-sync append-related
 vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
+	cp -r ../libs/cli/langchain_cli/integration_template src/theme
 	rm -rf build
 	mkdir static/api_reference
 	git clone --depth=1 https://github.com/langchain-ai/langchain-api-docs-html.git

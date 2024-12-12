@@ -8,20 +8,35 @@ import click
 import nbformat
 
 logger = logging.getLogger(__name__)
-NOTEBOOK_DIRS = ("docs/docs/tutorials",)
+NOTEBOOK_DIRS = ("docs/docs/how_to", "docs/docs/tutorials")
 DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
-# TODO: populate if needed
 NOTEBOOKS_NO_CASSETTES = [
     "docs/docs/tutorials/retrievers.ipynb",  # TODO: fix non-determinism
+    "docs/docs/how_to/multi_vector.ipynb",  # Non-determinism due to batch
 ]
 
 NOTEBOOKS_NO_EXECUTION = [
+    "docs/docs/how_to/add_scores_retriever.ipynb",  # Requires Pinecone instance
+    "docs/docs/how_to/chat_model_rate_limiting.ipynb",  # Slow (demonstrates rate limiting)
+    "docs/docs/how_to/document_loader_directory.ipynb",  # Deliberately raises error
+    "docs/docs/how_to/document_loader_pdf.ipynb",  # Local parsing section is slow
+    "docs/docs/how_to/example_selectors_langsmith.ipynb",  # TODO: add langchain-benchmarks; fix cassette issue
+    "docs/docs/how_to/extraction_long_text.ipynb",  # Non-determinism due to batch
+    "docs/docs/how_to/graph_constructing.ipynb",  # Requires local neo4j
+    "docs/docs/how_to/graph_semantic.ipynb",  # Requires local neo4j
+    "docs/docs/how_to/hybrid.ipynb",  # Requires AstraDB instance
+    "docs/docs/how_to/indexing.ipynb",  # Requires local Elasticsearch
+    "docs/docs/how_to/local_llms.ipynb",  # Local LLMs
+    "docs/docs/how_to/migrate_agent.ipynb",  # TODO: resolve issue with asyncio / exception handling
+    "docs/docs/how_to/qa_per_user.ipynb",  # Requires Pinecone instance
+    "docs/docs/how_to/query_high_cardinality.ipynb",  # Heavy
+    "docs/docs/how_to/split_by_token.ipynb",  # TODO: requires Korean document, also heavy deps
+    "docs/docs/how_to/tools_error.ipynb",  # Deliberately raises error
+    "docs/docs/how_to/tools_human.ipynb",  # Requires human input()
+    "docs/docs/how_to/tools_prompting.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
-    "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
-    "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
-    "docs/docs/tutorials/sql_qa.ipynb",  # Requires Chinook db locally
     "docs/docs/tutorials/summarization.ipynb",  # TODO: source of non-determinism somewhere, fix or add to no cassettes
 ]
 
@@ -122,7 +137,10 @@ def add_vcr_to_notebook(
     return notebook
 
 
-def process_notebooks(should_comment_install_cells: bool) -> None:
+def process_notebooks(
+    should_comment_install_cells: bool,
+    working_directory: str,
+) -> None:
     for directory in NOTEBOOK_DIRS:
         for root, _, files in os.walk(directory):
             for file in files:
@@ -130,6 +148,12 @@ def process_notebooks(should_comment_install_cells: bool) -> None:
                     continue
 
                 notebook_path = os.path.join(root, file)
+                # Filter notebooks based on the working_directory input
+                if working_directory != "all" and not notebook_path.startswith(
+                    working_directory
+                ):
+                    continue
+
                 try:
                     notebook = nbformat.read(notebook_path, as_version=4)
 
@@ -172,8 +196,16 @@ def process_notebooks(should_comment_install_cells: bool) -> None:
     default=False,
     help="Whether to comment out install cells",
 )
-def main(comment_install_cells):
-    process_notebooks(should_comment_install_cells=comment_install_cells)
+@click.option(
+    "--working-directory",
+    default="all",
+    help="Working directory or specific notebook to process",
+)
+def main(comment_install_cells, working_directory):
+    process_notebooks(
+        should_comment_install_cells=comment_install_cells,
+        working_directory=working_directory,
+    )
     logger.info("All notebooks processed successfully.")
 
 

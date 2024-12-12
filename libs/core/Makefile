@@ -6,14 +6,21 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-test:
-	poetry run pytest $(TEST_FILE)
-
-tests:
-	poetry run pytest $(TEST_FILE)
+test tests:
+	env \
+	-u LANGCHAIN_TRACING_V2 \
+	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_TRACING \
+	-u LANGCHAIN_PROJECT \
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)
+	env \
+	-u LANGCHAIN_TRACING_V2 \
+	-u LANGCHAIN_API_KEY \
+	-u LANGSMITH_TRACING \
+	-u LANGCHAIN_PROJECT \
+	poetry run ptw --snapshot-update --now . --disable-socket --allow-unix-socket -- -vv $(TEST_FILE)
 
 test_profile:
 	poetry run pytest -vv tests/unit_tests/ --profile-svg
@@ -22,7 +29,7 @@ check_imports: $(shell find langchain_core -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
-	poetry run pytest --only-extended $(TEST_FILE)
+	poetry run pytest --only-extended --disable-socket --allow-unix-socket $(TEST_FILE)
 
 
 ######################

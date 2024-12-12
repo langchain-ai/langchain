@@ -8,7 +8,8 @@ class __ModuleName__Embeddings(Embeddings):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install ``__package_name__`` and set environment variable
+        ``__MODULE_NAME___API_KEY``.
 
         .. code-block:: bash
 
@@ -70,21 +71,26 @@ class __ModuleName__Embeddings(Embeddings):
 
     """
 
+    def __init__(self, model: str):
+        self.model = model
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        raise NotImplementedError
+        return [[0.5, 0.6, 0.7] for _ in texts]
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        raise NotImplementedError
+        return self.embed_documents([text])[0]
 
-    # only keep aembed_documents and aembed_query if they're implemented!
-    # delete them otherwise to use the base class' default
-    # implementation, which calls the sync version in an executor
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronous Embed search docs."""
-        raise NotImplementedError
+    # optional: add custom async implementations here
+    # you can also delete these, and the base class will
+    # use the default implementation, which calls the sync
+    # version in an async executor:
 
-    async def aembed_query(self, text: str) -> List[float]:
-        """Asynchronous Embed query text."""
-        raise NotImplementedError
+    # async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    #     """Asynchronous Embed search docs."""
+    #     ...
+
+    # async def aembed_query(self, text: str) -> List[float]:
+    #     """Asynchronous Embed query text."""
+    #     ...
