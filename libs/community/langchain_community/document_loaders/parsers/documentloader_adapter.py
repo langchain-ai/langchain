@@ -58,4 +58,6 @@ class DocumentLoaderAsParser(BaseBlobParser):
         doc_loader = self.DocumentLoaderClass(
             file_path=blob.path, **self.document_loader_kwargs
         )  # type: ignore
-        yield from doc_loader.lazy_load()
+        for document in doc_loader.lazy_load():
+            document.metadata.update(blob.metadata)
+            yield document
