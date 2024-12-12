@@ -8,6 +8,7 @@ EXPECTED_ALL = [
     "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
+    "GoogleCalendarToolkit",
     "JiraToolkit",
     "JsonToolkit",
     "MultionToolkit",
