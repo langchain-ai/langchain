@@ -12,7 +12,7 @@ export default function VectorStoreTabs(props) {
         {
             value: "In-memory",
             label: "In-memory",
-            text: `from langchain_core.vector_stores import InMemoryVectorStore\n\n${vectorStoreVarName} = InMemoryVectorStore(embeddings)`,
+            text: `from langchain_core.vectorstores import InMemoryVectorStore\n\n${vectorStoreVarName} = InMemoryVectorStore(embeddings)`,
             packageName: "langchain-core",
             default: true,
         },
