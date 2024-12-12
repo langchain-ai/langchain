@@ -1,0 +1,33 @@
+repos:
+- repo: local
+  hooks:
+    - id: core
+      name: format core
+      language: system
+      entry: make -C libs/core format
+      files: ^libs/core/(langchain_core|tests)/
+      pass_filenames: false
+    - id: community
+      name: format community
+      language: system
+      entry: make -C libs/community format
+      files: ^libs/community/(langchain_community|tests)/
+      pass_filenames: false
+    - id: langchain
+      name: format langchain
+      language: system
+      entry: make -C libs/langchain format
+      files: ^libs/langchain/(langchain|tests)/
+      pass_filenames: false
+    - id: standard-tests
+      name: format standard-tests
+      language: system
+      entry: make -C libs/standard-tests format
+      files: ^libs/standard-tests/(langchain_standard_tests|tests)/
+      pass_filenames: false
+    - id: text-splitters
+      name: format text-splitters
+      language: system
+      entry: make -C libs/text-splitters format
+      files: ^libs/text-splitters/(langchain_text_splitters|tests)/
+      pass_filenames: false
