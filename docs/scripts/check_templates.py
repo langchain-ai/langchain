@@ -1,5 +1,4 @@
 import json
-import re
 import sys
 from functools import cache
 from pathlib import Path
