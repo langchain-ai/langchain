@@ -1,11 +1,21 @@
+import functools
 import inspect
-from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Union,
+    cast,
+    get_type_hints,
+    overload,
+)
 
 from pydantic import BaseModel, Field, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
-from langchain_core.tools.base import BaseTool
+from langchain_core.tools.base import BaseTool, create_schema_from_function
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
 
@@ -19,7 +29,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    outer_instance: Optional[Any] = None,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -34,7 +43,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    outer_instance: Optional[Any] = None,
 ) -> BaseTool: ...
 
 
@@ -48,7 +56,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    outer_instance: Optional[Any] = None,
 ) -> BaseTool: ...
 
 
@@ -62,7 +69,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    outer_instance: Optional[Any] = None,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -76,7 +82,6 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-    outer_instance: Optional[Any] = None,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -107,8 +112,6 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
-        outer_instance: For method tools, the instance of the class that the tool is
-            being created. Defaults to None.
 
     Returns:
         The tool.
@@ -264,7 +267,6 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
-                    outer_instance=outer_instance,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -438,6 +440,24 @@ class MethodTool:
         self.func = func
 
     def __get__(self, instance: Any, owner: Any) -> BaseTool:
-        if isinstance(self.func, classmethod):
-            return tool(self.func.__func__, outer_instance=owner)
-        return tool(self.func, outer_instance=instance)
+        # casting to Callable to avoid mypy error
+        tool_func: Callable = cast(
+            Callable,
+            self.func.__func__ if isinstance(self.func, classmethod) else self.func,
+        )
+        outer_instance = owner if isinstance(self.func, classmethod) else instance
+
+        new_func = functools.partial(tool_func, outer_instance)
+
+        # remove the first argument (typically 'self' or 'cls') from the schema
+        args_schema = create_schema_from_function(
+            tool_func.__name__,
+            tool_func,
+            filter_args=[
+                list(inspect.signature(tool_func).parameters.values())[0].name
+            ],
+        )
+
+        return tool(tool_func.__name__, args_schema=args_schema, infer_schema=False)(
+            new_func
+        )

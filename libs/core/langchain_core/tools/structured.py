@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import textwrap
 from collections.abc import Awaitable
 from inspect import signature
@@ -42,9 +41,6 @@ class StructuredTool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
-    outer_instance: Optional[Any] = None
-    """For methods/classmethods, the 'self' or 'cls' instance to use
-    when calling the function."""
 
     # --- Runnable ---
 
@@ -81,8 +77,6 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
-            if self.outer_instance is not None:
-                args = (self.outer_instance, *args)
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -100,8 +94,6 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
-            if self.outer_instance is not None:
-                args = (self.outer_instance, *args)
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default
@@ -124,7 +116,6 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
-        outer_instance: Optional[Any] = None,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -181,21 +172,13 @@ class StructuredTool(BaseTool):
             raise ValueError(msg)
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
-            filter_args = _filter_schema_args(source_function)
-
-            # if outer_instance is provided, add the first argument to the filter_args
-            if outer_instance is not None:
-                filter_args.append(
-                    list(inspect.signature(source_function).parameters.values())[0].name
-                )
-
             # schema name is appended within function
             args_schema = create_schema_from_function(
                 name,
                 source_function,
                 parse_docstring=parse_docstring,
                 error_on_invalid_docstring=error_on_invalid_docstring,
-                filter_args=filter_args,
+                filter_args=_filter_schema_args(source_function),
             )
         description_ = description
         if description is None and not parse_docstring:
@@ -220,7 +203,6 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
-            outer_instance=outer_instance,
             **kwargs,
         )
 
