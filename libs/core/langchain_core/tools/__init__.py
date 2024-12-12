@@ -41,6 +41,7 @@ from langchain_core.tools.base import (
 from langchain_core.tools.base import (
     create_schema_from_function as create_schema_from_function,
 )
+from langchain_core.tools.convert import MethodTool as MethodTool
 from langchain_core.tools.convert import (
     convert_runnable_to_tool as convert_runnable_to_tool,
 )

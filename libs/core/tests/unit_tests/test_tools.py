@@ -40,6 +40,7 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
+    MethodTool,
     StructuredTool,
     Tool,
     ToolException,
@@ -2174,3 +2175,124 @@ def test_tool_return_output_mixin() -> None:
     assert foo.invoke(
         {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
     ) == Bar(x=0)
+
+
+def test_method_tool_self_ref() -> None:
+    """Test that a method tool can reference self."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @MethodTool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+    assert a.foo.invoke({"a": 1, "b": 2}) == 13
+
+
+def test_method_tool_args() -> None:
+    """Test that a method tool's args do not include self."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @MethodTool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+    assert "self" not in a.foo.args
+
+
+async def test_method_tool_async() -> None:
+    """Test that a method tool can be async."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @MethodTool
+        async def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+    async_response = await a.foo.ainvoke({"a": 1, "b": 2})
+    assert async_response == 13
+
+
+def test_method_tool_string_invoke() -> None:
+    """Test that a method tool can be invoked with a string."""
+
+    class A:
+        def __init__(self, a: str):
+            self.a = a
+
+        @MethodTool
+        def foo(self, b: str) -> str:
+            """Concatenate a and b."""
+            return self.a + b
+
+    a = A("a")
+    assert a.foo.invoke("b") == "ab"
+
+
+def test_method_tool_toolcall_invoke() -> None:
+    """Test that a method tool can be invoked with a ToolCall."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @MethodTool
+        def foo(self, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + self.c
+
+    a = A(10)
+
+    tool_call = {
+        "name": a.foo.name,
+        "args": {"a": 1, "b": 2},
+        "id": "123",
+        "type": "tool_call",
+    }
+
+    tool_message = a.foo.invoke(tool_call)
+
+    assert int(tool_message.content) == 13
+
+
+def test_method_tool_classmethod() -> None:
+    """Test that a method tool can be a classmethod."""
+
+    class A:
+        c = 5
+
+        @MethodTool
+        @classmethod
+        def foo(cls, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + cls.c
+
+    assert A.foo.invoke({"a": 1, "b": 2}) == 8
+
+
+def test_method_tool_classmethod_args() -> None:
+    """Test that a classmethod tool's args do not include cls."""
+
+    class A:
+        c = 5
+
+        @MethodTool
+        @classmethod
+        def foo(cls, a: int, b: int) -> int:
+            """Add two numbers to c."""
+            return a + b + cls.c
+
+    assert "cls" not in A.foo.args

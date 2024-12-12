@@ -19,6 +19,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    outer_instance: Optional[Any] = None,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -33,6 +34,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    outer_instance: Optional[Any] = None,
 ) -> BaseTool: ...
 
 
@@ -46,6 +48,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    outer_instance: Optional[Any] = None,
 ) -> BaseTool: ...
 
 
@@ -59,6 +62,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    outer_instance: Optional[Any] = None,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -72,6 +76,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    outer_instance: Optional[Any] = None,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -102,6 +107,8 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        outer_instance: For method tools, the instance of the class that the tool is
+            being created. Defaults to None.
 
     Returns:
         The tool.
@@ -257,6 +264,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    outer_instance=outer_instance,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -421,3 +429,15 @@ def convert_runnable_to_tool(
             description=description,
             args_schema=args_schema,
         )
+
+
+class MethodTool:
+    """A descriptor that converts a method into a tool."""
+
+    def __init__(self, func: Union[Callable, classmethod]) -> None:
+        self.func = func
+
+    def __get__(self, instance: Any, owner: Any) -> BaseTool:
+        if isinstance(self.func, classmethod):
+            return tool(self.func.__func__, outer_instance=owner)
+        return tool(self.func, outer_instance=instance)
