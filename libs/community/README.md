@@ -15,7 +15,7 @@ LangChain Community contains third-party integrations that implement the base in
 
 For full documentation see the [API reference](https://python.langchain.com/api_reference/community/index.html).
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](https://raw.githubusercontent.com/langchain-ai/langchain/e1d113ea84a2edcf4a7709fc5be0e972ea74a5d9/docs/static/svg/langchain_stack_112024.svg "LangChain Framework Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](https://raw.githubusercontent.com/langchain-ai/langchain/master/docs/static/svg/langchain_stack_112024.svg "LangChain Framework Overview")
 
 ## 📕 Releases & Versioning
 
