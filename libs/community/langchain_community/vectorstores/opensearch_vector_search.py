@@ -562,8 +562,8 @@ class OpenSearchVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -1091,8 +1091,8 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         bulk_size: Optional[int] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
         """Construct OpenSearchVectorSearch wrapper from raw texts.
@@ -1157,8 +1157,8 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         bulk_size: Optional[int] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
         """Asynchronously construct OpenSearchVectorSearch wrapper from raw texts.
