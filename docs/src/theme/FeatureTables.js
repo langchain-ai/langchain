@@ -406,7 +406,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "NVIDIA",
-                link: "NVIDIAEmbeddings",
+                link: "nvidia_ai_endpoints",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
@@ -1138,7 +1138,20 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: false,
-            }
+            },
+            {
+                name: "SQLServer",
+                link: "sqlserver",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: false,
+                idsInAddDocuments: false,
+            }, 
         ],
     }
 };

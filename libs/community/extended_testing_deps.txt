@@ -46,6 +46,7 @@ motor>=3.3.1,<4
 msal>=1.25.0,<2
 mwparserfromhell>=0.6.4,<0.7
 mwxml>=0.3.3,<0.4
+needle-python>=0.4
 networkx>=3.2.1,<4
 newspaper3k>=0.2.8,<0.3
 numexpr>=2.8.6,<3

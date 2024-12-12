@@ -3,7 +3,7 @@
 from typing import Type
 
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests.chat_models import (
+from langchain_tests.unit_tests.chat_models import (
     ChatModelUnitTests,
 )
 
