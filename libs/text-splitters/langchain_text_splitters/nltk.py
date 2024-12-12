@@ -12,6 +12,7 @@ class NLTKTextSplitter(TextSplitter):
         self,
         separator: str = "\n\n",
         language: str = "english",
+        *,
         use_span_tokenize: bool = False,
         **kwargs: Any,
     ) -> None:
