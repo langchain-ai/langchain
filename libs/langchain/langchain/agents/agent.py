@@ -47,6 +47,7 @@ from langchain_core.utils.input import get_color_mapping
 from pydantic import BaseModel, ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent_iterator import AgentExecutorIterator
 from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import InvalidTool
@@ -633,10 +634,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
 @deprecated(
     "0.1.0",
-    message=(
-        "Use new agent constructor methods like create_react_agent, create_json_agent, "
-        "create_structured_chat_agent, etc."
-    ),
+    message=AGENT_DEPRECATION_WARNING,
     removal="1.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
@@ -724,10 +722,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 @deprecated(
     "0.1.0",
-    message=(
-        "Use new agent constructor methods like create_react_agent, create_json_agent, "
-        "create_structured_chat_agent, etc."
-    ),
+    message=AGENT_DEPRECATION_WARNING,
     removal="1.0",
 )
 class Agent(BaseSingleActionAgent):

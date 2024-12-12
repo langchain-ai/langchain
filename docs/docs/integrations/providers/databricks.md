@@ -14,23 +14,13 @@ Databricks embraces the LangChain ecosystem in various ways:
 Installation
 ------------
 
-First-party Databricks integrations are available in the langchain-databricks partner package.
+First-party Databricks integrations are now available in the databricks-langchain partner package.
 
 ```
-pip install langchain-databricks
+pip install databricks-langchain
 ```
 
-🚧 Upcoming Package Consolidation Notice
-
-This package (`langchain-databricks`) will soon be consolidated into a new package: `databricks-langchain`. The new package will serve as the primary hub for all Databricks Langchain integrations.
-
-What’s Changing?
-In the coming months, `databricks-langchain` will include all features currently in `langchain-databricks`, as well as additional integrations to provide a unified experience for Databricks users.
-
-What You Need to Know
-For now, continue to use `langchain-databricks` as usual. When `databricks-langchain` is ready, we’ll provide clear migration instructions to make the transition seamless. During the transition period, `langchain-databricks` will remain operational, and updates will be shared here with timelines and guidance.
-
-Thank you for your support as we work toward an improved, streamlined experience!
+The legacy langchain-databricks partner package is still available but will be soon deprecated. 
 
 Chat Model
 ----------
@@ -38,7 +28,7 @@ Chat Model
 `ChatDatabricks` is a Chat Model class to access chat endpoints hosted on Databricks, including state-of-the-art models such as Llama3, Mixtral, and DBRX, as well as your own fine-tuned models.
 
 ```
-from langchain_databricks import ChatDatabricks
+from databricks_langchain import ChatDatabricks
 
 chat_model = ChatDatabricks(endpoint="databricks-meta-llama-3-70b-instruct")
 ```
@@ -69,7 +59,7 @@ Embeddings
 `DatabricksEmbeddings` is an Embeddings class to access text-embedding endpoints hosted on Databricks, including state-of-the-art models such as BGE, as well as your own fine-tuned models.
 
 ```
-from langchain_databricks import DatabricksEmbeddings
+from databricks_langchain import DatabricksEmbeddings
 
 embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
 ```
@@ -83,7 +73,7 @@ Vector Search
 Databricks Vector Search is a serverless similarity search engine that allows you to store a vector representation of your data, including metadata, in a vector database. With Vector Search, you can create auto-updating vector search indexes from [Delta](https://docs.databricks.com/en/introduction/delta-comparison.html) tables managed by [Unity Catalog](https://www.databricks.com/product/unity-catalog) and query them with a simple API to return the most similar vectors.
 
 ```
-from langchain_databricks.vectorstores import DatabricksVectorSearch
+from databricks_langchain import DatabricksVectorSearch
 
 dvs = DatabricksVectorSearch(
     endpoint="<YOUT_ENDPOINT_NAME>",
