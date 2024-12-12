@@ -105,6 +105,7 @@ EXPECTED_ALL = [
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
+    "QuerySQLDatabaseTool",
     "QuerySQLDataBaseTool",
     "QuerySparkSQLTool",
     "ReadFileTool",

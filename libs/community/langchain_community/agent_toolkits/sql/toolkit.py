@@ -13,7 +13,10 @@ from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     ListSQLDatabaseTool,
     QuerySQLCheckerTool,
-    QuerySQLDataBaseTool,
+    QuerySQLDatabaseTool,
+)
+from langchain_community.tools.sql_database.tool import (
+    QuerySQLDataBaseTool as QuerySQLDataBaseTool,  # keep import for backwards compat.
 )
 from langchain_community.utilities.sql_database import SQLDatabase
 
@@ -110,7 +113,7 @@ class SQLDatabaseToolkit(BaseToolkit):
             f"'xxxx' in 'field list', use {info_sql_database_tool.name} "
             "to query the correct table fields."
         )
-        query_sql_database_tool = QuerySQLDataBaseTool(
+        query_sql_database_tool = QuerySQLDatabaseTool(
             db=self.db, description=query_sql_database_tool_description
         )
         query_sql_checker_tool_description = (
