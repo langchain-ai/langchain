@@ -128,6 +128,7 @@ class WebBaseLoader(BaseLoader):
         session: Any = None,
         *,
         show_progress: bool = True,
+        trust_env: bool = False,
     ) -> None:
         """Initialize loader.
 
@@ -189,6 +190,7 @@ class WebBaseLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.autoset_encoding = autoset_encoding
         self.encoding = encoding
+        self.trust_env = trust_env
 
     @property
     def web_path(self) -> str:
@@ -199,7 +201,7 @@ class WebBaseLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
                     kwargs: Dict = dict(
