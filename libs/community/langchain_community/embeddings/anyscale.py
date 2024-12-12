@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional
 
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from pydantic import Field, SecretStr
@@ -17,7 +17,7 @@ DEFAULT_MODEL = "thenlper/gte-large"
 class AnyscaleEmbeddings(OpenAIEmbeddings):
     """`Anyscale` Embeddings API."""
 
-    anyscale_api_key: SecretStr = Field(default=None)
+    anyscale_api_key: Optional[SecretStr] = Field(default=None)
     """AnyScale Endpoints API keys."""
     model: str = Field(default=DEFAULT_MODEL)
     """Model name to use."""

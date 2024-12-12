@@ -91,6 +91,8 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = tool_calls
+        if context := _dict.get("context"):
+            additional_kwargs["context"] = context
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
@@ -133,6 +135,11 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         if "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+        if "context" in message.additional_kwargs:
+            message_dict["context"] = message.additional_kwargs["context"]
+            # If context only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
     elif isinstance(message, SystemMessage):

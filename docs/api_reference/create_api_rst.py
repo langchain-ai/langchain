@@ -72,13 +72,20 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
     Returns:
         list: A list of loaded module objects.
     """
+
     classes_: List[ClassInfo] = []
     functions: List[FunctionInfo] = []
     module = importlib.import_module(module_path)
+
+    if ":private:" in (module.__doc__ or ""):
+        return ModuleMembers(classes_=[], functions=[])
+
     for name, type_ in inspect.getmembers(module):
         if not hasattr(type_, "__module__"):
             continue
         if type_.__module__ != module_path:
+            continue
+        if ":private:" in (type_.__doc__ or ""):
             continue
 
         if inspect.isclass(type_):
@@ -479,11 +486,11 @@ def _package_namespace(package_name: str) -> str:
     Returns:
         modified package_name: Can be either "langchain" or "langchain_{package_name}"
     """
-    return (
-        package_name
-        if package_name == "langchain"
-        else f"langchain_{package_name.replace('-', '_')}"
-    )
+    if package_name == "langchain":
+        return "langchain"
+    if package_name == "standard-tests":
+        return "langchain_tests"
+    return f"langchain_{package_name.replace('-', '_')}"
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
@@ -495,6 +502,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "core",
         "cli",
         "text-splitters",
+        "standard-tests",
     ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
@@ -649,7 +657,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners", "standard-tests", "packages.yml")
+            if dir_ not in ("cli", "partners", "packages.yml")
         ]
         dirs += [
             dir_

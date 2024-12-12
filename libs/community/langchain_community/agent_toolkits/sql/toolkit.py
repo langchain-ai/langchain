@@ -2,6 +2,8 @@
 
 from typing import List
 
+from langchain_core.caches import BaseCache as BaseCache
+from langchain_core.callbacks import Callbacks as Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
@@ -129,3 +131,6 @@ class SQLDatabaseToolkit(BaseToolkit):
     def get_context(self) -> dict:
         """Return db context that you may want in agent prompt."""
         return self.db.get_context()
+
+
+SQLDatabaseToolkit.model_rebuild()
