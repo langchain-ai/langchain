@@ -1,6 +1,7 @@
 """Models for the PebbloRetrievalQA chain."""
 
-from typing import Any, List, Optional, Union
+from enum import Enum
+from typing import Any, List, Optional, Set, Union
 
 from pydantic import BaseModel
 
@@ -10,7 +11,7 @@ class AuthContext(BaseModel):
 
     name: Optional[str] = None
     user_id: str
-    user_auth: List[str]
+    user_auth: List[str] = []
     """List of user authorizations, which may include their User ID and 
     the groups they are part of"""
 
@@ -149,3 +150,54 @@ class Qa(BaseModel):
     user: str
     user_identities: Optional[List[str]]
     classifier_location: str
+
+
+class PolicyType(Enum):
+    """Enums for policy types"""
+
+    IDENTITY = "identity"
+    APPLICATION = "application"
+    COST = "cost"
+
+
+class SemanticGuardrail(BaseModel):
+    """
+    Semantic Guardrail for Entities and Topics (Restrictions).
+
+    Attributes:
+        entities (Optional[Set[str]]): A set of entity restrictions.
+        topics (Optional[Set[str]]): A set of topic restrictions.
+    """
+
+    entities: Set[str] = set()
+    topics: Set[str] = set()
+
+
+class Policy(BaseModel):
+    """
+    Policy base class.
+
+    Attributes:
+        schema_version (int): The schema version of the policy.
+        type (PolicyType): The type of policy.
+    """
+
+    schema_version: int = 1
+    type: PolicyType
+
+    class Config:
+        extra = "ignore"
+
+
+class IdentityPolicy(Policy):
+    """
+    Policy for access control.
+
+    Attributes:
+        privileged_identities (Set[str]): List of identities with privileged access.
+        user_semantic_guardrail (dict[str, SemanticGuardrail]): Mapping of identities to
+            semantic guardrail restrictions.
+    """
+
+    privileged_identities: Set[str] = set()
+    user_semantic_guardrail: dict[str, SemanticGuardrail] = {}
