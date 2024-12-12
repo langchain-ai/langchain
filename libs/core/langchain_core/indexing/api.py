@@ -22,6 +22,7 @@ from pydantic import model_validator
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from langchain_core.exceptions import LangChainException
 from langchain_core.indexing.base import DocumentIndex, RecordManager
 from langchain_core.vectorstores import VectorStore
 
@@ -175,6 +176,10 @@ def _deduplicate_in_order(
             yield hashed_doc
 
 
+class IndexingException(LangChainException):
+    """Raised when an indexing operation fails."""
+
+
 def _delete(
     vector_store: Union[VectorStore, DocumentIndex],
     ids: list[str],
@@ -182,13 +187,19 @@ def _delete(
     if isinstance(vector_store, VectorStore):
         delete_ok = vector_store.delete(ids)
         if delete_ok is not None and delete_ok is False:
-            msg = "delete failed"
-            raise Exception(msg)
+            msg = "The delete operation to VectorStore failed."
+            raise IndexingException(msg)
     elif isinstance(vector_store, DocumentIndex):
         delete_response = vector_store.delete(ids)
         if "num_failed" in delete_response and delete_response["num_failed"] > 0:
-            msg = "delete failed"
-            raise Exception(msg)
+            msg = "The delete operation to DocumentIndex failed."
+            raise IndexingException(msg)
+    else:
+        msg = (
+            f"Vectorstore should be either a VectorStore or a DocumentIndex. "
+            f"Got {type(vector_store)}."
+        )
+        raise TypeError(msg)
 
 
 # PUBLIC API
@@ -474,13 +485,19 @@ async def _adelete(
     if isinstance(vector_store, VectorStore):
         delete_ok = await vector_store.adelete(ids)
         if delete_ok is not None and delete_ok is False:
-            msg = "delete failed"
-            raise Exception(msg)
+            msg = "The delete operation to VectorStore failed."
+            raise IndexingException(msg)
     elif isinstance(vector_store, DocumentIndex):
         delete_response = await vector_store.adelete(ids)
         if "num_failed" in delete_response and delete_response["num_failed"] > 0:
-            msg = "delete failed"
-            raise Exception(msg)
+            msg = "The delete operation to DocumentIndex failed."
+            raise IndexingException(msg)
+    else:
+        msg = (
+            f"Vectorstore should be either a VectorStore or a DocumentIndex. "
+            f"Got {type(vector_store)}."
+        )
+        raise TypeError(msg)
 
 
 async def aindex(
