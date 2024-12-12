@@ -390,6 +390,93 @@ class PyPDFium2Parser(BaseBlobParser):
         return extract_from_images_with_rapidocr(images)
 
 
+class PyPDFium2TocParser(BaseBlobParser):
+    """Parse `PDF` with `PyPDFium2`."""
+
+    def __init__(
+        self, extract_images: bool = False, remove_page_number_from_content: bool = True
+    ) -> None:
+        """Initialize the parser."""
+        try:
+            import pypdfium2  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "pypdfium2 package not found, please install it with"
+                " `pip install pypdfium2`"
+            )
+        self.extract_images = extract_images
+        self.remove_page_number_from_content = remove_page_number_from_content
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        """Lazily parse the blob."""
+        import pypdfium2
+
+        # pypdfium2 is really finicky with respect to closing things,
+        # if done incorrectly creates seg faults.
+        with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
+            pdf_reader = pypdfium2.PdfDocument(file_path, autoclose=True)
+            toc_entries = [toc_entry for toc_entry in pdf_reader.get_toc()]
+
+            try:
+                for toc_index, toc_entry in enumerate(toc_entries):
+                    content = ""
+                    page_indexes = []
+                    start_page = toc_entry.page_index
+                    if toc_index == len(toc_entries) - 1:
+                        next_toc_entry = None
+                        end_page = len(pdf_reader) - 1
+                    else:
+                        next_toc_entry = toc_entries[toc_index + 1]
+                        end_page = next_toc_entry.page_index
+
+                    for page_index in range(start_page, end_page + 1):
+                        page = pdf_reader[page_index]
+                        text_page = page.get_textpage()
+                        page_indexes.append(page_index)
+                        top, bottom = None, None
+                        if page_index == start_page:
+                            top = toc_entry.view_pos[1]
+                        if next_toc_entry and page_index == end_page:
+                            bottom = next_toc_entry.view_pos[1]
+                        page_content = text_page.get_text_bounded(
+                            top=top, bottom=bottom
+                        )
+                        if self.remove_page_number_from_content:
+                            lines_page_content = page_content.split("\n")
+                            if lines_page_content[-1].strip().isdigit():
+                                lines_page_content.pop()
+                            page_content = "\n".join(lines_page_content)
+                        content += page_content
+                        text_page.close()
+                        content += "\n" + self._extract_images_from_page(page)
+                        page.close()
+
+                    toc_entry_meta_data = {
+                        "toc_index": toc_index,
+                        "level": toc_entry.level,
+                        "n_kids": toc_entry.n_kids,
+                        "page_indexes": ",".join(map(str, page_indexes)),
+                        "toc_title": toc_entry.title,
+                    }
+                    metadata = {"source": blob.source}
+                    metadata.update(toc_entry_meta_data)
+                    yield Document(page_content=content, metadata=metadata)
+            finally:
+                pdf_reader.close()
+
+    def _extract_images_from_page(self, page: pypdfium2._helpers.page.PdfPage) -> str:
+        """Extract images from page and get the text with RapidOCR."""
+        if not self.extract_images:
+            return ""
+
+        import pypdfium2.raw as pdfium_c
+
+        images = list(page.get_objects(filter=(pdfium_c.FPDF_PAGEOBJ_IMAGE,)))
+
+        images = list(map(lambda x: x.get_bitmap().to_numpy(), images))
+        return extract_from_images_with_rapidocr(images)
+
+
 class PDFPlumberParser(BaseBlobParser):
     """Parse `PDF` with `PDFPlumber`."""
 

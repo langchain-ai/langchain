@@ -132,6 +132,7 @@ EXPECTED_ALL = [
     "PyMuPDFLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
+    "PyPDFium2TocLoader",
     "PyPDFium2Loader",
     "PySparkDataFrameLoader",
     "PythonLoader",

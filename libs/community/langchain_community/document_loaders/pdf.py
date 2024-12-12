@@ -34,6 +34,7 @@ from langchain_community.document_loaders.parsers.pdf import (
     PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
+    PyPDFium2TocParser,
     PyPDFParser,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
@@ -270,6 +271,33 @@ class PyPDFium2Loader(BasePDFLoader):
         """Initialize with a file path."""
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFium2Parser(extract_images=extract_images)
+
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        if self.web_path:
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
+        else:
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
+        yield from self.parser.parse(blob)
+
+
+class PyPDFium2TocLoader(BasePDFLoader):
+    """Load `PDF` using `pypdfium2` and its Table of Contents
+    and chunks at character level.
+    """
+
+    def __init__(
+        self,
+        file_path: str,
+        *,
+        headers: Optional[Dict] = None,
+        extract_images: bool = False,
+    ):
+        """Initialize with a file path."""
+        super().__init__(file_path, headers=headers)
+        self.parser = PyPDFium2TocParser(extract_images=extract_images)
 
     def lazy_load(
         self,

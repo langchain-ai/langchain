@@ -357,6 +357,7 @@ if TYPE_CHECKING:
         PyMuPDFLoader,
         PyPDFDirectoryLoader,
         PyPDFium2Loader,
+        PyPDFium2TocLoader,
         PyPDFLoader,
         UnstructuredPDFLoader,
     )
@@ -663,6 +664,7 @@ _module_lookup = {
     "PyMuPDFLoader": "langchain_community.document_loaders.pdf",
     "PyPDFDirectoryLoader": "langchain_community.document_loaders.pdf",
     "PyPDFLoader": "langchain_community.document_loaders.pdf",
+    "PyPDFium2TocLoader": "langchain_community.document_loaders.pdf",
     "PyPDFium2Loader": "langchain_community.document_loaders.pdf",
     "PySparkDataFrameLoader": "langchain_community.document_loaders.pyspark_dataframe",
     "PythonLoader": "langchain_community.document_loaders.python",
@@ -870,6 +872,7 @@ __all__ = [
     "PyMuPDFLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
+    "PyPDFium2TocLoader",
     "PyPDFium2Loader",
     "PySparkDataFrameLoader",
     "PythonLoader",
