@@ -9,10 +9,16 @@ from langchain_community.tools.gitlab.prompt import (
     COMMENT_ON_ISSUE_PROMPT,
     CREATE_FILE_PROMPT,
     CREATE_PULL_REQUEST_PROMPT,
+    CREATE_REPO_BRANCH,
     DELETE_FILE_PROMPT,
     GET_ISSUE_PROMPT,
     GET_ISSUES_PROMPT,
+    GET_REPO_FILES_FROM_DIRECTORY,
+    GET_REPO_FILES_IN_BOT_BRANCH,
+    GET_REPO_FILES_IN_MAIN,
+    LIST_REPO_BRANCES,
     READ_FILE_PROMPT,
+    SET_ACTIVE_BRANCH,
     UPDATE_FILE_PROMPT,
 )
 from langchain_community.tools.gitlab.tool import GitLabAction
@@ -90,6 +96,36 @@ class GitLabToolkit(BaseToolkit):
                 "mode": "delete_file",
                 "name": "Delete File",
                 "description": DELETE_FILE_PROMPT,
+            },
+            {
+                "mode": "create_branch",
+                "name": "Create a new branch",
+                "description": CREATE_REPO_BRANCH,
+            },
+            {
+                "mode": "list_branches_in_repo",
+                "name": "Get the list of branches",
+                "description": LIST_REPO_BRANCES,
+            },
+            {
+                "mode": "set_active_branch",
+                "name": "Change the active branch",
+                "description": SET_ACTIVE_BRANCH,
+            },
+            {
+                "mode": "list_files_in_main_branch",
+                "name": "Overview of existing files in Main branch",
+                "description": GET_REPO_FILES_IN_MAIN,
+            },
+            {
+                "mode": "list_files_in_bot_branch",
+                "name": "Overview of files in current working branch",
+                "description": GET_REPO_FILES_IN_BOT_BRANCH,
+            },
+            {
+                "mode": "list_files_from_directory",
+                "name": "Overview of files in current working branch from a specific path",  # noqa: E501
+                "description": GET_REPO_FILES_FROM_DIRECTORY,
             },
         ]
         tools = [
