@@ -170,6 +170,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return Neo4jTranslator()
 
         try:
+            # Trying langchain_chroma import if exists
             from langchain_chroma import Chroma
         except ImportError:
             pass
@@ -205,7 +206,9 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return HanaTranslator()
 
         try:
+            # Trying langchain_weaviate (weaviate v4) import if exists
             from langchain_weaviate.vectorstores import WeaviateVectorStore
+
         except ImportError:
             pass
         else:

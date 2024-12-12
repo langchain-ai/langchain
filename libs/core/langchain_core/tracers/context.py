@@ -6,6 +6,7 @@ from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Optional,
     Union,
     cast,
@@ -141,7 +142,7 @@ def _get_trace_callbacks(
     return cb
 
 
-def _tracing_v2_is_enabled() -> bool:
+def _tracing_v2_is_enabled() -> Union[bool, Literal["local"]]:
     if tracing_v2_callback_var.get() is not None:
         return True
     return ls_utils.tracing_is_enabled()
