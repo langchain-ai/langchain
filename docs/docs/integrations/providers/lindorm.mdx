@@ -1,0 +1,230 @@
+---
+sidebar_label: Lindorm
+---
+# LindormVectorStore
+
+This notebook covers how to get started with the Lindorm vector store.
+
+## Setup
+Lindorm is a multimodal database from Alibaba-cloud.It supports full-text search, vector search and hybrid search. To start Lindorm VectorService, you should have an Alibaba-cloud 
+account and purchase Lindorm database service. Note that SearchEngine and VectorEngine are both required if you want to use Lindorm vector search service. You can find more detailed 
+information on [this tutorial](https://help.aliyun.com/document_detail/2773369.html?spm=a2c4g.11186623.help-menu-172543.d_2_5_1.50075072fjtjfR&scm=20140722.H_2773369._.OR_help-V_1)
+
+You should install opensearch package
+%pip install opensearch-py 
+### Credentials
+Head to [you console](https://lindorm.console.aliyun.com/cn-hangzhou/clusterhou/cluster?spm=a2c4g.11186623.0.0.1fa31aa84av8Uv) to sign up to Lindorm and get the public url of **Search Engine**, username and password.
+
+
+
+```python
+SEARCH_ENDPOINT = ""
+SEARCH_USERNAME = ""
+SEARCH_PWD = ""
+```
+
+In this tutorial, we also use Lindorm-ai service to provide the embedding and rerank capability. You can get more information from [here](https://help.aliyun.com/document_detail/2393245.html?spm=a2c4g.11186623.help-menu-172543.d_2_7.1fa31aa84av8Uv)
+
+
+```python
+from langchain_community.embeddings.lindorm_embedding import LindormAIEmbeddings
+
+AI_EMB_ENDPOINT = ""
+AI_USERNAME = ""
+AI_PWD = ""
+
+AI_DEFAULT_EMBEDDING_MODEL = ""
+
+ldai_emb = LindormAIEmbeddings(
+    endpoint=AI_EMB_ENDPOINT,
+    username=AI_USERNAME,
+    password=AI_PWD,
+    model_name=AI_DEFAULT_EMBEDDING_MODEL,
+)
+```
+
+## Initialization
+
+
+
+```python
+from langchain_community.vectorstores.lindorm_vector_search import LindormVectorStore
+
+index_name = "langchain_test_index_1121"
+vector_store = LindormVectorStore(
+    lindorm_search_url=SEARCH_ENDPOINT,
+    index_name=index_name,
+    embedding=ldai_emb,
+    http_auth=(SEARCH_USERNAME, SEARCH_PWD),
+)
+```
+
+## Manage vector store
+
+### Add items to vector store
+
+
+
+```python
+from langchain_core.documents import Document
+
+document_1 = Document(page_content="foo", metadata={"source": "https://example.com"})
+
+document_2 = Document(page_content="bar", metadata={"source": "https://example.com"})
+
+document_3 = Document(page_content="baz", metadata={"source": "https://example.com"})
+
+documents = [document_1, document_2, document_3]
+
+vector_store.add_documents(documents=documents, ids=["1", "2", "3"])
+```
+
+### Delete items from vector store
+
+
+```python
+vector_store.delete(ids=["3"])
+```
+
+## Query vector store
+
+Once your vector store has been created and the relevant documents have been added you will most likely wish to query it during the running of your chain or agent. 
+
+### Query directly
+
+Performing a simple similarity search can be done as follows:
+
+
+```python
+results = vector_store.similarity_search(
+    query="thud",
+    k=1,
+    filter=[{"match": {"metadata.source": "https://another-example.com"}}],
+)
+for doc in results:
+    print(f"* {doc.page_content} [{doc.metadata}]")
+```
+
+If you want to execute a similarity search and receive the corresponding scores you can run:
+
+
+```python
+results = vector_store.similarity_search_with_score(
+    query="thud",
+    k=1,
+    filter=[{"match": {"metadata.source": "https://another-example.com"}}],
+)
+for doc, score in results:
+    print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+```
+
+## Usage for retrieval-augmented generation
+
+For guides on how to use this vector store for retrieval-augmented generation (RAG), see the following sections:
+
+- [Tutorials: working with external knowledge](https://python.langchain.com/docs/tutorials/#working-with-external-knowledge)
+- [How-to: Question and answer with RAG](https://python.langchain.com/docs/how_to/#qa-with-rag)
+- [Retrieval conceptual docs](https://python.langchain.com/docs/concepts/#retrieval)
+
+## More Feature of Lindorm Vector
+
+### Routing
+
+When using RAG in UGC scene, routing provides the capability of efficient searching. The following units are the tutorial code to use routing when adding and retrieving document. 
+
+
+```python
+import copy
+
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import CharacterTextSplitter
+
+# change the file name to your document name
+loader = TextLoader("wiki_documents.txt")
+documents = loader.load()
+text_splitter = CharacterTextSplitter(chunk_size=30, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)
+print("chunk_ids: ", len(docs))
+docs = [
+    copy.deepcopy(doc) for doc in docs for _ in range(10)
+]  # train ivfpq need data > max(256, nlist), nlist default to 1000
+print("total doc:", len(docs))
+
+
+# You Should Specify Your Routing Value When init the document
+for i, doc in enumerate(docs):
+    doc.metadata["chunk_id"] = i
+    doc.metadata["date"] = f"{range(2010, 2020)[i % 10]}-01-01"
+    doc.metadata["rating"] = range(1, 6)[i % 5]
+    doc.metadata["author"] = ["John Doe", "Jane Doe"][i % 2]
+    doc.metadata["routing"] = str(i % 5)
+```
+
+### Init LindormVectorStore and Build route index from documents
+
+
+```python
+route_index = "search_route_test_idx"
+ld_search_store = LindormVectorStore.from_documents(
+    docs,
+    lindorm_search_url=SEARCH_ENDPOINT,
+    index_name=route_index,
+    embedding=ldai_emb,
+    http_auth=(SEARCH_USERNAME, SEARCH_PWD),
+    use_ssl=False,
+    verify_certs=False,
+    ssl_assert_hostname=False,
+    ssl_show_warn=False,
+    timeout=60,
+    embed_thread_num=2,  # text -> embedding thread num
+    write_thread_num=5,  # embedding ingest thread num
+    pool_maxsize=10,  # search client pool size
+    analyzer="ik_smart",  # search's text analyzer
+    routing_field="routing",  # specify metadata["routing"] as routing_field
+    space_type="cosinesimil",  # others: l2, innerproduct
+    dimension=1024,  # modify when embedding model change
+    data_type="float",
+    method_name="ivfpq",
+    # following args for ivfpq index
+    nlist=32,  # > 1000 by default
+)
+```
+
+### Routing Search
+
+
+```python
+query = "where is the school library?"
+docs_with_score = ld_search_store.similarity_search_with_score(
+    query=query,
+    routing="0",
+    k=5,
+    hybrid=True,
+    nprobe="200",
+    reorder_factor="2",
+    client_refactor="true",
+)
+print(docs_with_score[0:1])
+```
+
+### Full text search
+You can also do the Full text search by specifying the search_type to be "text_search", whose default value is "approximate_search", also known as vector search.
+
+
+```python
+query = "school museum"
+docs_with_score = ld_search_store.similarity_search_with_score(
+    query, k=10, search_type="text_search"
+)
+print(docs_with_score)
+```
+
+### Delete Index
+
+
+```python
+ld_search_store.delete_index()
+```
+
+## API reference
+For detailed documentation of all Lindorm features and configurations head to the API reference: [docs](https://help.aliyun.com/document_detail/2854331.html?spm=a2c4g.11186623.help-menu-172543.d_2_5_2_2.23806911d9GmLx)
