@@ -26,7 +26,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    model_name: str = DEFAULT_MODEL_NAME
+    model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 
@@ -68,6 +68,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_config = ConfigDict(
         extra="forbid",
         protected_namespaces=(),
+        populate_by_name=True,
     )
 
     def _embed(
