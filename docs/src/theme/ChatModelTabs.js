@@ -15,6 +15,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
+  * @property {string} [databricksParams] - Parameters for Databricks model. Defaults to `endpoint="databricks-meta-llama-3-1-70b-instruct"`
  * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
@@ -27,6 +28,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
+ * @property {boolean} [hideDatabricks] - Whether or not to hide Databricks models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -46,6 +48,7 @@ export default function ChatModelTabs(props) {
     azureParams,
     nvidiaParams,
     awsBedrockParams,
+    databricksParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -57,6 +60,7 @@ export default function ChatModelTabs(props) {
     hideAzure,
     hideNvidia,
     hideAWS,
+    hideDatabricks,
     customVarName,
   } = props;
 
@@ -79,6 +83,7 @@ export default function ChatModelTabs(props) {
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
   const awsBedrockParamsOrDefault = awsBedrockParams ?? `model="anthropic.claude-3-5-sonnet-20240620-v1:0",\n    beta_use_converse_api=True`;
+  const databricksParamsOrDefault = databricksParams ?? `endpoint="databricks-meta-llama-3-1-70b-instruct"`
 
   const llmVarName = customVarName ?? "model";
 
@@ -181,6 +186,15 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-openai",
       default: false,
       shouldHide: hideTogether,
+    },
+    {
+      value: "Databricks",
+      label: "Databricks",
+      text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(${databricksParamsOrDefault})`,
+      apiKeyName: "DATABRICKS_TOKEN",
+      packageName: "databricks-langchain",
+      default: false,
+      shouldHide: hideDatabricks,
     },
   ];
 

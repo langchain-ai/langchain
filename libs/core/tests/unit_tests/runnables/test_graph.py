@@ -69,6 +69,26 @@ def test_trim(snapshot: SnapshotAssertion) -> None:
     assert graph.last_node() is end
 
 
+def test_trim_multi_edge() -> None:
+    class Scheme(BaseModel):
+        a: str
+
+    graph = Graph()
+    start = graph.add_node(Scheme, id="__start__")
+    a = graph.add_node(Scheme, id="a")
+    last = graph.add_node(Scheme, id="__end__")
+
+    graph.add_edge(start, a)
+    graph.add_edge(a, last)
+    graph.add_edge(start, last)
+
+    graph.trim_first_node()  # should not remove __start__ since it has 2 outgoing edges
+    assert graph.first_node() is start
+
+    graph.trim_last_node()  # should not remove the __end__ node since it has 2 incoming edges
+    assert graph.last_node() is last
+
+
 def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["a"])
     prompt = PromptTemplate.from_template("Hello, {name}!")

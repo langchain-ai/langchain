@@ -1346,8 +1346,11 @@ class FAISS(VectorStore):
             conditions for documents.
 
         Returns:
-            Callable[[Dict[str, Any]], bool]: A function that takes Document's metadata
-            and returns True if it satisfies the filter conditions, otherwise False.
+            A function that takes Document's metadata and returns True if it
+            satisfies the filter conditions, otherwise False.
+
+        Raises:
+            ValueError: If the filter is invalid or contains unsuported operators.
         """
         if callable(filter):
             return filter
@@ -1357,12 +1360,118 @@ class FAISS(VectorStore):
                 f"filter must be a dict of metadata or a callable, not {type(filter)}"
             )
 
-        def filter_func(metadata: Dict[str, Any]) -> bool:
-            return all(
-                metadata.get(key) in value
-                if isinstance(value, list)
-                else metadata.get(key) == value
-                for key, value in filter.items()  # type: ignore
-            )
+        from operator import eq, ge, gt, le, lt, ne
 
-        return filter_func
+        COMPARISON_OPERATORS = {
+            "$eq": eq,
+            "$neq": ne,
+            "$gt": gt,
+            "$lt": lt,
+            "$gte": ge,
+            "$lte": le,
+        }
+        SEQUENCE_OPERATORS = {
+            "$in": lambda a, b: a in b,
+            "$nin": lambda a, b: a not in b,
+        }
+        OPERATIONS = COMPARISON_OPERATORS | SEQUENCE_OPERATORS
+        VALID_OPERATORS = frozenset(list(OPERATIONS) + ["$and", "$or", "$not"])
+        SET_CONVERT_THRESHOLD = 10
+
+        # Validate top-level filter operators.
+        for op in filter:
+            if op and op.startswith("$") and op not in VALID_OPERATORS:
+                raise ValueError(f"filter contains unsupported operator: {op}")
+
+        def filter_func_cond(
+            field: str, condition: Union[Dict[str, Any], List[Any], Any]
+        ) -> Callable[[Dict[str, Any]], bool]:
+            """
+            Creates a filter function based on field and condition.
+
+            Args:
+                field: The document field to filter on
+                condition: Filter condition (dict for operators, list for in,
+                           or direct value for equality)
+
+            Returns:
+                A filter function that takes a document and returns boolean
+            """
+            if isinstance(condition, dict):
+                operators = []
+                for op, value in condition.items():
+                    if op not in OPERATIONS:
+                        raise ValueError(f"filter contains unsupported operator: {op}")
+                    operators.append((OPERATIONS[op], value))
+
+                def filter_fn(doc: Dict[str, Any]) -> bool:
+                    """
+                    Evaluates a document against a set of predefined operators
+                    and their values. This function applies multiple
+                    comparison/sequence operators to a specific field value
+                    from the document. All conditions must be satisfied for the
+                    function to return True.
+
+                    Args:
+                        doc (Dict[str, Any]): The document to evaluate, containing
+                        key-value pairs where keys are field names and values
+                        are the field values. The document must contain the field
+                        being filtered.
+
+                    Returns:
+                        bool: True if the document's field value satisfies all
+                            operator conditions, False otherwise.
+                    """
+                    doc_value = doc.get(field)
+                    return all(op(doc_value, value) for op, value in operators)
+
+                return filter_fn
+
+            if isinstance(condition, list):
+                if len(condition) > SET_CONVERT_THRESHOLD:
+                    condition_set = frozenset(condition)
+                    return lambda doc: doc.get(field) in condition_set
+                return lambda doc: doc.get(field) in condition
+
+            return lambda doc: doc.get(field) == condition
+
+        def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
+            """
+            Creates a filter function that evaluates documents against specified
+            filter conditions.
+
+            This function processes a dictionary of filter conditions and returns
+            a callable that can evaluate documents against these conditions. It
+            supports logical operators ($and, $or, $not) and field-level filtering.
+
+            Args:
+                filter (Dict[str, Any]): A dictionary containing filter conditions.
+                Can include:
+                    - Logical operators ($and, $or, $not) with lists of sub-filters
+                    - Field-level conditions with comparison or sequence operators
+                    - Direct field-value mappings for equality comparison
+
+            Returns:
+                Callable[[Dict[str, Any]], bool]: A function that takes a document
+                (as a dictionary) and returns True if the document matches all
+                filter conditions, False otherwise.
+            """
+            if "$and" in filter:
+                filters = [filter_func(sub_filter) for sub_filter in filter["$and"]]
+                return lambda doc: all(f(doc) for f in filters)
+
+            if "$or" in filter:
+                filters = [filter_func(sub_filter) for sub_filter in filter["$or"]]
+                return lambda doc: any(f(doc) for f in filters)
+
+            if "$not" in filter:
+                cond = filter_func(filter["$not"])
+                return lambda doc: not cond(doc)
+
+            conditions = [
+                filter_func_cond(field, condition)
+                for field, condition in filter.items()
+            ]
+            return lambda doc: all(condition(doc) for condition in conditions)
+
+        return filter_func(filter)

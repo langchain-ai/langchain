@@ -1,3 +1,11 @@
+"""
+Standard tests for the BaseStore abstraction
+
+We don't recommend implementing externally managed BaseStore abstractions at this time.
+
+:private:
+"""
+
 from abc import abstractmethod
 from typing import AsyncGenerator, Generator, Generic, Tuple, TypeVar
 
