@@ -9,7 +9,16 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_co
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
-class ToolMessage(BaseMessage):
+class ToolOutputMixin:
+    """Mixin for objects that tools can return directly.
+
+    If a custom BaseTool is invoked with a ToolCall and the output of custom code is
+    not an instance of ToolOutputMixin, the output will automatically be coerced to a
+    string and wrapped in a ToolMessage.
+    """
+
+
+class ToolMessage(BaseMessage, ToolOutputMixin):
     """Message for passing the result of executing a tool back to a model.
 
     ToolMessages contain the result of a tool invocation. Typically, the result
