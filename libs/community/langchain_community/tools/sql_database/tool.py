@@ -7,6 +7,7 @@ from sqlalchemy.engine import Result
 
 from pydantic import BaseModel, Field, root_validator, model_validator, ConfigDict
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -58,8 +59,17 @@ class QuerySQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overr
         return self.db.run_no_throw(query)
 
 
-# Backwards compatibility.
-QuerySQLDataBaseTool = QuerySQLDatabaseTool
+@deprecated(
+    since="0.3.12",
+    removal="1.0",
+    alternative_import="langchain_community.tools.QuerySQLDatabaseTool",
+)
+class QuerySQLDataBaseTool(QuerySQLDatabaseTool):  # type: ignore[override]
+    """
+    Equivalent stub to QuerySQLDatabaseTool for backwards compatibility.
+    :private:"""
+
+    ...
 
 
 class _InfoSQLDatabaseToolInput(BaseModel):
