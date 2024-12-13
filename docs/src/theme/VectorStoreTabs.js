@@ -1,9 +1,9 @@
-import React from "react";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
+import { CustomDropdown } from './ChatModelTabs';
 
 export default function VectorStoreTabs(props) {
+    const [selectedModel, setSelectedModel] = useState("In-memory");
     const { customVarName, useFakeEmbeddings = false } = props;
 
     const vectorStoreVarName = customVarName ?? "vector_store";
@@ -76,19 +76,34 @@ export default function VectorStoreTabs(props) {
         },
     ];
 
-    return (
-        <Tabs groupId="vectorStoreTabs">
-            {tabItems.map((tabItem) => (
-                <TabItem
-                    key={tabItem.value}
-                    value={tabItem.value}
-                    label={tabItem.label}
-                    default={tabItem.default}
-                >
-                    <CodeBlock language="bash">{`pip install -qU ${tabItem.packageName}`}</CodeBlock>
-                    <CodeBlock language="python">{tabItem.text}</CodeBlock>
-                </TabItem>
-            ))}
-        </Tabs>
-    );
-}
+    const modelOptions = tabItems
+    .filter((item) => !item.shouldHide)
+    .map((item) => ({
+      value: item.value,
+      label: item.label,
+      text: item.text,
+      packageName: item.packageName,
+    }));
+
+const selectedOption = modelOptions.find(
+  (option) => option.value === selectedModel
+);
+
+return (
+    <div>
+      <CustomDropdown
+        selectedOption={selectedOption}
+        options={modelOptions}
+        onSelect={setSelectedModel}
+        modelType="vectorstore"
+      />
+
+      <CodeBlock language="bash">
+        {`pip install -qU ${selectedOption.packageName}`}
+      </CodeBlock>
+      <CodeBlock language="python">
+        {selectedOption.text}
+      </CodeBlock>
+    </div>
+  );
+  }

@@ -167,6 +167,7 @@ let apiKeyText = "";
 if (selectedOption.apiKeyName) {
   apiKeyText = `import getpass
 import os
+
 if not os.environ.get("${selectedOption.apiKeyName}"):
   os.environ["${selectedOption.apiKeyName}"] = getpass.getpass("Enter API key for ${selectedOption.label}: ")`;
   } else if (selectedOption.apiKeyText) {
@@ -179,6 +180,7 @@ return (
       selectedOption={selectedOption}
       options={modelOptions}
       onSelect={setSelectedModel}
+      modelType="embeddings"
     />
 
     <CodeBlock language="bash">
