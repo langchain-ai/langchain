@@ -81,10 +81,10 @@ def test_tablestore() -> None:
     """
         5. get document
     """
-    get_docs = store.get_by_ids(["1", "3"])
+    get_docs = store.get_by_ids(["1", "4"])
     assert len(get_docs) == 2
     assert get_docs[0].id == "1"
-    assert get_docs[1] is None
+    assert get_docs[1].id == "4"
 
     """
         6. similarity_search

@@ -322,10 +322,10 @@ class TablestoreVectorStore(VectorStore):
             )
             logger.debug("Tablestore get row successfully. id:%s", row_id)
             if row is None:
-                return None
+                raise ValueError("Can't not find row_id:%s in tablestore." % row_id)
             document_id = row.primary_key[0][1]
             meta_data = {}
-            text = None
+            text = ""
             for col in row.attribute_columns:
                 key = col[0]
                 val = col[1]
@@ -406,7 +406,29 @@ class TablestoreVectorStore(VectorStore):
                 "Tablestore search successfully. request_id:%s",
                 search_response.request_id,
             )
-            return self.__search_response_to_query_result(search_response)
+            tuple_list = []
+            for hit in search_response.search_hits:
+                row = hit.row
+                score = hit.score
+                document_id = row[0][0][1]
+                meta_data = {}
+                text = ""
+                for col in row[1]:
+                    key = col[0]
+                    val = col[1]
+                    if key == self.__text_field:
+                        text = val
+                        continue
+                    if key == self.__vector_field:
+                        val = json.loads(val)
+                    meta_data[key] = val
+                doc = Document(
+                    id=document_id,
+                    page_content=text,
+                    metadata=meta_data,
+                )
+                tuple_list.append((doc, score))
+            return tuple_list
         except tablestore.OTSClientError as e:
             logger.exception("Tablestore search failed with client error:%s", e)
             raise e
@@ -421,33 +443,6 @@ class TablestoreVectorStore(VectorStore):
                 e.get_request_id(),
             )
             raise e
-
-    def __search_response_to_query_result(
-        self, search_response
-    ) -> List[Tuple[Document, float]]:
-        tuple_list = []
-        for hit in search_response.search_hits:
-            row = hit.row
-            score = hit.score
-            document_id = row[0][0][1]
-            meta_data = {}
-            text = None
-            for col in row[1]:
-                key = col[0]
-                val = col[1]
-                if key == self.__text_field:
-                    text = val
-                    continue
-                if key == self.__vector_field:
-                    val = json.loads(val)
-                meta_data[key] = val
-            doc = Document(
-                id=document_id,
-                page_content=text,
-                metadata=meta_data,
-            )
-            tuple_list.append((doc, score))
-        return tuple_list
 
     def add_texts(
         self,
@@ -480,7 +475,7 @@ class TablestoreVectorStore(VectorStore):
                 self.__delete_row(row_id)
         return True
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Optional[Document]]:
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         return [self.__get_row(row_id) for row_id in ids]
 
     def similarity_search(
