@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC
 from string import Formatter
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 from pydantic import BaseModel, create_model
 
@@ -15,6 +15,8 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
+
+PromptTemplateFormat = Literal["f-string", "mustache", "jinja2"]
 
 
 def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
@@ -95,7 +97,8 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg) from e
-    env = Environment()
+    # noqa for insecure warning elsewhere
+    env = Environment()  # noqa: S701
     ast = env.parse(template)
     variables = meta.find_undeclared_variables(ast)
     return variables
