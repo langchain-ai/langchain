@@ -2,32 +2,60 @@ name: Scheduled tests
 
 on:
   workflow_dispatch:  # Allows to trigger the workflow manually in GitHub UI
+    inputs:
+      working-directory-force:
+        type: string
+        description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
+      python-version-force:
+        type: string
+        description: "Python version to use - defaults to 3.9 and 3.11 in matrix - example value: 3.9"
   schedule:
     - cron:  '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
+  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
 
 jobs:
+  compute-matrix:
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    name: Compute matrix
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        env:
+          DEFAULT_LIBS: ${{ env.DEFAULT_LIBS }}
+          WORKING_DIRECTORY_FORCE: ${{ github.event.inputs.working-directory-force || '' }}
+          PYTHON_VERSION_FORCE: ${{ github.event.inputs.python-version-force || '' }}
+        run: |
+          # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
+          # python-version should default to 3.9 and 3.11, but is overridden to [PYTHON_VERSION_FORCE] if set
+          # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
+          python_version='["3.9", "3.11"]'
+          working_directory="$DEFAULT_LIBS"
+          if [ -n "$PYTHON_VERSION_FORCE" ]; then
+            python_version="[\"$PYTHON_VERSION_FORCE\"]"
+          fi
+          if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
+            working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
+          fi
+          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
+          echo $matrix
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
   build:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     runs-on: ubuntu-latest
+    needs: [compute-matrix]
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          - "3.9"
-          - "3.11"
-        working-directory:
-          - "libs/partners/openai"
-          - "libs/partners/anthropic"
-          - "libs/partners/fireworks"
-          - "libs/partners/groq"
-          - "libs/partners/mistralai"
-          - "libs/partners/google-vertexai"
-          - "libs/partners/google-genai"
-          - "libs/partners/aws"
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
+        working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
       - uses: actions/checkout@v4
