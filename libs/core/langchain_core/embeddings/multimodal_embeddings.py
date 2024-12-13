@@ -25,8 +25,8 @@ class MultimodalEmbeddings(ABC):
     Multimodal embedding models are used to map text and media (image, video, etc.) to a
     vector (a point in n-dimensional space).
 
-    Texts or media that are similar will usually be mapped to points that are close to each
-    other in this space. The exact details of what's considered "similar" and how
+    Texts or media that are similar will usually be mapped to points that are close to
+    each other in this space. The exact details of what's considered "similar" and how
     "distance" is measured in this space are dependent on the specific embedding model.
 
     This abstraction contains a method for embedding a list of documents and a method
@@ -46,11 +46,14 @@ class MultimodalEmbeddings(ABC):
     """
 
     @abstractmethod
-    def embed_documents(self, multimodal_inputs: list[MultimodalInput]) -> list[list[float]]:
+    def embed_documents(
+            self,
+            multimodal_inputs: list[MultimodalInput]
+    ) -> list[list[float]]:
         """Embed search docs.
 
         Args:
-            texts: List of text to embed.
+            multimodal_inputs: List of contents to embed.
 
         Returns:
             List of embeddings.
@@ -61,17 +64,20 @@ class MultimodalEmbeddings(ABC):
         """Embed query text.
 
         Args:
-            text: Text to embed.
+            multimodal_input: Content to embed.
 
         Returns:
             Embedding.
         """
 
-    async def aembed_documents(self, multimodal_inputs: list[MultimodalInput]) -> list[list[float]]:
+    async def aembed_documents(
+            self,
+            multimodal_inputs: list[MultimodalInput]
+    ) -> list[list[float]]:
         """Asynchronous Embed search docs.
 
         Args:
-            texts: List of text to embed.
+            multimodal_inputs: List of contents to embed.
 
         Returns:
             List of embeddings.
@@ -82,7 +88,7 @@ class MultimodalEmbeddings(ABC):
         """Asynchronous Embed query text.
 
         Args:
-            text: Text to embed.
+            multimodal_input: Content to embed.
 
         Returns:
             Embedding.
