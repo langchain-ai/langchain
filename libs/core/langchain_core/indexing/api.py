@@ -410,7 +410,8 @@ def index(
             # here due to a check that's happening above, so we check again.
             for source_id in source_ids:
                 if source_id is None:
-                    raise AssertionError("Source ids cannot be None here.")
+                    msg = "Source ids cannot be None here."
+                    raise AssertionError(msg)
 
             _source_ids = cast(Sequence[str], source_ids)
 
@@ -669,7 +670,8 @@ async def aindex(
             # here due to a check that's happening above, so we check again.
             for source_id in source_ids:
                 if source_id is None:
-                    raise AssertionError("Source ids cannot be None here.")
+                    msg = "Source ids cannot be None here."
+                    raise AssertionError(msg)
 
             _source_ids = cast(Sequence[str], source_ids)
 
