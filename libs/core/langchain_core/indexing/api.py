@@ -250,7 +250,7 @@ def index(
                     during this run of indexing.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
-            - Scoped_Full: Similar to Full, but only deletes all documents
+            - scoped_full: Similar to Full, but only deletes all documents
                            that haven't been updated AND that are associated with
                            source ids that were seen during indexing.
             - None: Do not delete any documents.
