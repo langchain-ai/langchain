@@ -208,7 +208,7 @@ class ChatDeepInfra(BaseChatModel):
     model_name: str = Field(default="meta-llama/Llama-2-70b-chat-hf", alias="model")
     """Model name to use."""
 
-    url: Optional[str] = "https://api.deepinfra.com/v1/openai/chat/completions"
+    url: str = "https://api.deepinfra.com/v1/openai/chat/completions"
     """URL to use for the API call."""
 
     deepinfra_api_token: Optional[str] = None
