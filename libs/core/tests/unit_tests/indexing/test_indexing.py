@@ -13,7 +13,7 @@ from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_core.indexing import InMemoryRecordManager, aindex, index
-from langchain_core.indexing.api import _abatch, _HashedDocument
+from langchain_core.indexing.api import IndexingException, _abatch, _HashedDocument
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
@@ -285,6 +285,164 @@ async def test_aindex_simple_delete_full(
             "num_skipped": 2,
             "num_updated": 0,
         }
+
+
+def test_index_delete_full_recovery_after_deletion_failure(
+    record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Indexing some content to confirm it gets added only once."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+            ),
+            Document(
+                page_content="This is another document.",
+            ),
+        ]
+    )
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
+        assert index(loader, record_manager, vector_store, cleanup="full") == {
+            "num_added": 2,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="mutated document 1",
+            ),
+            Document(
+                page_content="This is another document.",  # <-- Same as original
+            ),
+        ]
+    )
+
+    with (
+        patch.object(
+            record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        ),
+        patch.object(vector_store, "delete", return_value=False),
+        pytest.raises(IndexingException),
+    ):
+        indexing_result = index(loader, record_manager, vector_store, cleanup="full")
+
+    # At this point, there should be 3 records in both the record manager
+    # and the vector store
+    doc_texts = {
+        # Ignoring type since doc should be in the store and not a None
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        for uid in vector_store.store
+    }
+    assert doc_texts == {
+        "This is a test document.",
+        "mutated document 1",
+        "This is another document.",
+    }
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
+        indexing_result = index(loader, record_manager, vector_store, cleanup="full")
+        doc_texts = {
+            # Ignoring type since doc should be in the store and not a None
+            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            for uid in vector_store.store
+        }
+        assert doc_texts == {"mutated document 1", "This is another document."}
+
+    assert indexing_result == {
+        "num_added": 0,
+        "num_deleted": 1,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+
+async def test_aindex_delete_full_recovery_after_deletion_failure(
+    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Indexing some content to confirm it gets added only once."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+            ),
+            Document(
+                page_content="This is another document.",
+            ),
+        ]
+    )
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
+            "num_added": 2,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="mutated document 1",
+            ),
+            Document(
+                page_content="This is another document.",  # <-- Same as original
+            ),
+        ]
+    )
+
+    with (
+        patch.object(
+            arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        ),
+        patch.object(vector_store, "adelete", return_value=False),
+        pytest.raises(IndexingException),
+    ):
+        indexing_result = await aindex(
+            loader, arecord_manager, vector_store, cleanup="full"
+        )
+
+    # At this point, there should be 3 records in both the record manager
+    # and the vector store
+    doc_texts = {
+        # Ignoring type since doc should be in the store and not a None
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+        for uid in vector_store.store
+    }
+    assert doc_texts == {
+        "This is a test document.",
+        "mutated document 1",
+        "This is another document.",
+    }
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
+        indexing_result = await aindex(
+            loader, arecord_manager, vector_store, cleanup="full"
+        )
+        doc_texts = {
+            # Ignoring type since doc should be in the store and not a None
+            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            for uid in vector_store.store
+        }
+        assert doc_texts == {"mutated document 1", "This is another document."}
+
+    assert indexing_result == {
+        "num_added": 0,
+        "num_deleted": 1,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
 
 
 def test_incremental_fails_with_bad_source_ids(
