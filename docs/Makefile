@@ -19,15 +19,15 @@ clean:
 	rm -rf build
 
 install-vercel-deps:
-	yum -y update
-	yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip rsync -y
+	yum -y -q update
+	yum -y -q install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip rsync -y
 
 install-py-deps:
 	python3 -m venv .venv
-	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install --upgrade uv
-	$(PYTHON) -m uv pip install --pre -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install --pre $$($(PYTHON) scripts/partner_deps_list.py)
+	$(PYTHON) -m pip install -q --upgrade pip
+	$(PYTHON) -m pip install -q --upgrade uv
+	$(PYTHON) -m uv pip install -q --pre -r vercel_requirements.txt
+	$(PYTHON) -m uv pip install -q --pre $$($(PYTHON) scripts/partner_deps_list.py)
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
