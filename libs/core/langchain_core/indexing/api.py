@@ -197,12 +197,11 @@ def index(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", None] = None,
+    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
     upsert_kwargs: Optional[dict[str, Any]] = None,
-    scoped_full_cleanup: bool = False,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -216,6 +215,10 @@ def index(
      are not able to specify the uid of the document.
 
     IMPORTANT:
+       * In full mode, the loader should be returning
+         the entire dataset, and not just a subset of the dataset.
+         Otherwise, the auto_cleanup will remove documents that it is not
+         supposed to.
        * In incremental mode, if documents associated with a particular
          source id appear across different batches, the indexing API
          will do some redundant work. This will still result in the
@@ -224,6 +227,11 @@ def index(
          chunks, and we index them using a batch size of 5, we'll have 3 batches
          all with the same source id. In general, to avoid doing too much
          redundant work select as big a batch size as possible.
+       * scoped_full mode may be a good option if you have difficulty decidng
+         on the appropriate batch size and your loader is not able to
+         return the entire dataset. This solution keeps track of the source ids
+         in memory. It would probably be fine for most use cases in terms of
+         memory consumption, but would require parallelizing for 10M+ docs anyway
 
     Args:
         docs_source: Data loader or iterable of documents to index.
@@ -242,6 +250,9 @@ def index(
                     during this run of indexing.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
+            - Scoped_Full: Similar to Full, but only deletes all documents
+                           that haven't been updated AND that are associated with
+                           source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document. Default is None.
@@ -256,11 +267,6 @@ def index(
                        specify a custom vector_field:
                        upsert_kwargs={"vector_field": "embedding"}
             .. versionadded:: 0.3.10
-        scoped_full_cleanup: This argument will be valid only when `claneup` is Full.
-                             If True, Full cleanup deletes all documents that haven't
-                             been updated AND that are associated with source ids that
-                             were seen during indexing.
-                             Default is False.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -273,21 +279,16 @@ def index(
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
     """
-    if cleanup not in {"incremental", "full", None}:
+    if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
-            f"cleanup should be one of 'incremental', 'full' or None. "
+            f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "
             f"Got {cleanup}."
         )
         raise ValueError(msg)
 
-    if scoped_full_cleanup and cleanup != "full":
-        msg = "scoped_full_cleanup is valid only when cleanup mode is 'full'."
-        raise ValueError(msg)
-
-    if (cleanup == "incremental" or scoped_full_cleanup) and source_id_key is None:
+    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
         msg = (
-            "Source id key is required when cleanup mode is incremental"
-            "or scoped_full_clenup is True."
+            "Source id key is required when cleanup mode is incremental or scoped_full."
         )
         raise ValueError(msg)
 
@@ -348,18 +349,19 @@ def index(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental" or scoped_full_cleanup:
+        if cleanup == "incremental" or cleanup == "scoped_full":
             # source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
                     msg = (
-                        "Source ids are required when cleanup mode is incremental. "
+                        f"Source ids are required when cleanup mode is "
+                        f"incremental or scoped_full. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
                     raise ValueError(msg)
-                if cleanup == "full":
+                if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
             source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
@@ -438,9 +440,9 @@ def index(
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full":
+    if cleanup == "full" or cleanup == "scoped_full":
         delete_group_ids: Optional[Sequence[str]] = None
-        if scoped_full_cleanup:
+        if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)
         while uids_to_delete := record_manager.list_keys(
             group_ids=delete_group_ids, before=index_start_dt, limit=cleanup_batch_size
@@ -472,7 +474,7 @@ async def aindex(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", None] = None,
+    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -490,10 +492,23 @@ async def aindex(
      are not able to specify the uid of the document.
 
     IMPORTANT:
-       if auto_cleanup is set to True, the loader should be returning
-       the entire dataset, and not just a subset of the dataset.
-       Otherwise, the auto_cleanup will remove documents that it is not
-       supposed to.
+       * In full mode, the loader should be returning
+         the entire dataset, and not just a subset of the dataset.
+         Otherwise, the auto_cleanup will remove documents that it is not
+         supposed to.
+       * In incremental mode, if documents associated with a particular
+         source id appear across different batches, the indexing API
+         will do some redundant work. This will still result in the
+         correct end state of the index, but will unfortunately not be
+         100% efficient. For example, if a given document is split into 15
+         chunks, and we index them using a batch size of 5, we'll have 3 batches
+         all with the same source id. In general, to avoid doing too much
+         redundant work select as big a batch size as possible.
+       * scoped_full mode may be a good option if you have difficulty decidng
+         on the appropriate batch size and your loader is not able to
+         return the entire dataset. This solution keeps track of the source ids
+         in memory. It would probably be fine for most use cases in terms of
+         memory consumption, but would require parallelizing for 10M+ docs anyway
 
     Args:
         docs_source: Data loader or iterable of documents to index.
@@ -511,6 +526,9 @@ async def aindex(
             - Full: Delete all documents that haven to been returned by the loader.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
+            - Scoped_Full: Similar to Full, but only deletes all documents
+                           that haven't been updated AND that are associated with
+                           source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document. Default is None.
@@ -538,15 +556,17 @@ async def aindex(
         ValueError: If source_id_key is not None, but is not a string or callable.
     """
 
-    if cleanup not in {"incremental", "full", None}:
+    if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
-            f"cleanup should be one of 'incremental', 'full' or None. "
+            f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "
             f"Got {cleanup}."
         )
         raise ValueError(msg)
 
-    if cleanup == "incremental" and source_id_key is None:
-        msg = "Source id key is required when cleanup mode is incremental."
+    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+        msg = (
+            "Source id key is required when cleanup mode is incremental or scoped_full."
+        )
         raise ValueError(msg)
 
     destination = vector_store  # Renaming internally for clarity
@@ -602,6 +622,7 @@ async def aindex(
     num_skipped = 0
     num_updated = 0
     num_deleted = 0
+    scoped_full_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
         hashed_docs = list(
@@ -614,17 +635,20 @@ async def aindex(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental":
+        if cleanup == "incremental" or cleanup == "scoped_full":
             # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
                     msg = (
-                        "Source ids are required when cleanup mode is incremental. "
+                        f"Source ids are required when cleanup mode is "
+                        f"incremental or scoped_full. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
                     raise ValueError(msg)
+                if cleanup == "scoped_full":
+                    scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
             source_ids = cast(Sequence[str], source_ids)
 
@@ -702,9 +726,12 @@ async def aindex(
                 await record_manager.adelete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full":
+    if cleanup == "full" or cleanup == "scoped_full":
+        delete_group_ids: Optional[Sequence[str]] = None
+        if cleanup == "scoped_full":
+            delete_group_ids = list(scoped_full_cleanup_source_ids)
         while uids_to_delete := await record_manager.alist_keys(
-            before=index_start_dt, limit=cleanup_batch_size
+            group_ids=delete_group_ids, before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
             await destination.adelete(uids_to_delete)
