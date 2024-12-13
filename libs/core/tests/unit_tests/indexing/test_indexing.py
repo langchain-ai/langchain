@@ -364,6 +364,306 @@ async def test_aincremental_fails_with_bad_source_ids(
         )
 
 
+def test_index_simple_delete_scoped_full(
+    record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test Indexing with scoped_full strategy."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is a test document from another source.",
+                metadata={"source": "2"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 4,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="mutated document 1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",  # <-- Same as original
+                metadata={"source": "1"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 1,
+            "num_deleted": 2,
+            "num_skipped": 1,
+            "num_updated": 0,
+        }
+        doc_texts = {
+            # Ignoring type since doc should be in the store and not a None
+            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            for uid in vector_store.store
+        }
+        assert doc_texts == {
+            "mutated document 1",
+            "This is another document.",
+            "This is a test document from another source.",
+        }
+
+    # Attempt to index again verify that nothing changes
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 4).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
+
+
+async def test_aindex_simple_delete_scoped_full(
+    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test Indexing with scoped_full strategy."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is a test document from another source.",
+                metadata={"source": "2"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 4,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="mutated document 1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",  # <-- Same as original
+                metadata={"source": "1"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 1,
+            "num_deleted": 2,
+            "num_skipped": 1,
+            "num_updated": 0,
+        }
+        doc_texts = {
+            # Ignoring type since doc should be in the store and not a None
+            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
+            for uid in vector_store.store
+        }
+        assert doc_texts == {
+            "mutated document 1",
+            "This is another document.",
+            "This is a test document from another source.",
+        }
+
+    # Attempt to index again verify that nothing changes
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 4).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
+
+
+def test_scoped_full_fails_with_bad_source_ids(
+    record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test Indexing with scoped_full strategy."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "2"},
+            ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": None},
+            ),
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        # Should raise an error because no source id function was specified
+        index(loader, record_manager, vector_store, cleanup="scoped_full")
+
+    with pytest.raises(ValueError):
+        # Should raise an error because no source id function was specified
+        index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        )
+
+
+async def test_ascoped_full_fails_with_bad_source_ids(
+    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test Indexing with scoped_full strategy."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "2"},
+            ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": None},
+            ),
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        # Should raise an error because no source id function was specified
+        await aindex(loader, arecord_manager, vector_store, cleanup="scoped_full")
+
+    with pytest.raises(ValueError):
+        # Should raise an error because no source id function was specified
+        await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        )
+
+
 def test_no_delete(
     record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
