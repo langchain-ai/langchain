@@ -364,8 +364,15 @@ def deprecated(
             _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
         )
         since_str = f"{package}=={since}" if package else since
+        if removal:
+            if removal.startswith("1.") and package and package.startswith("langchain"):
+                removal_str = f"It will not be removed until {package}=={removal}."
+            else:
+                removal_str = f"It will be removed in {package}=={removal}."
+        else:
+            removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since_str} {details}
+.. deprecated:: {since_str} {details} {removal_str}
 
 {old_doc}\
 """

@@ -46,6 +46,7 @@ motor>=3.3.1,<4
 msal>=1.25.0,<2
 mwparserfromhell>=0.6.4,<0.7
 mwxml>=0.3.3,<0.4
+needle-python>=0.4
 networkx>=3.2.1,<4
 newspaper3k>=0.2.8,<0.3
 numexpr>=2.8.6,<3
@@ -86,6 +87,7 @@ telethon>=1.28.5,<2
 tidb-vector>=0.0.3,<1.0.0
 timescale-vector==0.0.1
 tqdm>=4.48.0
+tiktoken>=0.8.0
 tree-sitter>=0.20.2,<0.21
 tree-sitter-languages>=1.8.0,<2
 upstash-redis>=1.1.0,<2

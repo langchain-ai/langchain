@@ -762,7 +762,7 @@ class OracleVS(VectorStore):
         k: int,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
+    ) -> List[Tuple[Document, float, np.ndarray]]:
         embedding_arr: Any
         if self.insert_mode == "clob":
             embedding_arr = json.dumps(embedding)
