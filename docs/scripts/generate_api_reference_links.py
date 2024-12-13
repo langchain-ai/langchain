@@ -122,7 +122,7 @@ def get_full_module_name(module_path, class_name) -> Optional[str]:
             except ImportError:
                 raise ValueError(f"Failed to import module {module_path}")
             return module.__name__
-        
+
         try:
             class_ = getattr(module, class_name)
         except AttributeError:
@@ -130,9 +130,11 @@ def get_full_module_name(module_path, class_name) -> Optional[str]:
             try:
                 module = importlib.import_module(module_path + "." + class_name)
             except ImportError:
-                raise ValueError(f"Failed to import class {class_name} from module {module_path}")
+                raise ValueError(
+                    f"Failed to import class {class_name} from module {module_path}"
+                )
             return module.__name__
-        
+
         inspectmodule = inspect.getmodule(class_)
         if inspectmodule is None:
             # it wasn't a class, it's a primitive (e.g. END="__end__")
@@ -253,7 +255,9 @@ def _get_imports(
                 logger.warning(e)
                 continue
             except Exception as e:
-                logger.error(f"Failed to get full module name for {module}.{class_name}")
+                logger.error(
+                    f"Failed to get full module name for {module}.{class_name}"
+                )
                 logger.error(e)
                 continue
             if not module_path:

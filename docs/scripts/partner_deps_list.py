@@ -6,15 +6,21 @@ if __name__ == "__main__":
 
     packages = packages_yaml["packages"]
 
-    comaintain_packages = [p for p in packages if not p.get("disabled", False)
-            and p["repo"].startswith("langchain-ai/")
-            and p["repo"] != "langchain-ai/langchain"]
-    monorepo_packages = [p for p in packages if not p.get("disabled", False)
-            and p["repo"] == "langchain-ai/langchain"]
-    
+    comaintain_packages = [
+        p
+        for p in packages
+        if not p.get("disabled", False)
+        and p["repo"].startswith("langchain-ai/")
+        and p["repo"] != "langchain-ai/langchain"
+    ]
+    monorepo_packages = [
+        p
+        for p in packages
+        if not p.get("disabled", False) and p["repo"] == "langchain-ai/langchain"
+    ]
+
     for p in monorepo_packages:
         print("--editable ../" + p["path"])
 
     for p in comaintain_packages:
         print(p["name"])
-        
