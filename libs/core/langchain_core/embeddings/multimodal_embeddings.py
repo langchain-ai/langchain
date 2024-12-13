@@ -10,7 +10,7 @@ class Content(ABC):
     type: str
     text: Optional[str]
     image_url: Optional[str]
-    image_base_64: Optional[str]
+    image_base64: Optional[str]
 
 
 class MultimodalInput(ABC):
