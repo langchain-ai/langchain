@@ -46,7 +46,7 @@ Most popular LangChain integrations implement asynchronous support of their APIs
 When an asynchronous implementation is not available, LangChain tries to provide a default implementation, even if it incurs
 a **slight** overhead.
 
-By default, LangChain will delegate the execution of a unimplemented asynchronous methods to the synchronous counterparts. LangChain almost always assumes that the synchronous method should be treated as a blocking operation and should be run in a separate thread.
+By default, LangChain will delegate the execution of unimplemented asynchronous methods to the synchronous counterparts. LangChain almost always assumes that the synchronous method should be treated as a blocking operation and should be run in a separate thread.
 This is done using [asyncio.loop.run_in_executor](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor) functionality provided by the `asyncio` library. LangChain uses the default executor provided by the `asyncio` library, which lazily initializes a thread pool executor with a default number of threads that is reused in the given event loop. While this strategy incurs a slight overhead due to context switching between threads, it guarantees that every asynchronous method has a default implementation that works out of the box.
 
 ## Performance

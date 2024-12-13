@@ -381,7 +381,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         )
 
 
-@deprecated(since="0.1.0", removal="0.3.0", alternative="AnthropicLLM")
+@deprecated(since="0.1.0", removal="1.0.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
     """Anthropic large language model."""
 

@@ -188,7 +188,7 @@ class JSONLoader(BaseLoader):
         # In case the text is None, set it to an empty string
         elif isinstance(content, str):
             return content
-        elif isinstance(content, dict):
+        elif isinstance(content, (dict, list)):
             return json.dumps(content) if content else ""
         else:
             return str(content) if content is not None else ""
