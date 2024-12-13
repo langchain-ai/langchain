@@ -1252,32 +1252,3 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
-
-    def get_by_ids(self, ids: Sequence[str]) -> List[Document]:
-        """Retrieve documents by their IDs.
-
-        Args:
-            ids: List of document IDs to retrieve.
-
-        Returns:
-            List of Documents corresponding to the provided IDs.
-        """
-        # Fetch results from the Chroma collection based on the provided IDs
-        results: Dict[str, Any] = self.get(ids=list(ids))
-
-        # Ensure that none of the elements are None
-        if (
-            results["ids"] is None
-            or results["documents"] is None
-            or results["metadatas"] is None
-        ):
-            raise ValueError("One of the elements in the results dictionary is None")
-
-        return [
-            Document(id=result[0], page_content=result[1], metadata=result[2] or {})
-            for result in zip(
-                results["ids"],
-                results["documents"],
-                results["metadatas"],
-            )
-        ]
