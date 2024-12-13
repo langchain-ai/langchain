@@ -49,11 +49,12 @@ class _StreamingParser:
             try:
                 import defusedxml  # type: ignore
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
-                ) from e
+                )
+                raise ImportError(msg) from e
             _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
         else:
             _parser = None
@@ -190,12 +191,13 @@ class XMLOutputParser(BaseTransformOutputParser):
             try:
                 from defusedxml import ElementTree  # type: ignore
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
-                ) from e
+                )
+                raise ImportError(msg) from e
             _et = ElementTree  # Use the defusedxml parser
         else:
             _et = ET  # Use the standard library parser

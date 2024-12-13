@@ -1,3 +1,4 @@
+import copy
 import re
 import warnings
 from operator import itemgetter
@@ -20,7 +21,7 @@ from typing import (
 )
 
 import anthropic
-from langchain_core._api import deprecated
+from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -116,7 +117,6 @@ def _merge_messages(
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
-        curr = curr.model_copy(deep=True)
         if isinstance(curr, ToolMessage):
             if (
                 isinstance(curr.content, list)
@@ -139,16 +139,21 @@ def _merge_messages(
                     ]
                 )
         last = merged[-1] if merged else None
-        if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
-            if isinstance(last.content, str):
-                new_content: List = [{"type": "text", "text": last.content}]
+        if any(
+            all(isinstance(m, c) for m in (curr, last))
+            for c in (SystemMessage, HumanMessage)
+        ):
+            if isinstance(cast(BaseMessage, last).content, str):
+                new_content: List = [
+                    {"type": "text", "text": cast(BaseMessage, last).content}
+                ]
             else:
-                new_content = last.content
+                new_content = copy.copy(cast(list, cast(BaseMessage, last).content))
             if isinstance(curr.content, str):
                 new_content.append({"type": "text", "text": curr.content})
             else:
                 new_content.extend(curr.content)
-            last.content = new_content
+            merged[-1] = curr.model_copy(update={"content": new_content})
         else:
             merged.append(curr)
     return merged
@@ -174,13 +179,15 @@ def _format_messages(
     merged_messages = _merge_messages(messages)
     for i, message in enumerate(merged_messages):
         if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
-            if isinstance(message.content, list):
+            if system is not None:
+                raise ValueError("Received multiple non-consecutive system messages.")
+            elif isinstance(message.content, list):
                 system = [
-                    block
-                    if isinstance(block, dict)
-                    else {"type": "text", "text": "block"}
+                    (
+                        block
+                        if isinstance(block, dict)
+                        else {"type": "text", "text": block}
+                    )
                     for block in message.content
                 ]
             else:
@@ -295,7 +302,7 @@ class ChatAnthropic(BaseChatModel):
             Name of Anthropic model to use. E.g. "claude-3-sonnet-20240229".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
-        max_tokens: Optional[int]
+        max_tokens: int
             Max number of tokens to generate.
 
     Key init args — client params:
@@ -1106,6 +1113,86 @@ class ChatAnthropic(BaseChatModel):
         else:
             return llm | output_parser
 
+    @beta()
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
+        """Count tokens in a sequence of input messages.
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+
+        Basic usage:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.messages import HumanMessage, SystemMessage
+
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+                messages = [
+                    SystemMessage(content="You are a scientist"),
+                    HumanMessage(content="Hello, Claude"),
+                ]
+                llm.get_num_tokens_from_messages(messages)
+
+            .. code-block:: none
+
+                14
+
+        Pass tool schemas:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.messages import HumanMessage
+                from langchain_core.tools import tool
+
+                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+                @tool(parse_docstring=True)
+                def get_weather(location: str) -> str:
+                    \"\"\"Get the current weather in a given location
+
+                    Args:
+                        location: The city and state, e.g. San Francisco, CA
+                    \"\"\"
+                    return "Sunny"
+
+                messages = [
+                    HumanMessage(content="What's the weather like in San Francisco?"),
+                ]
+                llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+
+            .. code-block:: none
+
+                403
+
+        .. versionchanged:: 0.3.0
+
+                Uses Anthropic's token counting API to count tokens in messages. See:
+                https://docs.anthropic.com/en/docs/build-with-claude/token-counting
+        """
+        formatted_system, formatted_messages = _format_messages(messages)
+        kwargs: Dict[str, Any] = {}
+        if isinstance(formatted_system, str):
+            kwargs["system"] = formatted_system
+        if tools:
+            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+
+        response = self._client.beta.messages.count_tokens(
+            betas=["token-counting-2024-11-01"],
+            model=self.model,
+            messages=formatted_messages,  # type: ignore[arg-type]
+            **kwargs,
+        )
+        return response.input_tokens
+
 
 class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
@@ -1216,12 +1303,12 @@ def _make_message_chunk_from_anthropic_event(
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
             content_block["type"] = "tool_use"
-            tool_call_chunk = {
-                "index": event.index,
-                "id": None,
-                "name": None,
-                "args": event.delta.partial_json,
-            }
+            tool_call_chunk = create_tool_call_chunk(
+                index=event.index,
+                id=None,
+                name=None,
+                args=event.delta.partial_json,
+            )
             message_chunk = AIMessageChunk(
                 content=[content_block],
                 tool_call_chunks=[tool_call_chunk],  # type: ignore
@@ -1242,7 +1329,7 @@ def _make_message_chunk_from_anthropic_event(
     return message_chunk
 
 
-@deprecated(since="0.1.0", removal="0.3.0", alternative="ChatAnthropic")
+@deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
 class ChatAnthropicMessages(ChatAnthropic):
     pass
 

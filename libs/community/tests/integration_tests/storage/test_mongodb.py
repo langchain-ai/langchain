@@ -2,7 +2,7 @@ from typing import Generator, Tuple
 
 import pytest
 from langchain_core.documents import Document
-from langchain_standard_tests.integration_tests.base_store import BaseStoreSyncTests
+from langchain_tests.integration_tests.base_store import BaseStoreSyncTests
 
 from langchain_community.storage.mongodb import MongoDBByteStore, MongoDBStore
 

@@ -866,7 +866,8 @@ class Redis(VectorStore):
                 metadata = {"id": result.id}
                 metadata.update(self._collect_metadata(result))
 
-            doc = Document(page_content=result.content, metadata=metadata)
+            content_key = self._schema.content_key
+            doc = Document(page_content=getattr(result, content_key), metadata=metadata)
             distance = self._calculate_fp_distance(result.distance)
             docs_with_scores.append((doc, distance))
 
@@ -1425,7 +1426,7 @@ def _prepare_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     return clean_meta
 
 
-class RedisVectorStoreRetriever(VectorStoreRetriever):
+class RedisVectorStoreRetriever(VectorStoreRetriever):  # type: ignore[override]
     """Retriever for Redis VectorStore."""
 
     vectorstore: Redis

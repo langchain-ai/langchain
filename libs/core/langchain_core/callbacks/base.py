@@ -275,9 +275,8 @@ class CallbackManagerMixin:
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        )
+        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        raise NotImplementedError(msg)
 
     def on_retriever_start(
         self,
@@ -523,9 +522,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        )
+        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        raise NotImplementedError(msg)
 
     async def on_llm_new_token(
         self,
