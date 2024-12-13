@@ -307,7 +307,7 @@ class TablestoreVectorStore(VectorStore):
                 e.get_request_id(),
             )
 
-    def __get_row(self, row_id: str) -> Optional[Document]:
+    def __get_row(self, row_id: str) -> Document:
         try:
             import tablestore
         except ImportError:
