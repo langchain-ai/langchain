@@ -161,9 +161,8 @@ def _build_sugiyama_layout(
             route_with_lines,
         )
     except ImportError as exc:
-        raise ImportError(
-            "Install grandalf to draw graphs: `pip install grandalf`."
-        ) from exc
+        msg = "Install grandalf to draw graphs: `pip install grandalf`."
+        raise ImportError(msg) from exc
 
     #
     # Just a reminder about naming conventions:

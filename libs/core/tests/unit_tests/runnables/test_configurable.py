@@ -23,7 +23,8 @@ class MyRunnable(RunnableSerializable[str, str]):
     @classmethod
     def my_error(cls, values: dict[str, Any]) -> Any:
         if "_my_hidden_property" in values:
-            raise ValueError("Cannot set _my_hidden_property")
+            msg = "Cannot set _my_hidden_property"
+            raise ValueError(msg)
         return values
 
     @model_validator(mode="after")

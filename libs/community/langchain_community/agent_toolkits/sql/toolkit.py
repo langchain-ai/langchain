@@ -2,6 +2,8 @@
 
 from typing import List
 
+from langchain_core.caches import BaseCache as BaseCache
+from langchain_core.callbacks import Callbacks as Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
@@ -11,7 +13,10 @@ from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     ListSQLDatabaseTool,
     QuerySQLCheckerTool,
-    QuerySQLDataBaseTool,
+    QuerySQLDatabaseTool,
+)
+from langchain_community.tools.sql_database.tool import (
+    QuerySQLDataBaseTool as QuerySQLDataBaseTool,  # keep import for backwards compat.
 )
 from langchain_community.utilities.sql_database import SQLDatabase
 
@@ -108,7 +113,7 @@ class SQLDatabaseToolkit(BaseToolkit):
             f"'xxxx' in 'field list', use {info_sql_database_tool.name} "
             "to query the correct table fields."
         )
-        query_sql_database_tool = QuerySQLDataBaseTool(
+        query_sql_database_tool = QuerySQLDatabaseTool(
             db=self.db, description=query_sql_database_tool_description
         )
         query_sql_checker_tool_description = (
@@ -129,3 +134,6 @@ class SQLDatabaseToolkit(BaseToolkit):
     def get_context(self) -> dict:
         """Return db context that you may want in agent prompt."""
         return self.db.get_context()
+
+
+SQLDatabaseToolkit.model_rebuild()

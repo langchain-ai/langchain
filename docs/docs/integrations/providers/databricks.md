@@ -14,11 +14,13 @@ Databricks embraces the LangChain ecosystem in various ways:
 Installation
 ------------
 
-First-party Databricks integrations are available in the langchain-databricks partner package.
+First-party Databricks integrations are now available in the databricks-langchain partner package.
 
 ```
-pip install langchain-databricks
+pip install databricks-langchain
 ```
+
+The legacy langchain-databricks partner package is still available but will be soon deprecated. 
 
 Chat Model
 ----------
@@ -26,7 +28,7 @@ Chat Model
 `ChatDatabricks` is a Chat Model class to access chat endpoints hosted on Databricks, including state-of-the-art models such as Llama3, Mixtral, and DBRX, as well as your own fine-tuned models.
 
 ```
-from langchain_databricks import ChatDatabricks
+from databricks_langchain import ChatDatabricks
 
 chat_model = ChatDatabricks(endpoint="databricks-meta-llama-3-70b-instruct")
 ```
@@ -39,7 +41,7 @@ LLM
 `Databricks` is an LLM class to access completion endpoints hosted on Databricks.
 
 :::caution
-Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/#chat-models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
+Text completion models have been deprecated and the latest and most popular models are [chat completion models](/docs/concepts/chat_models). Use `ChatDatabricks` chat model instead to use those models and advanced features such as tool calling.
 :::
 
 ```
@@ -57,7 +59,7 @@ Embeddings
 `DatabricksEmbeddings` is an Embeddings class to access text-embedding endpoints hosted on Databricks, including state-of-the-art models such as BGE, as well as your own fine-tuned models.
 
 ```
-from langchain_databricks import DatabricksEmbeddings
+from databricks_langchain import DatabricksEmbeddings
 
 embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
 ```
@@ -71,7 +73,7 @@ Vector Search
 Databricks Vector Search is a serverless similarity search engine that allows you to store a vector representation of your data, including metadata, in a vector database. With Vector Search, you can create auto-updating vector search indexes from [Delta](https://docs.databricks.com/en/introduction/delta-comparison.html) tables managed by [Unity Catalog](https://www.databricks.com/product/unity-catalog) and query them with a simple API to return the most similar vectors.
 
 ```
-from langchain_databricks.vectorstores import DatabricksVectorSearch
+from databricks_langchain import DatabricksVectorSearch
 
 dvs = DatabricksVectorSearch(
     endpoint="<YOUT_ENDPOINT_NAME>",
@@ -113,7 +115,7 @@ See [Databricks SQL Agent](https://docs.databricks.com/en/large-language-models/
 Open Models
 -----------
 
-To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/platforms/huggingface) of LangChain.
+To directly integrate Databricks's open models hosted on HuggingFace, you can use the [HuggingFace Integration](/docs/integrations/providers/huggingface) of LangChain.
 
 ```
 from langchain_huggingface import HuggingFaceEndpoint

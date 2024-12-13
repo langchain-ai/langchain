@@ -72,6 +72,19 @@ def function() -> Callable:
 
 
 @pytest.fixture()
+def function_docstring_annotations() -> Callable:
+    def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
+        """dummy function
+
+        Args:
+            arg1 (int): foo
+            arg2: one of 'bar', 'baz'
+        """
+
+    return dummy_function
+
+
+@pytest.fixture()
 def runnable() -> Runnable:
     class Args(ExtensionsTypedDict):
         arg1: ExtensionsAnnotated[int, "foo"]
@@ -210,6 +223,50 @@ def json_schema() -> dict:
     }
 
 
+@pytest.fixture()
+def anthropic_tool() -> dict:
+    return {
+        "name": "dummy_function",
+        "description": "dummy function",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "arg1": {"description": "foo", "type": "integer"},
+                "arg2": {
+                    "description": "one of 'bar', 'baz'",
+                    "enum": ["bar", "baz"],
+                    "type": "string",
+                },
+            },
+            "required": ["arg1", "arg2"],
+        },
+    }
+
+
+@pytest.fixture()
+def bedrock_converse_tool() -> dict:
+    return {
+        "toolSpec": {
+            "name": "dummy_function",
+            "description": "dummy function",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "arg1": {"description": "foo", "type": "integer"},
+                        "arg2": {
+                            "description": "one of 'bar', 'baz'",
+                            "enum": ["bar", "baz"],
+                            "type": "string",
+                        },
+                    },
+                    "required": ["arg1", "arg2"],
+                }
+            },
+        }
+    }
+
+
 class Dummy:
     def dummy_function(self, arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """dummy function
@@ -234,9 +291,12 @@ class DummyWithClassMethod:
 def test_convert_to_openai_function(
     pydantic: type[BaseModel],
     function: Callable,
+    function_docstring_annotations: Callable,
     dummy_structured_tool: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: dict,
+    anthropic_tool: dict,
+    bedrock_converse_tool: dict,
     annotated_function: Callable,
     dummy_pydantic: type[BaseModel],
     runnable: Runnable,
@@ -265,9 +325,12 @@ def test_convert_to_openai_function(
     for fn in (
         pydantic,
         function,
+        function_docstring_annotations,
         dummy_structured_tool,
         dummy_tool,
         json_schema,
+        anthropic_tool,
+        bedrock_converse_tool,
         expected,
         Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,
@@ -411,6 +474,130 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
+json_schema_no_description_no_params = {
+    "title": "dummy_function",
+}
+
+
+json_schema_no_description = {
+    "title": "dummy_function",
+    "type": "object",
+    "properties": {
+        "arg1": {"description": "foo", "type": "integer"},
+        "arg2": {
+            "description": "one of 'bar', 'baz'",
+            "enum": ["bar", "baz"],
+            "type": "string",
+        },
+    },
+    "required": ["arg1", "arg2"],
+}
+
+
+anthropic_tool_no_description = {
+    "name": "dummy_function",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "arg1": {"description": "foo", "type": "integer"},
+            "arg2": {
+                "description": "one of 'bar', 'baz'",
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    },
+}
+
+
+bedrock_converse_tool_no_description = {
+    "toolSpec": {
+        "name": "dummy_function",
+        "inputSchema": {
+            "json": {
+                "type": "object",
+                "properties": {
+                    "arg1": {"description": "foo", "type": "integer"},
+                    "arg2": {
+                        "description": "one of 'bar', 'baz'",
+                        "enum": ["bar", "baz"],
+                        "type": "string",
+                    },
+                },
+                "required": ["arg1", "arg2"],
+            }
+        },
+    }
+}
+
+
+openai_function_no_description = {
+    "name": "dummy_function",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "arg1": {"description": "foo", "type": "integer"},
+            "arg2": {
+                "description": "one of 'bar', 'baz'",
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    },
+}
+
+
+openai_function_no_description_no_params = {
+    "name": "dummy_function",
+}
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        anthropic_tool_no_description,
+        json_schema_no_description,
+        bedrock_converse_tool_no_description,
+        openai_function_no_description,
+    ],
+)
+def test_convert_to_openai_function_no_description(func: dict) -> None:
+    expected = {
+        "name": "dummy_function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {"description": "foo", "type": "integer"},
+                "arg2": {
+                    "description": "one of 'bar', 'baz'",
+                    "enum": ["bar", "baz"],
+                    "type": "string",
+                },
+            },
+            "required": ["arg1", "arg2"],
+        },
+    }
+    actual = convert_to_openai_function(func)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        json_schema_no_description_no_params,
+        openai_function_no_description_no_params,
+    ],
+)
+def test_convert_to_openai_function_no_description_no_params(func: dict) -> None:
+    expected = {
+        "name": "dummy_function",
+    }
+    actual = convert_to_openai_function(func)
+    assert actual == expected
+
+
 @pytest.mark.xfail(
     reason="Pydantic converts Optional[str] to str in .model_json_schema()"
 )
@@ -506,6 +693,24 @@ def test_tool_outputs() -> None:
         },
     ]
     assert messages[2].content == "Output1"
+
+    # Test final AI response
+    messages = tool_example_to_messages(
+        input="This is an example",
+        tool_calls=[
+            FakeCall(data="ToolCall1"),
+        ],
+        tool_outputs=["Output1"],
+        ai_response="The output is Output1",
+    )
+    assert len(messages) == 4
+    assert isinstance(messages[0], HumanMessage)
+    assert isinstance(messages[1], AIMessage)
+    assert isinstance(messages[2], ToolMessage)
+    assert isinstance(messages[3], AIMessage)
+    response = messages[3]
+    assert response.content == "The output is Output1"
+    assert not response.tool_calls
 
 
 @pytest.mark.parametrize("use_extension_typed_dict", [True, False])
