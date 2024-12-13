@@ -1,13 +1,20 @@
 """**Embeddings** interface."""
 
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Optional
 
 from langchain_core.runnables.config import run_in_executor
 
 
+class ContentType(Enum):
+    text = "text"
+    image_url = "image_url"
+    image_base64 = "image_base64"
+
+
 class Content(ABC):
-    type: str
+    type: ContentType
     text: Optional[str]
     image_url: Optional[str]
     image_base64: Optional[str]
