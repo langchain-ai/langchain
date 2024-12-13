@@ -30,10 +30,12 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4o": 0.0025,
     "gpt-4o-2024-05-13": 0.005,
     "gpt-4o-2024-08-06": 0.0025,
+    "gpt-4o-2024-11-20": 0.0025,
     # GPT-4o output
     "gpt-4o-completion": 0.01,
     "gpt-4o-2024-05-13-completion": 0.015,
     "gpt-4o-2024-08-06-completion": 0.01,
+    "gpt-4o-2024-11-20-completion": 0.01,
     # GPT-4 input
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
