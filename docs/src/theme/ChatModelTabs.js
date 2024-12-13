@@ -1,8 +1,77 @@
 /* eslint-disable react/jsx-props-no-spreading, react/destructuring-assignment */
-import React from "react";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
+
+// Create a custom dropdown since Docusaurus's dropdown component isn't easily accessible
+const CustomDropdown = ({ selectedOption, options, onSelect }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && !event.target.closest('.dropdown')) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
+      <span style={{ 
+        fontSize: '1rem',
+        fontWeight: '500',
+      }}>
+        Select <a href="/docs/integrations/chat/">chat model</a>:
+      </span>
+      <div className={`dropdown ${isOpen ? 'dropdown--show' : ''}`}>
+        <button 
+          className="button button--secondary" 
+          onClick={() => setIsOpen(!isOpen)}
+          style={{ 
+            backgroundColor: 'var(--ifm-background-color)',
+            border: '1px solid var(--ifm-color-emphasis-300)',
+            fontWeight: 'normal',
+            fontSize: '1rem',
+            padding: '0.5rem 1rem',
+            color: 'var(--ifm-font-color-base)',
+          }}
+        >
+          {selectedOption.label}
+          <span style={{ 
+            marginLeft: '0.4rem',
+            fontSize: '0.875rem'
+          }}>▾</span>
+        </button>
+        <div className="dropdown__menu" style={{
+          maxHeight: '210px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          marginBottom: 0,
+        }}>
+          {options.map((option) => (
+            <li key={option.value}>
+              <a 
+                className={`dropdown__link ${option.value === selectedOption.value ? 'dropdown__link--active' : ''}`}
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelect(option.value);
+                  setIsOpen(false);
+                }}
+              >
+                {option.label}
+              </a>
+            </li>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 /**
  * @typedef {Object} ChatModelTabsProps - Component props.
@@ -36,6 +105,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
+  const [selectedModel, setSelectedModel] = useState("OpenAI");
   const {
     openaiParams,
     anthropicParams,
@@ -153,7 +223,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "FireworksAI",
-      label: "FireworksAI",
+      label: "Fireworks AI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
       apiKeyName: "FIREWORKS_API_KEY",
       packageName: "langchain-fireworks",
@@ -171,7 +241,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "MistralAI",
-      label: "MistralAI",
+      label: "Mistral AI",
       text: `from langchain_mistralai import ChatMistralAI\n\n${llmVarName} = ChatMistralAI(${mistralParamsOrDefault})`,
       apiKeyName: "MISTRAL_API_KEY",
       packageName: "langchain-mistralai",
@@ -180,7 +250,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "TogetherAI",
-      label: "TogetherAI",
+      label: "Together AI",
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
       packageName: "langchain-openai",
@@ -198,38 +268,46 @@ export default function ChatModelTabs(props) {
     },
   ];
 
-  return (
-    <Tabs groupId="modelTabs">
-      {tabItems
-        .filter((tabItem) => !tabItem.shouldHide)
-        .map((tabItem) => {
-          let apiKeyText = "";
-          if (tabItem.apiKeyName) {
-            apiKeyText = `import getpass
+  const modelOptions = tabItems
+  .filter((item) => !item.shouldHide)
+  .map((item) => ({
+    value: item.value,
+    label: item.label,
+    text: item.text,
+    apiKeyName: item.apiKeyName,
+    apiKeyText: item.apiKeyText,
+    packageName: item.packageName,
+  }));
+
+const selectedOption = modelOptions.find(
+  (option) => option.value === selectedModel
+);
+
+let apiKeyText = "";
+if (selectedOption.apiKeyName) {
+  apiKeyText = `import getpass
 import os
 
-os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
-          } else if (tabItem.apiKeyText) {
-            apiKeyText = tabItem.apiKeyText;
-          }
+if not os.environ.get("${selectedOption.apiKeyName}"):
+  os.environ["${selectedOption.apiKeyName}"] = getpass.getpass("Enter API key for ${selectedOption.label}: ")`;
+  } else if (selectedOption.apiKeyText) {
+    apiKeyText = selectedOption.apiKeyText;
+  }
 
-          return (
-            <TabItem
-              key={tabItem.value}
-              value={tabItem.value}
-              label={tabItem.label}
-              default={tabItem.default}
-            >
-              <CodeBlock language="bash">
-                {`pip install -qU ${tabItem.packageName}`}
-              </CodeBlock>
-              <CodeBlock language="python">
-                {apiKeyText ? apiKeyText + "\n\n" + tabItem.text : tabItem.text}
-              </CodeBlock>
-            </TabItem>
-          );
-        })
-      }
-    </Tabs>
-  );
+return (
+  <div>
+    <CustomDropdown 
+      selectedOption={selectedOption}
+      options={modelOptions}
+      onSelect={setSelectedModel}
+    />
+
+    <CodeBlock language="bash">
+      {`pip install -qU ${selectedOption.packageName}`}
+    </CodeBlock>
+    <CodeBlock language="python">
+      {apiKeyText ? apiKeyText + "\n\n" + selectedOption.text : selectedOption.text}
+    </CodeBlock>
+  </div>
+);
 }
