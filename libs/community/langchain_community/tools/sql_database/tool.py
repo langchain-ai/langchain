@@ -64,12 +64,12 @@ class QuerySQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overr
     removal="1.0",
     alternative_import="langchain_community.tools.QuerySQLDatabaseTool",
 )
-class QuerySQLDataBaseTool(QuerySQLDatabaseTool):
+class QuerySQLDataBaseTool(QuerySQLDatabaseTool):  # type: ignore[override]
     """
     Equivalent stub to QuerySQLDatabaseTool for backwards compatibility.
     :private:"""
 
-    pass
+    ...
 
 
 class _InfoSQLDatabaseToolInput(BaseModel):
