@@ -227,11 +227,11 @@ def index(
          chunks, and we index them using a batch size of 5, we'll have 3 batches
          all with the same source id. In general, to avoid doing too much
          redundant work select as big a batch size as possible.
-       * scoped_full mode may be a good option if you have difficulty decidng
-         on the appropriate batch size and your loader is not able to
-         return the entire dataset. This solution keeps track of the source ids
-         in memory. It would probably be fine for most use cases in terms of
-         memory consumption, but would require parallelizing for 10M+ docs anyway
+        * The `scoped_full` mode is suitable if determining an appropriate batch size
+          is challenging or if your data loader cannot return the entire dataset at
+          once. This mode keeps track of source IDs in memory, which should be fine
+          for most use cases. If your dataset is large (10M+ docs), you will likely
+          need to parallelize the indexing process regardless.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
@@ -240,13 +240,13 @@ def index(
         vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
-            - Incremental: Cleans up all documents that haven't been updated AND
+            - incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
                            Clean up is done continuously during indexing helping
                            to minimize the probability of users seeing duplicated
                            content.
-            - Full: Delete all documents that have not been returned by the loader
+            - full: Delete all documents that have not been returned by the loader
                     during this run of indexing.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
@@ -278,6 +278,10 @@ def index(
         ValueError: If vectorstore does not have
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
+
+    .. version_modified:: 0.3.25
+
+        * Added `scoped_full` cleanup mode.
     """
     if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
@@ -503,11 +507,11 @@ async def aindex(
          chunks, and we index them using a batch size of 5, we'll have 3 batches
          all with the same source id. In general, to avoid doing too much
          redundant work select as big a batch size as possible.
-       * scoped_full mode may be a good option if you have difficulty deciding
-         on the appropriate batch size and your loader is not able to
-         return the entire dataset. This solution keeps track of the source ids
-         in memory. It would probably be fine for most use cases in terms of
-         memory consumption, but would require parallelizing for 10M+ docs anyway
+       * The `scoped_full` mode is suitable if determining an appropriate batch size
+         is challenging or if your data loader cannot return the entire dataset at
+         once. This mode keeps track of source IDs in memory, which should be fine
+         for most use cases. If your dataset is large (10M+ docs), you will likely
+         need to parallelize the indexing process regardless.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
@@ -516,16 +520,16 @@ async def aindex(
         vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
-            - Incremental: Cleans up all documents that haven't been updated AND
+            - incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
                            Clean up is done continuously during indexing helping
                            to minimize the probability of users seeing duplicated
                            content.
-            - Full: Delete all documents that haven to been returned by the loader.
+            - full: Delete all documents that haven to been returned by the loader.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
-            - Scoped_Full: Similar to Full, but only deletes all documents
+            - scoped_full: Similar to Full, but only deletes all documents
                            that haven't been updated AND that are associated with
                            source ids that were seen during indexing.
             - None: Do not delete any documents.
@@ -553,6 +557,10 @@ async def aindex(
         ValueError: If vectorstore does not have
             "adelete" and "aadd_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
+
+    .. version_modified:: 0.3.25
+
+        * Added `scoped_full` cleanup mode.
     """
 
     if cleanup not in {"incremental", "full", "scoped_full", None}:
