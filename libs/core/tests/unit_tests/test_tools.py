@@ -40,10 +40,10 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
-    MethodTool,
     StructuredTool,
     Tool,
     ToolException,
+    methodtool,
     tool,
 )
 from langchain_core.tools.base import (
@@ -2184,7 +2184,7 @@ def test_method_tool_self_ref() -> None:
         def __init__(self, c: int):
             self.c = c
 
-        @MethodTool
+        @methodtool
         def foo(self, a: int, b: int) -> int:
             """Add two numbers to c."""
             return a + b + self.c
@@ -2200,7 +2200,7 @@ def test_method_tool_args() -> None:
         def __init__(self, c: int):
             self.c = c
 
-        @MethodTool
+        @methodtool
         def foo(self, a: int, b: int) -> int:
             """Add two numbers to c."""
             return a + b + self.c
@@ -2216,7 +2216,7 @@ async def test_method_tool_async() -> None:
         def __init__(self, c: int):
             self.c = c
 
-        @MethodTool
+        @methodtool
         async def foo(self, a: int, b: int) -> int:
             """Add two numbers to c."""
             return a + b + self.c
@@ -2233,7 +2233,7 @@ def test_method_tool_string_invoke() -> None:
         def __init__(self, a: str):
             self.a = a
 
-        @MethodTool
+        @methodtool
         def foo(self, b: str) -> str:
             """Concatenate a and b."""
             return self.a + b
@@ -2249,7 +2249,7 @@ def test_method_tool_toolcall_invoke() -> None:
         def __init__(self, c: int):
             self.c = c
 
-        @MethodTool
+        @methodtool
         def foo(self, a: int, b: int) -> int:
             """Add two numbers to c."""
             return a + b + self.c
@@ -2268,14 +2268,14 @@ def test_method_tool_toolcall_invoke() -> None:
     assert int(tool_message.content) == 13
 
 
-def test_method_tool_metadata() -> None:
+def test_method_tool_info() -> None:
     """Test that a method tools have correct name/description/args schema."""
 
     class A:
         def __init__(self, c: int):
             self.c = c
 
-        @MethodTool
+        @methodtool
         def foo(self, a: int, b: int) -> int:
             """Add two numbers to c."""
             return a + b + self.c
@@ -2296,7 +2296,7 @@ def test_method_tool_classmethod() -> None:
     class A:
         c = 5
 
-        @MethodTool
+        @methodtool
         @classmethod
         def foo(cls, a: int, b: int) -> int:
             """Add two numbers to c."""
@@ -2311,7 +2311,7 @@ def test_method_tool_classmethod_args() -> None:
     class A:
         c = 5
 
-        @MethodTool
+        @methodtool
         @classmethod
         def foo(cls, a: int, b: int) -> int:
             """Add two numbers to c."""

@@ -462,3 +462,15 @@ class MethodTool:
         return tool(tool_func.__name__, args_schema=args_schema, infer_schema=False)(
             new_func
         )
+
+
+def methodtool(func: Union[Callable, classmethod]) -> MethodTool:
+    """Convert a method into a tool.
+
+    Args:
+        func: The method to convert.
+
+    Returns:
+        The method tool.
+    """
+    return MethodTool(func)
