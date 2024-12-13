@@ -433,6 +433,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -519,10 +521,8 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            # Assign strings to any null IDs
-            for idx, _id in enumerate(ids):
-                if _id is None:
-                    ids[idx] = str(uuid.uuid4())
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -758,7 +758,7 @@ class Chroma(VectorStore):
 
         The most similar documents will have the lowest relevance score. Default
         relevance score function is euclidean distance. Distance metric must be
-        provided in `collection_metadata` during initizalition of Chroma object.
+        provided in `collection_metadata` during initialization of Chroma object.
         Example: collection_metadata={"hnsw:space": "cosine"}. Available distance
         metrics are: 'cosine', 'l2' and 'ip'.
 
@@ -1169,6 +1169,8 @@ class Chroma(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
             chroma_collection._client, "get_max_batch_size"
         ) or hasattr(  # for Chroma 0.5.1 and above
@@ -1228,7 +1230,7 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         if ids is None:
-            ids = [doc.id if doc.id else "" for doc in documents]
+            ids = [doc.id if doc.id else str(uuid.uuid4()) for doc in documents]
         return cls.from_texts(
             texts=texts,
             embedding=embedding,
