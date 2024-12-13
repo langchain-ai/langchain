@@ -13,7 +13,6 @@ from datetime import datetime
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
 
-from dateutil.parser import parse
 from pydantic import (
     BaseModel,
     Field,
