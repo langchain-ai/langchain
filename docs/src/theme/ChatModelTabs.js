@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
 
 // Create a custom dropdown since Docusaurus's dropdown component isn't easily accessible
-const CustomDropdown = ({ selectedOption, options, onSelect }) => {
+export const CustomDropdown = ({ selectedOption, options, onSelect }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Close dropdown when clicking outside
