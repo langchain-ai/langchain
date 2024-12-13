@@ -11,6 +11,10 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
+    """
+    :private:
+    """
+
     @property
     @abstractmethod
     def embeddings_class(self) -> Type[Embeddings]: ...

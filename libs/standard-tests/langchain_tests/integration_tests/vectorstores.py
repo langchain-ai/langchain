@@ -14,8 +14,8 @@ from langchain_tests.base import BaseStandardTests
 EMBEDDING_SIZE = 6
 
 
-class ReadWriteTestSuite(BaseStandardTests):
-    """Test suite for checking the synchronous read-write API of a vector store.
+class VectorStoreIntegrationTests(BaseStandardTests):
+    """Base class for vector store integration tests.
 
     Implementers should subclass this test suite and provide a fixture
     that returns an empty vector store for each test.
@@ -32,10 +32,10 @@ class ReadWriteTestSuite(BaseStandardTests):
         import pytest
         from langchain_core.vectorstores import VectorStore
         from langchain_parrot_link.vectorstores import ParrotVectorStore
-        from langchain_tests.integration_tests.vectorstores import ReadWriteTestSuite
+        from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 
-        class TestSync(ReadWriteTestSuite):
+        class TestParrotVectorStore(VectorStoreIntegrationTests):
             @pytest.fixture()
             def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
                 \"\"\"Get an empty vectorstore.\"\"\"
@@ -60,21 +60,36 @@ class ReadWriteTestSuite(BaseStandardTests):
 
         import pytest
         from langchain_core.vectorstores import VectorStore
-        from langchain_tests.integration_tests.vectorstores import ReadWriteTestSuite
+        from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
         from langchain_chroma import Chroma
 
 
-        class TestSync(ReadWriteTestSuite):
+        class TestChromaStandard(VectorStoreIntegrationTests):
             @pytest.fixture()
             def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore.\"\"\"
+                \"\"\"Get an empty vectorstore for unit tests.\"\"\"
                 store = Chroma(embedding_function=self.get_embeddings())
                 try:
                     yield store
                 finally:
                     store.delete_collection()
                     pass
+
+    Note that by default we enable both sync and async tests. To disable either,
+    override the ``has_sync`` or ``has_async`` properties to ``False`` in the
+    subclass. For example:
+
+    .. code-block:: python
+
+       class TestParrotVectorStore(VectorStoreIntegrationTests):
+            @pytest.fixture()
+            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+                ...
+
+            @property
+            def has_async(self) -> bool:
+                return False
 
     .. note::
           API references for individual test methods include troubleshooting tips.
@@ -87,6 +102,20 @@ class ReadWriteTestSuite(BaseStandardTests):
 
         The returned vectorstore should be EMPTY.
         """
+
+    @property
+    def has_sync(self) -> bool:
+        """
+        Configurable property to enable or disable sync tests.
+        """
+        return True
+
+    @property
+    def has_async(self) -> bool:
+        """
+        Configurable property to enable or disable async tests.
+        """
+        return True
 
     @staticmethod
     def get_embeddings() -> Embeddings:
@@ -107,9 +136,12 @@ class ReadWriteTestSuite(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``ReadWriteTestSuite``) initializes an empty vector store in the
+            ``VectorStoreIntegrationTests``) initializes an empty vector store in the
             ``vectorestore`` fixture.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
@@ -123,6 +155,9 @@ class ReadWriteTestSuite(BaseStandardTests):
             2. Calling ``.similarity_search`` for the top ``k`` similar documents does not threshold by score.
             3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -149,9 +184,12 @@ class ReadWriteTestSuite(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``ReadWriteTestSuite``) correctly clears the vector store in the
+            ``VectorStoreIntegrationTests``) correctly clears the vector store in the
             ``finally`` block.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_deleting_documents(self, vectorstore: VectorStore) -> None:
@@ -163,6 +201,9 @@ class ReadWriteTestSuite(BaseStandardTests):
             passed in through ``ids``, and that ``delete`` correctly removes
             documents.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -181,6 +222,9 @@ class ReadWriteTestSuite(BaseStandardTests):
             If this test fails, check that ``delete`` correctly removes multiple
             documents when given a list of IDs.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -200,6 +244,9 @@ class ReadWriteTestSuite(BaseStandardTests):
             If this test fails, check that ``delete`` does not raise an exception
             when deleting IDs that do not exist.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         vectorstore.delete(["1"])
         vectorstore.delete(["1", "2", "3"])
 
@@ -214,6 +261,9 @@ class ReadWriteTestSuite(BaseStandardTests):
             same IDs has the same effect as adding it once (i.e., it does not
             duplicate the documents).
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -235,6 +285,9 @@ class ReadWriteTestSuite(BaseStandardTests):
             ID that already exists in the vector store, the content is updated
             rather than duplicated.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -283,6 +336,9 @@ class ReadWriteTestSuite(BaseStandardTests):
                     def test_get_by_ids(self, vectorstore: VectorStore) -> None:
                         super().test_get_by_ids(vectorstore)
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -313,6 +369,9 @@ class ReadWriteTestSuite(BaseStandardTests):
                     def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
                         super().test_get_by_ids_missing(vectorstore)
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         # This should not raise an exception
         documents = vectorstore.get_by_ids(["1", "2", "3"])
         assert documents == []
@@ -339,6 +398,9 @@ class ReadWriteTestSuite(BaseStandardTests):
                     def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
                         super().test_add_documents_documents(vectorstore)
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -373,6 +435,9 @@ class ReadWriteTestSuite(BaseStandardTests):
                     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
                         super().test_add_documents_with_existing_ids(vectorstore)
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -384,106 +449,21 @@ class ReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-
-class AsyncReadWriteTestSuite(BaseStandardTests):
-    """Test suite for checking the async read-write API of a vector store.
-
-    Implementers should subclass this test suite and provide a fixture
-    that returns an empty vector store for each test.
-
-    The fixture should use the ``get_embeddings`` method to get a pre-defined
-    embeddings model that should be used for this test suite.
-
-    Here is a template:
-
-    .. code-block:: python
-
-        from typing import AsyncGenerator
-
-        import pytest
-        from langchain_core.vectorstores import VectorStore
-        from langchain_parrot_link.vectorstores import ParrotVectorStore
-        from langchain_tests.integration_tests.vectorstores import AsyncReadWriteTestSuite
-
-
-        class TestAsync(AsyncReadWriteTestSuite):
-            @pytest.fixture()
-            def vectorstore(self) -> AsyncGenerator[VectorStore, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore.\"\"\"
-                store = ParrotVectorStore(self.get_embeddings())
-                # note: store should be EMPTY at this point
-                # if you need to delete data, you may do so here
-                try:
-                    yield store
-                finally:
-                    # cleanup operations, or deleting data
-                    pass
-
-    In the fixture, before the ``yield`` we instantiate an empty vector store. In the
-    ``finally`` block, we call whatever logic is necessary to bring the vector store
-    to a clean state.
-
-    Example:
-
-    .. code-block:: python
-
-        from typing import AsyncGenerator, Generator
-
-        import pytest
-        from langchain_core.vectorstores import VectorStore
-        from langchain_tests.integration_tests.vectorstores import AsyncReadWriteTestSuite
-
-        from langchain_chroma import Chroma
-
-
-        class TestAsync(AsyncReadWriteTestSuite):
-            @pytest.fixture()
-            async def vectorstore(self) -> AsyncGenerator[VectorStore, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore for unit tests.\"\"\"
-                store = Chroma(embedding_function=self.get_embeddings())
-                try:
-                    yield store
-                finally:
-                    store.delete_collection()
-                    pass
-
-    .. note::
-          API references for individual test methods include troubleshooting tips.
-    """  # noqa: E501
-
-    @abstractmethod
-    @pytest.fixture
-    async def vectorstore(self) -> VectorStore:
-        """Get the vectorstore class to test.
-
-        The returned vectorstore should be EMPTY.
-        """
-
-    @staticmethod
-    def get_embeddings() -> Embeddings:
-        """A pre-defined embeddings model that should be used for this test.
-
-        This currently uses ``DeterministicFakeEmbedding`` from ``langchain-core``,
-        which uses numpy to generate random numbers based on a hash of the input text.
-
-        The resulting embeddings are not meaningful, but they are deterministic.
-        """
-        return DeterministicFakeEmbedding(
-            size=EMBEDDING_SIZE,
-        )
-
-    async def test_vectorstore_is_empty(self, vectorstore: VectorStore) -> None:
+    async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
         """Test that the vectorstore is empty.
 
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``AsyncReadWriteTestSuite``) initializes an empty vector store in the
+            ``VectorStoreIntegrationTests``) initializes an empty vector store in the
             ``vectorestore`` fixture.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
-    async def test_add_documents(self, vectorstore: VectorStore) -> None:
+    async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore.
 
         .. dropdown:: Troubleshooting
@@ -494,6 +474,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             2. Calling ``.asimilarity_search`` for the top ``k`` similar documents does not threshold by score.
             3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -512,7 +495,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
 
-    async def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
+    async def test_vectorstore_still_empty_async(
+        self, vectorstore: VectorStore
+    ) -> None:
         """This test should follow a test that adds documents.
 
         This just verifies that the fixture is set up properly to be empty
@@ -521,12 +506,15 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the test class (i.e., sub class of
-            ``AsyncReadWriteTestSuite``) correctly clears the vector store in the
+            ``VectorStoreIntegrationTests``) correctly clears the vector store in the
             ``finally`` block.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
-    async def test_deleting_documents(self, vectorstore: VectorStore) -> None:
+    async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
         """Test deleting documents from the vectorstore.
 
         .. dropdown:: Troubleshooting
@@ -535,6 +523,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             passed in through ``ids``, and that ``delete`` correctly removes
             documents.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -545,7 +536,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         documents = await vectorstore.asimilarity_search("foo", k=1)
         assert documents == [Document(page_content="bar", metadata={"id": 2}, id="2")]
 
-    async def test_deleting_bulk_documents(self, vectorstore: VectorStore) -> None:
+    async def test_deleting_bulk_documents_async(
+        self, vectorstore: VectorStore
+    ) -> None:
         """Test that we can delete several documents at once.
 
         .. dropdown:: Troubleshooting
@@ -553,6 +546,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             If this test fails, check that ``adelete`` correctly removes multiple
             documents when given a list of IDs.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -564,7 +560,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
         documents = await vectorstore.asimilarity_search("foo", k=1)
         assert documents == [Document(page_content="baz", metadata={"id": 3}, id="3")]
 
-    async def test_delete_missing_content(self, vectorstore: VectorStore) -> None:
+    async def test_delete_missing_content_async(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception.
 
         .. dropdown:: Troubleshooting
@@ -572,10 +568,13 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             If this test fails, check that ``adelete`` does not raise an exception
             when deleting IDs that do not exist.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         await vectorstore.adelete(["1"])
         await vectorstore.adelete(["1", "2", "3"])
 
-    async def test_add_documents_with_ids_is_idempotent(
+    async def test_add_documents_with_ids_is_idempotent_async(
         self, vectorstore: VectorStore
     ) -> None:
         """Adding by ID should be idempotent.
@@ -586,6 +585,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             same IDs has the same effect as adding it once (i.e., it does not
             duplicate the documents).
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -598,7 +600,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="foo", metadata={"id": 1}, id="1"),
         ]
 
-    async def test_add_documents_by_id_with_mutation(
+    async def test_add_documents_by_id_with_mutation_async(
         self, vectorstore: VectorStore
     ) -> None:
         """Test that we can overwrite by ID using add_documents.
@@ -609,6 +611,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             ID that already exists in the vector store, the content is updated
             rather than duplicated.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -636,7 +641,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(id="2", page_content="bar", metadata={"id": 2}),
         ]
 
-    async def test_get_by_ids(self, vectorstore: VectorStore) -> None:
+    async def test_get_by_ids_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs.
 
         This test requires that ``get_by_ids`` be implemented on the vector store.
@@ -657,6 +662,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
                     async def test_get_by_ids(self, vectorstore: VectorStore) -> None:
                         await super().test_get_by_ids(vectorstore)
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -668,7 +676,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
+    async def test_get_by_ids_missing_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
 
         .. dropdown:: Troubleshooting
@@ -687,10 +695,15 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
                     async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
                         await super().test_get_by_ids_missing(vectorstore)
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         # This should not raise an exception
         assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
 
-    async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
+    async def test_add_documents_documents_async(
+        self, vectorstore: VectorStore
+    ) -> None:
         """Run add_documents tests.
 
         .. dropdown:: Troubleshooting
@@ -712,6 +725,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
                     async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
                         await super().test_add_documents_documents(vectorstore)
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -722,7 +738,7 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_add_documents_with_existing_ids(
+    async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
     ) -> None:
         """Test that add_documents with existing IDs is idempotent.
@@ -748,6 +764,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
                     async def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
                         await super().test_add_documents_with_existing_ids(vectorstore)
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),

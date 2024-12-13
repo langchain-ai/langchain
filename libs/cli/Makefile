@@ -45,5 +45,4 @@ _e2e_test:
 			poetry run pip install -e ../../../standard-tests && \
 			make format lint tests && \
 			poetry install --with test_integration && \
-			rm tests/integration_tests/test_vectorstores.py && \
 			make integration_test 
