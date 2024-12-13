@@ -31,7 +31,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     To use, you should have both:
         - the ``azure-cosmos`` python package installed
 
-    You can read more about vector search, full text search and hybrid search using AzureCosmosDBNoSQL here:
+    You can read more about vector search, full text search
+    and hybrid search using AzureCosmosDBNoSQL here:
     https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search
     https://learn.microsoft.com/en-us/azure/cosmos-db/gen-ai/full-text-search
     https://learn.microsoft.com/en-us/azure/cosmos-db/gen-ai/hybrid-search
@@ -68,7 +69,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy: Indexing Policy for the container.
             cosmos_container_properties: Container Properties for the container.
             cosmos_database_properties: Database Properties for the container.
-            text_key: Text key to use for text property which will be embedded in the data schema.
+            text_key: Text key to use for text property which will be
+                      embedded in the data schema.
             embedding_key: Embedding key to use for vector embedding.
             metadata_key: Metadata key to use for data schema.
             create_container: Set to true if the container does not exist.
@@ -382,7 +384,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         projection_mapping: Dict[str, Any] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-
         query, parameters = self._construct_query(
             k=k,
             query_type=query_type,
@@ -463,7 +464,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         offset_limit: str = None,
         **kwargs: Any,
     ) -> List[Document]:
-
         if query_type not in CosmosDBQueryType.__members__.values():
             raise ValueError(
                 f"Invalid query_type: {query_type}. "
@@ -556,37 +556,53 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         offset_limit: str = None,
         projection_mapping: Optional[Dict[str, Any]] = None,
     ) -> Tuple[str, List[Dict[str, Any]]]:
-        if query_type == CosmosDBQueryType.FULL_TEXT_RANK or query_type == CosmosDBQueryType.HYBRID:
+        if (
+            query_type == CosmosDBQueryType.FULL_TEXT_RANK
+            or query_type == CosmosDBQueryType.HYBRID
+        ):
             query = f"SELECT {'TOP ' + str(k) + ' ' if not offset_limit else ''}"
         else:
-            query = f'''SELECT {'TOP @limit ' if not offset_limit else ''}'''
-        query += self._generate_projection_fields(projection_mapping, query_type, embeddings)
+            query = f"""SELECT {'TOP @limit ' if not offset_limit else ''}"""
+        query += self._generate_projection_fields(
+            projection_mapping, query_type, embeddings
+        )
         query += " FROM c "
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("conditions") is not None:
             where_clause = self._build_where_clause(pre_filter)
-            query += f'''{where_clause}'''
+            query += f"""{where_clause}"""
 
-        # TODO: Update the code to use parameters once parametrized queries are allowed for these query functions
+        # TODO: Update the code to use parameters once parametrized queries
+        #  are allowed for these query functions
         if query_type == CosmosDBQueryType.FULL_TEXT_RANK:
-            query += f''' ORDER BY RANK FullTextScore(c.{self._text_key}, [{", ".join(f"'{term}'" for term in search_text.split())}])'''
+            query += f""" ORDER BY RANK FullTextScore(c.{self._text_key}, 
+            [{", ".join(f"'{term}'" for term in search_text.split())}])"""
         elif query_type == CosmosDBQueryType.VECTOR:
-            query += f''' ORDER BY VectorDistance(c[@embeddingKey], @embeddings)'''
+            query += " ORDER BY VectorDistance(c[@embeddingKey], @embeddings)"
         elif query_type == CosmosDBQueryType.HYBRID:
-            query += f''' ORDER BY RANK RRF(FullTextScore(c.{self._text_key}, [{", ".join(f"'{term}'" for term in search_text.split())}]), VectorDistance(c.{self._embedding_key}, {embeddings}))'''
+            query += f""" ORDER BY RANK RRF(FullTextScore(c.{self._text_key}, 
+            [{", ".join(f"'{term}'" for term in search_text.split())}]), 
+            VectorDistance(c.{self._embedding_key}, {embeddings}))"""
         else:
-            query += f''''''
+            query += ""
 
         # Add limit_offset_clause if specified
         if offset_limit is not None:
-            query += f''' {offset_limit}'''
+            query += f""" {offset_limit}"""
 
-        # TODO: Remove this if check once parametrized queries are allowed for these query functions
+        # TODO: Remove this if check once parametrized queries
+        #  are allowed for these query functions
         parameters = []
-        if query_type == CosmosDBQueryType.FULL_TEXT_SEARCH or query_type == CosmosDBQueryType.VECTOR:
+        if (
+            query_type == CosmosDBQueryType.FULL_TEXT_SEARCH
+            or query_type == CosmosDBQueryType.VECTOR
+        ):
             parameters = self._build_parameters(
-                k=k, query_type=query_type, embeddings=embeddings, projection_mapping=projection_mapping
+                k=k,
+                query_type=query_type,
+                embeddings=embeddings,
+                projection_mapping=projection_mapping,
             )
         return query, parameters
 
@@ -596,22 +612,45 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: Optional[List[float]] = None,
     ) -> str:
-        # TODO: Remove this if check once parametrized queries are allowed for these query functions
-        if query_type == CosmosDBQueryType.FULL_TEXT_RANK or query_type == CosmosDBQueryType.HYBRID:
+        # TODO: Remove this if check once parametrized queries
+        #  are allowed for these query functions
+        if (
+            query_type == CosmosDBQueryType.FULL_TEXT_RANK
+            or query_type == CosmosDBQueryType.HYBRID
+        ):
             if projection_mapping:
-                projection = ", ".join(f"c.{key} as {alias}" for key, alias in projection_mapping.items())
+                projection = ", ".join(
+                    f"c.{key} as {alias}" for key, alias in projection_mapping.items()
+                )
             else:
-                projection = f"c.id, c.{self._text_key} as text, c.{self._metadata_key} as metadata"
+                projection = (
+                    f"c.id, c.{self._text_key} as text, "
+                    f"c.{self._metadata_key} as metadata"
+                )
             if query_type == CosmosDBQueryType.HYBRID:
-                projection += f", c.{self._embedding_key} as embedding, VectorDistance(c.{self._embedding_key}, {embeddings}) as SimilarityScore"
+                projection += (
+                    f", c.{self._embedding_key} as embedding, "
+                    f"VectorDistance(c.{self._embedding_key}, "
+                    f"{embeddings}) as SimilarityScore"
+                )
         else:
             if projection_mapping:
-                projection = ", ".join(f"c.[@{key}] as {alias}" for key, alias in projection_mapping.items())
+                projection = ", ".join(
+                    f"c.[@{key}] as {alias}"
+                    for key, alias in projection_mapping.items()
+                )
             else:
                 projection = "c.id, c[@textKey] as text, c[@metadataKey] as metadata"
 
-            if query_type == CosmosDBQueryType.VECTOR or query_type == CosmosDBQueryType.HYBRID:
-                projection += ", c[@embeddingKey] as embedding, VectorDistance(c[@embeddingKey], @embeddings) as SimilarityScore"
+            if (
+                query_type == CosmosDBQueryType.VECTOR
+                or query_type == CosmosDBQueryType.HYBRID
+            ):
+                projection += (
+                    ", c[@embeddingKey] as embedding, "
+                    "VectorDistance(c[@embeddingKey], "
+                    "@embeddings) as SimilarityScore"
+                )
         return projection
 
     def _build_parameters(
@@ -620,7 +659,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: Optional[List[float]],
         search_terms: Optional[List[str]] = None,
-        projection_mapping: Optional[Dict[str, Any]] = None
+        projection_mapping: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         parameters = [
             {"name": "@limit", "value": k},
@@ -633,20 +672,21 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         else:
             parameters.append({"name": "@metadataKey", "value": self._metadata_key})
 
-        if (query_type == CosmosDBQueryType.FULL_TEXT_RANK
-                or query_type == CosmosDBQueryType.HYBRID):
+        if (
+            query_type == CosmosDBQueryType.FULL_TEXT_RANK
+            or query_type == CosmosDBQueryType.HYBRID
+        ):
             parameters.append({"name": "@searchTerms", "value": search_terms})
-        elif (query_type == CosmosDBQueryType.VECTOR
-                or query_type == CosmosDBQueryType.HYBRID):
+        elif (
+            query_type == CosmosDBQueryType.VECTOR
+            or query_type == CosmosDBQueryType.HYBRID
+        ):
             parameters.append({"name": "@embeddingKey", "value": self._embedding_key})
             parameters.append({"name": "@embeddings", "value": embeddings})
 
         return parameters
 
-    def _build_where_clause(
-        self,
-        pre_filter: Dict[str, Any]
-    ) -> str:
+    def _build_where_clause(self, pre_filter: Dict[str, Any]) -> str:
         """
         Builds a where clause based on the given pre_filter.
         """
@@ -659,7 +699,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if logical_operator and logical_operator not in operator_map:
             raise ValueError(f"unsupported logical_operator: {logical_operator}")
 
-        sql_logical_operator = ''
+        sql_logical_operator = ""
         if logical_operator:
             sql_logical_operator = operator_map[logical_operator]
         clauses = []
@@ -674,7 +714,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
             if "full_text" in operator:
                 if not isinstance(value, str):
-                    raise ValueError(f"Expected a string for {operator}, got {type(value)}")
+                    raise ValueError(
+                        f"Expected a string for {operator}, got {type(value)}"
+                    )
                 # search_terms = ", ".join(f"'{term}'" for term in value.split())
                 search_terms = ", ".join(f"'{term}'" for term in value.split())
                 sql_function = operator_map[operator]
@@ -687,7 +729,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                     value = f"({', '.join(map(str, value))})"  # e.g., for IN clauses
 
                 clauses.append(f"c.{property_name} {sql_operator} {value}")
-        return f''' WHERE {' {} '.format(sql_logical_operator).join(clauses)}'''.strip()
+        return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
 
     def _execute_query(
         self,
@@ -716,8 +758,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             else:
                 metadata["id"] = item["id"]
 
-            if (query_type == CosmosDBQueryType.VECTOR
-                or query_type == CosmosDBQueryType.HYBRID):
+            if (
+                query_type == CosmosDBQueryType.VECTOR
+                or query_type == CosmosDBQueryType.HYBRID
+            ):
                 score = item["SimilarityScore"]
                 if with_embedding:
                     metadata[self._embedding_key] = item[self._embedding_key]
