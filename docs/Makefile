@@ -13,13 +13,6 @@ OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec sh -c ' \
-for dir; do \
-    if find "$$dir" -maxdepth 1 -type f \( -name "pyproject.toml" -o -name "setup.py" \) | grep -q .; then \
-        echo "$$dir"; \
-    fi \
-done' sh {} + | grep -vE "airbyte|ibm|databricks" | tr '\n' ' ')
-
 PORT ?= 3001
 
 clean:
@@ -34,7 +27,7 @@ install-py-deps:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
 	$(PYTHON) -m uv pip install --pre -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install --pre --editable $(PARTNER_DEPS_LIST)
+	$(PYTHON) -m uv pip install --pre $$($(PYTHON) scripts/partner_deps_list.py)
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)

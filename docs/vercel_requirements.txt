@@ -1,10 +1,5 @@
--e ../libs/core
--e ../libs/langchain
--e ../libs/community
--e ../libs/text-splitters
 langgraph
 pyyaml
-langchain-cohere
 urllib3==1.26.19
 nbconvert==7.16.4
 
