@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
@@ -15,7 +15,7 @@ class TextModerationInput(BaseModel):
     query: str = Field(description="Text to moderate")
 
 
-class EdenAiTextModerationTool(EdenaiTool):
+class EdenAiTextModerationTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Explicit text detection.
 
     for api reference check edenai documentation:

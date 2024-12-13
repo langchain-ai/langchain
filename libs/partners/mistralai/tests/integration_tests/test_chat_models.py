@@ -9,7 +9,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_mistralai.chat_models import ChatMistralAI
 

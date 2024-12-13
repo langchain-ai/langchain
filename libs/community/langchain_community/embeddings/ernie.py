@@ -6,9 +6,9 @@ from typing import Dict, List, Optional
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,8 @@ class ErnieEmbeddings(BaseModel, Embeddings):
     model_name: str = "ErnieBot-Embedding-V1"
 
     _lock = threading.Lock()
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

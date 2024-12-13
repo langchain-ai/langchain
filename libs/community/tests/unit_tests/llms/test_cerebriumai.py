@@ -1,6 +1,6 @@
 """Test CerebriumAI llm"""
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.llms.cerebriumai import CerebriumAI

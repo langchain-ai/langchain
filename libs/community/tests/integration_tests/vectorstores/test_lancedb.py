@@ -85,6 +85,16 @@ def test_lancedb_delete() -> None:
 
 
 @pytest.mark.requires("lancedb")
+def test_lancedb_delete_by_ids() -> None:
+    embeddings = FakeEmbeddings()
+
+    store = LanceDB(embedding=embeddings, id_key="pk")
+    ids = store.add_texts(["text 1", "text 2", "item 3"])
+    store.delete(ids=ids)
+    assert store.get_table().count_rows() == 0
+
+
+@pytest.mark.requires("lancedb")
 def test_lancedb_all_searches() -> None:
     embeddings = FakeEmbeddings()
 

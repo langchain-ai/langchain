@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Generic, Iterable, Set, TypeVar
 
 from langchain_core._api import beta
-from langchain_core.graph_vectorstores import Link
+
+from langchain_community.graph_vectorstores import Link
 
 InputT = TypeVar("InputT")
 

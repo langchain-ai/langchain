@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

@@ -7,7 +7,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
+from pydantic import BaseModel, Field, model_validator
 
 from langchain_community.tools.playwright.base import BaseBrowserTool
 from langchain_community.tools.playwright.utils import (
@@ -21,16 +21,18 @@ class NavigateToolInput(BaseModel):
 
     url: str = Field(..., description="url to navigate to")
 
-    @validator("url")
-    def validate_url_scheme(cls, url: str) -> str:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_url_scheme(cls, values: dict) -> dict:
         """Check that the URL scheme is valid."""
+        url = values.get("url")
         parsed_url = urlparse(url)
         if parsed_url.scheme not in ("http", "https"):
             raise ValueError("URL scheme must be 'http' or 'https'")
-        return url
+        return values
 
 
-class NavigateTool(BaseBrowserTool):
+class NavigateTool(BaseBrowserTool):  # type: ignore[override, override]
     """Tool for navigating a browser to a URL.
 
     **Security Note**: This tool provides code to control web-browser navigation.

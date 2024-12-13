@@ -6,13 +6,13 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
 
 
-class SearchAPIRun(BaseTool):
+class SearchAPIRun(BaseTool):  # type: ignore[override]
     """Tool that queries the SearchApi.io search API."""
 
     name: str = "searchapi"
@@ -40,7 +40,7 @@ class SearchAPIRun(BaseTool):
         return await self.api_wrapper.arun(query)
 
 
-class SearchAPIResults(BaseTool):
+class SearchAPIResults(BaseTool):  # type: ignore[override]
     """Tool that queries the SearchApi.io search API and returns JSON."""
 
     name: str = "searchapi_results_json"

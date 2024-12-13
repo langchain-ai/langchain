@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 
 class Person(Serializable):
@@ -84,11 +84,13 @@ class TestClass(Serializable):
     my_favorite_secret: str = Field(alias="my_favorite_secret_alias")
     my_other_secret: str = Field()
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def get_from_env(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_from_env(cls, values: Dict) -> Any:
         """Get the values from the environment."""
         if "my_favorite_secret" not in values:
             values["my_favorite_secret"] = os.getenv("MY_FAVORITE_SECRET")

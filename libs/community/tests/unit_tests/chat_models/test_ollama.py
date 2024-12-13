@@ -1,7 +1,7 @@
 from typing import List, Literal, Optional
 
 import pytest
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from langchain_community.chat_models import ChatOllama
 
@@ -12,8 +12,8 @@ def test_standard_params() -> None:
         ls_model_name: str
         ls_model_type: Literal["chat", "llm"]
         ls_temperature: Optional[float]
-        ls_max_tokens: Optional[int]
-        ls_stop: Optional[List[str]]
+        ls_max_tokens: Optional[int] = None
+        ls_stop: Optional[List[str]] = None
 
     model = ChatOllama(model="llama3")
     ls_params = model._get_ls_params()
