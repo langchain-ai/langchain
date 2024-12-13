@@ -34,14 +34,14 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.tool import ToolCallChunk
+from langchain_core.output_parsers import (
+    JsonOutputParser,
+    PydanticOutputParser,
+)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
-)
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -429,14 +429,14 @@ class MetaProvider(Provider):
         self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
         """Convert LangChain messages to OCI chat parameters.
-        
+
         Args:
             messages: List of LangChain BaseMessage objects
             **kwargs: Additional keyword arguments
-            
+
         Returns:
             Dict containing OCI chat parameters
-            
+
         Raises:
             ValueError: If message content is invalid
         """
@@ -457,13 +457,13 @@ class MetaProvider(Provider):
         self, content: Union[str, List[Union[str, Dict]]]
     ) -> List[Any]:
         """Process message content into OCI chat content format.
-        
+
         Args:
             content: Message content as string or list
-            
+
         Returns:
             List of OCI chat content objects
-            
+
         Raises:
             ValueError: If content format is invalid
         """
@@ -476,13 +476,13 @@ class MetaProvider(Provider):
         processed_content = []
         for item in content:
             if isinstance(item, str):
-                processed_content.append(
-                    self.oci_chat_message_text_content(text=item)
-                )
+                processed_content.append(self.oci_chat_message_text_content(text=item))
                 continue
 
             if not isinstance(item, dict):
-                raise ValueError(f"Content items must be str or dict, got: {type(item)}")
+                raise ValueError(
+                    f"Content items must be str or dict, got: {type(item)}"
+                )
 
             if "type" not in item:
                 raise ValueError("Dict content item must have a type key")
@@ -703,15 +703,21 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
             llm = self.bind_tools([schema], **kwargs)
+            tool_name = getattr(self._provider.convert_to_oci_tool(schema), "name")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
-                key_name = getattr(self._provider.convert_to_oci_tool(schema), "name")
                 output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
+                    key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
@@ -722,7 +728,8 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             )
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected `function_calling` or `json_mode`."
+                f"Unrecognized method argument. "
+                f"Expected `function_calling` or `json_mode`."
                 f"Received: `{method}`."
             )
         if include_raw:
