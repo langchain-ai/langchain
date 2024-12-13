@@ -48,4 +48,4 @@ class UnstructuredExcelLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.xlsx import partition_xlsx
 
-        return partition_xlsx(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_xlsx(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

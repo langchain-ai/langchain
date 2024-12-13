@@ -1,10 +1,33 @@
 import base64
 import re
-from typing import List, Union
+from typing import Dict, List, Type, Union
 
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from pydantic import BaseModel
 
 from .core import Invoker, Prompty, SimpleModel
+
+
+class RoleMap:
+    _ROLE_MAP: Dict[str, Type[BaseMessage]] = {
+        "system": SystemMessage,
+        "user": HumanMessage,
+        "human": HumanMessage,
+        "assistant": AIMessage,
+        "ai": AIMessage,
+        "function": FunctionMessage,
+    }
+    ROLES = _ROLE_MAP.keys()
+
+    @classmethod
+    def get_message_class(cls, role: str) -> Type[BaseMessage]:
+        return cls._ROLE_MAP[role]
 
 
 class PromptyChatParser(Invoker):
@@ -12,7 +35,7 @@ class PromptyChatParser(Invoker):
 
     def __init__(self, prompty: Prompty) -> None:
         self.prompty = prompty
-        self.roles = ["assistant", "function", "system", "user", "human", "ai"]
+        self.roles = RoleMap.ROLES
         self.path = self.prompty.file.parent
 
     def inline_image(self, image_item: str) -> str:

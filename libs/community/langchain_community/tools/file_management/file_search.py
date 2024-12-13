@@ -3,8 +3,8 @@ import os
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -26,7 +26,7 @@ class FileSearchInput(BaseModel):
     )
 
 
-class FileSearchTool(BaseFileToolMixin, BaseTool):
+class FileSearchTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that searches for files in a subdirectory that match a regex pattern."""
 
     name: str = "file_search"

@@ -1,8 +1,10 @@
 import copy
 import json
-from typing import Any, Dict, List, Optional, Type, Union
+from types import GenericAlias
+from typing import Any, Optional, Union
 
 import jsonpatch  # type: ignore[import]
+from pydantic import BaseModel, model_validator
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -11,7 +13,6 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -20,7 +21,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -35,16 +36,14 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         """
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         try:
             func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
-            raise OutputParserException(
-                f"Could not parse function call: {exc}"
-            ) from exc
+            msg = f"Could not parse function call: {exc}"
+            raise OutputParserException(msg) from exc
 
         if self.args_only:
             return func_call["arguments"]
@@ -56,9 +55,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
 
     strict: bool = False
     """Whether to allow non-JSON-compliant strings.
-    
+
     See: https://docs.python.org/3/library/json.html#encoders-and-decoders
-    
+
     Useful when the parsed output may include unicode characters or new lines.
     """
 
@@ -72,7 +71,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -87,14 +86,12 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         """
 
         if len(result) != 1:
-            raise OutputParserException(
-                f"Expected exactly one result, but got {len(result)}"
-            )
+            msg = f"Expected exactly one result, but got {len(result)}"
+            raise OutputParserException(msg)
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         try:
             function_call = message.additional_kwargs["function_call"]
@@ -102,9 +99,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             if partial:
                 return None
             else:
-                raise OutputParserException(
-                    f"Could not parse function call: {exc}"
-                ) from exc
+                msg = f"Could not parse function call: {exc}"
+                raise OutputParserException(msg) from exc
         try:
             if partial:
                 try:
@@ -128,9 +124,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                             function_call["arguments"], strict=self.strict
                         )
                     except (json.JSONDecodeError, TypeError) as exc:
-                        raise OutputParserException(
-                            f"Could not parse function call data: {exc}"
-                        ) from exc
+                        msg = f"Could not parse function call data: {exc}"
+                        raise OutputParserException(msg) from exc
                 else:
                     try:
                         return {
@@ -140,9 +135,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                             ),
                         }
                     except (json.JSONDecodeError, TypeError) as exc:
-                        raise OutputParserException(
-                            f"Could not parse function call data: {exc}"
-                        ) from exc
+                        msg = f"Could not parse function call data: {exc}"
+                        raise OutputParserException(msg) from exc
         except KeyError:
             return None
 
@@ -157,7 +151,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed JSON object.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
@@ -166,7 +160,7 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     key_name: str
     """The name of the key to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -223,15 +217,16 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             result = parser.parse_result([chat_generation])
     """
 
-    pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
+    pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
     """The pydantic schema to parse the output with.
-    
+
     If multiple schemas are provided, then the function name will be used to
     determine which schema to use.
     """
 
-    @root_validator(pre=True)
-    def validate_schema(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_schema(cls, values: dict) -> Any:
         """Validate the pydantic schema.
 
         Args:
@@ -245,17 +240,20 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         """
         schema = values["pydantic_schema"]
         if "args_only" not in values:
-            values["args_only"] = isinstance(schema, type) and issubclass(
-                schema, BaseModel
+            values["args_only"] = (
+                isinstance(schema, type)
+                and not isinstance(schema, GenericAlias)
+                and issubclass(schema, BaseModel)
             )
-        elif values["args_only"] and isinstance(schema, Dict):
-            raise ValueError(
+        elif values["args_only"] and isinstance(schema, dict):
+            msg = (
                 "If multiple pydantic schemas are provided then args_only should be"
                 " False."
             )
+            raise ValueError(msg)
         return values
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -267,11 +265,21 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         """
         _result = super().parse_result(result)
         if self.args_only:
-            pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
+            if hasattr(self.pydantic_schema, "model_validate_json"):
+                pydantic_args = self.pydantic_schema.model_validate_json(_result)
+            else:
+                pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
-            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore
+            if isinstance(self.pydantic_schema, dict):
+                pydantic_schema = self.pydantic_schema[fn_name]
+            else:
+                pydantic_schema = self.pydantic_schema
+            if hasattr(pydantic_schema, "model_validate_json"):
+                pydantic_args = pydantic_schema.model_validate_json(_args)  # type: ignore
+            else:
+                pydantic_args = pydantic_schema.parse_raw(_args)  # type: ignore
         return pydantic_args
 
 
@@ -281,7 +289,7 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:

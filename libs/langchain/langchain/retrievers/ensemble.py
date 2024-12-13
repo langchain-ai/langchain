@@ -24,8 +24,6 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.load.dump import dumpd
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import ensure_config, patch_config
@@ -33,6 +31,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
 )
+from pydantic import model_validator
 
 T = TypeVar("T")
 H = TypeVar("H", bound=Hashable)
@@ -83,8 +82,9 @@ class EnsembleRetriever(BaseRetriever):
             spec for retriever in self.retrievers for spec in retriever.config_specs
         )
 
-    @root_validator(pre=True)
-    def set_weights(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_weights(cls, values: Dict[str, Any]) -> Any:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
@@ -106,9 +106,9 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             **kwargs,
         )
         try:
@@ -139,9 +139,9 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
+            None,
             input,
-            name=config.get("run_name"),
+            name=config.get("run_name") or self.get_name(),
             **kwargs,
         )
         try:
@@ -310,9 +310,11 @@ class EnsembleRetriever(BaseRetriever):
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score[
-                    doc.page_content
-                    if self.id_key is None
-                    else doc.metadata[self.id_key]
+                    (
+                        doc.page_content
+                        if self.id_key is None
+                        else doc.metadata[self.id_key]
+                    )
                 ] += weight / (rank + self.c)
 
         # Docs are deduplicated by their contents then sorted by their scores
@@ -320,9 +322,11 @@ class EnsembleRetriever(BaseRetriever):
         sorted_docs = sorted(
             unique_by_key(
                 all_docs,
-                lambda doc: doc.page_content
-                if self.id_key is None
-                else doc.metadata[self.id_key],
+                lambda doc: (
+                    doc.page_content
+                    if self.id_key is None
+                    else doc.metadata[self.id_key]
+                ),
             ),
             reverse=True,
             key=lambda doc: rrf_score[
