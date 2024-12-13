@@ -504,7 +504,7 @@ async def aindex(
          chunks, and we index them using a batch size of 5, we'll have 3 batches
          all with the same source id. In general, to avoid doing too much
          redundant work select as big a batch size as possible.
-       * scoped_full mode may be a good option if you have difficulty decidng
+       * scoped_full mode may be a good option if you have difficulty deciding
          on the appropriate batch size and your loader is not able to
          return the entire dataset. This solution keeps track of the source ids
          in memory. It would probably be fine for most use cases in terms of
