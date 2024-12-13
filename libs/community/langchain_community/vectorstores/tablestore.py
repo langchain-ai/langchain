@@ -61,10 +61,10 @@ class TablestoreVectorStore(VectorStore):
         self,
         embedding: Embeddings,
         *,
-        endpoint: str = None,
-        instance_name: str = None,
-        access_key_id: str = None,
-        access_key_secret: str = None,
+        endpoint: Optional[str] = None,
+        instance_name: Optional[str] = None,
+        access_key_id: Optional[str] = None,
+        access_key_secret: Optional[str] = None,
         table_name: Optional[str] = "langchain_vector_store_ots_v1",
         index_name: Optional[str] = "langchain_vector_store_ots_index_v1",
         text_field: Optional[str] = "content",
@@ -212,7 +212,7 @@ class TablestoreVectorStore(VectorStore):
             "Tablestore create system index[%s] successfully.", self.__index_name
         )
 
-    def delete_table_if_exists(self):
+    def delete_table_if_exists(self) -> None:
         """Delete table if exists."""
 
         search_index_list = self.__tablestore_client.list_search_index(
@@ -222,13 +222,13 @@ class TablestoreVectorStore(VectorStore):
             self.__tablestore_client.delete_search_index(resp_tuple[0], resp_tuple[1])
         self.__tablestore_client.delete_table(self.__table_name)
 
-    def delete_search_index(self, table_name, index_name) -> None:
+    def delete_search_index(self, table_name: str, index_name: str) -> None:
         """Delete search index."""
 
         self.__tablestore_client.delete_search_index(table_name, index_name)
 
     def __write_row(
-        self, row_id: str, content: str, embedding_vector: [], meta_data: dict
+        self, row_id: str, content: str, embedding_vector: List[float], meta_data: dict
     ) -> None:
         try:
             import tablestore
@@ -342,6 +342,7 @@ class TablestoreVectorStore(VectorStore):
             logger.exception(
                 "Tablestore get row failed with client error:%s, id:%s", e, row_id
             )
+            raise e
         except tablestore.OTSServiceError as e:
             logger.exception(
                 "Tablestore get row failed with client error:%s, "
@@ -353,6 +354,7 @@ class TablestoreVectorStore(VectorStore):
                 e.get_error_message(),
                 e.get_request_id(),
             )
+            raise e
 
     def _tablestore_search(
         self,
@@ -407,6 +409,7 @@ class TablestoreVectorStore(VectorStore):
             return self.__search_response_to_query_result(search_response)
         except tablestore.OTSClientError as e:
             logger.exception("Tablestore search failed with client error:%s", e)
+            raise e
         except tablestore.OTSServiceError as e:
             logger.exception(
                 "Tablestore search failed with client error:%s, "
@@ -417,6 +420,7 @@ class TablestoreVectorStore(VectorStore):
                 e.get_error_message(),
                 e.get_request_id(),
             )
+            raise e
 
     def __search_response_to_query_result(
         self, search_response
@@ -476,7 +480,7 @@ class TablestoreVectorStore(VectorStore):
                 self.__delete_row(row_id)
         return True
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Optional[Document]]:
         return [self.__get_row(row_id) for row_id in ids]
 
     def similarity_search(
@@ -532,10 +536,10 @@ class TablestoreVectorStore(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        endpoint: str = None,
-        instance_name: str = None,
-        access_key_id: str = None,
-        access_key_secret: str = None,
+        endpoint: Optional[str] = None,
+        instance_name: Optional[str] = None,
+        access_key_id: Optional[str] = None,
+        access_key_secret: Optional[str] = None,
         table_name: Optional[str] = "langchain_vector_store_ots_v1",
         index_name: Optional[str] = "langchain_vector_store_ots_index_v1",
         text_field: Optional[str] = "content",
