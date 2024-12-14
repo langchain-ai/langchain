@@ -36,7 +36,7 @@ class OctoAIEndpoint(BaseOpenAI):  # type: ignore[override]
 
     """Key word arguments to pass to the model."""
     octoai_api_base: str = Field(default=DEFAULT_BASE_URL)
-    octoai_api_token: SecretStr = Field(default=None)
+    octoai_api_token: SecretStr = Field(default=SecretStr(""))
     model_name: str = Field(default=DEFAULT_MODEL)
 
     @classmethod

@@ -127,7 +127,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
         responses = await self.async_client.post(
-            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+            json={"inputs": texts, **_model_kwargs}, task=self.task
         )
         return json.loads(responses.decode())
 

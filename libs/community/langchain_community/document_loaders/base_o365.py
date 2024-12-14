@@ -5,8 +5,11 @@ from __future__ import annotations
 import logging
 import mimetypes
 import os
+import re
 import tempfile
+import urllib
 from abc import abstractmethod
+from datetime import datetime
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
 
@@ -84,6 +87,9 @@ class O365BaseLoader(BaseLoader, BaseModel):
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
     recursive: bool = False
     """Should the loader recursively load subfolders?"""
+    modified_since: Optional[datetime] = None
+    """Only fetch documents modified since given datetime. The datetime object
+    must be timezone aware."""
     handlers: Optional[Dict[str, Any]] = {}
     """
     Provide custom handlers for MimeTypeBasedParser.
@@ -186,17 +192,29 @@ class O365BaseLoader(BaseLoader, BaseModel):
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
-                        file.download(to_path=temp_dir, chunk_size=self.chunk_size)
-                        metadata_dict[file.name] = {
-                            "source": file.web_url,
-                            "mime_type": file.mime_type,
-                            "created": str(file.created),
-                            "modified": str(file.modified),
-                            "created_by": str(file.created_by),
-                            "modified_by": str(file.modified_by),
-                            "description": file.description,
-                            "id": str(file.object_id),
-                        }
+                        if (not self.modified_since) or (
+                            file.modified > self.modified_since
+                        ):
+                            source = file.web_url
+                            if re.search(
+                                r"Doc.aspx\?sourcedoc=.*file=([^&]+)", file.web_url
+                            ):
+                                source = (
+                                    file._parent.web_url
+                                    + "/"
+                                    + urllib.parse.quote(file.name)
+                                )
+                            file.download(to_path=temp_dir, chunk_size=self.chunk_size)
+                            metadata_dict[file.name] = {
+                                "source": source,
+                                "mime_type": file.mime_type,
+                                "created": str(file.created),
+                                "modified": str(file.modified),
+                                "created_by": str(file.created_by),
+                                "modified_by": str(file.modified_by),
+                                "description": file.description,
+                                "id": str(file.object_id),
+                            }
 
             loader = FileSystemBlobLoader(path=temp_dir)
             for blob in loader.yield_blobs():
@@ -241,9 +259,18 @@ class O365BaseLoader(BaseLoader, BaseModel):
                     continue
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
+                        source = file.web_url
+                        if re.search(
+                            r"Doc.aspx\?sourcedoc=.*file=([^&]+)", file.web_url
+                        ):
+                            source = (
+                                file._parent.web_url
+                                + "/"
+                                + urllib.parse.quote(file.name)
+                            )
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
                         metadata_dict[file.name] = {
-                            "source": file.web_url,
+                            "source": source,
                             "mime_type": file.mime_type,
                             "created": file.created,
                             "modified": file.modified,

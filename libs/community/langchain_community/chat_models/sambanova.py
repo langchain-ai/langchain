@@ -1,10 +1,25 @@
 import json
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from operator import itemgetter
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import requests
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -19,9 +34,24 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.output_parsers import (
+    JsonOutputParser,
+    PydanticOutputParser,
+)
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import Field, SecretStr
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import BaseModel, Field, SecretStr
 from requests import Response
 
 
@@ -35,6 +65,7 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
     Returns:
         messages_dict:  role / content dict
     """
+    message_dict: Dict[str, Any] = {}
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, SystemMessage):
@@ -43,8 +74,16 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            if message_dict["content"] == "":
+                message_dict["content"] = None
     elif isinstance(message, ToolMessage):
-        message_dict = {"role": "tool", "content": message.content}
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
@@ -64,14 +103,18 @@ def _create_message_dicts(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
     return message_dicts
 
 
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
+
+
 class ChatSambaNovaCloud(BaseChatModel):
     """
     SambaNova Cloud chat model.
 
     Setup:
         To use, you should have the environment variables:
-        ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
-        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
+        `SAMBANOVA_URL` set with your SambaNova Cloud URL.
+        `SAMBANOVA_API_KEY` set with your SambaNova Cloud API Key.
         http://cloud.sambanova.ai/
         Example:
         .. code-block:: python
@@ -123,8 +166,10 @@ class ChatSambaNovaCloud(BaseChatModel):
                 top_k = model top k,
                 stream_options = include usage to get generation metrics
             )
+
     Invoke:
         .. code-block:: python
+
             messages = [
                 SystemMessage(content="your are an AI assistant."),
                 HumanMessage(content="tell me a joke."),
@@ -134,32 +179,84 @@ class ChatSambaNovaCloud(BaseChatModel):
     Stream:
         .. code-block:: python
 
-        for chunk in chat.stream(messages):
-            print(chunk.content, end="", flush=True)
+            for chunk in chat.stream(messages):
+                print(chunk.content, end="", flush=True)
 
     Async:
         .. code-block:: python
 
-        response = chat.ainvoke(messages)
-        await response
+            response = chat.ainvoke(messages)
+            await response
+
+    Tool calling:
+        .. code-block:: python
+
+            from pydantic import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ...,
+                    description="The city and state, e.g. Los Angeles, CA"
+                )
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke("Should I bring my umbrella today in LA?")
+            ai_msg.tool_calls
+
+        .. code-block:: none
+
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': 'call_adf61180ea2b4d228a'
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from pydantic import BaseModel, Field
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+
+            structured_model = llm.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup="Why did the cat join a band?",
+            punchline="Because it wanted to be the purr-cussionist!")
+
+        See `ChatSambanovaCloud.with_structured_output()` for more.
 
     Token usage:
         .. code-block:: python
-        response = chat.invoke(messages)
-        print(response.response_metadata["usage"]["prompt_tokens"]
-        print(response.response_metadata["usage"]["total_tokens"]
+
+            response = chat.invoke(messages)
+            print(response.response_metadata["usage"]["prompt_tokens"]
+            print(response.response_metadata["usage"]["total_tokens"]
 
     Response metadata
         .. code-block:: python
 
-        response = chat.invoke(messages)
-        print(response.response_metadata)
+            response = chat.invoke(messages)
+            print(response.response_metadata)
+
     """
 
     sambanova_url: str = Field(default="")
     """SambaNova Cloud Url"""
 
-    sambanova_api_key: SecretStr = Field(default="")
+    sambanova_api_key: SecretStr = Field(default=SecretStr(""))
     """SambaNova Cloud api key"""
 
     model: str = Field(default="Meta-Llama-3.1-8B-Instruct")
@@ -180,8 +277,11 @@ class ChatSambaNovaCloud(BaseChatModel):
     top_k: Optional[int] = Field(default=None)
     """model top k"""
 
-    stream_options: dict = Field(default={"include_usage": True})
+    stream_options: Dict[str, Any] = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
+
+    additional_headers: Dict[str, Any] = Field(default={})
+    """Additional headers to sent in request"""
 
     class Config:
         populate_by_name = True
@@ -230,36 +330,409 @@ class ChatSambaNovaCloud(BaseChatModel):
         )
         super().__init__(**kwargs)
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[Any], Callable[..., Any], BaseTool]],
+        *,
+        tool_choice: Optional[Union[Dict[str, Any], bool, str]] = None,
+        parallel_tool_calls: Optional[bool] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model
+
+        tool_choice: does not currently support "any", choice like
+        should be one of ["auto", "none", "required"]
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "required"):
+                    tool_choice = "auto"
+            elif isinstance(tool_choice, bool):
+                if tool_choice:
+                    tool_choice = "required"
+            elif isinstance(tool_choice, dict):
+                raise ValueError(
+                    "tool_choice must be one of ['auto', 'none', 'required']"
+                )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool"
+                    f"Received: {tool_choice}"
+                )
+        else:
+            tool_choice = "auto"
+        kwargs["tool_choice"] = tool_choice
+        kwargs["parallel_tool_calls"] = parallel_tool_calls
+        return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict[str, Any], Type[BaseModel]]] = None,
+        *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict[str, Any], BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class,
+                    - or a Pydantic.BaseModel class.
+                If `schema` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+            method:
+                The method for steering model generation, either "function_calling"
+                "json_mode" or "json_schema".
+                If "function_calling" then the schema will be converted
+                to an OpenAI function and the returned model will make use of the
+                function-calling API. If "json_mode" or "json_schema" then OpenAI's
+                JSON mode will be used.
+                Note that if using "json_mode" or "json_schema" then you must include instructions
+                for formatting the output into the desired schema into the model call.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
+
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
+
+            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `"raw"`: BaseMessage
+                - `"parsed"`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+                - `"parsing_error"`: Optional[BaseException]
+
+        Example: schema=Pydantic class, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: str = Field(
+                        description="A justification for the answer."
+                    )
+
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same.'
+                # )
+
+        Example: schema=Pydantic class, method="function_calling", include_raw=True:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+                from pydantic import BaseModel
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: str
+
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'function': {'arguments': '{"answer": "They weigh the same.", "justification": "A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount."}', 'name': 'AnswerWithJustification'}, 'id': 'call_17a431fc6a4240e1bd', 'type': 'function'}]}, response_metadata={'finish_reason': 'tool_calls', 'usage': {'acceptance_rate': 5, 'completion_tokens': 53, 'completion_tokens_after_first_per_sec': 343.7964936837758, 'completion_tokens_after_first_per_sec_first_ten': 439.1205661878638, 'completion_tokens_per_sec': 162.8511306784833, 'end_time': 1731527851.0698032, 'is_last_response': True, 'prompt_tokens': 213, 'start_time': 1731527850.7137961, 'time_to_first_token': 0.20475482940673828, 'total_latency': 0.32545061111450196, 'total_tokens': 266, 'total_tokens_per_sec': 817.3283162354066}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731527850}, id='95667eaf-447f-4b53-bb6e-b6e1094ded88', tool_calls=[{'name': 'AnswerWithJustification', 'args': {'answer': 'They weigh the same.', 'justification': 'A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'}, 'id': 'call_17a431fc6a4240e1bd', 'type': 'tool_call'}]),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'),
+                #     'parsing_error': None
+                # }
+
+        Example: schema=TypedDict class, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
+                # from typing_extensions, not from typing.
+                from typing_extensions import Annotated, TypedDict
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+
+
+                class AnswerWithJustification(TypedDict):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Annotated[
+                        Optional[str], None, "A justification for the answer."
+                    ]
+
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'
+                # }
+
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+
+                oai_schema = {
+                    'name': 'AnswerWithJustification',
+                    'description': 'An answer to the user question along with justification for the answer.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'answer': {'type': 'string'},
+                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                        },
+                       'required': ['answer']
+                   }
+                }
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(oai_schema)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'A pound is a unit of weight or mass, so one pound of bricks and one pound of feathers both weigh the same amount.'
+                # }
+
+        Example: schema=Pydantic class, method="json_mode", include_raw=True:
+            .. code-block::
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+                from pydantic import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification,
+                    method="json_mode",
+                    include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n  "answer": "They are the same weight",\n  "justification": "A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities."\n}', additional_kwargs={}, response_metadata={'finish_reason': 'stop', 'usage': {'acceptance_rate': 5.3125, 'completion_tokens': 79, 'completion_tokens_after_first_per_sec': 292.65701089829776, 'completion_tokens_after_first_per_sec_first_ten': 346.43324678555325, 'completion_tokens_per_sec': 200.012158915008, 'end_time': 1731528071.1708555, 'is_last_response': True, 'prompt_tokens': 70, 'start_time': 1731528070.737394, 'time_to_first_token': 0.16693782806396484, 'total_latency': 0.3949759876026827, 'total_tokens': 149, 'total_tokens_per_sec': 377.2381225105847}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731528070}, id='83208297-3eb9-4021-a856-ca78a15758df'),
+                #     'parsed': AnswerWithJustification(answer='They are the same weight', justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'),
+                #     'parsing_error': None
+                # }
+
+        Example: schema=None, method="json_mode", include_raw=True:
+            .. code-block::
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n  "answer": "They are the same weight",\n  "justification": "A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities."\n}', additional_kwargs={}, response_metadata={'finish_reason': 'stop', 'usage': {'acceptance_rate': 4.722222222222222, 'completion_tokens': 79, 'completion_tokens_after_first_per_sec': 357.1315485254867, 'completion_tokens_after_first_per_sec_first_ten': 416.83279609305305, 'completion_tokens_per_sec': 240.92819585198137, 'end_time': 1731528164.8474727, 'is_last_response': True, 'prompt_tokens': 70, 'start_time': 1731528164.4906917, 'time_to_first_token': 0.13837409019470215, 'total_latency': 0.3278985247892492, 'total_tokens': 149, 'total_tokens_per_sec': 454.4088757208256}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731528164}, id='15261eaf-8a25-42ef-8ed5-f63d8bf5b1b0'),
+                #     'parsed': {
+                #         'answer': 'They are the same weight',
+                #         'justification': 'A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'},
+                #     },
+                #     'parsing_error': None
+                # }
+
+        Example: schema=None, method="json_schema", include_raw=True:
+            .. code-block::
+
+                from langchain_community.chat_models import ChatSambaNovaCloud
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatSambaNovaCloud(model="Meta-Llama-3.1-70B-Instruct", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, method="json_schema", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n  "answer": "They are the same weight",\n  "justification": "A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities."\n}', additional_kwargs={}, response_metadata={'finish_reason': 'stop', 'usage': {'acceptance_rate': 5.3125, 'completion_tokens': 79, 'completion_tokens_after_first_per_sec': 292.65701089829776, 'completion_tokens_after_first_per_sec_first_ten': 346.43324678555325, 'completion_tokens_per_sec': 200.012158915008, 'end_time': 1731528071.1708555, 'is_last_response': True, 'prompt_tokens': 70, 'start_time': 1731528070.737394, 'time_to_first_token': 0.16693782806396484, 'total_latency': 0.3949759876026827, 'total_tokens': 149, 'total_tokens_per_sec': 377.2381225105847}, 'model_name': 'Meta-Llama-3.1-70B-Instruct', 'system_fingerprint': 'fastcoe', 'created': 1731528070}, id='83208297-3eb9-4021-a856-ca78a15758df'),
+                #     'parsed': AnswerWithJustification(answer='They are the same weight', justification='A pound is a unit of weight or mass, so a pound of bricks and a pound of feathers both weigh the same amount, one pound. The difference is in their density and volume. A pound of feathers would take up more space than a pound of bricks due to the difference in their densities.'),
+                #     'parsing_error': None
+                # }
+        """  # noqa: E501
+        if kwargs is not None:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "`schema` must be specified when method is `function_calling`. "
+                    "Received None."
+                )
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools([schema], tool_choice=tool_name)
+            if is_pydantic_schema:
+                output_parser: OutputParserLike[Any] = PydanticToolsParser(
+                    tools=[schema],
+                    first_tool_only=True,
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self
+            # TODO bind response format when json mode available by API
+            # llm = self.bind(response_format={"type": "json_object"})
+            if is_pydantic_schema:
+                schema = cast(Type[BaseModel], schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)
+            else:
+                output_parser = JsonOutputParser()
+
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "`schema` must be specified when method is not `json_mode`. "
+                    "Received None."
+                )
+            llm = self
+            # TODO bind response format when json schema available by API,
+            # update example
+            # llm = self.bind(
+            #   response_format={"type": "json_object", "json_schema": schema}
+            # )
+            if is_pydantic_schema:
+                schema = cast(Type[BaseModel], schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)
+            else:
+                output_parser = JsonOutputParser()
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of `function_calling` or "
+                f"`json_mode`. Received: `{method}`"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
+
     def _handle_request(
-        self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self,
+        messages_dicts: List[Dict[str, Any]],
+        stop: Optional[List[str]] = None,
+        streaming: bool = False,
+        **kwargs: Any,
+    ) -> Response:
         """
         Performs a post request to the LLM API.
 
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
+            streaming: wether to do a streaming call
 
         Returns:
             An iterator of response dicts.
         """
-        data = {
-            "messages": messages_dicts,
-            "max_tokens": self.max_tokens,
-            "stop": stop,
-            "model": self.model,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
-        }
+        if streaming:
+            data = {
+                "messages": messages_dicts,
+                "max_tokens": self.max_tokens,
+                "stop": stop,
+                "model": self.model,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
+                "stream": True,
+                "stream_options": self.stream_options,
+                **kwargs,
+            }
+        else:
+            data = {
+                "messages": messages_dicts,
+                "max_tokens": self.max_tokens,
+                "stop": stop,
+                "model": self.model,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
+                **kwargs,
+            }
         http_session = requests.Session()
         response = http_session.post(
             self.sambanova_url,
             headers={
                 "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
                 "Content-Type": "application/json",
+                **self.additional_headers,
             },
             json=data,
+            stream=streaming,
         )
         if response.status_code != 200:
             raise RuntimeError(
@@ -267,27 +740,78 @@ class ChatSambaNovaCloud(BaseChatModel):
                 f"{response.status_code}.",
                 f"{response.text}.",
             )
-        response_dict = response.json()
-        if response_dict.get("error"):
-            raise RuntimeError(
-                f"Sambanova /complete call failed with status code "
-                f"{response.status_code}.",
-                f"{response_dict}.",
-            )
-        return response_dict
+        return response
 
-    def _handle_streaming_request(
-        self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
-    ) -> Iterator[Dict]:
+    def _process_response(self, response: Response) -> AIMessage:
         """
-        Performs an streaming post request to the LLM API.
+        Process a non streaming response from the api
 
         Args:
-            messages_dicts: List of role / content dicts to use as input.
-            stop: list of stop tokens
+            response: A request Response object
+
+        Returns
+            generation: an AIMessage with model generation
+        """
+        try:
+            response_dict = response.json()
+            if response_dict.get("error"):
+                raise RuntimeError(
+                    f"Sambanova /complete call failed with status code "
+                    f"{response.status_code}.",
+                    f"{response_dict}.",
+                )
+        except Exception as e:
+            raise RuntimeError(
+                f"Sambanova /complete call failed couldn't get JSON response {e}"
+                f"response: {response.text}"
+            )
+        content = response_dict["choices"][0]["message"].get("content", "")
+        if content is None:
+            content = ""
+        additional_kwargs: Dict[str, Any] = {}
+        tool_calls = []
+        invalid_tool_calls = []
+        raw_tool_calls = response_dict["choices"][0]["message"].get("tool_calls")
+        if raw_tool_calls:
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                if isinstance(raw_tool_call["function"]["arguments"], dict):
+                    raw_tool_call["function"]["arguments"] = json.dumps(
+                        raw_tool_call["function"].get("arguments", {})
+                    )
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        message = AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+            response_metadata={
+                "finish_reason": response_dict["choices"][0]["finish_reason"],
+                "usage": response_dict.get("usage"),
+                "model_name": response_dict["model"],
+                "system_fingerprint": response_dict["system_fingerprint"],
+                "created": response_dict["created"],
+            },
+            id=response_dict["id"],
+        )
+        return message
+
+    def _process_stream_response(
+        self, response: Response
+    ) -> Iterator[BaseMessageChunk]:
+        """
+        Process a streaming response from the api
+
+        Args:
+            response: An iterable request Response object
 
         Yields:
-            An iterator of response dicts.
+            generation: an AIMessageChunk with model partial generation
         """
         try:
             import sseclient
@@ -296,36 +820,8 @@ class ChatSambaNovaCloud(BaseChatModel):
                 "could not import sseclient library"
                 "Please install it with `pip install sseclient-py`."
             )
-        data = {
-            "messages": messages_dicts,
-            "max_tokens": self.max_tokens,
-            "stop": stop,
-            "model": self.model,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
-            "stream": True,
-            "stream_options": self.stream_options,
-        }
-        http_session = requests.Session()
-        response = http_session.post(
-            self.sambanova_url,
-            headers={
-                "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
-                "Content-Type": "application/json",
-            },
-            json=data,
-            stream=True,
-        )
 
         client = sseclient.SSEClient(response)
-
-        if response.status_code != 200:
-            raise RuntimeError(
-                f"Sambanova /complete call failed with status code "
-                f"{response.status_code}."
-                f"{response.text}."
-            )
 
         for event in client.events():
             if event.event == "error_event":
@@ -353,7 +849,31 @@ class ChatSambaNovaCloud(BaseChatModel):
                             f"{response.status_code}."
                             f"{event.data}."
                         )
-                    yield data
+                    if len(data["choices"]) > 0:
+                        finish_reason = data["choices"][0].get("finish_reason")
+                        content = data["choices"][0]["delta"]["content"]
+                        id = data["id"]
+                        chunk = AIMessageChunk(
+                            content=content, id=id, additional_kwargs={}
+                        )
+                    else:
+                        content = ""
+                        id = data["id"]
+                        metadata = {
+                            "finish_reason": finish_reason,
+                            "usage": data.get("usage"),
+                            "model_name": data["model"],
+                            "system_fingerprint": data["system_fingerprint"],
+                            "created": data["created"],
+                        }
+                        chunk = AIMessageChunk(
+                            content=content,
+                            id=id,
+                            response_metadata=metadata,
+                            additional_kwargs={},
+                        )
+                    yield chunk
+
             except Exception as e:
                 raise RuntimeError(
                     f"Error getting content chunk raw streamed response: {e}"
@@ -390,21 +910,14 @@ class ChatSambaNovaCloud(BaseChatModel):
             if stream_iter:
                 return generate_from_stream(stream_iter)
         messages_dicts = _create_message_dicts(messages)
-        response = self._handle_request(messages_dicts, stop)
-        message = AIMessage(
-            content=response["choices"][0]["message"]["content"],
-            additional_kwargs={},
-            response_metadata={
-                "finish_reason": response["choices"][0]["finish_reason"],
-                "usage": response.get("usage"),
-                "model_name": response["model"],
-                "system_fingerprint": response["system_fingerprint"],
-                "created": response["created"],
+        response = self._handle_request(messages_dicts, stop, streaming=False, **kwargs)
+        message = self._process_response(response)
+        generation = ChatGeneration(
+            message=message,
+            generation_info={
+                "finish_reason": message.response_metadata["finish_reason"]
             },
-            id=response["id"],
         )
-
-        generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
     def _stream(
@@ -431,34 +944,9 @@ class ChatSambaNovaCloud(BaseChatModel):
             chunk: ChatGenerationChunk with model partial generation
         """
         messages_dicts = _create_message_dicts(messages)
-        finish_reason = None
-        for partial_response in self._handle_streaming_request(messages_dicts, stop):
-            if len(partial_response["choices"]) > 0:
-                finish_reason = partial_response["choices"][0].get("finish_reason")
-                content = partial_response["choices"][0]["delta"]["content"]
-                id = partial_response["id"]
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=content, id=id, additional_kwargs={})
-                )
-            else:
-                content = ""
-                id = partial_response["id"]
-                metadata = {
-                    "finish_reason": finish_reason,
-                    "usage": partial_response.get("usage"),
-                    "model_name": partial_response["model"],
-                    "system_fingerprint": partial_response["system_fingerprint"],
-                    "created": partial_response["created"],
-                }
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=content,
-                        id=id,
-                        response_metadata=metadata,
-                        additional_kwargs={},
-                    )
-                )
-
+        response = self._handle_request(messages_dicts, stop, streaming=True, **kwargs)
+        for ai_message_chunk in self._process_stream_response(response):
+            chunk = ChatGenerationChunk(message=ai_message_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
@@ -584,7 +1072,7 @@ class ChatSambaStudio(BaseChatModel):
     sambastudio_url: str = Field(default="")
     """SambaStudio Url"""
 
-    sambastudio_api_key: SecretStr = Field(default="")
+    sambastudio_api_key: SecretStr = Field(default=SecretStr(""))
     """SambaStudio api key"""
 
     base_url: str = Field(default="", exclude=True)
@@ -617,10 +1105,10 @@ class ChatSambaStudio(BaseChatModel):
     process_prompt: Optional[bool] = Field(default=True)
     """whether process prompt (for CoE generic v1 and v2 endpoints)"""
 
-    stream_options: dict = Field(default={"include_usage": True})
+    stream_options: Dict[str, Any] = Field(default={"include_usage": True})
     """stream options, include usage to get generation metrics"""
 
-    special_tokens: dict = Field(
+    special_tokens: Dict[str, Any] = Field(
         default={
             "start": "<|begin_of_text|>",
             "start_role": "<|begin_of_text|><|start_header_id|>{role}<|end_header_id|>",
