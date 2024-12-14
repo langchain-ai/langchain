@@ -2318,3 +2318,36 @@ def test_method_tool_classmethod_args() -> None:
             return a + b + cls.c
 
     assert "cls" not in A.foo.args
+
+
+def test_method_tool_nonstandard_self() -> None:
+    """Test that a method tool can use a non-standard self name."""
+
+    class A:
+        def __init__(self, c: int):
+            self.c = c
+
+        @methodtool
+        def foo(s, a: int, b: int) -> int:  # noqa: N805
+            """Add two numbers to c."""
+            return a + b + s.c
+
+    a = A(10)
+    assert a.foo.invoke({"a": 1, "b": 2}) == 13
+    assert "s" not in a.foo.args
+
+
+def test_method_tool_nonstandard_cls() -> None:
+    """Test that a classmethod tool can use a non-standard cls name."""
+
+    class A:
+        c = 5
+
+        @methodtool
+        @classmethod
+        def foo(c, a: int, b: int) -> int:  # noqa: N804
+            """Add two numbers to c."""
+            return a + b + c.c
+
+    assert A.foo.invoke({"a": 1, "b": 2}) == 8
+    assert "c" not in A.foo.args
