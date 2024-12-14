@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.24"
+version = "0.3.25"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -84,16 +84,19 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
+
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8"
@@ -113,11 +116,14 @@ python = "<3.12"
 version = ">=1.26.0,<3"
 python = ">=3.12"
 
+
 [tool.poetry.group.test_integration.dependencies]
+
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
 develop = true
+
 
 [tool.poetry.group.test.dependencies.langchain-tests]
 path = "../standard-tests"
