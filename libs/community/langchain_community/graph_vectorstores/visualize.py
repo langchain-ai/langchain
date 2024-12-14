@@ -1,6 +1,7 @@
 import re
 from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 
 from langchain_community.graph_vectorstores.links import get_links
@@ -37,6 +38,7 @@ def _split_prefix(s: str, max_chars: int = 50) -> str:
         return f"{s[0:split]}..."
 
 
+@beta()
 def render_graphviz(
     documents: Iterable[Document],
     engine: Optional[str] = None,
