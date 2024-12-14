@@ -157,8 +157,6 @@ class JSONLoader(BaseLoader):
         # and prevent the user from getting a cryptic error later on.
         if self._content_key is not None:
             self._validate_content_key(data)
-        if self._metadata_func is not None:
-            self._validate_metadata_func(data)
 
         for i, sample in enumerate(data, index + 1):
             text = self._get_text(sample=sample)
@@ -178,7 +176,7 @@ class JSONLoader(BaseLoader):
         else:
             content = sample
 
-        if self._text_content and not isinstance(content, str):
+        if self._text_content and not isinstance(content, str) and content is not None:
             raise ValueError(
                 f"Expected page_content is string, got {type(content)} instead. \
                     Set `text_content=False` if the desired input for \
@@ -203,7 +201,13 @@ class JSONLoader(BaseLoader):
         :return:
         """
         if self._metadata_func is not None:
-            return self._metadata_func(sample, additional_fields)
+            result = self._metadata_func(sample, additional_fields)
+            if not isinstance(result, dict):
+                raise ValueError(
+                    f"Expected the metadata_func to return a dict but got \
+                                `{type(result)}`"
+                )
+            return result
         else:
             return additional_fields
 
@@ -233,15 +237,3 @@ class JSONLoader(BaseLoader):
                 f"Expected the jq schema to result in a list of objects (dict) \
                     with the key `{self._content_key}` which should be parsable by jq"
             )
-
-    def _validate_metadata_func(self, data: Any) -> None:
-        """Check if the metadata_func output is valid"""
-
-        sample = data.first()
-        if self._metadata_func is not None:
-            sample_metadata = self._metadata_func(sample, {})
-            if not isinstance(sample_metadata, dict):
-                raise ValueError(
-                    f"Expected the metadata_func to return a dict but got \
-                        `{type(sample_metadata)}`"
-                )
