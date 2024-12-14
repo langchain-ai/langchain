@@ -8,7 +8,6 @@ from hashlib import md5
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
-import redis.exceptions
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -368,6 +367,14 @@ class FalkorDBVector(VectorStore):
             raise ImportError(
                 "Could not import falkordb python package."
                 "Please install it with `pip install falkordb`"
+            )
+
+        try:
+            import redis.exceptions
+        except ImportError:
+            raise ImportError(
+                "Could not import redis.exceptions."
+                "Please install it with `pip install redis`"
             )
 
         # Allow only cosine and euclidean distance strategies
