@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import Callable, Dict, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import Field, model_validator
+from typing_extensions import Self
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
@@ -19,7 +20,7 @@ from langchain_community.utils.openai import is_openai_v1
     removal="1.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )
-class AzureOpenAIEmbeddings(OpenAIEmbeddings):
+class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """`Azure OpenAI` Embeddings API."""
 
     azure_endpoint: Union[str, None] = None
@@ -48,14 +49,21 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if `azure_ad_async_token_provider` is not provided.
+    """
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
     """
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     validate_base_url: bool = True
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         # Check OPENAI_KEY for backwards compatibility.
         # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
@@ -138,32 +146,38 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                     values["deployment"] = None
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init_validator(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def post_init_validator(self) -> Self:
         """Validate that the base url is set."""
         import openai
 
         if is_openai_v1():
             client_params = {
-                "api_version": values["openai_api_version"],
-                "azure_endpoint": values["azure_endpoint"],
-                "azure_deployment": values["deployment"],
-                "api_key": values["openai_api_key"],
-                "azure_ad_token": values["azure_ad_token"],
-                "azure_ad_token_provider": values["azure_ad_token_provider"],
-                "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
-                "timeout": values["request_timeout"],
-                "max_retries": values["max_retries"],
-                "default_headers": values["default_headers"],
-                "default_query": values["default_query"],
-                "http_client": values["http_client"],
+                "api_version": self.openai_api_version,
+                "azure_endpoint": self.azure_endpoint,
+                "azure_deployment": self.deployment,
+                "api_key": self.openai_api_key,
+                "azure_ad_token": self.azure_ad_token,
+                "azure_ad_token_provider": self.azure_ad_token_provider,
+                "organization": self.openai_organization,
+                "base_url": self.openai_api_base,
+                "timeout": self.request_timeout,
+                "max_retries": self.max_retries,
+                "default_headers": self.default_headers,
+                "default_query": self.default_query,
+                "http_client": self.http_client,
             }
-            values["client"] = openai.AzureOpenAI(**client_params).embeddings
-            values["async_client"] = openai.AsyncAzureOpenAI(**client_params).embeddings
+            self.client = openai.AzureOpenAI(**client_params).embeddings  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
+
+            if self.azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = (
+                    self.azure_ad_async_token_provider
+                )
+
+            self.async_client = openai.AsyncAzureOpenAI(**client_params).embeddings  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
         else:
-            values["client"] = openai.Embedding
-        return values
+            self.client = openai.Embedding  # type: ignore[attr-defined]
+        return self
 
     @property
     def _llm_type(self) -> str:

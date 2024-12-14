@@ -1,7 +1,7 @@
-from typing import Dict
+from typing import Dict, Optional
 
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
@@ -20,7 +20,7 @@ class OctoAIEmbeddings(OpenAIEmbeddings):
     Alternatively, you can use the octoai_api_token keyword argument.
     """
 
-    octoai_api_token: SecretStr = Field(default=None)
+    octoai_api_token: Optional[SecretStr] = Field(default=None)
     """OctoAI Endpoints API keys."""
     endpoint_url: str = Field(default=DEFAULT_API_BASE)
     """Base URL path for API requests."""
@@ -74,8 +74,8 @@ class OctoAIEmbeddings(OpenAIEmbeddings):
             else:
                 values["openai_api_base"] = values["endpoint_url"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.Embedding
-                values["async_client"] = openai.Embedding
+                values["client"] = openai.Embedding  # type: ignore[attr-defined]
+                values["async_client"] = openai.Embedding  # type: ignore[attr-defined]
 
         except ImportError:
             raise ImportError(

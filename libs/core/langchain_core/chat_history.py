@@ -18,7 +18,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union
+from collections.abc import Sequence
+from typing import Union
+
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import (
     AIMessage,
@@ -26,7 +29,6 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class BaseChatMessageHistory(ABC):
@@ -86,7 +88,7 @@ class BaseChatMessageHistory(ABC):
                        f.write("[]")
     """
 
-    messages: List[BaseMessage]
+    messages: list[BaseMessage]
     """A property or attribute that returns a list of messages.
 
     In general, getting the messages may involve IO to the underlying
@@ -94,7 +96,7 @@ class BaseChatMessageHistory(ABC):
     latency.
     """
 
-    async def aget_messages(self) -> List[BaseMessage]:
+    async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
 
         Can over-ride this method to provide an efficient async implementation.
@@ -155,10 +157,11 @@ class BaseChatMessageHistory(ABC):
             # method, so we should use it.
             self.add_messages([message])
         else:
-            raise NotImplementedError(
+            msg = (
                 "add_message is not implemented for this class. "
                 "Please implement add_message or add_messages."
             )
+            raise NotImplementedError(msg)
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Add a list of messages.
@@ -203,10 +206,10 @@ class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     Stores messages in a memory list.
     """
 
-    messages: List[BaseMessage] = Field(default_factory=list)
+    messages: list[BaseMessage] = Field(default_factory=list)
     """A list of messages stored in memory."""
 
-    async def aget_messages(self) -> List[BaseMessage]:
+    async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
 
         Can over-ride this method to provide an efficient async implementation.

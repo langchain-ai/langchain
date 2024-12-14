@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional, Type
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     # This is for linting and IDE typehints
@@ -27,7 +27,7 @@ class CloseSessionSchema(BaseModel):
     )
 
 
-class MultionCloseSession(BaseTool):
+class MultionCloseSession(BaseTool):  # type: ignore[override, override]
     """Tool that closes an existing Multion Browser Window with provided fields.
 
     Attributes:

@@ -22,7 +22,7 @@ integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv -x tests/unit_tests
+	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv tests/unit_tests
 
 check_imports: $(shell find langchain_community -name '*.py')
 	poetry run python ./scripts/check_imports.py $^

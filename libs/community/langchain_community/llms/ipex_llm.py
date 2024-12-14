@@ -3,6 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
+from pydantic import ConfigDict
 
 DEFAULT_MODEL_ID = "gpt2"
 
@@ -24,15 +25,16 @@ class IpexLLM(LLM):
     """Model name or model path to use."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
-    model: Any  #: :meta private:
+    model: Any = None  #: :meta private:
     """IpexLLM model."""
-    tokenizer: Any  #: :meta private:
+    tokenizer: Any = None  #: :meta private:
     """Huggingface tokenizer model."""
     streaming: bool = True
     """Whether to stream the results, token by token."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def from_model_id(

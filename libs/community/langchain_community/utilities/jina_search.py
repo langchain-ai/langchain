@@ -3,7 +3,7 @@ from typing import List
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from yarl import URL
 
 

@@ -1,24 +1,20 @@
 import asyncio
 import inspect
 import typing
+from collections.abc import AsyncIterator, Iterator, Sequence
 from contextvars import copy_context
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
+
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -95,40 +91,43 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """The Runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
-    exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
+    exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,)
     """The exceptions on which fallbacks should be tried.
-    
+
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
     exception_key: Optional[str] = None
-    """If string is specified then handled exceptions will be passed to fallbacks as 
+    """If string is specified then handled exceptions will be passed to fallbacks as
         part of the input under the specified key. If None, exceptions
-        will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
+        will not be passed to fallbacks. If used, the base Runnable and its fallbacks
         must accept a dictionary as input."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
-    def InputType(self) -> Type[Input]:
+    @override
+    def InputType(self) -> type[Input]:
         return self.runnable.InputType
 
     @property
-    def OutputType(self) -> Type[Output]:
+    @override
+    def OutputType(self) -> type[Output]:
         return self.runnable.OutputType
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
             for step in [self.runnable, *self.fallbacks]
@@ -140,7 +139,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -153,10 +152,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         if self.exception_key is not None and not isinstance(input, dict):
-            raise ValueError(
+            msg = (
                 "If 'exception_key' is specified then input must be a dictionary."
                 f"However found a type of {type(input)} for input"
             )
+            raise ValueError(msg)
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -193,7 +193,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 run_manager.on_chain_end(output)
                 return output
         if first_error is None:
-            raise ValueError("No error stored at end of fallbacks.")
+            msg = "No error stored at end of fallbacks."
+            raise ValueError(msg)
         run_manager.on_chain_error(first_error)
         raise first_error
 
@@ -204,10 +205,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         if self.exception_key is not None and not isinstance(input, dict):
-            raise ValueError(
+            msg = (
                 "If 'exception_key' is specified then input must be a dictionary."
                 f"However found a type of {type(input)} for input"
             )
+            raise ValueError(msg)
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -244,27 +246,29 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 await run_manager.on_chain_end(output)
                 return output
         if first_error is None:
-            raise ValueError("No error stored at end of fallbacks.")
+            msg = "No error stored at end of fallbacks."
+            raise ValueError(msg)
         await run_manager.on_chain_error(first_error)
         raise first_error
 
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.callbacks.manager import CallbackManager
 
         if self.exception_key is not None and not all(
             isinstance(input, dict) for input in inputs
         ):
-            raise ValueError(
+            msg = (
                 "If 'exception_key' is specified then inputs must be dictionaries."
                 f"However found a type of {type(inputs[0])} for input"
             )
+            raise ValueError(msg)
 
         if not inputs:
             return []
@@ -294,9 +298,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
 
-        to_return: Dict[int, Any] = {}
-        run_again = {i: input for i, input in enumerate(inputs)}
-        handled_exceptions: Dict[int, BaseException] = {}
+        to_return: dict[int, Any] = {}
+        run_again = dict(enumerate(inputs))
+        handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = runnable.batch(
@@ -342,21 +346,22 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
         if self.exception_key is not None and not all(
             isinstance(input, dict) for input in inputs
         ):
-            raise ValueError(
+            msg = (
                 "If 'exception_key' is specified then inputs must be dictionaries."
                 f"However found a type of {type(inputs[0])} for input"
             )
+            raise ValueError(msg)
 
         if not inputs:
             return []
@@ -376,7 +381,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for config in configs
         ]
         # start the root runs, one per input
-        run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
+        run_managers: list[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
                     None,
@@ -389,8 +394,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
         to_return = {}
-        run_again = {i: input for i, input in enumerate(inputs)}
-        handled_exceptions: Dict[int, BaseException] = {}
+        run_again = dict(enumerate(inputs))
+        handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = await runnable.abatch(
@@ -448,10 +453,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     ) -> Iterator[Output]:
         """"""
         if self.exception_key is not None and not isinstance(input, dict):
-            raise ValueError(
+            msg = (
                 "If 'exception_key' is specified then input must be a dictionary."
                 f"However found a type of {type(input)} for input"
             )
+            raise ValueError(msg)
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -511,10 +517,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         if self.exception_key is not None and not isinstance(input, dict):
-            raise ValueError(
+            msg = (
                 "If 'exception_key' is specified then input must be a dictionary."
                 f"However found a type of {type(input)} for input"
             )
+            raise ValueError(msg)
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -619,8 +626,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
                 return self.__class__(
                     **{
-                        **self.dict(),
-                        **{"runnable": new_runnable, "fallbacks": new_fallbacks},
+                        **self.model_dump(),
+                        "runnable": new_runnable,
+                        "fallbacks": new_fallbacks,
                     }
                 )
 

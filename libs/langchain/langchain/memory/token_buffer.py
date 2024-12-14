@@ -1,13 +1,26 @@
 from typing import Any, Dict, List
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 
 from langchain.memory.chat_memory import BaseChatMemory
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationTokenBufferMemory(BaseChatMemory):
-    """Conversation chat memory with token limit."""
+    """Conversation chat memory with token limit.
+
+    Keeps only the most recent messages in the conversation under the constraint
+    that the total number of tokens in the conversation does not exceed a certain limit.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"

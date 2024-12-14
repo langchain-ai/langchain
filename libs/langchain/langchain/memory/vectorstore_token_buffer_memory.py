@@ -13,8 +13,8 @@ from typing import Any, Dict, List
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import Field, PrivateAttr
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import Field, PrivateAttr
 
 from langchain.memory import ConversationTokenBufferMemory, VectorStoreRetrieverMemory
 from langchain.memory.chat_memory import BaseChatMemory
@@ -109,7 +109,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     previous_history_template: str = DEFAULT_HISTORY_TEMPLATE
     split_chunk_size: int = 1000
 
-    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)
+    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore
     _timestamps: List[datetime] = PrivateAttr(default_factory=list)
 
     @property

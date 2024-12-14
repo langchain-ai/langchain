@@ -13,11 +13,11 @@ from typing import (
 
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import Field, SecretStr
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -46,7 +46,7 @@ class ChatOctoAI(ChatOpenAI):
     """
 
     octoai_api_base: str = Field(default=DEFAULT_API_BASE)
-    octoai_api_token: SecretStr = Field(default=None, alias="api_key")
+    octoai_api_token: SecretStr = Field(default=SecretStr(""), alias="api_key")
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
     @property
@@ -98,7 +98,7 @@ class ChatOctoAI(ChatOpenAI):
             else:
                 values["openai_api_base"] = values["octoai_api_base"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.ChatCompletion
+                values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.llms.openai import BaseOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -10,7 +10,7 @@ DEFAULT_BASE_URL = "https://text.octoai.run/v1/"
 DEFAULT_MODEL = "codellama-7b-instruct"
 
 
-class OctoAIEndpoint(BaseOpenAI):
+class OctoAIEndpoint(BaseOpenAI):  # type: ignore[override]
     """OctoAI LLM Endpoints - OpenAI compatible.
 
     OctoAIEndpoint is a class to interact with OctoAI Compute Service large
@@ -36,7 +36,7 @@ class OctoAIEndpoint(BaseOpenAI):
 
     """Key word arguments to pass to the model."""
     octoai_api_base: str = Field(default=DEFAULT_BASE_URL)
-    octoai_api_token: SecretStr = Field(default=None)
+    octoai_api_token: SecretStr = Field(default=SecretStr(""))
     model_name: str = Field(default=DEFAULT_MODEL)
 
     @classmethod
@@ -102,7 +102,7 @@ class OctoAIEndpoint(BaseOpenAI):
             else:
                 values["openai_api_base"] = values["octoai_api_base"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.Completion
+                values["client"] = openai.Completion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

@@ -9,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.config import RunnableConfig
+from pydantic import ConfigDict
 
 from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
@@ -41,8 +42,9 @@ class LLMChainFilter(BaseDocumentCompressor):
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def compress_documents(
         self,

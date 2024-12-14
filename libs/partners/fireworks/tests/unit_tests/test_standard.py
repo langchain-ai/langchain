@@ -3,7 +3,7 @@
 from typing import Tuple, Type
 
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import (  # type: ignore[import-not-found]
+from langchain_tests.unit_tests import (  # type: ignore[import-not-found]
     ChatModelUnitTests,  # type: ignore[import-not-found]
 )
 
@@ -21,4 +21,14 @@ class TestFireworksStandard(ChatModelUnitTests):
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-        return ({"FIREWORKS_API_KEY": "api_key"}, {}, {"fireworks_api_key": "api_key"})
+        return (
+            {
+                "FIREWORKS_API_KEY": "api_key",
+                "FIREWORKS_API_BASE": "https://base.com",
+            },
+            {},
+            {
+                "fireworks_api_key": "api_key",
+                "fireworks_api_base": "https://base.com",
+            },
+        )

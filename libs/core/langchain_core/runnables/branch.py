@@ -1,20 +1,14 @@
+from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -68,13 +62,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             branch.invoke(None) # "goodbye"
     """
 
-    branches: Sequence[Tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
     default: Runnable[Input, Output]
 
     def __init__(
         self,
         *branches: Union[
-            Tuple[
+            tuple[
                 Union[
                     Runnable[Input, bool],
                     Callable[[Input], bool],
@@ -98,7 +92,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             ValueError: If a branch is not of length 2.
         """
         if len(branches) < 2:
-            raise ValueError("RunnableBranch requires at least two branches")
+            msg = "RunnableBranch requires at least two branches"
+            raise ValueError(msg)
 
         default = branches[-1]
 
@@ -106,9 +101,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             default,
             (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
-            raise TypeError(
-                "RunnableBranch default must be Runnable, callable or mapping."
-            )
+            msg = "RunnableBranch default must be Runnable, callable or mapping."
+            raise TypeError(msg)
 
         default_ = cast(
             Runnable[Input, Output], coerce_to_runnable(cast(RunnableLike, default))
@@ -118,25 +112,31 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         for branch in branches[:-1]:
             if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
-                raise TypeError(
+                msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"
                 )
+                raise TypeError(msg)
 
-            if not len(branch) == 2:
-                raise ValueError(
+            if len(branch) != 2:
+                msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists of length 2, not {len(branch)}"
                 )
+                raise ValueError(msg)
             condition, runnable = branch
             condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
-        super().__init__(branches=_branches, default=default_)  # type: ignore[call-arg]
+        super().__init__(
+            branches=_branches,
+            default=default_,
+        )  # type: ignore[call-arg]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -144,13 +144,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -158,13 +158,16 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if runnable.get_input_schema(config).schema().get("type") is not None:
+            if (
+                runnable.get_input_schema(config).model_json_schema().get("type")
+                is not None
+            ):
                 return runnable.get_input_schema(config)
 
         return super().get_input_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         from langchain_core.beta.runnables.context import (
             CONTEXT_CONFIG_PREFIX,
             CONTEXT_CONFIG_SUFFIX_SET,
@@ -184,7 +187,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             and s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)
             for s in specs
         ):
-            raise ValueError("RunnableBranch cannot contain context setters.")
+            msg = "RunnableBranch cannot contain context setters."
+            raise ValueError(msg)
         return specs
 
     def invoke(

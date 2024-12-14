@@ -4,7 +4,8 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_core.tools import BaseTool
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
@@ -54,6 +55,10 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_tool_calling(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
+    async def test_tool_calling_async(self, model: BaseChatModel) -> None:
+        await super().test_tool_calling_async(model)
+
+    @pytest.mark.xfail(reason=("Not implemented"))
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
         super().test_tool_calling_with_no_arguments(model)
 
@@ -66,13 +71,27 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_structured_output(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
+    def test_structured_output_async(self, model: BaseChatModel) -> None:  # type: ignore[override]
+        super().test_structured_output(model)
+
+    @pytest.mark.xfail(reason=("Not implemented"))
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         super().test_structured_output_pydantic_2_v1(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
-        super().test_tool_message_histories_list_content(model)
+    def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
+        super().test_structured_output_optional_param(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
-        super().test_structured_few_shot_examples(model)
+    def test_tool_message_histories_list_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_histories_list_content(
+            model, my_adder_tool=my_adder_tool
+        )
+
+    @pytest.mark.xfail(reason=("Not implemented"))
+    def test_structured_few_shot_examples(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_structured_few_shot_examples(model, my_adder_tool=my_adder_tool)

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from inspect import signature
-from typing import Callable, List
+from typing import Callable
 
 from langchain_core.tools.base import BaseTool
 
-ToolsRenderer = Callable[[List[BaseTool]], str]
+ToolsRenderer = Callable[[list[BaseTool]], str]
 
 
-def render_text_description(tools: List[BaseTool]) -> str:
+def render_text_description(tools: list[BaseTool]) -> str:
     """Render the tool name and description in plain text.
 
     Args:
@@ -36,7 +36,7 @@ def render_text_description(tools: List[BaseTool]) -> str:
     return "\n".join(descriptions)
 
 
-def render_text_description_and_args(tools: List[BaseTool]) -> str:
+def render_text_description_and_args(tools: list[BaseTool]) -> str:
     """Render the tool name, description, and args in plain text.
 
     Args:

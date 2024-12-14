@@ -65,10 +65,12 @@ class Epsilla(VectorStore):
                 "Please install pyepsilla package with `pip install pyepsilla`."
             ) from e
 
-        if not isinstance(client, pyepsilla.vectordb.Client):
+        if not isinstance(
+            client, (pyepsilla.vectordb.Client, pyepsilla.cloud.client.Vectordb)
+        ):
             raise TypeError(
-                f"client should be an instance of pyepsilla.vectordb.Client, "
-                f"got {type(client)}"
+                "client should be an instance of pyepsilla.vectordb.Client or "
+                f"pyepsilla.cloud.client.Vectordb, got {type(client)}"
             )
 
         self._client: vectordb.Client = client
