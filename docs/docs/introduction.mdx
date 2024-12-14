@@ -8,9 +8,9 @@ sidebar_class_name: hidden
 **LangChain** is a framework for developing applications powered by large language models (LLMs).
 
 LangChain simplifies every stage of the LLM application lifecycle:
-- **Development**: Build your applications using LangChain's open-source [building blocks](/docs/concepts/lcel), [components](/docs/concepts), and [third-party integrations](/docs/integrations/providers/).
+- **Development**: Build your applications using LangChain's open-source [components](/docs/concepts) and [third-party integrations](/docs/integrations/providers/).
 Use [LangGraph](/docs/concepts/architecture/#langgraph) to build stateful agents with first-class streaming and human-in-the-loop support.
-- **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your chains, so that you can continuously optimize and deploy with confidence.
+- **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your applications, so that you can continuously optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Platform](https://langchain-ai.github.io/langgraph/cloud/).
 
 import ThemedImage from '@theme/ThemedImage';
@@ -26,16 +26,18 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
   title="LangChain Framework Overview"
 />
 
-Concretely, the framework consists of the following open-source libraries:
+LangChain implements a standard interface for large language models and related
+technologies, such as embedding models and vector stores, and integrates with
+hundreds of providers. See the [integrations](/docs/integrations/providers/) page for
+more.
 
-- **`langchain-core`**: Base abstractions and LangChain Expression Language.
-- **Integration packages** (e.g. `langchain-openai`, `langchain-anthropic`, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
-- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **`langchain-community`**: Third-party integrations that are community maintained.
-- **[LangGraph](https://langchain-ai.github.io/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it. To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).
-- **[LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform)**: Deploy LLM applications built with LangGraph to production.
-- **[LangSmith](https://docs.smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
+import ChatModelTabs from "@theme/ChatModelTabs";
 
+<ChatModelTabs/>
+
+```python
+model.invoke("Hello, world!")
+```
 
 :::note
 
@@ -43,7 +45,20 @@ These docs focus on the Python LangChain library. [Head here](https://js.langcha
 
 :::
 
-## [Tutorials](/docs/tutorials)
+## Architecture
+
+The LangChain framework consists of multiple open-source libraries. Read more in the
+[Architecture](/docs/concepts/architecture/) page.
+
+- **`langchain-core`**: Base abstractions for chat models and other components.
+- **Integration packages** (e.g. `langchain-openai`, `langchain-anthropic`, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
+- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
+- **`langchain-community`**: Third-party integrations that are community maintained.
+- **`langgraph`**: Orchestration framework for combining LangChain components into production-ready applications with persistence, streaming, and other key features. See [LangGraph documentation](https://langchain-ai.github.io/langgraph/).
+
+## Guides
+
+### [Tutorials](/docs/tutorials)
 
 If you're looking to build something specific or are more of a hands-on learner, check out our [tutorials section](/docs/tutorials).
 This is the best place to get started.
@@ -58,7 +73,7 @@ These are the best ones to get started with:
 Explore the full list of LangChain tutorials [here](/docs/tutorials), and check out other [LangGraph tutorials here](https://langchain-ai.github.io/langgraph/tutorials/). To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).
 
 
-## [How-to guides](/docs/how_to)
+### [How-to guides](/docs/how_to)
 
 [Here](/docs/how_to) you’ll find short answers to “How do I….?” types of questions.
 These how-to guides don’t cover topics in depth – you’ll find that material in the [Tutorials](/docs/tutorials) and the [API Reference](https://python.langchain.com/api_reference/).
@@ -67,20 +82,20 @@ However, these guides will help you quickly accomplish common tasks using [chat 
 
 Check out [LangGraph-specific how-tos here](https://langchain-ai.github.io/langgraph/how-tos/).
 
-## [Conceptual guide](/docs/concepts)
+### [Conceptual guide](/docs/concepts)
 
 Introductions to all the key parts of LangChain you’ll need to know! [Here](/docs/concepts) you'll find high level explanations of all LangChain concepts.
 
 For a deeper dive into LangGraph concepts, check out [this page](https://langchain-ai.github.io/langgraph/concepts/).
 
-## [Integrations](integrations/providers/index.mdx)
+### [Integrations](integrations/providers/index.mdx)
 
 LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it.
 If you're looking to get up and running quickly with [chat models](/docs/integrations/chat/), [vector stores](/docs/integrations/vectorstores/),
 or other LangChain components from a specific provider, check out our growing list of [integrations](/docs/integrations/providers/).
 
 
-## [API reference](https://python.langchain.com/api_reference/)
+### [API reference](https://python.langchain.com/api_reference/)
 Head to the reference section for full documentation of all classes and methods in the LangChain Python packages.
 
 ## Ecosystem

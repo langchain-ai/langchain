@@ -15,7 +15,7 @@ EMBEDDING_SIZE = 6
 
 
 class VectorStoreIntegrationTests(BaseStandardTests):
-    """Test suite for checking the read-write API of a vector store.
+    """Base class for vector store integration tests.
 
     Implementers should subclass this test suite and provide a fixture
     that returns an empty vector store for each test.
@@ -76,6 +76,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     store.delete_collection()
                     pass
 
+    Note that by default we enable both sync and async tests. To disable either,
+    override the ``has_sync`` or ``has_async`` properties to ``False`` in the
+    subclass. For example:
+
+    .. code-block:: python
+
+       class TestParrotVectorStore(VectorStoreIntegrationTests):
+            @pytest.fixture()
+            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+                ...
+
+            @property
+            def has_async(self) -> bool:
+                return False
+
     .. note::
           API references for individual test methods include troubleshooting tips.
     """  # noqa: E501
@@ -87,6 +102,20 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
         The returned vectorstore should be EMPTY.
         """
+
+    @property
+    def has_sync(self) -> bool:
+        """
+        Configurable property to enable or disable sync tests.
+        """
+        return True
+
+    @property
+    def has_async(self) -> bool:
+        """
+        Configurable property to enable or disable async tests.
+        """
+        return True
 
     @staticmethod
     def get_embeddings() -> Embeddings:
@@ -110,6 +139,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             ``VectorStoreIntegrationTests``) initializes an empty vector store in the
             ``vectorestore`` fixture.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
@@ -123,6 +155,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             2. Calling ``.similarity_search`` for the top ``k`` similar documents does not threshold by score.
             3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -152,6 +187,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             ``VectorStoreIntegrationTests``) correctly clears the vector store in the
             ``finally`` block.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_deleting_documents(self, vectorstore: VectorStore) -> None:
@@ -163,6 +201,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             passed in through ``ids``, and that ``delete`` correctly removes
             documents.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -181,6 +222,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``delete`` correctly removes multiple
             documents when given a list of IDs.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -200,6 +244,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``delete`` does not raise an exception
             when deleting IDs that do not exist.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         vectorstore.delete(["1"])
         vectorstore.delete(["1", "2", "3"])
 
@@ -214,6 +261,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             same IDs has the same effect as adding it once (i.e., it does not
             duplicate the documents).
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -235,6 +285,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             ID that already exists in the vector store, the content is updated
             rather than duplicated.
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -283,6 +336,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     def test_get_by_ids(self, vectorstore: VectorStore) -> None:
                         super().test_get_by_ids(vectorstore)
         """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -313,6 +369,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
                         super().test_get_by_ids_missing(vectorstore)
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         # This should not raise an exception
         documents = vectorstore.get_by_ids(["1", "2", "3"])
         assert documents == []
@@ -339,6 +398,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
                         super().test_add_documents_documents(vectorstore)
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -373,6 +435,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
                         super().test_add_documents_with_existing_ids(vectorstore)
         """  # noqa: E501
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -393,6 +458,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             ``VectorStoreIntegrationTests``) initializes an empty vector store in the
             ``vectorestore`` fixture.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
@@ -406,6 +474,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             2. Calling ``.asimilarity_search`` for the top ``k`` similar documents does not threshold by score.
             3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -438,6 +509,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             ``VectorStoreIntegrationTests``) correctly clears the vector store in the
             ``finally`` block.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
@@ -449,6 +523,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             passed in through ``ids``, and that ``delete`` correctly removes
             documents.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -469,6 +546,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``adelete`` correctly removes multiple
             documents when given a list of IDs.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -488,6 +568,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``adelete`` does not raise an exception
             when deleting IDs that do not exist.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         await vectorstore.adelete(["1"])
         await vectorstore.adelete(["1", "2", "3"])
 
@@ -502,6 +585,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             same IDs has the same effect as adding it once (i.e., it does not
             duplicate the documents).
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -525,6 +611,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             ID that already exists in the vector store, the content is updated
             rather than duplicated.
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -573,6 +662,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     async def test_get_by_ids(self, vectorstore: VectorStore) -> None:
                         await super().test_get_by_ids(vectorstore)
         """
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -603,6 +695,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
                         await super().test_get_by_ids_missing(vectorstore)
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         # This should not raise an exception
         assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
 
@@ -630,6 +725,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
                         await super().test_add_documents_documents(vectorstore)
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
@@ -666,6 +764,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                     async def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
                         await super().test_add_documents_with_existing_ids(vectorstore)
         """  # noqa: E501
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
