@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.brave_search import BraveSearchWrapper
 
 
-class BraveSearch(BaseTool):
+class BraveSearch(BaseTool):  # type: ignore[override]
     """Tool that queries the BraveSearch."""
 
     name: str = "brave_search"

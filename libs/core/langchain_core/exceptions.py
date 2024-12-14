@@ -1,5 +1,6 @@
 """Custom **exceptions** for LangChain."""
 
+from enum import Enum
 from typing import Any, Optional
 
 
@@ -39,13 +40,35 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         llm_output: Optional[str] = None,
         send_to_llm: bool = False,
     ):
+        if isinstance(error, str):
+            error = create_message(
+                message=error, error_code=ErrorCode.OUTPUT_PARSING_FAILURE
+            )
         super().__init__(error)
-        if send_to_llm:
-            if observation is None or llm_output is None:
-                raise ValueError(
-                    "Arguments 'observation' & 'llm_output'"
-                    " are required if 'send_to_llm' is True"
-                )
+        if send_to_llm and (observation is None or llm_output is None):
+            msg = (
+                "Arguments 'observation' & 'llm_output'"
+                " are required if 'send_to_llm' is True"
+            )
+            raise ValueError(msg)
         self.observation = observation
         self.llm_output = llm_output
         self.send_to_llm = send_to_llm
+
+
+class ErrorCode(Enum):
+    INVALID_PROMPT_INPUT = "INVALID_PROMPT_INPUT"
+    INVALID_TOOL_RESULTS = "INVALID_TOOL_RESULTS"
+    MESSAGE_COERCION_FAILURE = "MESSAGE_COERCION_FAILURE"
+    MODEL_AUTHENTICATION = "MODEL_AUTHENTICATION"
+    MODEL_NOT_FOUND = "MODEL_NOT_FOUND"
+    MODEL_RATE_LIMIT = "MODEL_RATE_LIMIT"
+    OUTPUT_PARSING_FAILURE = "OUTPUT_PARSING_FAILURE"
+
+
+def create_message(*, message: str, error_code: ErrorCode) -> str:
+    return (
+        f"{message}\n"
+        "For troubleshooting, visit: https://python.langchain.com/docs/"
+        f"troubleshooting/errors/{error_code.value} "
+    )

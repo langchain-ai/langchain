@@ -51,15 +51,18 @@ def _validate_deprecation_params(
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
+        msg = "A pending deprecation cannot have a scheduled removal"
+        raise ValueError(msg)
     if alternative and alternative_import:
-        raise ValueError("Cannot specify both alternative and alternative_import")
+        msg = "Cannot specify both alternative and alternative_import"
+        raise ValueError(msg)
 
     if alternative_import and "." not in alternative_import:
-        raise ValueError(
+        msg = (
             "alternative_import must be a fully qualified module path. Got "
             f" {alternative_import}"
         )
+        raise ValueError(msg)
 
 
 def deprecated(
@@ -198,10 +201,9 @@ def deprecated(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the deprecation of a class."""
-                try:
+                # Can't set new_doc on some extension objects.
+                with contextlib.suppress(AttributeError):
                     obj.__doc__ = new_doc
-                except AttributeError:  # Can't set on some extension objects.
-                    pass
 
                 def warn_if_direct_instance(
                     self: Any, *args: Any, **kwargs: Any
@@ -223,7 +225,8 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             if not _name:
-                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+                msg = f"Field {obj} must have a name to be deprecated."
+                raise ValueError(msg)
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -242,7 +245,8 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             if not _name:
-                raise ValueError(f"Field {obj} must have a name to be deprecated.")
+                msg = f"Field {obj} must have a name to be deprecated."
+                raise ValueError(msg)
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -360,8 +364,15 @@ def deprecated(
             _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
         )
         since_str = f"{package}=={since}" if package else since
+        if removal:
+            if removal.startswith("1.") and package and package.startswith("langchain"):
+                removal_str = f"It will not be removed until {package}=={removal}."
+            else:
+                removal_str = f"It will be removed in {package}=={removal}."
+        else:
+            removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since_str} {details}
+.. deprecated:: {since_str} {details} {removal_str}
 
 {old_doc}\
 """
@@ -429,10 +440,11 @@ def warn_deprecated(
     if not pending:
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"
-            raise NotImplementedError(
+            msg = (
                 f"Need to determine which default deprecation schedule to use. "
                 f"{removal}"
             )
+            raise NotImplementedError(msg)
         else:
             removal = f"in {removal}"
 
@@ -524,9 +536,8 @@ def rename_parameter(
         @functools.wraps(f)
         def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             if new in kwargs and old in kwargs:
-                raise TypeError(
-                    f"{f.__name__}() got multiple values for argument {new!r}"
-                )
+                msg = f"{f.__name__}() got multiple values for argument {new!r}"
+                raise TypeError(msg)
             if old in kwargs:
                 warn_deprecated(
                     since,

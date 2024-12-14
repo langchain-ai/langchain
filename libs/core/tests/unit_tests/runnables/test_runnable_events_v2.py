@@ -1552,7 +1552,8 @@ async def test_event_stream_with_retry() -> None:
 
     def fail(inputs: str) -> None:
         """Simple func."""
-        raise Exception("fail")
+        msg = "fail"
+        raise Exception(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1995,7 +1996,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
 
     async def add_one_proxy(x: int, config: RunnableConfig) -> int:
         streaming = add_one_.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
@@ -2035,7 +2036,7 @@ async def test_sync_in_sync_lambdas() -> None:
     def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
         streaming = add_one_.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy_ = RunnableLambda(add_one_proxy)
@@ -2053,9 +2054,12 @@ class StreamingRunnable(Runnable[Input, Output]):
         """Initialize the runnable."""
         self.iterable = iterable
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         """Invoke the runnable."""
-        raise ValueError("Server side error")
+        msg = "Server side error"
+        raise ValueError(msg)
 
     def stream(
         self,
@@ -2063,7 +2067,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def astream(
         self,

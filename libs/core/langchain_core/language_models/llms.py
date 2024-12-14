@@ -135,15 +135,17 @@ def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
     elif cache is True:
         llm_cache = get_llm_cache()
         if llm_cache is None:
-            raise ValueError(
+            msg = (
                 "No global cache was configured. Use `set_llm_cache`."
                 "to set a global cache if you want to use a global cache."
                 "Otherwise either pass a cache object or set cache to False/None"
             )
+            raise ValueError(msg)
     elif cache is False:
         llm_cache = None
     else:
-        raise ValueError(f"Unsupported cache value {cache}")
+        msg = f"Unsupported cache value {cache}"
+        raise ValueError(msg)
     return llm_cache
 
 
@@ -166,7 +168,7 @@ def get_prompts(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_string = str(sorted(params.items()))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
@@ -202,7 +204,7 @@ async def aget_prompts(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    llm_string = str(sorted(params.items()))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
@@ -332,10 +334,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         elif isinstance(input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(input))
         else:
-            raise ValueError(
+            msg = (
                 f"Invalid input type {type(input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
+            raise ValueError(msg)
 
     def _get_ls_params(
         self,
@@ -695,7 +698,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         Returns:
             An iterator of GenerationChunks.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,
@@ -842,10 +845,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
-            raise ValueError(
+            msg = (
                 "Argument 'prompts' is expected to be of type List[str], received"
                 f" argument of type {type(prompts)}."
             )
+            raise ValueError(msg)
         # Create callback managers
         if isinstance(metadata, list):
             metadata = [
@@ -989,10 +993,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return [None] * len(prompts)
         if isinstance(run_id, list):
             if len(run_id) != len(prompts):
-                raise ValueError(
+                msg = (
                     "Number of manually provided run_id's does not match batch length."
                     f" {len(run_id)} != {len(prompts)}"
                 )
+                raise ValueError(msg)
             return run_id
         return [run_id] + [None] * (len(prompts) - 1)
 
@@ -1262,11 +1267,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ValueError: If the prompt is not a string.
         """
         if not isinstance(prompt, str):
-            raise ValueError(
+            msg = (
                 "Argument `prompt` is expected to be a string. Instead found "
                 f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
                 "`generate` instead."
             )
+            raise ValueError(msg)
         return (
             self.generate(
                 [prompt],
@@ -1305,10 +1311,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return self(text, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
@@ -1320,10 +1323,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         content = self(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
@@ -1331,10 +1331,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return await self._call_async(text, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
@@ -1346,10 +1343,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         content = await self._call_async(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
@@ -1384,10 +1378,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm.save(file_path="path/llm.yaml")
         """
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -1402,7 +1393,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
 
 class LLM(BaseLLM):
@@ -1432,7 +1424,7 @@ class LLM(BaseLLM):
     Please see the following guide for more information on how to
     implement a custom LLM:
 
-    https://python.langchain.com/v0.2/docs/how_to/custom_llm/
+    https://python.langchain.com/docs/how_to/custom_llm/
     """
 
     @abstractmethod

@@ -34,7 +34,7 @@ from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
     message=(
         "This class is deprecated. Use the `create_retrieval_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
     ),
 )
 class BaseRetrievalQA(Chain):
@@ -210,7 +210,7 @@ class BaseRetrievalQA(Chain):
     message=(
         "This class is deprecated. Use the `create_retrieval_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
     ),
 )
 class RetrievalQA(BaseRetrievalQA):
@@ -295,7 +295,7 @@ class RetrievalQA(BaseRetrievalQA):
     message=(
         "This class is deprecated. Use the `create_retrieval_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
     ),
 )
 class VectorDBQA(BaseRetrievalQA):

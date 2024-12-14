@@ -88,7 +88,6 @@ async def deprecated_async_function() -> str:
 class ClassWithDeprecatedMethods:
     def __init__(self) -> None:
         """original doc"""
-        pass
 
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_method(self) -> str:
@@ -138,7 +137,6 @@ def test_deprecated_function() -> None:
     assert not inspect.iscoroutinefunction(deprecated_function)
 
 
-@pytest.mark.asyncio
 async def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -180,7 +178,6 @@ def test_deprecated_method() -> None:
     assert not inspect.iscoroutinefunction(obj.deprecated_method)
 
 
-@pytest.mark.asyncio
 async def test_deprecated_async_method() -> None:
     """Test deprecated async method."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -268,7 +265,6 @@ def test_whole_class_deprecation() -> None:
     class DeprecatedClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
@@ -311,7 +307,6 @@ def test_whole_class_inherited_deprecation() -> None:
     class DeprecatedClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
@@ -324,7 +319,6 @@ def test_whole_class_inherited_deprecation() -> None:
 
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @deprecated(since="2.2.0", removal="3.2.0")
         def deprecated_method(self) -> str:

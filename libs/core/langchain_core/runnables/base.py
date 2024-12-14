@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import contextlib
 import functools
 import inspect
 import threading
@@ -291,10 +292,11 @@ class Runnable(Generic[Input, Output], ABC):
             if type_args and len(type_args) == 2:
                 return type_args[0]
 
-        raise TypeError(
+        msg = (
             f"Runnable {self.get_name()} doesn't have an inferable InputType. "
             "Override the InputType property to specify the input type."
         )
+        raise TypeError(msg)
 
     @property
     def OutputType(self) -> type[Output]:  # noqa: N802
@@ -312,10 +314,11 @@ class Runnable(Generic[Input, Output], ABC):
             if type_args and len(type_args) == 2:
                 return type_args[1]
 
-        raise TypeError(
+        msg = (
             f"Runnable {self.get_name()} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
+        raise TypeError(msg)
 
     @property
     def input_schema(self) -> type[BaseModel]:
@@ -722,7 +725,9 @@ class Runnable(Generic[Input, Output], ABC):
     """ --- Public API --- """
 
     @abstractmethod
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         """Transform a single input into an output. Override to implement.
 
         Args:
@@ -1158,7 +1163,7 @@ class Runnable(Generic[Input, Output], ABC):
         - ``data``: **Dict[str, Any]**
 
 
-        Below is a table that illustrates some evens that might be emitted by various
+        Below is a table that illustrates some events that might be emitted by various
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
@@ -1376,9 +1381,8 @@ class Runnable(Generic[Input, Output], ABC):
                 **kwargs,
             )
         else:
-            raise NotImplementedError(
-                'Only versions "v1" and "v2" of the schema is currently supported.'
-            )
+            msg = 'Only versions "v1" and "v2" of the schema is currently supported.'
+            raise NotImplementedError(msg)
 
         async with aclosing(event_stream):
             async for event in event_stream:
@@ -2466,10 +2470,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             A JSON-serializable representation of the Runnable.
         """
         dumped = super().to_json()
-        try:
+        with contextlib.suppress(Exception):
             dumped["name"] = self.get_name()
-        except Exception:
-            pass
         return dumped
 
     def configurable_fields(
@@ -2512,10 +2514,11 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 
         for key in kwargs:
             if key not in self.model_fields:
-                raise ValueError(
+                msg = (
                     f"Configuration key {key} not found in {self}: "
                     f"available keys are {self.model_fields.keys()}"
                 )
+                raise ValueError(msg)
 
         return RunnableConfigurableFields(default=self, fields=kwargs)
 
@@ -2763,18 +2766,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             ValueError: If the sequence has less than 2 steps.
         """
         steps_flat: list[Runnable] = []
-        if not steps:
-            if first is not None and last is not None:
-                steps_flat = [first] + (middle or []) + [last]
+        if not steps and first is not None and last is not None:
+            steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
             else:
                 steps_flat.append(coerce_to_runnable(step))
         if len(steps_flat) < 2:
-            raise ValueError(
-                f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
-            )
+            msg = f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
+            raise ValueError(msg)
         super().__init__(  # type: ignore[call-arg]
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
@@ -2923,7 +2924,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 step_graph.trim_last_node()
             step_first_node, _ = graph.extend(step_graph)
             if not step_first_node:
-                raise ValueError(f"Runnable {step} has no first node")
+                msg = f"Runnable {step} has no first node"
+                raise ValueError(msg)
             if current_last_node:
                 graph.add_edge(current_last_node, step_first_node)
 
@@ -3655,9 +3657,11 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             else:
                 step_first_node, step_last_node = graph.extend(step_graph)
                 if not step_first_node:
-                    raise ValueError(f"Runnable {step} has no first node")
+                    msg = f"Runnable {step} has no first node"
+                    raise ValueError(msg)
                 if not step_last_node:
-                    raise ValueError(f"Runnable {step} has no last node")
+                    msg = f"Runnable {step} has no last node"
+                    raise ValueError(msg)
                 graph.add_edge(input_node, step_first_node)
                 graph.add_edge(step_last_node, output_node)
 
@@ -3671,7 +3675,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         return "{\n  " + map_for_repr + "\n}"
 
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> dict[str, Any]:
         from langchain_core.callbacks.manager import CallbackManager
 
@@ -3778,7 +3782,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                     for key, step in steps.items()
                 )
             )
-            output = {key: value for key, value in zip(steps, results)}
+            output = dict(zip(steps, results))
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -4049,10 +4053,11 @@ class RunnableGenerator(Runnable[Input, Output]):
             self._transform = transform
             func_for_name = transform
         else:
-            raise TypeError(
+            msg = (
                 "Expected a generator function type for `transform`."
                 f"Instead got an unsupported type: {type(transform)}"
             )
+            raise TypeError(msg)
 
         try:
             self.name = name or func_for_name.__name__
@@ -4161,7 +4166,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> Iterator[Output]:
         if not hasattr(self, "_transform"):
-            raise NotImplementedError(f"{repr(self)} only supports async methods.")
+            msg = f"{repr(self)} only supports async methods."
+            raise NotImplementedError(msg)
         return self._transform_stream_with_config(
             input,
             self._transform,  # type: ignore[arg-type]
@@ -4180,12 +4186,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         for output in self.stream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
     def atransform(
@@ -4195,7 +4198,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         if not hasattr(self, "_atransform"):
-            raise NotImplementedError(f"{repr(self)} only supports sync methods.")
+            msg = f"{repr(self)} only supports sync methods."
+            raise NotImplementedError(msg)
 
         return self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
@@ -4215,12 +4219,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         async for output in self.astream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
 
@@ -4326,21 +4327,23 @@ class RunnableLambda(Runnable[Input, Output]):
 
         if is_async_callable(func) or is_async_generator(func):
             if afunc is not None:
-                raise TypeError(
+                msg = (
                     "Func was provided as a coroutine function, but afunc was "
                     "also provided. If providing both, func should be a regular "
                     "function to avoid ambiguity."
                 )
+                raise TypeError(msg)
             self.afunc = func
             func_for_name = func
         elif callable(func):
             self.func = cast(Callable[[Input], Output], func)
             func_for_name = func
         else:
-            raise TypeError(
+            msg = (
                 "Expected a callable type for `func`."
                 f"Instead got an unsupported type: {type(func)}"
             )
+            raise TypeError(msg)
 
         try:
             if name is not None:
@@ -4503,9 +4506,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 else:
                     dep_first_node, dep_last_node = graph.extend(dep_graph)
                     if not dep_first_node:
-                        raise ValueError(f"Runnable {dep} has no first node")
+                        msg = f"Runnable {dep} has no first node"
+                        raise ValueError(msg)
                     if not dep_last_node:
-                        raise ValueError(f"Runnable {dep} has no last node")
+                        msg = f"Runnable {dep} has no last node"
+                        raise ValueError(msg)
                     graph.add_edge(input_node, dep_first_node)
                     graph.add_edge(dep_last_node, output_node)
         else:
@@ -4566,9 +4571,10 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
+                msg = (
                     f"Recursion limit reached when invoking {self} with input {input}."
                 )
+                raise RecursionError(msg)
             output = output.invoke(
                 input,
                 patch_config(
@@ -4665,9 +4671,10 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
+                msg = (
                     f"Recursion limit reached when invoking {self} with input {input}."
                 )
+                raise RecursionError(msg)
             output = await output.ainvoke(
                 input,
                 patch_config(
@@ -4710,10 +4717,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 **kwargs,
             )
         else:
-            raise TypeError(
+            msg = (
                 "Cannot invoke a coroutine function synchronously."
                 "Use `ainvoke` instead."
             )
+            raise TypeError(msg)
 
     async def ainvoke(
         self,
@@ -4784,10 +4792,11 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
+                msg = (
                     f"Recursion limit reached when invoking "
                     f"{self} with input {final}."
                 )
+                raise RecursionError(msg)
             for chunk in output.stream(
                 final,
                 patch_config(
@@ -4815,10 +4824,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 **kwargs,
             )
         else:
-            raise TypeError(
+            msg = (
                 "Cannot stream a coroutine function synchronously."
                 "Use `astream` instead."
             )
+            raise TypeError(msg)
 
     def stream(
         self,
@@ -4855,10 +4865,11 @@ class RunnableLambda(Runnable[Input, Output]):
             afunc = self.afunc
         else:
             if inspect.isgeneratorfunction(self.func):
-                raise TypeError(
+                msg = (
                     "Cannot stream from a generator function asynchronously."
                     "Use .stream() instead."
                 )
+                raise TypeError(msg)
 
             def func(
                 input: Input,
@@ -4905,10 +4916,11 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
+                msg = (
                     f"Recursion limit reached when invoking "
                     f"{self} with input {final}."
                 )
+                raise RecursionError(msg)
             async for chunk in output.astream(
                 final,
                 patch_config(
@@ -5067,9 +5079,8 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[StreamEvent]:
         for _ in range(1):
-            raise NotImplementedError(
-                "RunnableEach does not support astream_events yet."
-            )
+            msg = "RunnableEach does not support astream_events yet."
+            raise NotImplementedError(msg)
             yield
 
 
@@ -5206,7 +5217,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     kwargs.
     """
 
-    config: RunnableConfig = Field(default_factory=dict)
+    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore
     """The config to bind to the underlying Runnable."""
 
     config_factories: list[Callable[[RunnableConfig], RunnableConfig]] = Field(
@@ -5825,10 +5836,11 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     elif isinstance(thing, dict):
         return cast(Runnable[Input, Output], RunnableParallel(thing))
     else:
-        raise TypeError(
+        msg = (
             f"Expected a Runnable, callable or dict."
             f"Instead got an unsupported type: {type(thing)}"
         )
+        raise TypeError(msg)
 
 
 @overload

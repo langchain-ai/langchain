@@ -89,7 +89,8 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     if generation:
         generation += list(stream)
     if generation is None:
-        raise ValueError("No generations found in stream.")
+        msg = "No generations found in stream."
+        raise ValueError(msg)
     return ChatResult(
         generations=[
             ChatGeneration(
@@ -189,7 +190,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         +----------------------------------+--------------------------------------------------------------------+-------------------+
 
         Follow the guide for more information on how to implement a custom Chat Model:
-        [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+        [Guide](https://python.langchain.com/docs/how_to/custom_chat_model/).
 
     """  # noqa: E501
 
@@ -208,8 +209,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
     """Whether to disable streaming for this model.
-    
-    If streaming is bypassed, then ``stream()/astream()`` will defer to 
+
+    If streaming is bypassed, then ``stream()/astream()`` will defer to
     ``invoke()/ainvoke()``.
 
     - If True, will always bypass streaming case.
@@ -265,10 +266,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif isinstance(input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(input))
         else:
-            raise ValueError(
+            msg = (
                 f"Invalid input type {type(input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
+            raise ValueError(msg)
 
     def invoke(
         self,
@@ -357,7 +359,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=False, **{**kwargs, **{"stream": True}}):
+        if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
@@ -427,7 +429,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=True, **{**kwargs, **{"stream": True}}):
+        if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
@@ -463,7 +465,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -550,8 +552,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
-            params = {**kwargs, **{"stop": stop}}
-            param_string = str(sorted([(k, v) for k, v in params.items()]))
+            params = {**kwargs, "stop": stop}
+            param_string = str(sorted(params.items()))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
             serialized_repr = self._serialized
@@ -561,7 +563,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
             params = {**params, **kwargs}
-            return str(sorted([(k, v) for k, v in params.items()]))
+            return str(sorted(params.items()))
 
     def generate(
         self,
@@ -802,10 +804,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if isinstance(self.cache, BaseCache):
-            llm_cache = self.cache
-        else:
-            llm_cache = get_llm_cache()
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
@@ -820,9 +819,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             elif self.cache is None:
                 pass
             else:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+                msg = "Asked to cache, but no cache found at `langchain.cache`."
+                raise ValueError(msg)
 
         # Apply the rate limiter after checking the cache, since
         # we usually don't want to rate limit cache lookups, but
@@ -879,10 +877,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if isinstance(self.cache, BaseCache):
-            llm_cache = self.cache
-        else:
-            llm_cache = get_llm_cache()
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
@@ -897,15 +892,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             elif self.cache is None:
                 pass
             else:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+                msg = "Asked to cache, but no cache found at `langchain.cache`."
+                raise ValueError(msg)
 
         # Apply the rate limiter after checking the cache, since
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(blocking=True)
+            await self.rate_limiter.aacquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
@@ -983,7 +977,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,
@@ -1026,7 +1020,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         else:
-            raise ValueError("Unexpected generation type")
+            msg = "Unexpected generation type"
+            raise ValueError(msg)
 
     async def _call_async(
         self,
@@ -1042,7 +1037,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         else:
-            raise ValueError("Unexpected generation type")
+            msg = "Unexpected generation type"
+            raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1054,15 +1050,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
         if isinstance(result.content, str):
             return result.content
         else:
-            raise ValueError("Cannot use predict when output is not a string.")
+            msg = "Cannot use predict when output is not a string."
+            raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict_messages(
@@ -1072,27 +1066,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return self(messages, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         result = await self._call_async(
             [HumanMessage(content=text)], stop=_stop, **kwargs
         )
         if isinstance(result.content, str):
             return result.content
         else:
-            raise ValueError("Cannot use predict when output is not a string.")
+            msg = "Cannot use predict when output is not a string."
+            raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict_messages(
@@ -1102,10 +1091,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
+        _stop = None if stop is None else list(stop)
         return await self._call_async(messages, stop=_stop, **kwargs)
 
     @property
@@ -1121,10 +1107,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[typing.Dict[str, Any], type, Callable, BaseTool]],  # noqa: UP006
+        tools: Sequence[
+            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def with_structured_output(
         self,
@@ -1236,7 +1224,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 # }
         """  # noqa: E501
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
 
         from langchain_core.output_parsers.openai_tools import (
             JsonOutputKeyToolsParser,
@@ -1244,9 +1233,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.bind_tools is BaseChatModel.bind_tools:
-            raise NotImplementedError(
-                "with_structured_output is not implemented for this model."
-            )
+            msg = "with_structured_output is not implemented for this model."
+            raise NotImplementedError(msg)
         llm = self.bind_tools([schema], tool_choice="any")
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
@@ -1333,9 +1321,12 @@ def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     if not isinstance(serialized, dict):
         return
 
-    if "type" in serialized and serialized["type"] == "not_implemented":
-        if "repr" in serialized:
-            del serialized["repr"]
+    if (
+        "type" in serialized
+        and serialized["type"] == "not_implemented"
+        and "repr" in serialized
+    ):
+        del serialized["repr"]
 
     if "graph" in serialized:
         del serialized["graph"]

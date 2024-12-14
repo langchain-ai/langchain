@@ -166,7 +166,7 @@ class GitHubToolkit(BaseToolkit):
 
     Setup:
         See detailed installation instructions here:
-        https://python.langchain.com/v0.2/docs/integrations/tools/github/#installation
+        https://python.langchain.com/docs/integrations/tools/github/#installation
 
         You will need to install ``pygithub`` and set the following environment
         variables:

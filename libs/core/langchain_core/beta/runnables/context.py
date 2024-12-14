@@ -59,7 +59,8 @@ def _key_from_id(id_: str) -> str:
     elif wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_SET):
         return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_SET)]
     else:
-        raise ValueError(f"Invalid context config id {id_}")
+        msg = f"Invalid context config id {id_}"
+        raise ValueError(msg)
 
 
 def _config_with_context(
@@ -86,9 +87,9 @@ def _config_with_context(
         )
     }
     deps_by_key = {
-        key: set(
+        key: {
             _key_from_id(dep) for spec in group for dep in (spec[0].dependencies or [])
-        )
+        }
         for key, group in grouped_by_key.items()
     }
 
@@ -103,16 +104,15 @@ def _config_with_context(
 
         for dep in deps_by_key[key]:
             if key in deps_by_key[dep]:
-                raise ValueError(
-                    f"Deadlock detected between context keys {key} and {dep}"
-                )
+                msg = f"Deadlock detected between context keys {key} and {dep}"
+                raise ValueError(msg)
         if len(setters) != 1:
-            raise ValueError(f"Expected exactly one setter for context key {key}")
+            msg = f"Expected exactly one setter for context key {key}"
+            raise ValueError(msg)
         setter_idx = setters[0][1]
         if any(getter_idx < setter_idx for _, getter_idx in getters):
-            raise ValueError(
-                f"Context setter for key {key} must be defined after all getters."
-            )
+            msg = f"Context setter for key {key} must be defined after all getters."
+            raise ValueError(msg)
 
         if getters:
             context_funcs[getters[0][0].id] = partial(getter, events[key], values)
@@ -183,7 +183,9 @@ class ContextGet(RunnableSerializable):
             for id_ in self.ids
         ]
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
@@ -198,7 +200,7 @@ class ContextGet(RunnableSerializable):
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
-            return {key: value for key, value in zip(self.key, values)}
+            return dict(zip(self.key, values))
         else:
             return await configurable[self.ids[0]]()
 
@@ -269,9 +271,8 @@ class ContextSet(RunnableSerializable):
             if spec.id.endswith(CONTEXT_CONFIG_SUFFIX_GET):
                 getter_key = spec.id.split("/")[1]
                 if getter_key in self.keys:
-                    raise ValueError(
-                        f"Circular reference in context setter for key {getter_key}"
-                    )
+                    msg = f"Circular reference in context setter for key {getter_key}"
+                    raise ValueError(msg)
         return super().config_specs + [
             ConfigurableFieldSpec(
                 id=id_,
@@ -280,7 +281,9 @@ class ContextSet(RunnableSerializable):
             for id_ in self.ids
         ]
 
-    def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
