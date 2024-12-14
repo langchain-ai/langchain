@@ -577,7 +577,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         #  are allowed for these query functions
         if query_type == CosmosDBQueryType.FULL_TEXT_RANK:
             if search_text is None:
-                raise ValueError("search text cannot be None for FULL_TEXT_RANK queries.")
+                raise ValueError("search text cannot be None "
+                                 "for FULL_TEXT_RANK queries.")
             query += f""" ORDER BY RANK FullTextScore(c.{self._text_key}, 
             [{", ".join(f"'{term}'" for term in search_text.split())}])"""
         elif query_type == CosmosDBQueryType.VECTOR:
