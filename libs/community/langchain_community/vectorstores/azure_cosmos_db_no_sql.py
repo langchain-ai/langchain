@@ -379,7 +379,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict[str, Any]] = None,
         with_embedding: bool = False,
-        offset_limit: str = "",
+        offset_limit: Optional[str] = None,
         *,
         projection_mapping: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -576,11 +576,15 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         # TODO: Update the code to use parameters once parametrized queries
         #  are allowed for these query functions
         if query_type == CosmosDBQueryType.FULL_TEXT_RANK:
+            if search_text is None:
+                raise ValueError("search text cannot be None for FULL_TEXT_RANK queries.")
             query += f""" ORDER BY RANK FullTextScore(c.{self._text_key}, 
             [{", ".join(f"'{term}'" for term in search_text.split())}])"""
         elif query_type == CosmosDBQueryType.VECTOR:
             query += " ORDER BY VectorDistance(c[@embeddingKey], @embeddings)"
         elif query_type == CosmosDBQueryType.HYBRID:
+            if search_text is None:
+                raise ValueError("search text cannot be None for HYBRID queries.")
             query += f""" ORDER BY RANK RRF(FullTextScore(c.{self._text_key}, 
             [{", ".join(f"'{term}'" for term in search_text.split())}]), 
             VectorDistance(c.{self._embedding_key}, {embeddings}))"""
@@ -661,7 +665,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         search_terms: Optional[List[str]] = None,
         projection_mapping: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
-        parameters = [
+        parameters: List[Dict[str, Any]] = [
             {"name": "@limit", "value": k},
             {"name": "@textKey", "value": self._text_key},
         ]
