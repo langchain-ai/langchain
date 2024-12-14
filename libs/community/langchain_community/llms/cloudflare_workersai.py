@@ -105,9 +105,9 @@ class CloudflareWorkersAI(LLM):
                     logger.debug(chunk)
                     raise e
                 if data is not None and "response" in data:
+                    if run_manager:
+                        run_manager.on_llm_new_token(data["response"])
                     yield GenerationChunk(text=data["response"])
-                if run_manager:
-                    run_manager.on_llm_new_token(data["response"])
         logger.debug("stream end")
         self.streaming = original_steaming
 

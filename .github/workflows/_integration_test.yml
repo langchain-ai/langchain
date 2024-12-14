@@ -12,7 +12,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
@@ -41,12 +41,6 @@ jobs:
         shell: bash
         run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
 
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
       - name: Run integration tests
         shell: bash
         env:
@@ -58,6 +52,7 @@ jobs:
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
@@ -67,6 +62,7 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
@@ -79,11 +75,11 @@ jobs:
           ES_URL: ${{ secrets.ES_URL }}
           ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: |
           make integration_tests
 

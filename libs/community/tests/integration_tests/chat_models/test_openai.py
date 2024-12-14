@@ -11,7 +11,7 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler

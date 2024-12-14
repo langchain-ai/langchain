@@ -6,7 +6,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 API_PLANNER_PROMPT = """You are a planner that plans a sequence of API calls to assist with user queries against an API.
 
 You should:
-1) evaluate whether the user query can be solved by the API documentated below. If no, say why.
+1) evaluate whether the user query can be solved by the API documented below. If no, say why.
 2) if yes, generate a plan of API calls and say what they are doing step by step.
 3) If the plan includes a DELETE call, you should always return an ask from the User for authorization first unless the User has specifically asked to delete something.
 

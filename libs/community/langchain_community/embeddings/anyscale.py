@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional
 
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
@@ -17,7 +17,7 @@ DEFAULT_MODEL = "thenlper/gte-large"
 class AnyscaleEmbeddings(OpenAIEmbeddings):
     """`Anyscale` Embeddings API."""
 
-    anyscale_api_key: SecretStr = Field(default=None)
+    anyscale_api_key: Optional[SecretStr] = Field(default=None)
     """AnyScale Endpoints API keys."""
     model: str = Field(default=DEFAULT_MODEL)
     """Model name to use."""
@@ -68,7 +68,7 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
         else:
             values["openai_api_base"] = values["anyscale_api_base"]
             values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-            values["client"] = openai.Embedding
+            values["client"] = openai.Embedding  # type: ignore[attr-defined]
         return values
 
     @property

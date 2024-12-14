@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import model_validator
 
 from langchain_community.vectorstores.milvus import Milvus
 
@@ -17,7 +17,7 @@ from langchain_community.vectorstores.milvus import Milvus
 class MilvusRetriever(BaseRetriever):
     """Milvus API retriever.
 
-    See detailed instructions here: https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/
+    See detailed instructions here: https://python.langchain.com/docs/integrations/retrievers/milvus_hybrid_search/
 
     Setup:
         Install ``langchain-milvus`` and other dependencies:
@@ -93,8 +93,9 @@ class MilvusRetriever(BaseRetriever):
     store: Milvus
     retriever: BaseRetriever
 
-    @root_validator(pre=True)
-    def create_retriever(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def create_retriever(cls, values: Dict) -> Any:
         """Create the Milvus store and retriever."""
         values["store"] = Milvus(
             values["embedding_function"],

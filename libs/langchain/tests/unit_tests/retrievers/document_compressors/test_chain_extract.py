@@ -72,7 +72,7 @@ async def test_llm_chain_extractor_async() -> None:
     output = await doc_compressor.acompress_documents(
         documents, "Tell me about Candlepin bowling."
     )
-    expected = documents = [
+    expected = [
         Document(
             page_content="Candlepin bowling is popular in New England.",
             metadata={"a": 1},

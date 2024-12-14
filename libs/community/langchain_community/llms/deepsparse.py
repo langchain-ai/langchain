@@ -2,7 +2,7 @@
 from langchain_core.utils import pre_init
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 from langchain_core.utils import pre_init
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator
 from langchain_core.utils import pre_init
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -33,7 +33,7 @@ class DeepSparse(LLM):
     model: str
     """The path to a model file or directory or the name of a SparseZoo model stub."""
 
-    model_config: Optional[Dict[str, Any]] = None
+    model_configuration: Optional[Dict[str, Any]] = None
     """Keyword arguments passed to the pipeline construction.
     Common parameters are sequence_length, prompt_sequence_length"""
 
@@ -51,7 +51,7 @@ class DeepSparse(LLM):
         """Get the identifying parameters."""
         return {
             "model": self.model,
-            "model_config": self.model_config,
+            "model_config": self.model_configuration,
             "generation_config": self.generation_config,
             "streaming": self.streaming,
         }
@@ -72,7 +72,7 @@ class DeepSparse(LLM):
                 "Please install it with `pip install deepsparse[llm]`"
             )
 
-        model_config = values["model_config"] or {}
+        model_config = values["model_configuration"] or {}
 
         values["pipeline"] = Pipeline.create(
             task="text_generation",
@@ -190,10 +190,10 @@ class DeepSparse(LLM):
         )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
-            yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.text)
+            yield chunk
 
     async def _astream(
         self,
@@ -228,7 +228,7 @@ class DeepSparse(LLM):
         )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
-            yield chunk
 
             if run_manager:
                 await run_manager.on_llm_new_token(token=chunk.text)
+            yield chunk

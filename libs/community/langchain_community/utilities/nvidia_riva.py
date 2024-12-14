@@ -25,7 +25,8 @@ from typing import (
 
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import (
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from pydantic import (
     AnyHttpUrl,
     BaseModel,
     Field,
@@ -33,7 +34,6 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validator,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
 
 if TYPE_CHECKING:
     import riva.client
@@ -110,7 +110,7 @@ class RivaAuthMixin(BaseModel):
     """Configuration for the authentication to a Riva service connection."""
 
     url: Union[AnyHttpUrl, str] = Field(
-        AnyHttpUrl("http://localhost:50051", scheme="http"),
+        AnyHttpUrl("http://localhost:50051"),
         description="The full URL where the Riva service can be found.",
         examples=["http://localhost:50051", "https://user@pass:riva.example.com"],
     )
@@ -401,7 +401,7 @@ ASRInputType = AudioStream
 ASROutputType = str
 
 
-class RivaASR(
+class RivaASR(  # type: ignore[override]
     RivaAuthMixin,
     RivaCommonConfigMixin,
     RunnableSerializable[ASRInputType, ASROutputType],
@@ -471,7 +471,8 @@ class RivaASR(
     def invoke(
         self,
         input: ASRInputType,
-        _: Optional[RunnableConfig] = None,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> ASROutputType:
         """Transcribe the audio bytes into a string with Riva."""
         # create an output text generator with Riva
@@ -508,7 +509,7 @@ TTSInputType = Union[str, AnyMessage, PromptValue]
 TTSOutputType = bytes
 
 
-class RivaTTS(
+class RivaTTS(  # type: ignore[override]
     RivaAuthMixin,
     RivaCommonConfigMixin,
     RunnableSerializable[TTSInputType, TTSOutputType],
@@ -567,7 +568,10 @@ class RivaTTS(
             ) from err
 
     def invoke(
-        self, input: TTSInputType, _: Union[RunnableConfig, None] = None
+        self,
+        input: TTSInputType,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> TTSOutputType:
         """Perform TTS by taking a string and outputting the entire audio file."""
         return b"".join(self.transform(iter([input])))

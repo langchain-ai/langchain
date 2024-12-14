@@ -3,8 +3,8 @@
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.scenexplain import SceneXplainAPIWrapper
 
@@ -15,7 +15,7 @@ class SceneXplainInput(BaseModel):
     query: str = Field(..., description="The link to the image to explain")
 
 
-class SceneXplainTool(BaseTool):
+class SceneXplainTool(BaseTool):  # type: ignore[override]
     """Tool that explains images."""
 
     name: str = "image_explainer"

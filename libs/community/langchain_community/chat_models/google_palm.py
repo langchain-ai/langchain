@@ -21,8 +21,8 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -219,7 +219,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     To use you must have the google.generativeai Python package installed and
     either:
 
-        1. The ``GOOGLE_API_KEY``` environment variable set with your API key, or
+        1. The ``GOOGLE_API_KEY`` environment variable set with your API key, or
         2. Pass your API key using the google_api_key kwarg to the ChatGoogle
            constructor.
 

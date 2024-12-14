@@ -36,7 +36,7 @@ def test_numeric_field_schema_creation() -> None:
 
 def test_redis_vector_field_validation() -> None:
     """Test validation for RedisVectorField's datatype."""
-    from langchain_core.pydantic_v1 import ValidationError
+    from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
         RedisVectorField(

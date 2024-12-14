@@ -7,17 +7,13 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-      langchain-location:
-        required: false
-        type: string
-        description: "Relative path to the langchain library folder"
       python-version:
         required: true
         type: string
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
   # This env var allows us to get inline annotations when ruff has complaints.
@@ -27,6 +23,7 @@ jobs:
   build:
     name: "make lint #${{ inputs.python-version }}"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -62,14 +59,6 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           poetry install --with lint,typing
-
-      - name: Install langchain editable
-        working-directory: ${{ inputs.working-directory }}
-        if: ${{ inputs.langchain-location }}
-        env:
-          LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
-        run: |
-          poetry run pip install -e "$LANGCHAIN_LOCATION"
 
       - name: Get .mypy_cache to speed up mypy
         uses: actions/cache@v4
