@@ -335,6 +335,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.open_city_data import (
         OpenCityDataLoader,
     )
+    from langchain_community.document_loaders.openvino_speech_to_text import (
+        OpenVINOSpeechToTextLoader,
+    )
     from langchain_community.document_loaders.oracleadb_loader import (
         OracleAutonomousDatabaseLoader,
     )
@@ -646,6 +649,7 @@ _module_lookup = {
     "OneDriveLoader": "langchain_community.document_loaders.onedrive",
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
+    "OpenVINOSpeechToTextLoader": "langchain_community.document_loaders.openvino_speech_to_text",  # noqa: E501
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
     "OracleDocLoader": "langchain_community.document_loaders.oracleai",
     "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
@@ -853,6 +857,7 @@ __all__ = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OpenCityDataLoader",
+    "OpenVINOSpeechToTextLoader",
     "OracleAutonomousDatabaseLoader",
     "OracleDocLoader",
     "OracleTextSplitter",
