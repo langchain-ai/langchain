@@ -231,7 +231,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
-        full_text_policy: Dict[str, Any] = None,
+        full_text_policy: Optional[Dict[str, Any]] = None,
         database_name: str = "vectorSearchDB",
         container_name: str = "vectorSearchContainer",
         text_key: str = "text",
@@ -319,11 +319,11 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: List[float],
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[Dict[str, Any]] = None,
         with_embedding: bool = False,
-        offset_limit: str = None,
+        offset_limit: Optional[str] = None,
         *,
-        projection_mapping: Dict[str, Any] = None,
+        projection_mapping: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query, parameters = self._construct_query(
@@ -346,12 +346,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     def _full_text_search(
         self,
         query_type: CosmosDBQueryType,
-        search_text: str = None,
+        search_text: Optional[str] = None,
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
-        offset_limit: str = None,
+        pre_filter: Optional[Dict[str, Any]] = None,
+        offset_limit: Optional[str] = None,
         *,
-        projection_mapping: Dict[str, Any] = None,
+        projection_mapping: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query, parameters = self._construct_query(
@@ -377,11 +377,11 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embeddings: List[float],
         search_text: str,
         k: int = 4,
-        pre_filter: Dict[str, Any] = None,
+        pre_filter: Optional[Dict[str, Any]] = None,
         with_embedding: bool = False,
-        offset_limit: str = None,
+        offset_limit: str = "",
         *,
-        projection_mapping: Dict[str, Any] = None,
+        projection_mapping: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query, parameters = self._construct_query(
@@ -405,10 +405,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[Dict[str, Any]] = None,
         with_embedding: bool = False,
         query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
-        offset_limit: str = None,
+        offset_limit: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         embeddings = self._embedding.embed_query(query)
@@ -458,10 +458,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[Dict[str, Any]] = None,
         with_embedding: bool = False,
         query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
-        offset_limit: str = None,
+        offset_limit: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         if query_type not in CosmosDBQueryType.__members__.values():
@@ -551,9 +551,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         k: int,
         query_type: CosmosDBQueryType,
         embeddings: Optional[List[float]] = None,
-        search_text: str = None,
+        search_text: Optional[str] = None,
         pre_filter: Optional[Dict] = None,
-        offset_limit: str = None,
+        offset_limit: Optional[str] = None,
         projection_mapping: Optional[Dict[str, Any]] = None,
     ) -> Tuple[str, List[Dict[str, Any]]]:
         if (
