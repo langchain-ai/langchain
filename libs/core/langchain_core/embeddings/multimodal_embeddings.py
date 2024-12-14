@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional
 
 from langchain_core.runnables.config import run_in_executor
 
@@ -15,9 +14,7 @@ class ContentType(Enum):
 
 class Content(ABC):
     type: ContentType
-    text: Optional[str]
-    image_url: Optional[str]
-    image_base64: Optional[str]
+    data: str
 
 
 class MultimodalInput(ABC):
