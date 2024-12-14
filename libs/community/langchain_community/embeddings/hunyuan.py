@@ -61,7 +61,10 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
         client_profile = ClientProfile()
         client_profile.httpProfile.pre_conn_pool_size = 3
 
-        credential = Credential(values["hunyuan_secret_id"].get_secret_value(), values["hunyuan_secret_key"].get_secret_value())
+        credential = Credential(
+            values["hunyuan_secret_id"].get_secret_value(),
+            values["hunyuan_secret_key"].get_secret_value(),
+        )
 
         values["request_cls"] = GetEmbeddingRequest
 

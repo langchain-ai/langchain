@@ -101,6 +101,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.huggingface_hub import (
         HuggingFaceHubEmbeddings,
     )
+    from langchain_community.embeddings.hunyuan import (
+        HunyuanEmbeddings,
+    )
     from langchain_community.embeddings.infinity import (
         InfinityEmbeddings,
     )
@@ -242,10 +245,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.embeddings.zhipuai import (
         ZhipuAIEmbeddings,
-    )
-
-    from langchain_community.embeddings.hunyuan import (
-        HunyuanEmbeddings,
     )
 
 __all__ = [
