@@ -16,8 +16,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ class QianfanLLMEndpoint(LLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any
+    client: Any = None
 
     qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")

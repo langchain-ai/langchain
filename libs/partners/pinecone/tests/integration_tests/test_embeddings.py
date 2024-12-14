@@ -44,7 +44,6 @@ def test_embed_query(embd_client: PineconeEmbeddings) -> None:
     assert len(out) == DIMENSION
 
 
-@pytest.mark.asyncio
 async def test_aembed_query(embd_client: PineconeEmbeddings) -> None:
     out = await embd_client.aembed_query("Hello, world!")
     assert isinstance(out, list)
@@ -58,7 +57,6 @@ def test_embed_documents(embd_client: PineconeEmbeddings) -> None:
     assert len(out[0]) == DIMENSION
 
 
-@pytest.mark.asyncio
 async def test_aembed_documents(embd_client: PineconeEmbeddings) -> None:
     out = await embd_client.aembed_documents(["Hello, world!", "This is a test."])
     assert isinstance(out, list)

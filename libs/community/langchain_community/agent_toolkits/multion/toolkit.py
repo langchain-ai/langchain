@@ -6,6 +6,7 @@ from typing import List
 
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict
 
 from langchain_community.tools.multion.close_session import MultionCloseSession
 from langchain_community.tools.multion.create_session import MultionCreateSession
@@ -25,8 +26,9 @@ class MultionToolkit(BaseToolkit):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

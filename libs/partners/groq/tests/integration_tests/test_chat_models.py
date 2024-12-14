@@ -13,8 +13,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 from langchain_groq import ChatGroq
 from tests.unit_tests.fake.callbacks import (
@@ -395,7 +395,7 @@ def test_json_mode_structured_output() -> None:
 
 
 def test_tool_calling_no_arguments() -> None:
-    # Note: this is a variant of a test in langchain_standard_tests
+    # Note: this is a variant of a test in langchain_tests
     # that as of 2024-08-19 fails with "Failed to call a function. Please
     # adjust your prompt." when `tool_choice="any"` is specified, but
     # passes when `tool_choice` is not specified.

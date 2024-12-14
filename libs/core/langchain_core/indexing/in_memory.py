@@ -1,12 +1,14 @@
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, Optional, cast
+
+from pydantic import Field
 
 from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.indexing import UpsertResponse
 from langchain_core.indexing.base import DeleteResponse, DocumentIndex
-from langchain_core.pydantic_v1 import Field
 
 
 @beta(message="Introduced in version 0.2.29. Underlying abstraction subject to change.")
@@ -21,7 +23,7 @@ class InMemoryDocumentIndex(DocumentIndex):
     .. versionadded:: 0.2.29
     """
 
-    store: Dict[str, Document] = Field(default_factory=dict)
+    store: dict[str, Document] = Field(default_factory=dict)
     top_k: int = 4
 
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
@@ -31,7 +33,7 @@ class InMemoryDocumentIndex(DocumentIndex):
         for item in items:
             if item.id is None:
                 id_ = str(uuid.uuid4())
-                item_ = item.copy()
+                item_ = item.model_copy()
                 item_.id = id_
             else:
                 item_ = item
@@ -42,10 +44,11 @@ class InMemoryDocumentIndex(DocumentIndex):
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by ID."""
         if ids is None:
-            raise ValueError("IDs must be provided for deletion")
+            msg = "IDs must be provided for deletion"
+            raise ValueError(msg)
 
         ok_ids = []
 
@@ -58,7 +61,7 @@ class InMemoryDocumentIndex(DocumentIndex):
             succeeded=ok_ids, num_deleted=len(ok_ids), num_failed=0, failed=[]
         )
 
-    def get(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
+    def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
         """Get by ids."""
         found_documents = []
 
@@ -70,7 +73,7 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         counts_by_doc = []
 
         for document in self.store.values():
@@ -78,4 +81,4 @@ class InMemoryDocumentIndex(DocumentIndex):
             counts_by_doc.append((document, count))
 
         counts_by_doc.sort(key=lambda x: x[1], reverse=True)
-        return [doc.copy() for doc, count in counts_by_doc[: self.top_k]]
+        return [doc.model_copy() for doc, count in counts_by_doc[: self.top_k]]

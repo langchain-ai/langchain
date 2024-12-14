@@ -5,7 +5,8 @@ from typing import Optional, Type
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from langchain_standard_tests.integration_tests import (
+from langchain_core.tools import BaseTool
+from langchain_tests.integration_tests import (
     ChatModelIntegrationTests,
 )
 
@@ -20,8 +21,10 @@ class BaseTestGroq(ChatModelIntegrationTests):
         return ChatGroq
 
     @pytest.mark.xfail(reason="Not yet implemented.")
-    def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
-        super().test_tool_message_histories_list_content(model)
+    def test_tool_message_histories_list_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_histories_list_content(model, my_adder_tool)
 
 
 class TestGroqLlama(BaseTestGroq):
@@ -47,5 +50,16 @@ class TestGroqLlama(BaseTestGroq):
     @pytest.mark.xfail(
         reason=("Fails with 'Failed to call a function. Please adjust your prompt.'")
     )
-    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
-        super().test_tool_message_histories_string_content(model)
+    def test_tool_message_histories_string_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_histories_string_content(model, my_adder_tool)
+
+    @pytest.mark.xfail(
+        reason=(
+            "Sometimes fails with 'Failed to call a function. "
+            "Please adjust your prompt.'"
+        )
+    )
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        super().test_bind_runnables_as_tools(model)

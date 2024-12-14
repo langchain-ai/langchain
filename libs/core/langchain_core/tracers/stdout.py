@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
@@ -54,7 +54,7 @@ class FunctionCallbackHandler(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         pass
 
-    def get_parents(self, run: Run) -> List[Run]:
+    def get_parents(self, run: Run) -> list[Run]:
         """Get the parents of a run.
 
         Args:
