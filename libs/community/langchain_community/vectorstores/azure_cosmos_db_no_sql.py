@@ -552,7 +552,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: Optional[List[float]] = None,
         search_text: Optional[str] = None,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[Dict[str, Any]] = None,
         offset_limit: Optional[str] = None,
         projection_mapping: Optional[Dict[str, Any]] = None,
     ) -> Tuple[str, List[Dict[str, Any]]]:

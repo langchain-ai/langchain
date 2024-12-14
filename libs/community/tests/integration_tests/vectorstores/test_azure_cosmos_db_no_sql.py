@@ -80,7 +80,7 @@ def get_vector_embedding_policy(
     }
 
 
-def get_full_text_policy():
+def get_full_text_policy() -> dict:
     return {
         "defaultLanguage": "en-US",
         "fullTextPaths": [{"path": "/text", "language": "en-US"}],
