@@ -44,10 +44,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         cosmos_client: CosmosClient,
         embedding: Embeddings,
         vector_embedding_policy: Dict[str, Any],
-        full_text_policy: Dict[str, Any],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
+        full_text_policy: Optional[Dict[str, Any]] = None,
         database_name: str = "vectorSearchDB",
         container_name: str = "vectorSearchContainer",
         text_key: str = "text",
@@ -486,9 +486,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
         **kwargs: Any,
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
@@ -521,9 +521,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
         **kwargs: Any,
     ) -> List[Document]:
         # compute the embeddings vector from the query string
