@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from langchain_community.document_loaders import AdobePDFExtractLoader
 from langchain_community.document_loaders.parsers import (
     AdobePDFExtractParser,
 )
@@ -41,26 +40,14 @@ def test_adobe_pdf_services(
 def test_adobe_pdf_services_loader_modes(
     mock_pdf_services: MagicMock, mock_credentials: MagicMock, mode: str
 ) -> None:
-    loader = AdobePDFExtractLoader(
+    blob_parser = AdobePDFExtractParser(
         client_id="client_id",
         client_secret="client_secret",
-        file_path="path/to/file.pdf",
-        mode=mode,
+        mode=mode,  # type: ignore
         embed_figures=True,
     )
     mock_credentials.assert_called_once_with(
         client_id="client_id", client_secret="client_secret"
     )
     mock_pdf_services.assert_called_once_with(credentials=mock_credentials())
-    assert loader.parser.mode == mode
-
-
-def test_adobe_pdf_services_loader_invalid_file_path() -> None:
-    with pytest.raises(AssertionError):
-        AdobePDFExtractLoader(
-            client_id="client_id",
-            client_secret="client_secret",
-            file_path=None,  # type: ignore[arg-type]
-            mode="chunks",
-            embed_figures=True,
-        )
+    assert blob_parser.mode == mode

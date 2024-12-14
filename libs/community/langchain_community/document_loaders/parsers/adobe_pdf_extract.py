@@ -54,10 +54,16 @@ class AdobePDFExtractParser(BaseBlobParser):
         mode: Literal["chunks", "json", "data"] = "chunks",
         embed_figures: bool = True,
     ):
-        from adobe.pdfservices.operation.auth.service_principal_credentials import (
-            ServicePrincipalCredentials,
-        )
-        from adobe.pdfservices.operation.pdf_services import PDFServices
+        try:
+            from adobe.pdfservices.operation.auth.service_principal_credentials import (
+                ServicePrincipalCredentials,
+            )
+            from adobe.pdfservices.operation.pdf_services import PDFServices
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "The Adobe PDF Services SDK is not installed. Please install it using "
+                "`pip install pdfservices-sdk`."
+            )
 
         self.credentials = ServicePrincipalCredentials(
             client_id=client_id, client_secret=client_secret
@@ -85,26 +91,10 @@ class AdobePDFExtractParser(BaseBlobParser):
     ) -> Iterator[Document]:
         headers: list = []
         current_paragraphs: list = []
-        header_page = None
+        header_page = 0
         paragraph_page = None
         last_header_level = None
         figures: dict = {}
-
-        def yield_chunk() -> Iterator[Document]:
-            if current_paragraphs:
-                merged_paragraphs = "".join([p for p in current_paragraphs]).strip()
-                yield Document(
-                    page_content=merged_paragraphs,
-                    metadata={
-                        "headers": headers.copy(),
-                        "page": header_page + 1
-                        if header_page
-                        else (paragraph_page or 0) + 1,
-                        "figures": figures,
-                    },
-                )
-                current_paragraphs.clear()
-                figures.clear()
 
         for element in json_data["elements"]:
             text = element.get("Text", "")
@@ -117,12 +107,25 @@ class AdobePDFExtractParser(BaseBlobParser):
                 if "Figure" in path:
                     continue
 
+                if current_paragraphs:
+                    merged_paragraphs = "".join([p for p in current_paragraphs]).strip()
+                    yield Document(
+                        page_content=merged_paragraphs,
+                        metadata={
+                            "headers": headers.copy(),
+                            "page": header_page + 1
+                            if header_page
+                            else (paragraph_page or 0) + 1,
+                            "figures": figures,
+                        },
+                    )
+                    current_paragraphs.clear()
+                    figures.clear()
+
                 if last_header_level and last_header_level < header_level:
-                    yield from yield_chunk()
                     headers.append(text)
 
                 else:
-                    yield from yield_chunk()
                     headers = headers[: header_level - 1]
                     headers.append(text)
 
@@ -158,7 +161,18 @@ class AdobePDFExtractParser(BaseBlobParser):
 
                 elif "Table" not in path:
                     current_paragraphs.append(text + "\n")
-        yield from yield_chunk()
+        if current_paragraphs:
+            merged_paragraphs = "".join([p for p in current_paragraphs]).strip()
+            yield Document(
+                page_content=merged_paragraphs,
+                metadata={
+                    "headers": headers.copy(),
+                    "page": header_page + 1
+                    if header_page
+                    else (paragraph_page or 0) + 1,
+                    "figures": figures,
+                },
+            )
 
     def _generate_docs_data(self, archive: zipfile.ZipFile) -> Iterator[Document]:
         from mimetypes import guess_type
