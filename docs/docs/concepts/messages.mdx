@@ -8,7 +8,7 @@
 
 Messages are the unit of communication in [chat models](/docs/concepts/chat_models). They are used to represent the input and output of a chat model, as well as any additional context or metadata that may be associated with a conversation.
 
-Each message has a **role** (e.g., "user", "assistant"), **content** (e.g., text, multimodal data), and additional metadata that can vary depending on the chat model provider.
+Each message has a **role** (e.g., "user", "assistant") and **content** (e.g., text, multimodal data) with additional metadata that varies depending on the chat model provider.
 
 LangChain provides a unified message format that can be used across chat models, allowing users to work with different chat models without worrying about the specific details of the message format used by each model provider.
 
@@ -39,6 +39,7 @@ The content of a message text or a list of dictionaries representing [multimodal
 Currently, most chat models support text as the primary content type, with some models also supporting multimodal data. However, support for multimodal data is still limited across most chat model providers.
 
 For more information see:
+* [SystemMessage](#systemmessage) -- for content which should be passed to direct the conversation
 * [HumanMessage](#humanmessage) -- for content in the input from the user.
 * [AIMessage](#aimessage) -- for content in the response from the model.
 * [Multimodality](/docs/concepts/multimodality) -- for more information on multimodal content.
