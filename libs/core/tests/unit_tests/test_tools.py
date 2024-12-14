@@ -2191,22 +2191,12 @@ def test_method_tool_self_ref() -> None:
 
     a = A(10)
     assert a.foo.invoke({"a": 1, "b": 2}) == 13
-
-
-def test_method_tool_args() -> None:
-    """Test that a method tool's args do not include self."""
-
-    class A:
-        def __init__(self, c: int):
-            self.c = c
-
-        @methodtool
-        def foo(self, a: int, b: int) -> int:
-            """Add two numbers to c."""
-            return a + b + self.c
-
-    a = A(10)
-    assert "self" not in a.foo.args
+    assert a.foo.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+    assert a.foo.name == "foo"
+    assert a.foo.description == "Add two numbers to c."
 
 
 async def test_method_tool_async() -> None:
@@ -2224,6 +2214,12 @@ async def test_method_tool_async() -> None:
     a = A(10)
     async_response = await a.foo.ainvoke({"a": 1, "b": 2})
     assert async_response == 13
+    assert a.foo.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+    assert a.foo.name == "foo"
+    assert a.foo.description == "Add two numbers to c."
 
 
 def test_method_tool_string_invoke() -> None:
@@ -2240,6 +2236,9 @@ def test_method_tool_string_invoke() -> None:
 
     a = A("a")
     assert a.foo.invoke("b") == "ab"
+    assert a.foo.args == {"b": {"title": "B", "type": "string"}}
+    assert a.foo.name == "foo"
+    assert a.foo.description == "Concatenate a and b."
 
 
 def test_method_tool_toolcall_invoke() -> None:
@@ -2266,35 +2265,19 @@ def test_method_tool_toolcall_invoke() -> None:
     tool_message = a.foo.invoke(tool_call)
 
     assert int(tool_message.content) == 13
-
-
-def test_method_tool_info() -> None:
-    """Test that a method tools have correct name/description/args schema."""
-
-    class A:
-        def __init__(self, c: int):
-            self.c = c
-
-        @methodtool
-        def foo(self, a: int, b: int) -> int:
-            """Add two numbers to c."""
-            return a + b + self.c
-
-    args = {
+    assert a.foo.args == {
         "a": {"title": "A", "type": "integer"},
         "b": {"title": "B", "type": "integer"},
     }
-
-    assert A.foo.name == "foo"
-    assert A.foo.description == "Add two numbers to c."
-    assert A.foo.args == args
+    assert a.foo.name == "foo"
+    assert a.foo.description == "Add two numbers to c."
 
 
 def test_method_tool_classmethod() -> None:
     """Test that a method tool can be a classmethod."""
 
     class A:
-        c = 5
+        c = 10
 
         @methodtool
         @classmethod
@@ -2302,22 +2285,13 @@ def test_method_tool_classmethod() -> None:
             """Add two numbers to c."""
             return a + b + cls.c
 
-    assert A.foo.invoke({"a": 1, "b": 2}) == 8
-
-
-def test_method_tool_classmethod_args() -> None:
-    """Test that a classmethod tool's args do not include cls."""
-
-    class A:
-        c = 5
-
-        @methodtool
-        @classmethod
-        def foo(cls, a: int, b: int) -> int:
-            """Add two numbers to c."""
-            return a + b + cls.c
-
-    assert "cls" not in A.foo.args
+    assert A.foo.invoke({"a": 1, "b": 2}) == 13
+    assert A.foo.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+    assert A.foo.name == "foo"
+    assert A.foo.description == "Add two numbers to c."
 
 
 def test_method_tool_nonstandard_self() -> None:
@@ -2334,14 +2308,19 @@ def test_method_tool_nonstandard_self() -> None:
 
     a = A(10)
     assert a.foo.invoke({"a": 1, "b": 2}) == 13
-    assert "s" not in a.foo.args
+    assert a.foo.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+    assert a.foo.name == "foo"
+    assert a.foo.description == "Add two numbers to c."
 
 
 def test_method_tool_nonstandard_cls() -> None:
     """Test that a classmethod tool can use a non-standard cls name."""
 
     class A:
-        c = 5
+        c = 10
 
         @methodtool
         @classmethod
@@ -2349,5 +2328,10 @@ def test_method_tool_nonstandard_cls() -> None:
             """Add two numbers to c."""
             return a + b + c.c
 
-    assert A.foo.invoke({"a": 1, "b": 2}) == 8
-    assert "c" not in A.foo.args
+    assert A.foo.invoke({"a": 1, "b": 2}) == 13
+    assert A.foo.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+    assert A.foo.name == "foo"
+    assert A.foo.description == "Add two numbers to c."
