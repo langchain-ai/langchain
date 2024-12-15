@@ -714,9 +714,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         clauses = []
 
         for condition in conditions:
-            property_name = condition["property"]
-            operator = condition["operator"]
-            value = condition["value"]
+            property_name = condition.get("property")
+            operator = condition.get("operator")
+            value = condition.get("value")
 
             if operator not in operator_map:
                 raise ValueError(f"Unsupported operator: {operator}")
