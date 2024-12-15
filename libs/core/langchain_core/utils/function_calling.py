@@ -687,3 +687,4 @@ def _recursive_set_additional_properties_false(
             _recursive_set_additional_properties_false(schema["items"])
 
     return schema
+    
