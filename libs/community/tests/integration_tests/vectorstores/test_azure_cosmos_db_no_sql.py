@@ -3,7 +3,7 @@
 import logging
 import os
 from time import sleep
-from typing import Any
+from typing import Any, Dict, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
@@ -11,6 +11,9 @@ from langchain_core.documents import Document
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
+    Condition,
+    CosmosDBQueryType,
+    PreFilter,
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -60,6 +63,7 @@ def get_vector_indexing_policy(embedding_type: str) -> dict:
         "includedPaths": [{"path": "/*"}],
         "excludedPaths": [{"path": '/"_etag"/?'}],
         "vectorIndexes": [{"path": "/embedding", "type": embedding_type}],
+        "fullTextIndexes": [{"path": "/text"}],
     }
 
 
@@ -78,6 +82,13 @@ def get_vector_embedding_policy(
     }
 
 
+def get_full_text_policy() -> dict:
+    return {
+        "defaultLanguage": "en-US",
+        "fullTextPaths": [{"path": "/text", "language": "en-US"}],
+    }
+
+
 class TestAzureCosmosDBNoSqlVectorSearch:
     def test_from_documents_cosine_distance(
         self,
@@ -86,12 +97,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
-        documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"b": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
-        ]
+        documents = self._get_documents()
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
@@ -105,13 +111,16 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
+            full_text_policy=get_full_text_policy(),
+            full_text_search_enabled=True,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search("Dogs", k=2)
+        output = store.similarity_search("intelligent herders", k=5)
 
         assert output
-        assert output[0].page_content == "Dogs are tough."
+        assert len(output) == 5
+        assert "Border Collies" in output[0].page_content
         safe_delete_database(cosmos_client)
 
     def test_from_texts_cosine_distance_delete_one(
@@ -120,13 +129,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         partition_key: Any,
         azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
-        texts = [
-            "Dogs are tough.",
-            "Cats have fluff.",
-            "What is a sandwich?",
-            "That fence is purple.",
-        ]
-        metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
+        texts, metadatas = self._get_texts_and_metadata()
 
         store = AzureCosmosDBNoSqlVectorSearch.from_texts(
             texts,
@@ -141,20 +144,24 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
+            full_text_policy=get_full_text_policy(),
+            full_text_search_enabled=True,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search("Dogs", k=1)
+        output = store.similarity_search("intelligent herders", k=1)
         assert output
-        assert output[0].page_content == "Dogs are tough."
+        assert len(output) == 1
+        assert "Border Collies" in output[0].page_content
 
         # delete one document
         store.delete_document_by_id(str(output[0].metadata["id"]))
         sleep(2)
 
-        output2 = store.similarity_search("Dogs", k=1)
+        output2 = store.similarity_search("intelligent herders", k=1)
         assert output2
-        assert output2[0].page_content != "Dogs are tough."
+        assert len(output2) == 1
+        assert "Border Collies" not in output2[0].page_content
         safe_delete_database(cosmos_client)
 
     def test_from_documents_cosine_distance_with_filtering(
@@ -164,12 +171,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
-        documents = [
-            Document(page_content="Dogs are tough.", metadata={"a": 1}),
-            Document(page_content="Cats have fluff.", metadata={"a": 1}),
-            Document(page_content="What is a sandwich?", metadata={"c": 1}),
-            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
-        ]
+        documents = self._get_documents()
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
@@ -183,33 +185,321 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
+            full_text_policy=get_full_text_policy(),
+            full_text_search_enabled=True,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search("Dogs", k=4)
+        output = store.similarity_search("intelligent herders", k=4)
         assert len(output) == 4
-        assert output[0].page_content == "Dogs are tough."
+        assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
 
-        pre_filter = {
-            "where_clause": "WHERE c.metadata.a=1",
-        }
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
+            ],
+        )
         output = store.similarity_search(
-            "Dogs", k=4, pre_filter=pre_filter, with_embedding=True
+            "intelligent herders", k=4, pre_filter=pre_filter, with_embedding=True
         )
 
-        assert len(output) == 2
-        assert output[0].page_content == "Dogs are tough."
+        assert len(output) == 3
+        assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
 
-        pre_filter = {
-            "where_clause": "WHERE c.metadata.a=1",
-            "limit_offset_clause": "OFFSET 0 LIMIT 1",
-        }
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
+            ],
+        )
+        offset_limit = "OFFSET 0 LIMIT 1"
 
-        output = store.similarity_search("Dogs", k=4, pre_filter=pre_filter)
+        output = store.similarity_search(
+            "intelligent herders", k=4, pre_filter=pre_filter, offset_limit=offset_limit
+        )
 
         assert len(output) == 1
-        assert output[0].page_content == "Dogs are tough."
+        assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
         safe_delete_database(cosmos_client)
+
+    def test_from_documents_full_text_and_hybrid(
+        self,
+        cosmos_client: Any,
+        partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
+    ) -> None:
+        """Test end to end construction and search."""
+        documents = self._get_documents()
+
+        store = AzureCosmosDBNoSqlVectorSearch.from_documents(
+            documents,
+            embedding=azure_openai_embeddings,
+            cosmos_client=cosmos_client,
+            database_name=database_name,
+            container_name=container_name,
+            vector_embedding_policy=get_vector_embedding_policy(
+                "cosine", "float32", 1536
+            ),
+            full_text_policy=get_full_text_policy(),
+            indexing_policy=get_vector_indexing_policy("diskANN"),
+            cosmos_container_properties={"partition_key": partition_key},
+            cosmos_database_properties={},
+            full_text_search_enabled=True,
+        )
+
+        sleep(480)  # waits for Cosmos DB to save contents to the collection
+
+        # Full text search contains any
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains_any",
+        #             "value": "intelligent herders",
+        #         },
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text",
+                    operator="$full_text_contains_all",
+                    value="intelligent herders",
+                ),
+            ],
+        )
+        output = store.similarity_search(
+            "intelligent herders",
+            k=5,
+            pre_filter=pre_filter,
+            query_type=CosmosDBQueryType.FULL_TEXT_SEARCH,
+        )
+
+        assert output
+        assert len(output) == 3
+        assert "Border Collies" in output[0].page_content
+
+        # Full text search contains all
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains_all",
+        #             "value": "intelligent herders",
+        #         },
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text",
+                    operator="$full_text_contains_all",
+                    value="intelligent herders",
+                ),
+            ],
+        )
+
+        output = store.similarity_search(
+            "intelligent herders",
+            k=5,
+            pre_filter=pre_filter,
+            query_type=CosmosDBQueryType.FULL_TEXT_SEARCH,
+        )
+
+        assert output
+        assert len(output) == 1
+        assert "Border Collies" in output[0].page_content
+
+        # Full text search BM25 ranking
+        output = store.similarity_search(
+            "intelligent herders", k=5, query_type=CosmosDBQueryType.FULL_TEXT_RANK
+        )
+
+        assert output
+        assert len(output) == 5
+        assert "Standard Poodles" in output[0].page_content
+
+        # Full text search BM25 ranking with filtering
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
+            ],
+        )
+        output = store.similarity_search(
+            "intelligent herders",
+            k=5,
+            pre_filter=pre_filter,
+            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+        )
+
+        assert output
+        assert len(output) == 3
+        assert "Border Collies" in output[0].page_content
+
+        # Hybrid search RRF ranking combination of full text search and vector search
+        output = store.similarity_search(
+            "intelligent herders", k=5, query_type=CosmosDBQueryType.HYBRID
+        )
+
+        assert output
+        assert len(output) == 5
+        assert "Border Collies" in output[0].page_content
+
+        # Hybrid search RRF ranking with filtering
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
+            ],
+        )
+        output = store.similarity_search(
+            "intelligent herders",
+            k=5,
+            pre_filter=pre_filter,
+            query_type=CosmosDBQueryType.HYBRID,
+        )
+
+        assert output
+        assert len(output) == 3
+        assert "Border Collies" in output[0].page_content
+
+        # Full text search BM25 ranking with full text filtering
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains",
+        #             "value": "energetic",
+        #         },
+        #     ]
+        # }
+
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text", operator="$full_text_contains", value="energetic"
+                ),
+            ],
+        )
+        output = store.similarity_search(
+            "intelligent herders",
+            k=5,
+            pre_filter=pre_filter,
+            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+        )
+
+        assert output
+        assert len(output) == 3
+        assert "Border Collies" in output[0].page_content
+
+        # Full text search BM25 ranking with full text filtering
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains",
+        #             "value": "energetic",
+        #         },
+        #         {"property": "metadata.a", "operator": "$eq", "value": 2},
+        #     ],
+        #     "logical_operator": "$and",
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text", operator="$full_text_contains", value="energetic"
+                ),
+                Condition(property="metadata.a", operator="$eq", value=2),
+            ],
+            logical_operator="$and",
+        )
+        output = store.similarity_search(
+            "intelligent herders",
+            k=5,
+            pre_filter=pre_filter,
+            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+        )
+
+        assert output
+        assert len(output) == 2
+        assert "Standard Poodles" in output[0].page_content
+
+    def _get_documents(self) -> List[Document]:
+        return [
+            Document(
+                page_content="Border Collies are intelligent, energetic "
+                "herders skilled in outdoor activities.",
+                metadata={"a": 1},
+            ),
+            Document(
+                page_content="Golden Retrievers are friendly, loyal companions "
+                "with excellent retrieving skills.",
+                metadata={"a": 2},
+            ),
+            Document(
+                page_content="Labrador Retrievers are playful, eager "
+                "learners and skilled retrievers.",
+                metadata={"a": 1},
+            ),
+            Document(
+                page_content="Australian Shepherds are agile, energetic "
+                "herders excelling in outdoor tasks.",
+                metadata={"a": 2, "b": 1},
+            ),
+            Document(
+                page_content="German Shepherds are brave, loyal protectors "
+                "excelling in versatile tasks.",
+                metadata={"a": 1, "b": 2},
+            ),
+            Document(
+                page_content="Standard Poodles are intelligent, energetic "
+                "learners excelling in agility.",
+                metadata={"a": 2, "b": 3},
+            ),
+        ]
+
+    def _get_texts_and_metadata(self) -> Tuple[List[str], List[Dict[str, Any]]]:
+        texts = [
+            "Border Collies are intelligent, "
+            "energetic herders skilled in outdoor activities.",
+            "Golden Retrievers are friendly, "
+            "loyal companions with excellent retrieving skills.",
+            "Labrador Retrievers are playful, "
+            "eager learners and skilled retrievers.",
+            "Australian Shepherds are agile, "
+            "energetic herders excelling in outdoor tasks.",
+            "German Shepherds are brave, "
+            "loyal protectors excelling in versatile tasks.",
+            "Standard Poodles are intelligent, "
+            "energetic learners excelling in agility.",
+        ]
+        metadatas = [
+            {"a": 1},
+            {"a": 2},
+            {"a": 1},
+            {"a": 2, "b": 1},
+            {"a": 1, "b": 2},
+            {"a": 2, "b": 1},
+        ]
+        return texts, metadatas
