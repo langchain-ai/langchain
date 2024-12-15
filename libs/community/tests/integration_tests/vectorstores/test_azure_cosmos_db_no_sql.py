@@ -6,15 +6,15 @@ from time import sleep
 from typing import Any, Dict, List, Tuple
 
 import pytest
+
 from langchain_core.documents import Document
+from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
     Condition,
     CosmosDBQueryType,
     PreFilter,
 )
-
-from langchain_community.embeddings import OpenAIEmbeddings
 
 logging.basicConfig(level=logging.DEBUG)
 
