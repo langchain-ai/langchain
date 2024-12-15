@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 from langchain_core.documents import Document
