@@ -312,24 +312,35 @@ class YoutubeLoader(BaseLoader):
             - and more.
         """
         try:
-            from pytube import YouTube
+            from yt_dlp import YoutubeDL
 
         except ImportError:
             raise ImportError(
-                'Could not import "pytube" Python package. '
-                "Please install it with `pip install pytube`."
+                'Could not import "yt_dlp" Python package. '
+                "Please install it with `pip install yt_dlp`."
             )
-        yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}")
+        ydl_opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+        with YoutubeDL(ydl_opts) as ydl:
+            yt = ydl.extract_info(
+                f"https://www.youtube.com/watch?v={self.video_id}", download=False
+            )
+            publish_date = yt.get("upload_date")
+            if publish_date:
+                try:
+                    from datetime import datetime
+
+                    publish_date = datetime.strptime(publish_date, "%Y%m%d")
+                except (ValueError, TypeError):
+                    publish_date = "Unknown"
         video_info = {
-            "title": yt.title or "Unknown",
-            "description": yt.description or "Unknown",
-            "view_count": yt.views or 0,
-            "thumbnail_url": yt.thumbnail_url or "Unknown",
-            "publish_date": yt.publish_date.strftime("%Y-%m-%d %H:%M:%S")
-            if yt.publish_date
-            else "Unknown",
-            "length": yt.length or 0,
-            "author": yt.author or "Unknown",
+            "title": yt.get("title", "Unknown"),
+            "description": yt.get("description", "Unknown"),
+            "view_count": yt.get("view_count", 0),
+            "publish_date": publish_date,
+            "length": yt.get("duration", 0),
+            "author": yt.get("uploader", "Unknown"),
+            "channel_id": yt.get("channel_id", "Unknown"),
+            "webpage_url": yt.get("webpage_url", "Unknown"),
         }
         return video_info
 
