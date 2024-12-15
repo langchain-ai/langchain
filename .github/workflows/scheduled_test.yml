@@ -14,17 +14,7 @@ on:
 
 env:
   POETRY_VERSION: "1.8.4"
-  DEFAULT_LIBS: >
-    [
-      "libs/partners/openai",
-      "libs/partners/anthropic",
-      "libs/partners/fireworks",
-      "libs/partners/groq",
-      "libs/partners/mistralai",
-      "libs/partners/google-vertexai",
-      "libs/partners/google-genai",
-      "libs/partners/aws"
-    ]
+  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
 
 jobs:
   compute-matrix:

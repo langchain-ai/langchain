@@ -3,7 +3,7 @@
 import math
 import os
 import tempfile
-from typing import List
+from typing import List, cast
 
 import numpy as np
 import pytest
@@ -60,13 +60,13 @@ class RandomEmbeddings(Embeddings):
     """Fake embeddings with random vectors. For testing purposes."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [np.random.rand(100).tolist() for _ in texts]
+        return [cast(list[float], np.random.rand(100).tolist()) for _ in texts]
 
     def embed_query(self, text: str) -> List[float]:
-        return np.random.rand(100).tolist()
+        return cast(list[float], np.random.rand(100).tolist())
 
     def embed_image(self, uris: List[str]) -> List[List[float]]:
-        return [np.random.rand(100).tolist() for _ in uris]
+        return [cast(list[float], np.random.rand(100).tolist()) for _ in uris]
 
 
 class IncrementalEmbeddings(Embeddings):
