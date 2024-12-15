@@ -7,12 +7,14 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
+from libs.community.langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+    AzureCosmosDBNoSqlVectorSearch,
+    Condition,
+    CosmosDBQueryType,
+    PreFilter,
+)
 
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
-    AzureCosmosDBNoSqlVectorSearch,
-    CosmosDBQueryType,
-)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -193,11 +195,16 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
 
-        pre_filter = {
-            "conditions": [
-                {"property": "metadata.a", "operator": "$eq", "value": 1},
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
             ],
-        }
+        )
         output = store.similarity_search(
             "intelligent herders", k=4, pre_filter=pre_filter, with_embedding=True
         )
@@ -206,11 +213,16 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
 
-        pre_filter = {
-            "conditions": [
-                {"property": "metadata.a", "operator": "$eq", "value": 1},
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
             ],
-        }
+        )
         offset_limit = "OFFSET 0 LIMIT 1"
 
         output = store.similarity_search(
@@ -250,15 +262,24 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         sleep(480)  # waits for Cosmos DB to save contents to the collection
 
         # Full text search contains any
-        pre_filter = {
-            "conditions": [
-                {
-                    "property": "text",
-                    "operator": "$full_text_contains_any",
-                    "value": "intelligent herders",
-                },
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains_any",
+        #             "value": "intelligent herders",
+        #         },
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text",
+                    operator="$full_text_contains_all",
+                    value="intelligent herders",
+                ),
             ],
-        }
+        )
         output = store.similarity_search(
             "intelligent herders",
             k=5,
@@ -271,15 +292,25 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Full text search contains all
-        pre_filter = {
-            "conditions": [
-                {
-                    "property": "text",
-                    "operator": "$full_text_contains_all",
-                    "value": "intelligent herders",
-                },
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains_all",
+        #             "value": "intelligent herders",
+        #         },
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text",
+                    operator="$full_text_contains_all",
+                    value="intelligent herders",
+                ),
             ],
-        }
+        )
+
         output = store.similarity_search(
             "intelligent herders",
             k=5,
@@ -301,11 +332,16 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Standard Poodles" in output[0].page_content
 
         # Full text search BM25 ranking with filtering
-        pre_filter = {
-            "conditions": [
-                {"property": "metadata.a", "operator": "$eq", "value": 1},
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
             ],
-        }
+        )
         output = store.similarity_search(
             "intelligent herders",
             k=5,
@@ -327,11 +363,16 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Hybrid search RRF ranking with filtering
-        pre_filter = {
-            "conditions": [
-                {"property": "metadata.a", "operator": "$eq", "value": 1},
+        # pre_filter = {
+        #     "conditions": [
+        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
+        #     ],
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(property="metadata.a", operator="$eq", value=1),
             ],
-        }
+        )
         output = store.similarity_search(
             "intelligent herders",
             k=5,
@@ -344,15 +385,23 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Full text search BM25 ranking with full text filtering
-        pre_filter = {
-            "conditions": [
-                {
-                    "property": "text",
-                    "operator": "$full_text_contains",
-                    "value": "energetic",
-                },
-            ]
-        }
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains",
+        #             "value": "energetic",
+        #         },
+        #     ]
+        # }
+
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text", operator="$full_text_contains", value="energetic"
+                ),
+            ],
+        )
         output = store.similarity_search(
             "intelligent herders",
             k=5,
@@ -365,17 +414,26 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Full text search BM25 ranking with full text filtering
-        pre_filter = {
-            "conditions": [
-                {
-                    "property": "text",
-                    "operator": "$full_text_contains",
-                    "value": "energetic",
-                },
-                {"property": "metadata.a", "operator": "$eq", "value": 2},
+        # pre_filter = {
+        #     "conditions": [
+        #         {
+        #             "property": "text",
+        #             "operator": "$full_text_contains",
+        #             "value": "energetic",
+        #         },
+        #         {"property": "metadata.a", "operator": "$eq", "value": 2},
+        #     ],
+        #     "logical_operator": "$and",
+        # }
+        pre_filter = PreFilter(
+            conditions=[
+                Condition(
+                    property="text", operator="$full_text_contains", value="energetic"
+                ),
+                Condition(property="metadata.a", operator="$eq", value=2),
             ],
-            "logical_operator": "$and",
-        }
+            logical_operator="$and",
+        )
         output = store.similarity_search(
             "intelligent herders",
             k=5,

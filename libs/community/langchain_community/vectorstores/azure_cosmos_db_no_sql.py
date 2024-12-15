@@ -3,13 +3,13 @@ from __future__ import annotations
 import uuid
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, Field
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -729,7 +729,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             if "full_text" in condition.operator:
                 if not isinstance(condition.value, str):
                     raise ValueError(
-                        f"Expected a string for {condition.operator}, got {type(condition.value)}"
+                        f"Expected a string for {condition.operator}, "
+                        f"got {type(condition.value)}"
                     )
                 search_terms = ", ".join(
                     f"'{term}'" for term in condition.value.split()
@@ -743,7 +744,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 if isinstance(condition.value, str):
                     value = f"'{condition.value}'"
                 elif isinstance(condition.value, list):
-                    value = f"({', '.join(map(str, condition.value))})"  # e.g., for IN clauses
+                    # e.g., for IN clauses
+                    value = f"({', '.join(map(str, condition.value))})"
                 clauses.append(f"c.{condition.property} {sql_operator} {value}")
         return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
 
