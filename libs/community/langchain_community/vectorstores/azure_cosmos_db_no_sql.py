@@ -501,15 +501,15 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
+        pre_filter: Optional[PreFilter] = None,
+        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
-        pre_filter = {}
-        with_embedding = False
-        if kwargs["pre_filter"]:
-            pre_filter = kwargs["pre_filter"]
-        if kwargs["with_embedding"]:
-            with_embedding = kwargs["with_embedding"]
+        # if kwargs["pre_filter"]:
+        #     pre_filter = kwargs["pre_filter"]
+        # if kwargs["with_embedding"]:
+        #     with_embedding = kwargs["with_embedding"]
         docs = self._similarity_search_with_score(
             embeddings=embedding,
             k=fetch_k,
@@ -536,15 +536,15 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
+        pre_filter: Optional[PreFilter] = None,
+        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         # compute the embeddings vector from the query string
-        pre_filter = {}
-        with_embedding = False
-        if kwargs["pre_filter"]:
-            pre_filter = kwargs["pre_filter"]
-        if kwargs["with_embedding"]:
-            with_embedding = kwargs["with_embedding"]
+        # if kwargs["pre_filter"]:
+        #     pre_filter = kwargs["pre_filter"]
+        # if kwargs["with_embedding"]:
+        #     with_embedding = kwargs["with_embedding"]
         embeddings = self._embedding.embed_query(query)
 
         docs = self.max_marginal_relevance_search_by_vector(
@@ -719,7 +719,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 f"unsupported logical_operator: {pre_filter.logical_operator}"
             )
 
-        sql_logical_operator = operator_map.get(pre_filter.logical_operator)
+        sql_logical_operator = operator_map.get(pre_filter.logical_operator or "", "")
         clauses = []
 
         for condition in pre_filter.conditions:
