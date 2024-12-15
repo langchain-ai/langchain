@@ -243,6 +243,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         )[0]
         return embedding.tolist()
 
+
 @deprecated(
     since="0.2.2",
     removal="1.0",
