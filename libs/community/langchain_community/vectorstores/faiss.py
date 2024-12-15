@@ -288,7 +288,14 @@ class FAISS(VectorStore):
         _len_check_if_sized(texts, ids, "texts", "ids")
 
         _metadatas = metadatas or ({} for _ in texts)
+<<<<<<< HEAD
         documents = [Document(id=id_, page_content=t, metadata=m) for id_, t, m in zip(ids, texts, _metadatas)]
+=======
+        documents = [
+            Document(id=id_, page_content=t, metadata=m)
+            for id_, t, m in zip(ids, texts, _metadatas)
+        ]
+>>>>>>> a699b69385b8781f8465316bf17eb35dfb1562d0
 
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
 
