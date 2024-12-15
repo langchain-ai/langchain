@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
-from libs.community.langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
     Condition,
     CosmosDBQueryType,
