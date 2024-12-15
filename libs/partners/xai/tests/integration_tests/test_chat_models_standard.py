@@ -5,6 +5,7 @@ from typing import Optional, Type
 import pytest  # type: ignore[import-not-found]
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_core.tools import BaseTool
 from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
     ChatModelIntegrationTests,  # type: ignore[import-not-found]
 )
@@ -40,13 +41,19 @@ class TestXAIStandard(ChatModelIntegrationTests):
         super().test_usage_metadata_streaming(model)
 
     @pytest.mark.xfail(reason="Can't handle AIMessage with empty content.")
-    def test_tool_message_error_status(self, model: BaseChatModel) -> None:
-        super().test_tool_message_error_status(model)
+    def test_tool_message_error_status(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_error_status(model, my_adder_tool)
 
     @pytest.mark.xfail(reason="Can't handle AIMessage with empty content.")
-    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
-        super().test_structured_few_shot_examples(model)
+    def test_structured_few_shot_examples(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_structured_few_shot_examples(model, my_adder_tool)
 
     @pytest.mark.xfail(reason="Can't handle AIMessage with empty content.")
-    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
-        super().test_tool_message_histories_string_content(model)
+    def test_tool_message_histories_string_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_histories_string_content(model, my_adder_tool)

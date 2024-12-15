@@ -170,6 +170,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return Neo4jTranslator()
 
         try:
+            # Trying langchain_chroma import if exists
             from langchain_chroma import Chroma
         except ImportError:
             pass
@@ -203,6 +204,16 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         else:
             if isinstance(vectorstore, HanaDB):
                 return HanaTranslator()
+
+        try:
+            # Trying langchain_weaviate (weaviate v4) import if exists
+            from langchain_weaviate.vectorstores import WeaviateVectorStore
+
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, WeaviateVectorStore):
+                return WeaviateTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
