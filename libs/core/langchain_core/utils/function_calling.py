@@ -610,7 +610,8 @@ def _parse_google_docstring(
     """
     if not docstring:
         if error_on_invalid_docstring:
-            raise ValueError("Found invalid Google-Style docstring.")
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
         return "", {}
 
     docstring_blocks = docstring.split("\n\n")
@@ -621,7 +622,9 @@ def _parse_google_docstring(
         }
         has_args_section = any(block.startswith("Args:") for block in docstring_blocks)
         if filtered_annotations and not has_args_section:
-            raise ValueError("Found invalid Google-Style docstring.")
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
+    
     description_blocks = []
     args_block = None
     for block in docstring_blocks:
@@ -643,7 +646,9 @@ def _parse_google_docstring(
                 arg_descriptions[arg.strip()] = desc.strip()
             elif arg:
                 arg_descriptions[arg.strip()] += " " + line.strip()
+    
     return description, arg_descriptions
+
 
 
 
