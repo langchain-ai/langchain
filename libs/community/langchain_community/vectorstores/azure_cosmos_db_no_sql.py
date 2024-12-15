@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 Condition = Dict[str, Union[str, Any]]
 PreFilter = Dict[str, Union[List[Condition], str]]
 
+
 class CosmosDBQueryType(str, Enum):
     """CosmosDB Query Type"""
 
