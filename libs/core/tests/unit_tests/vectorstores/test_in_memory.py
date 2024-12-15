@@ -2,10 +2,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from langchain_tests.integration_tests.vectorstores import (
-    AsyncReadWriteTestSuite,
-    ReadWriteTestSuite,
-)
+from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
@@ -13,15 +10,9 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from tests.unit_tests.stubs import _any_id_document
 
 
-class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
+class TestInMemoryStandard(VectorStoreIntegrationTests):
     @pytest.fixture
     def vectorstore(self) -> InMemoryVectorStore:
-        return InMemoryVectorStore(embedding=self.get_embeddings())
-
-
-class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
-    @pytest.fixture
-    async def vectorstore(self) -> InMemoryVectorStore:
         return InMemoryVectorStore(embedding=self.get_embeddings())
 
 

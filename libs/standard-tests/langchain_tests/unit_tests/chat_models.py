@@ -11,7 +11,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field, SecretStr
 from pydantic.v1 import (
     BaseModel as BaseModelV1,
@@ -28,15 +28,12 @@ from langchain_tests.base import BaseStandardTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-class Person(BaseModel):  # Used by some dependent tests. Should be deprecated.
-    """Record attributes of a person."""
-
-    name: str = Field(..., description="The name of the person.")
-    age: int = Field(..., description="The age of the person.")
-
-
 def generate_schema_pydantic_v1_from_2() -> Any:
-    """Use to generate a schema from v1 namespace in pydantic 2."""
+    """
+    Use to generate a schema from v1 namespace in pydantic 2.
+
+    :private:
+    """
     if PYDANTIC_MAJOR_VERSION != 2:
         raise AssertionError("This function is only compatible with Pydantic v2.")
 
@@ -50,7 +47,11 @@ def generate_schema_pydantic_v1_from_2() -> Any:
 
 
 def generate_schema_pydantic() -> Any:
-    """Works with either pydantic 1 or 2"""
+    """
+    Works with either pydantic 1 or 2
+
+    :private:
+    """
 
     class PersonA(BaseModel):
         """Record attributes of a person."""
@@ -67,19 +68,150 @@ if PYDANTIC_MAJOR_VERSION == 2:
     TEST_PYDANTIC_MODELS.append(generate_schema_pydantic_v1_from_2())
 
 
-@tool
-def my_adder_tool(a: int, b: int) -> int:
-    """Takes two integers, a and b, and returns their sum."""
-    return a + b
-
-
-def my_adder(a: int, b: int) -> int:
-    """Takes two integers, a and b, and returns their sum."""
-    return a + b
-
-
 class ChatModelTests(BaseStandardTests):
     """Base class for chat model tests.
+
+    :private:
+    """  # noqa: E501
+
+    @property
+    @abstractmethod
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        """The chat model class to test, e.g., ``ChatParrotLink``."""
+        ...
+
+    @property
+    def chat_model_params(self) -> dict:
+        """Initialization parameters for the chat model."""
+        return {}
+
+    @property
+    def standard_chat_model_params(self) -> dict:
+        """:private:"""
+        return {
+            "temperature": 0,
+            "max_tokens": 100,
+            "timeout": 60,
+            "stop": [],
+            "max_retries": 2,
+        }
+
+    @pytest.fixture
+    def model(self) -> BaseChatModel:
+        """:private:"""
+        return self.chat_model_class(
+            **{**self.standard_chat_model_params, **self.chat_model_params}
+        )
+
+    @pytest.fixture
+    def my_adder_tool(self) -> BaseTool:
+        """:private:"""
+
+        @tool
+        def my_adder_tool(a: int, b: int) -> int:
+            """Takes two integers, a and b, and returns their sum."""
+            return a + b
+
+        return my_adder_tool
+
+    @property
+    def has_tool_calling(self) -> bool:
+        """(bool) whether the model supports tool calling."""
+        return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
+
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """(None or str) to use for tool choice when used in tests."""
+        return None
+
+    @property
+    def has_structured_output(self) -> bool:
+        """(bool) whether the chat model supports structured output."""
+        return (
+            self.chat_model_class.with_structured_output
+            is not BaseChatModel.with_structured_output
+        )
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        """(bool) whether the chat model supports image inputs, defaults to
+        ``False``."""
+        return False
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        """(bool) whether the chat model supports video inputs, efaults to ``False``.
+        No current tests are written for this feature."""
+        return False
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        """(bool) whether the chat model returns usage metadata on invoke and streaming
+        responses."""
+        return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        """(bool) whether the chat model supports Anthropic-style inputs."""
+        return False
+
+    @property
+    def supports_image_tool_message(self) -> bool:
+        """(bool) whether the chat model supports ToolMessages that include image
+        content."""
+        return False
+
+    @property
+    def supported_usage_metadata_details(
+        self,
+    ) -> Dict[
+        Literal["invoke", "stream"],
+        List[
+            Literal[
+                "audio_input",
+                "audio_output",
+                "reasoning_output",
+                "cache_read_input",
+                "cache_creation_input",
+            ]
+        ],
+    ]:
+        """(dict) what usage metadata details are emitted in invoke and stream. Only
+        needs to be overridden if these details are returned by the model."""
+        return {"invoke": [], "stream": []}
+
+
+class ChatModelUnitTests(ChatModelTests):
+    """Base class for chat model unit tests.
+
+    Test subclasses must implement the ``chat_model_class`` and
+    ``chat_model_params`` properties to specify what model to test and its
+    initialization parameters.
+
+    Example:
+
+    .. code-block:: python
+
+        from typing import Type
+
+        from langchain_tests.unit_tests import ChatModelUnitTests
+        from my_package.chat_models import MyChatModel
+
+
+        class TestMyChatModelUnit(ChatModelUnitTests):
+            @property
+            def chat_model_class(self) -> Type[MyChatModel]:
+                # Return the chat model class to test here
+                return MyChatModel
+
+            @property
+            def chat_model_params(self) -> dict:
+                # Return initialization parameters for the model.
+                return {"model": "model-001", "temperature": 0}
+
+    .. note::
+          API references for individual test methods include troubleshooting tips.
+
 
     Test subclasses must implement the following two properties:
 
@@ -115,6 +247,14 @@ class ChatModelTests(BaseStandardTests):
 
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
+
+        Example override:
+
+        .. code-block:: python
+
+            @property
+            def has_tool_calling(self) -> bool:
+                return True
 
     .. dropdown:: tool_choice_value
 
@@ -275,145 +415,6 @@ class ChatModelTests(BaseStandardTests):
         cached, audio, or reasoning.
 
         Only needs to be overridden if these details are supplied.
-    """  # noqa: E501
-
-    @property
-    @abstractmethod
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        """The chat model class to test, e.g., `ChatParrotLink`."""
-        ...
-
-    @property
-    def chat_model_params(self) -> dict:
-        """Initialization parameters for the chat mobdel."""
-        return {}
-
-    @property
-    def standard_chat_model_params(self) -> dict:
-        """:meta private:"""
-        return {
-            "temperature": 0,
-            "max_tokens": 100,
-            "timeout": 60,
-            "stop": [],
-            "max_retries": 2,
-        }
-
-    @pytest.fixture
-    def model(self) -> BaseChatModel:
-        """Fixture that returns an instance of the chat model. Should not be
-        overridden."""
-        return self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
-        )
-
-    @property
-    def has_tool_calling(self) -> bool:
-        """Boolean property indicating whether the model supports tool calling."""
-        return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
-
-    @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
-        return None
-
-    @property
-    def has_structured_output(self) -> bool:
-        """Boolean property indicating whether the chat model supports structured
-        output."""
-        return (
-            self.chat_model_class.with_structured_output
-            is not BaseChatModel.with_structured_output
-        )
-
-    @property
-    def supports_image_inputs(self) -> bool:
-        """Boolean property indicating whether the chat model supports image inputs.
-        Defaults to ``False``."""
-        return False
-
-    @property
-    def supports_video_inputs(self) -> bool:
-        """Boolean property indicating whether the chat model supports image inputs.
-        Defaults to ``False``. No current tests are written for this feature."""
-        return False
-
-    @property
-    def returns_usage_metadata(self) -> bool:
-        """Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses."""
-        return True
-
-    @property
-    def supports_anthropic_inputs(self) -> bool:
-        """Boolean property indicating whether the chat model supports Anthropic-style
-        inputs."""
-        return False
-
-    @property
-    def supports_image_tool_message(self) -> bool:
-        """Boolean property indicating whether the chat model supports ToolMessages
-        that include image content."""
-        return False
-
-    @property
-    def supported_usage_metadata_details(
-        self,
-    ) -> Dict[
-        Literal["invoke", "stream"],
-        List[
-            Literal[
-                "audio_input",
-                "audio_output",
-                "reasoning_output",
-                "cache_read_input",
-                "cache_creation_input",
-            ]
-        ],
-    ]:
-        """Property controlling what usage metadata details are emitted in both invoke
-        and stream. Only needs to be overridden if these details are returned by the
-        model."""
-        return {"invoke": [], "stream": []}
-
-
-class ChatModelUnitTests(ChatModelTests):
-    """Base class for chat model unit tests.
-
-    Test subclasses must implement the following two properties:
-
-    chat_model_class
-        The chat model class to test, e.g., ``ChatParrotLink``.
-
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def chat_model_class(self) -> Type[ChatParrotLink]:
-                return ChatParrotLink
-
-    chat_model_params
-        Initialization parameters for the chat model.
-
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def chat_model_params(self) -> dict:
-                return {"model": "bird-brain-001", "temperature": 0}
-
-    .. note::
-          API references for individual test methods include troubleshooting tips.
-
-    .. note::
-        Test subclasses can control what features are tested (such as tool
-        calling or multi-modality) by selectively overriding the properties on the
-        class. Relevant properties are mentioned in the references for each method.
-        See this page for detail on all properties:
-        https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelTests.html
-
 
     Testing initialization from environment variables
         Some unit tests may require testing initialization from environment variables.
@@ -450,17 +451,15 @@ class ChatModelUnitTests(ChatModelTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:meta private:"""
+        """:private:"""
         params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-        """This property is used in unit tests to test initialization from environment
-        variables. It should return a tuple of three dictionaries that specify the
-        environment variables, additional initialization args, and expected instance
-        attributes to check."""
+        """(tuple) environment variables, additional initialization args, and expected
+        instance attributes for testing initialization from environment variables."""
         return {}, {}, {}
 
     def test_init(self) -> None:
@@ -486,7 +485,8 @@ class ChatModelUnitTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             If this test fails, ensure that ``init_from_env_params`` is specified
-            correctly.
+            correctly and that model parameters are properly set from environment
+            variables during initialization.
         """
         env_params, model_params, expected_attrs = self.init_from_env_params
         if not env_params:
@@ -524,6 +524,7 @@ class ChatModelUnitTests(ChatModelTests):
     def test_bind_tool_pydantic(
         self,
         model: BaseChatModel,
+        my_adder_tool: BaseTool,
     ) -> None:
         """Test that chat model correctly handles Pydantic models that are passed
         into ``bind_tools``. Test is skipped if the ``has_tool_calling`` property
@@ -539,6 +540,10 @@ class ChatModelUnitTests(ChatModelTests):
         """  # noqa: E501
         if not self.has_tool_calling:
             return
+
+        def my_adder(a: int, b: int) -> int:
+            """Takes two integers, a and b, and returns their sum."""
+            return a + b
 
         tools = [my_adder_tool, my_adder]
 

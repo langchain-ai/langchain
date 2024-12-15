@@ -643,10 +643,18 @@ def _parse_google_docstring(
         for line in args_block.split("\n")[1:]:
             if ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
+                arg = arg.strip()
+                arg_name, _, _annotations = arg.partition(" ")
+                if _annotations.startswith("(") and _annotations.endswith(")"):
+                    arg = arg_name
+                arg_descriptions[arg] = desc.strip()
             elif arg:
+<<<<<<< HEAD
                 arg_descriptions[arg.strip()] += " " + line.strip()
     
+=======
+                arg_descriptions[arg] += " " + line.strip()
+>>>>>>> e77052b4a51b9a662871c0680d34e51d04d8b317
     return description, arg_descriptions
 
 
