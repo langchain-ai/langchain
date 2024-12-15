@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Sized,
     Tuple,
     Union,
@@ -225,22 +226,12 @@ class FAISS(VectorStore):
         self.distance_strategy = distance_strategy
         self.override_relevance_score_fn = relevance_score_fn
         self._normalize_L2 = normalize_L2
-        if (
-            self.distance_strategy != DistanceStrategy.EUCLIDEAN_DISTANCE
-            and self._normalize_L2
-        ):
-            warnings.warn(
-                "Normalizing L2 is not applicable for "
-                f"metric type: {self.distance_strategy}"
-            )
+        if self.distance_strategy != DistanceStrategy.EUCLIDEAN_DISTANCE and self._normalize_L2:
+            warnings.warn("Normalizing L2 is not applicable for " f"metric type: {self.distance_strategy}")
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
-        return (
-            self.embedding_function
-            if isinstance(self.embedding_function, Embeddings)
-            else None
-        )
+        return self.embedding_function if isinstance(self.embedding_function, Embeddings) else None
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding_function, Embeddings):
@@ -292,13 +283,14 @@ class FAISS(VectorStore):
             )
 
         _len_check_if_sized(texts, metadatas, "texts", "metadatas")
+
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        _len_check_if_sized(texts, ids, "texts", "ids")
+
         _metadatas = metadatas or ({} for _ in texts)
-        documents = [
-            Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas)
-        ]
+        documents = [Document(id=id_, page_content=t, metadata=m) for id_, t, m in zip(ids, texts, _metadatas)]
 
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
-        _len_check_if_sized(documents, ids, "documents", "ids")
 
         if ids and len(ids) != len(set(ids)):
             raise ValueError("Duplicate ids found in the ids list.")
@@ -310,7 +302,6 @@ class FAISS(VectorStore):
         self.index.add(vector)
 
         # Add information to docstore and index.
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
         self.docstore.add({id_: doc for id_, doc in zip(ids, documents)})
         starting_len = len(self.index_to_docstore_id)
         index_to_id = {starting_len + j: id_ for j, id_ in enumerate(ids)}
@@ -436,15 +427,10 @@ class FAISS(VectorStore):
         if score_threshold is not None:
             cmp = (
                 operator.ge
-                if self.distance_strategy
-                in (DistanceStrategy.MAX_INNER_PRODUCT, DistanceStrategy.JACCARD)
+                if self.distance_strategy in (DistanceStrategy.MAX_INNER_PRODUCT, DistanceStrategy.JACCARD)
                 else operator.le
             )
-            docs = [
-                (doc, similarity)
-                for doc, similarity in docs
-                if cmp(similarity, score_threshold)
-            ]
+            docs = [(doc, similarity) for doc, similarity in docs if cmp(similarity, score_threshold)]
         return docs[:k]
 
     async def asimilarity_search_with_score_by_vector(
@@ -638,9 +624,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter, fetch_k=fetch_k, **kwargs
-        )
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter, fetch_k=fetch_k, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search(
@@ -663,9 +647,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = await self.asimilarity_search_with_score(
-            query, k, filter=filter, fetch_k=fetch_k, **kwargs
-        )
+        docs_and_scores = await self.asimilarity_search_with_score(query, k, filter=filter, fetch_k=fetch_k, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_with_score_by_vector(
@@ -832,10 +814,8 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        docs_and_scores = (
-            await self.amax_marginal_relevance_search_with_score_by_vector(
-                embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
-            )
+        docs_and_scores = await self.amax_marginal_relevance_search_with_score_by_vector(
+            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -927,10 +907,7 @@ class FAISS(VectorStore):
             raise ValueError("No ids provided to delete.")
         missing_ids = set(ids).difference(self.index_to_docstore_id.values())
         if missing_ids:
-            raise ValueError(
-                f"Some specified ids do not exist in the current store. Ids not found: "
-                f"{missing_ids}"
-            )
+            raise ValueError(f"Some specified ids do not exist in the current store. Ids not found: " f"{missing_ids}")
 
         reversed_index = {id_: idx for idx, id_ in self.index_to_docstore_id.items()}
         index_to_delete = {reversed_index[id_] for id_ in ids}
@@ -938,11 +915,7 @@ class FAISS(VectorStore):
         self.index.remove_ids(np.fromiter(index_to_delete, dtype=np.int64))
         self.docstore.delete(ids)
 
-        remaining_ids = [
-            id_
-            for i, id_ in sorted(self.index_to_docstore_id.items())
-            if i not in index_to_delete
-        ]
+        remaining_ids = [id_ for i, id_ in sorted(self.index_to_docstore_id.items()) if i not in index_to_delete]
         self.index_to_docstore_id = {i: id_ for i, id_ in enumerate(remaining_ids)}
 
         return True
@@ -1271,10 +1244,7 @@ class FAISS(VectorStore):
         elif self.distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
         else:
-            raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product,"
-                " or euclidean"
-            )
+            raise ValueError("Unknown distance strategy, must be cosine, max_inner_product," " or euclidean")
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -1289,10 +1259,7 @@ class FAISS(VectorStore):
         # filtered.
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " FAISS constructor to normalize scores"
-            )
+            raise ValueError("relevance_score_fn must be provided to" " FAISS constructor to normalize scores")
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
@@ -1300,9 +1267,7 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        docs_and_rel_scores = [
-            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
-        ]
+        docs_and_rel_scores = [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
         return docs_and_rel_scores
 
     async def _asimilarity_search_with_relevance_scores(
@@ -1318,10 +1283,7 @@ class FAISS(VectorStore):
         # filtered.
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
-            raise ValueError(
-                "relevance_score_fn must be provided to"
-                " FAISS constructor to normalize scores"
-            )
+            raise ValueError("relevance_score_fn must be provided to" " FAISS constructor to normalize scores")
         docs_and_scores = await self.asimilarity_search_with_score(
             query,
             k=k,
@@ -1329,9 +1291,7 @@ class FAISS(VectorStore):
             fetch_k=fetch_k,
             **kwargs,
         )
-        docs_and_rel_scores = [
-            (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
-        ]
+        docs_and_rel_scores = [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
         return docs_and_rel_scores
 
     @staticmethod
@@ -1356,9 +1316,7 @@ class FAISS(VectorStore):
             return filter
 
         if not isinstance(filter, dict):
-            raise ValueError(
-                f"filter must be a dict of metadata or a callable, not {type(filter)}"
-            )
+            raise ValueError(f"filter must be a dict of metadata or a callable, not {type(filter)}")
 
         from operator import eq, ge, gt, le, lt, ne
 
@@ -1468,10 +1426,11 @@ class FAISS(VectorStore):
                 cond = filter_func(filter["$not"])
                 return lambda doc: not cond(doc)
 
-            conditions = [
-                filter_func_cond(field, condition)
-                for field, condition in filter.items()
-            ]
+            conditions = [filter_func_cond(field, condition) for field, condition in filter.items()]
             return lambda doc: all(condition(doc) for condition in conditions)
 
         return filter_func(filter)
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        docs = [self.docstore.search(id_) for id_ in ids]
+        return [doc for doc in docs if isinstance(doc, Document)]
