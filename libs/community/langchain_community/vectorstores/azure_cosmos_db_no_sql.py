@@ -14,7 +14,10 @@ from pydantic import BaseModel, Field
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from azure.cosmos.cosmos_client import CosmosClient
+    from azure.cosmos import CosmosClient
+    from azure.identity import DefaultAzureCredential
+
+USER_AGENT = ("LangChain-CDBNoSql-VectorStore-Python",)
 
 
 class Condition(BaseModel):
@@ -302,6 +305,46 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             an `AzureCosmosDBNoSqlVectorSearch` vectorstore.
         """
         vectorstore = AzureCosmosDBNoSqlVectorSearch._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+        )
+        return vectorstore
+
+    @classmethod
+    def from_connection_string_and_aad(
+            cls,
+            connection_string: str,
+            defaultAzureCredential: DefaultAzureCredential,
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[dict]] = None,
+            **kwargs: Any,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        cosmos_client = CosmosClient(
+            connection_string, defaultAzureCredential, user_agent=USER_AGENT
+        )
+        kwargs["cosmos_client"] = cosmos_client
+        vectorstore = cls._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+        )
+        return vectorstore
+
+    @classmethod
+    def from_connection_string_and_key(
+            cls,
+            connection_string: str,
+            key: str,
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[dict]] = None,
+            **kwargs: Any,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        cosmos_client = CosmosClient(connection_string, key, user_agent=USER_AGENT)
+        kwargs["cosmos_client"] = cosmos_client
+        vectorstore = cls._from_kwargs(embedding, **kwargs)
         vectorstore.add_texts(
             texts=texts,
             metadatas=metadatas,
