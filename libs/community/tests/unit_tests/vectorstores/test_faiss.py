@@ -1605,6 +1605,7 @@ def test_faiss_with_duplicate_ids() -> None:
 
     assert "Duplicate ids found in the ids list." in str(exc_info.value)
 
+
 @pytest.mark.requires("faiss")
 def test_faiss_document_ids() -> None:
     """Test whether FAISS assigns the correct document ids."""
