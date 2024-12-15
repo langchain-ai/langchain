@@ -701,7 +701,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         """
 
         conditions = pre_filter.get("conditions", [])
-        logical_operator = pre_filter.get("logical_operator", "").lower()
+        logical_operator = pre_filter.get("logical_operator", "")
 
         operator_map = self._where_clause_operator_map()
 
