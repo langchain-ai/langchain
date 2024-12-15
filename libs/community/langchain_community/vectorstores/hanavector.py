@@ -256,6 +256,89 @@ class HanaDB(VectorStore):
 
         return metadata, special_metadata
 
+    def create_hnsw_index(
+        self,
+        m: Optional[int] = None,  # Optional M parameter
+        ef_construction: Optional[int] = None,  # Optional efConstruction parameter
+        ef_search: Optional[int] = None,  # Optional efSearch parameter
+        index_name: Optional[str] = None,  # Optional custom index name
+    ) -> None:
+        """
+        Creates an HNSW vector index on a specified table and vector column with
+        optional build and search configurations. If no configurations are provided,
+        default parameters from the database are used. If provided values exceed the
+        valid ranges, an error will be raised.
+        The index is always created in ONLINE mode.
+
+        Args:
+            m: (Optional) Maximum number of neighbors per graph node
+                (Valid Range: [4, 1000])
+            ef_construction: (Optional) Maximal candidates to consider when building
+                                the graph (Valid Range: [1, 100000])
+            ef_search: (Optional) Minimum candidates for top-k-nearest neighbor
+                                queries (Valid Range: [1, 100000])
+            index_name: (Optional) Custom index name. Defaults to
+                        <table_name>_<distance_strategy>_idx
+        """
+        # Set default index name if not provided
+        distance_func_name = HANA_DISTANCE_FUNCTION[self.distance_strategy][0]
+        default_index_name = f"{self.table_name}_{distance_func_name}_idx"
+        # Use provided index_name or default
+        index_name = (
+            HanaDB._sanitize_name(index_name) if index_name else default_index_name
+        )
+        # Initialize build_config and search_config as empty dictionaries
+        build_config = {}
+        search_config = {}
+
+        # Validate and add m parameter to build_config if provided
+        if m is not None:
+            m = HanaDB._sanitize_int(m)
+            if not (4 <= m <= 1000):
+                raise ValueError("M must be in the range [4, 1000]")
+            build_config["M"] = m
+
+        # Validate and add ef_construction to build_config if provided
+        if ef_construction is not None:
+            ef_construction = HanaDB._sanitize_int(ef_construction)
+            if not (1 <= ef_construction <= 100000):
+                raise ValueError("efConstruction must be in the range [1, 100000]")
+            build_config["efConstruction"] = ef_construction
+
+        # Validate and add ef_search to search_config if provided
+        if ef_search is not None:
+            ef_search = HanaDB._sanitize_int(ef_search)
+            if not (1 <= ef_search <= 100000):
+                raise ValueError("efSearch must be in the range [1, 100000]")
+            search_config["efSearch"] = ef_search
+
+        # Convert build_config and search_config to JSON strings if they contain values
+        build_config_str = json.dumps(build_config) if build_config else ""
+        search_config_str = json.dumps(search_config) if search_config else ""
+
+        # Create the index SQL string with the ONLINE keyword
+        sql_str = (
+            f'CREATE HNSW VECTOR INDEX {index_name} ON "{self.table_name}" '
+            f'("{self.vector_column}") '
+            f"SIMILARITY FUNCTION {distance_func_name} "
+        )
+
+        # Append build_config to the SQL string if provided
+        if build_config_str:
+            sql_str += f"BUILD CONFIGURATION '{build_config_str}' "
+
+        # Append search_config to the SQL string if provided
+        if search_config_str:
+            sql_str += f"SEARCH CONFIGURATION '{search_config_str}' "
+
+        # Always add the ONLINE option
+        sql_str += "ONLINE "
+        cur = self.connection.cursor()
+        try:
+            cur.execute(sql_str)
+        finally:
+            cur.close()
+
     def add_texts(  # type: ignore[override]
         self,
         texts: Iterable[str],
@@ -418,18 +501,18 @@ class HanaDB(VectorStore):
         k = HanaDB._sanitize_int(k)
         embedding = HanaDB._sanitize_list_float(embedding)
         distance_func_name = HANA_DISTANCE_FUNCTION[self.distance_strategy][0]
-        embedding_as_str = ",".join(map(str, embedding))
+        embedding_as_str = "[" + ",".join(map(str, embedding)) + "]"
         sql_str = (
             f"SELECT TOP {k}"
             f'  "{self.content_column}", '  # row[0]
             f'  "{self.metadata_column}", '  # row[1]
             f'  TO_NVARCHAR("{self.vector_column}"), '  # row[2]
-            f'  {distance_func_name}("{self.vector_column}", TO_REAL_VECTOR '
-            f"     (ARRAY({embedding_as_str}))) AS CS "  # row[3]
+            f'  {distance_func_name}("{self.vector_column}", TO_REAL_VECTOR (?)) AS CS '
             f'FROM "{self.table_name}"'
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
         where_str, query_tuple = self._create_where_by_filter(filter)
+        query_tuple = (embedding_as_str,) + tuple(query_tuple)
         sql_str = sql_str + where_str
         sql_str = sql_str + order_str
         try:
@@ -512,7 +595,7 @@ class HanaDB(VectorStore):
                             where_str_logical,
                             query_tuple_logical,
                         ) = self._process_filter_object(logical_operand)
-                        where_str += where_str_logical
+                        where_str += "(" + where_str_logical + ")"
                         query_tuple += query_tuple_logical
                     continue
 

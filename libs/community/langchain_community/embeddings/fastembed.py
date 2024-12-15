@@ -1,6 +1,6 @@
 import importlib
 import importlib.metadata
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, cast
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
@@ -117,7 +117,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             embeddings = self.model.embed(
                 texts, batch_size=self.batch_size, parallel=self.parallel
             )
-        return [e.tolist() for e in embeddings]
+        return [cast(List[float], e.tolist()) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
         """Generate query embeddings using FastEmbed.
@@ -133,4 +133,4 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
                 text, batch_size=self.batch_size, parallel=self.parallel
             )
         )
-        return query_embeddings.tolist()
+        return cast(List[float], query_embeddings.tolist())
