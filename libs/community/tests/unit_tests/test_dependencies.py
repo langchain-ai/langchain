@@ -44,15 +44,14 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "aiohttp",
             "dataclasses-json",
             "httpx-sse",
-            "langchain",
             "langchain-core",
             "langsmith",
             "numpy",
-            "pillow",
-            "pydantic-settings",
             "python",
             "requests",
+            "pydantic-settings",
             "tenacity",
+            "langchain",
         ]
     )
 
