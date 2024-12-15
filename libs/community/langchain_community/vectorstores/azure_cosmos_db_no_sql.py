@@ -4,6 +4,7 @@ import uuid
 import warnings
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
+from pydantic import BaseModel, Field
 
 import numpy as np
 from langchain_core.documents import Document
@@ -15,8 +16,16 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     from azure.cosmos.cosmos_client import CosmosClient
 
-Condition = Dict[str, Union[str, Any]]
-PreFilter = Dict[str, Union[List[Condition], str]]
+
+class Condition(BaseModel):
+    property: str
+    operator: str
+    value: Any
+
+
+class PreFilter(BaseModel):
+    conditions: List[Condition] = Field(default_factory=list)
+    logical_operator: Optional[str] = None
 
 
 class CosmosDBQueryType(str, Enum):
@@ -572,7 +581,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query += " FROM c "
 
         # Add where_clause if specified
-        if pre_filter is not None and pre_filter.get("conditions") is not None:
+        if pre_filter:
             where_clause = self._build_where_clause(pre_filter)
             query += f"""{where_clause}"""
 
@@ -700,54 +709,42 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         Builds a where clause based on the given pre_filter.
         """
 
-        conditions = pre_filter.get("conditions", [])
-        logical_operator = pre_filter.get("logical_operator", "")
-
         operator_map = self._where_clause_operator_map()
 
-        if logical_operator and logical_operator not in operator_map:
-            raise ValueError(f"unsupported logical_operator: {logical_operator}")
+        if (
+            pre_filter.logical_operator
+            and pre_filter.logical_operator not in operator_map
+        ):
+            raise ValueError(
+                f"unsupported logical_operator: {pre_filter.logical_operator}"
+            )
 
-        sql_logical_operator = ""
-        if logical_operator:
-            sql_logical_operator = operator_map[logical_operator]
+        sql_logical_operator = operator_map.get(pre_filter.logical_operator)
         clauses = []
 
-        if isinstance(conditions, list) and all(
-            isinstance(cond, dict) for cond in conditions
-        ):
-            for condition in conditions:
-                property_name = condition.get("property")
-                operator = condition.get("operator")
-                value = condition.get("value")
+        for condition in pre_filter.conditions:
+            if condition.operator not in operator_map:
+                raise ValueError(f"Unsupported operator: {condition.operator}")
 
-                if operator not in operator_map:
-                    raise ValueError(f"Unsupported operator: {operator}")
-
-                if "full_text" in operator:
-                    if not isinstance(value, str):
-                        raise ValueError(
-                            f"Expected a string for {operator}, got {type(value)}"
-                        )
-                    # search_terms = ", ".join(f"'{term}'" for term in value.split())
-                    search_terms = ", ".join(f"'{term}'" for term in value.split())
-                    sql_function = operator_map[operator]
-                    clauses.append(f"{sql_function}(c.{property_name}, {search_terms})")
-                else:
-                    sql_operator = operator_map[operator]
-                    if isinstance(value, str):
-                        value = f"'{value}'"
-                    elif isinstance(value, list):
-                        value = (
-                            f"({', '.join(map(str, value))})"  # e.g., for IN clauses
-                        )
-
-                    clauses.append(f"c.{property_name} {sql_operator} {value}")
-        else:
-            raise ValueError(
-                "Please check the format of conditions in the pre "
-                "filter. Conditions must be a list of a dict"
-            )
+            if "full_text" in condition.operator:
+                if not isinstance(condition.value, str):
+                    raise ValueError(
+                        f"Expected a string for {condition.operator}, got {type(condition.value)}"
+                    )
+                search_terms = ", ".join(
+                    f"'{term}'" for term in condition.value.split()
+                )
+                sql_function = operator_map[condition.operator]
+                clauses.append(
+                    f"{sql_function}(c.{condition.property}, {search_terms})"
+                )
+            else:
+                sql_operator = operator_map[condition.operator]
+                if isinstance(condition.value, str):
+                    value = f"'{condition.value}'"
+                elif isinstance(condition.value, list):
+                    value = f"({', '.join(map(str, condition.value))})"  # e.g., for IN clauses
+                clauses.append(f"c.{condition.property} {sql_operator} {value}")
         return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
 
     def _execute_query(
