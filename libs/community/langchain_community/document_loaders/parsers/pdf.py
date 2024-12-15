@@ -236,17 +236,39 @@ class PDFMinerParser(BaseBlobParser):
 
         images = []
 
-        for img in list(filter(bool, map(get_image, page))):
-            if img.stream["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
+        for img in filter(bool, map(get_image, page)):
+            img_filter = img.stream["Filter"]
+            if isinstance(img_filter, list):
+                filter_names = [f.name for f in img_filter]
+            else:
+                filter_names = [img_filter.name]
+
+            without_loss = any(
+                name in _PDF_FILTER_WITHOUT_LOSS for name in filter_names
+            )
+            with_loss = any(name in _PDF_FILTER_WITH_LOSS for name in filter_names)
+            non_matching = {name for name in filter_names} - {
+                *_PDF_FILTER_WITHOUT_LOSS,
+                *_PDF_FILTER_WITH_LOSS,
+            }
+
+            if without_loss and with_loss:
+                warnings.warn(
+                    "Image has both lossy and lossless filters. Defaulting to lossless"
+                )
+
+            if non_matching:
+                warnings.warn(f"Unknown PDF Filter(s): {non_matching}")
+
+            if without_loss:
                 images.append(
                     np.frombuffer(img.stream.get_data(), dtype=np.uint8).reshape(
                         img.stream["Height"], img.stream["Width"], -1
                     )
                 )
-            elif img.stream["Filter"].name in _PDF_FILTER_WITH_LOSS:
+            elif with_loss:
                 images.append(img.stream.get_data())
-            else:
-                warnings.warn("Unknown PDF Filter!")
+
         return extract_from_images_with_rapidocr(images)
 
 

@@ -1138,7 +1138,20 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: false,
-            }
+            },
+            {
+                name: "SQLServer",
+                link: "sqlserver",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: false,
+                idsInAddDocuments: false,
+            }, 
         ],
     }
 };
