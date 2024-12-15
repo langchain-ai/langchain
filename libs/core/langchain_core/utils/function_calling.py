@@ -608,38 +608,31 @@ def _parse_google_docstring(
 
     Assumes the function docstring follows Google Python style guide.
     """
-    if docstring:
-        docstring_blocks = docstring.split("\n\n")
-        if error_on_invalid_docstring:
-            filtered_annotations = {
-                arg for arg in args if arg not in ("run_manager", "callbacks", "return")
-            }
-            if filtered_annotations and (
-                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
-            ):
-                msg = "Found invalid Google-Style docstring."
-                raise ValueError(msg)
-        descriptors = []
-        args_block = None
-        past_descriptors = False
-        for block in docstring_blocks:
-            if block.startswith("Args:"):
-                args_block = block
-                break
-            elif block.startswith(("Returns:", "Example:")):
-                # Don't break in case Args come after
-                past_descriptors = True
-            elif not past_descriptors:
-                descriptors.append(block)
-            else:
-                continue
-        description = " ".join(descriptors)
-    else:
+    if not docstring:
         if error_on_invalid_docstring:
             msg = "Found invalid Google-Style docstring."
             raise ValueError(msg)
-        description = ""
-        args_block = None
+        return "", {}
+    docstring_blocks = docstring.split("\n\n")
+    if error_on_invalid_docstring:
+        filtered_annotations = {
+            arg for arg in args if arg not in ("run_manager", "callbacks", "return")
+        }
+        has_args_section = any(block.startswith("Args:") for block in docstring_blocks)
+        if filtered_annotations and not has_args_section:
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
+    description_blocks = []
+    args_block = None
+    for block in docstring_blocks:
+        if block.startswith("Args:"):
+            args_block = block
+            break
+        elif block.startswith(("Returns:", "Example:")):
+            break
+        else:
+            description_blocks.append(block)
+    description = " ".join(description_blocks).strip()
     arg_descriptions = {}
     if args_block:
         arg = None
@@ -650,6 +643,7 @@ def _parse_google_docstring(
             elif arg:
                 arg_descriptions[arg.strip()] += " " + line.strip()
     return description, arg_descriptions
+
 
 
 def _py_38_safe_origin(origin: type) -> type:
