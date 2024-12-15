@@ -713,31 +713,41 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             sql_logical_operator = operator_map[logical_operator]
         clauses = []
 
-        for condition in conditions:
-            property_name = condition.get("property")
-            operator = condition.get("operator")
-            value = condition.get("value")
+        if isinstance(conditions, list) and all(
+            isinstance(cond, dict) for cond in conditions
+        ):
+            for condition in conditions:
+                property_name = condition.get("property")
+                operator = condition.get("operator")
+                value = condition.get("value")
 
-            if operator not in operator_map:
-                raise ValueError(f"Unsupported operator: {operator}")
+                if operator not in operator_map:
+                    raise ValueError(f"Unsupported operator: {operator}")
 
-            if "full_text" in operator:
-                if not isinstance(value, str):
-                    raise ValueError(
-                        f"Expected a string for {operator}, got {type(value)}"
-                    )
-                # search_terms = ", ".join(f"'{term}'" for term in value.split())
-                search_terms = ", ".join(f"'{term}'" for term in value.split())
-                sql_function = operator_map[operator]
-                clauses.append(f"{sql_function}(c.{property_name}, {search_terms})")
-            else:
-                sql_operator = operator_map[operator]
-                if isinstance(value, str):
-                    value = f"'{value}'"
-                elif isinstance(value, list):
-                    value = f"({', '.join(map(str, value))})"  # e.g., for IN clauses
+                if "full_text" in operator:
+                    if not isinstance(value, str):
+                        raise ValueError(
+                            f"Expected a string for {operator}, got {type(value)}"
+                        )
+                    # search_terms = ", ".join(f"'{term}'" for term in value.split())
+                    search_terms = ", ".join(f"'{term}'" for term in value.split())
+                    sql_function = operator_map[operator]
+                    clauses.append(f"{sql_function}(c.{property_name}, {search_terms})")
+                else:
+                    sql_operator = operator_map[operator]
+                    if isinstance(value, str):
+                        value = f"'{value}'"
+                    elif isinstance(value, list):
+                        value = (
+                            f"({', '.join(map(str, value))})"  # e.g., for IN clauses
+                        )
 
-                clauses.append(f"c.{property_name} {sql_operator} {value}")
+                    clauses.append(f"c.{property_name} {sql_operator} {value}")
+        else:
+            raise ValueError(
+                "Please check the format of conditions in the pre "
+                "filter. Conditions must be a list of a dict"
+            )
         return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
 
     def _execute_query(
