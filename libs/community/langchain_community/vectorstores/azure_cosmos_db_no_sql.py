@@ -15,6 +15,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     from azure.cosmos.cosmos_client import CosmosClient
 
+Condition = Dict[str, Union[str, Any]]
+PreFilter = Dict[str, Union[List[Condition], str]]
 
 class CosmosDBQueryType(str, Enum):
     """CosmosDB Query Type"""
@@ -319,7 +321,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: List[float],
         k: int = 4,
-        pre_filter: Optional[Dict[str, Any]] = None,
+        pre_filter: Optional[PreFilter] = None,
         with_embedding: bool = False,
         offset_limit: Optional[str] = None,
         *,
@@ -348,7 +350,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         search_text: Optional[str] = None,
         k: int = 4,
-        pre_filter: Optional[Dict[str, Any]] = None,
+        pre_filter: Optional[PreFilter] = None,
         offset_limit: Optional[str] = None,
         *,
         projection_mapping: Optional[Dict[str, Any]] = None,
@@ -377,7 +379,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embeddings: List[float],
         search_text: str,
         k: int = 4,
-        pre_filter: Optional[Dict[str, Any]] = None,
+        pre_filter: Optional[PreFilter] = None,
         with_embedding: bool = False,
         offset_limit: Optional[str] = None,
         *,
@@ -405,7 +407,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict[str, Any]] = None,
+        pre_filter: Optional[PreFilter] = None,
         with_embedding: bool = False,
         query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
         offset_limit: Optional[str] = None,
@@ -458,7 +460,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict[str, Any]] = None,
+        pre_filter: Optional[PreFilter] = None,
         with_embedding: bool = False,
         query_type: CosmosDBQueryType = CosmosDBQueryType.VECTOR,
         offset_limit: Optional[str] = None,
@@ -552,7 +554,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: Optional[List[float]] = None,
         search_text: Optional[str] = None,
-        pre_filter: Optional[Dict[str, Any]] = None,
+        pre_filter: Optional[PreFilter] = None,
         offset_limit: Optional[str] = None,
         projection_mapping: Optional[Dict[str, Any]] = None,
     ) -> Tuple[str, List[Dict[str, Any]]]:
@@ -692,7 +694,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         return parameters
 
-    def _build_where_clause(self, pre_filter: Dict[str, Any]) -> str:
+    def _build_where_clause(self, pre_filter: PreFilter) -> str:
         """
         Builds a where clause based on the given pre_filter.
         """
