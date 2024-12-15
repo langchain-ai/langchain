@@ -29,6 +29,7 @@ gliner>=0.2.7
 google-cloud-documentai>=2.20.1,<3
 gql>=3.4.1,<4
 gradientai>=1.4.0,<2
+graphviz>=0.20.3,<0.21
 hdbcli>=2.19.21,<3
 hologres-vector==0.0.6
 html2text>=2020.1.16

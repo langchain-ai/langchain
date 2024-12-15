@@ -1,6 +1,5 @@
 from typing import Any, Type
 
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
@@ -11,9 +10,7 @@ class ParrotRetriever(BaseRetriever):
     parrot_name: str
     k: int = 3
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
-    ) -> list[Document]:
+    def _get_relevant_documents(self, query: str, **kwargs: Any) -> list[Document]:
         k = kwargs.get("k", self.k)
         return [Document(page_content=f"{self.parrot_name} says: {query}")] * k
 
