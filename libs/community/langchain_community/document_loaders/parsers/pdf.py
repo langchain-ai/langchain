@@ -18,7 +18,6 @@ from urllib.parse import urlparse
 
 import numpy as np
 from langchain_core.documents import Document
-from PIL import Image
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
@@ -406,6 +405,13 @@ class PDFPlumberParser(BaseBlobParser):
             text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
             dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
         """
+        try:
+            import PIL  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "pillow package not found, please install it with"
+                " `pip install pillow`"
+            )
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe
         self.extract_images = extract_images
@@ -447,6 +453,8 @@ class PDFPlumberParser(BaseBlobParser):
 
     def _extract_images_from_page(self, page: pdfplumber.page.Page) -> str:
         """Extract images from page and get the text with RapidOCR."""
+        from PIL import Image
+
         if not self.extract_images:
             return ""
 
