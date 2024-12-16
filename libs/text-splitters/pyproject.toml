@@ -26,6 +26,7 @@ module = [
     "numpy",
     "nltk",
     "spacy.cli",
+    "torch",
 ]
 ignore_missing_imports = "True"
 
