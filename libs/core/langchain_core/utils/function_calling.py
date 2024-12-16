@@ -610,28 +610,42 @@ def _parse_google_docstring(
     """
     if not docstring:
         if error_on_invalid_docstring:
-            msg="Found invalid Google-Style docstring."
+            msg = "Found invalid Google-Style docstring."
             raise ValueError(msg)
         return "", {}
     docstring_blocks = docstring.split("\n\n")
+    if error_on_invalid_docstring:
+        filtered_annotations = {
+            arg for arg in args if arg not in ("run_manager", "callbacks", "return")
+        }
+        has_args_section = any(block.startswith("Args:") for block in docstring_blocks)
+        if filtered_annotations and not has_args_section:
+            msg = "Found invalid Google-Style docstring."
+            raise ValueError(msg)
     description_blocks = []
     args_block = None
     for block in docstring_blocks:
-        if block.startswith("Args:") or block.startswith("Returns:"):
+        if block.startswith("Args:"):
             args_block = block
+            break
+        elif block.startswith(("Returns:", "Example:")):
             break
         else:
             description_blocks.append(block)
     description = " ".join(description_blocks).strip()
     arg_descriptions = {}
     if args_block:
+        arg = None
         for line in args_block.split("\n")[1:]:
             if ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
-            elif arg_descriptions:
-                last_arg = list(arg_descriptions.keys())[-1]
-                arg_descriptions[last_arg] += " " + line.strip()
+                arg = arg.strip()
+                arg_name, _, _annotations = arg.partition(" ")
+                if _annotations.startswith("(") and _annotations.endswith(")"):
+                    arg = arg_name
+                arg_descriptions[arg] = desc.strip()
+            elif arg:
+                arg_descriptions[arg] += " " + line.strip()
     return description, arg_descriptions
 
 
