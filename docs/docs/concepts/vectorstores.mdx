@@ -59,7 +59,7 @@ vector_store = InMemoryVectorStore(embedding=SomeEmbeddingModel())
 
 To add documents, use the `add_documents` method.
 
-This API works with a list of [Document](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html) objects.
+This API works with a list of [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html) objects.
 `Document` objects all have `page_content` and `metadata` attributes, making them a universal way to store unstructured text and associated metadata.
 
 ```python
@@ -126,7 +126,7 @@ to the documentation of the specific vectorstore you are using to see what simil
 Given a similarity metric to measure the distance between the embedded query and any embedded document, we need an algorithm to efficiently search over *all* the embedded documents to find the most similar ones.
 There are various ways to do this. As an example, many vectorstores implement [HNSW (Hierarchical Navigable Small World)](https://www.pinecone.io/learn/series/faiss/hnsw/), a graph-based index structure that allows for efficient similarity search.
 Regardless of the search algorithm used under the hood, the LangChain vectorstore interface has a `similarity_search` method for all integrations. 
-This will take the search query, create an embedding, find similar documents, and return them as a list of [Documents](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html).
+This will take the search query, create an embedding, find similar documents, and return them as a list of [Documents](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html).
 
 ```python
 query = "my query"

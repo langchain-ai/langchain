@@ -67,6 +67,7 @@ EXPECT_ALL = [
     "OpenAIChat",
     "OpenLLM",
     "OpenLM",
+    "Outlines",
     "PaiEasEndpoint",
     "Petals",
     "PipelineAI",

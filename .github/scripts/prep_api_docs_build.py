@@ -11,9 +11,7 @@ from typing import Dict, Any
 def load_packages_yaml() -> Dict[str, Any]:
     """Load and parse the packages.yml file."""
     with open("langchain/libs/packages.yml", "r") as f:
-        all_packages = yaml.safe_load(f)
-
-    return {k: v for k, v in all_packages.items() if k["repo"]}
+        return yaml.safe_load(f)
 
 
 def get_target_dir(package_name: str) -> Path:
