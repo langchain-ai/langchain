@@ -1,6 +1,7 @@
 """Test Chroma functionality."""
 import os.path
 import shutil
+import tempfile
 import uuid
 from typing import (
     Generator,
@@ -269,78 +270,86 @@ def test_chroma_search_filter_with_scores() -> None:
 
 def test_chroma_with_persistence() -> None:
     """Test end to end construction and search, with persistence."""
-    chroma_persist_dir = "./tests/persist_dir"
-    if os.path.exists(chroma_persist_dir):
-        shutil.rmtree(chroma_persist_dir)
-    collection_name = "test_collection"
-    texts = ["foo", "bar", "baz"]
-    ids = [f"id_{i}" for i in range(len(texts))]
+    with tempfile.TemporaryDirectory() as chroma_persist_dir:
+        collection_name = "test_collection"
+        texts = ["foo", "bar", "baz"]
+        ids = [f"id_{i}" for i in range(len(texts))]
 
-    docsearch = Chroma.from_texts(
-        collection_name=collection_name,
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        persist_directory=chroma_persist_dir,
-        ids=ids,
-    )
+        docsearch = Chroma.from_texts(
+            collection_name=collection_name,
+            texts=texts,
+            embedding=FakeEmbeddings(),
+            persist_directory=chroma_persist_dir,
+            ids=ids,
+        )
 
-    output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", id="id_0")]
+        try:
+            output = docsearch.similarity_search("foo", k=1)
+            assert output == [Document(page_content="foo", id="id_0")]
 
-    assert os.path.exists(chroma_persist_dir)
+            assert os.path.exists(chroma_persist_dir)
 
-    # Get a new VectorStore from the persisted directory
-    docsearch = Chroma(
-        collection_name=collection_name,
-        embedding_function=FakeEmbeddings(),
-        persist_directory=chroma_persist_dir,
-    )
-    output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", id="id_0")]
+            # Get a new VectorStore from the persisted directory
+            docsearch = Chroma(
+                collection_name=collection_name,
+                embedding_function=FakeEmbeddings(),
+                persist_directory=chroma_persist_dir,
+            )
+            output = docsearch.similarity_search("foo", k=1)
+            assert output == [Document(page_content="foo", id="id_0")]
 
-    # Clean up
-    docsearch.delete_collection()
+            # Clean up
+            docsearch.delete_collection()
 
-    # Persist doesn't need to be called again
-    # Data will be automatically persisted on object deletion
-    # Or on program exit
+            # Persist doesn't need to be called again
+            # Data will be automatically persisted on object deletion
+            # Or on program exit
+
+        finally:
+            docsearch._client._server._sysdb.stop()
+            docsearch._client._server._manager.stop()
+
 
 def test_chroma_with_persistence_with_client_settings() -> None:
     """Test end to end construction and search, with persistence."""
-    chroma_persist_dir = "./tests/persist_dir_2"
-    if os.path.exists(chroma_persist_dir):
-        shutil.rmtree(chroma_persist_dir)
+    with tempfile.TemporaryDirectory() as chroma_persist_dir:
+        client_settings = chromadb.config.Settings()
+        collection_name = "test_collection"
+        texts = ["foo", "bar", "baz"]
+        ids = [f"id_{i}" for i in range(len(texts))]
+        docsearch = Chroma.from_texts(
+            collection_name=collection_name,
+            texts=texts,
+            embedding=FakeEmbeddings(),
+            persist_directory=chroma_persist_dir,
+            client_settings=client_settings,
+            ids=ids
+        )
 
-    client_settings = chromadb.config.Settings()
-    collection_name = "test_collection"
-    texts = ["foo", "bar", "baz"]
-    docsearch = Chroma.from_texts(
-        collection_name=collection_name,
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        persist_directory=chroma_persist_dir,
-        client_settings=client_settings
-    )
+        try:
+            output = docsearch.similarity_search("foo", k=1)
+            assert output == [Document(page_content="foo", id="id_0")]
 
-    output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+            assert os.path.exists(chroma_persist_dir)
 
-    assert os.path.exists(chroma_persist_dir)
+            # Get a new VectorStore from the persisted directory
+            docsearch = Chroma(
+                collection_name=collection_name,
+                embedding_function=FakeEmbeddings(),
+                persist_directory=chroma_persist_dir,
+            )
+            output = docsearch.similarity_search("foo", k=1)
 
-    # Get a new VectorStore from the persisted directory
-    docsearch = Chroma(
-        collection_name=collection_name,
-        embedding_function=FakeEmbeddings(),
-        persist_directory=chroma_persist_dir,
-    )
-    output = docsearch.similarity_search("foo", k=1)
+            # Clean up
+            docsearch.delete_collection()
 
-    # Clean up
-    docsearch.delete_collection()
+            # Persist doesn't need to be called again
+            # Data will be automatically persisted on object deletion
+            # Or on program exit
+        finally:
+            docsearch._client._server._sysdb.stop()
+            docsearch._client._server._manager.stop()
 
-    # Persist doesn't need to be called again
-    # Data will be automatically persisted on object deletion
-    # Or on program exit
 
 def test_chroma_mmr() -> None:
     """Test end to end construction and search."""
