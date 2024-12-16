@@ -98,11 +98,7 @@ optional = true
 spacy = { version = "*", python = "<3.13" }
 nltk = "^3.9.1"
 transformers = "^4.47.0"
-sentence-transformers = "^3.3.1"
-scipy = [
-    { version = "*", python = "<3.13" },
-    { version = ">=1.14.1", python = ">=3.13" },
-]
+sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
 
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"
