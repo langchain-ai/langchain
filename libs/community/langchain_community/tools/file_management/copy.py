@@ -2,8 +2,8 @@ import shutil
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -19,7 +19,7 @@ class FileCopyInput(BaseModel):
     destination_path: str = Field(..., description="Path to save the copied file")
 
 
-class CopyFileTool(BaseFileToolMixin, BaseTool):
+class CopyFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that copies a file."""
 
     name: str = "copy_file"

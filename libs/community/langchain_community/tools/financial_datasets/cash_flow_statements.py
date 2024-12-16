@@ -1,8 +1,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.financial_datasets import FinancialDatasetsAPIWrapper
 
@@ -24,7 +24,7 @@ class CashFlowStatementsSchema(BaseModel):
     )
 
 
-class CashFlowStatements(BaseTool):
+class CashFlowStatements(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets cash flow statements for a given ticker over a given period.
     """

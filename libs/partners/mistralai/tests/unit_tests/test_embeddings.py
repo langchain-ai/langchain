@@ -1,7 +1,7 @@
 import os
 from typing import cast
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_mistralai import MistralAIEmbeddings
 

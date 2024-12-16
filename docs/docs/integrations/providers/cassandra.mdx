@@ -83,3 +83,28 @@ from langchain_community.agent_toolkits.cassandra_database.toolkit import (
 Learn more in the [example notebook](/docs/integrations/tools/cassandra_database).
 
 
+Cassandra Database individual tools:
+
+### Get Schema
+
+Tool for getting the schema of a keyspace in an Apache Cassandra database.
+
+```python
+from langchain_community.tools import GetSchemaCassandraDatabaseTool
+```
+
+### Get Table Data
+
+Tool for getting data from a table in an Apache Cassandra database.
+
+```python
+from langchain_community.tools import GetTableDataCassandraDatabaseTool
+```
+
+### Query
+
+Tool for querying an Apache Cassandra database with provided CQL.
+
+```python
+from langchain_community.tools import QueryCassandraDatabaseTool
+```

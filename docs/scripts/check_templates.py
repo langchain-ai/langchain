@@ -44,7 +44,7 @@ def _get_headers(doc_dir: str) -> Iterable[str]:
     for cell in nb["cells"]:
         if cell["cell_type"] == "markdown":
             for line in cell["source"]:
-                if not line.startswith("##") or "TODO" in line:
+                if not line.startswith("## ") or "TODO" in line:
                     continue
                 header = line.strip()
                 headers.append(header)
@@ -66,19 +66,22 @@ def check_header_order(path: Path) -> None:
 
     with open(path, "r") as f:
         doc = f.read()
-    regex = r".*".join(headers)
-    if not re.search(regex, doc, re.DOTALL):
-        issueline = (
-            (
-                " Please see https://github.com/langchain-ai/langchain/issues/"
-                f"{issue_number} for instructions on how to correctly format a "
-                f"{doc_dir} integration page."
-            )
-            if isinstance(issue_number, int)
-            else ""
-        )
+    notfound = []
+    for header in headers:
+        index = doc.find(header)
+        if index == -1:
+            notfound.append(header)
+        doc = doc[index + len(header) :]
+    if notfound:
+        notfound_headers = "\n- ".join(notfound)
         raise ValueError(
-            f"Document {path} does not match the expected header order.{issueline}"
+            f"Document {path} is missing headers:"
+            "\n- "
+            f"{notfound_headers}"
+            "\n\n"
+            "Please see https://github.com/langchain-ai/langchain/issues/"
+            f"{issue_number} for instructions on how to correctly format a "
+            f"{doc_dir} integration page."
         )
 
 

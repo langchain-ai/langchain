@@ -25,6 +25,11 @@ def test_pebblo_import() -> None:
     from langchain_community.document_loaders import PebbloSafeLoader  # noqa: F401
 
 
+def test_pebblo_text_loader_import() -> None:
+    """Test that the Pebblo text loader can be imported."""
+    from langchain_community.document_loaders import PebbloTextLoader  # noqa: F401
+
+
 def test_empty_filebased_loader(mocker: MockerFixture) -> None:
     """Test basic file based csv loader."""
     # Setup
@@ -146,3 +151,42 @@ def test_pebblo_safe_loader_api_key() -> None:
     # Assert
     assert loader.pb_client.api_key == api_key
     assert loader.pb_client.classifier_location == "local"
+
+
+def test_pebblo_text_loader(mocker: MockerFixture) -> None:
+    """
+    Test loading in-memory text with PebbloTextLoader and PebbloSafeLoader.
+    """
+    # Setup
+    from langchain_community.document_loaders import PebbloSafeLoader, PebbloTextLoader
+
+    mocker.patch.multiple(
+        "requests",
+        get=MockResponse(json_data={"data": ""}, status_code=200),
+        post=MockResponse(json_data={"data": ""}, status_code=200),
+    )
+
+    text = "This is a test text."
+    source = "fake_source"
+    expected_docs = [
+        Document(
+            metadata={
+                "full_path": source,
+                "pb_checksum": None,
+            },
+            page_content=text,
+        ),
+    ]
+
+    # Exercise
+    texts = [text]
+    loader = PebbloSafeLoader(
+        PebbloTextLoader(texts, source=source),
+        "dummy_app_name",
+        "dummy_owner",
+        "dummy_description",
+    )
+    result = loader.load()
+
+    # Assert
+    assert result == expected_docs

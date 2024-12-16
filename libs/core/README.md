@@ -17,7 +17,7 @@ These abstractions are designed to be as modular and simple as possible. Example
 
 The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the LangChain ecosystem.
 
-For full documentation see the [API reference](https://api.python.langchain.com/en/stable/core_api_reference.html).
+For full documentation see the [API reference](https://python.langchain.com/api_reference/core/index.html).
 
 ## 1️⃣ Core Interface: Runnables
 
@@ -53,7 +53,7 @@ LangChain Core compiles LCEL sequences to an _optimized execution plan_, with au
 
 For more check out the [LCEL docs](https://python.langchain.com/docs/expression_language/).
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](../../docs/static/svg/langchain_stack_062024.svg "LangChain Framework Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](https://raw.githubusercontent.com/langchain-ai/langchain/master/docs/static/svg/langchain_stack_112024.svg "LangChain Framework Overview")
 
 For more advanced use cases, also check out [LangGraph](https://github.com/langchain-ai/langgraph), which is a graph-based runner for cyclic and recursive LLM workflows.
 

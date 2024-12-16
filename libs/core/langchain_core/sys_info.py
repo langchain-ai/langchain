@@ -2,15 +2,15 @@
 for debugging purposes.
 """
 
-from typing import List, Sequence
+from collections.abc import Sequence
 
 
-def _get_sub_deps(packages: Sequence[str]) -> List[str]:
+def _get_sub_deps(packages: Sequence[str]) -> list[str]:
     """Get any specified sub-dependencies."""
     from importlib import metadata
 
     sub_deps = set()
-    _underscored_packages = set(pkg.replace("-", "_") for pkg in packages)
+    _underscored_packages = {pkg.replace("-", "_") for pkg in packages}
 
     for pkg in packages:
         try:
@@ -33,7 +33,7 @@ def _get_sub_deps(packages: Sequence[str]) -> List[str]:
     return sorted(sub_deps, key=lambda x: x.lower())
 
 
-def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
+def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     """Print information about the environment for debugging purposes.
 
     Args:
@@ -47,7 +47,6 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
         "langserve",
-        "langgraph",
         "langsmith",
     ]
 
@@ -55,8 +54,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
+    langgraph_pkgs = [
+        name for _, name, _ in pkgutil.iter_modules() if name.startswith("langgraph")
+    ]
+
     all_packages = sorted(
-        set(langchain_pkgs + other_langchain_packages + list(additional_pkgs))
+        set(
+            langchain_pkgs
+            + langgraph_pkgs
+            + other_langchain_packages
+            + list(additional_pkgs)
+        )
     )
 
     # Always surface these packages to the top

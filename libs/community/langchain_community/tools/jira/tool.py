@@ -23,13 +23,13 @@ toolkit = JiraToolkit.from_jira_api_wrapper(jira)
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.jira import JiraAPIWrapper
 
 
-class JiraAction(BaseTool):
+class JiraAction(BaseTool):  # type: ignore[override]
     """Tool that queries the Atlassian Jira API."""
 
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)  # type: ignore[arg-type]

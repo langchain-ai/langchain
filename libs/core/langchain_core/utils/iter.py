@@ -1,16 +1,11 @@
 from collections import deque
+from collections.abc import Generator, Iterable, Iterator
+from contextlib import AbstractContextManager
 from itertools import islice
 from typing import (
     Any,
-    ContextManager,
-    Deque,
-    Generator,
     Generic,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Tuple,
     TypeVar,
     Union,
     overload,
@@ -34,10 +29,10 @@ class NoLock:
 def tee_peer(
     iterator: Iterator[T],
     # the buffer specific to this peer
-    buffer: Deque[T],
+    buffer: deque[T],
     # the buffers of all peers, including our own
-    peers: List[Deque[T]],
-    lock: ContextManager[Any],
+    peers: list[deque[T]],
+    lock: AbstractContextManager[Any],
 ) -> Generator[T, None, None]:
     """An individual iterator of a :py:func:`~.tee`.
 
@@ -130,7 +125,7 @@ class Tee(Generic[T]):
         iterable: Iterator[T],
         n: int = 2,
         *,
-        lock: Optional[ContextManager[Any]] = None,
+        lock: Optional[AbstractContextManager[Any]] = None,
     ):
         """Create a new ``tee``.
 
@@ -141,7 +136,7 @@ class Tee(Generic[T]):
                 Defaults to None.
         """
         self._iterator = iter(iterable)
-        self._buffers: List[Deque[T]] = [deque() for _ in range(n)]
+        self._buffers: list[deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
             tee_peer(
                 iterator=self._iterator,
@@ -159,11 +154,11 @@ class Tee(Generic[T]):
     def __getitem__(self, item: int) -> Iterator[T]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Tuple[Iterator[T], ...]: ...
+    def __getitem__(self, item: slice) -> tuple[Iterator[T], ...]: ...
 
     def __getitem__(
         self, item: Union[int, slice]
-    ) -> Union[Iterator[T], Tuple[Iterator[T], ...]]:
+    ) -> Union[Iterator[T], tuple[Iterator[T], ...]]:
         return self._children[item]
 
     def __iter__(self) -> Iterator[Iterator[T]]:
@@ -185,7 +180,7 @@ class Tee(Generic[T]):
 safetee = Tee
 
 
-def batch_iterate(size: Optional[int], iterable: Iterable[T]) -> Iterator[List[T]]:
+def batch_iterate(size: Optional[int], iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function.
 
     Args:

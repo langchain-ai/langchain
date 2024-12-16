@@ -1,4 +1,5 @@
 import time
+from typing import Optional as Optional
 
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
@@ -218,6 +219,9 @@ class SerializableModel(GenericFakeChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
+
+
+SerializableModel.model_rebuild()
 
 
 def test_serialization_with_rate_limiter() -> None:

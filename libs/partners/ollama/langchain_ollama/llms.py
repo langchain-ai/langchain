@@ -18,8 +18,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
 from ollama import AsyncClient, Client, Options
+from pydantic import PrivateAttr, model_validator
+from typing_extensions import Self
 
 
 class OllamaLLM(BaseLLM):
@@ -115,23 +116,30 @@ class OllamaLLM(BaseLLM):
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = Field(default=None)
+    _client: Client = PrivateAttr(default=None)  # type: ignore
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = Field(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
     """
     The async client to use for making requests.
     """
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Ollama."""
-        return {
-            "model": self.model,
-            "format": self.format,
-            "options": {
+    def _generate_params(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            stop = self.stop
+
+        options_dict = kwargs.pop(
+            "options",
+            {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
                 "mirostat_tau": self.mirostat_tau,
@@ -142,13 +150,24 @@ class OllamaLLM(BaseLLM):
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
-                "stop": self.stop,
+                "stop": self.stop if stop is None else stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
             },
-            "keep_alive": self.keep_alive,
+        )
+
+        params = {
+            "prompt": prompt,
+            "stream": kwargs.pop("stream", True),
+            "model": kwargs.pop("model", self.model),
+            "format": kwargs.pop("format", self.format),
+            "options": Options(**options_dict),
+            "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
+            **kwargs,
         }
+
+        return params
 
     @property
     def _llm_type(self) -> str:
@@ -164,14 +183,13 @@ class OllamaLLM(BaseLLM):
             params["ls_max_tokens"] = max_tokens
         return params
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def _set_clients(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        values["_client"] = Client(host=values["base_url"], **values["client_kwargs"])
-        values["_async_client"] = AsyncClient(
-            host=values["base_url"], **values["client_kwargs"]
-        )
-        return values
+        client_kwargs = self.client_kwargs or {}
+        self._client = Client(host=self.base_url, **client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
+        return self
 
     async def _acreate_generate_stream(
         self,
@@ -179,27 +197,10 @@ class OllamaLLM(BaseLLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
         async for part in await self._async_client.generate(
-            model=params["model"],
-            prompt=prompt,
-            stream=True,
-            options=Options(**params["options"]),
-            keep_alive=params["keep_alive"],
-            format=params["format"],
+            **self._generate_params(prompt, stop=stop, **kwargs)
         ):  # type: ignore
-            yield part
+            yield part  # type: ignore
 
     def _create_generate_stream(
         self,
@@ -207,26 +208,9 @@ class OllamaLLM(BaseLLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
         yield from self._client.generate(
-            model=params["model"],
-            prompt=prompt,
-            stream=True,
-            options=Options(**params["options"]),
-            keep_alive=params["keep_alive"],
-            format=params["format"],
-        )
+            **self._generate_params(prompt, stop=stop, **kwargs)
+        )  # type: ignore
 
     async def _astream_with_aggregation(
         self,

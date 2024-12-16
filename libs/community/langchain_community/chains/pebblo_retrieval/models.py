@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional, Union
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class AuthContext(BaseModel):
@@ -123,6 +123,7 @@ class App(BaseModel):
     framework: Framework
     chains: List[ChainInfo]
     plugin_version: str
+    client_version: Framework
 
 
 class Context(BaseModel):

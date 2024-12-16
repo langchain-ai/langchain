@@ -9,7 +9,7 @@ def test_loads_openai_llm() -> None:
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
 
-    assert llm2 == llm
+    assert llm2.dict() == llm.dict()
     llm_string_2 = dumps(llm2)
     assert llm_string_2 == llm_string
     assert isinstance(llm2, OpenAI)
@@ -20,7 +20,7 @@ def test_load_openai_llm() -> None:
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"OPENAI_API_KEY": "hello"})
 
-    assert llm2 == llm
+    assert llm2.dict() == llm.dict()
     assert dumpd(llm2) == llm_obj
     assert isinstance(llm2, OpenAI)
 
@@ -30,7 +30,7 @@ def test_loads_openai_chat() -> None:
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
 
-    assert llm2 == llm
+    assert llm2.dict() == llm.dict()
     llm_string_2 = dumps(llm2)
     assert llm_string_2 == llm_string
     assert isinstance(llm2, ChatOpenAI)
@@ -41,6 +41,6 @@ def test_load_openai_chat() -> None:
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"OPENAI_API_KEY": "hello"})
 
-    assert llm2 == llm
+    assert llm2.dict() == llm.dict()
     assert dumpd(llm2) == llm_obj
     assert isinstance(llm2, ChatOpenAI)

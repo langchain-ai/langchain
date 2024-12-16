@@ -36,7 +36,6 @@ api_docs_build:
 API_PKG ?= text-splitters
 
 api_docs_quick_preview:
-	poetry run pip install "pydantic<2"
 	poetry run python docs/api_reference/create_api_rst.py $(API_PKG)
 	cd docs/api_reference && poetry run make html
 	poetry run python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
@@ -67,12 +66,16 @@ spell_fix:
 
 ## lint: Run linting on the project.
 lint lint_package lint_tests:
-	poetry run ruff check docs templates cookbook
-	poetry run ruff format docs templates cookbook --diff
-	poetry run ruff check --select I docs templates cookbook
-	git grep 'from langchain import' docs/docs templates cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
+	poetry run ruff check docs cookbook
+	poetry run ruff format docs cookbook cookbook --diff
+	poetry run ruff check --select I docs cookbook
+	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && echo "Error: no importing langchain from root in docs, except for hub" && exit 1 || exit 0
+	
+	git --no-pager grep 'api.python.langchain.com' -- docs/docs ':!docs/docs/additional_resources/arxiv_references.mdx' ':!docs/docs/integrations/document_loaders/sitemap.ipynb' || exit 0 && \
+	echo "Error: you should link python.langchain.com/api_reference, not api.python.langchain.com in the docs" && \
+	exit 1
 
 ## format: Format the project files.
 format format_diff:
-	poetry run ruff format docs templates cookbook
-	poetry run ruff check --select I --fix docs templates cookbook
+	poetry run ruff format docs cookbook
+	poetry run ruff check --select I --fix docs cookbook

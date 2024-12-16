@@ -25,12 +25,12 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from pydantic import ConfigDict, Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
@@ -115,8 +115,9 @@ class ChatYi(BaseChatModel):
     top_p: float = 0.7
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     def __init__(self, **kwargs: Any) -> None:
         kwargs["yi_api_key"] = convert_to_secret_str(

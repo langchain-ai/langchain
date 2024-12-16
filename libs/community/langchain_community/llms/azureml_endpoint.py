@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator, validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator, validator
 
 DEFAULT_TIMEOUT = 50
 
@@ -382,8 +382,11 @@ class AzureMLBaseEndpoint(BaseModel):
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
 
-    @root_validator(pre=True)
-    def validate_environ(cls, values: Dict) -> Dict:
+    model_config = ConfigDict(protected_namespaces=())
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environ(cls, values: Dict) -> Any:
         values["endpoint_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "endpoint_api_key", "AZUREML_ENDPOINT_API_KEY")
         )
@@ -430,8 +433,8 @@ class AzureMLBaseEndpoint(BaseModel):
         if field_value.endswith("inference.ml.azure.com"):
             raise ValueError(
                 "`endpoint_url` should contain the full invocation URL including "
-                "`/score` for `endpoint_api_type='dedicated'` or `/v1/completions` "
-                "or `/v1/chat/completions` for `endpoint_api_type='serverless'`"
+                "`/score` for `endpoint_api_type='dedicated'` or `/completions` "
+                "or `/chat/completions` for `endpoint_api_type='serverless'`"
             )
         return field_value
 
@@ -451,17 +454,17 @@ class AzureMLBaseEndpoint(BaseModel):
             raise ValueError(
                 "Endpoints of type `dedicated` should follow the format "
                 "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/score`."
-                " If your endpoint URL ends with `/v1/completions` or"
-                "`/v1/chat/completions`, use `endpoint_api_type='serverless'` instead."
+                " If your endpoint URL ends with `/completions` or"
+                "`/chat/completions`, use `endpoint_api_type='serverless'` instead."
             )
         if field_value == AzureMLEndpointApiType.serverless and not (
-            endpoint_url.endswith("/v1/completions")  # type: ignore[union-attr]
-            or endpoint_url.endswith("/v1/chat/completions")  # type: ignore[union-attr]
+            endpoint_url.endswith("/completions")  # type: ignore[union-attr]
+            or endpoint_url.endswith("/chat/completions")  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Endpoints of type `serverless` should follow the format "
-                "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/v1/chat/completions`"
-                " or `https://<your-endpoint>.<your_region>.inference.ml.azure.com/v1/chat/completions`"
+                "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/chat/completions`"
+                " or `https://<your-endpoint>.<your_region>.inference.ml.azure.com/chat/completions`"
             )
 
         return field_value
