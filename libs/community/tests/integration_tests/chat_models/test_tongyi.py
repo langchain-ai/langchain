@@ -8,7 +8,7 @@ from langchain_core.messages.ai import AIMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.tongyi import ChatTongyi

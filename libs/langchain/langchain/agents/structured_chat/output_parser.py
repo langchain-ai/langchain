@@ -8,7 +8,7 @@ from typing import Optional, Pattern, Union
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.utils import print_text
@@ -23,7 +23,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self.color = color
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+        self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
     ) -> None:
         """Print out that we are entering a chain.
 
@@ -32,10 +32,16 @@ class StdOutCallbackHandler(BaseCallbackHandler):
             inputs (Dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
-        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-        print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")  # noqa: T201
+        if "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+            else:
+                name = "<unknown>"
+        print(f"\n\n\033[1m> Entering new {name} chain...\033[0m")  # noqa: T201
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain.
 
         Args:

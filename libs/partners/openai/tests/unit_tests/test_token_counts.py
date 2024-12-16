@@ -16,6 +16,7 @@ _MODELS = models = ["ada", "babbage", "curie", "davinci"]
 _CHAT_MODELS = ["gpt-4", "gpt-4-32k", "gpt-3.5-turbo"]
 
 
+@pytest.mark.xfail(reason="Old models require different tiktoken cached file")
 @pytest.mark.parametrize("model", _MODELS)
 def test_openai_get_num_tokens(model: str) -> None:
     """Test get_tokens."""

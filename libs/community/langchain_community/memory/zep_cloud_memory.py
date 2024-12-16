@@ -8,7 +8,7 @@ try:
     from langchain.memory import ConversationBufferMemory
     from zep_cloud import MemoryGetRequestMemoryType
 
-    class ZepCloudMemory(ConversationBufferMemory):
+    class ZepCloudMemory(ConversationBufferMemory):  # type: ignore[override]
         """Persist your chain history to the Zep MemoryStore.
 
         Documentation: https://help.getzep.com

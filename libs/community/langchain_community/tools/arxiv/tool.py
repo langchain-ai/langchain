@@ -3,8 +3,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 
@@ -15,7 +15,7 @@ class ArxivInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class ArxivQueryRun(BaseTool):
+class ArxivQueryRun(BaseTool):  # type: ignore[override, override]
     """Tool that searches the Arxiv API."""
 
     name: str = "arxiv"
