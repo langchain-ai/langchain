@@ -547,6 +547,19 @@ class ChatTongyi(BaseChatModel):
                 if _kwargs.get("stream") and not _kwargs.get(
                     "incremental_output", False
                 ):
+                    # inline fix response text logic
+                    resp_copy = json.loads(json.dumps(resp))
+                    if resp_copy.get("output") and resp_copy["output"].get("choices"):
+                        choice = resp_copy["output"]["choices"][0]
+                        message = choice["message"]
+                        if isinstance(message.get("content"), list):
+                            content_text = "".join(
+                                item.get("text", "")
+                                for item in message["content"]
+                                if isinstance(item, dict)
+                            )
+                            message["content"] = content_text
+                        resp = resp_copy
                     if prev_resp is None:
                         delta_resp = resp
                     else:

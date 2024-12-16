@@ -24,6 +24,7 @@ class Docx2txtLoader(BaseLoader, ABC):
     def __init__(self, file_path: Union[str, Path]):
         """Initialize with file path."""
         self.file_path = str(file_path)
+        self.original_file_path = self.file_path
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -55,7 +56,7 @@ class Docx2txtLoader(BaseLoader, ABC):
         return [
             Document(
                 page_content=docx2txt.process(self.file_path),
-                metadata={"source": self.file_path},
+                metadata={"source": self.original_file_path},
             )
         ]
 
@@ -104,7 +105,7 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
         try:
             import magic  # noqa: F401
 
-            is_doc = detect_filetype(self.file_path) == FileType.DOC
+            is_doc = detect_filetype(self.file_path) == FileType.DOC  # type: ignore[arg-type]
         except ImportError:
             _, extension = os.path.splitext(str(self.file_path))
             is_doc = extension == ".doc"
@@ -119,8 +120,8 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
         if is_doc:
             from unstructured.partition.doc import partition_doc
 
-            return partition_doc(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_doc(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
         else:
             from unstructured.partition.docx import partition_docx
 
-            return partition_docx(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_docx(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

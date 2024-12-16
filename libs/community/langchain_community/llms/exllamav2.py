@@ -43,7 +43,7 @@ class ExLlamaV2(LLM):
     # Langchain parameters
     logfunc: Callable = print
 
-    stop_sequences: List[str] = Field("")
+    stop_sequences: List[str] = Field([])
     """Sequences that immediately will stop the generator."""
 
     max_new_tokens: int = Field(150)
@@ -56,7 +56,7 @@ class ExLlamaV2(LLM):
     """Whether to print debug information."""
 
     # Generator parameters
-    disallowed_tokens: List[int] = Field(None)
+    disallowed_tokens: Optional[List[int]] = Field(None)
     """List of tokens to disallow during generation."""
 
     @pre_init

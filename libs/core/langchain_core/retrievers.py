@@ -27,7 +27,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -136,14 +136,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Optional list of tags associated with the retriever. Defaults to None.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: Optional[dict[str, Any]] = None
     """Optional metadata associated with the retriever. Defaults to None.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
 
@@ -180,6 +180,18 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             cls._aget_relevant_documents = aswap  # type: ignore[assignment]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
+        if (
+            not cls._new_arg_supported
+            and cls._aget_relevant_documents == BaseRetriever._aget_relevant_documents
+        ):
+            # we need to tolerate no run_manager in _aget_relevant_documents signature
+            async def _aget_relevant_documents(
+                self: Self, query: str
+            ) -> list[Document]:
+                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore
+
+            cls._aget_relevant_documents = _aget_relevant_documents  # type: ignore[assignment]
+
         # If a V1 retriever broke the interface and expects additional arguments
         cls._expects_other_args = (
             len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0

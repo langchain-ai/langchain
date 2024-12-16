@@ -16,6 +16,7 @@ from typing import (
 
 import aiohttp
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -389,6 +390,11 @@ class _OllamaCommon(BaseLanguageModel):
         return final_chunk
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    alternative_import="langchain_ollama.OllamaLLM",
+)
 class Ollama(BaseLLM, _OllamaCommon):
     """Ollama locally runs large language models.
     To use, follow the instructions at https://ollama.ai/.

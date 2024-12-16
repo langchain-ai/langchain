@@ -17,7 +17,7 @@ from langchain_community.vectorstores.milvus import Milvus
 class MilvusRetriever(BaseRetriever):
     """Milvus API retriever.
 
-    See detailed instructions here: https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/
+    See detailed instructions here: https://python.langchain.com/docs/integrations/retrievers/milvus_hybrid_search/
 
     Setup:
         Install ``langchain-milvus`` and other dependencies:
