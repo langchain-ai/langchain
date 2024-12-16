@@ -1,4 +1,5 @@
 """Test Chroma functionality."""
+
 import os.path
 import tempfile
 import uuid
@@ -347,7 +348,7 @@ def test_chroma_with_persistence_with_client_settings() -> None:
             # Persist doesn't need to be called again
             # Data will be automatically persisted on object deletion
             # Or on program exit
-            
+
         finally:
             # Need to stop the chrom system database and segment manager
             # to be able to delete the files after testing
