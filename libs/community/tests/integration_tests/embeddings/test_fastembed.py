@@ -80,3 +80,11 @@ async def test_fastembed_async_embedding_query(
     embedding = FastEmbedEmbeddings(model_name=model_name, max_length=max_length)  # type: ignore[call-arg]
     output = await embedding.aembed_query(document)
     assert len(output) == 384
+
+
+def test_fastembed_embedding_query_with_default_params() -> None:
+    """Test fastembed embeddings for query with default model params"""
+    document = "foo bar"
+    embedding = FastEmbedEmbeddings()  # type: ignore[call-arg]
+    output = embedding.embed_query(document)
+    assert len(output) == 384

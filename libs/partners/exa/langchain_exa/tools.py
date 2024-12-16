@@ -1,14 +1,17 @@
-"""Tool for the Exa Search API."""  # type: ignore[import-not-found, import-not-found]
+"""Tool for the Exa Search API."""
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from exa_py import Exa  # type: ignore
-from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
+from exa_py import Exa  # type: ignore[untyped-import]
+from exa_py.api import (
+    HighlightsContentsOptions,  # type: ignore[untyped-import]
+    TextContentsOptions,  # type: ignore[untyped-import]
+)
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.tools import BaseTool
+from pydantic import Field, SecretStr, model_validator
 
 from langchain_exa._utilities import initialize_client
 
@@ -61,8 +64,9 @@ class ExaSearchResults(BaseTool):
     client: Exa = Field(default=None)
     exa_api_key: SecretStr = Field(default=None)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate the environment."""
         values = initialize_client(values)
         return values
@@ -114,8 +118,9 @@ class ExaFindSimilarResults(BaseTool):
     exa_api_key: SecretStr = Field(default=None)
     exa_base_url: Optional[str] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate the environment."""
         values = initialize_client(values)
         return values

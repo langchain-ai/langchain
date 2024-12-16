@@ -1,20 +1,24 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, Iterable, List
+from typing import Iterable, List
 
 import httpx
+from httpx import Response
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.utils import (
     secret_from_env,
 )
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +60,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         The number of times to retry a request if it fails.
       timeout: int
         The number of seconds to wait for a response before timing out.
+      wait_time: int
+        The number of seconds to wait before retrying a request in case of 429 error.
       max_concurrent_requests: int
         The maximum number of concurrent requests to make to the Mistral API.
 
@@ -111,8 +117,14 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    # The type for client and async_client is ignored because the type is not
+    # an Optional after the model is initialized and the model_validator
+    # is run.
+    client: httpx.Client = Field(default=None)  # type: ignore # : :meta private:
+
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
+        default=None
+    )
     mistral_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
@@ -120,46 +132,48 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     endpoint: str = "https://api.mistral.ai/v1/"
     max_retries: int = 5
     timeout: int = 120
+    wait_time: int = 30
     max_concurrent_requests: int = 64
     tokenizer: Tokenizer = Field(default=None)
 
     model: str = "mistral-embed"
 
-    class Config:
-        extra = "forbid"
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate configuration."""
 
-        api_key_str = values["mistral_api_key"].get_secret_value()
+        api_key_str = self.mistral_api_key.get_secret_value()
         # todo: handle retries
-        if not values.get("client"):
-            values["client"] = httpx.Client(
-                base_url=values["endpoint"],
+        if not self.client:
+            self.client = httpx.Client(
+                base_url=self.endpoint,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": f"Bearer {api_key_str}",
                 },
-                timeout=values["timeout"],
+                timeout=self.timeout,
             )
         # todo: handle retries and max_concurrency
-        if not values.get("async_client"):
-            values["async_client"] = httpx.AsyncClient(
-                base_url=values["endpoint"],
+        if not self.async_client:
+            self.async_client = httpx.AsyncClient(
+                base_url=self.endpoint,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": f"Bearer {api_key_str}",
                 },
-                timeout=values["timeout"],
+                timeout=self.timeout,
             )
-        if values["tokenizer"] is None:
+        if self.tokenizer is None:
             try:
-                values["tokenizer"] = Tokenizer.from_pretrained(
+                self.tokenizer = Tokenizer.from_pretrained(
                     "mistralai/Mixtral-8x7B-v0.1"
                 )
             except IOError:  # huggingface_hub GatedRepoError
@@ -169,8 +183,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "HF_TOKEN environment variable to download the real tokenizer. "
                     "Falling back to a dummy tokenizer that uses `len()`."
                 )
-                values["tokenizer"] = DummyTokenizer()
-        return values
+                self.tokenizer = DummyTokenizer()
+        return self
 
     def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
         """Split a list of texts into batches of less than 16k tokens
@@ -206,16 +220,26 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         try:
-            batch_responses = (
-                self.client.post(
+            batch_responses = []
+
+            @retry(
+                retry=retry_if_exception_type(httpx.TimeoutException),
+                wait=wait_fixed(self.wait_time),
+                stop=stop_after_attempt(self.max_retries),
+            )
+            def _embed_batch(batch: List[str]) -> Response:
+                response = self.client.post(
                     url="/embeddings",
                     json=dict(
                         model=self.model,
                         input=batch,
                     ),
                 )
-                for batch in self._get_batches(texts)
-            )
+                response.raise_for_status()
+                return response
+
+            for batch in self._get_batches(texts):
+                batch_responses.append(_embed_batch(batch))
             return [
                 list(map(float, embedding_obj["embedding"]))
                 for response in batch_responses

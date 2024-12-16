@@ -4,7 +4,7 @@ from typing import List, Union
 
 from langchain_core.documents import Document
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 
 class Node(Serializable):

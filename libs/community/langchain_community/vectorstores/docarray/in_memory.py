@@ -59,9 +59,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
             embedding (Embeddings): Embedding function.
             metadatas (Optional[List[Dict[Any, Any]]]): Metadata for each text
                 if it exists. Defaults to None.
-            metric (str): metric for exact nearest-neighbor search.
-                Can be one of: "cosine_sim", "euclidean_dist" and "sqeuclidean_dist".
-                Defaults to "cosine_sim".
+            **kwargs: Other keyword arguments to be passed to the from_params method.
 
         Returns:
             DocArrayInMemorySearch Vector Store

@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.pydantic_v1 import SecretStr, ValidationError
+from pydantic import SecretStr, ValidationError
 
 from langchain_community.chat_models.octoai import ChatOctoAI
 

@@ -6,11 +6,8 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-test:
-	poetry run pytest $(TEST_FILE)
-
-tests:
-	poetry run pytest $(TEST_FILE)
+test tests:
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
@@ -22,7 +19,7 @@ check_imports: $(shell find langchain_text_splitters -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
-	poetry run pytest --only-extended $(TEST_FILE)
+	poetry run pytest --disable-socket --allow-unix-socket --only-extended $(TEST_FILE)
 
 
 ######################
@@ -39,7 +36,6 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff

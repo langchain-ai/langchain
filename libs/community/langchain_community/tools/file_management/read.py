@@ -1,8 +1,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -17,7 +17,7 @@ class ReadFileInput(BaseModel):
     file_path: str = Field(..., description="name of file")
 
 
-class ReadFileTool(BaseFileToolMixin, BaseTool):
+class ReadFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that reads a file."""
 
     name: str = "read_file"

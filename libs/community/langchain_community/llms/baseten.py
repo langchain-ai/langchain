@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 

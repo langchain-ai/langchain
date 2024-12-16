@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import List
 
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools.financial_datasets.balance_sheets import BalanceSheets
 from langchain_community.tools.financial_datasets.cash_flow_statements import (
@@ -31,8 +31,9 @@ class FinancialDatasetsToolkit(BaseToolkit):
         super().__init__()
         self.api_wrapper = api_wrapper
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

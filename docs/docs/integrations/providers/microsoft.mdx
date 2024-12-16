@@ -1,0 +1,650 @@
+---
+keywords: [azure]
+---
+
+# Microsoft
+
+All functionality related to `Microsoft Azure` and other `Microsoft` products.
+
+## Chat Models
+
+### Azure OpenAI
+
+>[Microsoft Azure](https://en.wikipedia.org/wiki/Microsoft_Azure), often referred to as `Azure` is a cloud computing platform run by `Microsoft`, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). `Microsoft Azure` supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.
+
+>[Azure OpenAI](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/) is an `Azure` service with powerful language models from `OpenAI` including the `GPT-3`, `Codex` and `Embeddings model` series for content generation, summarization, semantic search, and natural language to code translation.
+
+```bash
+pip install langchain-openai
+```
+
+Set the environment variables to get access to the `Azure OpenAI` service.
+
+```python
+import os
+
+os.environ["AZURE_OPENAI_ENDPOINT"] = "https://<your-endpoint.openai.azure.com/"
+os.environ["AZURE_OPENAI_API_KEY"] = "your AzureOpenAI key"
+```
+
+See a [usage example](/docs/integrations/chat/azure_chat_openai)
+
+
+```python
+from langchain_openai import AzureChatOpenAI
+```
+
+### Azure ML Chat Online Endpoint
+
+See the documentation [here](/docs/integrations/chat/azureml_chat_endpoint) for accessing chat
+models hosted with [Azure Machine Learning](https://azure.microsoft.com/en-us/products/machine-learning/).
+
+
+## LLMs
+
+### Azure ML
+
+See a [usage example](/docs/integrations/llms/azure_ml).
+
+```python
+from langchain_community.llms.azureml_endpoint import AzureMLOnlineEndpoint
+```
+
+### Azure OpenAI
+
+See a [usage example](/docs/integrations/llms/azure_openai).
+
+```python
+from langchain_openai import AzureOpenAI
+```
+
+## Embedding Models
+### Azure OpenAI
+
+See a [usage example](/docs/integrations/text_embedding/azureopenai)
+
+```python
+from langchain_openai import AzureOpenAIEmbeddings
+```
+
+## Document loaders
+
+### Azure AI Data
+
+>[Azure AI Studio](https://ai.azure.com/) provides the capability to upload data assets 
+> to cloud storage and register existing data assets from the following sources:
+>
+>- `Microsoft OneLake`
+>- `Azure Blob Storage`
+>- `Azure Data Lake gen 2`
+
+First, you need to install several python packages.
+
+```bash
+pip install azureml-fsspec, azure-ai-generative
+```
+
+See a [usage example](/docs/integrations/document_loaders/azure_ai_data).
+
+```python
+from langchain.document_loaders import AzureAIDataLoader
+```
+
+
+### Azure AI Document Intelligence
+
+>[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
+> as `Azure Form Recognizer`) is machine-learning
+> based service that extracts texts (including handwriting), tables, document structures, 
+> and key-value-pairs
+> from digital or scanned PDFs, images, Office and HTML files.
+>
+> Document Intelligence supports `PDF`, `JPEG/JPG`, `PNG`, `BMP`, `TIFF`, `HEIF`, `DOCX`, `XLSX`, `PPTX` and `HTML`.
+
+First, you need to install a python package.
+
+```bash
+pip install azure-ai-documentintelligence
+```
+
+See a [usage example](/docs/integrations/document_loaders/azure_document_intelligence).
+
+```python
+from langchain.document_loaders import AzureAIDocumentIntelligenceLoader
+```
+
+
+### Azure Blob Storage
+
+>[Azure Blob Storage](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction) is Microsoft's object storage solution for the cloud. Blob Storage is optimized for storing massive amounts of unstructured data. Unstructured data is data that doesn't adhere to a particular data model or definition, such as text or binary data.
+
+>[Azure Files](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-introduction) offers fully managed
+> file shares in the cloud that are accessible via the industry standard Server Message Block (`SMB`) protocol,
+> Network File System (`NFS`) protocol, and `Azure Files REST API`. `Azure Files` are based on the `Azure Blob Storage`.
+
+`Azure Blob Storage` is designed for:
+- Serving images or documents directly to a browser.
+- Storing files for distributed access.
+- Streaming video and audio.
+- Writing to log files.
+- Storing data for backup and restore, disaster recovery, and archiving.
+- Storing data for analysis by an on-premises or Azure-hosted service.
+
+```bash
+pip install azure-storage-blob
+```
+
+See a [usage example for the Azure Blob Storage](/docs/integrations/document_loaders/azure_blob_storage_container).
+
+```python
+from langchain_community.document_loaders import AzureBlobStorageContainerLoader
+```
+
+See a [usage example for the Azure Files](/docs/integrations/document_loaders/azure_blob_storage_file).
+
+```python
+from langchain_community.document_loaders import AzureBlobStorageFileLoader
+```
+
+
+### Microsoft OneDrive
+
+>[Microsoft OneDrive](https://en.wikipedia.org/wiki/OneDrive) (formerly `SkyDrive`) is a file-hosting service operated by Microsoft.
+
+First, you need to install a python package.
+
+```bash
+pip install o365
+```
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_onedrive).
+
+```python
+from langchain_community.document_loaders import OneDriveLoader
+```
+
+### Microsoft OneDrive File
+
+>[Microsoft OneDrive](https://en.wikipedia.org/wiki/OneDrive) (formerly `SkyDrive`) is a file-hosting service operated by Microsoft.
+
+First, you need to install a python package.
+
+```bash
+pip install o365
+```
+
+```python
+from langchain_community.document_loaders import OneDriveFileLoader
+```
+
+
+### Microsoft Word
+
+>[Microsoft Word](https://www.microsoft.com/en-us/microsoft-365/word) is a word processor developed by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_word).
+
+```python
+from langchain_community.document_loaders import UnstructuredWordDocumentLoader
+```
+
+
+### Microsoft Excel
+
+>[Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet editor developed by 
+> Microsoft for Windows, macOS, Android, iOS and iPadOS. 
+> It features calculation or computation capabilities, graphing tools, pivot tables, and a macro programming 
+> language called Visual Basic for Applications (VBA). Excel forms part of the Microsoft 365 suite of software.
+
+The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loader works with both `.xlsx` and `.xls` files. 
+The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML 
+representation of the Excel file will be available in the document metadata under the `text_as_html` key.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_excel).
+
+```python
+from langchain_community.document_loaders import UnstructuredExcelLoader
+```
+
+
+### Microsoft SharePoint
+
+>[Microsoft SharePoint](https://en.wikipedia.org/wiki/SharePoint) is a website-based collaboration system 
+> that uses workflow applications, “list” databases, and other web parts and security features to 
+> empower business teams to work together developed by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_sharepoint).
+
+```python
+from langchain_community.document_loaders.sharepoint import SharePointLoader
+```
+
+
+### Microsoft PowerPoint
+
+>[Microsoft PowerPoint](https://en.wikipedia.org/wiki/Microsoft_PowerPoint) is a presentation program by Microsoft.
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_powerpoint).
+
+```python
+from langchain_community.document_loaders import UnstructuredPowerPointLoader
+```
+
+### Microsoft OneNote
+
+First, let's install dependencies:
+
+```bash
+pip install bs4 msal
+```
+
+See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
+
+```python
+from langchain_community.document_loaders.onenote import OneNoteLoader
+```
+
+### Playwright URL Loader
+
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
+> developed by `Microsoft` that allows you to programmatically control and automate 
+> web browsers. It is designed for end-to-end testing, scraping, and automating 
+> tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
+
+
+First, let's install dependencies:
+
+```bash
+pip install playwright unstructured
+```
+
+See a [usage example](/docs/integrations/document_loaders/url/#playwright-url-loader).
+
+```python
+from langchain_community.document_loaders.onenote import OneNoteLoader
+```
+
+## Vector Stores
+
+### Azure Cosmos DB
+AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
+
+Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
+
+#### Azure Cosmos DB for MongoDB (vCore)
+
+>[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
+> You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
+> Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
+
+##### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
+
+We need to install `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+##### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
+
+With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones.
+
+[Sign Up](https://azure.microsoft.com/en-us/free/) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
+
+```python
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+```
+
+#### Azure Cosmos DB NoSQL
+
+>[Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search) now offers vector indexing and search in preview.
+This feature is designed to handle high-dimensional vectors, enabling efficient and accurate vector search at any scale. You can now store vectors
+directly in the documents alongside your data. This means that each document in your database can contain not only traditional schema-free data,
+but also high-dimensional vectors as other properties of the documents. This colocation of data and vectors allows for efficient indexing and searching,
+as the vectors are stored in the same logical unit as the data they represent. This simplifies data management, AI application architectures, and the
+efficiency of vector-based operations.
+
+##### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
+
+We need to install `azure-cosmos` python package.
+
+```bash
+pip install azure-cosmos
+```
+
+##### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB offers a solution for modern apps and intelligent workloads by being very responsive with dynamic and elastic autoscale. It is available
+in every Azure region and can automatically replicate data closer to users. It has SLA guaranteed low-latency and high availability.
+
+[Sign Up](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?pivots=devcontainer-codespace) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
+
+```python
+from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
+```
+
+### Azure Database for PostgreSQL
+
+>[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+
+See a [usage example](/docs/integrations/memory/postgres_chat_message_history/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+
+Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
+
+### Azure SQL Database
+
+>[Azure SQL Database](https://learn.microsoft.com/azure/azure-sql/database/sql-database-paas-overview?view=azuresql) is a robust service that combines scalability, security, and high availability, providing all the benefits of a modern database solution.  It also provides a dedicated Vector data type & built-in functions that simplifies the storage and querying of vector embeddings directly within a relational database. This eliminates the need for separate vector databases and related integrations, increasing the security of your solutions while reducing the overall complexity.
+
+By leveraging your current SQL Server databases for vector search, you can enhance data capabilities while minimizing expenses and avoiding the challenges of transitioning to new systems.
+
+##### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/sqlserver).
+
+We need to install the `langchain-sqlserver` python package.
+
+```bash
+!pip install langchain-sqlserver==0.1.1
+```
+
+##### Deploy Azure SQL DB on Microsoft Azure
+
+[Sign Up](https://learn.microsoft.com/azure/azure-sql/database/free-offer?view=azuresql) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/sqlserver).
+
+```python
+from langchain_sqlserver import SQLServer_VectorStore
+```
+
+### Azure AI Search
+
+[Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) is a cloud search service
+that gives developers infrastructure, APIs, and tools for information retrieval of vector, keyword, and hybrid
+queries at scale. See [here](/docs/integrations/vectorstores/azuresearch) for usage examples.
+
+```python
+from langchain_community.vectorstores.azuresearch import AzureSearch
+```
+
+## Retrievers
+
+### Azure AI Search
+
+>[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` or `Azure Cognitive Search` ) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
+
+>Search is foundational to any app that surfaces text to users, where common scenarios include catalog or document search, online retail apps, or data exploration over proprietary content. When you create a search service, you'll work with the following capabilities:
+>- A search engine for full text search over a search index containing user-owned content
+>- Rich indexing, with lexical analysis and optional AI enrichment for content extraction and transformation
+>- Rich query syntax for text search, fuzzy search, autocomplete, geo-search and more
+>- Programmability through REST APIs and client libraries in Azure SDKs
+>- Azure integration at the data layer, machine learning layer, and AI (AI Services)
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/search/search-create-service-portal).
+
+See a [usage example](/docs/integrations/retrievers/azure_ai_search).
+
+```python
+from langchain_community.retrievers import AzureAISearchRetriever
+```
+
+## Vector Store
+### Azure Database for PostgreSQL
+>[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+
+You need to [enable pgvector extension](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-use-pgvector) in your database to use Postgres as a vector store. Once you have the extension enabled, you can use the [PGVector in LangChain](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL. 
+
+See a [usage example](/docs/integrations/vectorstores/pgvector/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+
+
+## Tools
+
+### Azure Container Apps dynamic sessions
+
+We need to get the `POOL_MANAGEMENT_ENDPOINT` environment variable from the Azure Container Apps service.
+See the instructions [here](/docs/integrations/tools/azure_dynamic_sessions/#setup).
+
+We need to install a python package.
+
+```bash
+pip install langchain-azure-dynamic-sessions
+```
+
+See a [usage example](/docs/integrations/tools/azure_dynamic_sessions).
+
+```python
+from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+```
+
+### Bing Search
+
+Follow the documentation [here](/docs/integrations/tools/bing_search) to get a detail explanations and instructions of this tool.
+
+The environment variable `BING_SUBSCRIPTION_KEY` and `BING_SEARCH_URL` are required from Bing Search resource.
+
+```python
+from langchain_community.tools.bing_search import BingSearchResults
+from langchain_community.utilities import BingSearchAPIWrapper
+
+api_wrapper = BingSearchAPIWrapper()
+tool = BingSearchResults(api_wrapper=api_wrapper)
+```
+
+## Toolkits
+
+### Azure AI Services
+
+We need to install several python packages.
+
+```bash
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
+```
+
+See a [usage example](/docs/integrations/tools/azure_ai_services).
+
+```python
+from langchain_community.agent_toolkits import azure_ai_services
+```
+
+#### Azure AI Services individual tools
+
+The `azure_ai_services` toolkit includes the following tools:
+
+- Image Analysis: [AzureAiServicesImageAnalysisTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.image_analysis.AzureAiServicesImageAnalysisTool.html)
+- Document Intelligence: [AzureAiServicesDocumentIntelligenceTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.document_intelligence.AzureAiServicesDocumentIntelligenceTool.html)
+- Speech to Text: [AzureAiServicesSpeechToTextTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.speech_to_text.AzureAiServicesSpeechToTextTool.html)
+- Text to Speech: [AzureAiServicesTextToSpeechTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_to_speech.AzureAiServicesTextToSpeechTool.html)
+- Text Analytics for Health: [AzureAiServicesTextAnalyticsForHealthTool](https://python.langchain.com/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_analytics_for_health.AzureAiServicesTextAnalyticsForHealthTool.html)
+
+### Azure Cognitive Services
+
+We need to install several python packages.
+
+```bash
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
+```
+
+See a [usage example](/docs/integrations/tools/azure_cognitive_services).
+
+```python
+from langchain_community.agent_toolkits import AzureCognitiveServicesToolkit
+```
+
+#### Azure AI Services individual tools
+
+The `azure_ai_services` toolkit includes the tools that queries the `Azure Cognitive Services`:
+- `AzureCogsFormRecognizerTool`: Form Recognizer API
+- `AzureCogsImageAnalysisTool`: Image Analysis API
+- `AzureCogsSpeech2TextTool`: Speech2Text API
+- `AzureCogsText2SpeechTool`: Text2Speech API
+- `AzureCogsTextAnalyticsHealthTool`: Text Analytics for Health API
+
+```python
+from langchain_community.tools.azure_cognitive_services import (
+    AzureCogsFormRecognizerTool,
+    AzureCogsImageAnalysisTool,
+    AzureCogsSpeech2TextTool,
+    AzureCogsText2SpeechTool,
+    AzureCogsTextAnalyticsHealthTool,
+)
+```
+
+### Microsoft Office 365 email and calendar
+
+We need to install `O365` python package.
+
+```bash
+pip install O365
+```
+
+
+See a [usage example](/docs/integrations/tools/office365).
+
+```python
+from langchain_community.agent_toolkits import O365Toolkit
+```
+
+#### Office 365 individual tools
+
+You can use individual tools from the Office 365 Toolkit:
+- `O365CreateDraftMessage`: creating a draft email in Office 365
+- `O365SearchEmails`: searching email messages in Office 365
+- `O365SearchEvents`: searching calendar events in Office 365
+- `O365SendEvent`: sending calendar events in Office 365
+- `O365SendMessage`: sending an email in Office 365
+
+```python
+from langchain_community.tools.office365 import O365CreateDraftMessage
+from langchain_community.tools.office365 import O365SearchEmails
+from langchain_community.tools.office365 import O365SearchEvents
+from langchain_community.tools.office365 import O365SendEvent
+from langchain_community.tools.office365 import O365SendMessage
+```
+
+### Microsoft Azure PowerBI
+
+We need to install `azure-identity` python package.
+
+```bash
+pip install azure-identity
+```
+
+See a [usage example](/docs/integrations/tools/powerbi).
+
+```python
+from langchain_community.agent_toolkits import PowerBIToolkit
+from langchain_community.utilities.powerbi import PowerBIDataset
+```
+
+#### PowerBI individual tools
+
+You can use individual tools from the Azure PowerBI Toolkit:
+- `InfoPowerBITool`: getting metadata about a PowerBI Dataset
+- `ListPowerBITool`: getting tables names
+- `QueryPowerBITool`: querying a PowerBI Dataset
+
+```python
+from langchain_community.tools.powerbi.tool import InfoPowerBITool
+from langchain_community.tools.powerbi.tool import ListPowerBITool
+from langchain_community.tools.powerbi.tool import QueryPowerBITool
+```
+
+
+### PlayWright Browser Toolkit
+
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
+> developed by `Microsoft` that allows you to programmatically control and automate 
+> web browsers. It is designed for end-to-end testing, scraping, and automating 
+> tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
+
+We need to install several python packages.
+
+```bash
+pip install playwright lxml
+```
+
+See a [usage example](/docs/integrations/tools/playwright).
+
+```python
+from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
+```
+
+#### PlayWright Browser individual tools
+
+You can use individual tools from the PlayWright Browser Toolkit.
+
+```python
+from langchain_community.tools.playwright import ClickTool
+from langchain_community.tools.playwright import CurrentWebPageTool
+from langchain_community.tools.playwright import ExtractHyperlinksTool
+from langchain_community.tools.playwright import ExtractTextTool
+from langchain_community.tools.playwright import GetElementsTool
+from langchain_community.tools.playwright import NavigateTool
+from langchain_community.tools.playwright import NavigateBackTool
+```
+
+## Graphs
+
+### Azure Cosmos DB for Apache Gremlin
+
+We need to install a python package.
+
+```bash
+pip install gremlinpython
+```
+
+See a [usage example](/docs/integrations/graphs/azure_cosmosdb_gremlin).
+
+```python
+from langchain_community.graphs import GremlinGraph
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
+```
+
+## Utilities
+
+### Bing Search API
+
+>[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
+> is a web search engine owned and operated by `Microsoft`.
+
+See a [usage example](/docs/integrations/tools/bing_search).
+
+```python
+from langchain_community.utilities import BingSearchAPIWrapper
+```
+
+## More
+
+### Microsoft Presidio
+
+>[Presidio](https://microsoft.github.io/presidio/) (Origin from Latin praesidium ‘protection, garrison’) 
+> helps to ensure sensitive data is properly managed and governed. It provides fast identification and 
+> anonymization modules for private entities in text and images such as credit card numbers, names, 
+> locations, social security numbers, bitcoin wallets, US phone numbers, financial data and more.
+
+First, you need to install several python packages and download a `SpaCy` model.
+
+```bash
+pip install langchain-experimental openai presidio-analyzer presidio-anonymizer spacy Faker
+python -m spacy download en_core_web_lg
+```
+
+See [usage examples](https://python.langchain.com/v0.1/docs/guides/productionization/safety/presidio_data_anonymization).
+
+```python
+from langchain_experimental.data_anonymizer import PresidioAnonymizer, PresidioReversibleAnonymizer
+```
