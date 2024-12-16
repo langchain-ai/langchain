@@ -10,6 +10,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from pydantic.fields import FieldInfo
 from typing_extensions import NotRequired
 
 
@@ -77,10 +78,23 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Raises:
         Exception: If the key is not in the model.
     """
+    field = model.model_fields[key]
+    return _try_neq_default(value, field)
+
+
+def _try_neq_default(value: Any, field: FieldInfo) -> bool:
+    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
+    # Pandas DataFrames).
     try:
-        return model.model_fields[key].get_default() != value
-    except Exception:
-        return True
+        return bool(field.get_default() != value)
+    except Exception as _:
+        try:
+            return all(field.get_default() != value)
+        except Exception as _:
+            try:
+                return value is not field.default
+            except Exception as _:
+                return False
 
 
 class Serializable(BaseModel, ABC):
@@ -297,18 +311,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     if field.default_factory is list and isinstance(value, list):
         return False
 
-    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
-    # Pandas DataFrames).
-    try:
-        value_neq_default = bool(field.get_default() != value)
-    except Exception as _:
-        try:
-            value_neq_default = all(field.get_default() != value)
-        except Exception as _:
-            try:
-                value_neq_default = value is not field.default
-            except Exception as _:
-                value_neq_default = False
+    value_neq_default = _try_neq_default(value, field)
 
     # If value is falsy and does not match the default
     return value_is_truthy or value_neq_default
