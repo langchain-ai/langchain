@@ -1,6 +1,5 @@
 """Test text splitting functionality using NLTK and Spacy based sentence splitters."""
 
-import importlib
 from typing import Any
 
 import nltk
