@@ -71,6 +71,9 @@ def check_index_exists(client: RedisType, index_name: str) -> bool:
     return True
 
 
+@deprecated(
+    since="0.3.13", removal="1.0", alternative_import="langchain_redis.RedisVectorStore"
+)
 class Redis(VectorStore):
     """Redis vector database.
 
