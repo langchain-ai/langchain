@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import threading
 import weakref
+from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Optional, Union, cast
 from uuid import UUID
 
 import langsmith
@@ -96,7 +97,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.futures: weakref.WeakSet[Future] = weakref.WeakSet()
         self.skip_unfinished = skip_unfinished
         self.project_name = project_name
-        self.logged_eval_results: Dict[Tuple[str, str], List[EvaluationResult]] = {}
+        self.logged_eval_results: dict[tuple[str, str], list[EvaluationResult]] = {}
         self.lock = threading.Lock()
         global _TRACERS
         _TRACERS.add(self)
@@ -152,16 +153,17 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _select_eval_results(
         self,
         results: Union[EvaluationResult, EvaluationResults],
-    ) -> List[EvaluationResult]:
+    ) -> list[EvaluationResult]:
         if isinstance(results, EvaluationResult):
             results_ = [results]
         elif isinstance(results, dict) and "results" in results:
-            results_ = cast(List[EvaluationResult], results["results"])
+            results_ = cast(list[EvaluationResult], results["results"])
         else:
-            raise TypeError(
+            msg = (
                 f"Invalid evaluation result type {type(results)}."
                 " Expected EvaluationResult or EvaluationResults."
             )
+            raise TypeError(msg)
         return results_
 
     def _log_evaluation_feedback(
@@ -169,10 +171,10 @@ class EvaluatorCallbackHandler(BaseTracer):
         evaluator_response: Union[EvaluationResult, EvaluationResults],
         run: Run,
         source_run_id: Optional[UUID] = None,
-    ) -> List[EvaluationResult]:
+    ) -> list[EvaluationResult]:
         results = self._select_eval_results(evaluator_response)
         for res in results:
-            source_info_: Dict[str, Any] = {}
+            source_info_: dict[str, Any] = {}
             if res.evaluator_info:
                 source_info_ = {**res.evaluator_info, **source_info_}
             run_id_ = getattr(res, "target_run_id", None)

@@ -219,12 +219,12 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     since="0.0.31",
     message=(
         "This class is pending deprecation and may be removed in a future version. "
-        "You can swap to using the `PGVector`"
-        " implementation in `langchain_postgres`. "
+        "You can swap to using the `PGVector` "
+        "implementation in `langchain_postgres`. "
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about "
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
@@ -331,11 +331,11 @@ class PGVector(VectorStore):
                 message=(
                     "Please use JSONB instead of JSON for metadata. "
                     "This change will allow for more efficient querying that "
-                    "involves filtering based on metadata."
+                    "involves filtering based on metadata. "
                     "Please note that filtering operators have been changed "
-                    "when using JSOB metadata to be prefixed with a $ sign "
+                    "when using JSONB metadata to be prefixed with a $ sign "
                     "to avoid name collisions with columns. "
-                    "If you're using an existing database, you will need to create a"
+                    "If you're using an existing database, you will need to create a "
                     "db migration for your metadata column to be JSONB and update your "
                     "queries to use the new operators. "
                 ),

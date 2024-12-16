@@ -2,26 +2,28 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 # TODO: think about error handling, more specific api specs, and jql/project limits
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
-    jira: Any  #: :meta private:
-    confluence: Any
+    jira: Any = None  #: :meta private:
+    confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         jira_username = get_from_dict_or_env(
             values, "jira_username", "JIRA_USERNAME", default=""

@@ -10,8 +10,9 @@ from typing import Any, Dict, List, Literal, Optional
 import aiohttp
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 YOU_API_URL = "https://api.ydc-index.io"
 
@@ -106,30 +107,31 @@ class YouSearchAPIWrapper(BaseModel):
     # should deprecate n_hits
     n_hits: Optional[int] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         ydc_api_key = get_from_dict_or_env(values, "ydc_api_key", "YDC_API_KEY")
         values["ydc_api_key"] = ydc_api_key
 
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def warn_if_set_fields_have_no_effect(cls, values: Dict) -> Dict:
-        if values["endpoint_type"] != "news":
+    @model_validator(mode="after")
+    def warn_if_set_fields_have_no_effect(self) -> Self:
+        if self.endpoint_type != "news":
             news_api_fields = ("search_lang", "ui_lang", "spellcheck")
             for field in news_api_fields:
-                if values[field]:
+                if getattr(self, field):
                     warnings.warn(
                         (
                             f"News API-specific field '{field}' is set but "
-                            f"`endpoint_type=\"{values['endpoint_type']}\"`. "
+                            f'`endpoint_type="{self.endpoint_type}"`. '
                             "This will have no effect."
                         ),
                         UserWarning,
                     )
-        if values["endpoint_type"] not in ("search", "snippet"):
-            if values["n_snippets_per_hit"]:
+        if self.endpoint_type not in ("search", "snippet"):
+            if self.n_snippets_per_hit:
                 warnings.warn(
                     (
                         "Field 'n_snippets_per_hit' only has effect on "
@@ -137,19 +139,19 @@ class YouSearchAPIWrapper(BaseModel):
                     ),
                     UserWarning,
                 )
-        return values
+        return self
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def warn_if_deprecated_endpoints_are_used(cls, values: Dict) -> Dict:
-        if values["endpoint_type"] == "snippets":
+    @model_validator(mode="after")
+    def warn_if_deprecated_endpoints_are_used(self) -> Self:
+        if self.endpoint_type == "snippets":
             warnings.warn(
                 (
-                    f"`endpoint_type=\"{values['endpoint_type']}\"` is deprecated. "
+                    f'`endpoint_type="{self.endpoint_type}"` is deprecated. '
                     'Use `endpoint_type="search"` instead.'
                 ),
                 DeprecationWarning,
             )
-        return values
+        return self
 
     def _generate_params(self, query: str, **kwargs: Any) -> Dict:
         """

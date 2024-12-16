@@ -15,10 +15,11 @@ from langchain.agents.openai_assistant.base import OpenAIAssistantRunnable, Outp
 from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
@@ -27,6 +28,15 @@ if TYPE_CHECKING:
 
 
 def _get_openai_client() -> openai.OpenAI:
+    """Get the OpenAI client.
+
+    Returns:
+        openai.OpenAI: OpenAI client
+
+    Raises:
+        ImportError: If `openai` is not installed.
+        AttributeError: If the installed `openai` version is not compatible.
+    """
     try:
         import openai
 
@@ -43,6 +53,15 @@ def _get_openai_client() -> openai.OpenAI:
 
 
 def _get_openai_async_client() -> openai.AsyncOpenAI:
+    """Get the async OpenAI client.
+
+    Returns:
+        openai.AsyncOpenAI: Async OpenAI client
+
+    Raises:
+        ImportError: If `openai` is not installed.
+        AttributeError: If the installed `openai` version is not compatible.
+    """
     try:
         import openai
 
@@ -59,14 +78,14 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
 
 def _convert_file_ids_into_attachments(file_ids: list) -> list:
-    """
-    Convert file_ids into attachments
+    """Convert file_ids into attachments
     File search and Code interpreter will be turned on by default.
 
     Args:
         file_ids (list): List of file_ids that need to be converted into attachments.
+
     Returns:
-        A list of attachments that are converted from file_ids.
+        list: List of attachments converted from file_ids.
     """
     attachments = []
     for id in file_ids:
@@ -82,16 +101,17 @@ def _convert_file_ids_into_attachments(file_ids: list) -> list:
 def _is_assistants_builtin_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> bool:
-    """
-    Determine if tool corresponds to OpenAI Assistants built-in.
+    """Determine if tool corresponds to OpenAI Assistants built-in.
 
     Args:
-        tool : Tool that needs to be determined
+        tool (Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]):
+            Tool that needs to be determined.
+
     Returns:
         A boolean response of true or false indicating if the tool corresponds to
-        OpenAI Assistants built-in.
+            OpenAI Assistants built-in.
     """
-    assistants_builtin_tools = ("code_interpreter", "retrieval")
+    assistants_builtin_tools = ("code_interpreter", "retrieval", "file_search")
     return (
         isinstance(tool, dict)
         and ("type" in tool)
@@ -108,10 +128,11 @@ def _get_assistants_tool(
     such as "code_interpreter" and "retrieval."
 
     Args:
-        tool: Tools or functions that need to be converted to OpenAI tools.
-    Returns:
-        A dictionary of tools that are converted into OpenAI tools.
+        tool (Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]):
+            Tools or functions that need to be converted to OpenAI tools.
 
+    Returns:
+        Dict[str, Any]: A dictionary of tools that are converted into OpenAI tools.
     """
     if _is_assistants_builtin_tool(tool):
         return tool  # type: ignore
@@ -123,18 +144,25 @@ def _get_assistants_tool(
 class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
     """Run an OpenAI Assistant.
 
+    Attributes:
+        client (Any): OpenAI or AzureOpenAI client.
+        async_client (Any): Async OpenAI or AzureOpenAI client.
+        assistant_id (str): OpenAI assistant ID.
+        check_every_ms (float): Frequency to check progress in milliseconds.
+        as_agent (bool): Whether to use the assistant as a LangChain agent.
+
     Example using OpenAI tools:
         .. code-block:: python
 
             from langchain.agents.openai_assistant import OpenAIAssistantV2Runnable
 
-            interpreter_assistant = OpenAIAssistantV2Runnable.create_assistant(
-                name="langchain assistant",
+            assistant = OpenAIAssistantV2Runnable.create_assistant(
+                name="math assistant",
                 instructions="You are a personal math tutor. Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
                 model="gpt-4-1106-preview"
             )
-            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+            output = assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
 
     Example using custom tools and AgentExecutor:
         .. code-block:: python
@@ -154,8 +182,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             )
 
             agent_executor = AgentExecutor(agent=agent, tools=tools)
-            agent_executor.invoke({"content": "What's 10 - 4 raised to the 2.7"})
-
+            agent_executor.invoke({"content": "Analyze the data..."})
 
     Example using custom tools and custom execution:
         .. code-block:: python
@@ -205,18 +232,19 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
     assistant_id: str
     """OpenAI assistant id."""
     check_every_ms: float = 1_000.0
-    """Frequency with which to check run progress in ms."""
+    """Frequency with which to check run progress in milliseconds."""
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_async_client(cls, values: dict) -> dict:
-        if values["async_client"] is None:
+    @model_validator(mode="after")
+    def validate_async_client(self) -> Self:
+        """Validate that the async client is set, otherwise initialize it."""
+        if self.async_client is None:
             import openai
 
-            api_key = values["client"].api_key
-            values["async_client"] = openai.AsyncOpenAI(api_key=api_key)
-        return values
+            api_key = self.client.api_key
+            self.async_client = openai.AsyncOpenAI(api_key=api_key)
+        return self
 
     @classmethod
     def create_assistant(
@@ -226,25 +254,32 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         tools: Sequence[Union[BaseTool, dict]],
         model: str,
         *,
+        model_kwargs: dict[str, float] = {},
         client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
         tool_resources: Optional[Union[AssistantToolResources, dict, NotGiven]] = None,
+        extra_body: Optional[object] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an OpenAI Assistant and instantiate the Runnable.
 
         Args:
-            name: Assistant name.
-            instructions: Assistant instructions.
-            tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
-            tool_resources: Assistant tool resources. Can be passed in OpenAI format
-            model: Assistant model to use.
-            client: OpenAI or AzureOpenAI client.
-                Will create default OpenAI client (Assistant v2) if not specified.
+            name (str): Assistant name.
+            instructions (str): Assistant instructions.
+            tools (Sequence[Union[BaseTool, dict]]): Assistant tools. Can be passed
+                in OpenAI format or as BaseTools.
+            tool_resources (Optional[Union[AssistantToolResources, dict, NotGiven]]):
+                Assistant tool resources. Can be passed in OpenAI format.
+            model (str): Assistant model to use.
+            client (Optional[Union[openai.OpenAI, openai.AzureOpenAI]]): OpenAI or
+                AzureOpenAI client. Will create default OpenAI client (Assistant v2)
+                if not specified.
+            model_kwargs: Additional model arguments. Only available for temperature
+                and top_p parameters.
+            extra_body: Additional body parameters to be passed to the assistant.
 
         Returns:
-            OpenAIAssistantRunnable configured to run using the created assistant.
+            OpenAIAssistantRunnable: The configured assistant runnable.
         """
-
         client = client or _get_openai_client()
         if tool_resources is None:
             from openai._types import NOT_GIVEN
@@ -254,18 +289,20 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             name=name,
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
-            tool_resources=tool_resources,
+            tool_resources=tool_resources,  # type: ignore[arg-type]
             model=model,
+            extra_body=extra_body,
+            **model_kwargs,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> OutputType:
-        """Invoke assistant.
+        """Invoke the assistant.
 
         Args:
-            input: Runnable input dict that can have:
+            input (dict): Runnable input dict that can have:
                 content: User message when starting a new run.
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
@@ -281,10 +318,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 tools: Override Assistant tools for this run.
                 tool_resources: Override Assistant tool resources for this run (v2 API).
                 run_metadata: Metadata to associate with new run.
-            config: Runnable config:
+            config (Optional[RunnableConfig]): Configuration for the run.
 
-        Return:
-            If self.as_agent, will return
+        Returns:
+            OutputType: If self.as_agent, will return
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
@@ -292,7 +329,6 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         Raises:
             BaseException: If an error occurs during the invocation.
         """
-
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -300,7 +336,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
@@ -371,16 +407,18 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         """Create an AsyncOpenAI Assistant and instantiate the Runnable.
 
         Args:
-            name: Assistant name.
-            instructions: Assistant instructions.
-            tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
-            tool_resources: Assistant tool resources. Can be passed in OpenAI format
-            model: Assistant model to use.
-            async_client: AsyncOpenAI client.
-            Will create default async_client if not specified.
+            name (str): Assistant name.
+            instructions (str): Assistant instructions.
+            tools (Sequence[Union[BaseTool, dict]]): Assistant tools. Can be passed
+                in OpenAI format or as BaseTools.
+            tool_resources (Optional[Union[AssistantToolResources, dict, NotGiven]]):
+                Assistant tool resources. Can be passed in OpenAI format.
+            model (str): Assistant model to use.
+            async_client (Optional[Union[openai.OpenAI, openai.AzureOpenAI]]): OpenAI or
+            AzureOpenAI async client. Will create default async_client if not specified.
 
         Returns:
-            AsyncOpenAIAssistantRunnable configured to run using the created assistant.
+            AsyncOpenAIAssistantRunnable: The configured assistant runnable.
         """
         async_client = async_client or _get_openai_async_client()
         if tool_resources is None:
@@ -393,7 +431,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             name=name,
             instructions=instructions,
             tools=openai_tools,  # type: ignore
-            tool_resources=tool_resources,
+            tool_resources=tool_resources,  # type: ignore[arg-type]
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
@@ -404,7 +442,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         """Async invoke assistant.
 
         Args:
-            input: Runnable input dict that can have:
+            input (dict): Runnable input dict that can have:
                 content: User message when starting a new run.
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
@@ -420,15 +458,17 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 tools: Override Assistant tools for this run.
                 tool_resources: Override Assistant tool resources for this run (v2 API).
                 run_metadata: Metadata to associate with new run.
-            config: Runnable config:
+            config (Optional[RunnableConfig]): Configuration for the run.
 
-        Return:
-            If self.as_agent, will return
+        Returns:
+            OutputType: If self.as_agent, will return
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
-        """
 
+        Raises:
+            BaseException: If an error occurs during the invocation.
+        """
         config = config or {}
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -436,7 +476,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name")
+            dumpd(self), input, name=config.get("run_name") or self.get_name()
         )
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
@@ -495,11 +535,24 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             return response
 
     def _create_run(self, input: dict) -> Any:
-        params = {
-            k: v
-            for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
-        }
+        """Create a new run within an existing thread.
+
+        Args:
+            input (dict): The input data for the new run.
+
+        Returns:
+            Any: The created run object.
+        """
+        allowed_assistant_params = (
+            "instructions",
+            "model",
+            "tools",
+            "tool_resources",
+            "run_metadata",
+            "truncation_strategy",
+            "max_prompt_tokens",
+        )
+        params = {k: v for k, v in input.items() if k in allowed_assistant_params}
         return self.client.beta.threads.runs.create(
             input["thread_id"],
             assistant_id=self.assistant_id,
@@ -507,6 +560,15 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         )
 
     def _create_thread_and_run(self, input: dict, thread: dict) -> Any:
+        """Create a new thread and run.
+
+        Args:
+            input (dict): The input data for the run.
+            thread (dict): The thread data to create.
+
+        Returns:
+            Any: The created thread and run.
+        """
         params = {
             k: v
             for k, v in input.items()
@@ -522,10 +584,18 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         return run
 
     async def _acreate_run(self, input: dict) -> Any:
+        """Asynchronously create a new run within an existing thread.
+
+        Args:
+            input (dict): The input data for the new run.
+
+        Returns:
+            Any: The created run object.
+        """
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources" "run_metadata")
+            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
         }
         return await self.async_client.beta.threads.runs.create(
             input["thread_id"],
@@ -534,6 +604,15 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         )
 
     async def _acreate_thread_and_run(self, input: dict, thread: dict) -> Any:
+        """Asynchronously create a new thread and run simultaneously.
+
+        Args:
+            input (dict): The input data for the run.
+            thread (dict): The thread data to create.
+
+        Returns:
+            Any: The created thread and run.
+        """
         params = {
             k: v
             for k, v in input.items()

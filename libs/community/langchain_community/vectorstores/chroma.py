@@ -75,7 +75,7 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
-        client: Optional[chromadb.Client] = None,
+        client: Optional[chromadb.Client] = None,  # type: ignore[valid-type]
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         """Initialize with a Chroma client."""
@@ -118,14 +118,14 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory = persist_directory
             else:
                 _client_settings = chromadb.config.Settings()
-            self._client_settings = _client_settings
-            self._client = chromadb.Client(_client_settings)
-            self._persist_directory = (
+            self._client_settings = _client_settings  # type: ignore[has-type]
+            self._client = chromadb.Client(_client_settings)  # type: ignore[has-type]
+            self._persist_directory = (  # type: ignore[has-type]
                 _client_settings.persist_directory or persist_directory
             )
 
         self._embedding_function = embedding_function
-        self._collection = self._client.get_or_create_collection(
+        self._collection = self._client.get_or_create_collection(  # type: ignore[has-type]
             name=collection_name,
             embedding_function=None,
             metadata=collection_metadata,
@@ -154,12 +154,12 @@ class Chroma(VectorStore):
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
-        return self._collection.query(
+        return self._collection.query(  # type: ignore[return-value]
             query_texts=query_texts,
-            query_embeddings=query_embeddings,
+            query_embeddings=query_embeddings,  # type: ignore[arg-type]
             n_results=n_results,
-            where=where,
-            where_document=where_document,
+            where=where,  # type: ignore[arg-type]
+            where_document=where_document,  # type: ignore[arg-type]
             **kwargs,
         )
 
@@ -218,7 +218,7 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,
+                        metadatas=metadatas,  # type: ignore[arg-type]
                         embeddings=embeddings_with_metadatas,
                         documents=images_with_metadatas,
                         ids=ids_with_metadata,
@@ -297,8 +297,8 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,
-                        embeddings=embeddings_with_metadatas,
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
                         documents=texts_with_metadatas,
                         ids=ids_with_metadata,
                     )
@@ -318,13 +318,13 @@ class Chroma(VectorStore):
                 )
                 ids_without_metadatas = [ids[j] for j in empty_ids]
                 self._collection.upsert(
-                    embeddings=embeddings_without_metadatas,
+                    embeddings=embeddings_without_metadatas,  # type: ignore[arg-type]
                     documents=texts_without_metadatas,
                     ids=ids_without_metadatas,
                 )
         else:
             self._collection.upsert(
-                embeddings=embeddings,
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=texts,
                 ids=ids,
             )
@@ -659,7 +659,7 @@ class Chroma(VectorStore):
 
     def delete_collection(self) -> None:
         """Delete the collection."""
-        self._client.delete_collection(self._collection.name)
+        self._client.delete_collection(self._collection.name)  # type: ignore[has-type]
 
     def get(
         self,
@@ -697,7 +697,7 @@ class Chroma(VectorStore):
         if include is not None:
             kwargs["include"] = include
 
-        return self._collection.get(**kwargs)
+        return self._collection.get(**kwargs)  # type: ignore[return-value, arg-type, arg-type, arg-type, arg-type, arg-type]
 
     @deprecated(
         since="0.1.17",
@@ -716,7 +716,7 @@ class Chroma(VectorStore):
         Since Chroma 0.4.x the manual persistence method is no longer
         supported as docs are automatically persisted.
         """
-        if self._persist_directory is None:
+        if self._persist_directory is None:  # type: ignore[has-type]
             raise ValueError(
                 "You must specify a persist_directory on"
                 "creation to persist the collection."
@@ -726,7 +726,7 @@ class Chroma(VectorStore):
         # Maintain backwards compatibility with chromadb < 0.4.0
         major, minor, _ = chromadb.__version__.split(".")
         if int(major) == 0 and int(minor) < 4:
-            self._client.persist()
+            self._client.persist()  # type: ignore[has-type]
 
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
@@ -753,6 +753,9 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
+            self._collection._client,
+            "get_max_batch_size",  # for Chroma 0.5.1 and above
+        ) or hasattr(
             self._collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
@@ -760,9 +763,9 @@ class Chroma(VectorStore):
             for batch in create_batches(
                 api=self._collection._client,
                 ids=ids,
-                metadatas=metadata,
+                metadatas=metadata,  # type: ignore[arg-type]
                 documents=text,
-                embeddings=embeddings,
+                embeddings=embeddings,  # type: ignore[arg-type]
             ):
                 self._collection.update(
                     ids=batch[0],
@@ -773,9 +776,9 @@ class Chroma(VectorStore):
         else:
             self._collection.update(
                 ids=ids,
-                embeddings=embeddings,
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=text,
-                metadatas=metadata,
+                metadatas=metadata,  # type: ignore[arg-type]
             )
 
     @classmethod
@@ -788,7 +791,7 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.Client] = None,
+        client: Optional[chromadb.Client] = None,  # type: ignore[valid-type]
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
@@ -823,19 +826,23 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         if hasattr(
-            chroma_collection._client, "max_batch_size"
+            chroma_collection._client,  # type: ignore[has-type]
+            "get_max_batch_size",  # for Chroma 0.5.1 and above
+        ) or hasattr(
+            chroma_collection._client,  # type: ignore[has-type]
+            "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=chroma_collection._client,
+                api=chroma_collection._client,  # type: ignore[has-type]
                 ids=ids,
-                metadatas=metadatas,
+                metadatas=metadatas,  # type: ignore[arg-type]
                 documents=texts,
             ):
                 chroma_collection.add_texts(
                     texts=batch[3] if batch[3] else [],
-                    metadatas=batch[2] if batch[2] else None,
+                    metadatas=batch[2] if batch[2] else None,  # type: ignore[arg-type]
                     ids=batch[0],
                 )
         else:
@@ -851,7 +858,9 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.Client] = None,  # Add this line
+        client: Optional[  # type: ignore[valid-type]
+            chromadb.Client
+        ] = None,  # Add this line  # type: ignore[valid-type]
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:

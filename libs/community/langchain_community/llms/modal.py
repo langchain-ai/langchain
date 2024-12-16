@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils.pydantic import get_fields
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -35,11 +35,13 @@ class Modal(LLM):
     """Holds any model parameters valid for `create` call not
     explicitly specified."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = {field.alias for field in get_fields(cls).values()}
 

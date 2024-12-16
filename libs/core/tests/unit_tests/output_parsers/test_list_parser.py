@@ -1,4 +1,5 @@
-from typing import AsyncIterator, Iterable, List, TypeVar, cast
+from collections.abc import AsyncIterator, Iterable
+from typing import TypeVar, cast
 
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
@@ -63,6 +64,25 @@ def test_multiple_items() -> None:
     assert list(parser.transform(iter([text]))) == [[a] for a in expected]
 
 
+def test_multiple_items_with_comma() -> None:
+    """Test that a string with multiple comma-separated items with 1 item containing a
+    comma is parsed to a list."""
+    parser = CommaSeparatedListOutputParser()
+    text = '"foo, foo2",bar,baz'
+    expected = ["foo, foo2", "bar", "baz"]
+
+    assert parser.parse(text) == expected
+    assert add(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [
+        [a] for a in expected
+    ]
+    assert list(
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))
+    ) == [[a] for a in expected]
+    assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
 def test_numbered_list() -> None:
     parser = NumberedListOutputParser()
     text1 = (
@@ -79,7 +99,7 @@ def test_numbered_list() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast(List[str], expected)]
+        expectedlist = [[a] for a in cast(list[str], expected)]
         assert parser.parse(text) == expected
         assert add(parser.transform(t for t in text)) == (expected or None)
         assert list(parser.transform(t for t in text)) == expectedlist
@@ -114,7 +134,7 @@ def test_markdown_list() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast(List[str], expected)]
+        expectedlist = [[a] for a in cast(list[str], expected)]
         assert parser.parse(text) == expected
         assert add(parser.transform(t for t in text)) == (expected or None)
         assert list(parser.transform(t for t in text)) == expectedlist
@@ -217,7 +237,7 @@ async def test_numbered_list_async() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast(List[str], expected)]
+        expectedlist = [[a] for a in cast(list[str], expected)]
         assert await parser.aparse(text) == expected
         assert await aadd(parser.atransform(aiter_from_iter(t for t in text))) == (
             expected or None
@@ -260,7 +280,7 @@ async def test_markdown_list_async() -> None:
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
     ]:
-        expectedlist = [[a] for a in cast(List[str], expected)]
+        expectedlist = [[a] for a in cast(list[str], expected)]
         assert await parser.aparse(text) == expected
         assert await aadd(parser.atransform(aiter_from_iter(t for t in text))) == (
             expected or None

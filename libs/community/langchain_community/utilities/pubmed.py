@@ -7,7 +7,7 @@ import urllib.request
 from typing import Any, Dict, Iterator, List
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ class PubMedAPIWrapper(BaseModel):
         sleep_time: time to wait between retries.
           Default is 0.2 seconds.
         email: email address to be used for the PubMed API.
+        api_key: API key to be used for the PubMed API.
     """
 
     parse: Any  #: :meta private:
@@ -47,9 +48,11 @@ class PubMedAPIWrapper(BaseModel):
     MAX_QUERY_LENGTH: int = 300
     doc_content_chars_max: int = 2000
     email: str = "your_email@example.com"
+    api_key: str = ""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             import xmltodict
@@ -100,6 +103,8 @@ class PubMedAPIWrapper(BaseModel):
             + str({urllib.parse.quote(query)})
             + f"&retmode=json&retmax={self.top_k_results}&usehistory=y"
         )
+        if self.api_key != "":
+            url += f"&api_key={self.api_key}"
         result = urllib.request.urlopen(url)
         text = result.read().decode("utf-8")
         json_text = json.loads(text)
@@ -134,6 +139,8 @@ class PubMedAPIWrapper(BaseModel):
             + "&webenv="
             + webenv
         )
+        if self.api_key != "":
+            url += f"&api_key={self.api_key}"
 
         retry = 0
         while True:

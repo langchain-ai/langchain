@@ -17,10 +17,11 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
+from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain.agents import BaseSingleActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (
@@ -58,8 +59,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         """Get allowed tools."""
         return [t.name for t in self.tools]
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_prompt(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def validate_prompt(self) -> Self:
         """Validate prompt.
 
         Args:
@@ -71,13 +72,13 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Raises:
             ValueError: If `agent_scratchpad` is not in the prompt.
         """
-        prompt: BasePromptTemplate = values["prompt"]
+        prompt: BasePromptTemplate = self.prompt
         if "agent_scratchpad" not in prompt.input_variables:
             raise ValueError(
                 "`agent_scratchpad` should be one of the variables in the prompt, "
                 f"got {prompt.input_variables}"
             )
-        return values
+        return self
 
     @property
     def input_keys(self) -> List[str]:
