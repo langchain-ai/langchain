@@ -1837,5 +1837,3 @@ def _peek(iterable: Iterable, default: Optional[Any] = None) -> Tuple[Iterable, 
         return iterable, value
     except StopIteration:
         return iterable, default
-
-
