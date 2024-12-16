@@ -306,6 +306,8 @@ def test_chroma_with_persistence() -> None:
             # Or on program exit
 
         finally:
+
+            # Need to stop the chrom system database and segment manager to be able to delete the files after testing
             docsearch._client._server._sysdb.stop()
             docsearch._client._server._manager.stop()
 
@@ -347,6 +349,8 @@ def test_chroma_with_persistence_with_client_settings() -> None:
             # Data will be automatically persisted on object deletion
             # Or on program exit
         finally:
+
+            # Need to stop the chrom system database and segment manager to be able to delete the files after testing
             docsearch._client._server._sysdb.stop()
             docsearch._client._server._manager.stop()
 
