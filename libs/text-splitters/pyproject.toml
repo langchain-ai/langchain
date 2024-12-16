@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -14,7 +14,20 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.mypy]
 disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
-module = [ "transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4", "pytest", "spacy", "spacy.lang.en", "numpy",]
+module = [
+    "transformers",
+    "sentence_transformers",
+    "nltk.tokenize",
+    "konlpy.tag",
+    "bs4",
+    "pytest",
+    "spacy",
+    "spacy.lang.en",
+    "numpy",
+    "nltk",
+    "spacy.cli",
+    "torch",
+]
 ignore_missing_imports = "True"
 
 [tool.poetry.urls]
@@ -26,15 +39,18 @@ python = ">=3.9,<4.0"
 langchain-core = "^0.3.25"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201", "D",]
-ignore = [ "D100",]
+select = ["E", "F", "I", "T201", "D"]
+ignore = ["D100"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.lint]
@@ -53,18 +69,16 @@ optional = true
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [ "D",]
+"tests/**" = ["D"]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
-
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
 tiktoken = "^0.8.0"
-
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
@@ -78,19 +92,22 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-socket = "^0.7.0"
 
+[tool.poetry.group.test_integration]
+optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-
+spacy = { version = "*", python = "<3.13" }
+nltk = "^3.9.1"
+transformers = "^4.47.0"
+sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
 
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"
 develop = true
 
-
 [tool.poetry.group.dev.dependencies.langchain-core]
 path = "../core"
 develop = true
-
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../core"

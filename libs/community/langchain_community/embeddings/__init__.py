@@ -101,6 +101,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.huggingface_hub import (
         HuggingFaceHubEmbeddings,
     )
+    from langchain_community.embeddings.hunyuan import (
+        HunyuanEmbeddings,
+    )
     from langchain_community.embeddings.infinity import (
         InfinityEmbeddings,
     )
@@ -327,6 +330,7 @@ __all__ = [
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
     "ZhipuAIEmbeddings",
+    "HunyuanEmbeddings",
 ]
 
 _module_lookup = {
@@ -412,6 +416,7 @@ _module_lookup = {
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
     "AscendEmbeddings": "langchain_community.embeddings.ascend",
     "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
+    "HunyuanEmbeddings": "langchain_community.embeddings.hunyuan",
 }
 
 
