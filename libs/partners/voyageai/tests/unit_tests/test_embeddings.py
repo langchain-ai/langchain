@@ -47,3 +47,10 @@ def test_initialization_voyage_1_batch_size() -> None:
     assert emb.batch_size == 15
     assert emb.model == "voyage-01"
     assert emb._client is not None
+
+
+def test_initialization_with_output_dimension() -> None:
+    emb = VoyageAIEmbeddings(model="voyage-3-large", output_dimension=256)  # type: ignore[call-arg]
+    assert isinstance(emb, Embeddings)
+    assert emb.model == "voyage-3-large"
+    assert emb.output_dimension == 256
