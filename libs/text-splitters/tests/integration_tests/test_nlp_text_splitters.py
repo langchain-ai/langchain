@@ -1,9 +1,17 @@
 """Test text splitting functionality using NLTK and Spacy based sentence splitters."""
 
+import nltk
 import pytest
+import spacy
+from langchain_core.documents import Document
 
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.spacy import SpacyTextSplitter
+
+
+def setup_module() -> None:
+    spacy.cli.download("en_core_web_sm")  # type: ignore
+    nltk.download("punkt_tab")
 
 
 def test_nltk_text_splitting_args() -> None:
@@ -50,3 +58,35 @@ def test_spacy_text_splitter_strip_whitespace(pipeline: str) -> None:
     output = splitter.split_text(text)
     expected_output = [f"This is sentence one. {separator}And this is sentence two."]
     assert output == expected_output
+
+
+def test_nltk_text_splitter_args() -> None:
+    """Test invalid arguments for NLTKTextSplitter."""
+    with pytest.raises(ValueError):
+        NLTKTextSplitter(
+            chunk_size=80,
+            chunk_overlap=0,
+            separator="\n\n",
+            use_span_tokenize=True,
+        )
+
+
+def test_nltk_text_splitter_with_add_start_index() -> None:
+    splitter = NLTKTextSplitter(
+        chunk_size=80,
+        chunk_overlap=0,
+        separator="",
+        use_span_tokenize=True,
+        add_start_index=True,
+    )
+    txt = (
+        "Innovation drives our success.        "
+        "Collaboration fosters creative solutions. "
+        "Efficiency enhances data management."
+    )
+    docs = [Document(txt)]
+    chunks = splitter.split_documents(docs)
+    assert len(chunks) == 2
+    for chunk in chunks:
+        s_i = chunk.metadata["start_index"]
+        assert chunk.page_content == txt[s_i : s_i + len(chunk.page_content)]
