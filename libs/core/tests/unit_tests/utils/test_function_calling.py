@@ -33,8 +33,8 @@ from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_openai_function,
     tool_example_to_messages,
+    _parse_google_docstring,  
 )
-
 
 @pytest.fixture()
 def pydantic() -> type[BaseModel]:
