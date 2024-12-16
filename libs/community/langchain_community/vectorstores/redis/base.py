@@ -1465,7 +1465,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):  # type: ignore[override]
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **_kwargs)
         elif self.search_type == "similarity_distance_threshold":
-            if self.search_kwargs["distance_threshold"] is None:
+            if _kwargs["distance_threshold"] is None:
                 raise ValueError(
                     "distance_threshold must be provided for "
                     + "similarity_distance_threshold retriever"
@@ -1496,7 +1496,7 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):  # type: ignore[override]
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(query, **_kwargs)
         elif self.search_type == "similarity_distance_threshold":
-            if self.search_kwargs["distance_threshold"] is None:
+            if _kwargs["distance_threshold"] is None:
                 raise ValueError(
                     "distance_threshold must be provided for "
                     + "similarity_distance_threshold retriever"
