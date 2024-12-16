@@ -1,17 +1,17 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from langchain_core.documents import Document
 
-from langchain_community.document_loaders.notion import NotionDBLoader
+from langchain_community.document_loaders import NotionDBLoader
 
 
 class TestNotionDBLoader:
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.loader = NotionDBLoader(
             integration_token="fake_token", database_id="fake_db_id"
         )
 
-    def test_concatenate_rich_text(self):
+    def test_concatenate_rich_text(self) -> None:
         # Setup
         rich_text = [
             {"plain_text": "Hello "},
@@ -25,9 +25,11 @@ class TestNotionDBLoader:
         # Assert
         assert result == "Hello world!"
 
-    @patch("langchain_community.document_loaders.notion.NotionDBLoader._request")
-    @patch("langchain_community.document_loaders.notion.NotionDBLoader._load_blocks")
-    def test_load_page_with_rich_text(self, mock_load_blocks, mock_request):
+    @patch("langchain_community.document_loaders.notiondb.NotionDBLoader._request")
+    @patch("langchain_community.document_loaders.notiondb.NotionDBLoader._load_blocks")
+    def test_load_page_with_rich_text(
+        self, mock_load_blocks: Mock, mock_request: Mock
+    ) -> None:
         # Setup
         mock_load_blocks.return_value = "Mocked block content"
         page_summary = {
@@ -59,9 +61,11 @@ class TestNotionDBLoader:
         # Assert
         assert result == expected_doc
 
-    @patch("langchain_community.document_loaders.notion.NotionDBLoader._request")
-    @patch("langchain_community.document_loaders.notion.NotionDBLoader._load_blocks")
-    def test_load_page_with_code_in_rich_text(self, mock_load_blocks, mock_request):
+    @patch("langchain_community.document_loaders.notiondb.NotionDBLoader._request")
+    @patch("langchain_community.document_loaders.notiondb.NotionDBLoader._load_blocks")
+    def test_load_page_with_code_in_rich_text(
+        self, mock_load_blocks: Mock, mock_request: Mock
+    ) -> None:
         # Setup
         mock_load_blocks.return_value = "Mocked block content"
         page_summary = {
@@ -88,9 +92,9 @@ class TestNotionDBLoader:
         # Assert
         assert result == expected_doc
 
-    @patch("langchain_community.document_loaders.notion.NotionDBLoader._request")
-    @patch("langchain_community.document_loaders.notion.NotionDBLoader._load_blocks")
-    def test_load(self, mock_load_blocks, mock_request):
+    @patch("langchain_community.document_loaders.notiondb.NotionDBLoader._request")
+    @patch("langchain_community.document_loaders.notiondb.NotionDBLoader._load_blocks")
+    def test_load(self, mock_load_blocks: Mock, mock_request: Mock) -> None:
         # Setup
         mock_load_blocks.return_value = "Mocked block content"
         mock_request.return_value = {

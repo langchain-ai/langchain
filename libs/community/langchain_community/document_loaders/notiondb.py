@@ -107,11 +107,13 @@ class NotionDBLoader(BaseLoader):
         # load properties as metadata
         metadata: Dict[str, Any] = {}
 
+        value: Any
+
         for prop_name, prop_data in page_summary["properties"].items():
             prop_type = prop_data["type"]
 
             if prop_type == "rich_text":
-                value = self._concatenate_rich_text(prop_data["title"])
+                value = self._concatenate_rich_text(prop_data["rich_text"])
             elif prop_type == "title":
                 value = self._concatenate_rich_text(prop_data["title"])
             elif prop_type == "multi_select":
