@@ -8,13 +8,13 @@ from typing import Any, Dict, List, Tuple
 import pytest
 from langchain_core.documents import Document
 
+from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
     Condition,
     CosmosDBQueryType,
     PreFilter,
 )
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -86,13 +86,14 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         self,
         cosmos_client: Any,
         partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
         documents = self._get_documents()
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
-            FakeEmbeddings(),
+            embedding=azure_openai_embeddings,
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
@@ -118,12 +119,13 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         self,
         cosmos_client: Any,
         partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         texts, metadatas = self._get_texts_and_metadata()
 
         store = AzureCosmosDBNoSqlVectorSearch.from_texts(
             texts,
-            FakeEmbeddings(),
+            azure_openai_embeddings,
             metadatas,
             cosmos_client=cosmos_client,
             database_name=database_name,
@@ -158,13 +160,14 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         self,
         cosmos_client: Any,
         partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
         documents = self._get_documents()
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
-            FakeEmbeddings(),
+            embedding=azure_openai_embeddings,
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,

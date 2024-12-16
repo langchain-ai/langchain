@@ -2293,6 +2293,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
+        create_container: bool = True,
     ):
         self.cosmos_client = cosmos_client
         self.database_name = database_name
@@ -2302,6 +2303,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         self.indexing_policy = indexing_policy
         self.cosmos_container_properties = cosmos_container_properties
         self.cosmos_database_properties = cosmos_database_properties
+        self.create_container = create_container
         self._cache_dict: Dict[str, AzureCosmosDBNoSqlVectorSearch] = {}
 
     def _cache_name(self, llm_string: str) -> str:
@@ -2326,6 +2328,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
                 cosmos_database_properties=self.cosmos_database_properties,
                 database_name=self.database_name,
                 container_name=self.container_name,
+                create_container=self.create_container,
             )
 
         return self._cache_dict[cache_name]

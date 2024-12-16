@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from azure.cosmos import CosmosClient
+    from azure.cosmos import ContainerProxy, CosmosClient
     from azure.identity import DefaultAzureCredential
 
 USER_AGENT = ("LangChain-CDBNoSql-VectorStore-Python",)
@@ -859,3 +859,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             "$full_text_contains_any": "FullTextContainsAny",
         }
         return operator_map
+
+    def get_container(self) -> ContainerProxy:
+        return self._container
