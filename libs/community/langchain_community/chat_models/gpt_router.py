@@ -152,7 +152,7 @@ class GPTRouter(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     models_priority_list: List[GPTRouterModel] = Field(min_length=1)
-    gpt_router_api_base: str = Field(default=None)
+    gpt_router_api_base: str = Field(default="")
     """WriteSonic GPTRouter custom endpoint"""
     gpt_router_api_key: Optional[SecretStr] = None
     """WriteSonic GPTRouter API Key"""

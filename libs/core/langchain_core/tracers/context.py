@@ -6,6 +6,7 @@ from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Optional,
     Union,
     cast,
@@ -40,9 +41,10 @@ def tracing_enabled(
     session_name: str = "default",
 ) -> Generator[TracerSessionV1, None, None]:
     """Throw an error because this has been replaced by tracing_v2_enabled."""
-    raise RuntimeError(
+    msg = (
         "tracing_enabled is no longer supported. Please use tracing_enabled_v2 instead."
     )
+    raise RuntimeError(msg)
 
 
 @contextmanager
@@ -140,7 +142,7 @@ def _get_trace_callbacks(
     return cb
 
 
-def _tracing_v2_is_enabled() -> bool:
+def _tracing_v2_is_enabled() -> Union[bool, Literal["local"]]:
     if tracing_v2_callback_var.get() is not None:
         return True
     return ls_utils.tracing_is_enabled()
@@ -196,9 +198,8 @@ def register_configure_hook(
           to a non-None value.
     """
     if env_var is not None and handle_class is None:
-        raise ValueError(
-            "If env_var is set, handle_class must also be set to a non-None value."
-        )
+        msg = "If env_var is set, handle_class must also be set to a non-None value."
+        raise ValueError(msg)
     from langchain_core.callbacks.base import BaseCallbackHandler
 
     _configure_hooks.append(

@@ -2,10 +2,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from langchain_standard_tests.integration_tests.vectorstores import (
-    AsyncReadWriteTestSuite,
-    ReadWriteTestSuite,
-)
+from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
@@ -13,15 +10,9 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from tests.unit_tests.stubs import _any_id_document
 
 
-class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
+class TestInMemoryStandard(VectorStoreIntegrationTests):
     @pytest.fixture
     def vectorstore(self) -> InMemoryVectorStore:
-        return InMemoryVectorStore(embedding=self.get_embeddings())
-
-
-class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
-    @pytest.fixture
-    async def vectorstore(self) -> InMemoryVectorStore:
         return InMemoryVectorStore(embedding=self.get_embeddings())
 
 
@@ -39,7 +30,7 @@ async def test_inmemory_similarity_search() -> None:
     output = await store.asimilarity_search("bar", k=2)
     assert output == [
         _any_id_document(page_content="bar"),
-        _any_id_document(page_content="baz"),
+        _any_id_document(page_content="foo"),
     ]
 
 
@@ -81,7 +72,7 @@ async def test_inmemory_mmr() -> None:
     output = docsearch.max_marginal_relevance_search("foo", k=10, lambda_mult=0.1)
     assert len(output) == len(texts)
     assert output[0] == _any_id_document(page_content="foo")
-    assert output[1] == _any_id_document(page_content="foy")
+    assert output[1] == _any_id_document(page_content="fou")
 
     # Check async version
     output = await docsearch.amax_marginal_relevance_search(
@@ -89,7 +80,7 @@ async def test_inmemory_mmr() -> None:
     )
     assert len(output) == len(texts)
     assert output[0] == _any_id_document(page_content="foo")
-    assert output[1] == _any_id_document(page_content="foy")
+    assert output[1] == _any_id_document(page_content="fou")
 
 
 async def test_inmemory_dump_load(tmp_path: Path) -> None:

@@ -118,7 +118,6 @@ def test_beta_function() -> None:
     assert not inspect.iscoroutinefunction(beta_function)
 
 
-@pytest.mark.asyncio
 async def test_beta_async_function() -> None:
     """Test beta async function."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -159,7 +158,6 @@ def test_beta_method() -> None:
     assert not inspect.iscoroutinefunction(obj.beta_method)
 
 
-@pytest.mark.asyncio
 async def test_beta_async_method() -> None:
     """Test beta method."""
     with warnings.catch_warnings(record=True) as warning_list:

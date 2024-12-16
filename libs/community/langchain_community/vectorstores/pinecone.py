@@ -31,7 +31,7 @@ def _import_pinecone() -> Any:
     except ImportError as e:
         raise ImportError(
             "Could not import pinecone python package. "
-            "Please install it with `pip install pinecone-client`."
+            "Please install it with `pip3 install pinecone`."
         ) from e
     return pinecone
 
@@ -48,7 +48,7 @@ def _is_pinecone_v3() -> bool:
 class Pinecone(VectorStore):
     """`Pinecone` vector store.
 
-    To use, you should have the ``pinecone-client`` python package installed.
+    To use, you should have the ``pinecone`` python package installed.
 
     This version of Pinecone is deprecated. Please use `langchain_pinecone.Pinecone`
     instead.

@@ -89,7 +89,8 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     if generation:
         generation += list(stream)
     if generation is None:
-        raise ValueError("No generations found in stream.")
+        msg = "No generations found in stream."
+        raise ValueError(msg)
     return ChatResult(
         generations=[
             ChatGeneration(
@@ -265,10 +266,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif isinstance(input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(input))
         else:
-            raise ValueError(
+            msg = (
                 f"Invalid input type {type(input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
+            raise ValueError(msg)
 
     def invoke(
         self,
@@ -817,9 +819,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             elif self.cache is None:
                 pass
             else:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+                msg = "Asked to cache, but no cache found at `langchain.cache`."
+                raise ValueError(msg)
 
         # Apply the rate limiter after checking the cache, since
         # we usually don't want to rate limit cache lookups, but
@@ -891,9 +892,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             elif self.cache is None:
                 pass
             else:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+                msg = "Asked to cache, but no cache found at `langchain.cache`."
+                raise ValueError(msg)
 
         # Apply the rate limiter after checking the cache, since
         # we usually don't want to rate limit cache lookups, but
@@ -977,7 +977,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,
@@ -1020,7 +1020,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         else:
-            raise ValueError("Unexpected generation type")
+            msg = "Unexpected generation type"
+            raise ValueError(msg)
 
     async def _call_async(
         self,
@@ -1036,7 +1037,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(generation, ChatGeneration):
             return generation.message
         else:
-            raise ValueError("Unexpected generation type")
+            msg = "Unexpected generation type"
+            raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1053,7 +1055,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(result.content, str):
             return result.content
         else:
-            raise ValueError("Cannot use predict when output is not a string.")
+            msg = "Cannot use predict when output is not a string."
+            raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict_messages(
@@ -1077,7 +1080,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if isinstance(result.content, str):
             return result.content
         else:
-            raise ValueError("Cannot use predict when output is not a string.")
+            msg = "Cannot use predict when output is not a string."
+            raise ValueError(msg)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict_messages(
@@ -1108,7 +1112,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def with_structured_output(
         self,
@@ -1220,7 +1224,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 # }
         """  # noqa: E501
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
 
         from langchain_core.output_parsers.openai_tools import (
             JsonOutputKeyToolsParser,
@@ -1228,9 +1233,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.bind_tools is BaseChatModel.bind_tools:
-            raise NotImplementedError(
-                "with_structured_output is not implemented for this model."
-            )
+            msg = "with_structured_output is not implemented for this model."
+            raise NotImplementedError(msg)
         llm = self.bind_tools([schema], tool_choice="any")
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(

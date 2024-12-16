@@ -1556,10 +1556,9 @@ class AzureSearch(VectorStore):
         """Return AzureSearchVectorStoreRetriever initialized from this VectorStore.
 
         Args:
-            search_type (Optional[str]): Defines the type of search that
-                the Retriever should perform.
-                Can be "similarity" (default), "hybrid", or
-                    "semantic_hybrid".
+            search_type (Optional[str]): Overrides the type of search that
+                the Retriever should perform. Defaults to `self.search_type`.
+                Can be "similarity", "hybrid", or "semantic_hybrid".
             search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                 search function. Can include things like:
                     score_threshold: Minimum relevance threshold
@@ -1572,6 +1571,9 @@ class AzureSearch(VectorStore):
         Returns:
             AzureSearchVectorStoreRetriever: Retriever class for VectorStore.
         """
+        search_type = kwargs.get("search_type", self.search_type)
+        kwargs["search_type"] = search_type
+
         tags = kwargs.pop("tags", None) or []
         tags.extend(self._get_retriever_tags())
         return AzureSearchVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
@@ -1780,6 +1782,8 @@ def _reorder_results_with_maximal_marginal_relevance(
         )
         for result in results
     ]
+    if not docs:
+        return []
     documents, scores, vectors = map(list, zip(*docs))
 
     # Get the new order of results.
@@ -1807,7 +1811,9 @@ def _result_to_document(result: Dict) -> Document:
             fields_metadata = json.loads(result[FIELDS_METADATA])
     else:
         fields_metadata = {
-            key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR
+            key: value
+            for key, value in result.items()
+            if key not in [FIELDS_CONTENT_VECTOR, FIELDS_CONTENT]
         }
     # IDs
     if FIELDS_ID in result:
@@ -1815,7 +1821,7 @@ def _result_to_document(result: Dict) -> Document:
     else:
         fields_id = {}
     return Document(
-        page_content=result.pop(FIELDS_CONTENT),
+        page_content=result[FIELDS_CONTENT],
         metadata={
             **fields_id,
             **fields_metadata,

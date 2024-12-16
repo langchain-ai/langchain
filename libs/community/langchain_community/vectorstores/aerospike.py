@@ -168,7 +168,7 @@ class Aerospike(VectorStore):
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
+            metadatas: Optional list of metadata associated with the texts.
             ids: Optional list of ids to associate with the texts.
             set_name: Optional aerospike set name to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
