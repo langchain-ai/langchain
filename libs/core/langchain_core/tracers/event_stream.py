@@ -136,10 +136,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         while parent_id := self.parent_map.get(run_id):
             str_parent_id = str(parent_id)
             if str_parent_id in parent_ids:
-                raise AssertionError(
+                msg = (
                     f"Parent ID {parent_id} is already in the parent_ids list. "
                     f"This should never happen."
                 )
+                raise AssertionError(msg)
             parent_ids.append(str_parent_id)
             run_id = parent_id
 
@@ -411,7 +412,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
-            raise AssertionError(f"Run ID {run_id} not found in run map.")
+            msg = f"Run ID {run_id} not found in run map."
+            raise AssertionError(msg)
         if self.is_tapped.get(run_id):
             return
         if run_info["run_type"] == "chat_model":
@@ -429,7 +431,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             else:
                 chunk_ = cast(GenerationChunk, chunk)
         else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+            msg = f"Unexpected run type: {run_info['run_type']}"
+            raise ValueError(msg)
 
         self._send(
             {
@@ -484,7 +487,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             }
             event = "on_llm_end"
         else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+            msg = f"Unexpected run type: {run_info['run_type']}"
+            raise ValueError(msg)
 
         self._send(
             {
@@ -626,10 +630,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """End a trace for a tool run."""
         run_info = self.run_map.pop(run_id)
         if "inputs" not in run_info:
-            raise AssertionError(
+            msg = (
                 f"Run ID {run_id} is a tool call and is expected to have "
                 f"inputs associated with it."
             )
+            raise AssertionError(msg)
         inputs = run_info["inputs"]
 
         self._send(
@@ -839,11 +844,12 @@ async def _astream_events_implementation_v1(
             if event_type == "stream":
                 num_chunks = len(log_entry["streamed_output"])
                 if num_chunks != 1:
-                    raise AssertionError(
+                    msg = (
                         f"Expected exactly one chunk of streamed output, "
                         f"got {num_chunks} instead. This is impossible. "
                         f"Encountered in: {log_entry['name']}"
                     )
+                    raise AssertionError(msg)
 
                 data = {"chunk": log_entry["streamed_output"][0]}
                 # Clean up the stream, we don't need it anymore.
@@ -866,11 +872,12 @@ async def _astream_events_implementation_v1(
         if state["streamed_output"]:
             num_chunks = len(state["streamed_output"])
             if num_chunks != 1:
-                raise AssertionError(
+                msg = (
                     f"Expected exactly one chunk of streamed output, "
                     f"got {num_chunks} instead. This is impossible. "
                     f"Encountered in: {state['name']}"
                 )
+                raise AssertionError(msg)
 
             data = {"chunk": state["streamed_output"][0]}
             # Clean up the stream, we don't need it anymore.
@@ -945,10 +952,11 @@ async def _astream_events_implementation_v2(
         callbacks.add_handler(event_streamer, inherit=True)
         config["callbacks"] = callbacks
     else:
-        raise ValueError(
+        msg = (
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )
+        raise ValueError(msg)
 
     # Call the runnable in streaming mode,
     # add each chunk to the output stream

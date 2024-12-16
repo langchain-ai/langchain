@@ -17,7 +17,7 @@ def test_add_message_implementation_only() -> None:
 
         def clear(self) -> None:
             """Clear the store."""
-            raise NotImplementedError()
+            raise NotImplementedError
 
     store: list[BaseMessage] = []
     chat_history = SampleChatHistory(store=store)
@@ -50,7 +50,7 @@ def test_bulk_message_implementation_only() -> None:
 
         def clear(self) -> None:
             """Clear the store."""
-            raise NotImplementedError()
+            raise NotImplementedError
 
     chat_history = BulkAddHistory(store=store)
     chat_history.add_message(HumanMessage(content="Hello"))

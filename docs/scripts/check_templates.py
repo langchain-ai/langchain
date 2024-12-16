@@ -44,7 +44,7 @@ def _get_headers(doc_dir: str) -> Iterable[str]:
     for cell in nb["cells"]:
         if cell["cell_type"] == "markdown":
             for line in cell["source"]:
-                if not line.startswith("##") or "TODO" in line:
+                if not line.startswith("## ") or "TODO" in line:
                     continue
                 header = line.strip()
                 headers.append(header)

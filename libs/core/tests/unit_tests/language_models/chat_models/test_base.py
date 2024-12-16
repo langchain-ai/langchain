@@ -165,7 +165,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _stream(
             self,
@@ -210,7 +210,7 @@ async def test_astream_implementation_uses_astream() -> None:
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         async def _astream(  # type: ignore
             self,

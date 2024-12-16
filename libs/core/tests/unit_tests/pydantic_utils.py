@@ -77,9 +77,8 @@ def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
 
     if not is_basemodel_subclass(obj):
-        raise TypeError(
-            f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
-        )
+        msg = f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
+        raise TypeError(msg)
     # Remap to old style schema
     if not hasattr(obj, "model_json_schema"):  # V1 model
         return obj.schema()

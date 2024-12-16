@@ -16,6 +16,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api import warn_deprecated
 from langchain_core.output_parsers.pydantic import PydanticBaseModel
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
@@ -325,6 +326,22 @@ class WandbTracer(BaseTracer):
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
         self._io_serializer = io_serializer
+        warn_deprecated(
+            "0.3.8",
+            pending=False,
+            message=(
+                "Please use the `WeaveTracer` from the `weave` package instead of this."
+                "The `WeaveTracer` is a more flexible and powerful tool for logging "
+                "and tracing your LangChain callables."
+                "Find more information at https://weave-docs.wandb.ai/guides/integrations/langchain"
+            ),
+            alternative=(
+                "Please instantiate the WeaveTracer from "
+                "`weave.integrations.langchain import WeaveTracer` ."
+                "For autologging simply use `weave.init()` and log all traces "
+                "from your LangChain callables."
+            ),
+        )
 
     def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
