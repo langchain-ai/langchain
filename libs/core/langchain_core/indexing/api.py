@@ -22,6 +22,7 @@ from pydantic import model_validator
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from langchain_core.exceptions import LangChainException
 from langchain_core.indexing.base import DocumentIndex, RecordManager
 from langchain_core.vectorstores import VectorStore
 
@@ -175,6 +176,32 @@ def _deduplicate_in_order(
             yield hashed_doc
 
 
+class IndexingException(LangChainException):
+    """Raised when an indexing operation fails."""
+
+
+def _delete(
+    vector_store: Union[VectorStore, DocumentIndex],
+    ids: list[str],
+) -> None:
+    if isinstance(vector_store, VectorStore):
+        delete_ok = vector_store.delete(ids)
+        if delete_ok is not None and delete_ok is False:
+            msg = "The delete operation to VectorStore failed."
+            raise IndexingException(msg)
+    elif isinstance(vector_store, DocumentIndex):
+        delete_response = vector_store.delete(ids)
+        if "num_failed" in delete_response and delete_response["num_failed"] > 0:
+            msg = "The delete operation to DocumentIndex failed."
+            raise IndexingException(msg)
+    else:
+        msg = (
+            f"Vectorstore should be either a VectorStore or a DocumentIndex. "
+            f"Got {type(vector_store)}."
+        )
+        raise TypeError(msg)
+
+
 # PUBLIC API
 
 
@@ -197,7 +224,7 @@ def index(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", None] = None,
+    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -215,7 +242,7 @@ def index(
      are not able to specify the uid of the document.
 
     IMPORTANT:
-       * if auto_cleanup is set to True, the loader should be returning
+       * In full mode, the loader should be returning
          the entire dataset, and not just a subset of the dataset.
          Otherwise, the auto_cleanup will remove documents that it is not
          supposed to.
@@ -227,6 +254,11 @@ def index(
          chunks, and we index them using a batch size of 5, we'll have 3 batches
          all with the same source id. In general, to avoid doing too much
          redundant work select as big a batch size as possible.
+        * The `scoped_full` mode is suitable if determining an appropriate batch size
+          is challenging or if your data loader cannot return the entire dataset at
+          once. This mode keeps track of source IDs in memory, which should be fine
+          for most use cases. If your dataset is large (10M+ docs), you will likely
+          need to parallelize the indexing process regardless.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
@@ -235,16 +267,19 @@ def index(
         vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
-            - Incremental: Cleans up all documents that haven't been updated AND
+            - incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
                            Clean up is done continuously during indexing helping
                            to minimize the probability of users seeing duplicated
                            content.
-            - Full: Delete all documents that have not been returned by the loader
+            - full: Delete all documents that have not been returned by the loader
                     during this run of indexing.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
+            - scoped_full: Similar to Full, but only deletes all documents
+                           that haven't been updated AND that are associated with
+                           source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document. Default is None.
@@ -270,16 +305,22 @@ def index(
         ValueError: If vectorstore does not have
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
+
+    .. version_modified:: 0.3.25
+
+        * Added `scoped_full` cleanup mode.
     """
-    if cleanup not in {"incremental", "full", None}:
+    if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
-            f"cleanup should be one of 'incremental', 'full' or None. "
+            f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "
             f"Got {cleanup}."
         )
         raise ValueError(msg)
 
-    if cleanup == "incremental" and source_id_key is None:
-        msg = "Source id key is required when cleanup mode is incremental."
+    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+        msg = (
+            "Source id key is required when cleanup mode is incremental or scoped_full."
+        )
         raise ValueError(msg)
 
     destination = vector_store  # Renaming internally for clarity
@@ -326,6 +367,7 @@ def index(
     num_skipped = 0
     num_updated = 0
     num_deleted = 0
+    scoped_full_cleanup_source_ids: set[str] = set()
 
     for doc_batch in _batch(batch_size, doc_iterator):
         hashed_docs = list(
@@ -338,17 +380,20 @@ def index(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental":
-            # If the cleanup mode is incremental, source ids are required.
+        if cleanup == "incremental" or cleanup == "scoped_full":
+            # source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
                     msg = (
-                        "Source ids are required when cleanup mode is incremental. "
+                        f"Source ids are required when cleanup mode is "
+                        f"incremental or scoped_full. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
                     raise ValueError(msg)
+                if cleanup == "scoped_full":
+                    scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
             source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
 
@@ -408,30 +453,35 @@ def index(
 
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-            if any(source_id is None for source_id in source_ids):
-                msg = "Source ids cannot be if cleanup=='incremental'."
-                raise AssertionError(msg)
+            for source_id in source_ids:
+                if source_id is None:
+                    msg = (
+                        "source_id cannot be None at this point. "
+                        "Reached unreachable code."
+                    )
+                    raise AssertionError(msg)
 
-            indexed_source_ids = cast(
-                Sequence[str], [source_id_assigner(doc) for doc in docs_to_index]
-            )
+            _source_ids = cast(Sequence[str], source_ids)
 
             uids_to_delete = record_manager.list_keys(
-                group_ids=indexed_source_ids, before=index_start_dt
+                group_ids=_source_ids, before=index_start_dt
             )
-            if indexed_source_ids and uids_to_delete:
+            if uids_to_delete:
                 # Then delete from vector store.
-                destination.delete(uids_to_delete)
+                _delete(destination, uids_to_delete)
                 # First delete from record store.
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full":
+    if cleanup == "full" or cleanup == "scoped_full":
+        delete_group_ids: Optional[Sequence[str]] = None
+        if cleanup == "scoped_full":
+            delete_group_ids = list(scoped_full_cleanup_source_ids)
         while uids_to_delete := record_manager.list_keys(
-            before=index_start_dt, limit=cleanup_batch_size
+            group_ids=delete_group_ids, before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
-            destination.delete(uids_to_delete)
+            _delete(destination, uids_to_delete)
             # Then delete from record manager.
             record_manager.delete_keys(uids_to_delete)
             num_deleted += len(uids_to_delete)
@@ -451,13 +501,35 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
         yield item
 
 
+async def _adelete(
+    vector_store: Union[VectorStore, DocumentIndex],
+    ids: list[str],
+) -> None:
+    if isinstance(vector_store, VectorStore):
+        delete_ok = await vector_store.adelete(ids)
+        if delete_ok is not None and delete_ok is False:
+            msg = "The delete operation to VectorStore failed."
+            raise IndexingException(msg)
+    elif isinstance(vector_store, DocumentIndex):
+        delete_response = await vector_store.adelete(ids)
+        if "num_failed" in delete_response and delete_response["num_failed"] > 0:
+            msg = "The delete operation to DocumentIndex failed."
+            raise IndexingException(msg)
+    else:
+        msg = (
+            f"Vectorstore should be either a VectorStore or a DocumentIndex. "
+            f"Got {type(vector_store)}."
+        )
+        raise TypeError(msg)
+
+
 async def aindex(
     docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", None] = None,
+    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -475,10 +547,23 @@ async def aindex(
      are not able to specify the uid of the document.
 
     IMPORTANT:
-       if auto_cleanup is set to True, the loader should be returning
-       the entire dataset, and not just a subset of the dataset.
-       Otherwise, the auto_cleanup will remove documents that it is not
-       supposed to.
+       * In full mode, the loader should be returning
+         the entire dataset, and not just a subset of the dataset.
+         Otherwise, the auto_cleanup will remove documents that it is not
+         supposed to.
+       * In incremental mode, if documents associated with a particular
+         source id appear across different batches, the indexing API
+         will do some redundant work. This will still result in the
+         correct end state of the index, but will unfortunately not be
+         100% efficient. For example, if a given document is split into 15
+         chunks, and we index them using a batch size of 5, we'll have 3 batches
+         all with the same source id. In general, to avoid doing too much
+         redundant work select as big a batch size as possible.
+       * The `scoped_full` mode is suitable if determining an appropriate batch size
+         is challenging or if your data loader cannot return the entire dataset at
+         once. This mode keeps track of source IDs in memory, which should be fine
+         for most use cases. If your dataset is large (10M+ docs), you will likely
+         need to parallelize the indexing process regardless.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
@@ -487,15 +572,18 @@ async def aindex(
         vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
-            - Incremental: Cleans up all documents that haven't been updated AND
+            - incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
                            Clean up is done continuously during indexing helping
                            to minimize the probability of users seeing duplicated
                            content.
-            - Full: Delete all documents that haven to been returned by the loader.
+            - full: Delete all documents that haven to been returned by the loader.
                     Clean up runs after all documents have been indexed.
                     This means that users may see duplicated content during indexing.
+            - scoped_full: Similar to Full, but only deletes all documents
+                           that haven't been updated AND that are associated with
+                           source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document. Default is None.
@@ -521,17 +609,23 @@ async def aindex(
         ValueError: If vectorstore does not have
             "adelete" and "aadd_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
+
+    .. version_modified:: 0.3.25
+
+        * Added `scoped_full` cleanup mode.
     """
 
-    if cleanup not in {"incremental", "full", None}:
+    if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
-            f"cleanup should be one of 'incremental', 'full' or None. "
+            f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "
             f"Got {cleanup}."
         )
         raise ValueError(msg)
 
-    if cleanup == "incremental" and source_id_key is None:
-        msg = "Source id key is required when cleanup mode is incremental."
+    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+        msg = (
+            "Source id key is required when cleanup mode is incremental or scoped_full."
+        )
         raise ValueError(msg)
 
     destination = vector_store  # Renaming internally for clarity
@@ -587,6 +681,7 @@ async def aindex(
     num_skipped = 0
     num_updated = 0
     num_deleted = 0
+    scoped_full_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
         hashed_docs = list(
@@ -599,17 +694,20 @@ async def aindex(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental":
+        if cleanup == "incremental" or cleanup == "scoped_full":
             # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
                     msg = (
-                        "Source ids are required when cleanup mode is incremental. "
+                        f"Source ids are required when cleanup mode is "
+                        f"incremental or scoped_full. "
                         f"Document that starts with "
                         f"content: {hashed_doc.page_content[:100]} was not assigned "
                         f"as source id."
                     )
                     raise ValueError(msg)
+                if cleanup == "scoped_full":
+                    scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
             source_ids = cast(Sequence[str], source_ids)
 
@@ -669,30 +767,35 @@ async def aindex(
 
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
-            if any(source_id is None for source_id in source_ids):
-                msg = "Source ids cannot be if cleanup=='incremental'."
-                raise AssertionError(msg)
+            for source_id in source_ids:
+                if source_id is None:
+                    msg = (
+                        "source_id cannot be None at this point. "
+                        "Reached unreachable code."
+                    )
+                    raise AssertionError(msg)
 
-            indexed_source_ids = cast(
-                Sequence[str], [source_id_assigner(doc) for doc in docs_to_index]
-            )
+            _source_ids = cast(Sequence[str], source_ids)
 
             uids_to_delete = await record_manager.alist_keys(
-                group_ids=indexed_source_ids, before=index_start_dt
+                group_ids=_source_ids, before=index_start_dt
             )
-            if indexed_source_ids and uids_to_delete:
+            if uids_to_delete:
                 # Then delete from vector store.
-                await destination.adelete(uids_to_delete)
+                await _adelete(destination, uids_to_delete)
                 # First delete from record store.
                 await record_manager.adelete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full":
+    if cleanup == "full" or cleanup == "scoped_full":
+        delete_group_ids: Optional[Sequence[str]] = None
+        if cleanup == "scoped_full":
+            delete_group_ids = list(scoped_full_cleanup_source_ids)
         while uids_to_delete := await record_manager.alist_keys(
-            before=index_start_dt, limit=cleanup_batch_size
+            group_ids=delete_group_ids, before=index_start_dt, limit=cleanup_batch_size
         ):
             # First delete from record store.
-            await destination.adelete(uids_to_delete)
+            await _adelete(destination, uids_to_delete)
             # Then delete from record manager.
             await record_manager.adelete_keys(uids_to_delete)
             num_deleted += len(uids_to_delete)

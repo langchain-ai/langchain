@@ -42,8 +42,8 @@ packages:
     repo: langchain-ai/langchain
     path: libs/partners/huggingface
   - name: langchain-ibm
-    repo: langchain-ai/langchain
-    path: libs/partners/ibm
+    repo: langchain-ai/langchain-ibm
+    path: libs/ibm
   - name: langchain-milvus
     repo: langchain-ai/langchain-milvus
     path: libs/milvus
