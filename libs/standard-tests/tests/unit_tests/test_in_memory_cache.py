@@ -1,7 +1,7 @@
 import pytest
 from langchain_core.caches import InMemoryCache
 
-from langchain_standard_tests.integration_tests.cache import (
+from langchain_tests.integration_tests.cache import (
     AsyncCacheTestSuite,
     SyncCacheTestSuite,
 )

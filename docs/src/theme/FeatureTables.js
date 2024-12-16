@@ -156,8 +156,8 @@ const FEATURE_TABLES = {
                 "link": "nvidia_ai_endpoints/",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false,
-                "multimodal": false,
+                "json_mode": true,
+                "multimodal": true,
                 "local": true,
                 "apiLink": "https://python.langchain.com/api_reference/nvidia_ai_endpoints/chat_models/langchain_nvidia_ai_endpoints.chat_models.ChatNVIDIA.html"
             },
@@ -215,7 +215,29 @@ const FEATURE_TABLES = {
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
-            }
+            },
+            {
+                "name": "ChatWatsonx",
+                "package": "langchain-ibm",
+                "link": "ibm_watsonx",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true, 
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
+            },
+            {
+                "name": "ChatXAI",
+                "package": "langchain-xai",
+                "link": "xai",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/xai/chat_models/langchain_xai.chat_models.ChatXAI.html"
+            },
         ],
     },
     llms: {
@@ -288,6 +310,12 @@ const FEATURE_TABLES = {
                 link: "google_vertexai",
                 package: "langchain-google_vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
+            },
+            {
+                name: "NVIDIA",
+                link: "NVIDIA",
+                package: "langchain-nvidia",
+                apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/llm/langchain_nvidia_ai_endpoints.llm.NVIDIA.html"
             },
         ],
     },
@@ -369,6 +397,18 @@ const FEATURE_TABLES = {
                 link: "voyageai",
                 package: "langchain-voyageai",
                 apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
+            },
+            {
+                name: "IBM",
+                link: "ibm_watsonx",
+                package: "langchain-ibm",
+                apiLink: "https://python.langchain.com/api_reference/ibm/embeddings/langchain_ibm.embeddings.WatsonxEmbeddings.html"
+            },
+            {
+                name: "NVIDIA",
+                link: "nvidia_ai_endpoints",
+                package: "langchain-nvidia",
+                apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
         ]
     },
@@ -1098,7 +1138,20 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: false,
-            }
+            },
+            {
+                name: "SQLServer",
+                link: "sqlserver",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: false,
+                idsInAddDocuments: false,
+            }, 
         ],
     }
 };

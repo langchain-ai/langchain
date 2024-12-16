@@ -26,7 +26,7 @@ class FileSearchInput(BaseModel):
     )
 
 
-class FileSearchTool(BaseFileToolMixin, BaseTool):
+class FileSearchTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that searches for files in a subdirectory that match a regex pattern."""
 
     name: str = "file_search"

@@ -2,7 +2,7 @@
 
 from typing import Type
 
-from langchain_standard_tests.integration_tests import EmbeddingsIntegrationTests
+from langchain_tests.integration_tests import EmbeddingsIntegrationTests
 
 from langchain_huggingface.embeddings import (
     HuggingFaceEmbeddings,

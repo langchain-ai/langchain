@@ -2,12 +2,12 @@ from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -55,8 +55,10 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any = None  #: :meta private:
-    model_id: str = DEFAULT_MODEL_ID
-    """Model name to use."""
+    model_id: Optional[str] = None
+    """The model name. If not set explicitly by the user,
+    it will be inferred from the provided pipeline (if available).
+    If neither is provided, the DEFAULT_MODEL_ID will be used."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
@@ -67,6 +69,17 @@ class HuggingFacePipeline(BaseLLM):
     model_config = ConfigDict(
         extra="forbid",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def pre_init_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure model_id is set either by pipeline or user input."""
+        if "model_id" not in values:
+            if "pipeline" in values and values["pipeline"]:
+                values["model_id"] = values["pipeline"].model.name_or_path
+            else:
+                values["model_id"] = DEFAULT_MODEL_ID
+        return values
 
     @classmethod
     def from_model_id(
@@ -349,7 +362,6 @@ class HuggingFacePipeline(BaseLLM):
 
         stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
-        inputs = self.pipeline.tokenizer(prompt, return_tensors="pt")
         streamer = TextIteratorStreamer(
             self.pipeline.tokenizer,
             timeout=60.0,
@@ -357,12 +369,12 @@ class HuggingFacePipeline(BaseLLM):
             skip_special_tokens=True,
         )
         generation_kwargs = dict(
-            inputs,
+            text_inputs=prompt,
             streamer=streamer,
             stopping_criteria=stopping_criteria,
             **pipeline_kwargs,
         )
-        t1 = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
+        t1 = Thread(target=self.pipeline, kwargs=generation_kwargs)
         t1.start()
 
         for char in streamer:
