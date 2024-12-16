@@ -19,7 +19,7 @@ from langchain_core.runnables.utils import (
     [
         (lambda x: x * 2, "lambda x: x * 2"),
         (lambda a, b: a + b, "lambda a, b: a + b"),
-        (lambda x: x if x > 0 else 0, "lambda x: x if x > 0 else 0"),
+        (lambda x: x if x > 0 else 0, "lambda x: x if x > 0 else 0"),  # noqa: FURB136
     ],
 )
 def test_get_lambda_source(func: Callable, expected_source: str) -> None:

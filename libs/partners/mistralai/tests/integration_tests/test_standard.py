@@ -3,7 +3,7 @@
 from typing import Optional, Type
 
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import (  # type: ignore[import-not-found]
+from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
     ChatModelIntegrationTests,  # type: ignore[import-not-found]
 )
 

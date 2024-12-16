@@ -388,6 +388,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         return name
 
 
+@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
@@ -639,10 +640,11 @@ def get_unique_config_specs(
         if len(others) == 0 or all(o == first for o in others):
             unique.append(first)
         else:
-            raise ValueError(
+            msg = (
                 "RunnableSequence contains conflicting config specs"
                 f"for {id}: {[first] + others}"
             )
+            raise ValueError(msg)
     return unique
 
 

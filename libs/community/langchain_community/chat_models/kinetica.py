@@ -38,7 +38,7 @@ class _KdtSuggestContext(BaseModel):
 
     table: Optional[str] = Field(default=None, title="Name of table")
     description: Optional[str] = Field(default=None, title="Table description")
-    columns: List[str] = Field(default=None, title="Table columns list")
+    columns: List[str] = Field(default=[], title="Table columns list")
     rules: Optional[List[str]] = Field(
         default=None, title="Rules that apply to the table."
     )
@@ -78,7 +78,7 @@ class _KdtSuggestContext(BaseModel):
 class _KdtSuggestPayload(BaseModel):
     """pydantic API request type"""
 
-    question: Optional[str]
+    question: Optional[str] = None
     context: List[_KdtSuggestContext]
 
     def get_system_str(self) -> str:
@@ -121,7 +121,7 @@ class _KdtoSuggestRequest(BaseModel):
 class _KdtMessage(BaseModel):
     """pydantic API response type"""
 
-    role: str = Field(default=None, title="One of [user|assistant|system]")
+    role: str = Field(default="", title="One of [user|assistant|system]")
     content: str
 
 
@@ -129,7 +129,7 @@ class _KdtChoice(BaseModel):
     """pydantic API response type"""
 
     index: int
-    message: _KdtMessage = Field(default=None, title="The generated SQL")
+    message: Optional[_KdtMessage] = Field(default=None, title="The generated SQL")
     finish_reason: str
 
 
@@ -150,7 +150,7 @@ class _KdtSqlResponse(BaseModel):
     model: str
     choices: List[_KdtChoice]
     usage: _KdtUsage
-    prompt: str = Field(default=None, title="The input question")
+    prompt: str = Field(default="", title="The input question")
 
 
 class _KdtCompletionResponse(BaseModel):
@@ -376,9 +376,8 @@ class ChatKinetica(BaseChatModel):
         dict_messages = [self._convert_message_to_dict(m) for m in messages]
         sql_response = self._submit_completion(dict_messages)
 
-        response_message = sql_response.choices[0].message
-        # generated_dict = response_message.model_dump() # pydantic v2
-        generated_dict = response_message.dict()
+        response_message = cast(_KdtMessage, sql_response.choices[0].message)
+        generated_dict = response_message.model_dump()
 
         generated_message = self._convert_message_from_dict(generated_dict)
 
@@ -410,17 +409,20 @@ class ChatKinetica(BaseChatModel):
 
         # query kinetica for the prompt
         sql = f"GENERATE PROMPT WITH OPTIONS (CONTEXT_NAMES = '{context_name}')"
+
         result = self._execute_sql(sql)
         prompt = result["Prompt"]
         prompt_json = json.loads(prompt)
 
         # convert the prompt to messages
         # request = SuggestRequest.model_validate(prompt_json) # pydantic v2
+
         request = _KdtoSuggestRequest.model_validate(prompt_json)
         payload = request.payload
 
         dict_messages = []
         dict_messages.append(dict(role="system", content=payload.get_system_str()))
+
         dict_messages.extend(payload.get_messages())
         messages = [self._convert_message_from_dict(m) for m in dict_messages]
         return messages
@@ -536,7 +538,7 @@ class KineticaSqlResponse(BaseModel):
     the generated SQL and related Pandas Dataframe fetched from the database.
     """
 
-    sql: str = Field(default=None)
+    sql: str = Field(default="")
     """The generated SQL."""
 
     # dataframe: "pd.DataFrame" = Field(default=None)

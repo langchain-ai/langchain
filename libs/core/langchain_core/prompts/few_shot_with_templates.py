@@ -9,6 +9,7 @@ from typing_extensions import Self
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
+    PromptTemplateFormat,
     StringPromptTemplate,
 )
 
@@ -36,8 +37,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     prefix: Optional[StringPromptTemplate] = None
     """A PromptTemplate to put before the examples."""
 
-    template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    template_format: PromptTemplateFormat = "f-string"
+    """The format of the prompt template.
+    Options are: 'f-string', 'jinja2', 'mustache'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
@@ -54,14 +56,12 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         examples = values.get("examples")
         example_selector = values.get("example_selector")
         if examples and example_selector:
-            raise ValueError(
-                "Only one of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "Only one of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         if examples is None and example_selector is None:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "One of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         return values
 
@@ -76,10 +76,11 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                 expected_input_variables |= set(self.prefix.input_variables)
             missing_vars = expected_input_variables.difference(input_variables)
             if missing_vars:
-                raise ValueError(
+                msg = (
                     f"Got input_variables={input_variables}, but based on "
                     f"prefix/suffix expected {expected_input_variables}"
                 )
+                raise ValueError(msg)
         else:
             self.input_variables = sorted(
                 set(self.suffix.input_variables)
@@ -216,5 +217,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             ValueError: If example_selector is provided.
         """
         if self.example_selector:
-            raise ValueError("Saving an example selector is not currently supported")
+            msg = "Saving an example selector is not currently supported"
+            raise ValueError(msg)
         return super().save(file_path)

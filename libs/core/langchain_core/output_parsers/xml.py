@@ -49,11 +49,12 @@ class _StreamingParser:
             try:
                 import defusedxml  # type: ignore
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
-                ) from e
+                )
+                raise ImportError(msg) from e
             _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
         else:
             _parser = None
@@ -141,6 +142,20 @@ class XMLOutputParser(BaseTransformOutputParser):
     """Parse an output using xml format."""
 
     tags: Optional[list[str]] = None
+    """Tags to tell the LLM to expect in the XML output.
+
+    Note this may not be perfect depending on the LLM implementation.
+
+    For example, with tags=["foo", "bar", "baz"]:
+            1. A well-formatted XML instance:
+                "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"
+
+            2. A badly-formatted XML instance (missing closing tag for 'bar'):
+                "<foo>\n   <bar>\n   </foo>"
+
+            3. A badly-formatted XML instance (unexpected 'tag' element):
+                "<foo>\n   <tag>\n   </tag>\n</foo>"
+    """
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
@@ -190,12 +205,13 @@ class XMLOutputParser(BaseTransformOutputParser):
             try:
                 from defusedxml import ElementTree  # type: ignore
             except ImportError as e:
-                raise ImportError(
+                msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
-                ) from e
+                )
+                raise ImportError(msg) from e
             _et = ElementTree  # Use the defusedxml parser
         else:
             _et = ET  # Use the standard library parser

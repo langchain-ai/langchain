@@ -14,7 +14,7 @@ on:
         description: "Release from a non-master branch (danger!)"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.10"
 
 jobs:
@@ -98,3 +98,5 @@ jobs:
           # This is *only for CI use* and is *extremely dangerous* otherwise!
           # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
           skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false

@@ -472,16 +472,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             # This occurs for chat models - since we batch inputs
             if isinstance(input_val[0], list):
                 if len(input_val) != 1:
-                    raise ValueError(
-                        f"Expected a single list of messages. Got {input_val}."
-                    )
+                    msg = f"Expected a single list of messages. Got {input_val}."
+                    raise ValueError(msg)
                 return input_val[0]
             return list(input_val)
         else:
-            raise ValueError(
+            msg = (
                 f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
                 f"Got {input_val}."
             )
+            raise ValueError(msg)
 
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
@@ -513,10 +513,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif isinstance(output_val, (list, tuple)):
             return list(output_val)
         else:
-            raise ValueError(
+            msg = (
                 f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
                 f"Got {output_val}."
             )
+            raise ValueError(msg)
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
@@ -593,12 +594,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 missing_key: "[your-value-here]" for missing_key in missing_keys
             }
             example_config = {"configurable": example_configurable}
-            raise ValueError(
+            msg = (
                 f"Missing keys {sorted(missing_keys)} in config['configurable'] "
                 f"Expected keys are {sorted(expected_keys)}."
                 f"When using via .invoke() or .stream(), pass in a config; "
                 f"e.g., chain.invoke({example_input}, {example_config})"
             )
+            raise ValueError(msg)
 
         if len(expected_keys) == 1:
             if parameter_names:
@@ -613,10 +615,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         else:
             # otherwise verify that names of keys patch and invoke by named arguments
             if set(expected_keys) != set(parameter_names):
-                raise ValueError(
+                msg = (
                     f"Expected keys {sorted(expected_keys)} do not match parameter "
                     f"names {sorted(parameter_names)} of get_session_history."
                 )
+                raise ValueError(msg)
 
             message_history = self.get_session_history(
                 **{key: configurable[key] for key in expected_keys}

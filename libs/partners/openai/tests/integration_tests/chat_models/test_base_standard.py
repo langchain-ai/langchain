@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Type, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import ChatOpenAI
 
