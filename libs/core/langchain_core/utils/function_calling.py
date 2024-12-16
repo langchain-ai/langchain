@@ -598,7 +598,16 @@ def tool_example_to_messages(
     return messages
 
 
-def _parse_google_docstring(docstring: Optional[str], args: list[str], *, error_on_invalid_docstring: bool = False) -> tuple[str, dict]:
+def _parse_google_docstring(
+    docstring: Optional[str],
+    args: list[str],
+    *,
+    error_on_invalid_docstring: bool = False,
+) -> tuple[str, dict]:
+    """Parse the function and argument descriptions from the docstring of a function.
+
+    Assumes the function docstring follows Google Python style guide.
+    """
     if not docstring:
         if error_on_invalid_docstring:
             msg="Found invalid Google-Style docstring."
