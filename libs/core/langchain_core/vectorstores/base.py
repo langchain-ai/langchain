@@ -1057,7 +1057,9 @@ class VectorStoreRetriever(BaseRetriever):
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
 
-        ls_params = super()._get_ls_params(**kwargs)
+        _kwargs = self.search_kwargs | kwargs
+
+        ls_params = super()._get_ls_params(_kwargs)
         ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
 
         if self.vectorstore.embeddings:
@@ -1076,7 +1078,7 @@ class VectorStoreRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
-        _kwargs = {**self.search_kwargs, **kwargs}
+        _kwargs = self.search_kwargs | kwargs
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **_kwargs)
         elif self.search_type == "similarity_score_threshold":
@@ -1100,7 +1102,7 @@ class VectorStoreRetriever(BaseRetriever):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> list[Document]:
-        _kwargs = {**self.search_kwargs, **kwargs}
+        _kwargs = self.search_kwargs | kwargs
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(query, **_kwargs)
         elif self.search_type == "similarity_score_threshold":
