@@ -91,11 +91,18 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-socket = "^0.7.0"
 
+[tool.poetry.group.test_integration]
+optional = true
+
 [tool.poetry.group.test_integration.dependencies]
 spacy = { version = "*", python = "<3.13" }
 nltk = "^3.9.1"
 transformers = "^4.47.0"
 sentence-transformers = "^3.3.1"
+scipy = [
+    { version = "*", python = "<3.13" },
+    { version = ">=1.14.1", python = ">=3.13" },
+]
 
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"
