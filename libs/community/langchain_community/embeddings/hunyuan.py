@@ -5,7 +5,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from pydantic import BaseModel, Field, SecretStr, model_validator
-from tqdm import tqdm
 
 
 class HunyuanEmbeddings(Embeddings, BaseModel):
@@ -96,6 +95,14 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
         """Embed search docs."""
         embeddings = []
         if self.show_progress_bar:
+            try:
+                from tqdm import tqdm
+            except ImportError as e:
+                raise ImportError(
+                    "Package tqdm must be installed if show_progress_bar=True. "
+                    "Please install with 'pip install tqdm' or set "
+                    "show_progress_bar=False."
+                ) from e
             _iter = tqdm(iterable=texts, desc="Hunyuan Embedding")
         else:
             _iter = texts
