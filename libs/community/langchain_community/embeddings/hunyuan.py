@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, List, Literal, Type
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, model_validator
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tqdm import tqdm
@@ -21,7 +21,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
     region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
     """The region of hunyuan service."""
     embedding_ctx_length: int = 1024
-    """The max embedding context length of hunyuan embedding. Just note that it is 1024."""
+    """The max embedding context length of hunyuan embedding (defaults to 1024)."""
     show_progress_bar: bool = False
     """Show progress bar when embedding. Default is False."""
 
@@ -30,7 +30,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
     request_cls: Type = Field(default=None, exclude=True)
     """The request class of tencentcloud sdk."""
 
-    @root_validator()
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["hunyuan_secret_id"] = convert_to_secret_str(
@@ -55,7 +55,8 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
             from tencentcloud.hunyuan.v20230901.models import GetEmbeddingRequest
         except ImportError:
             raise ImportError(
-                'Could not import tencentcloud sdk python package. Please install it with `pip install "tencentcloud-sdk-python>=3.0.1139"`.'
+                "Could not import tencentcloud sdk python package. Please install it "
+                'with `pip install "tencentcloud-sdk-python>=3.0.1139"`.'
             )
 
         client_profile = ClientProfile()
