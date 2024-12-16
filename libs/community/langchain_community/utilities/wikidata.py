@@ -147,7 +147,9 @@ class WikidataAPIWrapper(BaseModel):
             doc_lines.append(f"Aliases: {', '.join(resp.aliases)}")
         for prop, values in resp.statements.items():
             if values:
-                doc_lines.append(f"{prop.label}: {', '.join(values)}")
+                doc_lines.append(
+                    f"{prop.label}: {', '.join([v.value or 'unknown' for v in values])}"
+                )
 
         return Document(
             page_content=("\n".join(doc_lines))[: self.doc_content_chars_max],
