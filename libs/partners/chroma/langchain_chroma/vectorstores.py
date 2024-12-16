@@ -319,7 +319,8 @@ class Chroma(VectorStore):
                     persist_directory or client_settings.persist_directory
                 )
                 client_settings.is_persistent = (
-                        client_settings.persist_directory is not None)
+                        client_settings.persist_directory is not None
+                )
 
                 _client_settings = client_settings
             elif persist_directory:
