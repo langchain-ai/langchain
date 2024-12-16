@@ -591,13 +591,19 @@ class ChatZhipuAI(BaseChatModel):
                     if len(chunk["choices"]) == 0:
                         continue
                     choice = chunk["choices"][0]
+                    usage = chunk.get("usage", None)
+                    model_name = chunk.get("model", "")
                     chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     finish_reason = choice.get("finish_reason", None)
 
                     generation_info = (
-                        {"finish_reason": finish_reason}
+                        {
+                            "finish_reason": finish_reason,
+                            "token_usage": usage,
+                            "model_name": model_name,
+                        }
                         if finish_reason is not None
                         else None
                     )
@@ -678,13 +684,19 @@ class ChatZhipuAI(BaseChatModel):
                     if len(chunk["choices"]) == 0:
                         continue
                     choice = chunk["choices"][0]
+                    usage = chunk.get("usage", None)
+                    model_name = chunk.get("model", "")
                     chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     finish_reason = choice.get("finish_reason", None)
 
                     generation_info = (
-                        {"finish_reason": finish_reason}
+                        {
+                            "finish_reason": finish_reason,
+                            "token_usage": usage,
+                            "model_name": model_name,
+                        }
                         if finish_reason is not None
                         else None
                     )

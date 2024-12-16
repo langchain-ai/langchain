@@ -78,7 +78,7 @@ class Replicate(LLM):
     @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in get_fields(cls).values()}
+        all_required_field_names = {field for field in get_fields(cls).keys()}
 
         input = values.pop("input", {})
         if input:

@@ -22,7 +22,7 @@ class AzureAISearchRetriever(BaseRetriever):
     """`Azure AI Search` service retriever.
 
     Setup:
-        See here for more detail: https://python.langchain.com/v0.2/docs/integrations/retrievers/azure_ai_search/
+        See here for more detail: https://python.langchain.com/docs/integrations/retrievers/azure_ai_search/
 
         We will need to install the below dependencies and set the required
         environment variables:

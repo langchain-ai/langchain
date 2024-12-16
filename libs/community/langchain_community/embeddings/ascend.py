@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AscendEmbeddings(Embeddings, BaseModel):
@@ -32,6 +32,8 @@ class AscendEmbeddings(Embeddings, BaseModel):
     pooling_method: Optional[str] = "cls"
     model: Any
     tokenizer: Any
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
