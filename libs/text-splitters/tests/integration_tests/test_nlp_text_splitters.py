@@ -14,6 +14,7 @@ from langchain_text_splitters.spacy import SpacyTextSplitter
 def setup_module() -> None:
     nltk.download("punkt_tab")
 
+
 @pytest.fixture()
 def spacy() -> Any:
     try:
@@ -45,6 +46,7 @@ def test_nltk_text_splitter() -> None:
     expected_output = [f"This is sentence one.{separator}And this is sentence two."]
     assert output == expected_output
 
+
 @pytest.mark.parametrize("pipeline", ["sentencizer", "en_core_web_sm"])
 def test_spacy_text_splitter(pipeline: str, spacy: Any) -> None:
     """Test splitting by sentence using Spacy."""
@@ -54,6 +56,7 @@ def test_spacy_text_splitter(pipeline: str, spacy: Any) -> None:
     output = splitter.split_text(text)
     expected_output = [f"This is sentence one.{separator}And this is sentence two."]
     assert output == expected_output
+
 
 @pytest.mark.parametrize("pipeline", ["sentencizer", "en_core_web_sm"])
 def test_spacy_text_splitter_strip_whitespace(pipeline: str, spacy: Any) -> None:
