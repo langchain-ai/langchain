@@ -1,4 +1,3 @@
-# mypy: disable-error-code="annotation-unchecked"
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
@@ -1021,7 +1020,7 @@ def invalid_google_docstring() -> str:
     """
 
 
-def test_parse_google_docstring_simple(google_docstring_example):
+def test_parse_google_docstring_simple(google_docstring_example: str) -> None:
     description, args = _parse_google_docstring(
         google_docstring_example, ["param1", "param2"]
     )
@@ -1035,7 +1034,7 @@ def test_parse_google_docstring_simple(google_docstring_example):
     }
 
 
-def test_parse_google_docstring_missing_args_section():
+def test_parse_google_docstring_missing_args_section() -> None:
     docstring = """This function lacks an arguments section.
 
     Returns:
@@ -1046,14 +1045,14 @@ def test_parse_google_docstring_missing_args_section():
     assert args == {}
 
 
-def test_parse_google_docstring_invalid_format(invalid_google_docstring):
+def test_parse_google_docstring_invalid_format(invalid_google_docstring: str) -> None:
     with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
         _parse_google_docstring(
             invalid_google_docstring, ["param1"], error_on_invalid_docstring=True
         )
 
 
-def test_parse_google_docstring_extra_parameters():
+def test_parse_google_docstring_extra_parameters() -> None:
     docstring = """This function has only one argument.
 
     Args:
@@ -1066,7 +1065,7 @@ def test_parse_google_docstring_extra_parameters():
     }
 
 
-def test_parse_google_docstring_multiline_and_empty_lines():
+def test_parse_google_docstring_multiline_and_empty_lines() -> None:
     docstring = """This function has multiline argument descriptions.
 
     Args:
@@ -1086,7 +1085,7 @@ def test_parse_google_docstring_multiline_and_empty_lines():
     }
 
 
-def test_parse_google_docstring_no_description():
+def test_parse_google_docstring_no_description() -> None:
     docstring = """
     Args:
         param1 (int): The first parameter.
@@ -1100,7 +1099,7 @@ def test_parse_google_docstring_no_description():
     }
 
 
-def test_parse_google_docstring_multiple_paragraphs():
+def test_parse_google_docstring_multiple_paragraphs() -> None:
     docstring = """This function does something.
 
     It has multiple paragraphs that should be handled correctly.
