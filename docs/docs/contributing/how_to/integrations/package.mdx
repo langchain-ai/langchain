@@ -291,37 +291,8 @@ import VectorstoreSource from '../../../../src/theme/integration_template/integr
 Embeddings are used to convert `str` objects from `Document.page_content` fields
 into a vector representation (represented as a list of floats).
 
-The `Embeddings` class must inherit from the [Embeddings](https://python.langchain.com/api_reference/core/embeddings/langchain_core.embeddings.embeddings.Embeddings.html#langchain_core.embeddings.embeddings.Embeddings)
-base class. This interface has 5 methods that can be implemented.
-
-| Method/Property         | Description                                          |
-|------------------------ |------------------------------------------------------|
-| `__init__`              | Initialize the embeddings object. (optional)         |
-| `embed_query`           | Embed a list of texts. (required)                    |
-| `embed_documents`       | Embed a list of documents. (required)                |
-| `aembed_query`          | Asynchronously embed a list of texts. (optional)     |
-| `aembed_documents`      | Asynchronously embed a list of documents. (optional) |
-
-### Constructor
-
-The `__init__` constructor is optional but common, but can be used to set up any necessary attributes
-that a user can pass in when initializing the embeddings object. Common attributes include
-
-- `model` - the id of the model to use for embeddings
-
-### Embedding queries vs documents
-
-The `embed_query` and `embed_documents` methods are required. These methods both operate
-on string inputs (the accessing of `Document.page_content` attributes) is handled
-by the VectorStore using the embedding model for legacy reasons.
-
-`embed_query` takes in a single string and returns a single embedding as a list of floats.
-If your model has different modes for embedding queries vs the underlying documents, you can
-implement this method to handle that. 
-
-`embed_documents` takes in a list of strings and returns a list of embeddings as a list of lists of floats.
-
-### Implementation
+Refer to the [Custom Embeddings Guide](/docs/how_to/custom_embeddings) guide for
+detail on a starter embeddings [implementation](/docs/how_to/custom_embeddings/#implementation).
 
 You can start from the following template or langchain-cli command:
 
