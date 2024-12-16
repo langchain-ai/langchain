@@ -131,6 +131,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             connection_string: The MongoDB vCore instance connection string
             namespace: The namespace (database.collection)
             embedding: The embedding utility
+            application_name: The user agent for telemetry
             **kwargs: Dynamic keyword arguments
 
         Returns:
