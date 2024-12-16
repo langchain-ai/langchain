@@ -997,9 +997,8 @@ def test_convert_to_openai_function_no_args() -> None:
     }
 
 
-@pytest.fixture()
-def google_docstring_example() -> str:
-    return """This function demonstrates a Google-style docstring.
+def test_parse_google_docstring_simple() -> None:
+    google_docstring_example = """This function demonstrates a Google-style docstring.
 
     Args:
         param1 (int): The first parameter.
@@ -1009,18 +1008,6 @@ def google_docstring_example() -> str:
     Returns:
         bool: Indicates if the operation was successful.
     """
-
-
-@pytest.fixture()
-def invalid_google_docstring() -> str:
-    return """This function has a malformed docstring.
-
-    Arguments:
-        param1 (int) The first parameter without a colon.
-    """
-
-
-def test_parse_google_docstring_simple(google_docstring_example: str) -> None:
     description, args = _parse_google_docstring(
         google_docstring_example, ["param1", "param2"]
     )
@@ -1045,7 +1032,12 @@ def test_parse_google_docstring_missing_args_section() -> None:
     assert args == {}
 
 
-def test_parse_google_docstring_invalid_format(invalid_google_docstring: str) -> None:
+def test_parse_google_docstring_invalid_format() -> None:
+    invalid_google_docstring = """This function has a malformed docstring.
+
+    Arguments:
+        param1 (int) The first parameter without a colon.
+    """
     with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
         _parse_google_docstring(
             invalid_google_docstring, ["param1"], error_on_invalid_docstring=True
