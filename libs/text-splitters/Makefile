@@ -19,7 +19,7 @@ check_imports: $(shell find langchain_text_splitters -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
-	poetry run pytest --only-extended $(TEST_FILE)
+	poetry run pytest --disable-socket --allow-unix-socket --only-extended $(TEST_FILE)
 
 
 ######################
