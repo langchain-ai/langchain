@@ -63,6 +63,14 @@
       "destination": "/docs/tutorials/rag"
     },
     {
+      "source": "/docs/how_to/graph_mapping(/?)",
+      "destination": "/docs/tutorials/graph#query-validation"
+    },
+    {
+      "source": "/docs/how_to/graph_prompting(/?)",
+      "destination": "/docs/tutorials/graph#few-shot-prompting"
+    },
+    {
       "source": "/docs/tutorials/data_generation",
       "destination": "https://python.langchain.com/v0.2/docs/tutorials/data_generation/"
     },
@@ -113,6 +121,10 @@
     {
       "source": "/docs/contributing/:path((?:faq|repo_structure|review_process)/?)",
       "destination": "/docs/contributing/reference/:path"
+    },
+    {
+      "source": "/docs/integrations/retrievers/weaviate-hybrid(/?)",
+      "destination": "/docs/integrations/vectorstores/weaviate/#search-mechanism"
     }
   ]
 }
