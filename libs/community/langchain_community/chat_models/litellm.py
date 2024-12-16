@@ -54,7 +54,7 @@ from langchain_core.outputs import (
 )
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.utils import pre_init
+from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field
 
@@ -219,6 +219,12 @@ class ChatLiteLLM(BaseChatModel):
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
     """Model name to use."""
+    openai_api_key: Optional[str] = None
+    azure_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
+    replicate_api_key: Optional[str] = None
+    cohere_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
     api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
@@ -267,6 +273,20 @@ class ChatLiteLLM(BaseChatModel):
             set_model_value = self.model_name
         self.client.api_base = self.api_base
         self.client.api_key = self.api_key
+        for named_api_key in [
+            "openai_api_key",
+            "azure_api_key",
+            "anthropic_api_key",
+            "replicate_api_key",
+            "cohere_api_key",
+            "openrouter_api_key",
+        ]:
+            if api_key_value := getattr(self, named_api_key):
+                setattr(
+                    self.client,
+                    named_api_key.replace("_api_key", "_key"),
+                    api_key_value,
+                )
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": set_model_value,
@@ -298,6 +318,30 @@ class ChatLiteLLM(BaseChatModel):
                 "Please install it with `pip install litellm`"
             )
 
+        values["openai_api_key"] = get_from_dict_or_env(
+            values, "openai_api_key", "OPENAI_API_KEY", default=""
+        )
+        values["azure_api_key"] = get_from_dict_or_env(
+            values, "azure_api_key", "AZURE_API_KEY", default=""
+        )
+        values["anthropic_api_key"] = get_from_dict_or_env(
+            values, "anthropic_api_key", "ANTHROPIC_API_KEY", default=""
+        )
+        values["replicate_api_key"] = get_from_dict_or_env(
+            values, "replicate_api_key", "REPLICATE_API_KEY", default=""
+        )
+        values["openrouter_api_key"] = get_from_dict_or_env(
+            values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
+        )
+        values["cohere_api_key"] = get_from_dict_or_env(
+            values, "cohere_api_key", "COHERE_API_KEY", default=""
+        )
+        values["huggingface_api_key"] = get_from_dict_or_env(
+            values, "huggingface_api_key", "HUGGINGFACE_API_KEY", default=""
+        )
+        values["together_ai_api_key"] = get_from_dict_or_env(
+            values, "together_ai_api_key", "TOGETHERAI_API_KEY", default=""
+        )
         values["client"] = litellm
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
