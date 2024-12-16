@@ -4,9 +4,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from langchain_core._api import warn_deprecated
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
@@ -20,14 +22,7 @@ from langchain_community.callbacks.utils import (
 
 def import_wandb() -> Any:
     """Import the wandb python package and raise an error if it is not installed."""
-    try:
-        import wandb  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the wandb callback manager you need to have the `wandb` python "
-            "package installed. Please install it with `pip install wandb`"
-        )
-    return wandb
+    return guard_import("wandb")
 
 
 def load_json_to_dict(json_path: Union[str, Path]) -> dict:
@@ -212,6 +207,22 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.complexity_metrics = complexity_metrics
         self.visualize = visualize
         self.nlp = spacy.load("en_core_web_sm")
+        warn_deprecated(
+            "0.3.8",
+            pending=False,
+            message=(
+                "Please use the WeaveTracer instead of the WandbCallbackHandler. "
+                "The WeaveTracer is a more flexible and powerful tool for logging "
+                "and tracing your LangChain callables."
+                "Find more information at https://weave-docs.wandb.ai/guides/integrations/langchain"
+            ),
+            alternative=(
+                "Please instantiate the WeaveTracer from "
+                "weave.integrations.langchain import WeaveTracer ."
+                "For autologging simply use weave.init() and log all traces "
+                "from your LangChain callables."
+            ),
+        )
 
     def _init_resp(self) -> Dict:
         return {k: None for k in self.callback_columns}

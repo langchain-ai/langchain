@@ -6,10 +6,9 @@ import zipfile
 from pathlib import Path
 from typing import Iterator, List, Union
 
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,8 @@ class TelegramChatLoader(BaseChatLoader):
         """
         self.path = path if isinstance(path, str) else str(path)
 
-    def _load_single_chat_session_html(self, file_path: str) -> ChatSession:
+    @staticmethod
+    def _load_single_chat_session_html(file_path: str) -> ChatSession:
         """Load a single chat session from an HTML file.
 
         Args:
@@ -83,7 +83,8 @@ class TelegramChatLoader(BaseChatLoader):
 
         return ChatSession(messages=results)
 
-    def _load_single_chat_session_json(self, file_path: str) -> ChatSession:
+    @staticmethod
+    def _load_single_chat_session_json(file_path: str) -> ChatSession:
         """Load a single chat session from a JSON file.
 
         Args:
@@ -114,7 +115,8 @@ class TelegramChatLoader(BaseChatLoader):
 
         return ChatSession(messages=results)
 
-    def _iterate_files(self, path: str) -> Iterator[str]:
+    @staticmethod
+    def _iterate_files(path: str) -> Iterator[str]:
         """Iterate over files in a directory or zip file.
 
         Args:

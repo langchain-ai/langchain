@@ -21,8 +21,12 @@ from typing import (
 import numpy as np
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+    pre_init,
+)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -54,11 +58,11 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -81,11 +85,11 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -106,7 +110,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
-        raise openai.error.APIError("OpenAI API returned an empty embedding")
+        raise openai.error.APIError("OpenAI API returned an empty embedding")  # type: ignore[attr-defined]
     return response
 
 
@@ -140,7 +144,7 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
 @deprecated(
     since="0.0.9",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_openai.OpenAIEmbeddings",
 )
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -250,14 +254,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True, extra="forbid", protected_namespaces=()
+    )
 
-        extra = Extra.forbid
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -282,7 +285,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -305,10 +308,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2023-05-15"
-            # Azure OpenAI embedding models allow a maximum of 16 texts
-            # at a time in each batch
+            # Azure OpenAI embedding models allow a maximum of 2048
+            # texts at a time in each batch
             # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = min(values["chunk_size"], 16)
+            values["chunk_size"] = min(values["chunk_size"], 2048)
         else:
             default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
@@ -354,7 +357,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         **client_params
                     ).embeddings
             elif not values.get("client"):
-                values["client"] = openai.Embedding
+                values["client"] = openai.Embedding  # type: ignore[attr-defined]
             else:
                 pass
         return values
@@ -387,10 +390,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Please install it with `pip install openai`."
                     )
 
-                openai.proxy = {
+                openai.proxy = {  # type: ignore[attr-defined]
                     "http": self.openai_proxy,
                     "https": self.openai_proxy,
-                }  # type: ignore[assignment]  # noqa: E501
+                }  # type: ignore[assignment]
         return openai_args
 
     # please refer to
@@ -424,7 +427,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "Could not import transformers python package. "
                     "This is needed in order to for OpenAIEmbeddings without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
@@ -557,7 +560,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "Could not import transformers python package. "
                     "This is needed in order to for OpenAIEmbeddings without "
                     " `tiktoken`. Please install it with `pip install transformers`."

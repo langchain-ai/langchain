@@ -1,4 +1,5 @@
 """Playwright browser toolkit."""
+
 from langchain_community.agent_toolkits.playwright.toolkit import (
     PlayWrightBrowserToolkit,
 )

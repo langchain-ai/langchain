@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -16,64 +16,26 @@ IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
 )
 IMPORT_ASYNC_OPENSEARCH_PY_ERROR = """
-Could not import AsyncOpenSearch. 
+Could not import AsyncOpenSearch.
 Please install it with `pip install opensearch-py`."""
 
 SCRIPT_SCORING_SEARCH = "script_scoring"
 PAINLESS_SCRIPTING_SEARCH = "painless_scripting"
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
+HYBRID_SEARCH = "hybrid_search"
+
+if TYPE_CHECKING:
+    from opensearchpy import AsyncOpenSearch, OpenSearch
 
 
-def _import_opensearch() -> Any:
-    """Import OpenSearch if available, otherwise raise error."""
-    try:
-        from opensearchpy import OpenSearch
-    except ImportError:
-        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
-    return OpenSearch
-
-
-def _import_async_opensearch() -> Any:
-    """Import AsyncOpenSearch if available, otherwise raise error."""
-    try:
-        from opensearchpy import AsyncOpenSearch
-    except ImportError:
-        raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
-    return AsyncOpenSearch
-
-
-def _import_bulk() -> Any:
-    """Import bulk if available, otherwise raise error."""
-    try:
-        from opensearchpy.helpers import bulk
-    except ImportError:
-        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
-    return bulk
-
-
-def _import_async_bulk() -> Any:
-    """Import async_bulk if available, otherwise raise error."""
-    try:
-        from opensearchpy.helpers import async_bulk
-    except ImportError:
-        raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
-    return async_bulk
-
-
-def _import_not_found_error() -> Any:
-    """Import not found error if available, otherwise raise error."""
-    try:
-        from opensearchpy.exceptions import NotFoundError
-    except ImportError:
-        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
-    return NotFoundError
-
-
-def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
+def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> OpenSearch:
     """Get OpenSearch client from the opensearch_url, otherwise raise error."""
     try:
-        opensearch = _import_opensearch()
-        client = opensearch(opensearch_url, **kwargs)
+        from opensearchpy import OpenSearch
+
+        client = OpenSearch(opensearch_url, **kwargs)
+    except ImportError:
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
     except ValueError as e:
         raise ImportError(
             f"OpenSearch client string provided is not in proper format. "
@@ -82,11 +44,14 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     return client
 
 
-def _get_async_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
+def _get_async_opensearch_client(opensearch_url: str, **kwargs: Any) -> AsyncOpenSearch:
     """Get AsyncOpenSearch client from the opensearch_url, otherwise raise error."""
     try:
-        async_opensearch = _import_async_opensearch()
-        client = async_opensearch(opensearch_url, **kwargs)
+        from opensearchpy import AsyncOpenSearch
+
+        client = AsyncOpenSearch(opensearch_url, **kwargs)
+    except ImportError:
+        raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
     except ValueError as e:
         raise ImportError(
             f"AsyncOpenSearch client string provided is not in proper format. "
@@ -127,7 +92,7 @@ def _is_aoss_enabled(http_auth: Any) -> bool:
 
 
 def _bulk_ingest_embeddings(
-    client: Any,
+    client: OpenSearch,
     index_name: str,
     embeddings: List[List[float]],
     texts: Iterable[str],
@@ -142,16 +107,19 @@ def _bulk_ingest_embeddings(
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
         mapping = dict()
+    try:
+        from opensearchpy.exceptions import NotFoundError
+        from opensearchpy.helpers import bulk
+    except ImportError:
+        raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
 
-    bulk = _import_bulk()
-    not_found_error = _import_not_found_error()
     requests = []
     return_ids = []
     mapping = mapping
 
     try:
         client.indices.get(index=index_name)
-    except not_found_error:
+    except NotFoundError:
         client.indices.create(index=index_name, body=mapping)
 
     for i, text in enumerate(texts):
@@ -177,7 +145,7 @@ def _bulk_ingest_embeddings(
 
 
 async def _abulk_ingest_embeddings(
-    client: Any,
+    client: AsyncOpenSearch,
     index_name: str,
     embeddings: List[List[float]],
     texts: Iterable[str],
@@ -193,14 +161,18 @@ async def _abulk_ingest_embeddings(
     if not mapping:
         mapping = dict()
 
-    async_bulk = _import_async_bulk()
-    not_found_error = _import_not_found_error()
+    try:
+        from opensearchpy.exceptions import NotFoundError
+        from opensearchpy.helpers import async_bulk
+    except ImportError:
+        raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
+
     requests = []
     return_ids = []
 
     try:
         await client.indices.get(index=index_name)
-    except not_found_error:
+    except NotFoundError:
         await client.indices.create(index=index_name, body=mapping)
 
     for i, text in enumerate(texts):
@@ -230,7 +202,7 @@ async def _abulk_ingest_embeddings(
 def _default_scripting_text_mapping(
     dim: int,
     vector_field: str = "vector_field",
-) -> Dict:
+) -> Dict[str, Any]:
     """For Painless Scripting or Script Scoring,the default mapping to create index."""
     return {
         "mappings": {
@@ -249,7 +221,7 @@ def _default_text_mapping(
     ef_construction: int = 512,
     m: int = 16,
     vector_field: str = "vector_field",
-) -> Dict:
+) -> Dict[str, Any]:
     """For Approximate k-NN Search, this is the default mapping to create index."""
     return {
         "settings": {"index": {"knn": True, "knn.algo_param.ef_search": ef_search}},
@@ -274,10 +246,12 @@ def _default_approximate_search_query(
     query_vector: List[float],
     k: int = 4,
     vector_field: str = "vector_field",
-) -> Dict:
+    score_threshold: Optional[float] = 0.0,
+) -> Dict[str, Any]:
     """For Approximate k-NN Search, this is the default query."""
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
     }
 
@@ -288,10 +262,12 @@ def _approximate_search_query_with_boolean_filter(
     k: int = 4,
     vector_field: str = "vector_field",
     subquery_clause: str = "must",
-) -> Dict:
+    score_threshold: Optional[float] = 0.0,
+) -> Dict[str, Any]:
     """For Approximate k-NN Search, with Boolean Filter."""
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {
             "bool": {
                 "filter": boolean_filter,
@@ -308,11 +284,12 @@ def _approximate_search_query_with_efficient_filter(
     efficient_filter: Dict,
     k: int = 4,
     vector_field: str = "vector_field",
-) -> Dict:
+    score_threshold: Optional[float] = 0.0,
+) -> Dict[str, Any]:
     """For Approximate k-NN Search, with Efficient Filter for Lucene and
     Faiss Engines."""
     search_query = _default_approximate_search_query(
-        query_vector, k=k, vector_field=vector_field
+        query_vector, k=k, vector_field=vector_field, score_threshold=score_threshold
     )
     search_query["query"]["knn"][vector_field]["filter"] = efficient_filter
     return search_query
@@ -324,7 +301,8 @@ def _default_script_query(
     space_type: str = "l2",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
-) -> Dict:
+    score_threshold: Optional[float] = 0.0,
+) -> Dict[str, Any]:
     """For Script Scoring Search, this is the default query."""
 
     if not pre_filter:
@@ -332,6 +310,7 @@ def _default_script_query(
 
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -368,7 +347,8 @@ def _default_painless_scripting_query(
     space_type: str = "l2Squared",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
-) -> Dict:
+    score_threshold: Optional[float] = 0.0,
+) -> Dict[str, Any]:
     """For Painless Scripting Search, this is the default query."""
 
     if not pre_filter:
@@ -377,6 +357,7 @@ def _default_painless_scripting_query(
     source = __get_painless_scripting_source(space_type, vector_field=vector_field)
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -390,6 +371,65 @@ def _default_painless_scripting_query(
             }
         },
     }
+
+
+def _default_hybrid_search_query(
+    query_text: str, query_vector: List[float], k: int = 4
+) -> Dict:
+    """Returns payload for performing hybrid search for given options.
+
+    Args:
+        query_text: The query text to search for.
+        query_vector: The embedding vector (query) to search for.
+        k: Number of Documents to return. Defaults to 4.
+
+    Returns:
+        dict: The payload for hybrid search.
+    """
+    payload = {
+        "_source": {"exclude": ["vector_field"]},
+        "query": {
+            "hybrid": {
+                "queries": [
+                    {
+                        "match": {
+                            "text": {
+                                "query": query_text,
+                            }
+                        }
+                    },
+                    {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
+                ]
+            }
+        },
+        "size": k,
+    }
+
+    return payload
+
+
+def _hybrid_search_query_with_post_filter(
+    query_text: str,
+    query_vector: List[float],
+    k: int,
+    post_filter: Dict,
+) -> Dict:
+    """Returns payload for performing hybrid search with post filter.
+
+    Args:
+        query_text: The query text to search for.
+        query_vector: The embedding vector to search for.
+        k: Number of Documents to return.
+        post_filter: The post filter to apply.
+
+    Returns:
+        dict: The payload for hybrid search with post filter.
+    """
+    search_query = _default_hybrid_search_query(query_text, query_vector, k)
+
+    search_query["post_filter"] = post_filter
+
+    return search_query
 
 
 class OpenSearchVectorSearch(VectorStore):
@@ -421,7 +461,8 @@ class OpenSearchVectorSearch(VectorStore):
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
         self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
-        self.engine = kwargs.get("engine")
+        self.engine = kwargs.get("engine", "nmslib")
+        self.bulk_size = kwargs.get("bulk_size", 500)
 
     @property
     def embeddings(self) -> Embeddings:
@@ -433,14 +474,15 @@ class OpenSearchVectorSearch(VectorStore):
         embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
-        engine = kwargs.get("engine", "nmslib")
+        engine = kwargs.get("engine", self.engine)
         space_type = kwargs.get("space_type", "l2")
         ef_search = kwargs.get("ef_search", 512)
         ef_construction = kwargs.get("ef_construction", 512)
@@ -474,14 +516,15 @@ class OpenSearchVectorSearch(VectorStore):
         embeddings: List[List[float]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         index_name = kwargs.get("index_name", self.index_name)
         text_field = kwargs.get("text_field", "text")
         dim = len(embeddings[0])
-        engine = kwargs.get("engine", "nmslib")
+        engine = kwargs.get("engine", self.engine)
         space_type = kwargs.get("space_type", "l2")
         ef_search = kwargs.get("ef_search", 512)
         ef_construction = kwargs.get("ef_construction", 512)
@@ -509,12 +552,78 @@ class OpenSearchVectorSearch(VectorStore):
             is_aoss=self.is_aoss,
         )
 
+    def delete_index(self, index_name: Optional[str] = None) -> Optional[bool]:
+        """Deletes a given index from vectorstore."""
+        if index_name is None:
+            if self.index_name is None:
+                raise ValueError("index_name must be provided.")
+            index_name = self.index_name
+        try:
+            self.client.indices.delete(index=index_name)
+            return True
+        except Exception as e:
+            raise e
+
+    def index_exists(self, index_name: Optional[str] = None) -> Optional[bool]:
+        """If given index present in vectorstore, returns True else False."""
+        if index_name is None:
+            if self.index_name is None:
+                raise ValueError("index_name must be provided.")
+            index_name = self.index_name
+
+        return self.client.indices.exists(index=index_name)
+
+    def create_index(
+        self,
+        dimension: int,
+        index_name: Optional[str] = uuid.uuid4().hex,
+        **kwargs: Any,
+    ) -> Optional[str]:
+        """Create a new Index with given arguments"""
+        is_appx_search = kwargs.get("is_appx_search", True)
+        vector_field = kwargs.get("vector_field", "vector_field")
+        kwargs.get("text_field", "text")
+        http_auth = kwargs.get("http_auth")
+        is_aoss = _is_aoss_enabled(http_auth=http_auth)
+
+        if is_aoss and not is_appx_search:
+            raise ValueError(
+                "Amazon OpenSearch Service Serverless only "
+                "supports `approximate_search`"
+            )
+
+        if is_appx_search:
+            engine = kwargs.get("engine", self.engine)
+            space_type = kwargs.get("space_type", "l2")
+            ef_search = kwargs.get("ef_search", 512)
+            ef_construction = kwargs.get("ef_construction", 512)
+            m = kwargs.get("m", 16)
+
+            _validate_aoss_with_engines(is_aoss, engine)
+
+            mapping = _default_text_mapping(
+                dimension,
+                engine,
+                space_type,
+                ef_search,
+                ef_construction,
+                m,
+                vector_field,
+            )
+        else:
+            mapping = _default_scripting_text_mapping(dimension)
+
+        if self.index_exists(index_name):
+            raise RuntimeError(f"The index, {index_name} already exists.")
+        self.client.indices.create(index=index_name, body=mapping)
+        return index_name
+
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -536,6 +645,7 @@ class OpenSearchVectorSearch(VectorStore):
             to "text".
         """
         embeddings = self.embedding_function.embed_documents(list(texts))
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         return self.__add(
             texts,
             embeddings,
@@ -550,7 +660,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -558,6 +668,7 @@ class OpenSearchVectorSearch(VectorStore):
         and add to the vectorstore.
         """
         embeddings = await self.embedding_function.aembed_documents(list(texts))
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         return await self.__aadd(
             texts,
             embeddings,
@@ -572,7 +683,7 @@ class OpenSearchVectorSearch(VectorStore):
         text_embeddings: Iterable[Tuple[str, List[float]]],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add the given texts and embeddings to the vectorstore.
@@ -595,6 +706,7 @@ class OpenSearchVectorSearch(VectorStore):
             to "text".
         """
         texts, embeddings = zip(*text_embeddings)
+        bulk_size = bulk_size if bulk_size is not None else self.bulk_size
         return self.__add(
             list(texts),
             list(embeddings),
@@ -617,7 +729,10 @@ class OpenSearchVectorSearch(VectorStore):
             refresh_indices: Whether to refresh the index
                             after deleting documents. Defaults to True.
         """
-        bulk = _import_bulk()
+        try:
+            from opensearchpy.helpers import bulk
+        except ImportError:
+            raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
 
         body = []
 
@@ -658,8 +773,145 @@ class OpenSearchVectorSearch(VectorStore):
             item.get("delete", {}).get("error") for item in response["items"]
         )
 
+    def configure_search_pipelines(
+        self,
+        pipeline_name: str,
+        keyword_weight: float = 0.7,
+        vector_weight: float = 0.3,
+    ) -> dict:
+        """
+        Configures a search pipeline for hybrid search.
+        Args:
+            pipeline_name: Name of the pipeline
+            keyword_weight: Weight for keyword search
+            vector_weight: Weight for vector search
+        Returns:
+            response: Acknowledgement of the pipeline creation.
+            (if there is any error while configuring the pipeline, it will return None)
+        Raises:
+            Exception: If an error occurs
+        """
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+
+        path = f"/_search/pipeline/{pipeline_name}"
+
+        payload = {
+            "description": "Post processor for hybrid search",
+            "phase_results_processors": [
+                {
+                    "normalization-processor": {
+                        "normalization": {"technique": "min_max"},
+                        "combination": {
+                            "technique": "arithmetic_mean",
+                            "parameters": {"weights": [keyword_weight, vector_weight]},
+                        },
+                    }
+                }
+            ],
+        }
+
+        response = self.client.transport.perform_request(
+            method="PUT", url=path, body=payload
+        )
+        return response
+
+    def search_pipeline_exists(self, pipeline_name: str) -> bool:
+        """
+        Checks if a search pipeline exists.
+
+        Args:
+            pipeline_name: Name of the pipeline
+
+        Returns:
+            bool: True if the pipeline exists, False otherwise
+
+        Raises:
+            Exception: If an error occurs
+
+        Example:
+            >>> search_pipeline_exists("my_pipeline_1")
+            True
+            >>> search_pipeline_exists("my_pipeline_2")
+            False
+        """
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+
+        existed_pipelines = self.client.transport.perform_request(
+            method="GET", url="/_search/pipeline/"
+        )
+
+        return pipeline_name in existed_pipelines
+
+    def get_search_pipeline_info(self, pipeline_name: str) -> Optional[Dict]:
+        """
+        Get information about a search pipeline.
+
+        Args:
+            pipeline_name: Name of the pipeline
+
+        Returns:
+            dict: Information about the pipeline
+            None: If pipeline does not exist
+
+        Raises:
+            Exception: If an error occurs
+
+        Example:
+            >>> get_search_pipeline_info("my_pipeline_1")
+            {'search_pipeline_1': {
+                "description": "Post processor for hybrid search",
+                "phase_results_processors": [
+                    {
+                        "normalization-processor": {
+                            "normalization": {"technique": "min_max"},
+                            "combination": {
+                                "technique": "arithmetic_mean",
+                                "parameters": {"weights": [0.7, 0.3]}
+                            }
+                        }
+                    }
+                ]
+            }
+            }
+            >>> get_search_pipeline_info("my_pipeline_2")
+            None
+        """
+        response = None
+
+        if not pipeline_name.isidentifier():
+            raise ValueError(f"Invalid pipeline name: {pipeline_name}")
+
+        response = self.client.transport.perform_request(
+            method="GET", url=f"/_search/pipeline/{pipeline_name}"
+        )
+
+        return response
+
+    @staticmethod
+    def _identity_fn(score: float) -> float:
+        return score
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+
+        Vectorstores should define their own selection based method of relevance.
+        """
+        return self._identity_fn
+
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -669,6 +921,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of Documents most similar to the query.
@@ -717,20 +971,30 @@ class OpenSearchVectorSearch(VectorStore):
             pre_filter: script_score query to pre-filter documents before identifying
             nearest neighbors; default: {"match_all": {}}
         """
-        docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
+        docs_with_scores = self.similarity_search_with_score(
+            query, k, score_threshold, **kwargs
+        )
         return [doc[0] for doc in docs_with_scores]
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to the embedding vector."""
         docs_with_scores = self.similarity_search_with_score_by_vector(
-            embedding, k, **kwargs
+            embedding, k, score_threshold, **kwargs
         )
         return [doc[0] for doc in docs_with_scores]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and it's scores most similar to query.
 
@@ -740,6 +1004,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of Documents along with its scores most similar to the query.
@@ -747,11 +1013,19 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args:
             same as `similarity_search`
         """
+        # added query_text to kwargs for Hybrid Search
+        kwargs["query_text"] = query
         embedding = self.embedding_function.embed_query(query)
-        return self.similarity_search_with_score_by_vector(embedding, k, **kwargs)
+        return self.similarity_search_with_score_by_vector(
+            embedding, k, score_threshold, **kwargs
+        )
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and it's scores most similar to the embedding vector.
 
@@ -761,6 +1035,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of Documents along with its scores most similar to the query.
@@ -772,7 +1048,7 @@ class OpenSearchVectorSearch(VectorStore):
         metadata_field = kwargs.get("metadata_field", "metadata")
 
         hits = self._raw_similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, **kwargs
+            embedding=embedding, k=k, score_threshold=score_threshold, **kwargs
         )
 
         documents_with_scores = [
@@ -784,6 +1060,7 @@ class OpenSearchVectorSearch(VectorStore):
                         if metadata_field == "*" or metadata_field not in hit["_source"]
                         else hit["_source"][metadata_field]
                     ),
+                    id=hit["_id"],
                 ),
                 hit["_score"],
             )
@@ -792,7 +1069,11 @@ class OpenSearchVectorSearch(VectorStore):
         return documents_with_scores
 
     def _raw_similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[dict]:
         """Return raw opensearch documents (dict) including vectors,
         scores most similar to the embedding vector.
@@ -803,6 +1084,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of dict with its scores most similar to the embedding.
@@ -868,10 +1151,15 @@ class OpenSearchVectorSearch(VectorStore):
                     k=k,
                     vector_field=vector_field,
                     subquery_clause=subquery_clause,
+                    score_threshold=score_threshold,
                 )
             elif efficient_filter != {}:
                 search_query = _approximate_search_query_with_efficient_filter(
-                    embedding, efficient_filter, k=k, vector_field=vector_field
+                    embedding,
+                    efficient_filter,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
             elif lucene_filter != {}:
                 warnings.warn(
@@ -879,24 +1167,73 @@ class OpenSearchVectorSearch(VectorStore):
                     " `efficient_filter`"
                 )
                 search_query = _approximate_search_query_with_efficient_filter(
-                    embedding, lucene_filter, k=k, vector_field=vector_field
+                    embedding,
+                    lucene_filter,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
             else:
                 search_query = _default_approximate_search_query(
-                    embedding, k=k, vector_field=vector_field
+                    embedding,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = kwargs.get("space_type", "l2")
             pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
-                embedding, k, space_type, pre_filter, vector_field
+                embedding,
+                k,
+                space_type,
+                pre_filter,
+                vector_field,
+                score_threshold=score_threshold,
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = kwargs.get("space_type", "l2Squared")
             pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, k, space_type, pre_filter, vector_field
+                embedding,
+                k,
+                space_type,
+                pre_filter,
+                vector_field,
+                score_threshold=score_threshold,
             )
+
+        elif search_type == HYBRID_SEARCH:
+            search_pipeline = kwargs.get("search_pipeline")
+            post_filter = kwargs.get("post_filter", {})
+            query_text = kwargs.get("query_text")
+            path = f"/{index_name}/_search?search_pipeline={search_pipeline}"
+
+            if query_text is None:
+                raise ValueError("query_text must be provided for hybrid search")
+
+            if search_pipeline is None:
+                raise ValueError("search_pipeline must be provided for hybrid search")
+
+            # embedding the query_text
+            embeded_query = self.embedding_function.embed_query(query_text)
+
+            # if post filter is provided
+            if post_filter != {}:
+                # hybrid search with post filter
+                payload = _hybrid_search_query_with_post_filter(
+                    query_text, embeded_query, k, post_filter
+                )
+            else:
+                # hybrid search without post filter
+                payload = _default_hybrid_search_query(query_text, embeded_query, k)
+
+            response = self.client.transport.perform_request(
+                method="GET", url=path, body=payload
+            )
+
+            return [hit for hit in response["hits"]["hits"]]
+
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
@@ -953,6 +1290,7 @@ class OpenSearchVectorSearch(VectorStore):
             Document(
                 page_content=results[i]["_source"][text_field],
                 metadata=results[i]["_source"][metadata_field],
+                id=results[i]["_id"],
             )
             for i in mmr_selected
         ]
@@ -963,7 +1301,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
@@ -1012,6 +1350,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         """
         embeddings = embedding.embed_documents(texts)
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
         return cls.from_embeddings(
             embeddings,
             texts,
@@ -1028,7 +1367,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
@@ -1077,6 +1416,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         """
         embeddings = await embedding.aembed_documents(texts)
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
         return await cls.afrom_embeddings(
             embeddings,
             texts,
@@ -1094,7 +1434,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
@@ -1163,6 +1503,7 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
@@ -1224,7 +1565,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        bulk_size: int = 500,
+        bulk_size: Optional[int] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
@@ -1295,6 +1636,7 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
+        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable

@@ -6,15 +6,14 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import secret_from_env
+from pydantic import Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
 
-class EdenaiTool(BaseTool):
-
+class EdenaiTool(BaseTool):  # type: ignore[override]
     """
     the base tool for all the EdenAI Tools .
     you should have
@@ -24,19 +23,13 @@ class EdenaiTool(BaseTool):
 
     feature: str
     subfeature: str
-    edenai_api_key: Optional[str] = None
+    edenai_api_key: Optional[SecretStr] = Field(
+        default_factory=secret_from_env("EDENAI_API_KEY", default=None)
+    )
     is_async: bool = False
 
     providers: List[str]
     """provider to use for the API call."""
-
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-        values["edenai_api_key"] = get_from_dict_or_env(
-            values, "edenai_api_key", "EDENAI_API_KEY"
-        )
-        return values
 
     @staticmethod
     def get_user_agent() -> str:
@@ -55,11 +48,9 @@ class EdenaiTool(BaseTool):
             requests.Response: The response from the EdenAI API call.
 
         """
-
-        # faire l'API call
-
+        api_key = self.edenai_api_key.get_secret_value() if self.edenai_api_key else ""
         headers = {
-            "Authorization": f"Bearer {self.edenai_api_key}",
+            "Authorization": f"Bearer {api_key}",
             "User-Agent": self.get_user_agent(),
         }
 

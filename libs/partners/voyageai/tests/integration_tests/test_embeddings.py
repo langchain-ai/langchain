@@ -9,7 +9,7 @@ MODEL = "voyage-2"
 def test_langchain_voyageai_embedding_documents() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar"]
-    embedding = VoyageAIEmbeddings(model=MODEL)
+    embedding = VoyageAIEmbeddings(model=MODEL)  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 1024
@@ -29,7 +29,7 @@ def test_langchain_voyageai_embedding_documents_multiple() -> None:
 def test_langchain_voyageai_embedding_query() -> None:
     """Test voyage embeddings."""
     document = "foo bar"
-    embedding = VoyageAIEmbeddings(model=MODEL)
+    embedding = VoyageAIEmbeddings(model=MODEL)  # type: ignore[call-arg]
     output = embedding.embed_query(document)
     assert len(output) == 1024
 
@@ -48,6 +48,6 @@ async def test_langchain_voyageai_async_embedding_documents_multiple() -> None:
 async def test_langchain_voyageai_async_embedding_query() -> None:
     """Test voyage embeddings."""
     document = "foo bar"
-    embedding = VoyageAIEmbeddings(model=MODEL)
+    embedding = VoyageAIEmbeddings(model=MODEL)  # type: ignore[call-arg]
     output = await embedding.aembed_query(document)
     assert len(output) == 1024

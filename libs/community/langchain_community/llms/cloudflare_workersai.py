@@ -70,7 +70,9 @@ class CloudflareWorkersAI(LLM):
         """Call Cloudflare Workers API"""
         headers = {"Authorization": f"Bearer {self.api_token}"}
         data = {"prompt": prompt, "stream": self.streaming, **params}
-        response = requests.post(self.endpoint_url, headers=headers, json=data)
+        response = requests.post(
+            self.endpoint_url, headers=headers, json=data, stream=self.streaming
+        )
         return response
 
     def _process_response(self, response: requests.Response) -> str:
@@ -103,9 +105,9 @@ class CloudflareWorkersAI(LLM):
                     logger.debug(chunk)
                     raise e
                 if data is not None and "response" in data:
+                    if run_manager:
+                        run_manager.on_llm_new_token(data["response"])
                     yield GenerationChunk(text=data["response"])
-                if run_manager:
-                    run_manager.on_llm_new_token(data["response"])
         logger.debug("stream end")
         self.streaming = original_steaming
 

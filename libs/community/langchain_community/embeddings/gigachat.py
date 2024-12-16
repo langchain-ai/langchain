@@ -4,8 +4,11 @@ import logging
 from functools import cached_property
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.utils import pre_init
+from langchain_core.utils.pydantic import get_fields
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +16,11 @@ MAX_BATCH_SIZE_CHARS = 1000000
 MAX_BATCH_SIZE_PARTS = 90
 
 
+@deprecated(
+    since="0.3.5",
+    removal="1.0",
+    alternative_import="langchain_gigachat.GigaChatEmbeddings",
+)
 class GigaChatEmbeddings(BaseModel, Embeddings):
     """GigaChat Embeddings models.
 
@@ -77,7 +85,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
             key_file_password=self.key_file_password,
         )
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate authenticate data in environment and python package is installed."""
         try:
@@ -87,7 +95,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
                 "Could not import gigachat python package. "
                 "Please install it with `pip install gigachat`."
             )
-        fields = set(cls.__fields__.keys())
+        fields = set(get_fields(cls).keys())
         diff = set(values.keys()) - fields
         if diff:
             logger.warning(f"Extra fields {diff} in GigaChat class")

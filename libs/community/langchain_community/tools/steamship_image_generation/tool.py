@@ -11,16 +11,17 @@ To use this tool, you must first set as environment variables:
     STEAMSHIP_API_KEY
 ```
 """
+
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.steamship_image_generation.utils import make_image_public
 
 if TYPE_CHECKING:
@@ -40,8 +41,7 @@ SUPPORTED_IMAGE_SIZES = {
 }
 
 
-class SteamshipImageGenerationTool(BaseTool):
-
+class SteamshipImageGenerationTool(BaseTool):  # type: ignore[override]
     """Tool used to generate images from a text-prompt."""
 
     model_name: ModelName
@@ -56,8 +56,9 @@ class SteamshipImageGenerationTool(BaseTool):
         "Output: the UUID of a generated image"
     )
 
-    @root_validator(pre=True)
-    def validate_size(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_size(cls, values: Dict) -> Any:
         if "size" in values:
             size = values["size"]
             model_name = values["model_name"]
@@ -66,8 +67,9 @@ class SteamshipImageGenerationTool(BaseTool):
 
         return values
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         steamship_api_key = get_from_dict_or_env(
             values, "steamship_api_key", "STEAMSHIP_API_KEY"

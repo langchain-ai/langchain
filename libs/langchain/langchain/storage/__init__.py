@@ -5,43 +5,53 @@ to a simple key-value interface.
 
 The primary goal of these storages is to support implementation of caching.
 """
-import warnings
-from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
+from typing import TYPE_CHECKING, Any
 
+from langchain_core.stores import (
+    InMemoryByteStore,
+    InMemoryStore,
+    InvalidKeyException,
+)
+
+from langchain._api import create_importer
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
 from langchain.storage.encoder_backed import EncoderBackedStore
 from langchain.storage.file_system import LocalFileStore
-from langchain.storage.in_memory import InMemoryByteStore, InMemoryStore
-from langchain.utils.interactive_env import is_interactive_env
+
+if TYPE_CHECKING:
+    from langchain_community.storage import (
+        RedisStore,
+        UpstashRedisByteStore,
+        UpstashRedisStore,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "RedisStore": "langchain_community.storage",
+    "UpstashRedisByteStore": "langchain_community.storage",
+    "UpstashRedisStore": "langchain_community.storage",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    from langchain_community import storage
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing stores from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.storage import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(storage, name)
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
 __all__ = [
+    "create_kv_docstore",
+    "create_lc_store",
     "EncoderBackedStore",
-    "InMemoryStore",
     "InMemoryByteStore",
+    "InMemoryStore",
+    "InvalidKeyException",
     "LocalFileStore",
     "RedisStore",
-    "create_lc_store",
-    "create_kv_docstore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
 ]

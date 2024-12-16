@@ -2,17 +2,29 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
+from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache as BaseCache  # For model_rebuild
+from langchain_core.callbacks import Callbacks as Callbacks  # For model_rebuild
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.utils import pre_init
+from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 
 
+@deprecated(
+    since="0.2.12",
+    removal="1.0",
+    message=(
+        "Refer here for how to incorporate summaries of conversation history: "
+        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"  # noqa: E501
+    ),
+)
 class SummarizerMixin(BaseModel):
     """Mixin for summarizer."""
 
@@ -34,9 +46,34 @@ class SummarizerMixin(BaseModel):
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
+    async def apredict_new_summary(
+        self, messages: List[BaseMessage], existing_summary: str
+    ) -> str:
+        new_lines = get_buffer_string(
+            messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
 
+        chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        return await chain.apredict(summary=existing_summary, new_lines=new_lines)
+
+
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
-    """Conversation summarizer to chat memory."""
+    """Continually summarizes the conversation history.
+
+    The summary is updated after each conversation turn.
+    The implementations returns a summary of the conversation history which
+    can be used to provide context to the model.
+    """
 
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:
@@ -73,7 +110,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
             buffer = self.buffer
         return {self.memory_key: buffer}
 
-    @root_validator()
+    @pre_init
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables
@@ -96,3 +133,6 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """Clear memory contents."""
         super().clear()
         self.buffer = ""
+
+
+ConversationSummaryMemory.model_rebuild()

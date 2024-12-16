@@ -1,5 +1,5 @@
 import re
-from typing import Callable, List
+from typing import Callable, List, Pattern
 
 from langchain_community.document_loaders.parsers.language.code_segmenter import (
     CodeSegmenter,
@@ -9,11 +9,11 @@ from langchain_community.document_loaders.parsers.language.code_segmenter import
 class CobolSegmenter(CodeSegmenter):
     """Code segmenter for `COBOL`."""
 
-    PARAGRAPH_PATTERN = re.compile(r"^[A-Z0-9\-]+(\s+.*)?\.$", re.IGNORECASE)
-    DIVISION_PATTERN = re.compile(
+    PARAGRAPH_PATTERN: Pattern = re.compile(r"^[A-Z0-9\-]+(\s+.*)?\.$", re.IGNORECASE)
+    DIVISION_PATTERN: Pattern = re.compile(
         r"^\s*(IDENTIFICATION|DATA|PROCEDURE|ENVIRONMENT)\s+DIVISION.*$", re.IGNORECASE
     )
-    SECTION_PATTERN = re.compile(r"^\s*[A-Z0-9\-]+\s+SECTION.$", re.IGNORECASE)
+    SECTION_PATTERN: Pattern = re.compile(r"^\s*[A-Z0-9\-]+\s+SECTION.$", re.IGNORECASE)
 
     def __init__(self, code: str):
         super().__init__(code)

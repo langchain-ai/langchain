@@ -17,8 +17,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -67,8 +67,9 @@ class PaiEasChatEndpoint(BaseChatModel):
 
     timeout: Optional[int] = 5000
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["eas_service_url"] = get_from_dict_or_env(
             values, "eas_service_url", "EAS_SERVICE_URL"

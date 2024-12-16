@@ -1,4 +1,5 @@
 """Wrapper around Anyscale Endpoint"""
+
 from typing import (
     Any,
     Dict,
@@ -13,8 +14,8 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.llms.openai import (
     BaseOpenAI,
@@ -61,7 +62,7 @@ def create_llm_result(
     return LLMResult(generations=generations, llm_output=llm_output)
 
 
-class Anyscale(BaseOpenAI):
+class Anyscale(BaseOpenAI):  # type: ignore[override]
     """Anyscale large language models.
 
     To use, you should have the environment variable ``ANYSCALE_API_KEY``set with your
@@ -75,7 +76,7 @@ class Anyscale(BaseOpenAI):
             # To leverage Ray for parallel processing
             @ray.remote(num_cpus=1)
             def send_query(llm, text):
-                resp = llm(text)
+                resp = llm.invoke(text)
                 return resp
             futures = [send_query.remote(anyscalellm, text) for text in texts]
             results = ray.get(futures)
@@ -83,7 +84,7 @@ class Anyscale(BaseOpenAI):
 
     """Key word arguments to pass to the model."""
     anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
-    anyscale_api_key: SecretStr = Field(default=None)
+    anyscale_api_key: SecretStr = Field(default=SecretStr(""))
     model_name: str = Field(default=DEFAULT_MODEL)
 
     prefix_messages: List = Field(default_factory=list)
@@ -92,7 +93,7 @@ class Anyscale(BaseOpenAI):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_base"] = get_from_dict_or_env(
@@ -135,7 +136,7 @@ class Anyscale(BaseOpenAI):
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-                values["client"] = openai.Completion
+                values["client"] = openai.Completion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

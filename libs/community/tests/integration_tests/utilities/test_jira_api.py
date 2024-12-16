@@ -1,18 +1,19 @@
 """Integration test for JIRA API Wrapper."""
+
 from langchain_community.utilities.jira import JiraAPIWrapper
 
 
 def test_search() -> None:
     """Test for Searching issues on JIRA"""
     jql = "project = TP"
-    jira = JiraAPIWrapper()
+    jira = JiraAPIWrapper()  # type: ignore[call-arg]
     output = jira.run("jql", jql)
     assert "issues" in output
 
 
 def test_getprojects() -> None:
     """Test for getting projects on JIRA"""
-    jira = JiraAPIWrapper()
+    jira = JiraAPIWrapper()  # type: ignore[call-arg]
     output = jira.run("get_projects", "")
     assert "projects" in output
 
@@ -23,7 +24,7 @@ def test_create_ticket() -> None:
         '{"summary": "Test Summary", "description": "Test Description",'
         ' "issuetype": {"name": "Bug"}, "project": {"key": "TP"}}'
     )
-    jira = JiraAPIWrapper()
+    jira = JiraAPIWrapper()  # type: ignore[call-arg]
     output = jira.run("create_issue", issue_string)
     assert "id" in output
     assert "key" in output
@@ -31,7 +32,7 @@ def test_create_ticket() -> None:
 
 def test_create_confluence_page() -> None:
     """Test for getting projects on JIRA"""
-    jira = JiraAPIWrapper()
+    jira = JiraAPIWrapper()  # type: ignore[call-arg]
     create_page_dict = (
         '{"space": "ROC", "title":"This is the title",'
         '"body":"This is the body. You can use '
@@ -45,7 +46,7 @@ def test_create_confluence_page() -> None:
 
 def test_other() -> None:
     """Non-exhaustive test for accessing other JIRA API methods"""
-    jira = JiraAPIWrapper()
+    jira = JiraAPIWrapper()  # type: ignore[call-arg]
     issue_create_dict = """
         {
             "function":"issue_create",

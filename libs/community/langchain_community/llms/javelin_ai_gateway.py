@@ -7,12 +7,12 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from pydantic import BaseModel
 
 
 # Ignoring type because below is valid pydantic code
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class Params(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class Params(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Parameters for the Javelin AI Gateway LLM."""
 
     temperature: float = 0.0

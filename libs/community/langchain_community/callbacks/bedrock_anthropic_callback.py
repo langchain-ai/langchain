@@ -9,6 +9,8 @@ MODEL_COST_PER_1K_INPUT_TOKENS = {
     "anthropic.claude-v2": 0.008,
     "anthropic.claude-v2:1": 0.008,
     "anthropic.claude-3-sonnet-20240229-v1:0": 0.003,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 0.003,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 0.003,
     "anthropic.claude-3-haiku-20240307-v1:0": 0.00025,
 }
 
@@ -17,6 +19,8 @@ MODEL_COST_PER_1K_OUTPUT_TOKENS = {
     "anthropic.claude-v2": 0.024,
     "anthropic.claude-v2:1": 0.024,
     "anthropic.claude-3-sonnet-20240229-v1:0": 0.015,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 0.015,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 0.015,
     "anthropic.claude-3-haiku-20240307-v1:0": 0.00125,
 }
 
@@ -24,15 +28,25 @@ MODEL_COST_PER_1K_OUTPUT_TOKENS = {
 def _get_anthropic_claude_token_cost(
     prompt_tokens: int, completion_tokens: int, model_id: Union[str, None]
 ) -> float:
+    if model_id:
+        # The model ID can be a cross-region (system-defined) inference profile ID,
+        # which has a prefix indicating the region (e.g., 'us', 'eu') but
+        # shares the same token costs as the "base model".
+        # By extracting the "base model ID", by taking the last two segments
+        # of the model ID, we can map cross-region inference profile IDs to
+        # their corresponding cost entries.
+        base_model_id = model_id.split(".")[-2] + "." + model_id.split(".")[-1]
+    else:
+        base_model_id = None
     """Get the cost of tokens for the Claude model."""
-    if model_id not in MODEL_COST_PER_1K_INPUT_TOKENS:
+    if base_model_id not in MODEL_COST_PER_1K_INPUT_TOKENS:
         raise ValueError(
             f"Unknown model: {model_id}. Please provide a valid Anthropic model name."
             "Known models are: " + ", ".join(MODEL_COST_PER_1K_INPUT_TOKENS.keys())
         )
-    return (prompt_tokens / 1000) * MODEL_COST_PER_1K_INPUT_TOKENS[model_id] + (
+    return (prompt_tokens / 1000) * MODEL_COST_PER_1K_INPUT_TOKENS[base_model_id] + (
         completion_tokens / 1000
-    ) * MODEL_COST_PER_1K_OUTPUT_TOKENS[model_id]
+    ) * MODEL_COST_PER_1K_OUTPUT_TOKENS[base_model_id]
 
 
 class BedrockAnthropicTokenUsageCallbackHandler(BaseCallbackHandler):

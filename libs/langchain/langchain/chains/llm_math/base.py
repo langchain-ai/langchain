@@ -1,4 +1,5 @@
 """Chain that interprets a prompt and executes python code to do math."""
+
 from __future__ import annotations
 
 import math
@@ -6,21 +7,138 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from pydantic import ConfigDict, model_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This class is deprecated and will be removed in langchain 1.0. "
+        "See API reference for replacement: "
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.llm_math.base.LLMMathChain.html"  # noqa: E501
+    ),
+    removal="1.0",
+)
 class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
+
+    Note: this class is deprecated. See below for a replacement implementation
+        using LangGraph. The benefits of this implementation are:
+
+        - Uses LLM tool calling features;
+        - Support for both token-by-token and step-by-step streaming;
+        - Support for checkpointing and memory of chat history;
+        - Easier to modify or extend (e.g., with additional tools, structured responses, etc.)
+
+        Install LangGraph with:
+
+        .. code-block:: bash
+
+            pip install -U langgraph
+
+        .. code-block:: python
+
+            import math
+            from typing import Annotated, Sequence
+
+            from langchain_core.messages import BaseMessage
+            from langchain_core.runnables import RunnableConfig
+            from langchain_core.tools import tool
+            from langchain_openai import ChatOpenAI
+            from langgraph.graph import END, StateGraph
+            from langgraph.graph.message import add_messages
+            from langgraph.prebuilt.tool_node import ToolNode
+            import numexpr
+            from typing_extensions import TypedDict
+
+            @tool
+            def calculator(expression: str) -> str:
+                \"\"\"Calculate expression using Python's numexpr library.
+
+                Expression should be a single line mathematical expression
+                that solves the problem.
+
+                Examples:
+                    "37593 * 67" for "37593 times 67"
+                    "37593**(1/5)" for "37593^(1/5)"
+                \"\"\"
+                local_dict = {"pi": math.pi, "e": math.e}
+                return str(
+                    numexpr.evaluate(
+                        expression.strip(),
+                        global_dict={},  # restrict access to globals
+                        local_dict=local_dict,  # add common mathematical functions
+                    )
+                )
+
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+            tools = [calculator]
+            llm_with_tools = llm.bind_tools(tools, tool_choice="any")
+
+            class ChainState(TypedDict):
+                \"\"\"LangGraph state.\"\"\"
+
+                messages: Annotated[Sequence[BaseMessage], add_messages]
+
+            async def acall_chain(state: ChainState, config: RunnableConfig):
+                last_message = state["messages"][-1]
+                response = await llm_with_tools.ainvoke(state["messages"], config)
+                return {"messages": [response]}
+
+            async def acall_model(state: ChainState, config: RunnableConfig):
+                response = await llm.ainvoke(state["messages"], config)
+                return {"messages": [response]}
+
+            graph_builder = StateGraph(ChainState)
+            graph_builder.add_node("call_tool", acall_chain)
+            graph_builder.add_node("execute_tool", ToolNode(tools))
+            graph_builder.add_node("call_model", acall_model)
+            graph_builder.set_entry_point("call_tool")
+            graph_builder.add_edge("call_tool", "execute_tool")
+            graph_builder.add_edge("execute_tool", "call_model")
+            graph_builder.add_edge("call_model", END)
+            chain = graph_builder.compile()
+
+        .. code-block:: python
+
+            example_query = "What is 551368 divided by 82"
+
+            events = chain.astream(
+                {"messages": [("user", example_query)]},
+                stream_mode="values",
+            )
+            async for event in events:
+                event["messages"][-1].pretty_print()
+
+        .. code-block:: none
+
+            ================================ Human Message =================================
+
+            What is 551368 divided by 82
+            ================================== Ai Message ==================================
+            Tool Calls:
+            calculator (call_MEiGXuJjJ7wGU4aOT86QuGJS)
+            Call ID: call_MEiGXuJjJ7wGU4aOT86QuGJS
+            Args:
+                expression: 551368 / 82
+            ================================= Tool Message =================================
+            Name: calculator
+
+            6724.0
+            ================================== Ai Message ==================================
+
+            551368 divided by 82 equals 6724.
 
     Example:
         .. code-block:: python
@@ -28,7 +146,7 @@ class LLMMathChain(Chain):
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
-    """
+    """  # noqa: E501
 
     llm_chain: LLMChain
     llm: Optional[BaseLanguageModel] = None
@@ -38,14 +156,14 @@ class LLMMathChain(Chain):
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         try:
             import numexpr  # noqa: F401
         except ImportError:
@@ -81,7 +199,7 @@ class LLMMathChain(Chain):
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:
-        import numexpr  # noqa: F401
+        import numexpr
 
         try:
             local_dict = {"pi": math.pi, "e": math.e}

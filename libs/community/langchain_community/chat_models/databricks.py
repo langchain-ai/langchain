@@ -1,11 +1,18 @@
 import logging
 from urllib.parse import urlparse
 
+from langchain_core._api import deprecated
+
 from langchain_community.chat_models.mlflow import ChatMlflow
 
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.3.3",
+    removal="1.0",
+    alternative_import="langchain_databricks.ChatDatabricks",
+)
 class ChatDatabricks(ChatMlflow):
     """`Databricks` chat models API.
 
@@ -17,11 +24,18 @@ class ChatDatabricks(ChatMlflow):
 
             from langchain_community.chat_models import ChatDatabricks
 
-            chat = ChatDatabricks(
+            chat_model = ChatDatabricks(
                 target_uri="databricks",
-                endpoint="chat",
-                temperature-0.1,
+                endpoint="databricks-llama-2-70b-chat",
+                temperature=0.1,
             )
+
+            # single input invocation
+            print(chat_model.invoke("What is MLflow?").content)
+
+            # single input invocation with streaming response
+            for chunk in chat_model.stream("What is MLflow?"):
+                print(chunk.content, end="|")
     """
 
     target_uri: str = "databricks"

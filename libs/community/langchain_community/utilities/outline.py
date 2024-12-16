@@ -1,11 +1,12 @@
 """Util that calls Outline."""
+
 import logging
 from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,9 @@ class OutlineAPIWrapper(BaseModel):
     outline_api_key: Optional[str] = None
     outline_search_endpoint: str = "/api/documents.search"
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that instance url and api key exists in environment."""
         outline_instance_url = get_from_dict_or_env(
             values, "outline_instance_url", "OUTLINE_INSTANCE_URL"

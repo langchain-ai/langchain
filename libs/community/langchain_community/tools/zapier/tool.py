@@ -67,6 +67,7 @@ toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
 ```
 
 """
+
 from typing import Any, Dict, Optional
 
 from langchain_core._api import warn_deprecated
@@ -74,14 +75,15 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.tools import BaseTool
+from langchain_core.utils import pre_init
+from pydantic import Field
 
 from langchain_community.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain_community.utilities.zapier import ZapierNLAWrapper
 
 
-class ZapierNLARunAction(BaseTool):
+class ZapierNLARunAction(BaseTool):  # type: ignore[override]
     """Tool to run a specific action from the user's exposed actions.
 
     Params:
@@ -95,7 +97,7 @@ class ZapierNLARunAction(BaseTool):
 
     """
 
-    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
+    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)  # type: ignore[arg-type]
     action_id: str
     params: Optional[dict] = None
     base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
@@ -104,7 +106,7 @@ class ZapierNLARunAction(BaseTool):
     name: str = ""
     description: str = ""
 
-    @root_validator
+    @pre_init
     def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         zapier_description = values["zapier_description"]
         params_schema = values["params_schema"]
@@ -134,7 +136,7 @@ class ZapierNLARunAction(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.api_wrapper.run_as_str(self.action_id, instructions, self.params)
@@ -149,7 +151,7 @@ class ZapierNLARunAction(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return await self.api_wrapper.arun_as_str(
@@ -167,14 +169,14 @@ ZapierNLARunAction.__doc__ = (
 # other useful actions
 
 
-class ZapierNLAListActions(BaseTool):
+class ZapierNLAListActions(BaseTool):  # type: ignore[override]
     """Tool to list all exposed actions for the user."""
 
     name: str = "ZapierNLA_list_actions"
     description: str = BASE_ZAPIER_TOOL_PROMPT + (
         "This tool returns a list of the user's exposed actions."
     )
-    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
+    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)  # type: ignore[arg-type]
 
     def _run(
         self,
@@ -186,7 +188,7 @@ class ZapierNLAListActions(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.api_wrapper.list_as_str()
@@ -201,7 +203,7 @@ class ZapierNLAListActions(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return await self.api_wrapper.alist_as_str()

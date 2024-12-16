@@ -6,8 +6,8 @@ from dataclasses import asdict, dataclass, fields
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 DEFAULT_URL = "https://api.clickup.com/api/v2"
 
@@ -196,12 +196,15 @@ def extract_dict_elements_from_component_fields(
 def load_query(
     query: str, fault_tolerant: bool = False
 ) -> Tuple[Optional[Dict], Optional[str]]:
-    """Attempts to parse a JSON string and return the parsed object.
+    """Parse a JSON string and return the parsed object.
 
     If parsing fails, returns an error message.
 
     :param query: The JSON string to parse.
     :return: A tuple containing the parsed object or None and an error message or None.
+
+    Exceptions:
+        json.JSONDecodeError: If the input is not a valid JSON string.
     """
     try:
         return json.loads(query), None
@@ -279,10 +282,9 @@ class ClickupAPIWrapper(BaseModel):
     folder_id: Optional[str] = None
     list_id: Optional[str] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def get_access_code_url(
@@ -320,8 +322,9 @@ class ClickupAPIWrapper(BaseModel):
 
         return data["access_token"]
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["access_token"] = get_from_dict_or_env(
             values, "access_token", "CLICKUP_ACCESS_TOKEN"

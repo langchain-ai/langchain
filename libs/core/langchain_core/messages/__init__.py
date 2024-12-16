@@ -18,9 +18,6 @@
 from langchain_core.messages.ai import (
     AIMessage,
     AIMessageChunk,
-    InvalidToolCall,
-    ToolCall,
-    ToolCallChunk,
 )
 from langchain_core.messages.base import (
     BaseMessage,
@@ -32,16 +29,27 @@ from langchain_core.messages.base import (
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
+from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
+from langchain_core.messages.tool import (
+    InvalidToolCall,
+    ToolCall,
+    ToolCallChunk,
+    ToolMessage,
+    ToolMessageChunk,
+)
 from langchain_core.messages.utils import (
     AnyMessage,
     MessageLikeRepresentation,
     _message_from_dict,
     convert_to_messages,
+    convert_to_openai_messages,
+    filter_messages,
     get_buffer_string,
+    merge_message_runs,
     message_chunk_to_message,
     messages_from_dict,
+    trim_messages,
 )
 
 __all__ = [
@@ -64,6 +72,7 @@ __all__ = [
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "RemoveMessage",
     "_message_from_dict",
     "convert_to_messages",
     "get_buffer_string",
@@ -72,4 +81,8 @@ __all__ = [
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "filter_messages",
+    "merge_message_runs",
+    "trim_messages",
+    "convert_to_openai_messages",
 ]

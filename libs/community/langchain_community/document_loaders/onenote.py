@@ -1,37 +1,39 @@
 """Loads data from OneNote Notebooks"""
 
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Field,
     FilePath,
     SecretStr,
+    model_validator,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
 class _OneNoteGraphSettings(BaseSettings):
-    client_id: str = Field(..., env="MS_GRAPH_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
+    client_id: str = Field(...)
+    client_secret: SecretStr = Field(...)
 
-    class Config:
-        """Config for OneNoteGraphSettings."""
-
-        env_prefix = ""
-        case_sentive = False
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        populate_by_name=True,
+        env_file=".env",
+        env_prefix="MS_GRAPH_",
+        extra="ignore",
+    )
 
 
 class OneNoteLoader(BaseLoader, BaseModel):
     """Load pages from OneNote notebooks."""
 
-    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)
+    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)  # type: ignore[arg-type]
     """Settings for the Microsoft Graph API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
@@ -39,7 +41,7 @@ class OneNoteLoader(BaseLoader, BaseModel):
     """Personal access token"""
     onenote_api_base_url: str = "https://graph.microsoft.com/v1.0/me/onenote"
     """URL of Microsoft Graph API for OneNote"""
-    authority_url = "https://login.microsoftonline.com/consumers/"
+    authority_url: str = "https://login.microsoftonline.com/consumers/"
     """A URL that identifies a token authority"""
     token_path: FilePath = Path.home() / ".credentials" / "onenote_graph_token.txt"
     """Path to the file where the access token is stored"""
@@ -51,6 +53,14 @@ class OneNoteLoader(BaseLoader, BaseModel):
     """Filter on section name"""
     object_ids: Optional[List[str]] = None
     """ The IDs of the objects to load data from."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def init(cls, values: Dict) -> Any:
+        """Initialize the class."""
+        if "settings" in values and isinstance(values["settings"], dict):
+            values["settings"] = _OneNoteGraphSettings(**values["settings"])
+        return values
 
     def lazy_load(self) -> Iterator[Document]:
         """

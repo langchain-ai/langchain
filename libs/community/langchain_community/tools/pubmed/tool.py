@@ -1,13 +1,13 @@
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.pubmed import PubMedAPIWrapper
 
 
-class PubmedQueryRun(BaseTool):
+class PubmedQueryRun(BaseTool):  # type: ignore[override]
     """Tool that searches the PubMed API."""
 
     name: str = "pub_med"
@@ -18,7 +18,7 @@ class PubmedQueryRun(BaseTool):
         "from biomedical literature, MEDLINE, life science journals, and online books. "
         "Input should be a search query."
     )
-    api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
+    api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)  # type: ignore[arg-type]
 
     def _run(
         self,

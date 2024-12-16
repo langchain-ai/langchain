@@ -4,8 +4,8 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict
 from tenacity import (
     before_sleep_log,
     retry,
@@ -62,7 +62,9 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
     show_progress_bar: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
-    @root_validator()
+    model_config = ConfigDict(protected_namespaces=())
+
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists."""
         google_api_key = get_from_dict_or_env(

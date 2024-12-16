@@ -1,4 +1,5 @@
 """Test Chroma functionality."""
+
 import uuid
 
 import pytest
@@ -136,8 +137,6 @@ def test_chroma_with_persistence() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
-    docsearch.persist()
-
     # Get a new VectorStore from the persisted directory
     docsearch = Chroma(
         collection_name=collection_name,
@@ -207,7 +206,7 @@ def test_chroma_update_document() -> None:
         embedding=embedding,
         ids=[document_id],
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][
+    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -227,7 +226,7 @@ def test_chroma_update_document() -> None:
     assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][
+    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
     assert new_embedding == embedding.embed_documents([updated_content])[0]
@@ -345,7 +344,7 @@ def test_chroma_large_batch() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore[attr-defined]
     Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -373,7 +372,7 @@ def test_chroma_large_batch_update() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore[attr-defined]
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,

@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
 
 
-class EdenAiExplicitImageTool(EdenaiTool):
+class ExplicitImageInput(BaseModel):
+    query: HttpUrl = Field(description="url of the image to analyze")
 
+
+class EdenAiExplicitImageTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Explicit image detection.
 
     for api reference check edenai documentation:
@@ -23,9 +27,9 @@ class EdenAiExplicitImageTool(EdenaiTool):
 
     """
 
-    name = "edenai_image_explicit_content_detection"
+    name: str = "edenai_image_explicit_content_detection"
 
-    description = (
+    description: str = (
         "A wrapper around edenai Services Explicit image detection. "
         """Useful for when you have to extract Explicit Content from images.
         it detects adult only content in images, 
@@ -34,10 +38,11 @@ class EdenAiExplicitImageTool(EdenaiTool):
         pornography, violence, gore content, etc."""
         "Input should be the string url of the image ."
     )
+    args_schema: Type[BaseModel] = ExplicitImageInput
 
-    combine_available = True
-    feature = "image"
-    subfeature = "explicit_content"
+    combine_available: bool = True
+    feature: str = "image"
+    subfeature: str = "explicit_content"
 
     def _parse_json(self, json_data: dict) -> str:
         result_str = f"nsfw_likelihood: {json_data['nsfw_likelihood']}\n"

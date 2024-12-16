@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
-from langchain_community.document_loaders.base import BaseLoader
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -1386,7 +1386,14 @@ def test_indexing_custom_batch_size(
     with patch.object(vector_store, "add_documents") as mock_add_documents:
         index(docs, record_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
-        assert args == (docs,)
+        docs_with_id = [
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+                id=ids[0],
+            )
+        ]
+        assert args == (docs_with_id,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
 
 
@@ -1407,5 +1414,12 @@ async def test_aindexing_custom_batch_size(
     with patch.object(vector_store, "aadd_documents") as mock_add_documents:
         await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
-        assert args == (docs,)
+        docs_with_id = [
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+                id=ids[0],
+            )
+        ]
+        assert args == (docs_with_id,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}

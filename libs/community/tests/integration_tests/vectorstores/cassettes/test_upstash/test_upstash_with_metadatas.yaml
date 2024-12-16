@@ -1,0 +1,384 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/reset
+  response:
+    content: "{\n  \"result\" : \"Success\"\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '26'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:36 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - thankful-dane-25695-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://thankful-dane-25695-eu1-vector.upstash.io/reset
+  response:
+    content: "{\n  \"result\" : \"Success\"\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '26'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:36 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/info
+  response:
+    content: "{\n  \"result\" : {\n    \"vectorCount\" : 0,\n    \"pendingVectorCount\"
+      : 0,\n    \"indexSize\" : 0,\n    \"dimension\" : 10,\n    \"similarityFunction\"
+      : \"COSINE\"\n  }\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '154'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:37 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - thankful-dane-25695-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://thankful-dane-25695-eu1-vector.upstash.io/info
+  response:
+    content: "{\n  \"result\" : {\n    \"vectorCount\" : 0,\n    \"pendingVectorCount\"
+      : 0,\n    \"indexSize\" : 0,\n    \"dimension\" : 384,\n    \"similarityFunction\"
+      : \"COSINE\"\n  }\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '155'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:37 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '[{"id": "f814b1de-8d08-4355-aeed-367f95628449", "vector": [1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0], "metadata": {"page": "0", "text": "foo"}},
+      {"id": "9501ae4e-5068-48a9-b610-13c66d7e0a6c", "vector": [1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "metadata": {"page": "1", "text": "bar"}}, {"id":
+      "f02e41ba-cd46-4d42-8c37-336b5ec3b2a6", "vector": [1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 2.0], "metadata": {"page": "2", "text": "baz"}}]'
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '456'
+      content-type:
+      - application/json
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/upsert
+  response:
+    content: "{\n  \"result\" : \"Success\"\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '26'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:37 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/info
+  response:
+    content: "{\n  \"result\" : {\n    \"vectorCount\" : 3,\n    \"pendingVectorCount\"
+      : 3,\n    \"indexSize\" : 295,\n    \"dimension\" : 10,\n    \"similarityFunction\"
+      : \"COSINE\"\n  }\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '156'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:37 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/info
+  response:
+    content: "{\n  \"result\" : {\n    \"vectorCount\" : 3,\n    \"pendingVectorCount\"
+      : 3,\n    \"indexSize\" : 295,\n    \"dimension\" : 10,\n    \"similarityFunction\"
+      : \"COSINE\"\n  }\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '156'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:38 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: ''
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/info
+  response:
+    content: "{\n  \"result\" : {\n    \"vectorCount\" : 3,\n    \"pendingVectorCount\"
+      : 0,\n    \"indexSize\" : 295,\n    \"dimension\" : 10,\n    \"similarityFunction\"
+      : \"COSINE\"\n  }\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '156'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:38 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"topK": 1, "includeVectors": false, "includeMetadata": true, "filter":
+      "", "vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]}'
+    headers:
+      User-Agent:
+      - User-Agent-DUMMY
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      authorization:
+      - authorization-DUMMY
+      connection:
+      - keep-alive
+      content-length:
+      - '137'
+      content-type:
+      - application/json
+      host:
+      - fond-mutt-96644-eu1-vector.upstash.io
+      upstash-telemetry-platform:
+      - unknown
+      upstash-telemetry-runtime:
+      - python@v3.9.19
+      upstash-telemetry-sdk:
+      - upstash-vector-py@v0.3.1
+    method: POST
+    uri: https://fond-mutt-96644-eu1-vector.upstash.io/query
+  response:
+    content: "{\n  \"result\" : [ {\n    \"id\" : \"f814b1de-8d08-4355-aeed-367f95628449\",\n
+      \   \"score\" : 1.0,\n    \"metadata\" : {\"page\":\"0\",\"text\":\"foo\"}\n
+      \ } ]\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '139'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 27 Apr 2024 22:12:38 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    http_version: HTTP/1.1
+    status_code: 200
+version: 1

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional, Union
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -29,17 +29,25 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: bool
+    text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
 ) -> List[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
             _splits = re.split(f"({separator})", text)
-            splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
+            splits = (
+                ([_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)])
+                if keep_separator == "end"
+                else ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
+            )
             if len(_splits) % 2 == 0:
                 splits += _splits[-1:]
-            splits = [_splits[0]] + splits
+            splits = (
+                (splits + [_splits[-1]])
+                if keep_separator == "end"
+                else ([_splits[0]] + splits)
+            )
         else:
             splits = re.split(separator, text)
     else:
@@ -57,7 +65,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -107,18 +115,46 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         return final_chunks
 
     def split_text(self, text: str) -> List[str]:
+        """Split the input text into smaller chunks based on predefined separators.
+
+        Args:
+            text (str): The input text to be split.
+
+        Returns:
+            List[str]: A list of text chunks obtained after splitting.
+        """
         return self._split_text(text, self._separators)
 
     @classmethod
     def from_language(
         cls, language: Language, **kwargs: Any
     ) -> RecursiveCharacterTextSplitter:
+        """Return an instance of this class based on a specific language.
+
+        This method initializes the text splitter with language-specific separators.
+
+        Args:
+            language (Language): The language to configure the text splitter for.
+            **kwargs (Any): Additional keyword arguments to customize the splitter.
+
+        Returns:
+            RecursiveCharacterTextSplitter: An instance of the text splitter configured
+            for the specified language.
+        """
         separators = cls.get_separators_for_language(language)
         return cls(separators=separators, is_separator_regex=True, **kwargs)
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
-        if language == Language.CPP:
+        """Retrieve a list of separators specific to the given language.
+
+        Args:
+            language (Language): The language for which to get the separators.
+
+        Returns:
+            List[str]: A list of separators appropriate for the specified language.
+        """
+        if language == Language.C or language == Language.CPP:
             return [
                 # Split along class definitions
                 "\nclass ",
@@ -335,6 +371,30 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.ELIXIR:
+            return [
+                # Split along method function and module definition
+                "\ndef ",
+                "\ndefp ",
+                "\ndefmodule ",
+                "\ndefprotocol ",
+                "\ndefmacro ",
+                "\ndefmacrop ",
+                # Split along control flow statements
+                "\nif ",
+                "\nunless ",
+                "\nwhile ",
+                "\ncase ",
+                "\ncond ",
+                "\nwith ",
+                "\nfor ",
+                "\ndo ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.RUST:
             return [
                 # Split along function definitions
@@ -433,7 +493,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n\\\\begin{verse}",
                 "\n\\\\begin{verbatim}",
                 # Now split by math environments
-                "\n\\\begin{align}",
+                "\n\\\\begin{align}",
                 "$$",
                 "$",
                 # Now split by the normal type of lines
@@ -571,6 +631,23 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.LUA:
+            return [
+                # Split along variable and table definitions
+                "\nlocal ",
+                # Split along function definitions
+                "\nfunction ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nrepeat ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.HASKELL:
             return [
                 # Split along function definitions
@@ -610,6 +687,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.POWERSHELL:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along parameter declarations (escape parentheses)
+                "\nparam ",
+                # Split along control flow statements
+                "\nif ",
+                "\nforeach ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                # Split along class definitions (for PowerShell 5.0 and above)
+                "\nclass ",
+                # Split along try-catch-finally blocks
+                "\ntry ",
+                "\ncatch ",
+                "\nfinally ",
+                # Split by normal lines and empty spaces
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language in Language._value2member_map_:
+            raise ValueError(f"Language {language} is not implemented yet!")
         else:
             raise ValueError(
                 f"Language {language} is not supported! "

@@ -11,7 +11,7 @@ class Portkey:
           Default: "https://api.portkey.ai/v1/proxy"
     """
 
-    base = "https://api.portkey.ai/v1/proxy"
+    base: str = "https://api.portkey.ai/v1/proxy"
 
     @staticmethod
     def Config(

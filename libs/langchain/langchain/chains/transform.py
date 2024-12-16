@@ -1,4 +1,5 @@
 """Chain that runs an arbitrary python function."""
+
 import functools
 import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional
@@ -7,7 +8,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.chains.base import Chain
 
@@ -31,9 +32,9 @@ class TransformChain(Chain):
     """The keys returned by the transform's output dictionary."""
     transform_cb: Callable[[Dict[str, str]], Dict[str, str]] = Field(alias="transform")
     """The transform function."""
-    atransform_cb: Optional[
-        Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
-    ] = Field(None, alias="atransform")
+    atransform_cb: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = (
+        Field(None, alias="atransform")
+    )
     """The async coroutine transform function."""
 
     @staticmethod

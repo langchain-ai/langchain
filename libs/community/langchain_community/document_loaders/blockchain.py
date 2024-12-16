@@ -15,15 +15,29 @@ class BlockchainType(Enum):
 
     ETH_MAINNET = "eth-mainnet"
     ETH_GOERLI = "eth-goerli"
+    ETH_SEPOLIA = "eth-sepolia"
+    ETH_HOLESKY = "eth-holesky"
     POLYGON_MAINNET = "polygon-mainnet"
     POLYGON_MUMBAI = "polygon-mumbai"
+    POLYGON_AMOY = "polygon-amoy"
+    ARB_MAINNET = "arb-mainnet"
+    ARB_SEPOLIA = "arb-sepolia"
+    OP_MAINNET = "opt-mainnet"
+    OP_SEPOLIA = "opt-sepolia"
+    BASE_MAINNET = "base-mainnet"
+    BASE_SEPOLIA = "base-sepolia"
+    BLAST_MAINNET = "blast-mainnet"
+    BLAST_SEPOLIA = "blast-sepolia"
+    ZKSYNC_MAINNET = "zksync-mainnet"
+    ZKSYNC_SEPOLIA = "zksync-sepolia"
+    ZORA_MAINNET = "zora-mainnet"
+    ZORA_SEPOLIA = "zora-sepolia"
 
 
 class BlockchainDocumentLoader(BaseLoader):
     """Load elements from a blockchain smart contract.
 
-    The supported blockchains are: Ethereum mainnet, Ethereum Goerli testnet,
-    Polygon mainnet, and Polygon Mumbai testnet.
+    See supported blockchains here: https://python.langchain.com/v0.2/api_reference/community/document_loaders/langchain_community.document_loaders.blockchain.BlockchainType.html
 
     If no BlockchainType is specified, the default is Ethereum mainnet.
 
@@ -43,8 +57,8 @@ class BlockchainDocumentLoader(BaseLoader):
 
     Future versions of this loader can:
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
-        - Support additional blockain APIs (e.g. Infura, Opensea, etc.)
-    """
+        - Support additional blockchain APIs (e.g. Infura, Opensea, etc.)
+    """  # noqa: E501
 
     def __init__(
         self,

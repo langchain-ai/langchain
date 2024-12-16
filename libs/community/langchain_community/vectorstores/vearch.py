@@ -39,7 +39,7 @@ class Vearch(VectorStore):
             else:
                 import vearch
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import suitable python package. "
                 "Please install it with `pip install vearch or vearch_cluster`."
             )

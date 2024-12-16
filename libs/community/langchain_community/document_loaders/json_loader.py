@@ -1,4 +1,5 @@
 import json
+from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, Optional, Union
 
@@ -8,17 +9,81 @@ from langchain_community.document_loaders.base import BaseLoader
 
 
 class JSONLoader(BaseLoader):
-    """Load a `JSON` file using a `jq` schema.
+    """
+    Load a `JSON` file using a `jq` schema.
 
-    Example:
-        [{"text": ...}, {"text": ...}, {"text": ...}] -> schema = .[].text
-        {"key": [{"text": ...}, {"text": ...}, {"text": ...}]} -> schema = .key[].text
-        ["", "", ""] -> schema = .[]
+    Setup:
+        .. code-block:: bash
+
+            pip install -U jq
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import JSONLoader
+            import json
+            from pathlib import Path
+
+            file_path='./sample_quiz.json'
+            data = json.loads(Path(file_path).read_text())
+            loader = JSONLoader(
+                     file_path=file_path,
+                     jq_schema='.quiz',
+                     text_content=False)
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            {"sport": {"q1": {"question": "Which one is correct team name in
+            NBA?", "options": ["New York Bulls"
+            {'source': '/sample_quiz
+            .json', 'seq_num': 1}
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            {"sport": {"q1": {"question": "Which one is correct team name in
+            NBA?", "options": ["New York Bulls"
+            {'source': '/sample_quizg
+            .json', 'seq_num': 1}
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            {"sport": {"q1": {"question": "Which one is correct team name in
+            NBA?", "options": ["New York Bulls"
+            {'source': '/sample_quiz
+            .json', 'seq_num': 1}
     """
 
     def __init__(
         self,
-        file_path: Union[str, Path],
+        file_path: Union[str, PathLike],
         jq_schema: str,
         content_key: Optional[str] = None,
         is_content_key_jq_parsable: Optional[bool] = False,
@@ -29,7 +94,7 @@ class JSONLoader(BaseLoader):
         """Initialize the JSONLoader.
 
         Args:
-            file_path (Union[str, Path]): The path to the JSON or JSON Lines file.
+            file_path (Union[str, PathLike]): The path to the JSON or JSON Lines file.
             jq_schema (str): The jq schema to use to extract the data or text from
                 the JSON.
             content_key (str): The key to use to extract the content from
@@ -51,7 +116,7 @@ class JSONLoader(BaseLoader):
                 JSON Lines format.
         """
         try:
-            import jq  # noqa:F401
+            import jq
 
             self.jq = jq
         except ImportError:
@@ -92,8 +157,6 @@ class JSONLoader(BaseLoader):
         # and prevent the user from getting a cryptic error later on.
         if self._content_key is not None:
             self._validate_content_key(data)
-        if self._metadata_func is not None:
-            self._validate_metadata_func(data)
 
         for i, sample in enumerate(data, index + 1):
             text = self._get_text(sample=sample)
@@ -113,7 +176,7 @@ class JSONLoader(BaseLoader):
         else:
             content = sample
 
-        if self._text_content and not isinstance(content, str):
+        if self._text_content and not isinstance(content, str) and content is not None:
             raise ValueError(
                 f"Expected page_content is string, got {type(content)} instead. \
                     Set `text_content=False` if the desired input for \
@@ -123,7 +186,7 @@ class JSONLoader(BaseLoader):
         # In case the text is None, set it to an empty string
         elif isinstance(content, str):
             return content
-        elif isinstance(content, dict):
+        elif isinstance(content, (dict, list)):
             return json.dumps(content) if content else ""
         else:
             return str(content) if content is not None else ""
@@ -138,7 +201,13 @@ class JSONLoader(BaseLoader):
         :return:
         """
         if self._metadata_func is not None:
-            return self._metadata_func(sample, additional_fields)
+            result = self._metadata_func(sample, additional_fields)
+            if not isinstance(result, dict):
+                raise ValueError(
+                    f"Expected the metadata_func to return a dict but got \
+                                `{type(result)}`"
+                )
+            return result
         else:
             return additional_fields
 
@@ -168,15 +237,3 @@ class JSONLoader(BaseLoader):
                 f"Expected the jq schema to result in a list of objects (dict) \
                     with the key `{self._content_key}` which should be parsable by jq"
             )
-
-    def _validate_metadata_func(self, data: Any) -> None:
-        """Check if the metadata_func output is valid"""
-
-        sample = data.first()
-        if self._metadata_func is not None:
-            sample_metadata = self._metadata_func(sample, {})
-            if not isinstance(sample_metadata, dict):
-                raise ValueError(
-                    f"Expected the metadata_func to return a dict but got \
-                        `{type(sample_metadata)}`"
-                )

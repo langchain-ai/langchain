@@ -1,4 +1,5 @@
 """Test AzureChatOpenAI wrapper."""
+
 import os
 from typing import Any
 
@@ -20,7 +21,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
-    return AzureChatOpenAI(
+    return AzureChatOpenAI(  # type: ignore[call-arg]
         deployment_name=DEPLOYMENT_NAME,
         openai_api_version=OPENAI_API_VERSION,
         azure_endpoint=OPENAI_API_BASE,
@@ -40,7 +41,7 @@ def llm() -> AzureChatOpenAI:
 def test_chat_openai(llm: AzureChatOpenAI) -> None:
     """Test AzureChatOpenAI wrapper."""
     message = HumanMessage(content="Hello")
-    response = llm([message])
+    response = llm.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -87,7 +88,7 @@ def test_chat_openai_streaming() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 

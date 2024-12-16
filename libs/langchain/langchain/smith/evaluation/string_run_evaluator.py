@@ -1,9 +1,14 @@
 """Run evaluator wrapper for string evaluators."""
+
 from __future__ import annotations
 
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain_core.load.dump import dumpd
 from langchain_core.load.load import load
 from langchain_core.load.serializable import Serializable
@@ -11,10 +16,6 @@ from langchain_core.messages import BaseMessage, get_buffer_string, messages_fro
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.schema import RUN_KEY
@@ -238,7 +239,7 @@ class StringExampleMapper(Serializable):
         return self.map(example)
 
 
-class StringRunEvaluatorChain(Chain, RunEvaluator):
+class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, override]
     """Evaluate Run and optional examples."""
 
     run_mapper: StringRunMapper

@@ -13,19 +13,19 @@ README_PATH = Path(__file__).parents[4] / "README.md"
 
 
 class FakeUploadResponse:
-    status_code = 200
-    text = "fake_uuid"
+    status_code: int = 200
+    text: str = "fake_uuid"
 
 
 class FakePushResponse:
-    status_code = 200
+    status_code: int = 200
 
     def json(self) -> Any:
         return {"uuid": "fake_uuid"}
 
 
 class FakePullResponse:
-    status_code = 200
+    status_code: int = 200
 
     def json(self) -> Any:
         return {

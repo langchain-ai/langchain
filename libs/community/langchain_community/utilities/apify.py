@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import ApifyDatasetLoader
@@ -17,9 +17,11 @@ class ApifyWrapper(BaseModel):
 
     apify_client: Any
     apify_client_async: Any
+    apify_api_token: Optional[str] = None
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate environment.
         Validate that an Apify API token is set and the apify-client
         Python package exists in the current environment.
@@ -31,8 +33,18 @@ class ApifyWrapper(BaseModel):
         try:
             from apify_client import ApifyClient, ApifyClientAsync
 
-            values["apify_client"] = ApifyClient(apify_api_token)
-            values["apify_client_async"] = ApifyClientAsync(apify_api_token)
+            client = ApifyClient(apify_api_token)
+            if httpx_client := getattr(client.http_client, "httpx_client"):
+                httpx_client.headers["user-agent"] += "; Origin/langchain"
+
+            async_client = ApifyClientAsync(apify_api_token)
+            if httpx_async_client := getattr(
+                async_client.http_client, "httpx_async_client"
+            ):
+                httpx_async_client.headers["user-agent"] += "; Origin/langchain"
+
+            values["apify_client"] = client
+            values["apify_client_async"] = async_client
         except ImportError:
             raise ImportError(
                 "Could not import apify-client Python package. "

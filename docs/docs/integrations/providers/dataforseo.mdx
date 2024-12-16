@@ -19,7 +19,7 @@ os.environ["DATAFORSEO_PASSWORD"] = "your_password"
 
 ## Utility
 
-The DataForSEO utility wraps the API. To import this utility, use:
+The `DataForSEO` utility wraps the API. To import this utility, use:
 
 ```python
 from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
@@ -34,6 +34,13 @@ You can also load this wrapper as a Tool to use with an Agent:
 ```python
 from langchain.agents import load_tools
 tools = load_tools(["dataforseo-api-search"])
+```
+
+This will load the following tools:
+
+```python
+from langchain_community.tools import DataForSeoAPISearchRun
+from langchain_community.tools import DataForSeoAPISearchResults
 ```
 
 ## Example usage

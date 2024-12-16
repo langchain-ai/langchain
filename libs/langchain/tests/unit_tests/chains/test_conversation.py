@@ -1,4 +1,5 @@
 """Test conversation chain and memory."""
+
 from typing import Any, List, Optional
 
 import pytest
@@ -15,7 +16,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 class DummyLLM(LLM):
-    last_prompt = ""
+    last_prompt: str = ""
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

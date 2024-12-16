@@ -1,5 +1,5 @@
-"""Light weight unit test that attempts to import UpstashRedisStore.
-"""
+"""Light weight unit test that attempts to import UpstashRedisStore."""
+
 import pytest
 
 

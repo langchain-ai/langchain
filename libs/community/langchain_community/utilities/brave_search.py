@@ -3,7 +3,7 @@ from typing import List
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class BraveSearchWrapper(BaseModel):
@@ -30,7 +30,11 @@ class BraveSearchWrapper(BaseModel):
             {
                 "title": item.get("title"),
                 "link": item.get("url"),
-                "snippet": item.get("description"),
+                "snippet": " ".join(
+                    filter(
+                        None, [item.get("description"), *item.get("extra_snippets", [])]
+                    )
+                ),
             }
             for item in web_search_results
         ]
@@ -48,7 +52,11 @@ class BraveSearchWrapper(BaseModel):
         results = self._search_request(query)
         return [
             Document(
-                page_content=item.get("description"),  # type: ignore[arg-type]
+                page_content=" ".join(
+                    filter(
+                        None, [item.get("description"), *item.get("extra_snippets", [])]
+                    )
+                ),
                 metadata={"title": item.get("title"), "link": item.get("url")},
             )
             for item in results
@@ -60,7 +68,7 @@ class BraveSearchWrapper(BaseModel):
             "Accept": "application/json",
         }
         req = requests.PreparedRequest()
-        params = {**self.search_kwargs, **{"q": query}}
+        params = {**self.search_kwargs, **{"q": query, "extra_snippets": True}}
         req.prepare_url(self.base_url, params)
         if req.url is None:
             raise ValueError("prepared url is None, this should not happen")

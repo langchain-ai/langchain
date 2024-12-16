@@ -1,10 +1,12 @@
 """A Tracer Implementation that records activity to Weights & Biases."""
+
 from __future__ import annotations
 
 import json
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -14,29 +16,46 @@ from typing import (
     Union,
 )
 
+from langchain_core._api import warn_deprecated
+from langchain_core.output_parsers.pydantic import PydanticBaseModel
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
-    from wandb.sdk.data_types.trace_tree import Span
+    from wandb.sdk.data_types.trace_tree import Trace
     from wandb.sdk.lib.paths import StrPath
     from wandb.wandb_run import Run as WBRun
-
 
 PRINT_WARNINGS = True
 
 
-def _serialize_io(run_inputs: Optional[dict]) -> dict:
-    if not run_inputs:
+def _serialize_io(run_io: Optional[dict]) -> dict:
+    """Utility to serialize the input and output of a run to store in wandb.
+    Currently, supports serializing pydantic models and protobuf messages.
+
+    :param run_io: The inputs and outputs of the run.
+    :return: The serialized inputs and outputs.
+
+
+    """
+    if not run_io:
         return {}
     from google.protobuf.json_format import MessageToJson
     from google.protobuf.message import Message
 
     serialized_inputs = {}
-    for key, value in run_inputs.items():
+    for key, value in run_io.items():
         if isinstance(value, Message):
             serialized_inputs[key] = MessageToJson(value)
+
+        elif isinstance(value, PydanticBaseModel):
+            serialized_inputs[key] = (
+                value.model_dump_json()
+                if hasattr(value, "model_dump_json")
+                else value.json()
+            )
+
         elif key == "input_documents":
             serialized_inputs.update(
                 {f"input_document_{i}": doc.json() for i, doc in enumerate(value)}
@@ -46,344 +65,186 @@ def _serialize_io(run_inputs: Optional[dict]) -> dict:
     return serialized_inputs
 
 
-class RunProcessor:
-    """Handles the conversion of a LangChain Runs into a WBTraceTree."""
+def flatten_run(run: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Utility to flatten a nest run object into a list of runs.
+    :param run: The base run to flatten.
+    :return: The flattened list of runs.
+    """
 
-    def __init__(self, wandb_module: Any, trace_module: Any):
-        self.wandb = wandb_module
-        self.trace_tree = trace_module
-
-    def process_span(self, run: Run) -> Optional["Span"]:
-        """Converts a LangChain Run into a W&B Trace Span.
-        :param run: The LangChain Run to convert.
-        :return: The converted W&B Trace Span.
-        """
-        try:
-            span = self._convert_lc_run_to_wb_span(run)
-            return span
-        except Exception as e:
-            if PRINT_WARNINGS:
-                self.wandb.termwarn(
-                    f"Skipping trace saving - unable to safely convert LangChain Run "
-                    f"into W&B Trace due to: {e}"
-                )
-            return None
-
-    def _convert_run_to_wb_span(self, run: Run) -> "Span":
-        """Base utility to create a span from a run.
-        :param run: The run to convert.
-        :return: The converted Span.
-        """
-        attributes = {**run.extra} if run.extra else {}
-        attributes["execution_order"] = run.execution_order
-
-        return self.trace_tree.Span(
-            span_id=str(run.id) if run.id is not None else None,
-            name=run.name,
-            start_time_ms=int(run.start_time.timestamp() * 1000),
-            end_time_ms=int(run.end_time.timestamp() * 1000)
-            if run.end_time is not None
-            else None,
-            status_code=self.trace_tree.StatusCode.SUCCESS
-            if run.error is None
-            else self.trace_tree.StatusCode.ERROR,
-            status_message=run.error,
-            attributes=attributes,
-        )
-
-    def _convert_llm_run_to_wb_span(self, run: Run) -> "Span":
-        """Converts a LangChain LLM Run into a W&B Trace Span.
-        :param run: The LangChain LLM Run to convert.
-        :return: The converted W&B Trace Span.
-        """
-        base_span = self._convert_run_to_wb_span(run)
-        if base_span.attributes is None:
-            base_span.attributes = {}
-        base_span.attributes["llm_output"] = (run.outputs or {}).get("llm_output", {})
-
-        base_span.results = [
-            self.trace_tree.Result(
-                inputs={"prompt": prompt},
-                outputs={
-                    f"gen_{g_i}": gen["text"]
-                    for g_i, gen in enumerate(run.outputs["generations"][ndx])
-                }
-                if (
-                    run.outputs is not None
-                    and len(run.outputs["generations"]) > ndx
-                    and len(run.outputs["generations"][ndx]) > 0
-                )
-                else None,
-            )
-            for ndx, prompt in enumerate(run.inputs["prompts"] or [])
-        ]
-        base_span.span_kind = self.trace_tree.SpanKind.LLM
-
-        return base_span
-
-    def _convert_chain_run_to_wb_span(self, run: Run) -> "Span":
-        """Converts a LangChain Chain Run into a W&B Trace Span.
-        :param run: The LangChain Chain Run to convert.
-        :return: The converted W&B Trace Span.
-        """
-        base_span = self._convert_run_to_wb_span(run)
-
-        base_span.results = [
-            self.trace_tree.Result(
-                inputs=_serialize_io(run.inputs), outputs=_serialize_io(run.outputs)
-            )
-        ]
-        base_span.child_spans = [
-            self._convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
-        ]
-        base_span.span_kind = (
-            self.trace_tree.SpanKind.AGENT
-            if "agent" in run.name.lower()
-            else self.trace_tree.SpanKind.CHAIN
-        )
-
-        return base_span
-
-    def _convert_tool_run_to_wb_span(self, run: Run) -> "Span":
-        """Converts a LangChain Tool Run into a W&B Trace Span.
-        :param run: The LangChain Tool Run to convert.
-        :return: The converted W&B Trace Span.
-        """
-        base_span = self._convert_run_to_wb_span(run)
-        base_span.results = [
-            self.trace_tree.Result(
-                inputs=_serialize_io(run.inputs), outputs=_serialize_io(run.outputs)
-            )
-        ]
-        base_span.child_spans = [
-            self._convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
-        ]
-        base_span.span_kind = self.trace_tree.SpanKind.TOOL
-
-        return base_span
-
-    def _convert_lc_run_to_wb_span(self, run: Run) -> "Span":
-        """Utility to convert any generic LangChain Run into a W&B Trace Span.
-        :param run: The LangChain Run to convert.
-        :return: The converted W&B Trace Span.
-        """
-        if run.run_type == "llm":
-            return self._convert_llm_run_to_wb_span(run)
-        elif run.run_type == "chain":
-            return self._convert_chain_run_to_wb_span(run)
-        elif run.run_type == "tool":
-            return self._convert_tool_run_to_wb_span(run)
-        else:
-            return self._convert_run_to_wb_span(run)
-
-    def process_model(self, run: Run) -> Optional[Dict[str, Any]]:
-        """Utility to process a run for wandb model_dict serialization.
-        :param run: The run to process.
-        :return: The convert model_dict to pass to WBTraceTree.
-        """
-        try:
-            data = json.loads(run.json())
-            processed = self.flatten_run(data)
-            keep_keys = (
-                "id",
-                "name",
-                "serialized",
-                "inputs",
-                "outputs",
-                "parent_run_id",
-                "execution_order",
-            )
-            processed = self.truncate_run_iterative(processed, keep_keys=keep_keys)
-            exact_keys, partial_keys = ("lc", "type"), ("api_key",)
-            processed = self.modify_serialized_iterative(
-                processed, exact_keys=exact_keys, partial_keys=partial_keys
-            )
-            output = self.build_tree(processed)
-            return output
-        except Exception as e:
-            if PRINT_WARNINGS:
-                self.wandb.termwarn(f"WARNING: Failed to serialize model: {e}")
-            return None
-
-    def flatten_run(self, run: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Utility to flatten a nest run object into a list of runs.
-        :param run: The base run to flatten.
+    def flatten(child_runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Utility to recursively flatten a list of child runs in a run.
+        :param child_runs: The list of child runs to flatten.
         :return: The flattened list of runs.
         """
+        if child_runs is None:
+            return []
 
-        def flatten(child_runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-            """Utility to recursively flatten a list of child runs in a run.
-            :param child_runs: The list of child runs to flatten.
-            :return: The flattened list of runs.
-            """
-            if child_runs is None:
-                return []
+        result = []
+        for item in child_runs:
+            child_runs = item.pop("child_runs", [])
+            result.append(item)
+            result.extend(flatten(child_runs))
 
-            result = []
-            for item in child_runs:
-                child_runs = item.pop("child_runs", [])
-                result.append(item)
-                result.extend(flatten(child_runs))
+        return result
 
-            return result
+    return flatten([run])
 
-        return flatten([run])
 
-    def truncate_run_iterative(
-        self, runs: List[Dict[str, Any]], keep_keys: Tuple[str, ...] = ()
-    ) -> List[Dict[str, Any]]:
-        """Utility to truncate a list of runs dictionaries to only keep the specified
-            keys in each run.
-        :param runs: The list of runs to truncate.
-        :param keep_keys: The keys to keep in each run.
-        :return: The truncated list of runs.
+def truncate_run_iterative(
+    runs: List[Dict[str, Any]], keep_keys: Tuple[str, ...] = ()
+) -> List[Dict[str, Any]]:
+    """Utility to truncate a list of runs dictionaries to only keep the specified
+        keys in each run.
+    :param runs: The list of runs to truncate.
+    :param keep_keys: The keys to keep in each run.
+    :return: The truncated list of runs.
+    """
+
+    def truncate_single(run: Dict[str, Any]) -> Dict[str, Any]:
+        """Utility to truncate a single run dictionary to only keep the specified
+            keys.
+        :param run: The run dictionary to truncate.
+        :return: The truncated run dictionary
         """
+        new_dict = {}
+        for key in run:
+            if key in keep_keys:
+                new_dict[key] = run.get(key)
+        return new_dict
 
-        def truncate_single(run: Dict[str, Any]) -> Dict[str, Any]:
-            """Utility to truncate a single run dictionary to only keep the specified
-                keys.
-            :param run: The run dictionary to truncate.
-            :return: The truncated run dictionary
-            """
-            new_dict = {}
-            for key in run:
-                if key in keep_keys:
-                    new_dict[key] = run.get(key)
-            return new_dict
+    return list(map(truncate_single, runs))
 
-        return list(map(truncate_single, runs))
 
-    def modify_serialized_iterative(
-        self,
-        runs: List[Dict[str, Any]],
-        exact_keys: Tuple[str, ...] = (),
-        partial_keys: Tuple[str, ...] = (),
-    ) -> List[Dict[str, Any]]:
-        """Utility to modify the serialized field of a list of runs dictionaries.
-        removes any keys that match the exact_keys and any keys that contain any of the
-        partial_keys.
-        recursively moves the dictionaries under the kwargs key to the top level.
-        changes the "id" field to a string "_kind" field that tells WBTraceTree how to
-        visualize the run. promotes the "serialized" field to the top level.
+def modify_serialized_iterative(
+    runs: List[Dict[str, Any]],
+    exact_keys: Tuple[str, ...] = (),
+    partial_keys: Tuple[str, ...] = (),
+) -> List[Dict[str, Any]]:
+    """Utility to modify the serialized field of a list of runs dictionaries.
+    removes any keys that match the exact_keys and any keys that contain any of the
+    partial_keys.
+    recursively moves the dictionaries under the kwargs key to the top level.
+    changes the "id" field to a string "_kind" field that tells WBTraceTree how to
+    visualize the run. promotes the "serialized" field to the top level.
+    :param runs: The list of runs to modify.
+    :param exact_keys: A tuple of keys to remove from the serialized field.
+    :param partial_keys: A tuple of partial keys to remove from the serialized
+        field.
+    :return: The modified list of runs.
+    """
 
-        :param runs: The list of runs to modify.
-        :param exact_keys: A tuple of keys to remove from the serialized field.
-        :param partial_keys: A tuple of partial keys to remove from the serialized
-            field.
-        :return: The modified list of runs.
+    def remove_exact_and_partial_keys(obj: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively removes exact and partial keys from a dictionary.
+        :param obj: The dictionary to remove keys from.
+        :return: The modified dictionary.
         """
+        if isinstance(obj, dict):
+            obj = {
+                k: v
+                for k, v in obj.items()
+                if k not in exact_keys
+                and not any(partial in k for partial in partial_keys)
+            }
+            for k, v in obj.items():
+                obj[k] = remove_exact_and_partial_keys(v)
+        elif isinstance(obj, list):
+            obj = [remove_exact_and_partial_keys(x) for x in obj]
+        return obj
 
-        def remove_exact_and_partial_keys(obj: Dict[str, Any]) -> Dict[str, Any]:
-            """Recursively removes exact and partial keys from a dictionary.
-            :param obj: The dictionary to remove keys from.
-            :return: The modified dictionary.
-            """
-            if isinstance(obj, dict):
-                obj = {
-                    k: v
-                    for k, v in obj.items()
-                    if k not in exact_keys
-                    and not any(partial in k for partial in partial_keys)
-                }
-                for k, v in obj.items():
-                    obj[k] = remove_exact_and_partial_keys(v)
-            elif isinstance(obj, list):
-                obj = [remove_exact_and_partial_keys(x) for x in obj]
-            return obj
-
-        def handle_id_and_kwargs(
-            obj: Dict[str, Any], root: bool = False
-        ) -> Dict[str, Any]:
-            """Recursively handles the id and kwargs fields of a dictionary.
-            changes the id field to a string "_kind" field that tells WBTraceTree how
-            to visualize the run. recursively moves the dictionaries under the kwargs
-            key to the top level.
-            :param obj: a run dictionary with id and kwargs fields.
-            :param root: whether this is the root dictionary or the serialized
-                dictionary.
-            :return: The modified dictionary.
-            """
-            if isinstance(obj, dict):
-                if ("id" in obj or "name" in obj) and not root:
-                    _kind = obj.get("id")
-                    if not _kind:
-                        _kind = [obj.get("name")]
+    def handle_id_and_kwargs(obj: Dict[str, Any], root: bool = False) -> Dict[str, Any]:
+        """Recursively handles the id and kwargs fields of a dictionary.
+        changes the id field to a string "_kind" field that tells WBTraceTree how
+        to visualize the run. recursively moves the dictionaries under the kwargs
+        key to the top level.
+        :param obj: a run dictionary with id and kwargs fields.
+        :param root: whether this is the root dictionary or the serialized
+            dictionary.
+        :return: The modified dictionary.
+        """
+        if isinstance(obj, dict):
+            if "data" in obj and isinstance(obj["data"], dict):
+                obj = obj["data"]
+            if ("id" in obj or "name" in obj) and not root:
+                _kind = obj.get("id")
+                if not _kind:
+                    _kind = [obj.get("name")]
+                if isinstance(_kind, list):
                     obj["_kind"] = _kind[-1]
                     obj.pop("id", None)
                     obj.pop("name", None)
-                    if "kwargs" in obj:
-                        kwargs = obj.pop("kwargs")
-                        for k, v in kwargs.items():
-                            obj[k] = v
-                for k, v in obj.items():
-                    obj[k] = handle_id_and_kwargs(v)
-            elif isinstance(obj, list):
-                obj = [handle_id_and_kwargs(x) for x in obj]
-            return obj
+                if "kwargs" in obj:
+                    kwargs = obj.pop("kwargs")
+                    for k, v in kwargs.items():
+                        obj[k] = v
+            for k, v in obj.items():
+                obj[k] = handle_id_and_kwargs(v)
+        elif isinstance(obj, list):
+            obj = [handle_id_and_kwargs(x) for x in obj]
+        return obj
 
-        def transform_serialized(serialized: Dict[str, Any]) -> Dict[str, Any]:
-            """Transforms the serialized field of a run dictionary to be compatible
-                with WBTraceTree.
-            :param serialized: The serialized field of a run dictionary.
-            :return: The transformed serialized field.
-            """
-            serialized = handle_id_and_kwargs(serialized, root=True)
-            serialized = remove_exact_and_partial_keys(serialized)
-            return serialized
-
-        def transform_run(run: Dict[str, Any]) -> Dict[str, Any]:
-            """Transforms a run dictionary to be compatible with WBTraceTree.
-            :param run: The run dictionary to transform.
-            :return: The transformed run dictionary.
-            """
-            transformed_dict = transform_serialized(run)
-
-            serialized = transformed_dict.pop("serialized")
-            for k, v in serialized.items():
-                transformed_dict[k] = v
-
-            _kind = transformed_dict.get("_kind", None)
-            name = transformed_dict.pop("name", None)
-            exec_ord = transformed_dict.pop("execution_order", None)
-
-            if not name:
-                name = _kind
-
-            output_dict = {
-                f"{exec_ord}_{name}": transformed_dict,
-            }
-            return output_dict
-
-        return list(map(transform_run, runs))
-
-    def build_tree(self, runs: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Builds a nested dictionary from a list of runs.
-        :param runs: The list of runs to build the tree from.
-        :return: The nested dictionary representing the langchain Run in a tree
-            structure compatible with WBTraceTree.
+    def transform_serialized(serialized: Dict[str, Any]) -> Dict[str, Any]:
+        """Transforms the serialized field of a run dictionary to be compatible
+            with WBTraceTree.
+        :param serialized: The serialized field of a run dictionary.
+        :return: The transformed serialized field.
         """
-        id_to_data = {}
-        child_to_parent = {}
+        serialized = handle_id_and_kwargs(serialized, root=True)
+        serialized = remove_exact_and_partial_keys(serialized)
+        return serialized
 
-        for entity in runs:
-            for key, data in entity.items():
-                id_val = data.pop("id", None)
-                parent_run_id = data.pop("parent_run_id", None)
-                id_to_data[id_val] = {key: data}
-                if parent_run_id:
-                    child_to_parent[id_val] = parent_run_id
+    def transform_run(run: Dict[str, Any]) -> Dict[str, Any]:
+        """Transforms a run dictionary to be compatible with WBTraceTree.
+        :param run: The run dictionary to transform.
+        :return: The transformed run dictionary.
+        """
+        transformed_dict = transform_serialized(run)
 
-        for child_id, parent_id in child_to_parent.items():
-            parent_dict = id_to_data[parent_id]
-            parent_dict[next(iter(parent_dict))][
-                next(iter(id_to_data[child_id]))
-            ] = id_to_data[child_id][next(iter(id_to_data[child_id]))]
+        serialized = transformed_dict.pop("serialized")
+        for k, v in serialized.items():
+            transformed_dict[k] = v
 
-        root_dict = next(
-            data for id_val, data in id_to_data.items() if id_val not in child_to_parent
+        _kind = transformed_dict.get("_kind", None)
+        name = transformed_dict.pop("name", None)
+
+        if not name:
+            name = _kind
+
+        output_dict = {
+            f"{name}": transformed_dict,
+        }
+        return output_dict
+
+    return list(map(transform_run, runs))
+
+
+def build_tree(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Builds a nested dictionary from a list of runs.
+    :param runs: The list of runs to build the tree from.
+    :return: The nested dictionary representing the langchain Run in a tree
+        structure compatible with WBTraceTree.
+    """
+    id_to_data = {}
+    child_to_parent = {}
+
+    for entity in runs:
+        for key, data in entity.items():
+            id_val = data.pop("id", None)
+            parent_run_id = data.pop("parent_run_id", None)
+            id_to_data[id_val] = {key: data}
+            if parent_run_id:
+                child_to_parent[id_val] = parent_run_id
+
+    for child_id, parent_id in child_to_parent.items():
+        parent_dict = id_to_data[parent_id]
+        parent_dict[next(iter(parent_dict))][next(iter(id_to_data[child_id]))] = (
+            id_to_data[child_id][next(iter(id_to_data[child_id]))]
         )
 
-        return root_dict
+    root_dict = next(
+        data for id_val, data in id_to_data.items() if id_val not in child_to_parent
+    )
+
+    return root_dict
 
 
 class WandbRunArgs(TypedDict):
@@ -425,13 +286,20 @@ class WandbTracer(BaseTracer):
     _run: Optional[WBRun] = None
     _run_args: Optional[WandbRunArgs] = None
 
-    def __init__(self, run_args: Optional[WandbRunArgs] = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        run_args: Optional[WandbRunArgs] = None,
+        io_serializer: Callable = _serialize_io,
+        **kwargs: Any,
+    ) -> None:
         """Initializes the WandbTracer.
 
         Parameters:
             run_args: (dict, optional) Arguments to pass to `wandb.init()`. If not
                 provided, `wandb.init()` will be called with no arguments. Please
                 refer to the `wandb.init` for more details.
+            io_serializer: callable A function that serializes the input and outputs
+             of a run to store in wandb. Defaults to "_serialize_io"
 
         To use W&B to monitor all LangChain activity, add this tracer like any other
         LangChain callback:
@@ -457,7 +325,23 @@ class WandbTracer(BaseTracer):
         self._trace_tree = trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
-        self.run_processor = RunProcessor(self._wandb, self._trace_tree)
+        self._io_serializer = io_serializer
+        warn_deprecated(
+            "0.3.8",
+            pending=False,
+            message=(
+                "Please use the `WeaveTracer` from the `weave` package instead of this."
+                "The `WeaveTracer` is a more flexible and powerful tool for logging "
+                "and tracing your LangChain callables."
+                "Find more information at https://weave-docs.wandb.ai/guides/integrations/langchain"
+            ),
+            alternative=(
+                "Please instantiate the WeaveTracer from "
+                "`weave.integrations.langchain import WeaveTracer` ."
+                "For autologging simply use `weave.init()` and log all traces "
+                "from your LangChain callables."
+            ),
+        )
 
     def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
@@ -465,23 +349,6 @@ class WandbTracer(BaseTracer):
         Proxy for `wandb.finish()`.
         """
         self._wandb.finish()
-
-    def _log_trace_from_run(self, run: Run) -> None:
-        """Logs a LangChain Run to W*B as a W&B Trace."""
-        self._ensure_run()
-
-        root_span = self.run_processor.process_span(run)
-        model_dict = self.run_processor.process_model(run)
-
-        if root_span is None:
-            return
-
-        model_trace = self._trace_tree.WBTraceTree(
-            root_span=root_span,
-            model_dict=model_dict,
-        )
-        if self._wandb.run is not None:
-            self._wandb.run.log({"langchain_trace": model_trace})
 
     def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
@@ -507,6 +374,133 @@ class WandbTracer(BaseTracer):
                 )
 
             self._wandb.run._label(repo="langchain")
+
+    def process_model_dict(self, run: Run) -> Optional[Dict[str, Any]]:
+        """Utility to process a run for wandb model_dict serialization.
+        :param run: The run to process.
+        :return: The convert model_dict to pass to WBTraceTree.
+        """
+        try:
+            data = json.loads(run.json())
+            processed = flatten_run(data)
+            keep_keys = (
+                "id",
+                "name",
+                "serialized",
+                "parent_run_id",
+            )
+            processed = truncate_run_iterative(processed, keep_keys=keep_keys)
+            exact_keys, partial_keys = (
+                ("lc", "type", "graph"),
+                (
+                    "api_key",
+                    "input",
+                    "output",
+                ),
+            )
+            processed = modify_serialized_iterative(
+                processed, exact_keys=exact_keys, partial_keys=partial_keys
+            )
+            output = build_tree(processed)
+            return output
+        except Exception as e:
+            if PRINT_WARNINGS:
+                self._wandb.termerror(f"WARNING: Failed to serialize model: {e}")
+            return None
+
+    def _log_trace_from_run(self, run: Run) -> None:
+        """Logs a LangChain Run to W*B as a W&B Trace."""
+        self._ensure_run()
+
+        def create_trace(
+            run: "Run", parent: Optional["Trace"] = None
+        ) -> Optional["Trace"]:
+            """
+            Create a trace for a given run and its child runs.
+
+            Args:
+                run (Run): The run for which to create a trace.
+                parent (Optional[Trace]): The parent trace.
+                If provided, the created trace is added as a child to the parent trace.
+
+            Returns:
+                Optional[Trace]: The created trace.
+                 If an error occurs during the creation of the trace, None is returned.
+
+            Raises:
+                Exception: If an error occurs during the creation of the trace,
+                no exception is raised and a warning is printed.
+            """
+
+            def get_metadata_dict(r: "Run") -> Dict[str, Any]:
+                """
+                Extract metadata from a given run.
+
+                This function extracts metadata from a given run
+                and returns it as a dictionary.
+
+                Args:
+                    r (Run): The run from which to extract metadata.
+
+                Returns:
+                    Dict[str, Any]: A dictionary containing the extracted metadata.
+                """
+                run_dict = json.loads(r.json())
+                metadata_dict = run_dict.get("metadata", {})
+                metadata_dict["run_id"] = run_dict.get("id")
+                metadata_dict["parent_run_id"] = run_dict.get("parent_run_id")
+                metadata_dict["tags"] = run_dict.get("tags")
+                metadata_dict["execution_order"] = run_dict.get(
+                    "dotted_order", ""
+                ).count(".")
+                return metadata_dict
+
+            try:
+                if run.run_type in ["llm", "tool"]:
+                    run_type = run.run_type
+                elif run.run_type == "chain":
+                    run_type = "agent" if "agent" in run.name.lower() else "chain"
+                else:
+                    run_type = None
+
+                metadata = get_metadata_dict(run)
+                trace_tree = self._trace_tree.Trace(
+                    name=run.name,
+                    kind=run_type,
+                    status_code="error" if run.error else "success",
+                    start_time_ms=int(run.start_time.timestamp() * 1000)
+                    if run.start_time is not None
+                    else None,
+                    end_time_ms=int(run.end_time.timestamp() * 1000)
+                    if run.end_time is not None
+                    else None,
+                    metadata=metadata,
+                    inputs=self._io_serializer(run.inputs),
+                    outputs=self._io_serializer(run.outputs),
+                )
+
+                # If the run has child runs, recursively create traces for them
+                for child_run in run.child_runs:
+                    create_trace(child_run, trace_tree)
+
+                if parent is None:
+                    return trace_tree
+                else:
+                    parent.add_child(trace_tree)
+                    return parent
+            except Exception as e:
+                if PRINT_WARNINGS:
+                    self._wandb.termwarn(
+                        f"WARNING: Failed to serialize trace for run due to: {e}"
+                    )
+                return None
+
+        run_trace = create_trace(run)
+        model_dict = self.process_model_dict(run)
+        if model_dict is not None and run_trace is not None:
+            run_trace._model_dict = model_dict
+        if self._wandb.run is not None and run_trace is not None:
+            run_trace.log("langchain_trace")
 
     def _persist_run(self, run: "Run") -> None:
         """Persist a run."""

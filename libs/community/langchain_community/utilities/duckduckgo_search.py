@@ -3,9 +3,10 @@
 No setup required. Free.
 https://pypi.org/project/duckduckgo-search/
 """
-from typing import Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
@@ -15,19 +16,34 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     """
 
     region: Optional[str] = "wt-wt"
+    """
+    See https://pypi.org/project/duckduckgo-search/#regions
+    """
     safesearch: str = "moderate"
+    """
+    Options: strict, moderate, off
+    """
     time: Optional[str] = "y"
+    """
+    Options: d, w, m, y
+    """
     max_results: int = 5
-    backend: str = "api"  # which backend to use in DDGS.text() (api, html, lite)
-    source: str = "text"  # which function to use in DDGS (DDGS.text() or DDGS.news())
+    backend: str = "api"
+    """
+    Options: api, html, lite
+    """
+    source: str = "text"
+    """
+    Options: text, news
+    """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that python package exists in environment."""
         try:
             from duckduckgo_search import DDGS  # noqa: F401
@@ -47,7 +63,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.text(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,
@@ -66,7 +82,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.news(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,

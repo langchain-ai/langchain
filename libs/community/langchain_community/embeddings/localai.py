@@ -16,8 +16,12 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+    pre_init,
+)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -42,11 +46,11 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -64,11 +68,11 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -89,7 +93,7 @@ def _check_response(response: dict) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]):
         import openai
 
-        raise openai.error.APIError("LocalAI API returned an empty embedding")
+        raise openai.error.APIError("LocalAI API returned an empty embedding")  # type: ignore[attr-defined]
     return response
 
 
@@ -137,7 +141,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
@@ -162,13 +166,11 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -193,7 +195,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
@@ -228,7 +230,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         try:
             import openai
 
-            values["client"] = openai.Embedding
+            values["client"] = openai.Embedding  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -251,10 +253,10 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {
+            openai.proxy = {  # type: ignore[attr-defined]
                 "http": self.openai_proxy,
                 "https": self.openai_proxy,
-            }  # type: ignore[assignment]  # noqa: E501
+            }  # type: ignore[assignment]
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:

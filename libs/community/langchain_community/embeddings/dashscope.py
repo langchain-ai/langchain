@@ -10,8 +10,8 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -22,6 +22,8 @@ from tenacity import (
 )
 
 logger = logging.getLogger(__name__)
+
+BATCH_SIZE = {"text-embedding-v1": 25, "text-embedding-v2": 25, "text-embedding-v3": 6}
 
 
 def _create_retry_decorator(embeddings: DashScopeEmbeddings) -> Callable[[Any], Any]:
@@ -48,8 +50,14 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
         result = []
         i = 0
         input_data = kwargs["input"]
-        while i < len(input_data):
-            kwargs["input"] = input_data[i : i + 25]
+        input_len = len(input_data) if isinstance(input_data, list) else 1
+        batch_size = BATCH_SIZE.get(kwargs["model"], 25)
+        while i < input_len:
+            kwargs["input"] = (
+                input_data[i : i + batch_size]
+                if isinstance(input_data, list)
+                else input_data
+            )
             resp = embeddings.client.call(**kwargs)
             if resp.status_code == 200:
                 result += resp.output["embeddings"]
@@ -64,7 +72,7 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
                     f"code: {resp.code} \n message: {resp.message}",
                     response=resp,
                 )
-            i += 25
+            i += batch_size
         return result
 
     return _embed_with_retry(**kwargs)
@@ -98,20 +106,20 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """The DashScope client."""
     model: str = "text-embedding-v1"
     dashscope_api_key: Optional[str] = None
     max_retries: int = 5
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         import dashscope
 
         """Validate that api key and python package exists in environment."""
@@ -135,8 +143,6 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If None, will use the chunk size
-                specified by the class.
 
         Returns:
             List of embeddings, one for each text.

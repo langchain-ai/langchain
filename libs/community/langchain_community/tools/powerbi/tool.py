@@ -1,4 +1,5 @@
 """Tools for interacting with a Power BI dataset."""
+
 import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
@@ -7,8 +8,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, validator
 from langchain_core.tools import BaseTool
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_community.chat_models.openai import _import_tiktoken
 from langchain_community.tools.powerbi.prompt import (
@@ -21,7 +22,7 @@ from langchain_community.utilities.powerbi import PowerBIDataset, json_to_md
 logger = logging.getLogger(__name__)
 
 
-class QueryPowerBITool(BaseTool):
+class QueryPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for querying a Power BI Dataset."""
 
     name: str = "query_powerbi"
@@ -30,7 +31,7 @@ class QueryPowerBITool(BaseTool):
 
     Example Input: "How many rows are in table1?"
     """  # noqa: E501
-    llm_chain: Any
+    llm_chain: Any = None
     powerbi: PowerBIDataset = Field(exclude=True)
     examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
@@ -38,23 +39,24 @@ class QueryPowerBITool(BaseTool):
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-
-    @validator("llm_chain")
+    @model_validator(mode="before")
+    @classmethod
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
-        cls, llm_chain: Any
-    ) -> Any:
+        cls, values: dict
+    ) -> dict:
         """Make sure the LLM chain has the correct input variables."""
+        llm_chain = values["llm_chain"]
         for var in llm_chain.prompt.input_variables:
             if var not in ["tool_input", "tables", "schemas", "examples"]:
                 raise ValueError(
-                    "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: C0301 E501 # pylint: disable=C0301
+                    "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: E501 # pylint: disable=C0301
                     llm_chain.prompt.input_variables,
                 )
-        return llm_chain
+        return values
 
     def _check_cache(self, tool_input: str) -> Optional[str]:
         """Check if the input is present in the cache.
@@ -99,9 +101,9 @@ class QueryPowerBITool(BaseTool):
         logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
         if error is not None and "TokenExpired" in error:
-            self.session_cache[
-                tool_input
-            ] = "Authentication token expired or invalid, please try reauthenticate."
+            self.session_cache[tool_input] = (
+                "Authentication token expired or invalid, please try reauthenticate."
+            )
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -153,9 +155,9 @@ class QueryPowerBITool(BaseTool):
         logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
         if error is not None and ("TokenExpired" in error or "TokenError" in error):
-            self.session_cache[
-                tool_input
-            ] = "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."  # noqa: E501
+            self.session_cache[tool_input] = (
+                "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."  # noqa: E501
+            )
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -214,7 +216,7 @@ class QueryPowerBITool(BaseTool):
         return False, 0
 
 
-class InfoPowerBITool(BaseTool):
+class InfoPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for getting metadata about a PowerBI Dataset."""
 
     name: str = "schema_powerbi"
@@ -226,10 +228,9 @@ class InfoPowerBITool(BaseTool):
     """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _run(
         self,
@@ -247,17 +248,16 @@ class InfoPowerBITool(BaseTool):
         return await self.powerbi.aget_table_info(tool_input.split(", "))
 
 
-class ListPowerBITool(BaseTool):
+class ListPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for getting tables names."""
 
     name: str = "list_tables_powerbi"
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _run(
         self,

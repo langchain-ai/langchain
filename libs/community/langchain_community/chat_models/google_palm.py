@@ -1,4 +1,5 @@
 """Wrapper around Google's PaLM Chat API."""
+
 from __future__ import annotations
 
 import logging
@@ -20,8 +21,8 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,
@@ -218,7 +219,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     To use you must have the google.generativeai Python package installed and
     either:
 
-        1. The ``GOOGLE_API_KEY``` environment variable set with your API key, or
+        1. The ``GOOGLE_API_KEY`` environment variable set with your API key, or
         2. Pass your API key using the google_api_key kwarg to the ChatGoogle
            constructor.
 
@@ -235,7 +236,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     """Model name to use."""
     google_api_key: Optional[SecretStr] = None
     temperature: Optional[float] = None
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -260,7 +261,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "google_palm"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         google_api_key = convert_to_secret_str(

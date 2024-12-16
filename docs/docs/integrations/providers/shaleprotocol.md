@@ -20,8 +20,8 @@ As of June 2023, the API supports Vicuna-13B by default. We are going to support
 For example
 ```python
 from langchain_openai import OpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 import os
 os.environ['OPENAI_API_BASE'] = "https://shale.live/v1"
@@ -35,10 +35,11 @@ template = """Question: {question}
 
 prompt = PromptTemplate.from_template(template)
 
-llm_chain = LLMChain(prompt=prompt, llm=llm)
+
+llm_chain = prompt | llm | StrOutputParser()
 
 question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
 
-llm_chain.run(question)
+llm_chain.invoke(question)
 
 ```

@@ -1,5 +1,6 @@
 # flake8: noqa
 """Test Llama.cpp wrapper."""
+
 import os
 from typing import Generator
 from urllib.request import urlretrieve
@@ -35,7 +36,7 @@ def test_llamacpp_inference() -> None:
     """Test valid llama.cpp inference."""
     model_path = get_model()
     llm = LlamaCpp(model_path=model_path)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
     assert len(output) > 1
 
@@ -68,7 +69,7 @@ def test_llamacpp_streaming_callback() -> None:
         verbose=True,
         max_tokens=MAX_TOKENS,
     )
-    llm("Q: Can you count to 10? A:'1, ")
+    llm.invoke("Q: Can you count to 10? A:'1, ")
     assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE
 
 

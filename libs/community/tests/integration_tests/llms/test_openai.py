@@ -1,4 +1,5 @@
 """Test OpenAI API wrapper."""
+
 from pathlib import Path
 from typing import Generator
 
@@ -18,7 +19,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import (
 def test_openai_call() -> None:
     """Test valid call to openai."""
     llm = OpenAI()
-    output = llm("Say something nice:")
+    output = llm.invoke("Say something nice:")
     assert isinstance(output, str)
 
 
@@ -33,19 +34,19 @@ def test_openai_llm_output_contains_model_name() -> None:
 def test_openai_stop_valid() -> None:
     """Test openai stop logic on valid configuration."""
     query = "write an ordered list of five items"
-    first_llm = OpenAI(stop="3", temperature=0)
-    first_output = first_llm(query)
+    first_llm = OpenAI(stop="3", temperature=0)  # type: ignore[call-arg]
+    first_output = first_llm.invoke(query)
     second_llm = OpenAI(temperature=0)
-    second_output = second_llm(query, stop=["3"])
+    second_output = second_llm.invoke(query, stop=["3"])
     # Because it stops on new lines, shouldn't return anything
     assert first_output == second_output
 
 
 def test_openai_stop_error() -> None:
     """Test openai stop logic on bad configuration."""
-    llm = OpenAI(stop="3", temperature=0)
+    llm = OpenAI(stop="3", temperature=0)  # type: ignore[call-arg]
     with pytest.raises(ValueError):
-        llm("write an ordered list of five items", stop=["\n"])
+        llm.invoke("write an ordered list of five items", stop=["\n"])
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
@@ -158,7 +159,7 @@ def test_openai_streaming_multiple_prompts_error() -> None:
 def test_openai_streaming_call() -> None:
     """Test valid call to openai."""
     llm = OpenAI(max_tokens=10, streaming=True)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -173,7 +174,7 @@ def test_openai_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    llm("Write me a sentence with 100 words.")
+    llm.invoke("Write me a sentence with 100 words.")
     assert callback_handler.llm_streams == 10
 
 

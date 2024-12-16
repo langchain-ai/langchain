@@ -3,7 +3,7 @@
 from typing import Any, Union
 
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -19,7 +19,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_retriever_: bool = False
     ignore_chat_model_: bool = False
 
-    # to allow for similar callback handlers that are not technicall equal
+    # to allow for similar callback handlers that are not technically equal
     fake_id: Union[str, None] = None
 
     # add finer-grained counters for easier debugging of failing tests
@@ -251,5 +251,6 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_error_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":
+    # Overriding since BaseModel has __deepcopy__ method as well
+    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":  # type: ignore
         return self

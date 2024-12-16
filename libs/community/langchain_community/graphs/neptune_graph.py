@@ -22,9 +22,11 @@ class NeptuneQueryException(Exception):
 
 
 class BaseNeptuneGraph(ABC):
+    """Abstract base class for Neptune."""
+
     @property
     def get_schema(self) -> str:
-        """Returns the schema of the Neptune database"""
+        """Return the schema of the Neptune database"""
         return self.schema
 
     @abstractmethod
@@ -140,7 +142,7 @@ class BaseNeptuneGraph(ABC):
 class NeptuneAnalyticsGraph(BaseNeptuneGraph):
     """Neptune Analytics wrapper for graph operations.
 
-    Args:
+    Parameters:
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
         region_name: optional AWS region, e.g., us-west-2
@@ -196,13 +198,13 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
                     self.client = session.client("neptune-graph")
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
         except Exception as e:
             if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "NeptuneGraph requires a boto3 version 1.34.40 or greater."
                     "Please install it with `pip install -U boto3`."
                 ) from e
@@ -270,14 +272,13 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
 class NeptuneGraph(BaseNeptuneGraph):
     """Neptune wrapper for graph operations.
 
-    Args:
+    Parameters:
         host: endpoint for the database instance
         port: port number for the database instance, default is 8182
         use_https: whether to use secure connection, default is True
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
         region_name: optional AWS region, e.g., us-west-2
-        service: optional service name, default is neptunedata
         sign: optional, whether to sign the request payload, default is True
 
     Example:
@@ -345,13 +346,13 @@ class NeptuneGraph(BaseNeptuneGraph):
                     )
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
         except Exception as e:
             if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "NeptuneGraph requires a boto3 version 1.28.38 or greater."
                     "Please install it with `pip install -U boto3`."
                 ) from e

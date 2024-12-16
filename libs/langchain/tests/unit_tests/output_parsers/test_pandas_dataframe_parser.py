@@ -1,8 +1,11 @@
 """Test PandasDataframeParser"""
+
+from typing import Any, Dict
+
 import pandas as pd
+from langchain_core.exceptions import OutputParserException
 
 from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
-from langchain.schema import OutputParserException
 
 df = pd.DataFrame(
     {"chicken": [1, 2, 3, 4], "veggies": [5, 4, 3, 2], "steak": [9, 8, 7, 6]}
@@ -108,3 +111,8 @@ def test_pandas_output_parser_invalid_special_op() -> None:
         assert False, "Should have raised OutputParserException"
     except OutputParserException:
         assert True
+
+
+def test_pandas_output_parser_output_type() -> None:
+    """Test the output type of the pandas dataframe output parser is a pandas dataframe."""  # noqa: E501
+    assert parser.OutputType is Dict[str, Any]

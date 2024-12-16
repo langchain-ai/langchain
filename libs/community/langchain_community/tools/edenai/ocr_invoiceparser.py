@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, Field, HttpUrl
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
 
 
-class EdenAiParsingInvoiceTool(EdenaiTool):
+class InvoiceParsingInput(BaseModel):
+    query: HttpUrl = Field(description="url of the document to parse")
+
+
+class EdenAiParsingInvoiceTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Invoice parsing API.
 
     for api reference check edenai documentation:
@@ -22,9 +27,8 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
 
     """
 
-    name = "edenai_invoice_parsing"
-
-    description = (
+    name: str = "edenai_invoice_parsing"
+    description: str = (
         "A wrapper around edenai Services invoice parsing. "
         """Useful for when you have to extract information from 
         an image it enables to take invoices 
@@ -33,14 +37,15 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
         in a structured format to automate the invoice processing """
         "Input should be the string url of the document to parse."
     )
+    args_schema: Type[BaseModel] = InvoiceParsingInput
 
     language: Optional[str] = None
     """
     language of the image passed to the model.
     """
 
-    feature = "ocr"
-    subfeature = "invoice_parser"
+    feature: str = "ocr"
+    subfeature: str = "invoice_parser"
 
     def _parse_response(self, response: list) -> str:
         formatted_list: list = []

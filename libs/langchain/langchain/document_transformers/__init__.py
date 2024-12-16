@@ -14,29 +14,51 @@
 
     Document
 """  # noqa: E501
-import warnings
-from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
+from typing import TYPE_CHECKING, Any
 
-from langchain.utils.interactive_env import is_interactive_env
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_transformers import (
+        BeautifulSoupTransformer,
+        DoctranPropertyExtractor,
+        DoctranQATransformer,
+        DoctranTextTranslator,
+        EmbeddingsClusteringFilter,
+        EmbeddingsRedundantFilter,
+        GoogleTranslateTransformer,
+        Html2TextTransformer,
+        LongContextReorder,
+        NucliaTextTransformer,
+        OpenAIMetadataTagger,
+        get_stateful_documents,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "BeautifulSoupTransformer": "langchain_community.document_transformers",
+    "DoctranQATransformer": "langchain_community.document_transformers",
+    "DoctranTextTranslator": "langchain_community.document_transformers",
+    "DoctranPropertyExtractor": "langchain_community.document_transformers",
+    "EmbeddingsClusteringFilter": "langchain_community.document_transformers",
+    "EmbeddingsRedundantFilter": "langchain_community.document_transformers",
+    "GoogleTranslateTransformer": "langchain_community.document_transformers",
+    "get_stateful_documents": "langchain_community.document_transformers",
+    "LongContextReorder": "langchain_community.document_transformers",
+    "NucliaTextTransformer": "langchain_community.document_transformers",
+    "OpenAIMetadataTagger": "langchain_community.document_transformers",
+    "Html2TextTransformer": "langchain_community.document_transformers",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    from langchain_community import document_transformers
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing document transformers from langchain is deprecated. Importing "
-            "from langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.document_transformers import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(document_transformers, name)
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
 __all__ = [

@@ -1,4 +1,5 @@
 """Test ChatFireworks wrapper."""
+
 import sys
 from typing import cast
 
@@ -21,7 +22,7 @@ def chat() -> ChatFireworks:
 def test_chat_fireworks(chat: ChatFireworks) -> None:
     """Test ChatFireworks wrapper."""
     message = HumanMessage(content="What is the weather in Redwood City, CA today")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -38,7 +39,7 @@ def test_chat_fireworks_system_message(chat: ChatFireworks) -> None:
     """Test ChatFireworks wrapper with system message."""
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 

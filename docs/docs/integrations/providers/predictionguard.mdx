@@ -37,7 +37,7 @@ import os
 
 import predictionguard as pg
 from langchain_community.llms import PredictionGuard
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Your Prediction Guard API key. Get one at predictionguard.com
@@ -77,7 +77,7 @@ Basic LLM Chaining with the Prediction Guard wrapper:
 ```python
 import os
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_community.llms import PredictionGuard
 

@@ -13,7 +13,7 @@ def test_weight_only_quantization_with_config() -> None:
     llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="text2text-generation", quantization_config=conf
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -22,7 +22,7 @@ def test_weight_only_quantization_4bit() -> None:
     llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="text2text-generation", load_in_4bit=True
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -31,7 +31,7 @@ def test_weight_only_quantization_8bit() -> None:
     llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="text2text-generation", load_in_8bit=True
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -46,7 +46,7 @@ def test_init_with_pipeline() -> None:
     )
     pipe = pipeline("text2text-generation", model=model, tokenizer=tokenizer)
     llm = WeightOnlyQuantPipeline(pipeline=pipe)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -58,5 +58,5 @@ def text_weight_only_pipeline_summarization() -> None:
     llm = WeightOnlyQuantPipeline.from_model_id(
         model_id=model_id, task="summarization", quantization_config=conf
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)

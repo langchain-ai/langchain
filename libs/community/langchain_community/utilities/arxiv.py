@@ -1,11 +1,12 @@
 """Util that calls Arxiv."""
+
 import logging
 import os
 import re
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class ArxivAPIWrapper(BaseModel):
     Attributes:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
+        continue_on_failure (bool): If True, continue loading other URLs on failure.
         load_max_docs: a limit to the number of loaded documents
         load_all_available_meta:
             if True: the `metadata` of the loaded Documents contains all available
@@ -47,13 +49,14 @@ class ArxivAPIWrapper(BaseModel):
                 load_all_available_meta = False,
                 doc_content_chars_max = 40000
             )
-            arxiv.run("tree of thought llm)
+            arxiv.run("tree of thought llm")
     """
 
     arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH: int = 300
+    continue_on_failure: bool = False
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
@@ -70,8 +73,9 @@ class ArxivAPIWrapper(BaseModel):
                 return False
         return True
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             import arxiv
@@ -90,6 +94,16 @@ class ArxivAPIWrapper(BaseModel):
             )
         return values
 
+    def _fetch_results(self, query: str) -> Any:
+        """Helper function to fetch arxiv results based on query."""
+        if self.is_arxiv_identifier(query):
+            return self.arxiv_search(
+                id_list=query.split(), max_results=self.top_k_results
+            ).results()
+        return self.arxiv_search(
+            query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
+        ).results()
+
     def get_summaries_as_docs(self, query: str) -> List[Document]:
         """
         Performs an arxiv search and returns list of
@@ -101,18 +115,13 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
-            if self.is_arxiv_identifier(query):
-                results = self.arxiv_search(
-                    id_list=query.split(),
-                    max_results=self.top_k_results,
-                ).results()
-            else:
-                results = self.arxiv_search(  # type: ignore
-                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
-                ).results()
+            results = self._fetch_results(
+                query
+            )  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
+            logger.error(f"Arxiv exception: {ex}")  # Added error logging
             return [Document(page_content=f"Arxiv exception: {ex}")]
         docs = [
             Document(
@@ -140,18 +149,13 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
-            if self.is_arxiv_identifier(query):
-                results = self.arxiv_search(
-                    id_list=query.split(),
-                    max_results=self.top_k_results,
-                ).results()
-            else:
-                results = self.arxiv_search(  # type: ignore
-                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
-                ).results()
+            results = self._fetch_results(
+                query
+            )  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
+            logger.error(f"Arxiv exception: {ex}")  # Added error logging
             return f"Arxiv exception: {ex}"
         docs = [
             f"Published: {result.updated.date()}\n"
@@ -204,15 +208,9 @@ class ArxivAPIWrapper(BaseModel):
         try:
             # Remove the ":" and "-" from the query, as they can cause search problems
             query = query.replace(":", "").replace("-", "")
-            if self.is_arxiv_identifier(query):
-                results = self.arxiv_search(
-                    id_list=query[: self.ARXIV_MAX_QUERY_LENGTH].split(),
-                    max_results=self.load_max_docs,
-                ).results()
-            else:
-                results = self.arxiv_search(  # type: ignore
-                    query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.load_max_docs
-                ).results()
+            results = self._fetch_results(
+                query
+            )  # Using helper function to fetch results
         except self.arxiv_exceptions as ex:
             logger.debug("Error on arxiv: %s", ex)
             return
@@ -225,6 +223,12 @@ class ArxivAPIWrapper(BaseModel):
             except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
+            except Exception as e:
+                if self.continue_on_failure:
+                    logger.error(e)
+                    continue
+                else:
+                    raise e
             if self.load_all_available_meta:
                 extra_metadata = {
                     "entry_id": result.entry_id,

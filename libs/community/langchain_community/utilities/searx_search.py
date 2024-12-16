@@ -132,15 +132,14 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import (
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import (
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     PrivateAttr,
-    root_validator,
-    validator,
+    model_validator,
 )
-from langchain_core.utils import get_from_dict_or_env
 
 
 def _get_default_params() -> dict:
@@ -215,24 +214,11 @@ class SearxSearchWrapper(BaseModel):
     k: int = 10
     aiosession: Optional[Any] = None
 
-    @validator("unsecure")
-    def disable_ssl_warnings(cls, v: bool) -> bool:
-        """Disable SSL warnings."""
-        if v:
-            # requests.urllib3.disable_warnings()
-            try:
-                import urllib3
-
-                urllib3.disable_warnings()
-            except ImportError as e:
-                print(e)  # noqa: T201
-
-        return v
-
-    @root_validator()
-    def validate_params(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_params(cls, values: Dict) -> Any:
         """Validate that custom searx params are merged with default ones."""
-        user_params = values["params"]
+        user_params = values.get("params", {})
         default = _get_default_params()
         values["params"] = {**default, **user_params}
 
@@ -253,15 +239,13 @@ class SearxSearchWrapper(BaseModel):
             searx_host = "https://" + searx_host
         elif searx_host.startswith("http://"):
             values["unsecure"] = True
-            cls.disable_ssl_warnings(True)
         values["searx_host"] = searx_host
 
         return values
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """Actual request to searx API."""
@@ -281,12 +265,13 @@ class SearxSearchWrapper(BaseModel):
     async def _asearx_api_query(self, params: dict) -> SearxResults:
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    self.searx_host,
-                    headers=self.headers,
-                    params=params,
-                    ssl=(lambda: False if self.unsecure else None)(),
-                ) as response:
+                kwargs: Dict = {
+                    "headers": self.headers,
+                    "params": params,
+                }
+                if self.unsecure:
+                    kwargs["ssl"] = False
+                async with session.get(self.searx_host, **kwargs) as response:
                     if not response.ok:
                         raise ValueError("Searx API returned an error: ", response.text)
                     result = SearxResults(await response.text())

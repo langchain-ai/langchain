@@ -1,8 +1,9 @@
 # flake8: noqa
 """Tools for interacting with Spark SQL."""
+
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, model_validator, ConfigDict
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
@@ -20,11 +21,12 @@ class BaseSparkSQLTool(BaseModel):
 
     db: SparkSQL = Field(exclude=True)
 
-    class Config(BaseTool.Config):
-        pass
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
-class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
+class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
     """Tool for querying a Spark SQL."""
 
     name: str = "query_sql_db"
@@ -43,7 +45,7 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
         return self.db.run_no_throw(query)
 
 
-class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
+class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
     """Tool for getting metadata about a Spark SQL."""
 
     name: str = "schema_sql_db"
@@ -63,7 +65,7 @@ class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
         return self.db.get_table_info_no_throw(table_names.split(", "))
 
 
-class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
+class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
     """Tool for getting tables names."""
 
     name: str = "list_tables_sql_db"
@@ -78,7 +80,7 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
         return ", ".join(self.db.get_usable_table_names())
 
 
-class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
+class QueryCheckerTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
     """Use an LLM to check if a query is correct.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
@@ -91,13 +93,14 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
     Always use this tool before executing a query with query_sql_db!
     """
 
-    @root_validator(pre=True)
-    def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def initialize_llm_chain(cls, values: Dict[str, Any]) -> Any:
         if "llm_chain" not in values:
             from langchain.chains.llm import LLMChain
 
             values["llm_chain"] = LLMChain(
-                llm=values.get("llm"),
+                llm=values.get("llm"),  # type: ignore[arg-type]
                 prompt=PromptTemplate(
                     template=QUERY_CHECKER, input_variables=["query"]
                 ),

@@ -1,9 +1,10 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from packaging.version import parse
+from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import Self
 
 __all__ = ["GradientEmbeddings"]
 
@@ -50,13 +51,13 @@ class GradientEmbeddings(BaseModel, Embeddings):
     """Gradient client."""
 
     # LLM call kwargs
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
 
         values["gradient_access_token"] = get_from_dict_or_env(
@@ -67,8 +68,15 @@ class GradientEmbeddings(BaseModel, Embeddings):
         )
 
         values["gradient_api_url"] = get_from_dict_or_env(
-            values, "gradient_api_url", "GRADIENT_API_URL"
+            values,
+            "gradient_api_url",
+            "GRADIENT_API_URL",
+            default="https://api.gradient.ai/api",
         )
+        return values
+
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
         try:
             import gradientai
         except ImportError:
@@ -82,13 +90,12 @@ class GradientEmbeddings(BaseModel, Embeddings):
             )
 
         gradient = gradientai.Gradient(
-            access_token=values["gradient_access_token"],
-            workspace_id=values["gradient_workspace_id"],
-            host=values["gradient_api_url"],
+            access_token=self.gradient_access_token,
+            workspace_id=self.gradient_workspace_id,
+            host=self.gradient_api_url,
         )
-        values["client"] = gradient.get_embeddings_model(slug=values["model"])
-
-        return values
+        self.client = gradient.get_embeddings_model(slug=self.model)
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Gradient's embedding endpoint.

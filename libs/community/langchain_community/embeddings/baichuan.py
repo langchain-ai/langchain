@@ -1,11 +1,21 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import (
+    secret_from_env,
+)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
+from requests import RequestException
+from typing_extensions import Self
 
-BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
+BAICHUAN_API_URL: str = "https://api.baichuan-ai.com/v1/embeddings"
 
 # BaichuanTextEmbeddings is an embedding model provided by Baichuan Inc. (https://www.baichuan-ai.com/home).
 # As of today (Jan 25th, 2024) BaichuanTextEmbeddings ranks #1 in C-MTEB
@@ -15,45 +25,66 @@ BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 # Official Website: https://platform.baichuan-ai.com/docs/text-Embedding
 # An API-key is required to use this embedding model. You can get one by registering
 # at https://platform.baichuan-ai.com/docs/text-Embedding.
-# BaichuanTextEmbeddings support 512 token window and preduces vectors with
+# BaichuanTextEmbeddings support 512 token window and produces vectors with
 # 1024 dimensions.
 
 
 # NOTE!! BaichuanTextEmbeddings only supports Chinese text embedding.
 # Multi-language support is coming soon.
 class BaichuanTextEmbeddings(BaseModel, Embeddings):
-    """Baichuan Text Embedding models."""
+    """Baichuan Text Embedding models.
 
-    session: Any  #: :meta private:
-    model_name: str = "Baichuan-Text-Embedding"
-    baichuan_api_key: Optional[SecretStr] = None
+    Setup:
+        To use, you should set the environment variable ``BAICHUAN_API_KEY`` to
+        your API key or pass it as a named parameter to the constructor.
 
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+        .. code-block:: bash
+
+            export BAICHUAN_API_KEY="your-api-key"
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.embeddings import BaichuanTextEmbeddings
+
+            embeddings = BaichuanTextEmbeddings()
+
+    Embed:
+        .. code-block:: python
+
+            # embed the documents
+            vectors = embeddings.embed_documents([text1, text2, ...])
+
+            # embed the query
+            vectors = embeddings.embed_query(text)
+    """  # noqa: E501
+
+    session: Any = None  #: :meta private:
+    model_name: str = Field(default="Baichuan-Text-Embedding", alias="model")
+    """The model used to embed the documents."""
+    baichuan_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env(["BAICHUAN_API_KEY", "BAICHUAN_AUTH_TOKEN"]),
+    )
+    """Automatically inferred from env var `BAICHUAN_API_KEY` if not provided."""
+    chunk_size: int = 16
+    """Chunk size when multiple texts are input"""
+
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
+
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that auth token exists in environment."""
-        try:
-            baichuan_api_key = convert_to_secret_str(
-                get_from_dict_or_env(values, "baichuan_api_key", "BAICHUAN_API_KEY")
-            )
-        except ValueError as original_exc:
-            try:
-                baichuan_api_key = convert_to_secret_str(
-                    get_from_dict_or_env(
-                        values, "baichuan_auth_token", "BAICHUAN_AUTH_TOKEN"
-                    )
-                )
-            except ValueError:
-                raise original_exc
         session = requests.Session()
         session.headers.update(
             {
-                "Authorization": f"Bearer {baichuan_api_key.get_secret_value()}",
+                "Authorization": f"Bearer {self.baichuan_api_key.get_secret_value()}",
                 "Accept-Encoding": "identity",
                 "Content-type": "application/json",
             }
         )
-        values["session"] = session
-        return values
+        self.session = session
+        return self
 
     def _embed(self, texts: List[str]) -> Optional[List[List[float]]]:
         """Internal method to call Baichuan Embedding API and return embeddings.
@@ -65,10 +96,17 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
             A list of list of floats representing the embeddings, or None if an
             error occurs.
         """
-        try:
+        chunk_texts = [
+            texts[i : i + self.chunk_size]
+            for i in range(0, len(texts), self.chunk_size)
+        ]
+        embed_results = []
+        for chunk in chunk_texts:
             response = self.session.post(
-                BAICHUAN_API_URL, json={"input": texts, "model": self.model_name}
+                BAICHUAN_API_URL, json={"input": chunk, "model": self.model_name}
             )
+            # Raise exception if response status code from 400 to 600
+            response.raise_for_status()
             # Check if the response status code indicates success
             if response.status_code == 200:
                 resp = response.json()
@@ -76,18 +114,17 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
                 # Sort resulting embeddings by index
                 sorted_embeddings = sorted(embeddings, key=lambda e: e.get("index", 0))
                 # Return just the embeddings
-                return [result.get("embedding", []) for result in sorted_embeddings]
+                embed_results.extend(
+                    [result.get("embedding", []) for result in sorted_embeddings]
+                )
             else:
                 # Log error or handle unsuccessful response appropriately
-                print(  # noqa: T201
-                    f"""Error: Received status code {response.status_code} from 
-                    embedding API"""
+                # Handle 100 <= status_code < 400, not include 200
+                raise RequestException(
+                    f"Error: Received status code {response.status_code} from "
+                    "`BaichuanEmbedding` API"
                 )
-                return None
-        except Exception as e:
-            # Log the exception or handle it as needed
-            print(f"Exception occurred while trying to get embeddings: {str(e)}")  # noqa: T201
-            return None
+        return embed_results
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.

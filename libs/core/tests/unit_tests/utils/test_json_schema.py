@@ -183,6 +183,38 @@ def test_dereference_refs_integer_ref() -> None:
     assert actual == expected
 
 
+def test_dereference_refs_string_ref() -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "error_400": {"$ref": "#/$defs/400"},
+        },
+        "$defs": {
+            "400": {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
+        },
+    }
+    expected = {
+        "type": "object",
+        "properties": {
+            "error_400": {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
+        },
+        "$defs": {
+            "400": {
+                "type": "object",
+                "properties": {"description": "Bad Request"},
+            },
+        },
+    }
+    actual = dereference_refs(schema)
+    assert actual == expected
+
+
 def test_dereference_refs_cyclical_refs() -> None:
     schema = {
         "type": "object",

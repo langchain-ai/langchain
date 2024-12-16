@@ -1,4 +1,5 @@
 """Integration test for PubMed API Wrapper."""
+
 from typing import Any, List
 
 import pytest
@@ -13,7 +14,7 @@ xmltodict = pytest.importorskip("xmltodict")
 
 @pytest.fixture
 def api_client() -> PubMedAPIWrapper:
-    return PubMedAPIWrapper()
+    return PubMedAPIWrapper()  # type: ignore[call-arg]
 
 
 def test_run_success(api_client: PubMedAPIWrapper) -> None:
@@ -115,7 +116,7 @@ def test_load_returns_no_result(api_client: PubMedAPIWrapper) -> None:
 def test_load_returns_limited_docs() -> None:
     """Test that returns several docs"""
     expected_docs = 2
-    api_client = PubMedAPIWrapper(top_k_results=expected_docs)
+    api_client = PubMedAPIWrapper(top_k_results=expected_docs)  # type: ignore[call-arg]
     docs = api_client.load_docs("ChatGPT")
     assert len(docs) == expected_docs
     assert_docs(docs)
@@ -123,7 +124,7 @@ def test_load_returns_limited_docs() -> None:
 
 def test_load_returns_full_set_of_metadata() -> None:
     """Test that returns several docs"""
-    api_client = PubMedAPIWrapper(load_max_docs=1, load_all_available_meta=True)
+    api_client = PubMedAPIWrapper(load_max_docs=1, load_all_available_meta=True)  # type: ignore[call-arg]
     docs = api_client.load_docs("ChatGPT")
     assert len(docs) == 3
     for doc in docs:
@@ -147,7 +148,7 @@ def test_load_pupmed_from_universal_entry() -> None:
         "Examining the Validity of ChatGPT in Identifying "
         "Relevant Nephrology Literature"
     )
-    output = pubmed_tool(search_string)
+    output = pubmed_tool.invoke(search_string)
     test_string = (
         "Examining the Validity of ChatGPT in Identifying "
         "Relevant Nephrology Literature: Findings and Implications"

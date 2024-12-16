@@ -9,21 +9,22 @@
 
     BaseCrossEncoder --> <name>CrossEncoder  # Examples: SagemakerEndpointCrossEncoder
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.cross_encoders.base import (
-        BaseCrossEncoder,  # noqa: F401
+        BaseCrossEncoder,
     )
     from langchain_community.cross_encoders.fake import (
-        FakeCrossEncoder,  # noqa: F401
+        FakeCrossEncoder,
     )
     from langchain_community.cross_encoders.huggingface import (
-        HuggingFaceCrossEncoder,  # noqa: F401
+        HuggingFaceCrossEncoder,
     )
     from langchain_community.cross_encoders.sagemaker_endpoint import (
-        SagemakerEndpointCrossEncoder,  # noqa: F401
+        SagemakerEndpointCrossEncoder,
     )
 
 __all__ = [

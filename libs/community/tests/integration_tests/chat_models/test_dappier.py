@@ -12,12 +12,12 @@ from langchain_community.chat_models.dappier import (
 @pytest.mark.scheduled
 def test_dappier_chat() -> None:
     """Test ChatDappierAI wrapper."""
-    chat = ChatDappierAI(
+    chat = ChatDappierAI(  # type: ignore[call-arg]
         dappier_endpoint="https://api.dappier.com/app/datamodelconversation",
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
     message = HumanMessage(content="Who are you ?")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -25,7 +25,7 @@ def test_dappier_chat() -> None:
 @pytest.mark.scheduled
 def test_dappier_generate() -> None:
     """Test generate method of Dappier AI."""
-    chat = ChatDappierAI(
+    chat = ChatDappierAI(  # type: ignore[call-arg]
         dappier_endpoint="https://api.dappier.com/app/datamodelconversation",
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
@@ -45,7 +45,7 @@ def test_dappier_generate() -> None:
 @pytest.mark.scheduled
 async def test_dappier_agenerate() -> None:
     """Test async generation."""
-    chat = ChatDappierAI(
+    chat = ChatDappierAI(  # type: ignore[call-arg]
         dappier_endpoint="https://api.dappier.com/app/datamodelconversation",
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )

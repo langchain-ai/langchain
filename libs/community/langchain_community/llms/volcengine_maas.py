@@ -5,14 +5,16 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class VolcEngineMaasBase(BaseModel):
     """Base class for VolcEngineMaas models."""
 
-    client: Any
+    model_config = ConfigDict(protected_namespaces=())
+
+    client: Any = None
 
     volc_engine_maas_ak: Optional[SecretStr] = None
     """access key for volc engine"""
@@ -52,7 +54,7 @@ class VolcEngineMaasBase(BaseModel):
     """Timeout for read response from volc engine maas endpoint. 
     Default is 60 seconds."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         volc_engine_maas_ak = convert_to_secret_str(
             get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")

@@ -117,6 +117,7 @@ class RdfGraph:
         standard: Optional[str] = "rdf",
         local_copy: Optional[str] = None,
         graph_kwargs: Optional[Dict] = None,
+        store_kwargs: Optional[Dict] = None,
     ) -> None:
         """
         Set up the RDFlib graph
@@ -128,6 +129,9 @@ class RdfGraph:
         :param standard: RDF, RDFS, or OWL
         :param local_copy: new local copy for storing changes
         :param graph_kwargs: Additional rdflib.Graph specific kwargs
+        that will be used to initialize it,
+        if query_endpoint is provided.
+        :param store_kwargs: Additional sparqlstore.SPARQLStore specific kwargs
         that will be used to initialize it,
         if query_endpoint is provided.
         """
@@ -142,7 +146,7 @@ class RdfGraph:
             import rdflib
             from rdflib.plugins.stores import sparqlstore
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rdflib python package. "
                 "Please install it with `pip install rdflib`."
             )
@@ -174,12 +178,13 @@ class RdfGraph:
             self.graph.parse(source_file, format=self.serialization)
 
         if query_endpoint:
+            store_kwargs = store_kwargs or {}
             self.mode = "store"
             if not update_endpoint:
-                self._store = sparqlstore.SPARQLStore()
+                self._store = sparqlstore.SPARQLStore(**store_kwargs)
                 self._store.open(query_endpoint)
             else:
-                self._store = sparqlstore.SPARQLUpdateStore()
+                self._store = sparqlstore.SPARQLUpdateStore(**store_kwargs)
                 self._store.open((query_endpoint, update_endpoint))
             graph_kwargs = graph_kwargs or {}
             self.graph = rdflib.Graph(self._store, **graph_kwargs)

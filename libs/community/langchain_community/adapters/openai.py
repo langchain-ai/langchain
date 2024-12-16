@@ -25,7 +25,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from typing_extensions import Literal
 
 
@@ -91,22 +91,24 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = tool_calls
+        if context := _dict.get("context"):
+            additional_kwargs["context"] = context
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
-        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))
+        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))  # type: ignore[arg-type]
     elif role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
-            tool_call_id=_dict.get("tool_call_id"),
+            tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
             additional_kwargs=additional_kwargs,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
@@ -133,6 +135,11 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         if "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+        if "context" in message.additional_kwargs:
+            message_dict["context"] = message.additional_kwargs["context"]
+            # If context only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
     elif isinstance(message, SystemMessage):
@@ -180,6 +187,12 @@ def _convert_message_chunk(chunk: BaseMessageChunk, i: int) -> dict:
             # not missing, but None.
             if i == 0:
                 _dict["content"] = None
+        if "tool_calls" in chunk.additional_kwargs:
+            _dict["tool_calls"] = chunk.additional_kwargs["tool_calls"]
+            # If the first chunk is tool calls, the content is not empty string,
+            # not missing, but None.
+            if i == 0:
+                _dict["content"] = None
         else:
             _dict["content"] = chunk.content
     else:
@@ -206,8 +219,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> dict:
-        ...
+    ) -> dict: ...
 
     @overload
     @staticmethod
@@ -217,8 +229,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> Iterable:
-        ...
+    ) -> Iterable: ...
 
     @staticmethod
     def create(
@@ -249,8 +260,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> dict:
-        ...
+    ) -> dict: ...
 
     @overload
     @staticmethod
@@ -260,8 +270,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> AsyncIterator:
-        ...
+    ) -> AsyncIterator: ...
 
     @staticmethod
     async def acreate(
@@ -319,8 +328,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> ChatCompletions:
-        ...
+    ) -> ChatCompletions: ...
 
     @overload
     @staticmethod
@@ -330,8 +338,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> Iterable:
-        ...
+    ) -> Iterable: ...
 
     @staticmethod
     def create(
@@ -366,8 +373,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> ChatCompletions:
-        ...
+    ) -> ChatCompletions: ...
 
     @overload
     @staticmethod
@@ -377,8 +383,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> AsyncIterator:
-        ...
+    ) -> AsyncIterator: ...
 
     @staticmethod
     async def acreate(

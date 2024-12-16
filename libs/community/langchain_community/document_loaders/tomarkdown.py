@@ -21,7 +21,7 @@ class ToMarkdownLoader(BaseLoader):
     ) -> Iterator[Document]:
         """Lazily load the file."""
         response = requests.post(
-            "https://2markdown.com/api/2md",
+            "https://api.2markdown.com/v1/url2md",
             headers={"X-Api-Key": self.api_key},
             json={"url": self.url},
         )

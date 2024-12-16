@@ -29,7 +29,7 @@ from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import FlyteCallbackHandler
 from langchain.chains import LLMChain
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage
 ```
 
@@ -83,7 +83,7 @@ def langchain_llm() -> str:
         temperature=0.2,
         callbacks=[FlyteCallbackHandler()],
     )
-    return llm([HumanMessage(content="Tell me a joke")]).content
+    return llm.invoke([HumanMessage(content="Tell me a joke")]).content
 ```
 
 ### Chain

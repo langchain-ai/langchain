@@ -1,14 +1,14 @@
 # LLM Lingua Document Compressor
 
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Pattern, Sequence, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.documents.compressor import (
     BaseDocumentCompressor,
 )
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
@@ -24,8 +24,8 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
 
     # Pattern to match ref tags at the beginning or end of the string,
     # allowing for malformed tags
-    _pattern_beginning = re.compile(r"\A(?:<#)?(?:ref)?(\d+)(?:#>?)?")
-    _pattern_ending = re.compile(r"(?:<#)?(?:ref)?(\d+)(?:#>?)?\Z")
+    _pattern_beginning: Pattern = re.compile(r"\A(?:<#)?(?:ref)?(\d+)(?:#>?)?")
+    _pattern_ending: Pattern = re.compile(r"(?:<#)?(?:ref)?(\d+)(?:#>?)?\Z")
 
     model_name: str = "NousResearch/Llama-2-7b-hf"
     """The hugging face model to use"""
@@ -35,9 +35,9 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
     """The target number of compressed tokens"""
     rank_method: str = "longllmlingua"
     """The ranking method to use"""
-    model_config: dict = {}
+    model_configuration: dict = Field(default_factory=dict, alias="model_config")
     """Custom configuration for the model"""
-    open_api_config: dict = {}
+    open_api_config: dict = Field(default_factory=dict)
     """open_api configuration"""
     instruction: str = DEFAULT_LLM_LINGUA_INSTRUCTION
     """The instruction for the LLM"""
@@ -49,11 +49,12 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         "dynamic_context_compression_ratio": 0.4,
     }
     """Extra compression arguments"""
-    lingua: Any
+    lingua: Any = None
     """The instance of the llm linqua"""
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             from llmlingua import PromptCompressor
@@ -71,11 +72,12 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
             )
         return values
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+        populate_by_name=True,
+        protected_namespaces=(),
+    )
 
     @staticmethod
     def _format_context(docs: Sequence[Document]) -> List[str]:

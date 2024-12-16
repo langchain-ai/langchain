@@ -2,6 +2,7 @@
 
 This module contains some logic to help assemble more sophisticated parsers.
 """
+
 from typing import Iterator, Mapping, Optional
 
 from langchain_core.documents import Document
@@ -22,14 +23,14 @@ class MimeTypeBasedParser(BaseBlobParser):
 
         .. code-block:: python
 
-        from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
+            from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
 
-        parser = MimeTypeBasedParser(
-            handlers={
-                "application/pdf": ...,
-            },
-            fallback_parser=...,
-        )
+            parser = MimeTypeBasedParser(
+                handlers={
+                    "application/pdf": ...,
+                },
+                fallback_parser=...,
+            )
     """  # noqa: E501
 
     def __init__(

@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
 
 
 class CTransformers(LLM):
@@ -57,7 +57,7 @@ class CTransformers(LLM):
         """Return type of llm."""
         return "ctransformers"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``ctransformers`` package is installed."""
         try:
@@ -97,7 +97,7 @@ class CTransformers(LLM):
         Example:
             .. code-block:: python
 
-                response = llm("Tell me a joke.")
+                response = llm.invoke("Tell me a joke.")
         """
         text = []
         _run_manager = run_manager or CallbackManagerForLLMRun.get_noop_manager()
@@ -125,7 +125,7 @@ class CTransformers(LLM):
 
         Example:
             .. code-block:: python
-                response = llm("Once upon a time, ")
+                response = llm.invoke("Once upon a time, ")
         """
         text_callback = None
         if run_manager:

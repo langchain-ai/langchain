@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import BaseModel, model_validator
 
 
 class VectorSearchConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
@@ -19,11 +19,18 @@ class RetrievalConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
 
 
 class AmazonKnowledgeBasesRetriever(BaseRetriever):
-    """`Amazon Bedrock Knowledge Bases` retrieval.
+    """Amazon Bedrock Knowledge Bases retriever.
 
     See https://aws.amazon.com/bedrock/knowledge-bases for more info.
 
-    Args:
+    Setup:
+        Install ``langchain-aws``:
+
+        .. code-block:: bash
+
+            pip install -U langchain-aws
+
+    Key init args:
         knowledge_base_id: Knowledge Base ID.
         region_name: The aws region e.g., `us-west-2`.
             Fallback to AWS_DEFAULT_REGION env variable or region specified in
@@ -35,7 +42,7 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
         client: boto3 client for bedrock agent runtime.
         retrieval_config: Configuration for retrieval.
 
-    Example:
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.retrievers import AmazonKnowledgeBasesRetriever
@@ -48,7 +55,48 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
                     }
                 },
             )
-    """
+
+    Usage:
+        .. code-block:: python
+
+            query = "..."
+
+            retriever.invoke(query)
+
+    Use within a chain:
+        .. code-block:: python
+
+            from langchain_aws import ChatBedrockConverse
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnablePassthrough
+            from langchain_openai import ChatOpenAI
+
+            prompt = ChatPromptTemplate.from_template(
+                \"\"\"Answer the question based only on the context provided.
+
+            Context: {context}
+
+            Question: {question}\"\"\"
+            )
+
+            llm = ChatBedrockConverse(
+                model_id="anthropic.claude-3-5-sonnet-20240620-v1:0"
+            )
+
+            def format_docs(docs):
+                return "\\n\\n".join(doc.page_content for doc in docs)
+
+            chain = (
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
+                | prompt
+                | llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("...")
+
+    """  # noqa: E501
 
     knowledge_base_id: str
     region_name: Optional[str] = None
@@ -57,8 +105,9 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
     client: Any
     retrieval_config: RetrievalConfig
 
-    @root_validator(pre=True)
-    def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: Dict[str, Any]) -> Any:
         if values.get("client") is not None:
             return values
 
@@ -88,12 +137,12 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
 
             return values
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
         except UnknownServiceError as e:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Ensure that you have installed the latest boto3 package "
                 "that contains the API for `bedrock-runtime-agent`."
             ) from e
@@ -115,13 +164,16 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
         results = response["retrievalResults"]
         documents = []
         for result in results:
+            content = result["content"]["text"]
+            result.pop("content")
+            if "score" not in result:
+                result["score"] = 0
+            if "metadata" in result:
+                result["source_metadata"] = result.pop("metadata")
             documents.append(
                 Document(
-                    page_content=result["content"]["text"],
-                    metadata={
-                        "location": result["location"],
-                        "score": result["score"] if "score" in result else 0,
-                    },
+                    page_content=content,
+                    metadata=result,
                 )
             )
 

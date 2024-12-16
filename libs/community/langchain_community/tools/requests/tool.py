@@ -1,9 +1,10 @@
 # flake8: noqa
 """Tools for making requests to an API endpoint."""
+
 import json
 from typing import Any, Dict, Optional, Union
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -46,7 +47,7 @@ class BaseRequestsTool(BaseModel):
         super().__init__(**kwargs)
 
 
-class RequestsGetTool(BaseRequestsTool, BaseTool):
+class RequestsGetTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool for making a GET request to an API endpoint."""
 
     name: str = "requests_get"
@@ -70,7 +71,7 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
         return await self.requests_wrapper.aget(_clean_url(url))
 
 
-class RequestsPostTool(BaseRequestsTool, BaseTool):
+class RequestsPostTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool for making a POST request to an API endpoint."""
 
     name: str = "requests_post"
@@ -107,7 +108,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
             return repr(e)
 
 
-class RequestsPatchTool(BaseRequestsTool, BaseTool):
+class RequestsPatchTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool for making a PATCH request to an API endpoint."""
 
     name: str = "requests_patch"
@@ -144,7 +145,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
             return repr(e)
 
 
-class RequestsPutTool(BaseRequestsTool, BaseTool):
+class RequestsPutTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool for making a PUT request to an API endpoint."""
 
     name: str = "requests_put"
@@ -181,7 +182,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
             return repr(e)
 
 
-class RequestsDeleteTool(BaseRequestsTool, BaseTool):
+class RequestsDeleteTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
     """Tool for making a DELETE request to an API endpoint."""
 
     name: str = "requests_delete"

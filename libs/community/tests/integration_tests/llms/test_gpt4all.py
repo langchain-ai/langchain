@@ -1,5 +1,6 @@
 # flake8: noqa
 """Test Llama.cpp wrapper."""
+
 import os
 from urllib.request import urlretrieve
 
@@ -21,5 +22,5 @@ def test_gpt4all_inference() -> None:
     """Test valid gpt4all inference."""
     model_path = _download_model()
     llm = GPT4All(model=model_path)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)

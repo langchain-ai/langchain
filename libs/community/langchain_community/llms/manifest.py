@@ -2,21 +2,21 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.utils import pre_init
+from pydantic import ConfigDict
 
 
 class ManifestWrapper(LLM):
     """HazyResearch's Manifest library."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     llm_kwargs: Optional[Dict] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
         try:

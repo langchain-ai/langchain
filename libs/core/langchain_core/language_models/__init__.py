@@ -1,29 +1,47 @@
 """**Language Model** is a type of model that can generate text or complete
-text prompts. 
+text prompts.
 
-LangChain has two main classes to work with language models:
-- **LLM** classes provide access to the large language model (**LLM**) APIs and services.
-- **Chat Models** are a variation on language models.
+LangChain has two main classes to work with language models: **Chat Models**
+and "old-fashioned" **LLMs**.
 
-**Class hierarchy:**
+**Chat Models**
 
-.. code-block::
+Language models that use a sequence of messages as inputs and return chat messages
+as outputs (as opposed to using plain text). These are traditionally newer models (
+older models are generally LLMs, see below). Chat models support the assignment of
+distinct roles to conversation messages, helping to distinguish messages from the AI,
+users, and instructions such as system messages.
 
-    BaseLanguageModel --> BaseLLM --> LLM --> <name>  # Examples: AI21, HuggingFaceHub, OpenAI
-                      --> BaseChatModel --> <name>    # Examples: ChatOpenAI, ChatGooglePalm
+The key abstraction for chat models is `BaseChatModel`. Implementations
+should inherit from this class. Please see LangChain how-to guides with more
+information on how to implement a custom chat model.
 
-**Main helpers:**
+To implement a custom Chat Model, inherit from `BaseChatModel`. See
+the following guide for more information on how to implement a custom Chat Model:
 
-.. code-block::
+https://python.langchain.com/docs/how_to/custom_chat_model/
 
-    LLMResult, PromptValue,
-    CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun,
-    CallbackManager, AsyncCallbackManager,
-    AIMessage, BaseMessage, HumanMessage
+**LLMs**
+
+Language models that takes a string as input and returns a string.
+These are traditionally older models (newer models generally are Chat Models, see below).
+
+Although the underlying models are string in, string out, the LangChain wrappers
+also allow these models to take messages as input. This gives them the same interface
+as Chat Models. When messages are passed in as input, they will be formatted into a
+string under the hood before being passed to the underlying model.
+
+To implement a custom LLM, inherit from `BaseLLM` or `LLM`.
+Please see the following guide for more information on how to implement a custom LLM:
+
+https://python.langchain.com/docs/how_to/custom_llm/
+
+
 """  # noqa: E501
 
 from langchain_core.language_models.base import (
     BaseLanguageModel,
+    LangSmithParams,
     LanguageModelInput,
     LanguageModelLike,
     LanguageModelOutput,
@@ -47,6 +65,7 @@ __all__ = [
     "LLM",
     "LanguageModelInput",
     "get_tokenizer",
+    "LangSmithParams",
     "LanguageModelOutput",
     "LanguageModelLike",
     "FakeListLLM",

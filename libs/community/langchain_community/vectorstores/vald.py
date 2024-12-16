@@ -1,4 +1,5 @@
 """Wrapper around Vald vector database."""
+
 from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional, Tuple, Type
@@ -22,10 +23,11 @@ class Vald(VectorStore):
             from langchain_community.embeddings import HuggingFaceEmbeddings
             from langchain_community.vectorstores import Vald
 
+            model_name = "sentence-transformers/all-mpnet-base-v2"
             texts = ['foo', 'bar', 'baz']
             vald = Vald.from_texts(
                 texts=texts,
-                embedding=HuggingFaceEmbeddings(),
+                embedding=HuggingFaceEmbeddings(model_name=model_name),
                 host="localhost",
                 port=8080,
                 skip_strict_exist_check=False,
@@ -58,7 +60,7 @@ class Vald(VectorStore):
         try:
             import grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import grpcio python package. "
                 "Please install it with `pip install grpcio`."
             )
@@ -86,7 +88,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import upsert_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
@@ -126,7 +128,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import remove_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
@@ -221,7 +223,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import search_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
@@ -289,7 +291,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import object_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )

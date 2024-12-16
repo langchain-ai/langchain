@@ -17,12 +17,13 @@ The Chain interface makes it easy to create apps that are:
     Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
-import importlib
 from typing import Any
+
+from langchain._api import create_importer
 
 _module_lookup = {
     "APIChain": "langchain.chains.api.base",
-    "OpenAPIEndpointChain": "langchain.chains.api.openapi.chain",
+    "OpenAPIEndpointChain": "langchain_community.chains.openapi.chain",
     "AnalyzeDocumentChain": "langchain.chains.combine_documents.base",
     "MapReduceDocumentsChain": "langchain.chains.combine_documents.map_reduce",
     "MapRerankDocumentsChain": "langchain.chains.combine_documents.map_rerank",
@@ -35,29 +36,30 @@ _module_lookup = {
     "ConversationalRetrievalChain": "langchain.chains.conversational_retrieval.base",
     "generate_example": "langchain.chains.example_generator",
     "FlareChain": "langchain.chains.flare.base",
-    "ArangoGraphQAChain": "langchain.chains.graph_qa.arangodb",
-    "GraphQAChain": "langchain.chains.graph_qa.base",
-    "GraphCypherQAChain": "langchain.chains.graph_qa.cypher",
-    "FalkorDBQAChain": "langchain.chains.graph_qa.falkordb",
-    "HugeGraphQAChain": "langchain.chains.graph_qa.hugegraph",
-    "KuzuQAChain": "langchain.chains.graph_qa.kuzu",
-    "NebulaGraphQAChain": "langchain.chains.graph_qa.nebulagraph",
-    "NeptuneOpenCypherQAChain": "langchain.chains.graph_qa.neptune_cypher",
-    "NeptuneSparqlQAChain": "langchain.chains.graph_qa.neptune_sparql",
-    "OntotextGraphDBQAChain": "langchain.chains.graph_qa.ontotext_graphdb",
-    "GraphSparqlQAChain": "langchain.chains.graph_qa.sparql",
+    "ArangoGraphQAChain": "langchain_community.chains.graph_qa.arangodb",
+    "GraphQAChain": "langchain_community.chains.graph_qa.base",
+    "GraphCypherQAChain": "langchain_community.chains.graph_qa.cypher",
+    "FalkorDBQAChain": "langchain_community.chains.graph_qa.falkordb",
+    "HugeGraphQAChain": "langchain_community.chains.graph_qa.hugegraph",
+    "KuzuQAChain": "langchain_community.chains.graph_qa.kuzu",
+    "NebulaGraphQAChain": "langchain_community.chains.graph_qa.nebulagraph",
+    "NeptuneOpenCypherQAChain": "langchain_community.chains.graph_qa.neptune_cypher",
+    "NeptuneSparqlQAChain": "langchain_community.chains.graph_qa.neptune_sparql",
+    "OntotextGraphDBQAChain": "langchain_community.chains.graph_qa.ontotext_graphdb",
+    "GraphSparqlQAChain": "langchain_community.chains.graph_qa.sparql",
     "create_history_aware_retriever": "langchain.chains.history_aware_retriever",
     "HypotheticalDocumentEmbedder": "langchain.chains.hyde.base",
     "LLMChain": "langchain.chains.llm",
     "LLMCheckerChain": "langchain.chains.llm_checker.base",
     "LLMMathChain": "langchain.chains.llm_math.base",
-    "LLMRequestsChain": "langchain.chains.llm_requests",
+    "LLMRequestsChain": "langchain_community.chains.llm_requests",
     "LLMSummarizationCheckerChain": "langchain.chains.llm_summarization_checker.base",
     "load_chain": "langchain.chains.loading",
     "MapReduceChain": "langchain.chains.mapreduce",
     "OpenAIModerationChain": "langchain.chains.moderation",
     "NatBotChain": "langchain.chains.natbot.base",
     "create_citation_fuzzy_match_chain": "langchain.chains.openai_functions",
+    "create_citation_fuzzy_match_runnable": "langchain.chains.openai_functions",
     "create_extraction_chain": "langchain.chains.openai_functions",
     "create_extraction_chain_pydantic": "langchain.chains.openai_functions",
     "create_qa_with_sources_chain": "langchain.chains.openai_functions",
@@ -84,12 +86,11 @@ _module_lookup = {
     "TransformChain": "langchain.chains.transform",
 }
 
+importer = create_importer(__package__, module_lookup=_module_lookup)
+
 
 def __getattr__(name: str) -> Any:
-    if name in _module_lookup:
-        module = importlib.import_module(_module_lookup[name])
-        return getattr(module, name)
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    return importer(name)
 
 
 __all__ = list(_module_lookup.keys())

@@ -1,15 +1,15 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
+from pydantic import Field, model_validator
 
 from langchain.storage._lc_store import create_kv_docstore
 
@@ -19,6 +19,8 @@ class SearchType(str, Enum):
 
     similarity = "similarity"
     """Similarity search."""
+    similarity_score_threshold = "similarity_score_threshold"
+    """Similarity search with a score threshold."""
     mmr = "mmr"
     """Maximal Marginal Relevance reranking of similarity search."""
 
@@ -39,8 +41,9 @@ class MultiVectorRetriever(BaseRetriever):
     search_type: SearchType = SearchType.similarity
     """Type of search to perform (similarity / mmr)"""
 
-    @root_validator(pre=True)
-    def shim_docstore(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def shim_docstore(cls, values: Dict) -> Any:
         byte_store = values.get("byte_store")
         docstore = values.get("docstore")
         if byte_store is not None:
@@ -64,6 +67,13 @@ class MultiVectorRetriever(BaseRetriever):
             sub_docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == SearchType.similarity_score_threshold:
+            sub_docs_and_similarities = (
+                self.vectorstore.similarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
         else:
             sub_docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
 
@@ -89,6 +99,13 @@ class MultiVectorRetriever(BaseRetriever):
             sub_docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == SearchType.similarity_score_threshold:
+            sub_docs_and_similarities = (
+                await self.vectorstore.asimilarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
         else:
             sub_docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs

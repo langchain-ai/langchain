@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import guard_import
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.base import AddableMixin, Docstore
@@ -15,14 +16,7 @@ def dependable_usearch_import() -> Any:
     """
     Import usearch if available, otherwise raise error.
     """
-    try:
-        import usearch.index
-    except ImportError:
-        raise ImportError(
-            "Could not import usearch python package. "
-            "Please install it with `pip install usearch` "
-        )
-    return usearch.index
+    return guard_import("usearch.index")
 
 
 class USearch(VectorStore):
@@ -48,7 +42,7 @@ class USearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[Dict]] = None,
-        ids: Optional[np.ndarray] = None,
+        ids: Optional[Union[np.ndarray, list[str]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -75,11 +69,13 @@ class USearch(VectorStore):
         last_id = int(self.ids[-1]) + 1
         if ids is None:
             ids = np.array([str(last_id + id) for id, _ in enumerate(texts)])
+        elif isinstance(ids, list):
+            ids = np.array(ids)
 
         self.index.add(np.array(ids), np.array(embeddings))
         self.docstore.add(dict(zip(ids, documents)))
         self.ids.extend(ids)
-        return ids.tolist()
+        return cast(List[str], ids.tolist())
 
     def similarity_search_with_score(
         self,
@@ -140,7 +136,7 @@ class USearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
-        ids: Optional[np.ndarray] = None,
+        ids: Optional[Union[np.ndarray, list[str]]] = None,
         metric: str = "cos",
         **kwargs: Any,
     ) -> USearch:
@@ -165,12 +161,14 @@ class USearch(VectorStore):
         documents: List[Document] = []
         if ids is None:
             ids = np.array([str(id) for id, _ in enumerate(texts)])
+        elif isinstance(ids, list):
+            ids = np.array(ids)
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
 
         docstore = InMemoryDocstore(dict(zip(ids, documents)))
-        usearch = dependable_usearch_import()
+        usearch = guard_import("usearch.index")
         index = usearch.Index(ndim=len(embeddings[0]), metric=metric)
         index.add(np.array(ids), np.array(embeddings))
-        return cls(embedding, index, docstore, ids.tolist())
+        return cls(embedding, index, docstore, cast(List[str], ids.tolist()))

@@ -397,7 +397,7 @@ class MomentoVectorIndex(VectorStore):
         )
         selected = [response.hits[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop(self.text_field, ""), metadata=metadata)  # type: ignore  # noqa: E501
+            Document(page_content=metadata.pop(self.text_field, ""), metadata=metadata)  # type: ignore
             for metadata in selected
         ]
 

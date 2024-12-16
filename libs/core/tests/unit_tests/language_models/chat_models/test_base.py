@@ -1,12 +1,14 @@
 """Test base chat model."""
 
 import uuid
-from typing import Any, AsyncIterator, Iterator, List, Optional
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Literal, Optional, Union
 
 import pytest
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, FakeListChatModel
+from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -18,13 +20,14 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
+from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 @pytest.fixture
@@ -50,10 +53,10 @@ def test_batch_size(messages: list, messages_2: list) -> None:
     with collect_runs() as cb:
         llm.batch([messages, messages_2], {"callbacks": [cb]})
         assert len(cb.traced_runs) == 2
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
     with collect_runs() as cb:
         llm.batch([messages], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     with collect_runs() as cb:
@@ -73,11 +76,11 @@ async def test_async_batch_size(messages: list, messages_2: list) -> None:
     # so we expect batch_size to always be 1
     with collect_runs() as cb:
         await llm.abatch([messages, messages_2], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 2
     with collect_runs() as cb:
         await llm.abatch([messages], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     with collect_runs() as cb:
@@ -104,12 +107,12 @@ async def test_stream_error_callback() -> None:
         else:
             assert llm_result.generations[0][0].text == message[:i]
 
-    for i in range(0, 2):
+    for i in range(2):
         llm = FakeListChatModel(
             responses=[message],
             error_on_chunk_number=i,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(FakeListChatModelError):
             cb_async = FakeAsyncCallbackHandler()
             async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
                 pass
@@ -128,8 +131,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
     class ModelWithGenerate(BaseChatModel):
         def _generate(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
@@ -143,11 +146,11 @@ async def test_astream_fallback_to_ainvoke() -> None:
             return "fake-chat-model"
 
     model = ModelWithGenerate()
-    chunks = [chunk for chunk in model.stream("anything")]
-    assert chunks == [AIMessage(content="hello", id=AnyStr())]
+    chunks = list(model.stream("anything"))
+    assert chunks == [_any_id_ai_message(content="hello")]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [AIMessage(content="hello", id=AnyStr())]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
@@ -156,18 +159,18 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     class ModelWithSyncStream(BaseChatModel):
         def _generate(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         def _stream(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> Iterator[ChatGenerationChunk]:
@@ -180,17 +183,17 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             return "fake-chat-model"
 
     model = ModelWithSyncStream()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == [
-        AIMessageChunk(content="a", id=AnyStr()),
-        AIMessageChunk(content="b", id=AnyStr()),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
-        AIMessageChunk(content="a", id=AnyStr()),
-        AIMessageChunk(content="b", id=AnyStr()),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
 
@@ -201,18 +204,18 @@ async def test_astream_implementation_uses_astream() -> None:
     class ModelWithAsyncStream(BaseChatModel):
         def _generate(
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call"""
-            raise NotImplementedError()
+            raise NotImplementedError
 
         async def _astream(  # type: ignore
             self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
+            messages: list[BaseMessage],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
@@ -227,8 +230,8 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
-        AIMessageChunk(content="a", id=AnyStr()),
-        AIMessageChunk(content="b", id=AnyStr()),
+        _any_id_ai_message_chunk(content="a"),
+        _any_id_ai_message_chunk(content="b"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -272,3 +275,96 @@ async def test_async_pass_run_id() -> None:
     uid3 = uuid.uuid4()
     await llm.abatch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
     assert cb.traced_run_ids == [uid1, uid2, uid3]
+
+
+class NoStreamingModel(BaseChatModel):
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage("invoke"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "model1"
+
+
+class StreamingModel(NoStreamingModel):
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming(
+    disable_streaming: Union[bool, Literal["tool_calling"]],
+) -> None:
+    model = StreamingModel(disable_streaming=disable_streaming)
+    assert model.invoke([]).content == "invoke"
+    assert (await model.ainvoke([])).content == "invoke"
+
+    expected = "invoke" if disable_streaming is True else "stream"
+    assert next(model.stream([])).content == expected
+    async for c in model.astream([]):
+        assert c.content == expected
+        break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
+        ).content
+        == expected
+    )
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == expected
+
+    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    assert next(model.stream([], tools=[{"type": "function"}])).content == expected
+    async for c in model.astream([], tools=[{}]):
+        assert c.content == expected
+        break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        ).content
+        == expected
+    )
+    assert (
+        await model.ainvoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        )
+    ).content == expected
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming_no_streaming_model(
+    disable_streaming: Union[bool, Literal["tool_calling"]],
+) -> None:
+    model = NoStreamingModel(disable_streaming=disable_streaming)
+    assert model.invoke([]).content == "invoke"
+    assert (await model.ainvoke([])).content == "invoke"
+    assert next(model.stream([])).content == "invoke"
+    async for c in model.astream([]):
+        assert c.content == "invoke"
+        break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
+        ).content
+        == "invoke"
+    )
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+    assert next(model.stream([], tools=[{}])).content == "invoke"
+    async for c in model.astream([], tools=[{}]):
+        assert c.content == "invoke"
+        break

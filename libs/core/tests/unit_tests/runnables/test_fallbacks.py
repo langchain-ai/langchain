@@ -1,20 +1,35 @@
-import sys
-from typing import Any, AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterator, Sequence
+from typing import (
+    Any,
+    Callable,
+    Optional,
+    Union,
+)
 
 import pytest
+from pydantic import BaseModel
 from syrupy import SnapshotAssertion
 
-from langchain_core.language_models import FakeListLLM
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import (
+    BaseChatModel,
+    FakeListLLM,
+    LanguageModelInput,
+)
 from langchain_core.load import dumps
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
     Runnable,
+    RunnableBinding,
     RunnableGenerator,
     RunnableLambda,
     RunnableParallel,
     RunnablePassthrough,
     RunnableWithFallbacks,
 )
+from langchain_core.tools import BaseTool
 
 
 @pytest.fixture()
@@ -46,13 +61,13 @@ def chain() -> Runnable:
 
 
 def _raise_error(inputs: dict) -> str:
-    raise ValueError()
+    raise ValueError
 
 
 def _dont_raise_error(inputs: dict) -> str:
     if "exception" in inputs:
         return "bar"
-    raise ValueError()
+    raise ValueError
 
 
 @pytest.fixture()
@@ -77,19 +92,18 @@ async def test_fallbacks(
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
-    if sys.version_info >= (3, 9):
-        assert dumps(runnable, pretty=True) == snapshot
+    assert dumps(runnable, pretty=True) == snapshot
 
 
 def _runnable(inputs: dict) -> str:
     if inputs["text"] == "foo":
         return "first"
     if "exception" not in inputs:
-        raise ValueError()
+        raise ValueError
     if inputs["text"] == "bar":
         return "second"
     if isinstance(inputs["exception"], ValueError):
-        raise RuntimeError()
+        raise RuntimeError
     return "third"
 
 
@@ -237,20 +251,20 @@ def _generate(input: Iterator) -> Iterator[str]:
 
 
 def _generate_immediate_error(input: Iterator) -> Iterator[str]:
-    raise ValueError()
+    raise ValueError
     yield ""
 
 
 def _generate_delayed_error(input: Iterator) -> Iterator[str]:
     yield ""
-    raise ValueError()
+    raise ValueError
 
 
 def test_fallbacks_stream() -> None:
     runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
         [RunnableGenerator(_generate)]
     )
-    assert list(runnable.stream({})) == [c for c in "foo bar"]
+    assert list(runnable.stream({})) == list("foo bar")
 
     with pytest.raises(ValueError):
         runnable = RunnableGenerator(_generate_delayed_error).with_fallbacks(
@@ -265,13 +279,13 @@ async def _agenerate(input: AsyncIterator) -> AsyncIterator[str]:
 
 
 async def _agenerate_immediate_error(input: AsyncIterator) -> AsyncIterator[str]:
-    raise ValueError()
+    raise ValueError
     yield ""
 
 
 async def _agenerate_delayed_error(input: AsyncIterator) -> AsyncIterator[str]:
     yield ""
-    raise ValueError()
+    raise ValueError
 
 
 async def test_fallbacks_astream() -> None:
@@ -286,5 +300,84 @@ async def test_fallbacks_astream() -> None:
         runnable = RunnableGenerator(_agenerate_delayed_error).with_fallbacks(
             [RunnableGenerator(_agenerate)]
         )
-        async for c in runnable.astream({}):
+        async for _ in runnable.astream({}):
             pass
+
+
+class FakeStructuredOutputModel(BaseChatModel):
+    foo: int
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Top Level call"""
+        return ChatResult(generations=[])
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        return self.bind(tools=tools)
+
+    def with_structured_output(
+        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+        return RunnableLambda(lambda x: {"foo": self.foo})
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake1"
+
+
+class FakeModel(BaseChatModel):
+    bar: int
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Top Level call"""
+        return ChatResult(generations=[])
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        return self.bind(tools=tools)
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake2"
+
+
+def test_fallbacks_getattr() -> None:
+    llm_with_fallbacks = FakeStructuredOutputModel(foo=3).with_fallbacks(
+        [FakeModel(bar=4)]
+    )
+    assert llm_with_fallbacks.foo == 3
+
+    with pytest.raises(AttributeError):
+        assert llm_with_fallbacks.bar == 4
+
+
+def test_fallbacks_getattr_runnable_output() -> None:
+    llm_with_fallbacks = FakeStructuredOutputModel(foo=3).with_fallbacks(
+        [FakeModel(bar=4)]
+    )
+    llm_with_fallbacks_with_tools = llm_with_fallbacks.bind_tools([])
+    assert isinstance(llm_with_fallbacks_with_tools, RunnableWithFallbacks)
+    assert isinstance(llm_with_fallbacks_with_tools.runnable, RunnableBinding)
+    assert all(
+        isinstance(fallback, RunnableBinding)
+        for fallback in llm_with_fallbacks_with_tools.fallbacks
+    )
+    assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []

@@ -1,11 +1,11 @@
 import inspect
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core._api.beta_decorator import beta, warn_beta
-from langchain_core.pydantic_v1 import BaseModel
 
 
 @pytest.mark.parametrize(
@@ -35,12 +35,13 @@ from langchain_core.pydantic_v1 import BaseModel
                 "obj_type": "",
                 "addendum": "Please migrate your code.",
             },
-            "`SomeFunction` is in beta. It is actively being worked on, so the API may "
+            "`SomeFunction` is in beta. It is actively being worked on, "
+            "so the API may "
             "change. Please migrate your code.",
         ),
     ],
 )
-def test_warn_beta(kwargs: Dict[str, Any], expected_message: str) -> None:
+def test_warn_beta(kwargs: dict[str, Any], expected_message: str) -> None:
     """Test warn beta."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
@@ -67,7 +68,6 @@ async def beta_async_function() -> str:
 class ClassWithBetaMethods:
     def __init__(self) -> None:
         """original doc"""
-        pass
 
     @beta()
     def beta_method(self) -> str:
@@ -106,18 +106,18 @@ def test_beta_function() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_function` is in beta. It is actively being worked on, "
+            "The function `beta_function` is in beta. It is actively being "
+            "worked on, "
             "so the API may change."
         )
 
         doc = beta_function.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert not inspect.iscoroutinefunction(beta_function)
 
 
-@pytest.mark.asyncio
 async def test_beta_async_function() -> None:
     """Test beta async function."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -132,7 +132,7 @@ async def test_beta_async_function() -> None:
 
         doc = beta_function.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert inspect.iscoroutinefunction(beta_async_function)
 
@@ -146,18 +146,18 @@ def test_beta_method() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_method` is in beta. It is actively being worked on, so "
+            "The method `ClassWithBetaMethods.beta_method` is in beta. It is actively "
+            "being worked on, so "
             "the API may change."
         )
 
         doc = obj.beta_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert not inspect.iscoroutinefunction(obj.beta_method)
 
 
-@pytest.mark.asyncio
 async def test_beta_async_method() -> None:
     """Test beta method."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -167,13 +167,13 @@ async def test_beta_async_method() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_async_method` is in beta. "
+            "The method `ClassWithBetaMethods.beta_async_method` is in beta. "
             "It is actively being worked on, so the API may change."
         )
 
         doc = obj.beta_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
     assert inspect.iscoroutinefunction(obj.beta_async_method)
 
@@ -186,13 +186,13 @@ def test_beta_classmethod() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_classmethod` is in beta. It is actively being worked "
-            "on, so the API may change."
+            "The method `ClassWithBetaMethods.beta_classmethod` is in beta. "
+            "It is actively being worked on, so the API may change."
         )
 
         doc = ClassWithBetaMethods.beta_classmethod.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
 
 def test_beta_staticmethod() -> None:
@@ -206,12 +206,12 @@ def test_beta_staticmethod() -> None:
         warning = warning_list[0].message
 
         assert str(warning) == (
-            "The function `beta_staticmethod` is in beta. It is actively being worked "
-            "on, so the API may change."
+            "The method `ClassWithBetaMethods.beta_staticmethod` is in beta. "
+            "It is actively being worked on, so the API may change."
         )
         doc = ClassWithBetaMethods.beta_staticmethod.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
 
 def test_beta_property() -> None:
@@ -226,12 +226,12 @@ def test_beta_property() -> None:
         warning = warning_list[0].message
 
         assert str(warning) == (
-            "The function `beta_property` is in beta. It is actively being worked on, "
-            "so the API may change."
+            "The method `ClassWithBetaMethods.beta_property` is in beta. "
+            "It is actively being worked on, so the API may change."
         )
         doc = ClassWithBetaMethods.beta_property.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")
 
 
 def test_whole_class_beta() -> None:
@@ -241,7 +241,6 @@ def test_whole_class_beta() -> None:
     class BetaClass:
         def __init__(self) -> None:
             """original doc"""
-            pass
 
         @beta()
         def beta_method(self) -> str:
@@ -257,13 +256,15 @@ def test_whole_class_beta() -> None:
         assert len(warning_list) == 2
         warning = warning_list[0].message
         assert str(warning) == (
-            "The class `BetaClass` is in beta. It is actively being worked on, so the "
+            "The class `test_whole_class_beta.<locals>.BetaClass` is in beta. "
+            "It is actively being worked on, so the "
             "API may change."
         )
 
         warning = warning_list[1].message
         assert str(warning) == (
-            "The function `beta_method` is in beta. It is actively being worked on, so "
+            "The method `test_whole_class_beta.<locals>.BetaClass.beta_method` "
+            "is in beta. It is actively being worked on, so "
             "the API may change."
         )
 
@@ -272,7 +273,7 @@ def test_whole_class_inherited_beta() -> None:
     """Test whole class beta status for inherited class.
 
     The original version of beta decorator created duplicates with
-    '[*Beta*]'.
+    '.. beta::'.
     """
 
     # Test whole class beta status
@@ -299,13 +300,15 @@ def test_whole_class_inherited_beta() -> None:
         assert len(warning_list) == 2
         warning = warning_list[0].message
         assert str(warning) == (
-            "The class `BetaClass` is in beta. It is actively being worked on, so the "
+            "The class `test_whole_class_inherited_beta.<locals>.BetaClass` "
+            "is in beta. It is actively being worked on, so the "
             "API may change."
         )
 
         warning = warning_list[1].message
         assert str(warning) == (
-            "The function `beta_method` is in beta. It is actively being worked on, so "
+            "The method `test_whole_class_inherited_beta.<locals>.BetaClass."
+            "beta_method` is in beta. It is actively being worked on, so "
             "the API may change."
         )
 
@@ -318,21 +321,23 @@ def test_whole_class_inherited_beta() -> None:
         assert len(warning_list) == 2
         warning = warning_list[0].message
         assert str(warning) == (
-            "The class `InheritedBetaClass` is in beta. "
+            "The class `test_whole_class_inherited_beta.<locals>.InheritedBetaClass` "
+            "is in beta. "
             "It is actively being worked on, so the "
             "API may change."
         )
 
         warning = warning_list[1].message
         assert str(warning) == (
-            "The function `beta_method` is in beta. "
+            "The method `test_whole_class_inherited_beta.<locals>.InheritedBetaClass."
+            "beta_method` is in beta. "
             "It is actively being worked on, so "
             "the API may change."
         )
 
-        # if [*Beta*] was inserted only once:
+        # if .. beta:: was inserted only once:
         if obj.__doc__ is not None:
-            assert obj.__doc__.count("[*Beta*]") == 1
+            assert obj.__doc__.count(".. beta::") == 1
 
 
 # Tests with pydantic models
@@ -352,10 +357,11 @@ def test_beta_method_pydantic() -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == (
-            "The function `beta_method` is in beta. It is actively being worked on, so "
+            "The method `MyModel.beta_method` is in beta. It is actively being "
+            "worked on, so "
             "the API may change."
         )
 
         doc = obj.beta_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith("[*Beta*] original doc")
+        assert doc.startswith(".. beta::")

@@ -21,8 +21,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_pydantic_field_names
+from pydantic import ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +64,9 @@ def _convert_delta_to_message_chunk(
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 class LlamaEdgeChatService(BaseChatModel):
@@ -84,13 +84,13 @@ class LlamaEdgeChatService(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})

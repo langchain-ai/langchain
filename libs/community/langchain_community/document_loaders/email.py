@@ -60,16 +60,16 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.file_utils.filetype import FileType, detect_filetype
 
-        filetype = detect_filetype(self.file_path)
+        filetype = detect_filetype(self.file_path)  # type: ignore[arg-type]
 
         if filetype == FileType.EML:
             from unstructured.partition.email import partition_email
 
-            return partition_email(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_email(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
         elif satisfies_min_unstructured_version("0.5.8") and filetype == FileType.MSG:
             from unstructured.partition.msg import partition_msg
 
-            return partition_msg(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_msg(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
         else:
             raise ValueError(
                 f"Filetype {filetype} is not supported in UnstructuredEmailLoader."
@@ -116,3 +116,4 @@ class OutlookMessageLoader(BaseLoader):
                 "date": msg.date,
             },
         )
+        msg.close()

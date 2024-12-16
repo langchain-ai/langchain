@@ -1,4 +1,5 @@
 """Test Anthropic Chat API wrapper."""
+
 import os
 from typing import List
 
@@ -21,7 +22,7 @@ def test_anthropic_model_name_param() -> None:
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_param() -> None:
-    llm = ChatAnthropic(model="foo")
+    llm = ChatAnthropic(model="foo")  # type: ignore[call-arg]
     assert llm.model == "foo"
 
 
@@ -32,15 +33,18 @@ def test_anthropic_model_kwargs() -> None:
 
 
 @pytest.mark.requires("anthropic")
-def test_anthropic_invalid_model_kwargs() -> None:
-    with pytest.raises(ValueError):
-        ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
+def test_anthropic_fields_in_model_kwargs() -> None:
+    """Test that for backwards compatibility fields can be passed in as model_kwargs."""
+    llm = ChatAnthropic(model_kwargs={"max_tokens_to_sample": 5})
+    assert llm.max_tokens_to_sample == 5
+    llm = ChatAnthropic(model_kwargs={"max_tokens": 5})
+    assert llm.max_tokens_to_sample == 5
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = ChatAnthropic(foo="bar")
+        llm = ChatAnthropic(foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -49,7 +53,7 @@ def test_anthropic_initialization() -> None:
     """Test anthropic initialization."""
     # Verify that chat anthropic can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
-    ChatAnthropic(model="test", anthropic_api_key="test")
+    ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[arg-type, call-arg]
 
 
 @pytest.mark.parametrize(

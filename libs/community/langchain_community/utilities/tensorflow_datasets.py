@@ -2,7 +2,7 @@ import logging
 from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +60,9 @@ class TensorflowDatasets(BaseModel):
     sample_to_document_function: Optional[Callable[[Dict], Document]] = None
     dataset: Any  #: :meta private:
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             import tensorflow  # noqa: F401

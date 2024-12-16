@@ -30,8 +30,9 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -150,8 +151,8 @@ class GPTRouter(BaseChatModel):
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
-    models_priority_list: List[GPTRouterModel] = Field(min_items=1)
-    gpt_router_api_base: str = Field(default=None)
+    models_priority_list: List[GPTRouterModel] = Field(min_length=1)
+    gpt_router_api_base: str = Field(default="")
     """WriteSonic GPTRouter custom endpoint"""
     gpt_router_api_key: Optional[SecretStr] = None
     """WriteSonic GPTRouter API Key"""
@@ -167,8 +168,9 @@ class GPTRouter(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: int = 256
 
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         values["gpt_router_api_base"] = get_from_dict_or_env(
             values,
             "gpt_router_api_base",
@@ -183,7 +185,10 @@ class GPTRouter(BaseChatModel):
                 "GPT_ROUTER_API_KEY",
             )
         )
+        return values
 
+    @model_validator(mode="after")
+    def post_init(self) -> Self:
         try:
             from gpt_router.client import GPTRouterClient
 
@@ -194,12 +199,14 @@ class GPTRouter(BaseChatModel):
             )
 
         gpt_router_client = GPTRouterClient(
-            values["gpt_router_api_base"],
-            values["gpt_router_api_key"].get_secret_value(),
+            self.gpt_router_api_base,
+            self.gpt_router_api_key.get_secret_value()
+            if self.gpt_router_api_key
+            else None,
         )
-        values["client"] = gpt_router_client
+        self.client = gpt_router_client
 
-        return values
+        return self
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

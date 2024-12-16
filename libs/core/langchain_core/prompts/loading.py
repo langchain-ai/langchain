@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Union
+from typing import Callable, Optional, Union
 
 import yaml
 
@@ -18,13 +18,24 @@ logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Load prompt from Config Dict."""
+    """Load prompt from Config Dict.
+
+    Args:
+        config: Dict containing the prompt configuration.
+
+    Returns:
+        A PromptTemplate object.
+
+    Raises:
+        ValueError: If the prompt type is not supported.
+    """
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
     config_type = config.pop("_type", "prompt")
 
     if config_type not in type_to_loader_dict:
-        raise ValueError(f"Loading {config_type} prompt not supported")
+        msg = f"Loading {config_type} prompt not supported"
+        raise ValueError(msg)
 
     prompt_loader = type_to_loader_dict[config_type]
     return prompt_loader(config)
@@ -36,9 +47,8 @@ def _load_template(var_name: str, config: dict) -> dict:
     if f"{var_name}_path" in config:
         # If it does, make sure template variable doesn't also exist.
         if var_name in config:
-            raise ValueError(
-                f"Both `{var_name}_path` and `{var_name}` cannot be provided."
-            )
+            msg = f"Both `{var_name}_path` and `{var_name}` cannot be provided."
+            raise ValueError(msg)
         # Pop the template path from the config.
         template_path = Path(config.pop(f"{var_name}_path"))
         # Load the template.
@@ -63,12 +73,12 @@ def _load_examples(config: dict) -> dict:
             elif config["examples"].endswith((".yaml", ".yml")):
                 examples = yaml.safe_load(f)
             else:
-                raise ValueError(
-                    "Invalid file format. Only json or yaml formats are supported."
-                )
+                msg = "Invalid file format. Only json or yaml formats are supported."
+                raise ValueError(msg)
         config["examples"] = examples
     else:
-        raise ValueError("Invalid examples format. Only list or string are supported.")
+        msg = "Invalid examples format. Only list or string are supported."
+        raise ValueError(msg)
     return config
 
 
@@ -80,7 +90,8 @@ def _load_output_parser(config: dict) -> dict:
         if output_parser_type == "default":
             output_parser = StrOutputParser(**_config)
         else:
-            raise ValueError(f"Unsupported output parser {output_parser_type}")
+            msg = f"Unsupported output parser {output_parser_type}"
+            raise ValueError(msg)
         config["output_parser"] = output_parser
     return config
 
@@ -93,10 +104,11 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     # Load the example prompt.
     if "example_prompt_path" in config:
         if "example_prompt" in config:
-            raise ValueError(
+            msg = (
                 "Only one of example_prompt and example_prompt_path should "
                 "be specified."
             )
+            raise ValueError(msg)
         config["example_prompt"] = load_prompt(config.pop("example_prompt_path"))
     else:
         config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
@@ -116,47 +128,62 @@ def _load_prompt(config: dict) -> PromptTemplate:
     if template_format == "jinja2":
         # Disabled due to:
         # https://github.com/langchain-ai/langchain/issues/4394
-        raise ValueError(
+        msg = (
             f"Loading templates with '{template_format}' format is no longer supported "
             f"since it can lead to arbitrary code execution. Please migrate to using "
             f"the 'f-string' template format, which does not suffer from this issue."
         )
+        raise ValueError(msg)
 
     return PromptTemplate(**config)
 
 
-def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
-    """Unified method for loading a prompt from LangChainHub or local fs."""
+def load_prompt(
+    path: Union[str, Path], encoding: Optional[str] = None
+) -> BasePromptTemplate:
+    """Unified method for loading a prompt from LangChainHub or local fs.
+
+    Args:
+        path: Path to the prompt file.
+        encoding: Encoding of the file. Defaults to None.
+
+    Returns:
+        A PromptTemplate object.
+
+    Raises:
+        RuntimeError: If the path is a Lang Chain Hub path.
+    """
     if isinstance(path, str) and path.startswith("lc://"):
-        raise RuntimeError(
+        msg = (
             "Loading from the deprecated github-based Hub is no longer supported. "
             "Please use the new LangChain Hub at https://smith.langchain.com/hub "
             "instead."
         )
-    return _load_prompt_from_file(path)
+        raise RuntimeError(msg)
+    return _load_prompt_from_file(path, encoding)
 
 
-def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
+def _load_prompt_from_file(
+    file: Union[str, Path], encoding: Optional[str] = None
+) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
-    if isinstance(file, str):
-        file_path = Path(file)
-    else:
-        file_path = file
+    file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path) as f:
+        with open(file_path, encoding=encoding) as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path, "r") as f:
+        with open(file_path, encoding=encoding) as f:
             config = yaml.safe_load(f)
     else:
-        raise ValueError(f"Got unsupported file type {file_path.suffix}")
+        msg = f"Got unsupported file type {file_path.suffix}"
+        raise ValueError(msg)
     # Load the prompt from the config now.
     return load_prompt_from_config(config)
 
 
-def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
+def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
     """Load chat prompt from config"""
 
     messages = config.pop("messages")
@@ -164,12 +191,13 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     config.pop("input_variables")
 
     if not template:
-        raise ValueError("Can't load chat prompt without template")
+        msg = "Can't load chat prompt without template"
+        raise ValueError(msg)
 
     return ChatPromptTemplate.from_template(template=template, **config)
 
 
-type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
+type_to_loader_dict: dict[str, Callable[[dict], BasePromptTemplate]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
     "chat": _load_chat_prompt,

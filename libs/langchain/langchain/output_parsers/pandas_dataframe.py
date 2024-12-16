@@ -3,20 +3,21 @@ from typing import Any, Dict, List, Tuple, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
-from langchain_core.pydantic_v1 import validator
+from pydantic import field_validator
 
 from langchain.output_parsers.format_instructions import (
     PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS,
 )
 
 
-class PandasDataFrameOutputParser(BaseOutputParser):
+class PandasDataFrameOutputParser(BaseOutputParser[Dict[str, Any]]):
     """Parse an output using Pandas DataFrame format."""
 
     """The Pandas DataFrame to parse."""
     dataframe: Any
 
-    @validator("dataframe")
+    @field_validator("dataframe")
+    @classmethod
     def validate_dataframe(cls, val: Any) -> Any:
         import pandas as pd
 

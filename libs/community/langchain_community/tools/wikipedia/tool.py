@@ -1,14 +1,21 @@
 """Tool for the Wikipedia API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 
 
-class WikipediaQueryRun(BaseTool):
+class WikipediaQueryInput(BaseModel):
+    """Input for the WikipediaQuery tool."""
+
+    query: str = Field(description="query to look up on wikipedia")
+
+
+class WikipediaQueryRun(BaseTool):  # type: ignore[override, override]
     """Tool that searches the Wikipedia API."""
 
     name: str = "wikipedia"
@@ -19,6 +26,8 @@ class WikipediaQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: WikipediaAPIWrapper
+
+    args_schema: Type[BaseModel] = WikipediaQueryInput
 
     def _run(
         self,

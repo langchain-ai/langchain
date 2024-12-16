@@ -1,4 +1,5 @@
 """Power BI agent."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -32,7 +33,27 @@ def create_pbi_agent(
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Construct a Power BI agent from an LLM and tools."""
+    """Construct a Power BI agent from an LLM and tools.
+
+    Args:
+        llm: The language model to use.
+        toolkit: Optional. The Power BI toolkit. Default is None.
+        powerbi: Optional. The Power BI dataset. Default is None.
+        callback_manager: Optional. The callback manager. Default is None.
+        prefix: Optional. The prefix for the prompt. Default is POWERBI_PREFIX.
+        suffix: Optional. The suffix for the prompt. Default is POWERBI_SUFFIX.
+        format_instructions: Optional. The format instructions for the prompt.
+            Default is None.
+        examples: Optional. The examples for the prompt. Default is None.
+        input_variables: Optional. The input variables for the prompt. Default is None.
+        top_k: Optional. The top k for the prompt. Default is 10.
+        verbose: Optional. Whether to print verbose output. Default is False.
+        agent_executor_kwargs: Optional. The agent executor kwargs. Default is None.
+        kwargs: Any. Additional keyword arguments.
+
+    Returns:
+        The agent executor.
+    """
     from langchain.agents import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
     from langchain.chains.llm import LLMChain

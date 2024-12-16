@@ -1,6 +1,8 @@
 """Wrapper around LiteLLM's model I/O library."""
+
 from __future__ import annotations
 
+import json
 import logging
 from typing import (
     Any,
@@ -9,8 +11,10 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -20,6 +24,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -39,14 +44,20 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
+    ToolCallChunk,
+    ToolMessage,
 )
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +94,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
+
+        additional_kwargs = {}
         if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
+            additional_kwargs["function_call"] = dict(_dict["function_call"])
+
+        if _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = _dict["tool_calls"]
+
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
@@ -122,37 +137,75 @@ def _convert_delta_to_message_chunk(
     else:
         additional_kwargs = {}
 
+    tool_call_chunks = []
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_call_chunks = [
+                ToolCallChunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc["index"],
+                )
+                for rtc in raw_tool_calls
+            ]
+        except KeyError:
+            pass
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        },
+    }
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any] = {"content": message.content}
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict["role"] = "user"
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
+        if message.tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
+        message_dict["role"] = "function"
+        message_dict["name"] = message.name
+    elif isinstance(message, ToolMessage):
+        message_dict["role"] = "tool"
+        message_dict["tool_call_id"] = message.tool_call_id
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:
@@ -160,10 +213,37 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
+_OPENAI_MODELS = [
+    "o1-mini",
+    "o1-preview",
+    "gpt-4o-mini",
+    "gpt-4o-mini-2024-07-18",
+    "gpt-4o",
+    "gpt-4o-2024-08-06",
+    "gpt-4o-2024-05-13",
+    "gpt-4-turbo",
+    "gpt-4-turbo-preview",
+    "gpt-4-0125-preview",
+    "gpt-4-1106-preview",
+    "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0301",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-16k-0613",
+    "gpt-4",
+    "gpt-4-0314",
+    "gpt-4-0613",
+    "gpt-4-32k",
+    "gpt-4-32k-0314",
+    "gpt-4-32k-0613",
+]
+
+
 class ChatLiteLLM(BaseChatModel):
     """Chat model that uses the LiteLLM API."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
     """Model name to use."""
@@ -173,6 +253,7 @@ class ChatLiteLLM(BaseChatModel):
     replicate_api_key: Optional[str] = None
     cohere_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
+    api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
@@ -180,7 +261,7 @@ class ChatLiteLLM(BaseChatModel):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -191,7 +272,7 @@ class ChatLiteLLM(BaseChatModel):
     n: int = 1
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
 
     max_retries: int = 6
 
@@ -219,6 +300,21 @@ class ChatLiteLLM(BaseChatModel):
         if self.model_name is not None:
             set_model_value = self.model_name
         self.client.api_base = self.api_base
+        self.client.api_key = self.api_key
+        for named_api_key in [
+            "openai_api_key",
+            "azure_api_key",
+            "anthropic_api_key",
+            "replicate_api_key",
+            "cohere_api_key",
+            "openrouter_api_key",
+        ]:
+            if api_key_value := getattr(self, named_api_key):
+                setattr(
+                    self.client,
+                    named_api_key.replace("_api_key", "_key"),
+                    api_key_value,
+                )
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": set_model_value,
@@ -239,7 +335,7 @@ class ChatLiteLLM(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         try:
@@ -350,6 +446,8 @@ class ChatLiteLLM(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -374,6 +472,8 @@ class ChatLiteLLM(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.model_dump()
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
@@ -405,6 +505,65 @@ class ChatLiteLLM(BaseChatModel):
             self, messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        LiteLLM expects tools argument in OpenAI format.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call. Options are:
+                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
+                - ``"auto"``:
+                    automatically selects a tool (including no tool).
+                - ``"none"``:
+                    does not call a tool.
+                - ``"any"`` or ``"required"`` or ``True``:
+                    forces least one tool to be called.
+                - dict of the form:
+                ``{"type": "function", "function": {"name": <<tool_name>>}}``
+                - ``False`` or ``None``: no effect
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+
+        # In case of openai if tool_choice is `any` or if bool has been provided we
+        # change it to `required` as that is suppored by openai.
+        if (
+            (self.model is not None and "azure" in self.model)
+            or (self.model_name is not None and "azure" in self.model_name)
+            or (self.model is not None and self.model in _OPENAI_MODELS)
+            or (self.model_name is not None and self.model_name in _OPENAI_MODELS)
+        ) and (tool_choice == "any" or isinstance(tool_choice, bool)):
+            tool_choice = "required"
+        # If tool_choice is bool apart from openai we make it `any`
+        elif isinstance(tool_choice, bool):
+            tool_choice = "any"
+        elif isinstance(tool_choice, dict):
+            tool_names = [
+                formatted_tool["function"]["name"] for formatted_tool in formatted_tools
+            ]
+            if not any(
+                tool_name == tool_choice["function"]["name"] for tool_name in tool_names
+            ):
+                raise ValueError(
+                    f"Tool choice {tool_choice} was specified, but the only "
+                    f"provided tools were {tool_names}."
+                )
+        return super().bind(tools=formatted_tools, tool_choice=tool_choice, **kwargs)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

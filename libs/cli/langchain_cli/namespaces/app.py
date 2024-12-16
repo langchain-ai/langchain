@@ -5,6 +5,7 @@ Manage LangChain apps
 import shutil
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -118,6 +119,15 @@ def new(
     if has_packages:
         add(package, project_dir=destination_dir, pip=pip_bool)
 
+    typer.echo(f'\n\nSuccess! Created a new LangChain app under "./{app_name}"!\n\n')
+    typer.echo("Next, enter your new app directory by running:\n")
+    typer.echo(f"    cd ./{app_name}\n")
+    typer.echo("Then add templates with commands like:\n")
+    typer.echo("    langchain app add extraction-openai-functions")
+    typer.echo(
+        "    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n"
+    )
+
 
 @app_cli.command()
 def add(
@@ -153,6 +163,12 @@ def add(
     langchain app add extraction-openai-functions
     langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
     """
+
+    if not branch and not repo:
+        warnings.warn(
+            "Adding templates from the default branch and repo is deprecated."
+            " At a minimum, you will have to add `--branch v0.2` for this to work"
+        )
 
     parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
 

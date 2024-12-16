@@ -22,6 +22,8 @@ EXPECTED_ALL = [
     "UpstashRedisChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
+    "ZepCloudChatMessageHistory",
+    "KafkaChatMessageHistory",
 ]
 
 

@@ -3,17 +3,26 @@ from __future__ import annotations
 import json
 import logging
 import os
+import warnings
 from dataclasses import dataclass, field
 from hashlib import md5
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type
 
 import requests
+from langchain_core.callbacks.manager import (
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import ConfigDict
 
 logger = logging.getLogger(__name__)
+
+MMR_RERANKER_ID = 272725718
+RERANKER_MULTILINGUAL_V1_ID = 272725719
+UDF_RERANKER_ID = 272725722
 
 
 @dataclass
@@ -30,12 +39,14 @@ class SummaryConfig:
     is_enabled: bool = False
     max_results: int = 7
     response_lang: str = "eng"
-    prompt_name: str = "vectara-summary-ext-v1.2.0"
+    prompt_name: str = "vectara-summary-ext-24-05-med-omni"
+    stream: bool = False
 
 
 @dataclass
 class MMRConfig:
     """Configuration for Maximal Marginal Relevance (MMR) search.
+       This will soon be deprated in favor of RerankConfig.
 
     is_enabled: True if MMR is enabled, False otherwise
     mmr_k: number of results to fetch for MMR, defaults to 50
@@ -54,6 +65,28 @@ class MMRConfig:
 
 
 @dataclass
+class RerankConfig:
+    """Configuration for Reranker.
+
+    reranker: "mmr", "rerank_multilingual_v1", "udf" or "none"
+    rerank_k: number of results to fetch before reranking, defaults to 50
+    mmr_diversity_bias: for MMR only - a number between 0 and 1 that determines
+        the degree of diversity among the results with 0 corresponding
+        to minimum diversity and 1 to maximum diversity.
+        Defaults to 0.3.
+        Note: mmr_diversity_bias is equivalent 1-lambda_mult
+        where lambda_mult is the value often used in max_marginal_relevance_search()
+        We chose to use that since we believe it's more intuitive to the user.
+    user_function: for UDF only - the user function to use for reranking.
+    """
+
+    reranker: str = "none"
+    rerank_k: int = 50
+    mmr_diversity_bias: float = 0.3
+    user_function: str = ""
+
+
+@dataclass
 class VectaraQueryConfig:
     """Configuration for Vectara query.
 
@@ -66,9 +99,11 @@ class VectaraQueryConfig:
     score_threshold: minimal score threshold for the result.
         If defined, results with score less than this value will be
         filtered out.
-    n_sentence_context: number of sentences before/after the matching segment
+    n_sentence_before: number of sentences before the matching segment
         to add, defaults to 2
-    mmr_config: MMRConfig configuration dataclass
+    n_sentence_after: number of sentences before the matching segment
+        to add, defaults to 2
+    rerank_config: RerankConfig configuration dataclass
     summary_config: SummaryConfig configuration dataclass
     """
 
@@ -76,9 +111,62 @@ class VectaraQueryConfig:
     lambda_val: float = 0.0
     filter: str = ""
     score_threshold: Optional[float] = None
-    n_sentence_context: int = 2
-    mmr_config: MMRConfig = field(default_factory=MMRConfig)
+    n_sentence_before: int = 2
+    n_sentence_after: int = 2
+    rerank_config: RerankConfig = field(default_factory=RerankConfig)
     summary_config: SummaryConfig = field(default_factory=SummaryConfig)
+
+    def __init__(
+        self,
+        k: int = 10,
+        lambda_val: float = 0.0,
+        filter: str = "",
+        score_threshold: Optional[float] = None,
+        n_sentence_before: int = 2,
+        n_sentence_after: int = 2,
+        n_sentence_context: Optional[int] = None,
+        mmr_config: Optional[MMRConfig] = None,
+        summary_config: Optional[SummaryConfig] = None,
+        rerank_config: Optional[RerankConfig] = None,
+    ):
+        self.k = k
+        self.lambda_val = lambda_val
+        self.filter = filter
+        self.score_threshold = score_threshold
+
+        if summary_config:
+            self.summary_config = summary_config
+        else:
+            self.summary_config = SummaryConfig()
+
+        # handle n_sentence_context for backward compatibility
+        if n_sentence_context:
+            self.n_sentence_before = n_sentence_context
+            self.n_sentence_after = n_sentence_context
+            warnings.warn(
+                "n_sentence_context is deprecated. "
+                "Please use n_sentence_before and n_sentence_after instead",
+                DeprecationWarning,
+            )
+        else:
+            self.n_sentence_before = n_sentence_before
+            self.n_sentence_after = n_sentence_after
+
+        # handle mmr_config for backward compatibility
+        if rerank_config:
+            self.rerank_config = rerank_config
+        elif mmr_config:
+            self.rerank_config = RerankConfig(
+                reranker="mmr",
+                rerank_k=mmr_config.mmr_k,
+                mmr_diversity_bias=mmr_config.diversity_bias,
+            )
+            warnings.warn(
+                "MMRConfig is deprecated. Please use RerankConfig instead.",
+                DeprecationWarning,
+            )
+        else:
+            self.rerank_config = RerankConfig()
 
 
 class Vectara(VectorStore):
@@ -150,9 +238,7 @@ class Vectara(VectorStore):
         Delete a document from the Vectara corpus.
 
         Args:
-            url (str): URL of the page to delete.
             doc_id (str): ID of the document to delete.
-
         Returns:
             bool: True if deletion was successful, False otherwise.
         """
@@ -206,6 +292,21 @@ class Vectara(VectorStore):
             return "E_NO_PERMISSIONS"
         else:
             return "E_SUCCEEDED"
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
+        """
+        if ids:
+            success = [self._delete_doc(id) for id in ids]
+            return all(success)
+        else:
+            return True
 
     def add_files(
         self,
@@ -317,6 +418,89 @@ class Vectara(VectorStore):
             )
         return [doc_id]
 
+    def _get_query_body(
+        self,
+        query: str,
+        config: VectaraQueryConfig,
+        chat: Optional[bool] = False,
+        chat_conv_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Build the body for the API
+
+        Args:
+            query: Text to look up documents similar to.
+            config: VectaraQueryConfig object
+        Returns:
+            A dictionary with the body of the query
+        """
+        if isinstance(config.rerank_config, dict):
+            config.rerank_config = RerankConfig(**config.rerank_config)
+        if isinstance(config.summary_config, dict):
+            config.summary_config = SummaryConfig(**config.summary_config)
+
+        body = {
+            "query": [
+                {
+                    "query": query,
+                    "start": 0,
+                    "numResults": (
+                        config.rerank_config.rerank_k
+                        if (
+                            config.rerank_config.reranker
+                            in ["mmr", "udf", "rerank_multilingual_v1"]
+                        )
+                        else config.k
+                    ),
+                    "contextConfig": {
+                        "sentencesBefore": config.n_sentence_before,
+                        "sentencesAfter": config.n_sentence_after,
+                    },
+                    "corpusKey": [
+                        {
+                            "corpusId": self._vectara_corpus_id,
+                            "metadataFilter": config.filter,
+                        }
+                    ],
+                }
+            ]
+        }
+
+        if config.lambda_val > 0:
+            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {  # type: ignore
+                "lambda": config.lambda_val
+            }
+
+        if config.rerank_config.reranker == "mmr":
+            body["query"][0]["rerankingConfig"] = {
+                "rerankerId": MMR_RERANKER_ID,
+                "mmrConfig": {"diversityBias": config.rerank_config.mmr_diversity_bias},
+            }
+        elif config.rerank_config.reranker == "udf":
+            body["query"][0]["rerankingConfig"] = {
+                "rerankerId": UDF_RERANKER_ID,
+                "userFunction": config.rerank_config.user_function,
+            }
+        elif config.rerank_config.reranker == "rerank_multilingual_v1":
+            body["query"][0]["rerankingConfig"] = {
+                "rerankerId": RERANKER_MULTILINGUAL_V1_ID,
+            }
+
+        if config.summary_config.is_enabled:
+            body["query"][0]["summary"] = [
+                {
+                    "maxSummarizedResults": config.summary_config.max_results,
+                    "responseLang": config.summary_config.response_lang,
+                    "summarizerPromptName": config.summary_config.prompt_name,
+                }
+            ]
+            if chat:
+                body["query"][0]["summary"][0]["chat"] = {  # type: ignore
+                    "store": True,
+                    "conversationId": chat_conv_id,
+                }
+        return body
+
     def vectara_query(
         self,
         query: str,
@@ -332,54 +516,11 @@ class Vectara(VectorStore):
             A list of k Documents matching the given query
             If summary is enabled, last document is the summary text with 'summary'=True
         """
-        if isinstance(config.mmr_config, dict):
-            config.mmr_config = MMRConfig(**config.mmr_config)
-        if isinstance(config.summary_config, dict):
-            config.summary_config = SummaryConfig(**config.summary_config)
-
-        data = {
-            "query": [
-                {
-                    "query": query,
-                    "start": 0,
-                    "numResults": (
-                        config.mmr_config.mmr_k
-                        if config.mmr_config.is_enabled
-                        else config.k
-                    ),
-                    "contextConfig": {
-                        "sentencesBefore": config.n_sentence_context,
-                        "sentencesAfter": config.n_sentence_context,
-                    },
-                    "corpusKey": [
-                        {
-                            "customerId": self._vectara_customer_id,
-                            "corpusId": self._vectara_corpus_id,
-                            "metadataFilter": config.filter,
-                            "lexicalInterpolationConfig": {"lambda": config.lambda_val},
-                        }
-                    ],
-                }
-            ]
-        }
-        if config.mmr_config.is_enabled:
-            data["query"][0]["rerankingConfig"] = {
-                "rerankerId": 272725718,
-                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias},
-            }
-        if config.summary_config.is_enabled:
-            data["query"][0]["summary"] = [
-                {
-                    "maxSummarizedResults": config.summary_config.max_results,
-                    "responseLang": config.summary_config.response_lang,
-                    "summarizerPromptName": config.summary_config.prompt_name,
-                }
-            ]
-
+        body = self._get_query_body(query, config, **kwargs)
         response = self._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
-            data=json.dumps(data),
+            data=json.dumps(body),
             timeout=self.vectara_api_timeout,
         )
 
@@ -389,7 +530,7 @@ class Vectara(VectorStore):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return [], ""  # type: ignore[return-value]
+            return []
 
         result = response.json()
 
@@ -424,14 +565,19 @@ class Vectara(VectorStore):
             for x, md in zip(responses, metadatas)
         ]
 
-        if config.mmr_config.is_enabled:
+        if config.rerank_config.reranker in ["mmr", "rerank_multilingual_v1"]:
             res = res[: config.k]
         if config.summary_config.is_enabled:
             summary = result["responseSet"][0]["summary"][0]["text"]
+            fcs = result["responseSet"][0]["summary"][0]["factualConsistency"]["score"]
             res.append(
-                (Document(page_content=summary, metadata={"summary": True}), 0.0)
+                (
+                    Document(
+                        page_content=summary, metadata={"summary": True, "fcs": fcs}
+                    ),
+                    0.0,
+                )
             )
-
         return res
 
     def similarity_search_with_score(
@@ -444,12 +590,15 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 10.
+
             any other querying variable in VectaraQueryConfig like:
             - lambda_val: lexical match parameter for hybrid search.
             - filter: filter string
             - score_threshold: minimal score threshold for the result.
-            - n_sentence_context: number of sentences before/after the matching segment
-            - mmr_config: optional configuration for MMR (see MMRConfig dataclass)
+            - n_sentence_before: number of sentences before the matching segment
+            - n_sentence_after: number of sentences after the matching segment
+            - rerank_config: optional configuration for Reranking
+              (see RerankConfig dataclass)
             - summary_config: optional configuration for summary
               (see SummaryConfig dataclass)
         Returns:
@@ -503,8 +652,8 @@ class Vectara(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        kwargs["mmr_config"] = MMRConfig(
-            is_enabled=True, mmr_k=fetch_k, diversity_bias=1 - lambda_mult
+        kwargs["rerank_config"] = RerankConfig(
+            reranker="mmr", rerank_k=fetch_k, mmr_diversity_bias=1 - lambda_mult
         )
         return self.similarity_search(query, **kwargs)
 
@@ -567,42 +716,198 @@ class Vectara(VectorStore):
         vectara.add_files(files, metadatas)
         return vectara
 
+    def as_rag(self, config: VectaraQueryConfig) -> VectaraRAG:
+        """Return a Vectara RAG runnable."""
+        return VectaraRAG(self, config)
 
-class VectaraRetriever(VectorStoreRetriever):
-    """Retriever for `Vectara`."""
+    def as_chat(self, config: VectaraQueryConfig) -> VectaraRAG:
+        """Return a Vectara RAG runnable for chat."""
+        return VectaraRAG(self, config, chat=True)
+
+    def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
+        """return a retriever object."""
+        return VectaraRetriever(
+            vectorstore=self, config=kwargs.get("config", VectaraQueryConfig())
+        )
+
+
+class VectaraRetriever(VectorStoreRetriever):  # type: ignore[override]
+    """Vectara Retriever class."""
 
     vectorstore: Vectara
-    """Vectara vectorstore."""
-    search_kwargs: dict = Field(
-        default_factory=lambda: {
-            "lambda_val": 0.0,
-            "k": 5,
-            "filter": "",
-            "n_sentence_context": "2",
-            "summary_config": SummaryConfig(),
-        }
+    """VectorStore to use for retrieval."""
+
+    config: VectaraQueryConfig
+    """Configuration for this retriever."""
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
     )
 
-    """Search params.
-        k: Number of Documents to return. Defaults to 5.
-        lambda_val: lexical match parameter for hybrid search.
-        filter: Dictionary of argument(s) to filter on metadata. For example a
-            filter can be "doc.rating > 3.0 and part.lang = 'deu'"} see
-            https://docs.vectara.com/docs/search-apis/sql/filter-overview
-            for more details.
-        n_sentence_context: number of sentences before/after the matching segment to add
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+    ) -> List[Document]:
+        docs_and_scores = self.vectorstore.vectara_query(query, self.config, **kwargs)
+        return [doc for doc, _ in docs_and_scores]
+
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Add documents to vectorstore."""
+        return self.vectorstore.add_documents(documents, **kwargs)
+
+
+class VectaraRAG(Runnable):
+    """Vectara RAG runnable.
+
+    Parameters:
+        vectara: Vectara object
+        config: VectaraQueryConfig object
+        chat: bool, default False
     """
 
-    def add_texts(
+    def __init__(
+        self, vectara: Vectara, config: VectaraQueryConfig, chat: bool = False
+    ):
+        self.vectara = vectara
+        self.config = config
+        self.chat = chat
+        self.conv_id = None
+
+    def stream(
         self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
-        doc_metadata: Optional[dict] = None,
-    ) -> None:
-        """Add text to the Vectara vectorstore.
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[dict]:
+        """Get streaming output from Vectara RAG.
 
         Args:
-            texts (List[str]): The text
-            metadatas (List[dict]): Metadata dicts, must line up with existing store
+            input: The input query
+            config: RunnableConfig object
+            kwargs: Any additional arguments
+
+        Returns:
+            The output dictionary with question, answer and context
         """
-        self.vectorstore.add_texts(texts, metadatas, doc_metadata or {})
+        body = self.vectara._get_query_body(input, self.config, self.chat, self.conv_id)
+
+        response = self.vectara._session.post(
+            headers=self.vectara._get_post_headers(),
+            url="https://api.vectara.io/v1/stream-query",
+            data=json.dumps(body),
+            timeout=self.vectara.vectara_api_timeout,
+            stream=True,
+        )
+
+        if response.status_code != 200:
+            logger.error(
+                "Query failed %s",
+                f"(code {response.status_code}, reason {response.reason}, details "
+                f"{response.text})",
+            )
+            return
+
+        responses = []
+        documents = []
+
+        yield {"question": input}  # First chunk is the question
+
+        for line in response.iter_lines():
+            if line:  # filter out keep-alive new lines
+                data = json.loads(line.decode("utf-8"))
+                result = data["result"]
+                response_set = result["responseSet"]
+                if response_set is None:
+                    summary = result.get("summary", None)
+                    if summary is None:
+                        continue
+                    if len(summary.get("status")) > 0:
+                        logger.error(
+                            f"Summary generation failed with status "
+                            f"{summary.get('status')[0].get('statusDetail')}"
+                        )
+                        continue
+
+                    # Store conversation ID for chat, if applicable
+                    chat = summary.get("chat", None)
+                    if chat and chat.get("status", None):
+                        st_code = chat["status"]
+                        logger.info(f"Chat query failed with code {st_code}")
+                        if st_code == "RESOURCE_EXHAUSTED":
+                            self.conv_id = None
+                            logger.error(
+                                "Sorry, Vectara chat turns exceeds plan limit."
+                            )
+                            continue
+
+                    conv_id = chat.get("conversationId", None) if chat else None
+                    if conv_id:
+                        self.conv_id = conv_id
+
+                    # If FCS is provided, pull it from the JSON response
+                    if summary.get("factualConsistency", None):
+                        fcs = summary.get("factualConsistency", {}).get("score", None)
+                        yield {"fcs": fcs}
+                        continue
+
+                    # Yield the summary chunk
+                    chunk = str(summary["text"])
+                    yield {"answer": chunk}
+                else:
+                    if self.config.score_threshold:
+                        responses = [
+                            r
+                            for r in response_set["response"]
+                            if r["score"] > self.config.score_threshold
+                        ]
+                    else:
+                        responses = response_set["response"]
+                    documents = response_set["document"]
+                    metadatas = []
+                    for x in responses:
+                        md = {m["name"]: m["value"] for m in x["metadata"]}
+                        doc_num = x["documentIndex"]
+                        doc_md = {
+                            m["name"]: m["value"]
+                            for m in documents[doc_num]["metadata"]
+                        }
+                        if "source" not in doc_md:
+                            doc_md["source"] = "vectara"
+                        md.update(doc_md)
+                        metadatas.append(md)
+                    res = [
+                        (
+                            Document(
+                                page_content=x["text"],
+                                metadata=md,
+                            ),
+                            x["score"],
+                        )
+                        for x, md in zip(responses, metadatas)
+                    ]
+                    if self.config.rerank_config.reranker in [
+                        "mmr",
+                        "rerank_multilingual_v1",
+                    ]:
+                        res = res[: self.config.k]
+                    yield {"context": res}
+        return
+
+    def invoke(
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> dict:
+        res = {"answer": ""}
+        for chunk in self.stream(input):
+            if "context" in chunk:
+                res["context"] = chunk["context"]
+            elif "question" in chunk:
+                res["question"] = chunk["question"]
+            elif "answer" in chunk:
+                res["answer"] += chunk["answer"]
+            elif "fcs" in chunk:
+                res["fcs"] = chunk["fcs"]
+            else:
+                logger.error(f"Unknown chunk type: {chunk}")
+        return res

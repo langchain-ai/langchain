@@ -1,4 +1,5 @@
 """Wrapper around Perplexity APIs."""
+
 from __future__ import annotations
 
 import logging
@@ -34,8 +35,12 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    from_env,
+    get_pydantic_field_names,
+)
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -53,21 +58,28 @@ class ChatPerplexity(BaseChatModel):
 
             from langchain_community.chat_models import ChatPerplexity
 
-            chat = ChatPerplexity(model="pplx-70b-online", temperature=0.7)
+            chat = ChatPerplexity(
+                model="llama-3.1-sonar-small-128k-online",
+                temperature=0.7,
+            )
     """
 
-    client: Any  #: :meta private:
-    model: str = "pplx-70b-online"
+    client: Any = None  #: :meta private:
+    model: str = "llama-3.1-sonar-small-128k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[str] = None
-    """Base URL path for API requests, 
+    pplx_api_key: Optional[str] = Field(
+        default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
+    )
+    """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
+        None, alias="timeout"
+    )
+    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -75,17 +87,17 @@ class ChatPerplexity(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"pplx_api_key": "PPLX_API_KEY"}
 
-    @root_validator(pre=True, allow_reuse=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -110,22 +122,19 @@ class ChatPerplexity(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["pplx_api_key"] = get_from_dict_or_env(
-            values, "pplx_api_key", "PPLX_API_KEY"
-        )
         try:
-            import openai  # noqa: F401
+            import openai
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.OpenAI(
-                api_key=values["pplx_api_key"], base_url="https://api.perplexity.ai"
+            self.client = openai.OpenAI(
+                api_key=self.pplx_api_key, base_url="https://api.perplexity.ai"
             )
         except AttributeError:
             raise ValueError(
@@ -133,13 +142,12 @@ class ChatPerplexity(BaseChatModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
-        return values
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling PerplexityChat API."""
         return {
-            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "temperature": self.temperature,
@@ -195,9 +203,9 @@ class ChatPerplexity(BaseChatModel):
         elif role == "tool" or default_class == ToolMessageChunk:
             return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
         elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)
+            return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
         else:
-            return default_class(content=content)
+            return default_class(content=content)  # type: ignore[call-arg]
 
     def _stream(
         self,
@@ -213,7 +221,7 @@ class ChatPerplexity(BaseChatModel):
         if stop:
             params["stop_sequences"] = stop
         stream_resp = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts, stream=True
+            messages=message_dicts, stream=True, **params
         )
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
@@ -249,18 +257,17 @@ class ChatPerplexity(BaseChatModel):
                 return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts
+        response = self.client.chat.completions.create(messages=message_dicts, **params)
+        message = AIMessage(
+            content=response.choices[0].message.content,
+            additional_kwargs={"citations": response.citations},
         )
-        message = AIMessage(content=response.choices[0].message.content)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         pplx_creds: Dict[str, Any] = {
-            "api_key": self.pplx_api_key,
-            "api_base": "https://api.perplexity.ai",
             "model": self.model,
         }
         return {**pplx_creds, **self._default_params}

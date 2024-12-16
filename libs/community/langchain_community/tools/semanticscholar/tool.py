@@ -3,8 +3,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.semanticscholar import SemanticScholarAPIWrapper
 
@@ -15,7 +15,7 @@ class SemantscholarInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class SemanticScholarQueryRun(BaseTool):
+class SemanticScholarQueryRun(BaseTool):  # type: ignore[override, override]
     """Tool that searches the semanticscholar API."""
 
     name: str = "semanticscholar"
@@ -26,7 +26,7 @@ class SemanticScholarQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: SemanticScholarAPIWrapper = Field(
-        default_factory=SemanticScholarAPIWrapper
+        default_factory=SemanticScholarAPIWrapper  # type: ignore[arg-type]
     )
     args_schema: Type[BaseModel] = SemantscholarInput
 

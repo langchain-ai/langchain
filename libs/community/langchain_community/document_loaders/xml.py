@@ -1,4 +1,5 @@
 """Loads Microsoft Excel files."""
+
 from pathlib import Path
 from typing import Any, List, Union
 
@@ -45,4 +46,4 @@ class UnstructuredXMLLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.xml import partition_xml
 
-        return partition_xml(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_xml(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

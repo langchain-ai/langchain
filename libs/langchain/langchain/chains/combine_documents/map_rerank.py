@@ -4,17 +4,28 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
+from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import Self
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.regex import RegexParser
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain/"  # noqa: E501
+    ),
+)
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then reranking results.
 
@@ -25,7 +36,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     Example:
         .. code-block:: python
 
-            from langchain.chains import StuffDocumentsChain, LLMChain
+            from langchain.chains import MapRerankDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
@@ -39,7 +50,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             prompt_template = (
                 "Use the following context to tell me the chemical formula "
                 "for water. Output both your answer and a score of how confident "
-                "you are. Context: {content}"
+                "you are. Context: {context}"
             )
             output_parser = RegexParser(
                 regex=r"(.*?)\nScore: (.*)",
@@ -74,11 +85,10 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     """Return intermediate steps.
     Intermediate steps include the results of calling llm_chain on each document."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
@@ -106,33 +116,37 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             _output_keys += self.metadata_keys
         return _output_keys
 
-    @root_validator()
-    def validate_llm_output(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_llm_output(self) -> Self:
         """Validate that the combine chain outputs a dictionary."""
-        output_parser = values["llm_chain"].prompt.output_parser
+        output_parser = self.llm_chain.prompt.output_parser
         if not isinstance(output_parser, RegexParser):
             raise ValueError(
                 "Output parser of llm_chain should be a RegexParser,"
                 f" got {output_parser}"
             )
         output_keys = output_parser.output_keys
-        if values["rank_key"] not in output_keys:
+        if self.rank_key not in output_keys:
             raise ValueError(
-                f"Got {values['rank_key']} as key to rank on, but did not find "
+                f"Got {self.rank_key} as key to rank on, but did not find "
                 f"it in the llm_chain output keys ({output_keys})"
             )
-        if values["answer_key"] not in output_keys:
+        if self.answer_key not in output_keys:
             raise ValueError(
-                f"Got {values['answer_key']} as key to return, but did not find "
+                f"Got {self.answer_key} as key to return, but did not find "
                 f"it in the llm_chain output keys ({output_keys})"
             )
-        return values
+        return self
 
-    @root_validator(pre=True)
-    def get_default_document_variable_name(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_default_document_variable_name(cls, values: Dict) -> Any:
         """Get default document variable name, if not provided."""
+        if "llm_chain" not in values:
+            raise ValueError("llm_chain must be provided")
+
+        llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -141,7 +155,6 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
         else:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "

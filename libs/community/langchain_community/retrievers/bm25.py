@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict, Field
 
 
 def default_preprocessing_func(text: str) -> List[str]:
@@ -15,7 +15,7 @@ def default_preprocessing_func(text: str) -> List[str]:
 class BM25Retriever(BaseRetriever):
     """`BM25` retriever without Elasticsearch."""
 
-    vectorizer: Any
+    vectorizer: Any = None
     """ BM25 vectorizer."""
     docs: List[Document] = Field(repr=False)
     """ List of documents."""
@@ -24,16 +24,16 @@ class BM25Retriever(BaseRetriever):
     preprocess_func: Callable[[str], List[str]] = default_preprocessing_func
     """ Preprocessing function to use on the text before BM25 vectorization."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def from_texts(
         cls,
         texts: Iterable[str],
         metadatas: Optional[Iterable[dict]] = None,
+        ids: Optional[Iterable[str]] = None,
         bm25_params: Optional[Dict[str, Any]] = None,
         preprocess_func: Callable[[str], List[str]] = default_preprocessing_func,
         **kwargs: Any,
@@ -43,6 +43,7 @@ class BM25Retriever(BaseRetriever):
         Args:
             texts: A list of texts to vectorize.
             metadatas: A list of metadata dicts to associate with each text.
+            ids: A list of ids to associate with each text.
             bm25_params: Parameters to pass to the BM25 vectorizer.
             preprocess_func: A function to preprocess each text before vectorization.
             **kwargs: Any other arguments to pass to the retriever.
@@ -62,7 +63,15 @@ class BM25Retriever(BaseRetriever):
         bm25_params = bm25_params or {}
         vectorizer = BM25Okapi(texts_processed, **bm25_params)
         metadatas = metadatas or ({} for _ in texts)
-        docs = [Document(page_content=t, metadata=m) for t, m in zip(texts, metadatas)]
+        if ids:
+            docs = [
+                Document(page_content=t, metadata=m, id=i)
+                for t, m, i in zip(texts, metadatas, ids)
+            ]
+        else:
+            docs = [
+                Document(page_content=t, metadata=m) for t, m in zip(texts, metadatas)
+            ]
         return cls(
             vectorizer=vectorizer, docs=docs, preprocess_func=preprocess_func, **kwargs
         )
@@ -87,11 +96,14 @@ class BM25Retriever(BaseRetriever):
         Returns:
             A BM25Retriever instance.
         """
-        texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
+        texts, metadatas, ids = zip(
+            *((d.page_content, d.metadata, d.id) for d in documents)
+        )
         return cls.from_texts(
             texts=texts,
             bm25_params=bm25_params,
             metadatas=metadatas,
+            ids=ids,
             preprocess_func=preprocess_func,
             **kwargs,
         )

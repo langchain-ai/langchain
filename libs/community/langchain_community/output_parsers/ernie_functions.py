@@ -13,7 +13,7 @@ from langchain_core.outputs.chat_generation import (
     ChatGeneration,
     Generation,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -143,8 +143,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     pydantic_schema: Union[Type[BaseModel], Dict[str, Type[BaseModel]]]
     """The pydantic schema to parse the output with."""
 
-    @root_validator(pre=True)
-    def validate_schema(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_schema(cls, values: Dict) -> Any:
         schema = values["pydantic_schema"]
         if "args_only" not in values:
             values["args_only"] = isinstance(schema, type) and issubclass(
@@ -164,7 +165,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
-            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore  # noqa: E501
+            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore
         return pydantic_args
 
 

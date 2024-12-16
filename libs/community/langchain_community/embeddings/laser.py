@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 LASER_MULTILINGUAL_MODEL: str = "laser2"
 
@@ -26,7 +27,7 @@ class LaserEmbeddings(BaseModel, Embeddings):
         embeddings = encoder.encode_sentences(["Hello", "World"])
     """
 
-    lang: Optional[str]
+    lang: Optional[str] = None
     """The language or language code you'd like to use
     If empty, this implementation will default
     to using a multilingual earlier LASER encoder model (called laser2)
@@ -34,14 +35,13 @@ class LaserEmbeddings(BaseModel, Embeddings):
     https://github.com/facebookresearch/flores/blob/main/flores200/README.md#languages-in-flores-200
     """
 
-    _encoder_pipeline: Any  # : :meta private:
+    _encoder_pipeline: Any = None  # : :meta private:
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that laser_encoders has been installed."""
         try:
@@ -73,7 +73,7 @@ class LaserEmbeddings(BaseModel, Embeddings):
         embeddings: np.ndarray
         embeddings = self._encoder_pipeline.encode_sentences(texts)
 
-        return embeddings.tolist()
+        return cast(List[List[float]], embeddings.tolist())
 
     def embed_query(self, text: str) -> List[float]:
         """Generate single query text embeddings using LASER.
@@ -86,4 +86,4 @@ class LaserEmbeddings(BaseModel, Embeddings):
         """
         query_embeddings: np.ndarray
         query_embeddings = self._encoder_pipeline.encode_sentences([text])
-        return query_embeddings.tolist()[0]
+        return cast(List[List[float]], query_embeddings.tolist())[0]

@@ -7,7 +7,7 @@ from langchain_core.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -50,19 +50,18 @@ Passage:
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/"
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
-        "https://python.langchain.com/docs/use_cases/extraction/."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here:"
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
-    pending=True,
+    removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):
@@ -121,19 +120,18 @@ def create_extraction_chain(
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/"
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
-        "https://python.langchain.com/docs/use_cases/extraction/."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here:"
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
-    pending=True,
+    removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):
@@ -174,7 +172,11 @@ def create_extraction_chain_pydantic(
     class PydanticSchema(BaseModel):
         info: List[pydantic_schema]  # type: ignore
 
-    openai_schema = pydantic_schema.schema()
+    if hasattr(pydantic_schema, "model_json_schema"):
+        openai_schema = pydantic_schema.model_json_schema()
+    else:
+        openai_schema = pydantic_schema.schema()
+
     openai_schema = _resolve_schema_references(
         openai_schema, openai_schema.get("definitions", {})
     )

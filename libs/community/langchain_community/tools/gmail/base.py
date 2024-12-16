@@ -1,10 +1,11 @@
 """Base class for Gmail tools."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.tools.gmail.utils import build_resource_service
 
@@ -19,7 +20,7 @@ else:
         pass
 
 
-class GmailBaseTool(BaseTool):
+class GmailBaseTool(BaseTool):  # type: ignore[override]
     """Base class for Gmail tools."""
 
     api_resource: Resource = Field(default_factory=build_resource_service)
@@ -34,4 +35,4 @@ class GmailBaseTool(BaseTool):
         Returns:
             A tool.
         """
-        return cls(service=api_resource)
+        return cls(service=api_resource)  # type: ignore[call-arg]

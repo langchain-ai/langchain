@@ -1,9 +1,10 @@
 """Util that calls Wikipedia."""
+
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +27,15 @@ class WikipediaAPIWrapper(BaseModel):
     load_all_available_meta: bool = False
     doc_content_chars_max: int = 4000
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             import wikipedia
 
-            wikipedia.set_lang(values["lang"])
+            lang = values.get("lang", "en")
+            wikipedia.set_lang(lang)
             values["wiki_client"] = wikipedia
         except ImportError:
             raise ImportError(

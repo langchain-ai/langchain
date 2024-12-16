@@ -129,11 +129,11 @@ async def test_aget_salient_docs(
         assert doc in want
 
 
-def test_get_relevant_documents(
+def test_invoke(
     time_weighted_retriever: TimeWeightedVectorStoreRetriever,
 ) -> None:
     query = "Test query"
-    relevant_documents = time_weighted_retriever.get_relevant_documents(query)
+    relevant_documents = time_weighted_retriever.invoke(query)
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(relevant_documents, list)
     assert len(relevant_documents) == len(want)
@@ -147,11 +147,11 @@ def test_get_relevant_documents(
         assert now - timedelta(hours=1) < d.metadata["last_accessed_at"] <= now
 
 
-async def test_aget_relevant_documents(
+async def test_ainvoke(
     time_weighted_retriever: TimeWeightedVectorStoreRetriever,
 ) -> None:
     query = "Test query"
-    relevant_documents = await time_weighted_retriever.aget_relevant_documents(query)
+    relevant_documents = await time_weighted_retriever.ainvoke(query)
     want = [(doc, 0.5) for doc in _get_example_memories()]
     assert isinstance(relevant_documents, list)
     assert len(relevant_documents) == len(want)

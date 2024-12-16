@@ -1,13 +1,15 @@
 """Utility that calls OpenAI's Dall-E Image Generator."""
+
 import logging
-import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import (
-    get_from_dict_or_env,
+    from_env,
     get_pydantic_field_names,
+    secret_from_env,
 )
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -25,19 +27,32 @@ class DallEAPIWrapper(BaseModel):
     2. save your OPENAI_API_KEY in an environment variable
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            "OPENAI_API_KEY",
+            default=None,
+        ),
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    openai_organization: Optional[str] = Field(
+        alias="organization",
+        default_factory=from_env(
+            ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
+        ),
+    )
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: str = Field(default_factory=from_env("OPENAI_PROXY", default=""))
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -58,13 +73,11 @@ class DallEAPIWrapper(BaseModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
-        extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -89,29 +102,9 @@ class DallEAPIWrapper(BaseModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
-            or None
-        )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
-        )
-
         try:
             import openai
 
@@ -123,25 +116,27 @@ class DallEAPIWrapper(BaseModel):
 
         if is_openai_v1():
             client_params = {
-                "api_key": values["openai_api_key"],
-                "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
-                "timeout": values["request_timeout"],
-                "max_retries": values["max_retries"],
-                "default_headers": values["default_headers"],
-                "default_query": values["default_query"],
-                "http_client": values["http_client"],
+                "api_key": self.openai_api_key.get_secret_value()
+                if self.openai_api_key
+                else None,
+                "organization": self.openai_organization,
+                "base_url": self.openai_api_base,
+                "timeout": self.request_timeout,
+                "max_retries": self.max_retries,
+                "default_headers": self.default_headers,
+                "default_query": self.default_query,
+                "http_client": self.http_client,
             }
 
-            if not values.get("client"):
-                values["client"] = openai.OpenAI(**client_params).images
-            if not values.get("async_client"):
-                values["async_client"] = openai.AsyncOpenAI(**client_params).images
-        elif not values.get("client"):
-            values["client"] = openai.Image
+            if not self.client:
+                self.client = openai.OpenAI(**client_params).images  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
+            if not self.async_client:
+                self.async_client = openai.AsyncOpenAI(**client_params).images  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
+        elif not self.client:
+            self.client = openai.Image  # type: ignore[attr-defined]
         else:
             pass
-        return values
+        return self
 
     def run(self, query: str) -> str:
         """Run query through OpenAI and parse result."""

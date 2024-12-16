@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Optional, Union
+from typing import Optional, Pattern, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
@@ -23,7 +23,7 @@ class StructuredChatOutputParser(AgentOutputParser):
     format_instructions: str = FORMAT_INSTRUCTIONS
     """Default formatting instructions"""
 
-    pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
+    pattern: Pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
     """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:
@@ -69,9 +69,9 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             if self.output_fixing_parser is not None:
-                parsed_obj: Union[
-                    AgentAction, AgentFinish
-                ] = self.output_fixing_parser.parse(text)
+                parsed_obj: Union[AgentAction, AgentFinish] = (
+                    self.output_fixing_parser.parse(text)
+                )
             else:
                 parsed_obj = self.base_parser.parse(text)
             return parsed_obj

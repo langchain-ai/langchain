@@ -174,9 +174,9 @@ def get_arangodb_client(
             "Unable to import arango, please install with `pip install python-arango`."
         ) from e
 
-    _url: str = url or os.environ.get("ARANGODB_URL", "http://localhost:8529")  # type: ignore[assignment]  # noqa: E501
-    _dbname: str = dbname or os.environ.get("ARANGODB_DBNAME", "_system")  # type: ignore[assignment]  # noqa: E501
-    _username: str = username or os.environ.get("ARANGODB_USERNAME", "root")  # type: ignore[assignment]  # noqa: E501
-    _password: str = password or os.environ.get("ARANGODB_PASSWORD", "")  # type: ignore[assignment]  # noqa: E501
+    _url: str = url or os.environ.get("ARANGODB_URL", "http://localhost:8529")  # type: ignore[assignment]
+    _dbname: str = dbname or os.environ.get("ARANGODB_DBNAME", "_system")  # type: ignore[assignment]
+    _username: str = username or os.environ.get("ARANGODB_USERNAME", "root")  # type: ignore[assignment]
+    _password: str = password or os.environ.get("ARANGODB_PASSWORD", "")  # type: ignore[assignment]
 
     return ArangoClient(_url).db(_dbname, _username, _password, verify=True)

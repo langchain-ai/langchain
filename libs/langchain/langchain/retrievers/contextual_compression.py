@@ -5,7 +5,8 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever, RetrieverLike
+from pydantic import ConfigDict
 
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -18,13 +19,12 @@ class ContextualCompressionRetriever(BaseRetriever):
     base_compressor: BaseDocumentCompressor
     """Compressor for compressing retrieved documents."""
 
-    base_retriever: BaseRetriever
+    base_retriever: RetrieverLike
     """Base Retriever to use for getting relevant documents."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def _get_relevant_documents(
         self,
@@ -41,8 +41,8 @@ class ContextualCompressionRetriever(BaseRetriever):
         Returns:
             Sequence of relevant documents
         """
-        docs = self.base_retriever.get_relevant_documents(
-            query, callbacks=run_manager.get_child(), **kwargs
+        docs = self.base_retriever.invoke(
+            query, config={"callbacks": run_manager.get_child()}, **kwargs
         )
         if docs:
             compressed_docs = self.base_compressor.compress_documents(
@@ -67,8 +67,8 @@ class ContextualCompressionRetriever(BaseRetriever):
         Returns:
             List of relevant documents
         """
-        docs = await self.base_retriever.aget_relevant_documents(
-            query, callbacks=run_manager.get_child(), **kwargs
+        docs = await self.base_retriever.ainvoke(
+            query, config={"callbacks": run_manager.get_child()}, **kwargs
         )
         if docs:
             compressed_docs = await self.base_compressor.acompress_documents(

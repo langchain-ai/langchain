@@ -21,9 +21,9 @@ def mock_connector_id():  # type: ignore
 
 @pytest.mark.requires("psychicapi")
 class TestPsychicLoader:
-    MOCK_API_KEY = "api_key"
-    MOCK_CONNECTOR_ID = "notion"
-    MOCK_ACCOUNT_ID = "account_id"
+    MOCK_API_KEY: str = "api_key"
+    MOCK_CONNECTOR_ID: str = "notion"
+    MOCK_ACCOUNT_ID: str = "account_id"
 
     def test_psychic_loader_initialization(
         self, mock_psychic: MagicMock, mock_connector_id: MagicMock

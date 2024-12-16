@@ -14,29 +14,35 @@ The **Docstore** is a simplified version of the Document Loader.
 
     Document, AddableMixin
 """
-import warnings
-from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
+from typing import TYPE_CHECKING, Any
 
-from langchain.utils.interactive_env import is_interactive_env
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.docstore.arbitrary_fn import DocstoreFn
+    from langchain_community.docstore.in_memory import InMemoryDocstore
+    from langchain_community.docstore.wikipedia import Wikipedia
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "DocstoreFn": "langchain_community.docstore.arbitrary_fn",
+    "InMemoryDocstore": "langchain_community.docstore.in_memory",
+    "Wikipedia": "langchain_community.docstore.wikipedia",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    from langchain_community import docstore
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing docstores from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.docstore import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(docstore, name)
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-__all__ = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]
+__all__ = [
+    "DocstoreFn",
+    "InMemoryDocstore",
+    "Wikipedia",
+]

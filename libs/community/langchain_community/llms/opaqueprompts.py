@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.messages import AIMessage
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +33,11 @@ class OpaquePrompts(LLM):
     base_llm: BaseLanguageModel
     """The base LLM to use."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates that the OpaquePrompts API key and the Python package exist."""
         try:
@@ -83,7 +83,7 @@ class OpaquePrompts(LLM):
         Example:
             .. code-block:: python
 
-                response = op_llm("Tell me a joke.")
+                response = op_llm.invoke("Tell me a joke.")
         """
         import opaqueprompts as op
 
@@ -95,10 +95,11 @@ class OpaquePrompts(LLM):
 
         # TODO: Add in callbacks once child runs for LLMs are supported by LangSmith.
         # call the LLM with the sanitized prompt and get the response
-        llm_response = self.base_llm.predict(
+        llm_response = self.base_llm.bind(stop=stop).invoke(
             sanitized_prompt_value_str,
-            stop=stop,
         )
+        if isinstance(llm_response, AIMessage):
+            llm_response = llm_response.content
 
         # desanitize the response by restoring the original sensitive information
         desanitize_response: op.DesanitizeResponse = op.desanitize(

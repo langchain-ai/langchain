@@ -1,24 +1,42 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Type
+from typing import Annotated, Any, Optional
+
+from pydantic import SkipValidation, ValidationError
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
-from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
+from langchain_core.messages.tool import invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
 from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.pydantic import TypeBaseModel
 
 
 def parse_tool_call(
-    raw_tool_call: Dict[str, Any],
+    raw_tool_call: dict[str, Any],
     *,
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[Dict[str, Any]]:
-    """Parse a single tool call."""
+) -> Optional[dict[str, Any]]:
+    """Parse a single tool call.
+
+    Args:
+        raw_tool_call: The raw tool call to parse.
+        partial: Whether to parse partial JSON. Default is False.
+        strict: Whether to allow non-JSON-compliant strings.
+            Default is False.
+        return_id: Whether to return the tool call id. Default is True.
+
+    Returns:
+        The parsed tool call.
+
+    Raises:
+        OutputParserException: If the tool call is not valid JSON.
+    """
     if "function" not in raw_tool_call:
         return None
     if partial:
@@ -34,26 +52,36 @@ def parse_tool_call(
                 raw_tool_call["function"]["arguments"], strict=strict
             )
         except JSONDecodeError as e:
-            raise OutputParserException(
+            msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
                 f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
             )
+            raise OutputParserException(msg) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
+        parsed = create_tool_call(**parsed)  # type: ignore
     return parsed
 
 
 def make_invalid_tool_call(
-    raw_tool_call: Dict[str, Any],
+    raw_tool_call: dict[str, Any],
     error_msg: Optional[str],
 ) -> InvalidToolCall:
-    """Create an InvalidToolCall from a raw tool call."""
-    return InvalidToolCall(
+    """Create an InvalidToolCall from a raw tool call.
+
+    Args:
+        raw_tool_call: The raw tool call.
+        error_msg: The error message.
+
+    Returns:
+        An InvalidToolCall instance with the error message.
+    """
+    return invalid_tool_call(
         name=raw_tool_call["function"]["name"],
         args=raw_tool_call["function"]["arguments"],
         id=raw_tool_call.get("id"),
@@ -62,14 +90,28 @@ def make_invalid_tool_call(
 
 
 def parse_tool_calls(
-    raw_tool_calls: List[dict],
+    raw_tool_calls: list[dict],
     *,
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> List[Dict[str, Any]]:
-    """Parse a list of tool calls."""
-    final_tools: List[Dict[str, Any]] = []
+) -> list[dict[str, Any]]:
+    """Parse a list of tool calls.
+
+    Args:
+        raw_tool_calls: The raw tool calls to parse.
+        partial: Whether to parse partial JSON. Default is False.
+        strict: Whether to allow non-JSON-compliant strings.
+            Default is False.
+        return_id: Whether to return the tool call id. Default is True.
+
+    Returns:
+        The parsed tool calls.
+
+    Raises:
+        OutputParserException: If any of the tool calls are not valid JSON.
+    """
+    final_tools: list[dict[str, Any]] = []
     exceptions = []
     for tool_call in raw_tool_calls:
         try:
@@ -101,20 +143,36 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list 
+    If False, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
-    and the other tool calls will be ignored. 
-    If no tool calls are found, None will be returned. 
+    and the other tool calls will be ignored.
+    If no tool calls are found, None will be returned.
     """
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a list of tool calls.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON.
+                If True, the output will be a JSON object containing
+                all the keys that have been returned so far.
+                If False, the output will be the full JSON object.
+                Default is False.
+
+        Returns:
+            The parsed tool calls.
+
+        Raises:
+            OutputParserException: If the output is not valid JSON.
+        """
+
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         if isinstance(message, AIMessage) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
@@ -141,7 +199,15 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         return tool_calls
 
     def parse(self, text: str) -> Any:
-        raise NotImplementedError()
+        """Parse the output of an LLM call to a list of tool calls.
+
+        Args:
+            text: The output of the LLM call.
+
+        Returns:
+            The parsed tool calls.
+        """
+        raise NotImplementedError
 
 
 class JsonOutputKeyToolsParser(JsonOutputToolsParser):
@@ -150,7 +216,20 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a list of tool calls.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON.
+                If True, the output will be a JSON object containing
+                all the keys that have been returned so far.
+                If False, the output will be the full JSON object.
+                Default is False.
+
+        Returns:
+            The parsed tool calls.
+        """
         parsed_result = super().parse_result(result, partial=partial)
 
         if self.first_tool_only:
@@ -174,11 +253,28 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: List[Type[BaseModel]]
+    tools: Annotated[list[TypeBaseModel], SkipValidation()]
+    """The tools to parse."""
 
     # TODO: Support more granular streaming of objects. Currently only streams once all
     # Pydantic object fields are present.
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a list of Pydantic objects.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON.
+                If True, the output will be a JSON object containing
+                all the keys that have been returned so far.
+                If False, the output will be the full JSON object.
+                Default is False.
+
+        Returns:
+            The parsed Pydantic objects.
+
+        Raises:
+            OutputParserException: If the output is not valid JSON.
+        """
         json_results = super().parse_result(result, partial=partial)
         if not json_results:
             return None if self.first_tool_only else []
@@ -189,10 +285,11 @@ class PydanticToolsParser(JsonOutputToolsParser):
         for res in json_results:
             try:
                 if not isinstance(res["args"], dict):
-                    raise ValueError(
+                    msg = (
                         f"Tool arguments must be specified as a dict, received: "
                         f"{res['args']}"
                     )
+                    raise ValueError(msg)
                 pydantic_objects.append(name_dict[res["type"]](**res["args"]))
             except (ValidationError, ValueError) as e:
                 if partial:

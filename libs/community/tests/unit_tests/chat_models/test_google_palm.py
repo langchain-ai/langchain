@@ -92,19 +92,19 @@ def test_messages_to_prompt_dict_raises_with_example_after_real() -> None:
 def test_chat_google_raises_with_invalid_temperature() -> None:
     pytest.importorskip("google.generativeai")
     with pytest.raises(ValueError) as e:
-        ChatGooglePalm(google_api_key="fake", temperature=2.0)
+        ChatGooglePalm(google_api_key="fake", temperature=2.0)  # type: ignore[arg-type, call-arg]
     assert "must be in the range" in str(e)
 
 
 def test_chat_google_raises_with_invalid_top_p() -> None:
     pytest.importorskip("google.generativeai")
     with pytest.raises(ValueError) as e:
-        ChatGooglePalm(google_api_key="fake", top_p=2.0)
+        ChatGooglePalm(google_api_key="fake", top_p=2.0)  # type: ignore[arg-type, call-arg]
     assert "must be in the range" in str(e)
 
 
 def test_chat_google_raises_with_invalid_top_k() -> None:
     pytest.importorskip("google.generativeai")
     with pytest.raises(ValueError) as e:
-        ChatGooglePalm(google_api_key="fake", top_k=-5)
+        ChatGooglePalm(google_api_key="fake", top_k=-5)  # type: ignore[arg-type, call-arg]
     assert "must be positive" in str(e)

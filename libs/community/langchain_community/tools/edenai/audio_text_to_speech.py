@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field, root_validator, validator
+from pydantic import BaseModel, Field, model_validator, validator
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
 
 
-class EdenAiTextToSpeechTool(EdenaiTool):
+class TextToSpeechInput(BaseModel):
+    query: str = Field(description="text to generate audio from")
+
+
+class EdenAiTextToSpeechTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Text to speech API.
     for api reference check edenai documentation:
     https://docs.edenai.co/reference/audio_text_to_speech_create.
@@ -23,13 +27,14 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     """
 
-    name = "edenai_text_to_speech"
-    description = (
+    name: str = "edenai_text_to_speech"
+    description: str = (
         "A wrapper around edenai Services text to speech."
         "Useful for when you need to convert text to speech."
         """the output is a string representing the URL of the audio file,
         or the path to the downloaded wav file """
     )
+    args_schema: Type[BaseModel] = TextToSpeechInput
 
     language: Optional[str] = "en"
     """
@@ -38,11 +43,11 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     # optional params see api documentation for more info
     return_type: Literal["url", "wav"] = "url"
-    rate: Optional[int]
-    pitch: Optional[int]
-    volume: Optional[int]
-    audio_format: Optional[str]
-    sampling_rate: Optional[int]
+    rate: Optional[int] = None
+    pitch: Optional[int] = None
+    volume: Optional[int] = None
+    audio_format: Optional[str] = None
+    sampling_rate: Optional[int] = None
     voice_models: Dict[str, str] = Field(default_factory=dict)
 
     voice: Literal["MALE", "FEMALE"]
@@ -65,8 +70,9 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             )
         return v
 
-    @root_validator
-    def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def check_voice_models_key_is_provider_name(cls, values: dict) -> Any:
         for key in values.get("voice_models", {}).keys():
             if key not in values.get("providers", []):
                 raise ValueError(

@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.gmail.base import GmailBaseTool
 from langchain_community.tools.gmail.utils import clean_email_body
@@ -43,7 +43,7 @@ class SearchArgsSchema(BaseModel):
     )
 
 
-class GmailSearch(GmailBaseTool):
+class GmailSearch(GmailBaseTool):  # type: ignore[override, override]
     """Tool that searches for messages or threads in Gmail."""
 
     name: str = "search_gmail"
@@ -99,14 +99,14 @@ class GmailSearch(GmailBaseTool):
                     cdispo = str(part.get("Content-Disposition"))
                     if ctype == "text/plain" and "attachment" not in cdispo:
                         try:
-                            message_body = part.get_payload(decode=True).decode("utf-8")
+                            message_body = part.get_payload(decode=True).decode("utf-8")  # type: ignore[union-attr]
                         except UnicodeDecodeError:
-                            message_body = part.get_payload(decode=True).decode(
+                            message_body = part.get_payload(decode=True).decode(  # type: ignore[union-attr]
                                 "latin-1"
                             )
                         break
             else:
-                message_body = email_msg.get_payload(decode=True).decode("utf-8")
+                message_body = email_msg.get_payload(decode=True).decode("utf-8")  # type: ignore[union-attr]
 
             body = clean_email_body(message_body)
 
@@ -118,6 +118,10 @@ class GmailSearch(GmailBaseTool):
                     "body": body,
                     "subject": subject,
                     "sender": sender,
+                    "from": email_msg["From"],
+                    "date": email_msg["Date"],
+                    "to": email_msg["To"],
+                    "cc": email_msg["Cc"],
                 }
             )
         return results

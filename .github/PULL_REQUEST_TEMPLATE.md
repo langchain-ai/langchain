@@ -1,7 +1,7 @@
 Thank you for contributing to LangChain!
 
 - [ ] **PR title**: "package: description"
-  - Where "package" is whichever of langchain, community, core, experimental, etc. is being modified. Use "docs: ..." for purely docs changes, "templates: ..." for template changes, "infra: ..." for CI changes.
+  - Where "package" is whichever of langchain, community, core, etc. is being modified. Use "docs: ..." for purely docs changes, "infra: ..." for CI changes.
   - Example: "community: add foobar LLM"
 
 
@@ -26,4 +26,4 @@ Additional guidelines:
 - Changes should be backwards compatible.
 - If you are adding something to community, do not re-import it in langchain.
 
-If no one reviews your PR within a few days, please @-mention one of baskaryan, efriis, eyurtsev, hwchase17.
+If no one reviews your PR within a few days, please @-mention one of baskaryan, efriis, eyurtsev, ccurme, vbarda, hwchase17.

@@ -4,22 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
     from google.api_core.client_options import ClientOptions
-    from google.cloud.discoveryengine_v1beta import (
-        ConversationalSearchServiceClient,
-        SearchRequest,
-        SearchResult,
-        SearchServiceClient,
-    )
+    from google.cloud.discoveryengine_v1beta import SearchRequest, SearchResult
 
 
 class _BaseGoogleVertexAISearchRetriever(BaseModel):
@@ -45,8 +41,9 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
     3 - Blended search
     """
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validates the environment."""
         try:
             from google.cloud import discoveryengine_v1beta  # noqa: F401
@@ -189,12 +186,17 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
                 print(  # noqa: T201
                     "Make sure that your data store is using Advanced Website "
                     "Indexing.\n"
-                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
+                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"
                 )
 
         return documents
 
 
+@deprecated(
+    since="0.0.33",
+    removal="1.0",
+    alternative_import="langchain_google_community.VertexAISearchRetriever",
+)
 class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetriever):
     """`Google Vertex AI Search` retriever.
 
@@ -236,15 +238,14 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         Search will be based on the corrected query if found.
     """
 
-    _client: SearchServiceClient
+    # type is SearchServiceClient but can't be set due to optional imports
+    _client: Any = None
     _serving_config: str
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="ignore",
+    )
 
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
@@ -390,6 +391,11 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         return documents, response
 
 
+@deprecated(
+    since="0.0.33",
+    removal="1.0",
+    alternative_import="langchain_google_community.VertexAIMultiTurnSearchRetriever",
+)
 class GoogleVertexAIMultiTurnSearchRetriever(
     BaseRetriever, _BaseGoogleVertexAISearchRetriever
 ):
@@ -398,15 +404,14 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     conversation_id: str = "-"
     """Vertex AI Search Conversation ID."""
 
-    _client: ConversationalSearchServiceClient
+    # type is ConversationalSearchServiceClient but can't be set due to optional imports
+    _client: Any = None
     _serving_config: str
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="ignore",
+    )
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
@@ -49,6 +50,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
+@deprecated(since="0.2.9", removal="1.0", alternative_import="langchain_chroma.Chroma")
 class Chroma(VectorStore):
     """`ChromaDB` vector store.
 
@@ -64,7 +66,7 @@ class Chroma(VectorStore):
                 vectorstore = Chroma("langchain_store", embeddings)
     """
 
-    _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+    _LANGCHAIN_DEFAULT_COLLECTION_NAME: str = "langchain"
 
     def __init__(
         self,
@@ -73,7 +75,7 @@ class Chroma(VectorStore):
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[Dict] = None,
-        client: Optional[chromadb.Client] = None,
+        client: Optional[chromadb.Client] = None,  # type: ignore[valid-type]
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         """Initialize with a Chroma client."""
@@ -116,14 +118,14 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory = persist_directory
             else:
                 _client_settings = chromadb.config.Settings()
-            self._client_settings = _client_settings
-            self._client = chromadb.Client(_client_settings)
-            self._persist_directory = (
+            self._client_settings = _client_settings  # type: ignore[has-type]
+            self._client = chromadb.Client(_client_settings)  # type: ignore[has-type]
+            self._persist_directory = (  # type: ignore[has-type]
                 _client_settings.persist_directory or persist_directory
             )
 
         self._embedding_function = embedding_function
-        self._collection = self._client.get_or_create_collection(
+        self._collection = self._client.get_or_create_collection(  # type: ignore[has-type]
             name=collection_name,
             embedding_function=None,
             metadata=collection_metadata,
@@ -148,16 +150,16 @@ class Chroma(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
-        return self._collection.query(
+        return self._collection.query(  # type: ignore[return-value]
             query_texts=query_texts,
-            query_embeddings=query_embeddings,
+            query_embeddings=query_embeddings,  # type: ignore[arg-type]
             n_results=n_results,
-            where=where,
-            where_document=where_document,
+            where=where,  # type: ignore[arg-type]
+            where_document=where_document,  # type: ignore[arg-type]
             **kwargs,
         )
 
@@ -216,7 +218,7 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,
+                        metadatas=metadatas,  # type: ignore[arg-type]
                         embeddings=embeddings_with_metadatas,
                         documents=images_with_metadatas,
                         ids=ids_with_metadata,
@@ -295,8 +297,8 @@ class Chroma(VectorStore):
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
                     self._collection.upsert(
-                        metadatas=metadatas,
-                        embeddings=embeddings_with_metadatas,
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
                         documents=texts_with_metadatas,
                         ids=ids_with_metadata,
                     )
@@ -316,13 +318,13 @@ class Chroma(VectorStore):
                 )
                 ids_without_metadatas = [ids[j] for j in empty_ids]
                 self._collection.upsert(
-                    embeddings=embeddings_without_metadatas,
+                    embeddings=embeddings_without_metadatas,  # type: ignore[arg-type]
                     documents=texts_without_metadatas,
                     ids=ids_without_metadatas,
                 )
         else:
             self._collection.upsert(
-                embeddings=embeddings,
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=texts,
                 ids=ids,
             )
@@ -477,6 +479,93 @@ class Chroma(VectorStore):
                 "Consider providing relevance_score_fn to Chroma constructor."
             )
 
+    def similarity_search_by_image(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List of Images most similar to the provided image.
+            Each element in list is a Langchain Document Object.
+            The page content is b64 encoded image, metadata is default or
+            as defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
+    def similarity_search_by_image_with_relevance_score(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return.
+            Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List[Tuple[Document, float]]: List of tuples containing documents similar
+            to the query image and their similarity scores.
+            0th element in each tuple is a Langchain Document Object.
+            The page content is b64 encoded img, metadata is default or defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -570,7 +659,7 @@ class Chroma(VectorStore):
 
     def delete_collection(self) -> None:
         """Delete the collection."""
-        self._client.delete_collection(self._collection.name)
+        self._client.delete_collection(self._collection.name)  # type: ignore[has-type]
 
     def get(
         self,
@@ -608,15 +697,26 @@ class Chroma(VectorStore):
         if include is not None:
             kwargs["include"] = include
 
-        return self._collection.get(**kwargs)
+        return self._collection.get(**kwargs)  # type: ignore[return-value, arg-type, arg-type, arg-type, arg-type, arg-type]
 
+    @deprecated(
+        since="0.1.17",
+        message=(
+            "Since Chroma 0.4.x the manual persistence method is no longer "
+            "supported as docs are automatically persisted."
+        ),
+        removal="1.0",
+    )
     def persist(self) -> None:
         """Persist the collection.
 
         This can be used to explicitly persist the data to disk.
         It will also be called automatically when the object is destroyed.
+
+        Since Chroma 0.4.x the manual persistence method is no longer
+        supported as docs are automatically persisted.
         """
-        if self._persist_directory is None:
+        if self._persist_directory is None:  # type: ignore[has-type]
             raise ValueError(
                 "You must specify a persist_directory on"
                 "creation to persist the collection."
@@ -626,7 +726,7 @@ class Chroma(VectorStore):
         # Maintain backwards compatibility with chromadb < 0.4.0
         major, minor, _ = chromadb.__version__.split(".")
         if int(major) == 0 and int(minor) < 4:
-            self._client.persist()
+            self._client.persist()  # type: ignore[has-type]
 
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
@@ -653,6 +753,9 @@ class Chroma(VectorStore):
         embeddings = self._embedding_function.embed_documents(text)
 
         if hasattr(
+            self._collection._client,
+            "get_max_batch_size",  # for Chroma 0.5.1 and above
+        ) or hasattr(
             self._collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
@@ -660,9 +763,9 @@ class Chroma(VectorStore):
             for batch in create_batches(
                 api=self._collection._client,
                 ids=ids,
-                metadatas=metadata,
+                metadatas=metadata,  # type: ignore[arg-type]
                 documents=text,
-                embeddings=embeddings,
+                embeddings=embeddings,  # type: ignore[arg-type]
             ):
                 self._collection.update(
                     ids=batch[0],
@@ -673,9 +776,9 @@ class Chroma(VectorStore):
         else:
             self._collection.update(
                 ids=ids,
-                embeddings=embeddings,
+                embeddings=embeddings,  # type: ignore[arg-type]
                 documents=text,
-                metadatas=metadata,
+                metadatas=metadata,  # type: ignore[arg-type]
             )
 
     @classmethod
@@ -688,7 +791,7 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.Client] = None,
+        client: Optional[chromadb.Client] = None,  # type: ignore[valid-type]
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
@@ -723,19 +826,23 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         if hasattr(
-            chroma_collection._client, "max_batch_size"
+            chroma_collection._client,  # type: ignore[has-type]
+            "get_max_batch_size",  # for Chroma 0.5.1 and above
+        ) or hasattr(
+            chroma_collection._client,  # type: ignore[has-type]
+            "max_batch_size",
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
             for batch in create_batches(
-                api=chroma_collection._client,
+                api=chroma_collection._client,  # type: ignore[has-type]
                 ids=ids,
-                metadatas=metadatas,
+                metadatas=metadatas,  # type: ignore[arg-type]
                 documents=texts,
             ):
                 chroma_collection.add_texts(
                     texts=batch[3] if batch[3] else [],
-                    metadatas=batch[2] if batch[2] else None,
+                    metadatas=batch[2] if batch[2] else None,  # type: ignore[arg-type]
                     ids=batch[0],
                 )
         else:
@@ -751,7 +858,9 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.Client] = None,  # Add this line
+        client: Optional[  # type: ignore[valid-type]
+            chromadb.Client
+        ] = None,  # Add this line  # type: ignore[valid-type]
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
@@ -794,7 +903,7 @@ class Chroma(VectorStore):
         Args:
             ids: List of ids to delete.
         """
-        self._collection.delete(ids=ids)
+        self._collection.delete(ids=ids, **kwargs)
 
     def __len__(self) -> int:
         """Count the number of documents in the collection."""

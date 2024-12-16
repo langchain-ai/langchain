@@ -35,7 +35,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        keep_separator: bool = False,
+        keep_separator: Union[bool, Literal["start", "end"]] = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
     ) -> None:
@@ -45,7 +45,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_size: Maximum size of chunks to return
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
-            keep_separator: Whether to keep the separator in the chunks
+            keep_separator: Whether to keep the separator and where to place it
+                            in each corresponding chunk (True='start')
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
@@ -248,6 +249,21 @@ class TokenTextSplitter(TextSplitter):
         self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> List[str]:
+        """Splits the input text into smaller chunks based on tokenization.
+
+        This method uses a custom tokenizer configuration to encode the input text
+        into tokens, processes the tokens in chunks of a specified size with overlap,
+        and decodes them back into text chunks. The splitting is performed using the
+        `split_text_on_tokens` function.
+
+        Args:
+            text (str): The input text to be split into smaller chunks.
+
+        Returns:
+            List[str]: A list of text chunks, where each chunk is derived from a portion
+            of the input text based on the tokenization and chunking rules.
+        """
+
         def _encode(_text: str) -> List[int]:
             return self._tokenizer.encode(
                 _text,
@@ -292,6 +308,8 @@ class Language(str, Enum):
     LUA = "lua"
     PERL = "perl"
     HASKELL = "haskell"
+    ELIXIR = "elixir"
+    POWERSHELL = "powershell"
 
 
 @dataclass(frozen=True)

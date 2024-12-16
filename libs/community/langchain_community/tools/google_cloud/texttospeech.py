@@ -3,18 +3,19 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, Any, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.vertexai import get_client_info
 
 if TYPE_CHECKING:
-    from google.cloud import texttospeech
+    from google.cloud import texttospeech  # type: ignore[attr-defined]
 
 
 def _import_google_cloud_texttospeech() -> Any:
     try:
-        from google.cloud import texttospeech
+        from google.cloud import texttospeech  # type: ignore[attr-defined]
     except ImportError as e:
         raise ImportError(
             "Cannot import google.cloud.texttospeech, please install "
@@ -36,7 +37,12 @@ def _encoding_file_extension_map(encoding: texttospeech.AudioEncoding) -> Option
     return ENCODING_FILE_EXTENSION_MAP.get(encoding)
 
 
-class GoogleCloudTextToSpeechTool(BaseTool):
+@deprecated(
+    since="0.0.33",
+    removal="1.0",
+    alternative_import="langchain_google_community.TextToSpeechTool",
+)
+class GoogleCloudTextToSpeechTool(BaseTool):  # type: ignore[override]
     """Tool that queries the Google Cloud Text to Speech API.
 
     In order to set this up, follow instructions at:

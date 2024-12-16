@@ -3,7 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -62,7 +62,7 @@ class WeightOnlyQuantPipeline(LLM):
             hf = WeightOnlyQuantPipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name or local path to use."""
 
@@ -72,10 +72,9 @@ class WeightOnlyQuantPipeline(LLM):
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.allow
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
     @classmethod
     def from_model_id(
@@ -108,7 +107,7 @@ class WeightOnlyQuantPipeline(LLM):
             from transformers import AutoTokenizer
             from transformers import pipeline as hf_pipeline
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers` "
                 "and `pip install intel-extension-for-transformers`."
@@ -154,7 +153,7 @@ class WeightOnlyQuantPipeline(LLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
@@ -222,7 +221,7 @@ class WeightOnlyQuantPipeline(LLM):
                     model_id="google/flan-t5-large",
                     task="text2text-generation",
                 )
-                llm("This is a prompt.")
+                llm.invoke("This is a prompt.")
         """
         response = self.pipeline(prompt)
         if self.pipeline.task == "text-generation":

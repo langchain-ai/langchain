@@ -82,7 +82,7 @@ def test_run() -> None:
     responses.add(responses.POST, TEST_ENDPOINT, json=MOCK_RESPONSE, status=200)
 
     query = "query { allUsers { name } }"
-    graphql_wrapper = GraphQLAPIWrapper(
+    graphql_wrapper = GraphQLAPIWrapper(  # type: ignore[call-arg]
         graphql_endpoint=TEST_ENDPOINT,
         custom_headers={"Authorization": "Bearer testtoken"},
         fetch_schema_from_transport=True,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
@@ -10,16 +10,80 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env, get_from_env
+from pydantic import ConfigDict, model_validator
 
 DEFAULT_URL_SUFFIX = "search.windows.net"
 """Default URL Suffix for endpoint connection - commercial cloud"""
 
 
 class AzureAISearchRetriever(BaseRetriever):
-    """`Azure AI Search` service retriever."""
+    """`Azure AI Search` service retriever.
+
+    Setup:
+        See here for more detail: https://python.langchain.com/docs/integrations/retrievers/azure_ai_search/
+
+        We will need to install the below dependencies and set the required
+        environment variables:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community azure-identity azure-search-documents
+            export AZURE_AI_SEARCH_SERVICE_NAME="<YOUR_SEARCH_SERVICE_NAME>"
+            export AZURE_AI_SEARCH_INDEX_NAME="<YOUR_SEARCH_INDEX_NAME>"
+            export AZURE_AI_SEARCH_API_KEY="<YOUR_API_KEY>"
+
+    Key init args:
+        content_key: str
+        top_k: int
+        index_name: str
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.retrievers import AzureAISearchRetriever
+
+            retriever = AzureAISearchRetriever(
+                content_key="content", top_k=1, index_name="langchain-vector-demo"
+            )
+
+    Usage:
+        .. code-block:: python
+
+            retriever.invoke("here is my unstructured query string")
+
+    Use within a chain:
+        .. code-block:: python
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnablePassthrough
+            from langchain_openai import AzureChatOpenAI
+
+            prompt = ChatPromptTemplate.from_template(
+                \"\"\"Answer the question based only on the context provided.
+
+            Context: {context}
+
+            Question: {question}\"\"\"
+            )
+
+            llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo")
+
+            def format_docs(docs):
+                return "\\n\\n".join(doc.page_content for doc in docs)
+
+            chain = (
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
+                | prompt
+                | llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("...")
+
+    """  # noqa: E501
 
     service_name: str = ""
     """Name of Azure AI Search service"""
@@ -36,13 +100,17 @@ class AzureAISearchRetriever(BaseRetriever):
     """Key in a retrieved result to set as the Document page_content."""
     top_k: Optional[int] = None
     """Number of results to retrieve. Set to None to retrieve all results."""
+    filter: Optional[str] = None
+    """OData $filter expression to apply to the search query."""
 
-    class Config:
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that service name, index name and api key exists in environment."""
         values["service_name"] = get_from_dict_or_env(
             values, "service_name", "AZURE_AI_SEARCH_SERVICE_NAME"
@@ -72,7 +140,8 @@ class AzureAISearchRetriever(BaseRetriever):
             base_url = self.service_name
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
         top_param = f"&$top={self.top_k}" if self.top_k else ""
-        return base_url + endpoint_path + f"&search={query}" + top_param
+        filter_param = f"&$filter={self.filter}" if self.filter else ""
+        return base_url + endpoint_path + f"&search={query}" + top_param + filter_param
 
     @property
     def _headers(self) -> Dict[str, str]:

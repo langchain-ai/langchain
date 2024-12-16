@@ -173,7 +173,7 @@ class Tair(VectorStore):
         try:
             from tair import tairvector
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tair python package. "
                 "Please install it with `pip install tair`."
             )
@@ -262,7 +262,7 @@ class Tair(VectorStore):
         try:
             from tair import Tair as TairClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import tair python package. "
                 "Please install it with `pip install tair`."
             )

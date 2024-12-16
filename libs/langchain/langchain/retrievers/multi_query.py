@@ -9,8 +9,10 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import Runnable
 
 from langchain.chains.llm import LLMChain
 
@@ -22,7 +24,7 @@ class LineListOutputParser(BaseOutputParser[List[str]]):
 
     def parse(self, text: str) -> List[str]:
         lines = text.strip().split("\n")
-        return lines
+        return list(filter(None, lines))  # Remove empty lines
 
 
 # Default prompt
@@ -49,7 +51,7 @@ class MultiQueryRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
-    llm_chain: LLMChain
+    llm_chain: Runnable
     verbose: bool = True
     parser_key: str = "lines"
     """DEPRECATED. parser_key is no longer used and should not be specified."""
@@ -61,7 +63,7 @@ class MultiQueryRetriever(BaseRetriever):
         cls,
         retriever: BaseRetriever,
         llm: BaseLanguageModel,
-        prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
+        prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: Optional[str] = None,
         include_original: bool = False,
     ) -> "MultiQueryRetriever":
@@ -70,6 +72,8 @@ class MultiQueryRetriever(BaseRetriever):
         Args:
             retriever: retriever to query documents from
             llm: llm for query generation using DEFAULT_QUERY_PROMPT
+            prompt: The prompt which aims to generate several different versions
+                of the given user query
             include_original: Whether to include the original query in the list of
                 generated queries.
 
@@ -77,7 +81,7 @@ class MultiQueryRetriever(BaseRetriever):
             MultiQueryRetriever
         """
         output_parser = LineListOutputParser()
-        llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=output_parser)
+        llm_chain = prompt | llm | output_parser
         return cls(
             retriever=retriever,
             llm_chain=llm_chain,
@@ -93,7 +97,7 @@ class MultiQueryRetriever(BaseRetriever):
         """Get relevant documents given a user query.
 
         Args:
-            question: user query
+            query: user query
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -115,10 +119,13 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = await self.llm_chain.acall(
-            inputs={"question": question}, callbacks=run_manager.get_child()
+        response = await self.llm_chain.ainvoke(
+            {"question": question}, config={"callbacks": run_manager.get_child()}
         )
-        lines = response["text"]
+        if isinstance(self.llm_chain, LLMChain):
+            lines = response["text"]
+        else:
+            lines = response
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines
@@ -136,8 +143,8 @@ class MultiQueryRetriever(BaseRetriever):
         """
         document_lists = await asyncio.gather(
             *(
-                self.retriever.aget_relevant_documents(
-                    query, callbacks=run_manager.get_child()
+                self.retriever.ainvoke(
+                    query, config={"callbacks": run_manager.get_child()}
                 )
                 for query in queries
             )
@@ -153,7 +160,7 @@ class MultiQueryRetriever(BaseRetriever):
         """Get relevant documents given a user query.
 
         Args:
-            question: user query
+            query: user query
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -175,10 +182,13 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = self.llm_chain(
-            {"question": question}, callbacks=run_manager.get_child()
+        response = self.llm_chain.invoke(
+            {"question": question}, config={"callbacks": run_manager.get_child()}
         )
-        lines = response["text"]
+        if isinstance(self.llm_chain, LLMChain):
+            lines = response["text"]
+        else:
+            lines = response
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines
@@ -196,8 +206,8 @@ class MultiQueryRetriever(BaseRetriever):
         """
         documents = []
         for query in queries:
-            docs = self.retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child()
+            docs = self.retriever.invoke(
+                query, config={"callbacks": run_manager.get_child()}
             )
             documents.extend(docs)
         return documents

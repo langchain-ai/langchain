@@ -1,4 +1,5 @@
 """Test openai embeddings."""
+
 import os
 from typing import Any
 
@@ -17,7 +18,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
-    return AzureOpenAIEmbeddings(
+    return AzureOpenAIEmbeddings(  # type: ignore[call-arg]
         azure_deployment=DEPLOYMENT_NAME,
         api_version=OPENAI_API_VERSION,
         openai_api_base=OPENAI_API_BASE,
@@ -104,7 +105,7 @@ def test_azure_openai_embedding_with_empty_string() -> None:
     output = embedding.embed_documents(document)
     assert len(output) == 2
     assert len(output[0]) == 1536
-    expected_output = openai.Embedding.create(input="", model="text-embedding-ada-002")[
+    expected_output = openai.Embedding.create(input="", model="text-embedding-ada-002")[  # type: ignore[attr-defined]
         "data"
     ][0]["embedding"]
     assert np.allclose(output[0], expected_output)

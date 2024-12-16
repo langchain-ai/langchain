@@ -1,1 +1,0 @@
-Tell me a {adjective} joke about {content}.

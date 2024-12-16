@@ -7,6 +7,7 @@ To use this tool, you must first set as environment variables:
     JIRA_API_TOKEN
     JIRA_USERNAME
     JIRA_INSTANCE_URL
+    JIRA_CLOUD
 
 Below is a sample script that uses the Jira tool:
 
@@ -18,19 +19,20 @@ jira = JiraAPIWrapper()
 toolkit = JiraToolkit.from_jira_api_wrapper(jira)
 ```
 """
+
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.jira import JiraAPIWrapper
 
 
-class JiraAction(BaseTool):
+class JiraAction(BaseTool):  # type: ignore[override]
     """Tool that queries the Atlassian Jira API."""
 
-    api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
+    api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)  # type: ignore[arg-type]
     mode: str
     name: str = ""
     description: str = ""

@@ -1,4 +1,5 @@
 """Wrapper around Epsilla vector database."""
+
 from __future__ import annotations
 
 import logging
@@ -44,9 +45,9 @@ class Epsilla(VectorStore):
             epsilla = Epsilla(client, embeddings, db_path, db_name)
     """
 
-    _LANGCHAIN_DEFAULT_DB_NAME = "langchain_store"
-    _LANGCHAIN_DEFAULT_DB_PATH = "/tmp/langchain-epsilla"
-    _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_collection"
+    _LANGCHAIN_DEFAULT_DB_NAME: str = "langchain_store"
+    _LANGCHAIN_DEFAULT_DB_PATH: str = "/tmp/langchain-epsilla"
+    _LANGCHAIN_DEFAULT_TABLE_NAME: str = "langchain_collection"
 
     def __init__(
         self,
@@ -64,10 +65,12 @@ class Epsilla(VectorStore):
                 "Please install pyepsilla package with `pip install pyepsilla`."
             ) from e
 
-        if not isinstance(client, pyepsilla.vectordb.Client):
+        if not isinstance(
+            client, (pyepsilla.vectordb.Client, pyepsilla.cloud.client.Vectordb)
+        ):
             raise TypeError(
-                f"client should be an instance of pyepsilla.vectordb.Client, "
-                f"got {type(client)}"
+                "client should be an instance of pyepsilla.vectordb.Client or "
+                f"pyepsilla.cloud.client.Vectordb, got {type(client)}"
             )
 
         self._client: vectordb.Client = client

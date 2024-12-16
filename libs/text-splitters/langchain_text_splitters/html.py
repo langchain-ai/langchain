@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import os
 import pathlib
 from io import BytesIO, StringIO
 from typing import Any, Dict, Iterable, List, Optional, Tuple, TypedDict, cast
@@ -22,8 +21,8 @@ class ElementType(TypedDict):
 
 
 class HTMLHeaderTextSplitter:
-    """
-    Splitting HTML files based on specified headers.
+    """Splitting HTML files based on specified headers.
+
     Requires lxml package.
     """
 
@@ -47,7 +46,7 @@ class HTMLHeaderTextSplitter:
     def aggregate_elements_to_chunks(
         self, elements: List[ElementType]
     ) -> List[Document]:
-        """Combine elements with common metadata into chunks
+        """Combine elements with common metadata into chunks.
 
         Args:
             elements: HTML element content with associated identifying info and metadata
@@ -72,17 +71,19 @@ class HTMLHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
-    def split_text_from_url(self, url: str) -> List[Document]:
-        """Split HTML from web URL
+    def split_text_from_url(self, url: str, **kwargs: Any) -> List[Document]:
+        """Split HTML from web URL.
 
         Args:
             url: web URL
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the fetch url content request.
         """
-        r = requests.get(url)
+        r = requests.get(url, **kwargs)
         return self.split_text_from_file(BytesIO(r.content))
 
     def split_text(self, text: str) -> List[Document]:
-        """Split HTML text string
+        """Split HTML text string.
 
         Args:
             text: HTML text
@@ -90,7 +91,7 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def split_text_from_file(self, file: Any) -> List[Document]:
-        """Split HTML file
+        """Split HTML file.
 
         Args:
             file: HTML file
@@ -165,15 +166,15 @@ class HTMLHeaderTextSplitter:
 
 
 class HTMLSectionSplitter:
-    """
-    Splitting HTML files based on specified tag and font sizes.
+    """Splitting HTML files based on specified tag and font sizes.
+
     Requires lxml package.
     """
 
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        xslt_path: str = "xsl/converting_to_header.xslt",
+        xslt_path: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Create a new HTMLSectionSplitter.
@@ -183,10 +184,19 @@ class HTMLSectionSplitter:
                 (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
                 h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2"].
             xslt_path: path to xslt file for document transformation.
+            Uses a default if not passed.
             Needed for html contents that using different format and layouts.
+            **kwargs (Any): Additional optional arguments for customizations.
+
         """
         self.headers_to_split_on = dict(headers_to_split_on)
-        self.xslt_path = xslt_path
+
+        if xslt_path is None:
+            self.xslt_path = (
+                pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
+            ).absolute()
+        else:
+            self.xslt_path = pathlib.Path(xslt_path).absolute()
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
@@ -202,7 +212,7 @@ class HTMLSectionSplitter:
         return text_splitter.split_documents(results)
 
     def split_text(self, text: str) -> List[Document]:
-        """Split HTML text string
+        """Split HTML text string.
 
         Args:
             text: HTML text
@@ -227,9 +237,24 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(
-        self, html_doc: str
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
+        """Split an HTML document into sections based on specified header tags.
+
+        This method uses BeautifulSoup to parse the HTML content and divides it into
+        sections based on headers defined in `headers_to_split_on`. Each section
+        contains the header text, content under the header, and the tag name.
+
+        Args:
+            html_doc (str): The HTML document to be split into sections.
+
+        Returns:
+            List[Dict[str, Optional[str]]]: A list of dictionaries representing
+            sections.
+                Each dictionary contains:
+                - 'header': The header text or a default title for the first section.
+                - 'content': The content under the header.
+                - 'tag_name': The name of the header tag (e.g., "h1", "h2").
+        """
         try:
             from bs4 import BeautifulSoup, PageElement  # type: ignore[import-untyped]
         except ImportError as e:
@@ -241,7 +266,7 @@ class HTMLSectionSplitter:
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
-        sections: Dict[str, Dict[str, Optional[str]]] = {}
+        sections: list[dict[str, str | None]] = []
 
         headers = soup.find_all(["body"] + headers)
 
@@ -253,7 +278,7 @@ class HTMLSectionSplitter:
                 section_content: List = []
             else:
                 current_header = header_element.text.strip()
-                current_header_tag = header_element.name
+                current_header_tag = header_element.name  # type: ignore[attr-defined]
                 section_content = []
             for element in header_element.next_elements:
                 if i + 1 < len(headers) and element == headers[i + 1]:
@@ -263,14 +288,29 @@ class HTMLSectionSplitter:
             content = " ".join(section_content).strip()
 
             if content != "":
-                sections[current_header] = {
-                    "content": content,
-                    "tag_name": current_header_tag,
-                }
+                sections.append(
+                    {
+                        "header": current_header,
+                        "content": content,
+                        "tag_name": current_header_tag,
+                    }
+                )
 
         return sections
 
     def convert_possible_tags_to_header(self, html_content: str) -> str:
+        """Convert specific HTML tags to headers using an XSLT transformation.
+
+        This method uses an XSLT file to transform the HTML content, converting
+        certain tags into headers for easier parsing. If no XSLT path is provided,
+        the HTML content is returned unchanged.
+
+        Args:
+            html_content (str): The HTML content to be transformed.
+
+        Returns:
+            str: The transformed HTML content as a string.
+        """
         if self.xslt_path is None:
             return html_content
 
@@ -284,19 +324,13 @@ class HTMLSectionSplitter:
         parser = etree.HTMLParser()
         tree = etree.parse(StringIO(html_content), parser)
 
-        # document transformation for "structure-aware" chunking is handled with xsl.
-        # this is needed for htmls files that using different font sizes and layouts
-        # check to see if self.xslt_path is a relative path or absolute path
-        if not os.path.isabs(self.xslt_path):
-            xslt_path = pathlib.Path(__file__).parent / self.xslt_path
-
-        xslt_tree = etree.parse(xslt_path)
+        xslt_tree = etree.parse(self.xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
         return str(result)
 
     def split_text_from_file(self, file: Any) -> List[Document]:
-        """Split HTML file
+        """Split HTML file.
 
         Args:
             file: HTML file
@@ -307,12 +341,12 @@ class HTMLSectionSplitter:
 
         return [
             Document(
-                cast(str, sections[section_key]["content"]),
+                cast(str, section["content"]),
                 metadata={
-                    self.headers_to_split_on[
-                        str(sections[section_key]["tag_name"])
-                    ]: section_key
+                    self.headers_to_split_on[str(section["tag_name"])]: section[
+                        "header"
+                    ]
                 },
             )
-            for section_key in sections.keys()
+            for section in sections
         ]

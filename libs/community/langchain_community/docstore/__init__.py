@@ -20,16 +20,14 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.docstore.arbitrary_fn import (
-        DocstoreFn,  # noqa: F401
+        DocstoreFn,
     )
     from langchain_community.docstore.in_memory import (
-        InMemoryDocstore,  # noqa: F401
+        InMemoryDocstore,
     )
     from langchain_community.docstore.wikipedia import (
-        Wikipedia,  # noqa: F401
+        Wikipedia,
     )
-
-__all__ = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]
 
 _module_lookup = {
     "DocstoreFn": "langchain_community.docstore.arbitrary_fn",
@@ -45,4 +43,4 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = list(_module_lookup.keys())
+__all__ = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]

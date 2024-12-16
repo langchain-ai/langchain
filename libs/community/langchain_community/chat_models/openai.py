@@ -1,9 +1,11 @@
 """OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
 import os
 import sys
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -43,12 +45,14 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -67,7 +71,7 @@ def _import_tiktoken() -> Any:
     try:
         import tiktoken
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import tiktoken python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install tiktoken`."
@@ -84,11 +88,11 @@ def _create_retry_decorator(
     import openai
 
     errors = [
-        openai.error.Timeout,
-        openai.error.APIError,
-        openai.error.APIConnectionError,
-        openai.error.RateLimitError,
-        openai.error.ServiceUnavailableError,
+        openai.error.Timeout,  # type: ignore[attr-defined]
+        openai.error.APIError,  # type: ignore[attr-defined]
+        openai.error.APIConnectionError,  # type: ignore[attr-defined]
+        openai.error.RateLimitError,  # type: ignore[attr-defined]
+        openai.error.ServiceUnavailableError,  # type: ignore[attr-defined]
     ]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -139,13 +143,40 @@ def _convert_delta_to_message_chunk(
     elif role == "tool" or default_class == ToolMessageChunk:
         return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+) -> Union[int, dict]:
+    # Token usage is either ints or dictionaries
+    # `reasoning_tokens` is nested inside `completion_tokens_details`
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return new_usage + overall_token_usage
+    elif isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+        return new_usage
 
 
 @deprecated(
-    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.ChatOpenAI"
+    since="0.0.10", removal="1.0", alternative_import="langchain_openai.ChatOpenAI"
 )
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
@@ -217,7 +248,7 @@ class ChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    max_retries: int = 2
+    max_retries: int = Field(default=2)
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -242,13 +273,13 @@ class ChatOpenAI(BaseChatModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -273,7 +304,7 @@ class ChatOpenAI(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -327,7 +358,7 @@ class ChatOpenAI(BaseChatModel):
                     **client_params
                 ).chat.completions
         elif not values.get("client"):
-            values["client"] = openai.ChatCompletion
+            values["client"] = openai.ChatCompletion  # type: ignore[attr-defined]
         else:
             pass
         return values
@@ -374,7 +405,9 @@ class ChatOpenAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -403,6 +436,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -495,6 +530,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -558,7 +595,7 @@ class ChatOpenAI(BaseChatModel):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[attr-defined]
         return {**self._default_params, **openai_creds}
 
     def _get_invocation_params(
@@ -608,11 +645,21 @@ class ChatOpenAI(BaseChatModel):
         _, encoding_model = self._get_encoding_model()
         return encoding_model.encode(text)
 
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
         Official documentation: https://github.com/openai/openai-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
