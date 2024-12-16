@@ -1059,7 +1059,7 @@ class VectorStoreRetriever(BaseRetriever):
 
         _kwargs = self.search_kwargs | kwargs
 
-        ls_params = super()._get_ls_params(_kwargs)
+        ls_params = super()._get_ls_params(**_kwargs)
         ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
 
         if self.vectorstore.embeddings:
