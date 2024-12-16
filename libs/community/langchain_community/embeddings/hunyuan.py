@@ -1,10 +1,10 @@
 import json
-from typing import Any, Dict, List, Literal, Type
+from typing import Any, Dict, List, Literal, Optional, Type
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, model_validator
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from tqdm import tqdm
 
 
@@ -14,9 +14,9 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
     For more information, see https://cloud.tencent.com/document/product/1729
     """
 
-    hunyuan_secret_id: SecretStr = Field(alias="secret_id", default=None)
+    hunyuan_secret_id: Optional[SecretStr] = Field(alias="secret_id", default=None)
     """Hunyuan Secret ID"""
-    hunyuan_secret_key: SecretStr = Field(alias="secret_key", default=None)
+    hunyuan_secret_key: Optional[SecretStr] = Field(alias="secret_key", default=None)
     """Hunyuan Secret Key"""
     region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
     """The region of hunyuan service."""
@@ -27,7 +27,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
 
     client: Any = Field(default=None, exclude=True)
     """The tencentcloud client."""
-    request_cls: Type = Field(default=None, exclude=True)
+    request_cls: Optional[Type] = Field(default=None, exclude=True)
     """The request class of tencentcloud sdk."""
 
     @model_validator(mode="before")
@@ -73,6 +73,8 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
         return values
 
     def _embed_text(self, text: str) -> List[float]:
+        if self.request_cls is None:
+            raise AssertionError("Request class is not initialized.")
         request = self.request_cls()
         request.Input = text
 
@@ -80,7 +82,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
 
         _response: Dict[str, Any] = json.loads(response.to_json_string())
 
-        data: List[Dict[str, Any]] | None = _response.get("Data")
+        data: Optional[List[Dict[str, Any]]] = _response.get("Data")
         if not data:
             raise RuntimeError("Occur hunyuan embedding error: Data is empty")
 
