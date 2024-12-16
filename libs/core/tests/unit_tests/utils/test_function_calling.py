@@ -995,3 +995,108 @@ def test_convert_to_openai_function_no_args() -> None:
         },
         "strict": True,
     }
+
+@pytest.fixture()
+def google_docstring_example() -> str:
+    return """This function demonstrates a Google-style docstring.
+
+    Args:
+        param1 (int): The first parameter.
+            It has additional explanation in multiple lines.
+        param2 (str): The second parameter.
+
+    Returns:
+        bool: Indicates if the operation was successful.
+    """
+
+@pytest.fixture()
+def invalid_google_docstring() -> str:
+    return """This function has a malformed docstring.
+
+    Arguments:
+        param1 (int) The first parameter without a colon.
+    """
+def test_parse_google_docstring_simple(google_docstring_example):
+    description, args = _parse_google_docstring(google_docstring_example, ["param1", "param2"])
+    assert description == "This function demonstrates a Google-style docstring."
+    assert args == {
+        "param1": "(int): The first parameter. It has additional explanation in multiple lines.",
+        "param2": "(str): The second parameter.",
+    }
+
+def test_parse_google_docstring_missing_args_section():
+    docstring = """This function lacks an arguments section.
+
+    Returns:
+        bool: Whether the operation succeeded.
+    """
+    description, args = _parse_google_docstring(docstring, [])
+    assert description == "This function lacks an arguments section."
+    assert args == {}
+
+def test_parse_google_docstring_invalid_format(invalid_google_docstring):
+    with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
+        _parse_google_docstring(invalid_google_docstring, ["param1"], error_on_invalid_docstring=True)
+
+def test_parse_google_docstring_extra_parameters():
+    docstring = """This function has only one argument.
+
+    Args:
+        param1 (int): The first parameter.
+    """
+    description, args = _parse_google_docstring(docstring, ["param1", "param2"])
+    assert description == "This function has only one argument."
+    assert args == {
+        "param1": "(int): The first parameter.",
+    }
+
+def test_parse_google_docstring_multiline_and_empty_lines():
+    docstring = """This function has multiline argument descriptions.
+
+    Args:
+        param1 (int): The first parameter.
+            
+            Additional explanation here.
+        param2 (str): The second parameter.
+
+    Returns:
+        bool: Whether the operation succeeded.
+    """
+    description, args = _parse_google_docstring(docstring, ["param1", "param2"])
+    assert description == "This function has multiline argument descriptions."
+    assert args == {
+        "param1": "(int): The first parameter. Additional explanation here.",
+        "param2": "(str): The second parameter.",
+    }
+
+def test_parse_google_docstring_no_description():
+    docstring = """
+    Args:
+        param1 (int): The first parameter.
+        param2 (str): The second parameter.
+    """
+    description, args = _parse_google_docstring(docstring, ["param1", "param2"])
+    assert description == ""
+    assert args == {
+        "param1": "(int): The first parameter.",
+        "param2": "(str): The second parameter.",
+    }
+
+def test_parse_google_docstring_multiple_paragraphs():
+    docstring = """This function demonstrates a Google-style docstring.
+
+    It has multiple paragraphs that should be handled correctly.
+
+    Args:
+        param1 (int): The first parameter.
+        param2 (str): The second parameter.
+
+    Returns:
+        bool: Indicates if the operation was successful.
+    """
+    description, args = _parse_google_docstring(docstring, ["param1", "param2"])
+    assert description == "This function demonstrates a Google-style docstring.\n\nIt has multiple paragraphs that should be handled correctly."
+    assert args == {
+        "param1": "(int): The first parameter.",
+        "param2": "(str): The second parameter.",
+    }
