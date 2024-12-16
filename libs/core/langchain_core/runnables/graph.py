@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from collections import Counter
+from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
@@ -330,7 +330,8 @@ class Graph:
             ValueError: If a node with the same id already exists.
         """
         if id is not None and id in self.nodes:
-            raise ValueError(f"Node with id {id} already exists")
+            msg = f"Node with id {id} already exists"
+            raise ValueError(msg)
         id = id or self.next_id()
         node = Node(id=id, data=data, metadata=metadata, name=node_data_str(id, data))
         self.nodes[node.id] = node
@@ -371,9 +372,11 @@ class Graph:
             ValueError: If the source or target node is not in the graph.
         """
         if source.id not in self.nodes:
-            raise ValueError(f"Source node {source.id} not in graph")
+            msg = f"Source node {source.id} not in graph"
+            raise ValueError(msg)
         if target.id not in self.nodes:
-            raise ValueError(f"Target node {target.id} not in graph")
+            msg = f"Target node {target.id} not in graph"
+            raise ValueError(msg)
         edge = Edge(
             source=source.id, target=target.id, data=data, conditional=conditional
         )
@@ -420,12 +423,19 @@ class Graph:
     def reid(self) -> Graph:
         """Return a new graph with all nodes re-identified,
         using their unique, readable names where possible."""
-        node_labels = {node.id: node.name for node in self.nodes.values()}
-        node_label_counts = Counter(node_labels.values())
+        node_name_to_ids = defaultdict(list)
+        for node in self.nodes.values():
+            node_name_to_ids[node.name].append(node.id)
+
+        unique_labels = {
+            node_id: node_name if len(node_ids) == 1 else f"{node_name}_{i + 1}"
+            for node_name, node_ids in node_name_to_ids.items()
+            for i, node_id in enumerate(node_ids)
+        }
 
         def _get_node_id(node_id: str) -> str:
-            label = node_labels[node_id]
-            if is_uuid(node_id) and node_label_counts[label] == 1:
+            label = unique_labels[node_id]
+            if is_uuid(node_id):
                 return label
             else:
                 return node_id
@@ -460,14 +470,22 @@ class Graph:
         """Remove the first node if it exists and has a single outgoing edge,
         i.e., if removing it would not leave the graph without a "first" node."""
         first_node = self.first_node()
-        if first_node and _first_node(self, exclude=[first_node.id]):
+        if (
+            first_node
+            and _first_node(self, exclude=[first_node.id])
+            and len({e for e in self.edges if e.source == first_node.id}) == 1
+        ):
             self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
         """Remove the last node if it exists and has a single incoming edge,
         i.e., if removing it would not leave the graph without a "last" node."""
         last_node = self.last_node()
-        if last_node and _last_node(self, exclude=[last_node.id]):
+        if (
+            last_node
+            and _last_node(self, exclude=[last_node.id])
+            and len({e for e in self.edges if e.target == last_node.id}) == 1
+        ):
             self.remove_node(last_node)
 
     def draw_ascii(self) -> str:

@@ -62,14 +62,12 @@ class _FewShotPromptTemplateMixin(BaseModel):
         examples = values.get("examples")
         example_selector = values.get("example_selector")
         if examples and example_selector:
-            raise ValueError(
-                "Only one of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "Only one of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         if examples is None and example_selector is None:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "One of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         return values
 
@@ -90,9 +88,8 @@ class _FewShotPromptTemplateMixin(BaseModel):
         elif self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
         else:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "One of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
     async def _aget_examples(self, **kwargs: Any) -> list[dict]:
         """Async get the examples to use for formatting the prompt.
@@ -111,9 +108,8 @@ class _FewShotPromptTemplateMixin(BaseModel):
         elif self.example_selector is not None:
             return await self.example_selector.aselect_examples(kwargs)
         else:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "One of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
 
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
@@ -243,7 +239,8 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
             ValueError: If example_selector is provided.
         """
         if self.example_selector:
-            raise ValueError("Saving an example selector is not currently supported")
+            msg = "Saving an example selector is not currently supported"
+            raise ValueError(msg)
         return super().save(file_path)
 
 
@@ -467,4 +464,4 @@ class FewShotChatMessagePromptTemplate(
         Returns:
             A pretty representation of the prompt template.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

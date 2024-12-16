@@ -61,4 +61,4 @@ class UnstructuredRTFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.rtf import partition_rtf
 
-        return partition_rtf(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_rtf(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

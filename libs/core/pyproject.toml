@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.9"
+version = "0.3.25"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -27,8 +27,8 @@ target-version = "py39"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langsmith = "^0.1.125"
-tenacity = "^8.1.0,!=8.4.0"
+langsmith = ">=0.1.125,<0.3"
+tenacity = ">=8.1.0,!=8.4.0,<10.0.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
@@ -44,15 +44,15 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "B", "C4", "E", "F", "I", "N", "PIE", "SIM", "T201", "UP", "W",]
-ignore = [ "UP007", "W293",]
+select = [ "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TID", "UP", "W", "YTT",]
+ignore = [ "COM812", "UP007", "W293", "S101", "S110", "S112",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 
@@ -78,46 +78,53 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/**" = [ "S",]
+"scripts/**" = [ "S",]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
-simsimd = "^5.0.0"
+
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
 
+
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^8"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
-pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
+pytest-socket = "^0.7.0"
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"
 python = "<3.12"
 
 [[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.26.0"
+version = ">=1.26.0,<3"
 python = ">=3.12"
 
+
 [tool.poetry.group.test_integration.dependencies]
+
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../standard-tests"
 develop = true
