@@ -1,6 +1,5 @@
 """Test Chroma functionality."""
 import os.path
-import shutil
 import tempfile
 import uuid
 from typing import (
