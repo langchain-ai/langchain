@@ -1083,7 +1083,7 @@ def test_parse_google_docstring_no_description():
     }
 
 def test_parse_google_docstring_multiple_paragraphs():
-    docstring = """This function demonstrates a Google-style docstring.
+    docstring = """This function does something.
 
     It has multiple paragraphs that should be handled correctly.
 
@@ -1092,11 +1092,12 @@ def test_parse_google_docstring_multiple_paragraphs():
         param2 (str): The second parameter.
 
     Returns:
-        bool: Indicates if the operation was successful.
-    """
-    description, args = _parse_google_docstring(docstring, ["param1", "param2"])
-    assert description == "This function demonstrates a Google-style docstring.\n\nIt has multiple paragraphs that should be handled correctly."
+        bool: Indicates if the operation was successful."""
+
+    description, args = _parse_google_docstring(docstring, ['param1', 'param2'], error_on_invalid_docstring=True)
+    
+    assert description == 'This function does something. It has multiple paragraphs that should be handled correctly.'
     assert args == {
-        "param1": "(int): The first parameter.",
-        "param2": "(str): The second parameter.",
+        'param1': 'The first parameter.',
+        'param2': 'The second parameter.'
     }
