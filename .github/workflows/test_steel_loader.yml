@@ -1,0 +1,44 @@
+name: Test Steel Loader
+
+on:
+  pull_request:
+    paths:
+      - 'libs/community/langchain_community/document_loaders/steel.py'
+      - 'libs/community/tests/integration_tests/document_loaders/test_steel.py'
+  workflow_dispatch:
+
+env:
+  POETRY_VERSION: "1.6.1"
+  WORKDIR: "libs/community"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install poetry
+        run: |
+          pipx install poetry==$POETRY_VERSION
+      
+      - name: Install dependencies
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          poetry install --with test
+          poetry run playwright install chromium
+      
+      - name: Run Steel loader tests
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          poetry run pytest tests/integration_tests/document_loaders/test_steel.py -v
+        env:
+          STEEL_API_KEY: ${{ secrets.STEEL_API_KEY }}
