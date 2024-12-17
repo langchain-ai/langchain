@@ -45,6 +45,10 @@ class TestGroqLlama(BaseTestGroq):
         """Value to use for tool choice when used in tests."""
         return "any"
 
+    @property
+    def supports_json_mode(self) -> bool:
+        return False  # Not supported in streaming mode
+
     @pytest.mark.xfail(
         reason=("Fails with 'Failed to call a function. Please adjust your prompt.'")
     )
