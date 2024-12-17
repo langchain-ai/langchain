@@ -19,9 +19,9 @@ disallow_untyped_defs = "True"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-voyageai%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.9,<3.13"
 langchain-core = "^0.3.15"
-voyageai = ">=0.2.1,<1"
+voyageai = ">=0.3.2,<1"
 pydantic = ">=2,<3"
 
 [tool.ruff.lint]
