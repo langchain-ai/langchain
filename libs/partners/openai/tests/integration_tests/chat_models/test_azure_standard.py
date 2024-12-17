@@ -35,6 +35,10 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         super().test_usage_metadata_streaming(model)
 
+    @property
+    def supports_json_mode(self) -> bool:
+        return True
+
 
 class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
     """Test a legacy model."""
@@ -57,8 +61,4 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
 
     @property
     def supports_image_inputs(self) -> bool:
-        return True
-
-    @property
-    def supports_json_mode(self) -> bool:
         return True
