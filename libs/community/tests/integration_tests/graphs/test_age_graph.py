@@ -13,7 +13,7 @@ test_data = [
         nodes=[
             Node(id="foo", type="foo"),
             Node(id="bar", type="bar"),
-            Node(id="foo", type="foo", property={"property_a": "a"}),
+            Node(id="foo", type="foo", properties={"property_a": "a"}),
         ],
         relationships=[
             Relationship(
