@@ -1189,6 +1189,23 @@ def test_tool_arg_descriptions() -> None:
     args_schema = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema["description"] == expected["description"]
 
+    # Test additional docstring format
+    def foo6(bar: str, baz: int) -> str:
+        """The foo.
+
+        Additional description here.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo6, parse_docstring=True)
+    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema["description"] == "The foo. Additional description here."
+    assert args_schema["properties"] == expected["properties"]
+
 
 def test_tool_invalid_docstrings() -> None:
     # Test invalid docstrings
