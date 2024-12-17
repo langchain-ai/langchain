@@ -598,6 +598,8 @@ def tool_example_to_messages(
     return messages
 
 
+from typing import Optional
+
 def _parse_google_docstring(
     docstring: Optional[str],
     args: list[str],
@@ -610,43 +612,35 @@ def _parse_google_docstring(
     """
     if not docstring:
         if error_on_invalid_docstring:
-            msg = "Found invalid Google-Style docstring."
-            raise ValueError(msg)
+            raise ValueError("Found invalid Google-Style docstring.")
         return "", {}
-    docstring_blocks = docstring.split("\n\n")
-    if error_on_invalid_docstring:
-        filtered_annotations = {
-            arg for arg in args if arg not in ("run_manager", "callbacks", "return")
-        }
-        has_args_section = any(block.startswith("Args:") for block in docstring_blocks)
-        if filtered_annotations and not has_args_section:
-            msg = "Found invalid Google-Style docstring."
-            raise ValueError(msg)
-    description_blocks = []
-    args_block = None
-    for block in docstring_blocks:
-        if block.startswith("Args:"):
-            args_block = block
-            break
-        elif block.startswith(("Returns:", "Example:")):
-            break
-        else:
-            description_blocks.append(block)
-    description = " ".join(description_blocks).strip()
+    lines = docstring.splitlines()  
+    description_lines = []
     arg_descriptions = {}
-    if args_block:
-        arg = None
-        for line in args_block.split("\n")[1:]:
-            if ":" in line:
-                arg, desc = line.split(":", maxsplit=1)
-                arg = arg.strip()
-                arg_name, _, _annotations = arg.partition(" ")
-                if _annotations.startswith("(") and _annotations.endswith(")"):
-                    arg = arg_name
-                arg_descriptions[arg] = desc.strip()
-            elif arg:
-                arg_descriptions[arg] += " " + line.strip()
+    current_section = None
+    current_arg = None
+    for line in lines:
+        stripped_line = line.strip()
+        if stripped_line.startswith("Args:"):
+            current_section = "args"
+            continue
+        elif stripped_line.startswith(("Returns:", "Example:")):
+            current_section = None 
+            continue
+        if current_section is None:
+            if stripped_line: 
+                description_lines.append(stripped_line)
+            continue
+        if current_section == "args":
+            if stripped_line.startswith(tuple(args)) and ":" in stripped_line:
+                arg, desc = stripped_line.split(":", maxsplit=1)
+                current_arg = arg.strip()
+                arg_descriptions[current_arg] = desc.strip()
+            elif current_arg and stripped_line.startswith(" "):  
+                arg_descriptions[current_arg] += " " + stripped_line.strip()
+    description = " ".join(description_lines).strip()
     return description, arg_descriptions
+
 
 
 def _py_38_safe_origin(origin: type) -> type:
