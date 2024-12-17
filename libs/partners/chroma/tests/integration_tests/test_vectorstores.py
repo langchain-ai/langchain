@@ -12,6 +12,7 @@ import chromadb
 import pytest  # type: ignore[import-not-found]
 import requests
 from chromadb.api.client import SharedSystemClient
+from chromadb.api.segment import SegmentAPI
 from chromadb.api.types import Embeddable
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import FakeEmbeddings as Fak
@@ -308,8 +309,11 @@ def test_chroma_with_persistence() -> None:
         finally:
             # Need to stop the chrom system database and segment manager
             # to be able to delete the files after testing
-            docsearch._client._server._sysdb.stop()
-            docsearch._client._server._manager.stop()
+            client = docsearch._client
+            assert isinstance(client, chromadb.ClientCreator)
+            assert isinstance(client._server, SegmentAPI)
+            client._server._sysdb.stop()
+            client._server._manager.stop()
 
 
 def test_chroma_with_persistence_with_client_settings() -> None:
@@ -352,8 +356,11 @@ def test_chroma_with_persistence_with_client_settings() -> None:
         finally:
             # Need to stop the chrom system database and segment manager
             # to be able to delete the files after testing
-            docsearch._client._server._sysdb.stop()
-            docsearch._client._server._manager.stop()
+            client = docsearch._client
+            assert isinstance(client, chromadb.ClientCreator)
+            assert isinstance(client._server, SegmentAPI)
+            client._server._sysdb.stop()
+            client._server._manager.stop()
 
 
 def test_chroma_mmr() -> None:
