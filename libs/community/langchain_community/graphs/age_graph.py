@@ -697,8 +697,9 @@ class AGEGraph(GraphStore):
         # query for inserting nodes
         node_insert_query = (
             """
-            MERGE (n:`{label}` {properties})
-        """
+            MERGE (n:`{label}` {{`id`: "{id}"}})
+            SET n = {properties}
+            """
             if not include_source
             else """
             MERGE (n:`{label}` {properties})
@@ -735,6 +736,7 @@ class AGEGraph(GraphStore):
                     query = node_insert_query.format(
                         label=AGEGraph.clean_graph_labels(node.type),
                         properties=self._format_properties(node.properties),
+                        id=node.id,
                     )
 
                 self.query(query)
