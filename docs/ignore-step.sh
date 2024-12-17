@@ -2,13 +2,17 @@
 
 echo "VERCEL_ENV: $VERCEL_ENV"
 echo "VERCEL_GIT_COMMIT_REF: $VERCEL_GIT_COMMIT_REF"
+echo "VERCEL_GIT_REPO_OWNER: $VERCEL_GIT_REPO_OWNER"
+echo "VERCEL_GIT_REPO_SLUG: $VERCEL_GIT_REPO_SLUG"
 
 
-if [ "$VERCEL_ENV" == "production" ] || \
-    [ "$VERCEL_GIT_COMMIT_REF" == "master" ] || \
-    [ "$VERCEL_GIT_COMMIT_REF" == "v0.1" ] || \
-    [ "$VERCEL_GIT_COMMIT_REF" == "v0.2" ] || \
-    [ "$VERCEL_GIT_COMMIT_REF" == "v0.3rc" ]
+if  { \
+        [ "$VERCEL_ENV" == "production" ] || \
+        [ "$VERCEL_GIT_COMMIT_REF" == "master" ] || \
+        [ "$VERCEL_GIT_COMMIT_REF" == "v0.1" ] || \
+        [ "$VERCEL_GIT_COMMIT_REF" == "v0.2" ] || \
+        [ "$VERCEL_GIT_COMMIT_REF" == "v0.3rc" ]; \
+    } && [ "$VERCEL_GIT_REPO_OWNER" == "langchain-ai" ]
 then 
      echo "✅ Production build - proceeding with build"
      exit 1

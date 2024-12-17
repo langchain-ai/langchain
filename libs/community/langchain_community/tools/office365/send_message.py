@@ -31,7 +31,7 @@ class SendMessageSchema(BaseModel):
     )
 
 
-class O365SendMessage(O365BaseTool):
+class O365SendMessage(O365BaseTool):  # type: ignore[override, override]
     """Send an email in Office 365."""
 
     name: str = "send_email"

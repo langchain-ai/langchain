@@ -290,11 +290,13 @@ class InMemoryRecordManager(RecordManager):
         """
 
         if group_ids and len(keys) != len(group_ids):
-            raise ValueError("Length of keys must match length of group_ids")
+            msg = "Length of keys must match length of group_ids"
+            raise ValueError(msg)
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
             if time_at_least and time_at_least > self.get_time():
-                raise ValueError("time_at_least must be in the past")
+                msg = "time_at_least must be in the past"
+                raise ValueError(msg)
             self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
 
     async def aupdate(
@@ -465,26 +467,26 @@ class DeleteResponse(TypedDict, total=False):
 
     num_deleted: int
     """The number of items that were successfully deleted.
-    
+
     If returned, this should only include *actual* deletions.
-    
-    If the ID did not exist to begin with, 
+
+    If the ID did not exist to begin with,
     it should not be included in this count.
     """
 
     succeeded: Sequence[str]
     """The IDs that were successfully deleted.
-    
+
     If returned, this should only include *actual* deletions.
-    
+
     If the ID did not exist to begin with,
     it should not be included in this list.
     """
 
     failed: Sequence[str]
     """The IDs that failed to be deleted.
-    
-    Please note that deleting an ID that 
+
+    Please note that deleting an ID that
     does not exist is **NOT** considered a failure.
     """
 

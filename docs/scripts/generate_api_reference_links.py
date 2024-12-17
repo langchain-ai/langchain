@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import warnings
 from pathlib import Path
 from typing import List, Literal, Optional
 
@@ -20,111 +21,53 @@ _LANGGRAPH_API_REFERENCE = "https://langchain-ai.github.io/langgraph/reference/"
 code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTILINE)
 
 
+# (alias/re-exported modules, source module, class, docs namespace)
 MANUAL_API_REFERENCES_LANGGRAPH = [
-    ("langgraph.prebuilt", "create_react_agent"),
     (
-        "langgraph.prebuilt",
-        "ToolNode",
+        ["langgraph.prebuilt"],
+        "langgraph.prebuilt.chat_agent_executor",
+        "create_react_agent",
+        "prebuilt",
+    ),
+    (["langgraph.prebuilt"], "langgraph.prebuilt.tool_node", "ToolNode", "prebuilt"),
+    (
+        ["langgraph.prebuilt"],
+        "langgraph.prebuilt.tool_node",
+        "tools_condition",
+        "prebuilt",
     ),
     (
-        "langgraph.prebuilt",
-        "ToolExecutor",
-    ),
-    (
-        "langgraph.prebuilt",
-        "ToolInvocation",
-    ),
-    ("langgraph.prebuilt", "tools_condition"),
-    (
-        "langgraph.prebuilt",
-        "ValidationNode",
-    ),
-    (
-        "langgraph.prebuilt",
+        ["langgraph.prebuilt"],
+        "langgraph.prebuilt.tool_node",
         "InjectedState",
+        "prebuilt",
     ),
     # Graph
-    (
-        "langgraph.graph",
-        "StateGraph",
-    ),
-    (
-        "langgraph.graph.message",
-        "MessageGraph",
-    ),
-    ("langgraph.graph.message", "add_messages"),
-    (
-        "langgraph.graph.graph",
-        "CompiledGraph",
-    ),
-    (
-        "langgraph.types",
-        "StreamMode",
-    ),
-    (
-        "langgraph.graph",
-        "START",
-    ),
-    (
-        "langgraph.graph",
-        "END",
-    ),
-    (
-        "langgraph.types",
-        "Send",
-    ),
-    (
-        "langgraph.types",
-        "Interrupt",
-    ),
-    (
-        "langgraph.types",
-        "RetryPolicy",
-    ),
-    (
-        "langgraph.checkpoint.base",
-        "Checkpoint",
-    ),
-    (
-        "langgraph.checkpoint.base",
-        "CheckpointMetadata",
-    ),
-    (
-        "langgraph.checkpoint.base",
-        "BaseCheckpointSaver",
-    ),
-    (
-        "langgraph.checkpoint.base",
-        "SerializerProtocol",
-    ),
-    (
-        "langgraph.checkpoint.serde.jsonplus",
-        "JsonPlusSerializer",
-    ),
-    (
-        "langgraph.checkpoint.memory",
-        "MemorySaver",
-    ),
-    (
-        "langgraph.checkpoint.sqlite.aio",
-        "AsyncSqliteSaver",
-    ),
-    (
-        "langgraph.checkpoint.sqlite",
-        "SqliteSaver",
-    ),
-    (
-        "langgraph.checkpoint.postgres.aio",
-        "AsyncPostgresSaver",
-    ),
-    (
-        "langgraph.checkpoint.postgres",
-        "PostgresSaver",
-    ),
+    (["langgraph.graph"], "langgraph.graph.message", "add_messages", "graphs"),
+    (["langgraph.graph"], "langgraph.graph.state", "StateGraph", "graphs"),
+    (["langgraph.graph"], "langgraph.graph.state", "CompiledStateGraph", "graphs"),
+    ([], "langgraph.types", "StreamMode", "types"),
+    (["langgraph.graph"], "langgraph.constants", "START", "constants"),
+    (["langgraph.graph"], "langgraph.constants", "END", "constants"),
+    (["langgraph.constants"], "langgraph.types", "Send", "types"),
+    (["langgraph.constants"], "langgraph.types", "Interrupt", "types"),
+    ([], "langgraph.types", "RetryPolicy", "types"),
+    ([], "langgraph.checkpoint.base", "Checkpoint", "checkpoints"),
+    ([], "langgraph.checkpoint.base", "CheckpointMetadata", "checkpoints"),
+    ([], "langgraph.checkpoint.base", "BaseCheckpointSaver", "checkpoints"),
+    ([], "langgraph.checkpoint.base", "SerializerProtocol", "checkpoints"),
+    ([], "langgraph.checkpoint.serde.jsonplus", "JsonPlusSerializer", "checkpoints"),
+    ([], "langgraph.checkpoint.memory", "MemorySaver", "checkpoints"),
+    ([], "langgraph.checkpoint.sqlite.aio", "AsyncSqliteSaver", "checkpoints"),
+    ([], "langgraph.checkpoint.sqlite", "SqliteSaver", "checkpoints"),
+    ([], "langgraph.checkpoint.postgres.aio", "AsyncPostgresSaver", "checkpoints"),
+    ([], "langgraph.checkpoint.postgres", "PostgresSaver", "checkpoints"),
 ]
 
 WELL_KNOWN_LANGGRAPH_OBJECTS = {
-    (module_, class_) for module_, class_ in MANUAL_API_REFERENCES_LANGGRAPH
+    (module_, class_): (source_module, namespace)
+    for (modules, source_module, class_, namespace) in MANUAL_API_REFERENCES_LANGGRAPH
+    for module_ in modules + [source_module]
 }
 
 
@@ -168,16 +111,36 @@ def find_files(path):
 
 def get_full_module_name(module_path, class_name) -> Optional[str]:
     """Get full module name using inspect"""
-    try:
-        module = importlib.import_module(module_path)
-        class_ = getattr(module, class_name)
-        return inspect.getmodule(class_).__name__
-    except AttributeError as e:
-        logger.warning(f"Could not find module for {class_name}, {e}")
-        return None
-    except ImportError as e:
-        logger.warning(f"Failed to load for class {class_name}, {e}")
-        return None
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            module = importlib.import_module(module_path)
+        except ImportError:
+            # check if it's a submodule
+            try:
+                module = importlib.import_module(module_path + "." + class_name)
+            except ImportError:
+                raise ValueError(f"Failed to import module {module_path}")
+            return module.__name__
+
+        try:
+            class_ = getattr(module, class_name)
+        except AttributeError:
+            # check if it's a submodule
+            try:
+                module = importlib.import_module(module_path + "." + class_name)
+            except ImportError:
+                raise ValueError(
+                    f"Failed to import class {class_name} from module {module_path}"
+                )
+            return module.__name__
+
+        inspectmodule = inspect.getmodule(class_)
+        if inspectmodule is None:
+            # it wasn't a class, it's a primitive (e.g. END="__end__")
+            # so no documentation link is necessary
+            return None
+        return inspectmodule.__name__
 
 
 def get_args() -> argparse.Namespace:
@@ -286,7 +249,17 @@ def _get_imports(
             if imp.strip()
         ]
         for class_name in imported_classes:
-            module_path = get_full_module_name(module, class_name)
+            try:
+                module_path = get_full_module_name(module, class_name)
+            except ValueError as e:
+                logger.warning(e)
+                continue
+            except Exception as e:
+                logger.error(
+                    f"Failed to get full module name for {module}.{class_name}"
+                )
+                logger.error(e)
+                continue
             if not module_path:
                 continue
             if len(module_path.split(".")) < 2:
@@ -308,34 +281,21 @@ def _get_imports(
                     + ".html"
                 )
             elif package_ecosystem == "langgraph":
-                if module.startswith("langgraph.checkpoint"):
-                    namespace = "checkpoints"
-                elif module.startswith("langgraph.graph"):
-                    namespace = "graphs"
-                elif module.startswith("langgraph.prebuilt"):
-                    namespace = "prebuilt"
-                elif module.startswith("langgraph.errors"):
-                    namespace = "errors"
-                else:
+                if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
                     # Likely not documented yet
-                    # Unable to determine the namespace
                     continue
 
-                if module.startswith("langgraph.errors"):
-                    # Has different URL structure than other modules
-                    url = (
-                        _LANGGRAPH_API_REFERENCE
-                        + namespace
-                        + "/#langgraph.errors."
-                        + class_name  # Uses the actual class name here.
-                    )
-                else:
-                    if (module, class_name) not in WELL_KNOWN_LANGGRAPH_OBJECTS:
-                        # Likely not documented yet
-                        continue
-                    url = (
-                        _LANGGRAPH_API_REFERENCE + namespace + "/#" + class_name.lower()
-                    )
+                source_module, namespace = WELL_KNOWN_LANGGRAPH_OBJECTS[
+                    (module, class_name)
+                ]
+                url = (
+                    _LANGGRAPH_API_REFERENCE
+                    + namespace
+                    + "/#"
+                    + source_module
+                    + "."
+                    + class_name
+                )
             else:
                 raise ValueError(f"Invalid package ecosystem: {package_ecosystem}")
 

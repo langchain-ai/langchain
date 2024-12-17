@@ -24,19 +24,21 @@ class Visitor(ABC):
             and self.allowed_operators is not None
             and func not in self.allowed_operators
         ):
-            raise ValueError(
+            msg = (
                 f"Received disallowed operator {func}. Allowed "
                 f"comparators are {self.allowed_operators}"
             )
+            raise ValueError(msg)
         if (
             isinstance(func, Comparator)
             and self.allowed_comparators is not None
             and func not in self.allowed_comparators
         ):
-            raise ValueError(
+            msg = (
                 f"Received disallowed comparator {func}. Allowed "
                 f"comparators are {self.allowed_comparators}"
             )
+            raise ValueError(msg)
 
     @abstractmethod
     def visit_operation(self, operation: Operation) -> Any:

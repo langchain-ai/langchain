@@ -293,7 +293,8 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
     elif method == "abatch":
         res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
     else:
-        raise ValueError(f"Unknown method {method}")
+        msg = f"Unknown method {method}"
+        raise ValueError(msg)
     assert res == 3
     posts = _get_posts(mock_client_)
     name_order = [
@@ -345,7 +346,8 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
                 ), f"{name} not after {name_order[i-1]}"
             prev_dotted_order = dotted_order
             if name in dotted_order_map:
-                raise ValueError(f"Duplicate name {name}")
+                msg = f"Duplicate name {name}"
+                raise ValueError(msg)
             dotted_order_map[name] = dotted_order
             id_map[name] = posts[i]["id"]
             parent_id_map[name] = posts[i].get("parent_run_id")

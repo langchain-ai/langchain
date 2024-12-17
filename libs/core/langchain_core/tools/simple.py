@@ -62,17 +62,20 @@ class Tool(BaseTool):
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> tuple[tuple, dict]:
         """Convert tool input to pydantic model."""
-        args, kwargs = super()._to_args_and_kwargs(tool_input)
+        args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
-            raise ToolException(
+            msg = (
                 f"""Too many arguments to single-input tool {self.name}.
                 Consider using StructuredTool instead."""
                 f" Args: {all_args}"
             )
+            raise ToolException(msg)
         return tuple(all_args), {}
 
     def _run(
@@ -89,7 +92,8 @@ class Tool(BaseTool):
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
-        raise NotImplementedError("Tool does not support sync invocation.")
+        msg = "Tool does not support sync invocation."
+        raise NotImplementedError(msg)
 
     async def _arun(
         self,
@@ -152,7 +156,8 @@ class Tool(BaseTool):
             ValueError: If the function is not provided.
         """
         if func is None and coroutine is None:
-            raise ValueError("Function and/or coroutine must be provided")
+            msg = "Function and/or coroutine must be provided"
+            raise ValueError(msg)
         return cls(
             name=name,
             func=func,

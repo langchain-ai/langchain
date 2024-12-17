@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cache
@@ -60,11 +61,12 @@ def get_tokenizer() -> Any:
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
     except ImportError as e:
-        raise ImportError(
+        msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -98,14 +100,14 @@ class BaseLanguageModel(
     All language model wrappers inherited from BaseLanguageModel.
     """
 
-    cache: Union[BaseCache, bool, None] = None
+    cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
     """Whether to cache the response.
-    
+
     * If true, will use the global cache.
     * If false, will not use a cache
     * If None, will use the global cache if it's set, otherwise no cache.
     * If instance of BaseCache, will use the provided cache.
-    
+
     Caching is not currently supported for streaming methods of models.
     """
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
@@ -236,7 +238,7 @@ class BaseLanguageModel(
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod
@@ -363,17 +365,31 @@ class BaseLanguageModel(
         """
         return len(self.get_token_ids(text))
 
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[Sequence] = None,
+    ) -> int:
         """Get the number of tokens in the messages.
 
         Useful for checking if an input fits in a model's context window.
 
+        **Note**: the base implementation of get_num_tokens_from_messages ignores
+        tool schemas.
+
         Args:
             messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
 
         Returns:
             The sum of the number of tokens across the messages.
         """
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools.",
+                stacklevel=2,
+            )
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
     @classmethod
