@@ -264,7 +264,8 @@ class ConfluenceLoader(BaseLoader):
             )
 
         non_null_creds = list(
-            x is not None for x in ((api_key or username), session, oauth2, token, cookies)
+            x is not None for x in ((api_key or username), session, oauth2, token,
+                                    cookies)
         )
         if sum(non_null_creds) > 1:
             all_names = ("(api_key, username)", "session", "oauth2", "token", "cookies")
