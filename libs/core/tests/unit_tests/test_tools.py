@@ -1217,6 +1217,7 @@ def test_docstring_parsing() -> None:
     assert args_schema["description"] == "The foo."
     assert args_schema["properties"] == expected["properties"]
 
+    # Multi-line description
     def foo2(bar: str, baz: int) -> str:
         """The foo.
 
@@ -1228,7 +1229,6 @@ def test_docstring_parsing() -> None:
         """
         return bar
 
-    # Multi-line description
     as_tool = tool(foo2, parse_docstring=True)
     args_schema2 = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema2["description"] == "The foo. Additional description here."
