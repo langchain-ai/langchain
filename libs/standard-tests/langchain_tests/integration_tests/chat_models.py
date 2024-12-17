@@ -178,7 +178,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         output.
 
         By default, this is determined by whether the chat model's
-        `with_structured_output` method is overridden. If the base implementation is
+        ``with_structured_output`` method is overridden. If the base implementation is
         intended to be used, this method should be overridden.
 
         See: https://python.langchain.com/docs/concepts/structured_outputs/
@@ -189,6 +189,21 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             @property
             def has_structured_output(self) -> bool:
+                return True
+
+    .. dropdown:: supports_json_mode
+
+        Boolean property indicating whether the chat model supports JSON mode in
+        ``with_structured_output``.
+
+        See: https://python.langchain.com/docs/concepts/structured_outputs/#json-mode
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_json_mode(self) -> bool:
                 return True
 
     .. dropdown:: supports_image_inputs
@@ -1296,6 +1311,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(joke_result, Joke)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
+        """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_
+
+        This test is optional and should be skipped if the model does not support
+        the JSON mode feature (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable this test, set ``supports_json_mode`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def supports_json_mode(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+        """  # noqa: E501
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
 
