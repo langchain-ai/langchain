@@ -31,13 +31,13 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     def supports_image_inputs(self) -> bool:
         return True
 
-    @pytest.mark.xfail(reason="Not yet supported.")
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata_streaming(model)
-
     @property
     def supports_json_mode(self) -> bool:
         return True
+
+    @pytest.mark.xfail(reason="Not yet supported.")
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata_streaming(model)
 
 
 class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
@@ -58,7 +58,3 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         super().test_usage_metadata_streaming(model)
-
-    @property
-    def supports_image_inputs(self) -> bool:
-        return True
