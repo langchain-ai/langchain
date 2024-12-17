@@ -642,7 +642,6 @@ def _parse_google_docstring(
     return description, arg_descriptions
 
 
-
 def _py_38_safe_origin(origin: type) -> type:
     origin_union_type_map: dict[type, Any] = (
         {types.UnionType: Union} if hasattr(types, "UnionType") else {}
