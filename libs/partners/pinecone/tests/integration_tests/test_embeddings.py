@@ -69,6 +69,6 @@ def test_vector_store(
 ) -> None:
     vectorstore = PineconeVectorStore(index_name=INDEX_NAME, embedding=embd_client)
     vectorstore.add_documents([Document("Hello, world!"), Document("This is a test.")])
-    time.sleep(5)
+    time.sleep(20)
     resp = vectorstore.similarity_search(query="hello")
     assert len(resp) == 2
