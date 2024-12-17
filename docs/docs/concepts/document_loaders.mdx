@@ -29,7 +29,7 @@ loader = CSVLoader(
 data = loader.load()
 ```
 
-or if working with large datasets, you can use the `.lazy_load` method:
+When working with large datasets, you can use the `.lazy_load` method:
 
 ```python
 for document in loader.lazy_load():
