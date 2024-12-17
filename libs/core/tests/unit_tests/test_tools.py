@@ -46,6 +46,7 @@ from langchain_core.tools import (
 )
 from langchain_core.tools.base import (
     InjectedToolArg,
+    InjectedToolArgSchema,
     SchemaAnnotationError,
     _is_message_content_block,
     _is_message_content_type,
@@ -2110,3 +2111,18 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+
+
+# Test user specific tools produce correct the correct json schema
+# for it's arguments using .args
+def test_user_specific_tool_without_schema() -> None:
+    @tool
+    def user_specific_tool(x: str, y: InjectedToolArgSchema) -> str:
+        """Tool that has an injected tool arg."""
+        return "User {x} processed {y}"
+
+    # Verify the tool's args schema
+    assert user_specific_tool.args == {
+        "x": {"title": "X", "type": "string"},
+        "y": {"title": "Y", "type": "Injected-Tool-Argument"},
+    }
