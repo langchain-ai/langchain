@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -65,17 +66,20 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         protected_namespaces=(),
     )
 
+    async def _initialize_async_client(self) -> aiohttp.ClientSession:
+        return aiohttp.ClientSession(
+            headers={
+                "Api-Key": self.pinecone_api_key.get_secret_value(),
+                "Content-Type": "application/json",
+                "X-Pinecone-API-Version": "2024-10",
+            }
+        )
+
     @property
     def async_client(self) -> aiohttp.ClientSession:
         """Lazily initialize the async client."""
         if self._async_client is None:
-            self._async_client = aiohttp.ClientSession(
-                headers={
-                    "Api-Key": self.pinecone_api_key.get_secret_value(),
-                    "Content-Type": "application/json",
-                    "X-Pinecone-API-Version": "2024-10",
-                }
-            )
+            self._async_client = asyncio.run(self._initialize_async_client())
         return self._async_client
 
     @model_validator(mode="before")
