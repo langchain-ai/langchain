@@ -26,6 +26,10 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def supports_json_mode(self) -> bool:
+        return True
+
+    @property
     def supported_usage_metadata_details(
         self,
     ) -> Dict[
