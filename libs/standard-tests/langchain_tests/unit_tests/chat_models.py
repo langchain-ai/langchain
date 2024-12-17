@@ -133,6 +133,10 @@ class ChatModelTests(BaseStandardTests):
         )
 
     @property
+    def supports_json_mode(self) -> bool:
+        return False
+
+    @property
     def supports_image_inputs(self) -> bool:
         """(bool) whether the chat model supports image inputs, defaults to
         ``False``."""
