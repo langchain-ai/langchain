@@ -45,14 +45,6 @@ def partition_key() -> Any:
     return PartitionKey(path="/id")
 
 
-@pytest.fixture()
-def azure_openai_embeddings() -> Any:
-    openai_embeddings: OpenAIEmbeddings = OpenAIEmbeddings(
-        deployment=model_deployment, model=model_name, chunk_size=1
-    )
-    return openai_embeddings
-
-
 def safe_delete_database(cosmos_client: Any) -> None:
     cosmos_client.delete_database(database_name)
 
@@ -101,7 +93,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
-            azure_openai_embeddings,
+            embedding=azure_openai_embeddings,
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
@@ -175,7 +167,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
 
         store = AzureCosmosDBNoSqlVectorSearch.from_documents(
             documents,
-            azure_openai_embeddings,
+            embedding=azure_openai_embeddings,
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
@@ -195,11 +187,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
 
-        # pre_filter = {
-        #     "conditions": [
-        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
-        #     ],
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(property="metadata.a", operator="$eq", value=1),
@@ -213,11 +200,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
         assert output[0].metadata["a"] == 1
 
-        # pre_filter = {
-        #     "conditions": [
-        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
-        #     ],
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(property="metadata.a", operator="$eq", value=1),
@@ -262,15 +244,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         sleep(480)  # waits for Cosmos DB to save contents to the collection
 
         # Full text search contains any
-        # pre_filter = {
-        #     "conditions": [
-        #         {
-        #             "property": "text",
-        #             "operator": "$full_text_contains_any",
-        #             "value": "intelligent herders",
-        #         },
-        #     ],
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(
@@ -292,15 +265,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Full text search contains all
-        # pre_filter = {
-        #     "conditions": [
-        #         {
-        #             "property": "text",
-        #             "operator": "$full_text_contains_all",
-        #             "value": "intelligent herders",
-        #         },
-        #     ],
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(
@@ -332,11 +296,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Standard Poodles" in output[0].page_content
 
         # Full text search BM25 ranking with filtering
-        # pre_filter = {
-        #     "conditions": [
-        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
-        #     ],
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(property="metadata.a", operator="$eq", value=1),
@@ -363,11 +322,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Hybrid search RRF ranking with filtering
-        # pre_filter = {
-        #     "conditions": [
-        #         {"property": "metadata.a", "operator": "$eq", "value": 1},
-        #     ],
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(property="metadata.a", operator="$eq", value=1),
@@ -385,16 +339,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Full text search BM25 ranking with full text filtering
-        # pre_filter = {
-        #     "conditions": [
-        #         {
-        #             "property": "text",
-        #             "operator": "$full_text_contains",
-        #             "value": "energetic",
-        #         },
-        #     ]
-        # }
-
         pre_filter = PreFilter(
             conditions=[
                 Condition(
@@ -414,17 +358,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert "Border Collies" in output[0].page_content
 
         # Full text search BM25 ranking with full text filtering
-        # pre_filter = {
-        #     "conditions": [
-        #         {
-        #             "property": "text",
-        #             "operator": "$full_text_contains",
-        #             "value": "energetic",
-        #         },
-        #         {"property": "metadata.a", "operator": "$eq", "value": 2},
-        #     ],
-        #     "logical_operator": "$and",
-        # }
         pre_filter = PreFilter(
             conditions=[
                 Condition(

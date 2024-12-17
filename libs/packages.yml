@@ -44,6 +44,9 @@ packages:
   - name: langchain-ibm
     repo: langchain-ai/langchain-ibm
     path: libs/ibm
+  - name: langchain-localai
+    repo: mkhludnev/langchain-localai
+    path: libs/localai
   - name: langchain-milvus
     repo: langchain-ai/langchain-milvus
     path: libs/milvus
