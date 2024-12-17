@@ -41,7 +41,7 @@ tool = DataheraldTextToSQL(api_wrapper=api_wrapper)
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 prompt = hub.pull("hwchase17/react")
 agent = create_react_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
 agent_executor.invoke({"input":"Return the sql for this question: How many employees are in the company?"})
 ```
 
