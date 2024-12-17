@@ -470,14 +470,22 @@ class Graph:
         """Remove the first node if it exists and has a single outgoing edge,
         i.e., if removing it would not leave the graph without a "first" node."""
         first_node = self.first_node()
-        if first_node and _first_node(self, exclude=[first_node.id]):
+        if (
+            first_node
+            and _first_node(self, exclude=[first_node.id])
+            and len({e for e in self.edges if e.source == first_node.id}) == 1
+        ):
             self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
         """Remove the last node if it exists and has a single incoming edge,
         i.e., if removing it would not leave the graph without a "last" node."""
         last_node = self.last_node()
-        if last_node and _last_node(self, exclude=[last_node.id]):
+        if (
+            last_node
+            and _last_node(self, exclude=[last_node.id])
+            and len({e for e in self.edges if e.target == last_node.id}) == 1
+        ):
             self.remove_node(last_node)
 
     def draw_ascii(self) -> str:

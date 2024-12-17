@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Pattern
+from typing import TYPE_CHECKING, Any, List, Optional, Pattern, cast
 from urllib.parse import urlparse
 
 import numpy as np
@@ -18,7 +18,7 @@ def _array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
 
 
 def _buffer_to_array(buffer: bytes, dtype: Any = np.float32) -> List[float]:
-    return np.frombuffer(buffer, dtype=dtype).tolist()
+    return cast(List[float], np.frombuffer(buffer, dtype=dtype).tolist())
 
 
 class TokenEscaper:

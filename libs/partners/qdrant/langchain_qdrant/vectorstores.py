@@ -57,7 +57,7 @@ def sync_call_fallback(method: Callable) -> Callable:
         except NotImplementedError:
             # If the async method is not implemented, call the synchronous method
             # by removing the first letter from the method name. For example,
-            # if the async method is called ``aaad_texts``, the synchronous method
+            # if the async method is called ``aadd_texts``, the synchronous method
             # will be called ``aad_texts``.
             return await run_in_executor(
                 None, getattr(self, method.__name__[1:]), *args, **kwargs
@@ -921,7 +921,7 @@ class Qdrant(VectorStore):
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
@@ -984,7 +984,7 @@ class Qdrant(VectorStore):
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
@@ -1072,7 +1072,7 @@ class Qdrant(VectorStore):
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.

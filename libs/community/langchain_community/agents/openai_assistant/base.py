@@ -543,11 +543,16 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         Returns:
             Any: The created run object.
         """
-        params = {
-            k: v
-            for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
-        }
+        allowed_assistant_params = (
+            "instructions",
+            "model",
+            "tools",
+            "tool_resources",
+            "run_metadata",
+            "truncation_strategy",
+            "max_prompt_tokens",
+        )
+        params = {k: v for k, v in input.items() if k in allowed_assistant_params}
         return self.client.beta.threads.runs.create(
             input["thread_id"],
             assistant_id=self.assistant_id,

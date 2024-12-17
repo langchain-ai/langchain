@@ -1,5 +1,8 @@
 import base64
 import json
+import typing
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import pytest
 
@@ -19,6 +22,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
+from langchain_core.tools import BaseTool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -53,6 +57,24 @@ def test_merge_message_runs_str_without_separator(
     actual = merge_message_runs(messages, chunk_separator="")
     assert actual == expected
     assert messages == messages_model_copy
+
+
+def test_merge_message_runs_response_metadata() -> None:
+    messages = [
+        AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
+        AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
+    ]
+    expected = [
+        AIMessage(
+            "foo\nbar",
+            id="1",
+            response_metadata={"input_tokens": 1},
+        )
+    ]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    # Check it's not mutated
+    assert messages[1].response_metadata == {"input_tokens": 2}
 
 
 def test_merge_message_runs_content() -> None:
@@ -431,7 +453,15 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
 
 
 class FakeTokenCountingModel(FakeChatModel):
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[
+            Sequence[
+                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+            ]
+        ] = None,
+    ) -> int:
         return dummy_token_counter(messages)
 
 

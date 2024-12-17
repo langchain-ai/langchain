@@ -331,7 +331,7 @@ def dummy_tool() -> BaseTool:
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
-    class DummyFunction(BaseTool):
+    class DummyFunction(BaseTool):  # type: ignore[override]
         args_schema: Type[BaseModel] = Schema
         name: str = "dummy_function"
         description: str = "dummy function"
