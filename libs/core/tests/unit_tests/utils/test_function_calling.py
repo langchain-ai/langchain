@@ -1,3 +1,4 @@
+# mypy: disable-error-code="annotation-unchecked"
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
