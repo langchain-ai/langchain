@@ -1,180 +1,176 @@
-"""Steel Web Document Loader for LangChain.
+"""Load web pages using Steel.dev browser automation.
 
-This module provides a web document loader using Steel's browser automation 
-and Playwright for web page content extraction.
+Example:
+    .. code-block:: python
 
-Key Features:
-- Load web pages from single or multiple URLs
-- Support for Steel's proxy and CAPTCHA solving
-- Optional screenshot capture
-- Robust error handling
+        from langchain_community.document_loaders import SteelWebLoader
+        
+        loader = SteelWebLoader(
+            "https://example.com",
+            steel_api_key="your-api-key",
+            extract_strategy="text"
+        )
+        documents = loader.load()
 """
-from __future__ import annotations
-
+from typing import List, Optional, Dict, Any
 import logging
+import asyncio
 import os
-from typing import List, Optional, Union
-
-import urllib3
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
-
-from steel import Steel
-from playwright.sync_api import sync_playwright, TimeoutError
-
-# Configure logging to reduce noise from external libraries
-logging.getLogger('urllib3').setLevel(logging.WARNING)
-logging.getLogger('playwright').setLevel(logging.WARNING)
+from playwright.async_api import async_playwright
 
 class SteelWebLoader(BaseLoader):
-    """Loader that uses Steel and Playwright to load web pages.
+    """Load web pages using Steel.dev browser automation.
 
-    This loader supports advanced web page loading with:
-    - Single or multiple URL loading
-    - Optional screenshot capture
-    - Proxy and CAPTCHA solving via Steel
-    
-    Attributes:
-        urls (List[str]): URLs to load
-        steel_api_key (Optional[str]): Authentication key for Steel
-        timeout (int): Navigation timeout in milliseconds
-        use_proxy (bool): Use Steel's proxy network
-        solve_captcha (bool): Enable CAPTCHA solving
-        take_screenshot (bool): Capture page screenshots
+    This loader uses Steel.dev's managed browser infrastructure to load web pages,
+    with support for proxy networks and automated CAPTCHA solving.
     """
-
+    
     def __init__(
-        self,
-        urls: Union[str, List[str]],
+        self, 
+        url: str, 
         steel_api_key: Optional[str] = None,
+        extract_strategy: str = 'text',
         timeout: int = 30000,
         use_proxy: bool = True,
-        solve_captcha: bool = False,
-        take_screenshot: bool = False,
-        log_level: int = logging.INFO
-    ):
-        """
-        Initialize the Steel Web Loader.
+        solve_captcha: bool = True
+    ) -> None:
+        """Initialize the Steel Web Loader.
 
         Args:
-            urls: URL or list of URLs to load
-            steel_api_key: Steel API key (optional if set in environment)
+            url: Web page URL to load
+            steel_api_key: Steel API key. If not provided, will look for STEEL_API_KEY env var
+            extract_strategy: Content extraction method ('text', 'markdown', or 'html')
             timeout: Navigation timeout in milliseconds
-            use_proxy: Use Steel's proxy network
-            solve_captcha: Enable CAPTCHA solving
-            take_screenshot: Capture page screenshots
-            log_level: Logging level for the loader
+            use_proxy: Whether to use Steel's proxy network
+            solve_captcha: Whether to enable automated CAPTCHA solving
         
         Raises:
-            ValueError: If no Steel API key is provided
+            ValueError: If extract_strategy is invalid or no API key is provided
         """
-        # Normalize URLs
-        self.urls = [urls] if isinstance(urls, str) else urls
-        
-        # API Key from environment or parameter
+        self.url = url
         self.steel_api_key = steel_api_key or os.getenv('STEEL_API_KEY')
         if not self.steel_api_key:
             raise ValueError(
-                "Steel API key is required. "
-                "Set STEEL_API_KEY environment variable or provide steel_api_key."
+                "steel_api_key must be provided or STEEL_API_KEY environment variable must be set"
             )
         
+        self.extract_strategy = extract_strategy
         self.timeout = timeout
         self.use_proxy = use_proxy
         self.solve_captcha = solve_captcha
-        self.take_screenshot = take_screenshot
         
-        # Configure logging
-        logging.basicConfig(level=log_level, 
-                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
-
-    def load(self) -> List[Document]:
+        
+        valid_strategies = ['text', 'markdown', 'html']
+        if extract_strategy not in valid_strategies:
+            raise ValueError(
+                f"Invalid extract_strategy. Must be one of {valid_strategies}"
+            )
+    
+    async def _create_session(self) -> Dict[str, Any]:
+        """Create a new Steel session.
+        
+        Returns:
+            Dict containing session information including ID and viewer URL
         """
-        Load documents from web pages using Steel and Playwright.
+        # Initialize Playwright
+        playwright = await async_playwright().start()
+        
+        try:
+            # Create session with Steel
+            params = []
+            if self.use_proxy:
+                params.append("useProxy=true")
+            if self.solve_captcha:
+                params.append("solveCaptcha=true")
+            
+            params_str = "&".join(params)
+            connection_url = f"wss://connect.steel.dev?apiKey={self.steel_api_key}"
+            if params_str:
+                connection_url += f"&{params_str}"
+            
+            # Connect to Steel
+            browser = await playwright.chromium.connect_over_cdp(connection_url)
+            
+            # Get session ID from connection URL
+            session_id = connection_url.split("sessionId=")[-1].split("&")[0]
+            
+            return {
+                "id": session_id,
+                "viewer_url": f"https://app.steel.dev/sessions/{session_id}",
+                "browser": browser,
+                "playwright": playwright
+            }
+            
+        except Exception as e:
+            await playwright.stop()
+            raise e
+    
+    async def _aload(self) -> List[Document]:
+        """Async implementation of web page loading.
 
         Returns:
-            List of Documents extracted from web pages
+            List[Document]: List containing the loaded web page as a Document
+
+        Raises:
+            Exception: If page loading fails
         """
-        documents = []
-        
-        for url in self.urls:
-            session = None
+        try:
+            # Create session
+            session = await self._create_session()
+            self.logger.info(f"Created Steel session: {session['id']}")
             
             try:
-                # Create Steel client and session
-                client = Steel(steel_api_key=self.steel_api_key)
-                session = client.sessions.create(
-                    use_proxy=self.use_proxy,
-                    solve_captcha=self.solve_captcha
+                # Create new page
+                context = session["browser"].contexts[0]
+                page = await context.new_page()
+                
+                # Navigate to URL
+                await page.goto(
+                    self.url, 
+                    wait_until="networkidle", 
+                    timeout=self.timeout
                 )
                 
-                # Playwright connection
-                with sync_playwright() as playwright:
-                    browser = playwright.chromium.connect_over_cdp(
-                        f"wss://connect.steel.dev?apiKey={self.steel_api_key}&sessionId={session.id}"
-                    )
-                    
-                    context = browser.contexts[0]
-                    page = context.new_page()
-                    
-                    # Navigate to URL with enhanced error handling
-                    try:
-                        response = page.goto(url, wait_until="networkidle", timeout=self.timeout)
-                        
-                        # Additional check for HTTP errors
-                        if response and response.status >= 400:
-                            self.logger.warning(f"HTTP error {response.status} for {url}")
-                            continue
-                    
-                    except TimeoutError:
-                        self.logger.warning(f"Timeout loading {url}")
-                        continue
-                    except Exception as e:
-                        self.logger.error(f"Navigation error for {url}: {e}")
-                        continue
-                    
-                    # Extract content with fallback
-                    try:
-                        content = page.inner_text('body') or page.content()
-                    except Exception as e:
-                        self.logger.error(f"Content extraction error for {url}: {e}")
-                        content = f"Content extraction failed: {str(e)}"
-                    
-                    # Optional screenshot with error tracking
-                    screenshot_path = None
-                    if self.take_screenshot:
-                        try:
-                            screenshots_dir = os.path.join(os.getcwd(), 'screenshots')
-                            os.makedirs(screenshots_dir, exist_ok=True)
-                            screenshot_path = os.path.join(
-                                screenshots_dir, 
-                                f"{url.replace('https://', '').replace('/', '_')}_screenshot.png"
-                            )
-                            page.screenshot(path=screenshot_path, full_page=True)
-                        except Exception as e:
-                            self.logger.error(f"Screenshot error for {url}: {e}")
-                    
-                    # Create document
-                    doc = Document(
+                # Extract content based on strategy
+                if self.extract_strategy == 'text':
+                    content = await page.inner_text('body')
+                elif self.extract_strategy == 'markdown':
+                    content = await page.inner_text('body')  # TODO: Implement markdown conversion
+                else:  # html
+                    content = await page.content()
+                
+                # Create document
+                return [
+                    Document(
                         page_content=content,
                         metadata={
-                            'source': url,
-                            'steel_session_id': session.id,
-                            'screenshot_path': screenshot_path
+                            'source': self.url,
+                            'steel_session_id': session['id'],
+                            'steel_session_viewer_url': session['viewer_url'],
+                            'extract_strategy': self.extract_strategy
                         }
                     )
-                    documents.append(doc)
-            
-            except Exception as e:
-                self.logger.error(f"Critical error processing {url}: {e}")
+                ]
             
             finally:
-                # Always release the session
-                if session:
-                    try:
-                        client.sessions.release(session.id)
-                    except Exception as e:
-                        self.logger.error(f"Error releasing session: {e}")
+                # Always close the browser and stop Playwright
+                await session["browser"].close()
+                await session["playwright"].stop()
         
-        return documents
+        except Exception as e:
+            self.logger.error(f"Error loading {self.url}: {e}")
+            raise
+    
+    def load(self) -> List[Document]:
+        """Load the web page.
+
+        Returns:
+            List[Document]: List containing the loaded web page as a Document
+            
+        Raises:
+            Exception: If page loading fails
+        """
+        return asyncio.run(self._aload())
