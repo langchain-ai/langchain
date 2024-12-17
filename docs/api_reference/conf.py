@@ -128,6 +128,7 @@ extensions = [
     "_extensions.gallery_directive",
     "sphinx_design",
     "sphinx_copybutton",
+    "sphinxcontrib.googleanalytics",
 ]
 source_suffix = [".rst", ".md"]
 
@@ -266,6 +267,8 @@ html_show_sourcelink = False
 
 # Set canonical URL from the Read the Docs Domain
 html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+googleanalytics_id = "G-9B66JQQH2F"
 
 # Tell Jinja2 templates the build is running on Read the Docs
 if os.environ.get("READTHEDOCS", "") == "True":

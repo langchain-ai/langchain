@@ -1084,7 +1084,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
-        "openllm_client": _import_openllm,
         "outlines": _import_outlines,
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
