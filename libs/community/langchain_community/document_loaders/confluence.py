@@ -93,8 +93,6 @@ class ConfluenceLoader(BaseLoader):
     :type oauth2: dict, optional
     :param token: _description_, defaults to None
     :type token: str, optional
-    :param cookies: _description_, defaults to {}
-    :type cookies: dict, optional
     :param cloud: _description_, defaults to True
     :type cloud: bool, optional
     :param number_of_retries: How many times to retry, defaults to 3
@@ -105,6 +103,8 @@ class ConfluenceLoader(BaseLoader):
     :type max_retry_seconds: Optional[int], optional
     :param confluence_kwargs: additional kwargs to initialize confluence with
     :type confluence_kwargs: dict, optional
+    :param cookies: _description_, defaults to {}
+    :type cookies: dict, optional
     :param space_key: Space key retrieved from a confluence URL, defaults to None
     :type space_key: Optional[str], optional
     :param page_ids: List of specific page IDs to load, defaults to None
@@ -154,13 +154,13 @@ class ConfluenceLoader(BaseLoader):
         session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
-        cookies: Optional[dict] = None,
         cloud: Optional[bool] = True,
         number_of_retries: Optional[int] = 3,
         min_retry_seconds: Optional[int] = 2,
         max_retry_seconds: Optional[int] = 10,
         confluence_kwargs: Optional[dict] = None,
         *,
+        cookies: Optional[dict] = None,
         space_key: Optional[str] = None,
         page_ids: Optional[List[str]] = None,
         label: Optional[str] = None,
