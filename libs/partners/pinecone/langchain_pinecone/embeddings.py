@@ -66,21 +66,24 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         protected_namespaces=(),
     )
 
-    async def _initialize_async_client(self) -> aiohttp.ClientSession:
-        return aiohttp.ClientSession(
-            headers={
-                "Api-Key": self.pinecone_api_key.get_secret_value(),
-                "Content-Type": "application/json",
-                "X-Pinecone-API-Version": "2024-10",
-            }
-        )
-
-    @property
-    def async_client(self) -> aiohttp.ClientSession:
+    async def _get_async_client(self) -> aiohttp.ClientSession:
         """Lazily initialize the async client."""
         if self._async_client is None:
-            self._async_client = asyncio.run(self._initialize_async_client())
+            self._async_client = aiohttp.ClientSession(
+                headers={
+                    "Api-Key": self.pinecone_api_key.get_secret_value(),
+                    "Content-Type": "application/json",
+                    "X-Pinecone-API-Version": "2024-10",
+                }
+            )
         return self._async_client
+
+    # @property
+    # def async_client(self) -> aiohttp.ClientSession:
+    #     """Lazily initialize the async client."""
+    #     if self._async_client is None:
+    #         self._async_client = asyncio.run(self._get_async_client())
+    #     return self._async_client
 
     @model_validator(mode="before")
     @classmethod
@@ -110,7 +113,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         self._client = client
 
         # Ensure async_client is lazily initialized
-        _ = self.async_client
+        # _ = asyncio.run(self._get_async_client())
         return self
 
     def _get_batch_iterator(self, texts: List[str]) -> Iterable:
@@ -184,8 +187,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             "inputs": [{"text": text} for text in texts],
             "parameters": parameters,
         }
-        async with self.async_client.post(
-            "https://api.pinecone.io/embed", json=data
-        ) as response:
+        client = await self._get_async_client()
+        async with client.post("https://api.pinecone.io/embed", json=data) as response:
             response_data = await response.json(content_type=None)
             return response_data
