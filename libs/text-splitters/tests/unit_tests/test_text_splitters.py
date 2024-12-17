@@ -4,7 +4,7 @@ import random
 import re
 import string
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
