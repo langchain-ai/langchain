@@ -26,6 +26,10 @@ class BaseTestGroq(ChatModelIntegrationTests):
     ) -> None:
         super().test_tool_message_histories_list_content(model, my_adder_tool)
 
+    @property
+    def supports_json_mode(self) -> bool:
+        return True
+
 
 class TestGroqLlama(BaseTestGroq):
     @property
@@ -40,6 +44,10 @@ class TestGroqLlama(BaseTestGroq):
     def tool_choice_value(self) -> Optional[str]:
         """Value to use for tool choice when used in tests."""
         return "any"
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return False  # Not supported in streaming mode
 
     @pytest.mark.xfail(
         reason=("Fails with 'Failed to call a function. Please adjust your prompt.'")

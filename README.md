@@ -75,7 +75,7 @@ For these applications, LangChain simplifies the entire application lifecycle:
 **🧱 Extracting structured output**
 
 - [Documentation](https://python.langchain.com/docs/tutorials/extraction/)
-- End-to-end Example: [SQL Llama2 Template](https://github.com/langchain-ai/langchain-extract/)
+- End-to-end Example: [LangChain Extract](https://github.com/langchain-ai/langchain-extract/)
 
 **🤖 Chatbots**
 

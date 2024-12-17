@@ -98,7 +98,6 @@ packages:
   - name: langchain-google-vertexai
     repo: langchain-ai/langchain-google
     path: libs/vertexai
-    disabled: true
   - name: langchain-google-community
     repo: langchain-ai/langchain-google
     path: libs/community

@@ -34,8 +34,8 @@ class ConfluenceLoader(BaseLoader):
     """Load `Confluence` pages.
 
     Port of https://llamahub.ai/l/confluence
-    This currently supports username/api_key, Oauth2 login or personal access token
-    authentication.
+    This currently supports username/api_key, Oauth2 login, personal access token
+    or cookies authentication.
 
     Specify a list page_ids and/or space_key to load in the corresponding pages into
     Document objects, if both are specified the union of both sets will be returned.
@@ -103,6 +103,8 @@ class ConfluenceLoader(BaseLoader):
     :type max_retry_seconds: Optional[int], optional
     :param confluence_kwargs: additional kwargs to initialize confluence with
     :type confluence_kwargs: dict, optional
+    :param cookies: _description_, defaults to {}
+    :type cookies: dict, optional
     :param space_key: Space key retrieved from a confluence URL, defaults to None
     :type space_key: Optional[str], optional
     :param page_ids: List of specific page IDs to load, defaults to None
@@ -158,6 +160,7 @@ class ConfluenceLoader(BaseLoader):
         max_retry_seconds: Optional[int] = 10,
         confluence_kwargs: Optional[dict] = None,
         *,
+        cookies: Optional[dict] = None,
         space_key: Optional[str] = None,
         page_ids: Optional[List[str]] = None,
         label: Optional[str] = None,
@@ -197,6 +200,7 @@ class ConfluenceLoader(BaseLoader):
             username=username,
             session=session,
             oauth2=oauth2,
+            cookies=cookies,
             token=token,
         )
         if errors:
@@ -224,6 +228,10 @@ class ConfluenceLoader(BaseLoader):
             self.confluence = Confluence(
                 url=url, token=token, cloud=cloud, **confluence_kwargs
             )
+        elif cookies:
+            self.confluence = Confluence(
+                url=url, cookies=cookies, cloud=cloud, **confluence_kwargs
+            )
         else:
             self.confluence = Confluence(
                 url=url,
@@ -241,6 +249,7 @@ class ConfluenceLoader(BaseLoader):
         session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
+        cookies: Optional[dict] = None,
     ) -> Union[List, None]:
         """Validates proper combinations of init arguments"""
 
@@ -255,10 +264,11 @@ class ConfluenceLoader(BaseLoader):
             )
 
         non_null_creds = list(
-            x is not None for x in ((api_key or username), session, oauth2, token)
+            x is not None
+            for x in ((api_key or username), session, oauth2, token, cookies)
         )
         if sum(non_null_creds) > 1:
-            all_names = ("(api_key, username)", "session", "oauth2", "token")
+            all_names = ("(api_key, username)", "session", "oauth2", "token", "cookies")
             provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
                 f"Cannot provide a value for more than one of: {all_names}. Received "
