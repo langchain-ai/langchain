@@ -1202,6 +1202,7 @@ def test_docstring_parsing() -> None:
         "required": ["bar", "baz"],
     }
 
+    # Simple case
     def foo(bar: str, baz: int) -> str:
         """The foo.
 
@@ -1227,11 +1228,13 @@ def test_docstring_parsing() -> None:
         """
         return bar
 
+    # Multi-line description
     as_tool = tool(foo2, parse_docstring=True)
     args_schema2 = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema2["description"] == "The foo. Additional description here."
     assert args_schema2["properties"] == expected["properties"]
 
+    # Multi-line wth Returns block
     def foo3(bar: str, baz: int) -> str:
         """The foo.
 
@@ -1251,6 +1254,7 @@ def test_docstring_parsing() -> None:
     args_schema3["title"] = "foo2"
     assert args_schema2 == args_schema3
 
+    # Single argument
     def foo4(bar: str) -> str:
         """The foo.
 
@@ -1260,9 +1264,9 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo4, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
-    assert args_schema["description"] == "The foo."
-    assert args_schema["properties"] == {
+    args_schema4 = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema4["description"] == "The foo."
+    assert args_schema4["properties"] == {
         "bar": {"description": "The bar.", "title": "Bar", "type": "string"}
     }
 

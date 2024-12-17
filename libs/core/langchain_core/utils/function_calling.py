@@ -616,7 +616,7 @@ def _parse_google_docstring(
             }
             if filtered_annotations and (
                 len(docstring_blocks) < 2
-                or not any(block.startswith("Args:") for block in docstring_blocks)
+                or not any(block.startswith("Args:") for block in docstring_blocks[1:])
             ):
                 msg = "Found invalid Google-Style docstring."
                 raise ValueError(msg)
