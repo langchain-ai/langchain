@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2", "inner_product"
+DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
 DEFAULT_TiDB_VECTOR_TABLE_NAME = "langchain_vector"
 
 
@@ -47,7 +47,7 @@ class TiDBVectorStore(VectorStore):
                 store vector data. If you do not provide a table name,
                 a default table named `langchain_vector` will be created automatically.
             distance_strategy: The strategy used for similarity search,
-                defaults to "cosine", valid values: "l2", "cosine", "inner_product".
+                defaults to "cosine", valid values: "l2", "cosine".
             engine_args (Optional[Dict]): Additional arguments for the database engine,
                 defaults to None.
             drop_existing_table: Drop the existing TiDB table before initializing,
@@ -145,7 +145,7 @@ class TiDBVectorStore(VectorStore):
                 table_name (str, optional): The name of table used to store vector data,
                     defaults to "langchain_vector".
                 distance_strategy: The distance strategy used for similarity search,
-                    defaults to "cosine", allowed: "l2", "cosine", "inner_product".
+                    defaults to "cosine", allowed: "l2", "cosine".
                 ids (Optional[List[str]]): The list of IDs corresponding to each text,
                     defaults to None.
                 engine_args: Additional arguments for the underlying database engine,
@@ -207,7 +207,7 @@ class TiDBVectorStore(VectorStore):
             table_name (str, optional): The name of table used to store vector data,
                 defaults to "langchain_vector".
             distance_strategy: The distance strategy used for similarity search,
-                defaults to "cosine", allowed: "l2", "cosine", 'inner_product'.
+                defaults to "cosine", allowed: "l2", "cosine".
             engine_args: Additional arguments for the underlying database engine,
                 defaults to None.
             **kwargs (Any): Additional keyword arguments.

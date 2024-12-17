@@ -9,7 +9,7 @@ clicking on the 'sandbox' toggle.
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_community.llms import EdenAI
 

@@ -1,6 +1,7 @@
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.graphs.graph_document import GraphDocument
@@ -51,6 +52,11 @@ include_docs_query = (
 )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph.clean_string_values",
+)
 def clean_string_values(text: str) -> str:
     """Clean string values for schema.
 
@@ -65,6 +71,11 @@ def clean_string_values(text: str) -> str:
     return text.replace("\n", " ").replace("\r", " ")
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph.value_sanitize",
+)
 def value_sanitize(d: Any) -> Any:
     """Sanitize the input dictionary or list.
 
@@ -111,6 +122,11 @@ def value_sanitize(d: Any) -> Any:
         return d
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._get_node_import_query",
+)
 def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
     if baseEntityLabel:
         return (
@@ -134,6 +150,11 @@ def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
         )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._get_rel_import_query",
+)
 def _get_rel_import_query(baseEntityLabel: bool) -> str:
     if baseEntityLabel:
         return (
@@ -158,6 +179,11 @@ def _get_rel_import_query(baseEntityLabel: bool) -> str:
         )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._format_schema",
+)
 def _format_schema(schema: Dict, is_enhanced: bool) -> str:
     formatted_node_props = []
     formatted_rel_props = []
@@ -246,7 +272,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                 elif prop["type"] == "LIST":
                     # Skip embeddings
-                    if prop["min_size"] > LIST_LIMIT:
+                    if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
                         f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
@@ -287,10 +313,20 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
     )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._remove_backticks",
+)
 def _remove_backticks(text: str) -> str:
     return text.replace("`", "")
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.Neo4jGraph",
+)
 class Neo4jGraph(GraphStore):
     """Neo4j database wrapper for various graph operations.
 
@@ -346,18 +382,27 @@ class Neo4jGraph(GraphStore):
             )
 
         url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
-        username = get_from_dict_or_env(
-            {"username": username}, "username", "NEO4J_USERNAME"
-        )
-        password = get_from_dict_or_env(
-            {"password": password}, "password", "NEO4J_PASSWORD"
-        )
+        # if username and password are "", assume Neo4j auth is disabled
+        if username == "" and password == "":
+            auth = None
+        else:
+            username = get_from_dict_or_env(
+                {"username": username},
+                "username",
+                "NEO4J_USERNAME",
+            )
+            password = get_from_dict_or_env(
+                {"password": password},
+                "password",
+                "NEO4J_PASSWORD",
+            )
+            auth = (username, password)
         database = get_from_dict_or_env(
             {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
         )
 
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password), **(driver_config or {})
+            url, auth=auth, **(driver_config or {})
         )
         self._database = database
         self.timeout = timeout
@@ -401,7 +446,11 @@ class Neo4jGraph(GraphStore):
         """Returns the structured schema of the Graph"""
         return self.structured_schema
 
-    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+    def query(
+        self,
+        query: str,
+        params: dict = {},
+    ) -> List[Dict[str, Any]]:
         """Query Neo4j database.
 
         Args:
@@ -412,17 +461,44 @@ class Neo4jGraph(GraphStore):
             List[Dict[str, Any]]: The list of dictionaries containing the query results.
         """
         from neo4j import Query
-        from neo4j.exceptions import CypherSyntaxError
+        from neo4j.exceptions import Neo4jError
 
+        try:
+            data, _, _ = self._driver.execute_query(
+                Query(text=query, timeout=self.timeout),
+                database_=self._database,
+                parameters_=params,
+            )
+            json_data = [r.data() for r in data]
+            if self.sanitize:
+                json_data = [value_sanitize(el) for el in json_data]
+            return json_data
+        except Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message  # type: ignore[operator]
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message  # type: ignore[operator]
+                        or "tried to execute in an explicit transaction" in e.message  # type: ignore[operator]
+                    )
+                )
+            ):
+                raise
+        # fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            try:
-                data = session.run(Query(text=query, timeout=self.timeout), params)
-                json_data = [r.data() for r in data]
-                if self.sanitize:
-                    json_data = [value_sanitize(el) for el in json_data]
-                return json_data
-            except CypherSyntaxError as e:
-                raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+            data = session.run(Query(text=query, timeout=self.timeout), params)  # type: ignore[assignment]
+            json_data = [r.data() for r in data]
+            if self.sanitize:
+                json_data = [value_sanitize(el) for el in json_data]
+            return json_data
 
     def refresh_schema(self) -> None:
         """

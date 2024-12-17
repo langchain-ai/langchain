@@ -10,7 +10,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.chat_models.baichuan import (

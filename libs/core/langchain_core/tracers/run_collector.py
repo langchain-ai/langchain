@@ -1,6 +1,6 @@
 """A tracer that collects all nested runs in a list."""
 
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.tracers.base import BaseTracer
@@ -38,7 +38,7 @@ class RunCollectorCallbackHandler(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.traced_runs: List[Run] = []
+        self.traced_runs: list[Run] = []
 
     def _persist_run(self, run: Run) -> None:
         """

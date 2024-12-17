@@ -3,8 +3,8 @@
 from typing import Callable, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 
 def _print_func(text: str) -> None:
@@ -12,7 +12,7 @@ def _print_func(text: str) -> None:
     print(text)  # noqa: T201
 
 
-class HumanInputRun(BaseTool):
+class HumanInputRun(BaseTool):  # type: ignore[override]
     """Tool that asks user for input."""
 
     name: str = "human"

@@ -5,14 +5,14 @@ import tempfile
 from typing import Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
 logger = logging.getLogger(__name__)
 
 
-class AzureAiServicesTextToSpeechTool(BaseTool):
+class AzureAiServicesTextToSpeechTool(BaseTool):  # type: ignore[override]
     """Tool that queries the Azure AI Services Text to Speech API.
 
     In order to set this up, follow instructions at:
@@ -31,8 +31,9 @@ class AzureAiServicesTextToSpeechTool(BaseTool):
     speech_language: str = "en-US"  #: :meta private:
     speech_config: Any  #: :meta private:
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and endpoint exists in environment."""
         azure_ai_services_key = get_from_dict_or_env(
             values, "azure_ai_services_key", "AZURE_AI_SERVICES_KEY"

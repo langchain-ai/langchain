@@ -3,6 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -61,7 +62,7 @@ class WeightOnlyQuantPipeline(LLM):
             hf = WeightOnlyQuantPipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    pipeline: Any = None  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name or local path to use."""
 
@@ -71,8 +72,9 @@ class WeightOnlyQuantPipeline(LLM):
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
     @classmethod
     def from_model_id(

@@ -33,6 +33,7 @@ from urllib.parse import urlparse
 
 import openai
 import tiktoken
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -62,10 +63,13 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
-from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -73,15 +77,10 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -91,7 +90,9 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +129,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
+        if audio := _dict.get("audio"):
+            additional_kwargs["audio"] = audio
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -218,6 +221,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         # If tool calls present, content null value should be None not empty string.
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
+
+        if "audio" in message.additional_kwargs:
+            # openai doesn't support passing the data back - only the id
+            # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+            raw_audio = message.additional_kwargs["audio"]
+            audio = (
+                {"id": message.additional_kwargs["audio"]["id"]}
+                if "id" in raw_audio
+                else raw_audio
+            )
+            message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
@@ -284,6 +298,78 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content, id=id_)  # type: ignore
 
 
+def _convert_chunk_to_generation_chunk(
+    chunk: dict, default_chunk_class: Type, base_generation_info: Optional[Dict]
+) -> Optional[ChatGenerationChunk]:
+    token_usage = chunk.get("usage")
+    choices = chunk.get("choices", [])
+
+    usage_metadata: Optional[UsageMetadata] = (
+        _create_usage_metadata(token_usage) if token_usage else None
+    )
+    if len(choices) == 0:
+        # logprobs is implicitly None
+        generation_chunk = ChatGenerationChunk(
+            message=default_chunk_class(content="", usage_metadata=usage_metadata)
+        )
+        return generation_chunk
+
+    choice = choices[0]
+    if choice["delta"] is None:
+        return None
+
+    message_chunk = _convert_delta_to_message_chunk(
+        choice["delta"], default_chunk_class
+    )
+    generation_info = {**base_generation_info} if base_generation_info else {}
+
+    if finish_reason := choice.get("finish_reason"):
+        generation_info["finish_reason"] = finish_reason
+        if model_name := chunk.get("model"):
+            generation_info["model_name"] = model_name
+        if system_fingerprint := chunk.get("system_fingerprint"):
+            generation_info["system_fingerprint"] = system_fingerprint
+
+    logprobs = choice.get("logprobs")
+    if logprobs:
+        generation_info["logprobs"] = logprobs
+
+    if usage_metadata and isinstance(message_chunk, AIMessageChunk):
+        message_chunk.usage_metadata = usage_metadata
+
+    generation_chunk = ChatGenerationChunk(
+        message=message_chunk, generation_info=generation_info or None
+    )
+    return generation_chunk
+
+
+def _update_token_usage(
+    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
+) -> Union[int, dict]:
+    # Token usage is either ints or dictionaries
+    # `reasoning_tokens` is nested inside `completion_tokens_details`
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return new_usage + overall_token_usage
+    elif isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            raise ValueError(
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    else:
+        warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+        return new_usage
+
+
 class _FunctionCall(TypedDict):
     name: str
 
@@ -310,15 +396,18 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
+    )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default=None)
+    )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -346,7 +435,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
@@ -362,11 +451,11 @@ class BaseChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = None
+    http_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.Client. Only used for sync invocations. Must specify 
         http_async_client as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = None
+    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
@@ -376,72 +465,80 @@ class BaseChatOpenAI(BaseChatModel):
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
+    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
+    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    disabled for the given model.
+    
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+    parameter and the value is either None, meaning that parameter should never be
+    used, or it's a list of disabled values for the parameter.
+    
+    For example, older models may not support the 'parallel_tool_calls' parameter at 
+    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed 
+    in.
+    
+    If a parameter is disabled then it will not be used by default in any methods, e.g.
+    in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
+    However this does not prevent a user from directly passed in the parameter during
+    invocation. 
+    """
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(populate_by_name=True)
 
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_temperature(cls, values: Dict[str, Any]) -> Any:
+        """Currently o1 models only allow temperature=1."""
+        model = values.get("model_name") or values.get("model") or ""
+        if model.startswith("o1") and "temperature" not in values:
+            values["temperature"] = 1
+        return values
+
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
-        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
+        self.openai_organization = (
+            self.openai_organization
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
-
-        client_params = {
+        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+        client_params: dict = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if values["openai_proxy"] and (
-            values["http_client"] or values["http_async_client"]
-        ):
-            openai_proxy = values["openai_proxy"]
-            http_client = values["http_client"]
-            http_async_client = values["http_async_client"]
+        if self.openai_proxy and (self.http_client or self.http_async_client):
+            openai_proxy = self.openai_proxy
+            http_client = self.http_client
+            http_async_client = self.http_async_client
             raise ValueError(
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
-        if not values.get("client"):
-            if values["openai_proxy"] and not values["http_client"]:
+        if not self.client:
+            if self.openai_proxy and not self.http_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -449,12 +546,12 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
-            sync_specific = {"http_client": values["http_client"]}
-            values["root_client"] = openai.OpenAI(**client_params, **sync_specific)
-            values["client"] = values["root_client"].chat.completions
-        if not values.get("async_client"):
-            if values["openai_proxy"] and not values["http_async_client"]:
+                self.http_client = httpx.Client(proxy=self.openai_proxy)
+            sync_specific = {"http_client": self.http_client}
+            self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+            self.client = self.root_client.chat.completions
+        if not self.async_client:
+            if self.openai_proxy and not self.http_async_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -462,15 +559,14 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(
-                    proxy=values["openai_proxy"]
-                )
-            async_specific = {"http_client": values["http_async_client"]}
-            values["root_async_client"] = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+            async_specific = {"http_client": self.http_async_client}
+            self.root_async_client = openai.AsyncOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             )
-            values["async_client"] = values["root_async_client"].chat.completions
-        return values
+            self.async_client = self.root_async_client.chat.completions
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -509,8 +605,12 @@ class BaseChatOpenAI(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -532,24 +632,6 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
-        if "response_format" in payload and is_basemodel_subclass(
-            payload["response_format"]
-        ):
-            # TODO: Add support for streaming with Pydantic response_format.
-            warnings.warn("Streaming with Pydantic response_format not yet supported.")
-            chat_result = self._generate(
-                messages, stop, run_manager=run_manager, **kwargs
-            )
-            msg = chat_result.generations[0].message
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(
-                    **msg.dict(exclude={"type", "additional_kwargs"}),
-                    # preserve the "parsed" Pydantic object without converting to dict
-                    additional_kwargs=msg.additional_kwargs,
-                ),
-                generation_info=chat_result.generations[0].generation_info,
-            )
-            return
         if self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -561,43 +643,15 @@ class BaseChatOpenAI(BaseChatModel):
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(  # type: ignore[call-arg]
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                        logprobs = None
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    message_chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
-                    generation_info = {**base_generation_info} if is_first_chunk else {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                        if model_name := chunk.get("model"):
-                            generation_info["model_name"] = model_name
-                        if system_fingerprint := chunk.get("system_fingerprint"):
-                            generation_info["system_fingerprint"] = system_fingerprint
-
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = message_chunk.__class__
-                    generation_chunk = ChatGenerationChunk(
-                        message=message_chunk, generation_info=generation_info or None
-                    )
+                generation_chunk = _convert_chunk_to_generation_chunk(
+                    chunk,
+                    default_chunk_class,
+                    base_generation_info if is_first_chunk else {},
+                )
+                if generation_chunk is None:
+                    continue
+                default_chunk_class = generation_chunk.message.__class__
+                logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                 if run_manager:
                     run_manager.on_llm_new_token(
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
@@ -645,6 +699,7 @@ class BaseChatOpenAI(BaseChatModel):
         messages = self._convert_input(input_).to_messages()
         if stop is not None:
             kwargs["stop"] = stop
+
         return {
             "messages": [_convert_message_to_dict(m) for m in messages],
             **self._default_params,
@@ -668,15 +723,11 @@ class BaseChatOpenAI(BaseChatModel):
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
-        token_usage = response_dict.get("usage", {})
+        token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -715,26 +766,8 @@ class BaseChatOpenAI(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
-        if "response_format" in payload and is_basemodel_subclass(
-            payload["response_format"]
-        ):
-            # TODO: Add support for streaming with Pydantic response_format.
-            warnings.warn("Streaming with Pydantic response_format not yet supported.")
-            chat_result = await self._agenerate(
-                messages, stop, run_manager=run_manager, **kwargs
-            )
-            msg = chat_result.generations[0].message
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(
-                    **msg.dict(exclude={"type", "additional_kwargs"}),
-                    # preserve the "parsed" Pydantic object without converting to dict
-                    additional_kwargs=msg.additional_kwargs,
-                ),
-                generation_info=chat_result.generations[0].generation_info,
-            )
-            return
         if self.include_response_headers:
-            raw_response = self.async_client.with_raw_response.create(**payload)
+            raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
@@ -744,51 +777,18 @@ class BaseChatOpenAI(BaseChatModel):
             async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(  # type: ignore[call-arg]
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                        logprobs = None
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    message_chunk = await run_in_executor(
-                        None,
-                        _convert_delta_to_message_chunk,
-                        choice["delta"],
-                        default_chunk_class,
-                    )
-                    generation_info = {**base_generation_info} if is_first_chunk else {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                        if model_name := chunk.get("model"):
-                            generation_info["model_name"] = model_name
-                        if system_fingerprint := chunk.get("system_fingerprint"):
-                            generation_info["system_fingerprint"] = system_fingerprint
-
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = message_chunk.__class__
-                    generation_chunk = ChatGenerationChunk(
-                        message=message_chunk, generation_info=generation_info or None
-                    )
+                generation_chunk = _convert_chunk_to_generation_chunk(
+                    chunk,
+                    default_chunk_class,
+                    base_generation_info if is_first_chunk else {},
+                )
+                if generation_chunk is None:
+                    continue
+                default_chunk_class = generation_chunk.message.__class__
+                logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        token=generation_chunk.text,
-                        chunk=generation_chunk,
-                        logprobs=logprobs,
+                        generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
                 is_first_chunk = False
                 yield generation_chunk
@@ -854,7 +854,9 @@ class BaseChatOpenAI(BaseChatModel):
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
-        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens) or params.get(
+            "max_completion_tokens", self.max_tokens
+        ):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
@@ -887,8 +889,13 @@ class BaseChatOpenAI(BaseChatModel):
         _, encoding_model = self._get_encoding_model()
         return encoding_model.encode(text)
 
-    # TODO: Count bound tools as part of input.
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
@@ -898,7 +905,18 @@ class BaseChatOpenAI(BaseChatModel):
         counting.
 
         OpenAI reference: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+        """
+        # TODO: Count bound tools as part of input.
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
@@ -957,13 +975,37 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     # Cast str(value) in case the message value is not a string
                     # This occurs with function messages
-                    num_tokens += len(encoding.encode(value))
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        response_format: Optional[Union[dict, type]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        if isinstance(response_format, type) and is_basemodel_subclass(response_format):
+            # TODO: Add support for streaming with Pydantic response_format.
+            warnings.warn("Streaming with Pydantic response_format not yet supported.")
+            return False
+
+        return super()._should_stream(
+            async_api=async_api, run_manager=run_manager, **kwargs
+        )
+
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_openai.chat_models.base.ChatOpenAI.bind_tools",
+        removal="1.0.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -1031,22 +1073,18 @@ class BaseChatOpenAI(BaseChatModel):
 
         Assumes model is compatible with OpenAI tool-calling API.
 
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            tool_choice: Which tool to require the model to call.
-                Options are:
-                    - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
-                    - ``"auto"``: automatically selects a tool (including no tool).
-                    - ``"none"``: does not call a tool.
-                    - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
-                    - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
-                    - ``False`` or ``None``: no effect, default OpenAI behavior.
+            tool_choice: Which tool to require the model to call. Options are:
+
+                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
+                - ``"auto"``: automatically selects a tool (including no tool).
+                - ``"none"``: does not call a tool.
+                - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
+                - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
+                - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
                 provided in the tool definition. If True, the input schema will be
                 validated according to
@@ -1054,11 +1092,13 @@ class BaseChatOpenAI(BaseChatModel):
                 If False, input schema will not be validated and model output will not
                 be validated.
                 If None, ``strict`` argument will not be passed to the model.
-
-                .. versionadded:: 0.1.21
-
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                :meth:`~langchain_openai.chat_models.base.ChatOpenAI.bind`.
+
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+
         """  # noqa: E501
 
         formatted_tools = [
@@ -1112,18 +1152,15 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
-        .. versionchanged:: 0.1.21
-
-            Support for ``strict`` argument added.
-            Support for ``method`` = "json_schema" added.
-
         Args:
             schema:
                 The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.20),
-                    - or a Pydantic class.
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.20),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -1131,25 +1168,20 @@ class BaseChatOpenAI(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.20
+            method: The method for steering model generation, one of:
 
-                        Added support for TypedDict class.
-
-            method:
-                The method for steering model generation, one of:
-                    - "function_calling":
-                        Uses OpenAI's tool-calling (formerly called function calling)
-                        API: https://platform.openai.com/docs/guides/function-calling
-                    - "json_schema":
-                        Uses OpenAI's Structured Output API:
-                        https://platform.openai.com/docs/guides/structured-outputs
-                        Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
-                        models.
-                    - "json_mode":
-                        Uses OpenAI's JSON mode. Note that if using JSON mode then you
-                        must include instructions for formatting the output into the
-                        desired schema into the model call:
-                        https://platform.openai.com/docs/guides/structured-outputs/json-mode
+                - "function_calling":
+                    Uses OpenAI's tool-calling (formerly called function calling)
+                    API: https://platform.openai.com/docs/guides/function-calling
+                - "json_schema":
+                    Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
+                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
+                    models.
+                - "json_mode":
+                    Uses OpenAI's JSON mode. Note that if using JSON mode then you
+                    must include instructions for formatting the output into the
+                    desired schema into the model call:
+                    https://platform.openai.com/docs/guides/structured-outputs/json-mode
 
                 Learn more about the differences between the methods and which models
                 support which methods here:
@@ -1157,14 +1189,6 @@ class BaseChatOpenAI(BaseChatModel):
                 - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
                 - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
-                .. versionchanged:: 0.1.21
-
-                        Added support for "json_schema".
-
-                .. note:: Planned breaking change in version `0.2.0`
-
-                    ``method`` default will be changed to "json_schema" from
-                    "function_calling".
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -1173,6 +1197,7 @@ class BaseChatOpenAI(BaseChatModel):
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
             strict:
+
                 - True:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to
@@ -1187,12 +1212,6 @@ class BaseChatOpenAI(BaseChatModel):
                 "function_calling" or "json_mode" defaults to None. Can only be
                 non-null if ``method`` is "function_calling" or "json_schema".
 
-                .. versionadded:: 0.1.21
-
-                .. note:: Planned breaking change in version `0.2.0`
-
-                    ``strict`` will default to True when ``method`` is
-                    "function_calling" as of version `0.2.0`.
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1205,6 +1224,23 @@ class BaseChatOpenAI(BaseChatModel):
             - "raw": BaseMessage
             - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - "parsing_error": Optional[BaseException]
+
+        .. versionchanged:: 0.1.20
+
+            Added support for TypedDict class ``schema``.
+
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+            Support for ``method`` = "json_schema" added.
+
+        .. note:: Planned breaking changes in version `0.3.0`
+
+            - ``method`` default will be changed to "json_schema" from
+                "function_calling".
+            - ``strict`` will default to True when ``method`` is
+                "function_calling" as of version `0.3.0`.
+
 
         .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
 
@@ -1220,7 +1256,7 @@ class BaseChatOpenAI(BaseChatModel):
                 from typing import Optional
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1251,7 +1287,7 @@ class BaseChatOpenAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1341,7 +1377,7 @@ class BaseChatOpenAI(BaseChatModel):
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
@@ -1399,14 +1435,13 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools(
-                [schema],
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
+            bind_kwargs = self._filter_disabled_params(
+                tool_choice=tool_name, parallel_tool_calls=False, strict=strict
             )
+
+            llm = self.bind_tools([schema], **bind_kwargs)
             if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
+                output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
                     first_tool_only=True,  # type: ignore[list-item]
                 )
@@ -1427,14 +1462,14 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
-            output_parser = (
-                cast(Runnable, _oai_structured_outputs_parser)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            if is_pydantic_schema:
+                output_parser = _oai_structured_outputs_parser.with_types(
+                    output_type=cast(type, schema)
+                )
+            else:
+                output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
@@ -1453,8 +1488,23 @@ class BaseChatOpenAI(BaseChatModel):
         else:
             return llm | output_parser
 
+    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+        if not self.disabled_params:
+            return kwargs
+        filtered = {}
+        for k, v in kwargs.items():
+            # Skip param
+            if k in self.disabled_params and (
+                self.disabled_params[k] is None or v in self.disabled_params[k]
+            ):
+                continue
+            # Keep param
+            else:
+                filtered[k] = v
+        return filtered
 
-class ChatOpenAI(BaseChatOpenAI):
+
+class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     """OpenAI chat model integration.
 
     .. dropdown:: Setup
@@ -1643,7 +1693,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -1729,7 +1779,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -1916,6 +1966,9 @@ class ChatOpenAI(BaseChatOpenAI):
     message chunks will be generated during the stream including usage metadata.
     """
 
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    """Maximum number of tokens to generate."""
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
@@ -1944,6 +1997,29 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        params = super()._default_params
+        if "max_tokens" in params:
+            params["max_completion_tokens"] = params.pop("max_tokens")
+
+        return params
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        # max_tokens was deprecated in favor of max_completion_tokens
+        # in September 2024 release
+        if "max_tokens" in payload:
+            payload["max_completion_tokens"] = payload.pop("max_tokens")
+        return payload
 
     def _should_stream_usage(
         self, stream_usage: Optional[bool] = None, **kwargs: Any
@@ -2092,14 +2168,36 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], strict: bool
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
 ) -> Union[Dict, TypeBaseModel]:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
+
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
+        response_format = schema
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
+        response_format = {"type": "json_schema", "json_schema": schema}
     else:
+        strict = strict if strict is not None else True
         function = convert_to_openai_function(schema, strict=strict)
         function["schema"] = function.pop("parameters")
-        return {"type": "json_schema", "json_schema": function}
+        response_format = {"type": "json_schema", "json_schema": function}
+
+    if strict is not None and strict is not response_format["json_schema"].get(
+        "strict"
+    ):
+        msg = (
+            f"Output schema already has 'strict' value set to "
+            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
+            f"with_structured_output as {strict}. Please make sure that "
+            f"'strict' is only specified in one place."
+        )
+        raise ValueError(msg)
+    return response_format
 
 
 @chain
@@ -2111,7 +2209,7 @@ def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            "field."
+            "field. Received message:\n\n{ai_msg}"
         )
 
 
@@ -2126,3 +2224,36 @@ class OpenAIRefusalError(Exception):
 
     .. versionadded:: 0.1.21
     """
+
+
+def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
+    input_tokens = oai_token_usage.get("prompt_tokens", 0)
+    output_tokens = oai_token_usage.get("completion_tokens", 0)
+    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_token_details: dict = {
+        "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "cache_read": (oai_token_usage.get("prompt_tokens_details") or {}).get(
+            "cached_tokens"
+        ),
+    }
+    output_token_details: dict = {
+        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "reasoning": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "reasoning_tokens"
+        ),
+    }
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+        input_token_details=InputTokenDetails(
+            **{k: v for k, v in input_token_details.items() if v is not None}
+        ),
+        output_token_details=OutputTokenDetails(
+            **{k: v for k, v in output_token_details.items() if v is not None}
+        ),
+    )

@@ -11,7 +11,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from requests import Response
 
 from langchain_community.tools.openapi.utils.api_models import APIOperation
@@ -30,7 +30,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     """Chain interacts with an OpenAPI endpoint using natural language."""
 
     api_request_chain: LLMChain
-    api_response_chain: Optional[LLMChain]
+    api_response_chain: Optional[LLMChain] = None
     api_operation: APIOperation
     requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")

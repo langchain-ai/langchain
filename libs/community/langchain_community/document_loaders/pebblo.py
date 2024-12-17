@@ -3,7 +3,8 @@
 import logging
 import os
 import uuid
-from typing import Dict, Iterator, List, Optional
+from importlib.metadata import version
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -12,6 +13,7 @@ from langchain_community.utilities.pebblo import (
     BATCH_SIZE_BYTES,
     PLUGIN_VERSION,
     App,
+    Framework,
     IndexedDocument,
     PebbloLoaderAPIWrapper,
     generate_size_based_batches,
@@ -43,6 +45,7 @@ class PebbloSafeLoader(BaseLoader):
         classifier_url: Optional[str] = None,
         *,
         classifier_location: str = "local",
+        anonymize_snippets: bool = False,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -76,6 +79,7 @@ class PebbloSafeLoader(BaseLoader):
             api_key=api_key,
             classifier_location=classifier_location,
             classifier_url=classifier_url,
+            anonymize_snippets=anonymize_snippets,
         )
         self.pb_client.send_loader_discover(self.app)
 
@@ -175,6 +179,10 @@ class PebbloSafeLoader(BaseLoader):
             runtime=runtime,
             framework=framework,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 
@@ -252,11 +260,80 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
-            doc_metadata["full_path"] = get_full_path(
-                doc_metadata.get(
-                    "full_path", doc_metadata.get("source", self.source_path)
+            if self.loader.__class__.__name__ == "SharePointLoader":
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get("source", self.source_path)
                 )
-            )
+            else:
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get(
+                        "full_path", doc_metadata.get("source", self.source_path)
+                    )
+                )
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
             )
+
+
+class PebbloTextLoader(BaseLoader):
+    """
+    Loader for text data.
+
+    Since PebbloSafeLoader is a wrapper around document loaders, this loader is
+    used to load text data directly into Documents.
+    """
+
+    def __init__(
+        self,
+        texts: Iterable[str],
+        *,
+        source: Optional[str] = None,
+        ids: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        """
+        Args:
+            texts: Iterable of text data.
+            source: Source of the text data.
+                Optional. Defaults to None.
+            ids: List of unique identifiers for each text.
+                Optional. Defaults to None.
+            metadata: Metadata for all texts.
+                Optional. Defaults to None.
+            metadatas: List of metadata for each text.
+                Optional. Defaults to None.
+        """
+        self.texts = texts
+        self.source = source
+        self.ids = ids
+        self.metadata = metadata
+        self.metadatas = metadatas
+
+    def lazy_load(self) -> Iterator[Document]:
+        """
+        Lazy load text data into Documents.
+
+        Returns:
+            Iterator of Documents
+        """
+        for i, text in enumerate(self.texts):
+            _id = None
+            metadata = self.metadata or {}
+            if self.metadatas and i < len(self.metadatas) and self.metadatas[i]:
+                metadata.update(self.metadatas[i])
+            if self.ids and i < len(self.ids):
+                _id = self.ids[i]
+            yield Document(id=_id, page_content=text, metadata=metadata)
+
+    def load(self) -> List[Document]:
+        """
+        Load text data into Documents.
+
+        Returns:
+            List of Documents
+        """
+        documents = []
+        for doc in self.lazy_load():
+            documents.append(doc)
+        return documents

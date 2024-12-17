@@ -38,7 +38,8 @@ class LangSmithRunChatLoader(BaseChatLoader):
         self.runs = runs
         self.client = client or Client()
 
-    def _load_single_chat_session(self, llm_run: "Run") -> ChatSession:
+    @staticmethod
+    def _load_single_chat_session(llm_run: "Run") -> ChatSession:
         """
         Convert an individual LangSmith LLM run to a ChatSession.
 

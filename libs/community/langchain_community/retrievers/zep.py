@@ -8,8 +8,8 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import model_validator
 
 if TYPE_CHECKING:
     from zep_python.memory import MemorySearchResult
@@ -79,8 +79,9 @@ class ZepRetriever(BaseRetriever):
     mmr_lambda: Optional[float] = None
     """Lambda value for MMR search."""
 
-    @root_validator(pre=True)
-    def create_client(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def create_client(cls, values: dict) -> Any:
         try:
             from zep_python import ZepClient
         except ImportError:

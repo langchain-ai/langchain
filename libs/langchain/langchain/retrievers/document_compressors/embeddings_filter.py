@@ -4,8 +4,8 @@ import numpy as np
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict, Field
 
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -36,13 +36,14 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     k: Optional[int] = 20
     """The number of relevant documents to return. Can be set to None, in which case
     `similarity_threshold` must be specified. Defaults to 20."""
-    similarity_threshold: Optional[float]
+    similarity_threshold: Optional[float] = None
     """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @pre_init
     def validate_params(cls, values: Dict) -> Dict:
@@ -74,7 +75,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         )
         embedded_query = self.embeddings.embed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
-        included_idxs = np.arange(len(embedded_documents))
+        included_idxs: np.ndarray = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
@@ -109,7 +110,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         )
         embedded_query = await self.embeddings.aembed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
-        included_idxs = np.arange(len(embedded_documents))
+        included_idxs: np.ndarray = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:

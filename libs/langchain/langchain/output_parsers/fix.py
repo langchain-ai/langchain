@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Union
+from typing import Annotated, Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnableSerializable
+from pydantic import SkipValidation
 from typing_extensions import TypedDict
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
@@ -26,11 +27,12 @@ class OutputFixingParser(BaseOutputParser[T]):
     def is_lc_serializable(cls) -> bool:
         return True
 
-    parser: BaseOutputParser[T]
+    parser: Annotated[Any, SkipValidation()]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
-    retry_chain: Union[
-        RunnableSerializable[OutputFixingParserRetryChainInput, str], Any
+    retry_chain: Annotated[
+        Union[RunnableSerializable[OutputFixingParserRetryChainInput, str], Any],
+        SkipValidation(),
     ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1
