@@ -1189,8 +1189,34 @@ def test_tool_arg_descriptions() -> None:
     args_schema = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema["description"] == expected["description"]
 
-    # Test additional docstring format
-    def foo6(bar: str, baz: int) -> str:
+
+def test_docstring_parsing() -> None:
+    expected = {
+        "title": "foo",
+        "description": "The foo.",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
+            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+    def foo(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo, parse_docstring=True)
+    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema["description"] == "The foo."
+    assert args_schema["properties"] == expected["properties"]
+
+    def foo2(bar: str, baz: int) -> str:
         """The foo.
 
         Additional description here.
@@ -1201,10 +1227,44 @@ def test_tool_arg_descriptions() -> None:
         """
         return bar
 
-    as_tool = tool(foo6, parse_docstring=True)
+    as_tool = tool(foo2, parse_docstring=True)
+    args_schema2 = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema2["description"] == "The foo. Additional description here."
+    assert args_schema2["properties"] == expected["properties"]
+
+    def foo3(bar: str, baz: int) -> str:
+        """The foo.
+
+        Additional description here.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+
+        Returns:
+            str: description of returned value.
+        """
+        return bar
+
+    as_tool = tool(foo3, parse_docstring=True)
+    args_schema3 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema3["title"] = "foo2"
+    assert args_schema2 == args_schema3
+
+    def foo4(bar: str) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+        """
+        return bar
+
+    as_tool = tool(foo4, parse_docstring=True)
     args_schema = _schema(as_tool.args_schema)  # type: ignore
-    assert args_schema["description"] == "The foo. Additional description here."
-    assert args_schema["properties"] == expected["properties"]
+    assert args_schema["description"] == "The foo."
+    assert args_schema["properties"] == {
+        "bar": {"description": "The bar.", "title": "Bar", "type": "string"}
+    }
 
 
 def test_tool_invalid_docstrings() -> None:
