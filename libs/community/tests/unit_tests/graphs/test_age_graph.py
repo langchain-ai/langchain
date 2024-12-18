@@ -54,6 +54,7 @@ class TestAGEGraph(unittest.TestCase):
 
     def test_wrap_query(self) -> None:
         inputs = [
+            # Positive case: Simple return clause
             """
             MATCH (keanu:Person {name:'Keanu Reeves'})
             RETURN keanu.name AS name, keanu.born AS born
@@ -61,9 +62,20 @@ class TestAGEGraph(unittest.TestCase):
             """
             MERGE (n:a {id: 1})
             """,
+            # Negative case: Return in a string value
+            """
+            MATCH (n {description: "This will return a value"})
+            MERGE (n)-[:RELATED]->(m)
+            """,
+            # Negative case: Return in a property key
+            """
+            MATCH (n {returnValue: "some value"})
+            MERGE (n)-[:RELATED]->(m)
+            """,
         ]
 
         expected = [
+            # Expected output for the first positive case
             """
             SELECT * FROM ag_catalog.cypher('test', $$
             MATCH (keanu:Person {name:'Keanu Reeves'})
@@ -73,6 +85,19 @@ class TestAGEGraph(unittest.TestCase):
             """
             SELECT * FROM ag_catalog.cypher('test', $$
             MERGE (n:a {id: 1})
+            $$) AS (a agtype);
+            """,
+            # Expected output for the negative cases (no return clause)
+            """
+            SELECT * FROM ag_catalog.cypher('test', $$
+            MATCH (n {description: "This will return a value"})
+            MERGE (n)-[:RELATED]->(m)
+            $$) AS (a agtype);
+            """,
+            """
+            SELECT * FROM ag_catalog.cypher('test', $$
+            MATCH (n {returnValue: "some value"})
+            MERGE (n)-[:RELATED]->(m)
             $$) AS (a agtype);
             """,
         ]
