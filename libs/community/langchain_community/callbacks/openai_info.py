@@ -330,12 +330,12 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 model_name = standardize_model_name(
                     response.llm_output.get("model_name", "")
                 )
-            match usage_metadata:
-                case {"input_token_details": {"cache_read": cached_tokens}}:
-                    prompt_tokens_cached = cached_tokens
-            match usage_metadata:
-                case {"output_token_details": {"reasoning": reasoning}}:
-                    reasoning_tokens = reasoning
+            if "cache_read" in usage_metadata.get("input_token_details", {}):
+                prompt_tokens_cached = usage_metadata["input_token_details"][
+                    "cache_read"
+                ]
+            if "reasoning" in usage_metadata.get("output_token_details", {}):
+                reasoning_tokens = usage_metadata["output_token_details"]["reasoning"]
         else:
             if response.llm_output is None:
                 return None
