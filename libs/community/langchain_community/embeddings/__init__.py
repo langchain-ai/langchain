@@ -101,6 +101,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.huggingface_hub import (
         HuggingFaceHubEmbeddings,
     )
+    from langchain_community.embeddings.hunyuan import (
+        HunyuanEmbeddings,
+    )
     from langchain_community.embeddings.infinity import (
         InfinityEmbeddings,
     )
@@ -144,6 +147,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.embeddings.mlflow_gateway import (
         MlflowAIGatewayEmbeddings,
+    )
+    from langchain_community.embeddings.model2vec import (
+        Model2vecEmbeddings,
     )
     from langchain_community.embeddings.modelscope_hub import (
         ModelScopeEmbeddings,
@@ -289,6 +295,7 @@ __all__ = [
     "MlflowAIGatewayEmbeddings",
     "MlflowCohereEmbeddings",
     "MlflowEmbeddings",
+    "Model2vecEmbeddings",
     "ModelScopeEmbeddings",
     "MosaicMLInstructorEmbeddings",
     "NLPCloudEmbeddings",
@@ -323,6 +330,7 @@ __all__ = [
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
     "ZhipuAIEmbeddings",
+    "HunyuanEmbeddings",
 ]
 
 _module_lookup = {
@@ -372,6 +380,7 @@ _module_lookup = {
     "MlflowAIGatewayEmbeddings": "langchain_community.embeddings.mlflow_gateway",
     "MlflowCohereEmbeddings": "langchain_community.embeddings.mlflow",
     "MlflowEmbeddings": "langchain_community.embeddings.mlflow",
+    "Model2vecEmbeddings": "langchain_community.embeddings.model2vec",
     "ModelScopeEmbeddings": "langchain_community.embeddings.modelscope_hub",
     "MosaicMLInstructorEmbeddings": "langchain_community.embeddings.mosaicml",
     "NLPCloudEmbeddings": "langchain_community.embeddings.nlpcloud",
@@ -407,6 +416,7 @@ _module_lookup = {
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
     "AscendEmbeddings": "langchain_community.embeddings.ascend",
     "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
+    "HunyuanEmbeddings": "langchain_community.embeddings.hunyuan",
 }
 
 

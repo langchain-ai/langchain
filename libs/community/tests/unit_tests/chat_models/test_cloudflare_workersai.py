@@ -11,7 +11,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_community.chat_models.cloudflare_workersai import (
     ChatCloudflareWorkersAI,

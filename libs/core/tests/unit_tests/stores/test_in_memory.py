@@ -1,5 +1,5 @@
 import pytest
-from langchain_standard_tests.integration_tests.base_store import (
+from langchain_tests.integration_tests.base_store import (
     BaseStoreAsyncTests,
     BaseStoreSyncTests,
 )

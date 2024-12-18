@@ -14047,7 +14047,8 @@
                   "stop": [
                     "Thought:"
                   ]
-                }
+                },
+                "config": {}
               },
               "name": "FakeListChatModel"
             },

@@ -90,5 +90,5 @@ class DatabricksVectorSearchTranslator(Visitor):
         if structured_query.filter is None:
             kwargs = {}
         else:
-            kwargs = {"filters": structured_query.filter.accept(self)}
+            kwargs = {"filter": structured_query.filter.accept(self)}
         return structured_query.query, kwargs
