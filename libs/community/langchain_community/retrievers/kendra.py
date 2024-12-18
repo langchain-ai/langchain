@@ -355,6 +355,9 @@ class AmazonKendraRetriever(BaseRetriever):
 
         user_context: Provides information about the user context
             See: https://docs.aws.amazon.com/kendra/latest/APIReference
+        
+        min_score_confidence: The minimum confidence score threshold for filtering documents. 
+            Documents with a confidence score below this value will be excluded from the results. 
 
     Example:
         .. code-block:: python
@@ -374,7 +377,7 @@ class AmazonKendraRetriever(BaseRetriever):
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
-    min_score_confidence: Annotated[Optional[float], Field(ge=0.0, le=1.0)]
+    min_score_confidence: Annotated[Optional[float], Field(ge=0.0, le=1.0)] = 0.0
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
