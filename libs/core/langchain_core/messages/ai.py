@@ -2,7 +2,7 @@ import json
 import operator
 from typing import Any, Literal, Optional, Union, cast
 
-from pydantic import model_validator
+from pydantic import BaseModel, model_validator
 from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_core.messages.base import (
@@ -166,6 +166,7 @@ class AIMessage(BaseMessage):
 
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
+    parsed: Optional[Union[dict, BaseModel]] = None
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -440,6 +441,17 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
+    has_parsed = [m for m in ([left, *others]) if m.parsed]
+    if len(has_parsed) >= 2:
+        msg = (
+            "Cannot concatenate two AIMessageChunks with non-null 'parsed' attributes."
+        )
+        raise ValueError(msg)
+    elif len(has_parsed) == 1:
+        parsed = has_parsed[0].parsed
+    else:
+        parsed = None
+
     return left.__class__(
         example=left.example,
         content=content,
@@ -448,6 +460,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=left.id,
+        parsed=parsed,
     )
 
 
