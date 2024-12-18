@@ -221,14 +221,14 @@ def _create_message_from_message_type(
         tool_call_id: (str) the tool call id. Default is None.
         tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
         id: (str) the id of the message. Default is None.
-        **additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        additional_kwargs: (dict[str, Any]) additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
 
     Raises:
         ValueError: if the message type is not one of "human", "user", "ai",
-            "assistant", "system", "function", or "tool".
+            "assistant", "system", "function", "tool", or "developer".
     """
     kwargs: dict[str, Any] = {}
     if name is not None:
@@ -276,7 +276,7 @@ def _create_message_from_message_type(
     else:
         msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
         )
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)

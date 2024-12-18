@@ -1097,3 +1097,15 @@ def test_o1_max_tokens() -> None:
         "how are you"
     )
     assert isinstance(response, AIMessage)
+
+
+def test_developer_message() -> None:
+    llm = ChatOpenAI(model="o1", max_tokens=10)
+    response = llm.invoke(
+        [
+            {"role": "developer", "content": "respond in all caps"},
+            {"role": "user", "content": "HOW ARE YOU"},
+        ]
+    )
+    assert isinstance(response, AIMessage)
+    assert response.content.upper() == response.content
