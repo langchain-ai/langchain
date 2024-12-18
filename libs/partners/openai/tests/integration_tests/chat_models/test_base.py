@@ -1097,3 +1097,31 @@ def test_o1_max_tokens() -> None:
         "how are you"
     )
     assert isinstance(response, AIMessage)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "gpt-4o",
+        "gpt-4o-mini",
+        "o1",
+        # "o1-mini", neither supported
+        "gpt-3.5-turbo",
+    ],
+)
+@pytest.mark.parametrize("role", ["system", "developer", None])
+def test_system_message_roles(model: str, role: Optional[str]) -> None:
+    init_kwargs = {"model": model}
+    if role is not None:
+        init_kwargs["system_message_role"] = role
+    llm = ChatOpenAI(**init_kwargs)  # type: ignore[arg-type]
+    if role is None:
+        if model.startswith("o1"):
+            assert llm.system_message_role == "developer"
+        else:
+            assert llm.system_message_role == "system"
+    history = [SystemMessage("You talk like a pirate"), HumanMessage("Hello there")]
+
+    out = llm.invoke(history)
+    assert isinstance(out, AIMessage)
+    assert out.content
