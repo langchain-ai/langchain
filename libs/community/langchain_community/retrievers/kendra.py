@@ -355,11 +355,10 @@ class AmazonKendraRetriever(BaseRetriever):
 
         user_context: Provides information about the user context
             See: https://docs.aws.amazon.com/kendra/latest/APIReference
-        
-        min_score_confidence: The minimum confidence score threshold for 
-            filtering documents. Documents with a confidence score 
-            below this value will be excluded from the results. 
 
+        min_score_confidence: The minimum confidence score threshold for
+            filtering documents. Documents with a confidence score
+            below this value will be excluded from the results.
     Example:
         .. code-block:: python
 
