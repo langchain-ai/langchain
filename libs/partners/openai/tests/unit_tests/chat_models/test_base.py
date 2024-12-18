@@ -864,7 +864,7 @@ def test_nested_structured_output_strict() -> None:
 
 def test__get_request_payload() -> None:
     llm = ChatOpenAI(model="gpt-4o-2024-08-06")
-    messages = [
+    messages: list = [
         SystemMessage("hello"),
         SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
         {"role": "human", "content": "how are you"},

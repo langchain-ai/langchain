@@ -1100,7 +1100,7 @@ def test_o1_max_tokens() -> None:
 
 
 def test_developer_message() -> None:
-    llm = ChatOpenAI(model="o1", max_tokens=10)
+    llm = ChatOpenAI(model="o1", max_tokens=10)  # type: ignore[call-arg]
     response = llm.invoke(
         [
             {"role": "developer", "content": "respond in all caps"},
@@ -1108,4 +1108,5 @@ def test_developer_message() -> None:
         ]
     )
     assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
     assert response.content.upper() == response.content

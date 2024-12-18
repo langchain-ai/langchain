@@ -952,7 +952,7 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
 
 
 def test_convert_to_openai_messages_developer() -> None:
-    messages = [
+    messages: list = [
         SystemMessage("a", additional_kwargs={"__openai_role__": "developer"}),
         {"role": "developer", "content": "a"},
     ]
