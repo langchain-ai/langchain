@@ -357,8 +357,8 @@ class AmazonKendraRetriever(BaseRetriever):
             See: https://docs.aws.amazon.com/kendra/latest/APIReference
         
         min_score_confidence: The minimum confidence score threshold for 
-            filtering documents. 
-            Documents with a confidence score below this value will be excluded from the results. 
+            filtering documents. Documents with a confidence score 
+            below this value will be excluded from the results. 
 
     Example:
         .. code-block:: python
