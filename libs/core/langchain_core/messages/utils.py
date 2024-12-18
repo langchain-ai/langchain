@@ -139,7 +139,12 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return HumanMessage(**message["data"])
     elif _type == "ai":
         return AIMessage(**message["data"])
-    elif _type == "system":
+    elif _type in ("system", "developer"):
+        if _type == "developer":
+            message["data"]["additional_kwargs"] = (
+                message["data"].get("additional_kwargs") or {}
+            )
+            message["data"]["additional_kwargs"]["__openai_role__"] = "developer"
         return SystemMessage(**message["data"])
     elif _type == "chat":
         return ChatMessage(**message["data"])
@@ -262,8 +267,9 @@ def _create_message_from_message_type(
     elif message_type in ("ai", "assistant"):
         message = AIMessage(content=content, **kwargs)
     elif message_type in ("system", "developer"):
-        kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
-        kwargs["additional_kwargs"]["__openai_role__"] = message_type
+        if message_type == "developer":
+            kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
+            kwargs["additional_kwargs"]["__openai_role__"] = "developer"
         message = SystemMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
