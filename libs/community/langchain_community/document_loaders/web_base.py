@@ -71,6 +71,7 @@ class WebBaseLoader(BaseLoader):
                 # bs_kwargs = None,
                 # session = None,
                 # show_progress = True,
+                # trust_env = False,
             )
 
     Lazy load:
@@ -128,6 +129,7 @@ class WebBaseLoader(BaseLoader):
         session: Any = None,
         *,
         show_progress: bool = True,
+        trust_env: bool = False,
     ) -> None:
         """Initialize loader.
 
@@ -140,6 +142,8 @@ class WebBaseLoader(BaseLoader):
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
             show_progress: Show progress bar when loading pages.
+            trust_env: set to True if using proxy to make web requests, for example
+                using http(s)_proxy environment variables. Defaults to False.
         """
         # web_path kept for backwards-compatibility.
         if web_path and web_paths:
@@ -189,6 +193,7 @@ class WebBaseLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.autoset_encoding = autoset_encoding
         self.encoding = encoding
+        self.trust_env = trust_env
 
     @property
     def web_path(self) -> str:
@@ -199,7 +204,7 @@ class WebBaseLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
                     kwargs: Dict = dict(

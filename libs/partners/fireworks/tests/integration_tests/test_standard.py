@@ -29,3 +29,7 @@ class TestFireworksStandard(ChatModelIntegrationTests):
         self, model: BaseChatModel, my_adder_tool: BaseTool
     ) -> None:
         super().test_tool_message_histories_list_content(model, my_adder_tool)
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return True
