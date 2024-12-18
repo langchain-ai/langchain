@@ -31,29 +31,11 @@ repos:
       entry: make -C libs/text-splitters format
       files: ^libs/text-splitters/
       pass_filenames: false
-    - id: airbyte
-      name: format partners/airbyte
-      language: system
-      entry: make -C libs/partners/airbyte format
-      files: ^libs/partners/airbyte/
-      pass_filenames: false
     - id: anthropic
       name: format partners/anthropic
       language: system
       entry: make -C libs/partners/anthropic format
       files: ^libs/partners/anthropic/
-      pass_filenames: false
-    - id: azure-dynamic-sessions
-      name: format partners/azure-dynamic-sessions
-      language: system
-      entry: make -C libs/partners/azure-dynamic-sessions format
-      files: ^libs/partners/azure-dynamic-sessions/
-      pass_filenames: false
-    - id: box
-      name: format partners/box
-      language: system
-      entry: make -C libs/partners/box format
-      files: ^libs/partners/box/
       pass_filenames: false
     - id: chroma
       name: format partners/chroma
@@ -91,23 +73,11 @@ repos:
       entry: make -C libs/partners/huggingface format
       files: ^libs/partners/huggingface/
       pass_filenames: false
-    - id: milvus
-      name: format partners/milvus
-      language: system
-      entry: make -C libs/partners/milvus format
-      files: ^libs/partners/milvus/
-      pass_filenames: false
     - id: mistralai
       name: format partners/mistralai
       language: system
       entry: make -C libs/partners/mistralai format
       files: ^libs/partners/mistralai/
-      pass_filenames: false
-    - id: mongodb
-      name: format partners/mongodb
-      language: system
-      entry: make -C libs/partners/mongodb format
-      files: ^libs/partners/mongodb/
       pass_filenames: false
     - id: nomic
       name: format partners/nomic
@@ -145,12 +115,6 @@ repos:
       entry: make -C libs/partners/qdrant format
       files: ^libs/partners/qdrant/
       pass_filenames: false
-    - id: unstructured
-      name: format partners/unstructured
-      language: system
-      entry: make -C libs/partners/unstructured format
-      files: ^libs/partners/unstructured/
-      pass_filenames: false
     - id: voyageai
       name: format partners/voyageai
       language: system
@@ -161,5 +125,5 @@ repos:
       name: format docs, cookbook, templates
       language: system
       entry: make format
-      files: ^(docs|cookbook|templates)/
+      files: ^(docs|cookbook)/
       pass_filenames: false
