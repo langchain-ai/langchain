@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
 
 // Create a custom dropdown since Docusaurus's dropdown component isn't easily accessible
-const CustomDropdown = ({ selectedOption, options, onSelect }) => {
+export const CustomDropdown = ({ selectedOption, options, onSelect, modelType }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Close dropdown when clicking outside
@@ -18,13 +18,29 @@ const CustomDropdown = ({ selectedOption, options, onSelect }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [isOpen]);
 
+  // Determine the text and link based on the modelType
+  const getModelTextAndLink = () => {
+    switch (modelType) {
+      case 'chat':
+        return { text: 'chat model', link: '/docs/integrations/chat/' };
+      case 'embeddings':
+        return { text: 'embeddings model', link: '/docs/integrations/text_embedding/' };
+      case 'vectorstore':
+        return { text: 'vector store', link: '/docs/integrations/vectorstores/' };
+      default:
+        return { text: 'chat model', link: '/docs/integrations/chat/' };
+    }
+  };
+
+  const { text, link } = getModelTextAndLink();
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
       <span style={{ 
         fontSize: '1rem',
         fontWeight: '500',
       }}>
-        Select <a href="/docs/integrations/chat/">chat model</a>:
+        Select <a href={link}>{text}</a>:
       </span>
       <div className={`dropdown ${isOpen ? 'dropdown--show' : ''}`}>
         <button 
@@ -300,6 +316,7 @@ return (
       selectedOption={selectedOption}
       options={modelOptions}
       onSelect={setSelectedModel}
+      modelType="chat"
     />
 
     <CodeBlock language="bash">

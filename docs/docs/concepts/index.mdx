@@ -48,7 +48,7 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[AIMessage](/docs/concepts/messages#aimessage)**: Represents a complete response from an AI model.
 - **[astream_events](/docs/concepts/chat_models#key-methods)**: Stream granular information from [LCEL](/docs/concepts/lcel) chains.
 - **[BaseTool](/docs/concepts/tools/#tool-interface)**: The base class for all tools in LangChain.
-- **[batch](/docs/concepts/runnables)**: Use to execute a runnable with batch inputs a Runnable.
+- **[batch](/docs/concepts/runnables)**: Use to execute a runnable with batch inputs.
 - **[bind_tools](/docs/concepts/tool_calling/#tool-binding)**: Allows models to interact with tools.
 - **[Caching](/docs/concepts/chat_models#caching)**: Storing results to avoid redundant calls to a chat model.
 - **[Chat models](/docs/concepts/multimodality/#multimodality-in-chat-models)**: Chat models that handle multiple data modalities.
@@ -70,7 +70,7 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[langchain-core](/docs/concepts/architecture#langchain-core)**: Core langchain package. Includes base interfaces and in-memory implementations.
 - **[langchain](/docs/concepts/architecture#langchain)**: A package for higher level components (e.g., some pre-built chains).
 - **[langgraph](/docs/concepts/architecture#langgraph)**: Powerful orchestration layer for LangChain. Use to build complex pipelines and workflows.
-- **[langserve](/docs/concepts/architecture#langserve)**: Use to deploy LangChain Runnables as REST endpoints. Uses FastAPI. Works primarily for LangChain Runnables, does not currently integrate with LangGraph.
+- **[langserve](/docs/concepts/architecture#langserve)**: Used to deploy LangChain Runnables as REST endpoints. Uses FastAPI. Works primarily for LangChain Runnables, does not currently integrate with LangGraph.
 - **[LLMs (legacy)](/docs/concepts/text_llms)**: Older language models that take a string as input and return a string as output.
 - **[Managing chat history](/docs/concepts/chat_history#managing-chat-history)**: Techniques to maintain and manage the chat history.
 - **[OpenAI format](/docs/concepts/messages#openai-format)**: OpenAI's message format for chat models.
@@ -79,7 +79,7 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[RemoveMessage](/docs/concepts/messages/#removemessage)**: An abstraction used to remove a message from chat history, used primarily in LangGraph.
 - **[role](/docs/concepts/messages#role)**: Represents the role (e.g., user, assistant) of a chat message.
 - **[RunnableConfig](/docs/concepts/runnables/#runnableconfig)**: Use to pass run time information to Runnables (e.g., `run_name`, `run_id`, `tags`, `metadata`, `max_concurrency`, `recursion_limit`, `configurable`).
-- **[Standard parameters for chat models](/docs/concepts/chat_models#standard-parameters)**: Parameters such as API key, `temperature`, and `max_tokens`,
+- **[Standard parameters for chat models](/docs/concepts/chat_models#standard-parameters)**: Parameters such as API key, `temperature`, and `max_tokens`.
 - **[Standard tests](/docs/concepts/testing#standard-tests)**: A defined set of unit and integration tests that all integrations must pass.
 - **[stream](/docs/concepts/streaming)**: Use to stream output from a Runnable or a graph.
 - **[Tokenization](/docs/concepts/tokens)**: The process of converting data into tokens and vice versa.

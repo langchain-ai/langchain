@@ -16,8 +16,8 @@ from voyageai.object import RerankingObject  # type: ignore
 class VoyageAIRerank(BaseDocumentCompressor):
     """Document compressor that uses `VoyageAI Rerank API`."""
 
-    client: voyageai.Client = None
-    aclient: voyageai.AsyncClient = None
+    client: voyageai.Client = None  # type: ignore
+    aclient: voyageai.AsyncClient = None  # type: ignore
     """VoyageAI clients to use for compressing documents."""
     voyage_api_key: Optional[SecretStr] = None
     """VoyageAI API key. Must be specified directly or via environment variable 

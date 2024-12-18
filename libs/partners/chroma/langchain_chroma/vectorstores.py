@@ -318,6 +318,9 @@ class Chroma(VectorStore):
                 client_settings.persist_directory = (
                     persist_directory or client_settings.persist_directory
                 )
+                client_settings.is_persistent = (
+                    client_settings.persist_directory is not None
+                )
 
                 _client_settings = client_settings
             elif persist_directory:
@@ -433,6 +436,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -519,10 +524,8 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            # Assign strings to any null IDs
-            for idx, _id in enumerate(ids):
-                if _id is None:
-                    ids[idx] = str(uuid.uuid4())
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -1169,6 +1172,8 @@ class Chroma(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
             chroma_collection._client, "get_max_batch_size"
         ) or hasattr(  # for Chroma 0.5.1 and above

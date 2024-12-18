@@ -68,6 +68,16 @@ class TestConfluenceLoader:
                 session=requests.Session(),
             )
 
+        with pytest.raises(ValueError):
+            ConfluenceLoader(
+                self.CONFLUENCE_URL,
+                username=self.MOCK_USERNAME,
+                api_key=self.MOCK_API_TOKEN,
+                cookies={
+                    "key": "value",
+                },
+            )
+
     def test_confluence_loader_initialization_from_env(
         self, mock_confluence: MagicMock
     ) -> None:

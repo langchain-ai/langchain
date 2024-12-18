@@ -207,6 +207,10 @@ class ChatDeepInfra(BaseChatModel):
     # client: Any  #: :meta private:
     model_name: str = Field(default="meta-llama/Llama-2-70b-chat-hf", alias="model")
     """Model name to use."""
+
+    url: str = "https://api.deepinfra.com/v1/openai/chat/completions"
+    """URL to use for the API call."""
+
     deepinfra_api_token: Optional[str] = None
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
@@ -469,7 +473,7 @@ class ChatDeepInfra(BaseChatModel):
             )
 
     def _url(self) -> str:
-        return "https://stage.api.deepinfra.com/v1/openai/chat/completions"
+        return self.url
 
     def _headers(self) -> Dict:
         return {
