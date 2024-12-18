@@ -2,19 +2,23 @@ import inspect
 from typing import Any, Dict, Iterator, Type
 
 from langchain.document_loaders.base import BaseBlobParser, BaseLoader
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.documents.base import Blob
 
 
+@beta()
 class DocumentLoaderAsParser(BaseBlobParser):
+    """A wrapper class that adapts a document loader to function as a parser.
+
+    This class is a work-around that adapts a document loader to function as a parser.
+    It is recommended to use a proper parser, if available.
+
+    Requires the document loader to accept a `file_path` parameter.
+    """
+
     DocumentLoaderType: Type[BaseLoader]
     doc_loader_kwargs: Dict[str, Any]
-    """
-    A wrapper class that adapts a document loader to function as a parser.
-    
-    This class allows a document loader that accepts a `file_path` parameter
-    to be used as a blob parser in LangChain.
-    """
 
     def __init__(self, document_loader_class: Type[BaseLoader], **kwargs: Any) -> None:
         """
