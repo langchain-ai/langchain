@@ -7,6 +7,7 @@ from sqlalchemy.engine import Result
 
 from pydantic import BaseModel, Field, root_validator, model_validator, ConfigDict
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -28,12 +29,18 @@ class BaseSQLDatabaseTool(BaseModel):
     )
 
 
-class _QuerySQLDataBaseToolInput(BaseModel):
+class _QuerySQLDatabaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct SQL query.")
 
 
-class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
-    """Tool for querying a SQL database."""
+class QuerySQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
+    """Tool for querying a SQL database.
+
+    .. versionchanged:: 0.3.12
+
+        Renamed from QuerySQLDataBaseTool to QuerySQLDatabaseTool.
+        Legacy name still works for backwards compatibility.
+    """
 
     name: str = "sql_db_query"
     description: str = """
@@ -41,7 +48,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overr
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
-    args_schema: Type[BaseModel] = _QuerySQLDataBaseToolInput
+    args_schema: Type[BaseModel] = _QuerySQLDatabaseToolInput
 
     def _run(
         self,
@@ -50,6 +57,19 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overr
     ) -> Union[str, Sequence[Dict[str, Any]], Result]:
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
+
+
+@deprecated(
+    since="0.3.12",
+    removal="1.0",
+    alternative_import="langchain_community.tools.QuerySQLDatabaseTool",
+)
+class QuerySQLDataBaseTool(QuerySQLDatabaseTool):  # type: ignore[override]
+    """
+    Equivalent stub to QuerySQLDatabaseTool for backwards compatibility.
+    :private:"""
+
+    ...
 
 
 class _InfoSQLDatabaseToolInput(BaseModel):
@@ -80,7 +100,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
         )
 
 
-class _ListSQLDataBaseToolInput(BaseModel):
+class _ListSQLDatabaseToolInput(BaseModel):
     tool_input: str = Field("", description="An empty string")
 
 
@@ -89,7 +109,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
 
     name: str = "sql_db_list_tables"
     description: str = "Input is an empty string, output is a comma-separated list of tables in the database."
-    args_schema: Type[BaseModel] = _ListSQLDataBaseToolInput
+    args_schema: Type[BaseModel] = _ListSQLDatabaseToolInput
 
     def _run(
         self,

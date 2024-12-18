@@ -4600,18 +4600,18 @@ def test_representation_of_runnables() -> None:
     assert repr(RunnableLambda(func=f, afunc=af)) == "RunnableLambda(f)"
 
     assert repr(
-        RunnableLambda(lambda x: x + 2)
+        RunnableLambda(lambda x: x * 2)
         | {
             "a": RunnableLambda(lambda x: x * 2),
             "b": RunnableLambda(lambda x: x * 3),
         }
     ) == (
-        "RunnableLambda(...)\n"
+        "RunnableLambda(lambda x: x * 2)\n"
         "| {\n"
         "    a: RunnableLambda(...),\n"
         "    b: RunnableLambda(...)\n"
         "  }"
-    ), "repr where code string contains multiple lambdas gives up"
+    )
 
 
 async def test_tool_from_runnable() -> None:

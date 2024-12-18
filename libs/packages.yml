@@ -42,8 +42,11 @@ packages:
     repo: langchain-ai/langchain
     path: libs/partners/huggingface
   - name: langchain-ibm
-    repo: langchain-ai/langchain
-    path: libs/partners/ibm
+    repo: langchain-ai/langchain-ibm
+    path: libs/ibm
+  - name: langchain-localai
+    repo: mkhludnev/langchain-localai
+    path: libs/localai
   - name: langchain-milvus
     repo: langchain-ai/langchain-milvus
     path: libs/milvus
@@ -68,6 +71,9 @@ packages:
   - name: langchain-qdrant
     repo: langchain-ai/langchain
     path: libs/partners/qdrant
+  - name: langchain-scrapegraph
+    repo: ScrapeGraphAI/langchain-scrapegraph
+    path: .
   - name: langchain-sema4
     repo: langchain-ai/langchain-sema4
     path: libs/sema4
@@ -92,7 +98,6 @@ packages:
   - name: langchain-google-vertexai
     repo: langchain-ai/langchain-google
     path: libs/vertexai
-    disabled: true
   - name: langchain-google-community
     repo: langchain-ai/langchain-google
     path: libs/community
@@ -150,3 +155,6 @@ packages:
   - name: langchain-neo4j
     repo: langchain-ai/langchain-neo4j
     path: libs/neo4j
+  - name: langchain-linkup
+    repo: LinkupPlatform/langchain-linkup
+    path: .
