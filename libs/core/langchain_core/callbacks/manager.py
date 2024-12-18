@@ -2379,6 +2379,7 @@ def _configure(
                             if run_tree is not None
                             else tracing_context["client"]
                         ),
+                        tags=tracing_tags,
                     )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
