@@ -228,7 +228,7 @@ def _create_message_from_message_type(
 
     Raises:
         ValueError: if the message type is not one of "human", "user", "ai",
-            "assistant", "system", "function", "tool", or "developer".
+            "assistant", "function", "tool", "system", or "developer".
     """
     kwargs: dict[str, Any] = {}
     if name is not None:
