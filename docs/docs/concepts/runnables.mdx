@@ -114,7 +114,7 @@ Please see the [Configurable Runnables](#configurable-runnables) section for mor
 | Method                  | Description                                                      |
 |-------------------------|------------------------------------------------------------------|
 | `get_input_schema`      | Gives the Pydantic Schema of the input schema for the Runnable.  |
-| `get_output_chema`      | Gives the Pydantic Schema of the output schema for the Runnable. |
+| `get_output_schema`      | Gives the Pydantic Schema of the output schema for the Runnable. |
 | `config_schema`         | Gives the Pydantic Schema of the config schema for the Runnable. |
 | `get_input_jsonschema`  | Gives the JSONSchema of the input schema for the Runnable.       |
 | `get_output_jsonschema` | Gives the JSONSchema of the output schema for the Runnable.      |
@@ -323,7 +323,7 @@ multiple Runnables and you need to add custom processing logic in one of the ste
 
 There are two ways to create a custom Runnable from a function:
 
-* `RunnableLambda`: Use this simple transformations where streaming is not required.
+* `RunnableLambda`: Use this for simple transformations where streaming is not required.
 * `RunnableGenerator`: use this for more complex transformations when streaming is needed.
 
 See the [How to run custom functions](/docs/how_to/functions) guide for more information on how to use `RunnableLambda` and `RunnableGenerator`.
@@ -347,6 +347,6 @@ Sometimes you may want to experiment with, or even expose to the end user, multi
 To simplify this process, the Runnable interface provides two methods for creating configurable Runnables at runtime:
 
 * `configurable_fields`: This method allows you to configure specific **attributes** in a Runnable. For example, the `temperature` attribute of a chat model.
-* `configurable_alternatives`: This method enables you to specify **alternative** Runnables that can be run during run time. For example, you could specify a list of different chat models that can be used.
+* `configurable_alternatives`: This method enables you to specify **alternative** Runnables that can be run during runtime. For example, you could specify a list of different chat models that can be used.
 
 See the [How to configure runtime chain internals](/docs/how_to/configure) guide for more information on how to configure runtime chain internals.
