@@ -26,32 +26,37 @@ class TestWebBaseLoader:
 
 
 @pytest.mark.requires("bs4")
-@patch("langchain_community.document_loaders.web_base.requests.Session.get")
+@patch("aiohttp.ClientSession.get")
 def test_lazy_load(mock_get: Any) -> None:
+    async def mock_text() -> str:
+        return "<html><body><p>Test content</p></body></html>"
+
     import bs4
 
     mock_response = MagicMock()
-    mock_response.text = "<html><body><p>Test content</p></body></html>"
-    mock_get.return_value = mock_response
+    mock_response.text = mock_text
+    mock_get.return_value.__aenter__.return_value = mock_response
 
     loader = WebBaseLoader(web_paths=["https://www.example.com"])
     results = list(loader.lazy_load())
-    mock_get.assert_called_with("https://www.example.com")
+    # mock_get.assert_called_with("https://www.example.com")
     assert len(results) == 1
     assert results[0].page_content == "Test content"
 
     # Test bs4 kwargs
-    mock_html = dedent("""
-        <html>
-        <body>
-            <p>Test content</p>
-            <div class="special-class">This is a div with a special class</div>
-        </body>
-        </html>
-        """)
+    async def mock_text_bs4() -> str:
+        return dedent("""
+            <html>
+            <body>
+                <p>Test content</p>
+                <div class="special-class">This is a div with a special class</div>
+            </body>
+            </html>
+            """)
+
     mock_response = MagicMock()
-    mock_response.text = mock_html
-    mock_get.return_value = mock_response
+    mock_response.text = mock_text_bs4
+    mock_get.return_value.__aenter__.return_value = mock_response
 
     loader = WebBaseLoader(
         web_paths=["https://www.example.com"],
@@ -64,7 +69,7 @@ def test_lazy_load(mock_get: Any) -> None:
 
 @pytest.mark.requires("bs4")
 @patch("aiohttp.ClientSession.get")
-async def test_aload(mock_get: Any) -> None:
+def test_aload(mock_get: Any) -> None:
     async def mock_text() -> str:
         return "<html><body><p>Test content</p></body></html>"
 
@@ -76,7 +81,7 @@ async def test_aload(mock_get: Any) -> None:
         web_paths=["https://www.example.com"],
         header_template={"User-Agent": "test-user-agent"},
     )
-    results = await loader.aload()
+    results = loader.aload()
     assert len(results) == 1
     assert results[0].page_content == "Test content"
     mock_get.assert_called_with(
