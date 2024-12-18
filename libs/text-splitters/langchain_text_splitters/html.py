@@ -43,56 +43,25 @@ class Node:
     parent: Optional[Node] = field(default=None)
 
 class HTMLHeaderTextSplitter:
-    '''
-    HTMLHeaderTextSplitter is a class designed to split HTML content into
-    structured Document objects based on specified header tags.
+    """
+    Splits HTML content into structured `Document` objects based on specified header
+    tags.
 
-    Classes:
-        HTMLHeaderTextSplitter: A class to split HTML content into Document
-        objects.
+    This splitter processes HTML by identifying header elements (e.g., `<h1>`,
+    `<h2>`) and segments the content accordingly. Each header and the text that
+    follows, up to the next header of the same or higher level, are grouped into a
+    `Document`. The metadata of each `Document` reflects the hierarchy of headers,
+    providing an organized content structure.
 
-    Methods:
-        __init__(self, headers_to_split_on: List[Tuple[str, str]],
-        return_each_element: bool = False) -> None:
-            Initializes the HTMLHeaderTextSplitter with headers to split on
-            and an optional parameter to return each HTML element as a
-            separate Document.
+    If the content does not contain any of the specified headers, the splitter
+    returns a single `Document` with the aggregated content and no additional
+    metadata.
 
-        _header_level(self, element) -> int:
-            Determines the heading level of an HTML element.
-
-        _dom_depth(self, element) -> int:
-            Computes the DOM depth of an HTML element.
-
-        _build_tree(self, elements) -> None:
-            Builds a tree structure from a list of HTML elements.
-
-        split_text(self, text: str) -> List[Document]:
-            Splits the given HTML text into a list of Document objects.
-
-        split_text_from_url(self, url: str, timeout: int = 10,
-        **kwargs: Any) -> List[Document]:
-            Fetches text content from a URL and splits it into documents.
-
-        _finalize_chunk(self, current_chunk: List[str],
-        active_headers: Dict[str, Tuple[str, int, int]],
-        documents: List[Document], chunk_dom_depth: int) -> None:
-            Finalizes the current chunk of text and appends it to the list of
-            documents.
-
-        _generate_documents(self, nodes: Dict[int, Node]) -> List[Document]:
-            Generates a list of Document objects from a node structure.
-
-        split_text_from_file(self, file: Any) -> List[Document]:
-            Splits HTML content from a file into a list of Document objects.
-
-        _aggregate_documents(self, nodes: Dict[int, Node]) -> List[Document]:
-            Aggregates documents based on headers.
-
-        _generate_individual_documents(self, nodes: Dict[int, Node]) ->
-        List[Document]:
-            Generates individual Document objects for each element.
-    '''
+    Attributes:
+        headers_to_split_on (List[Tuple[str, str]]): List of header tags to split
+            on, specified as tuples of (`tag_name`, `display_name`), e.g.,
+            `("h1", "Header 1")`.
+    """
 
     def __init__(
         self,
