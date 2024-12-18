@@ -175,8 +175,8 @@ class ChatClovaX(BaseChatModel):
             model.invoke([HumanMessage(content="Come up with 10 names for a song about parrots.")])
     """  # noqa: E501
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    client: Optional[httpx.Client] = Field(default=None)  #: :meta private:
+    async_client: Optional[httpx.AsyncClient] = Field(default=None)  #: :meta private:
 
     model_name: str = Field(
         default="HCX-003",
@@ -197,7 +197,7 @@ class ChatClovaX(BaseChatModel):
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: str = Field(default=None, alias="base_url")
+    base_url: str = Field(default="", alias="base_url")
     """
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -356,11 +356,12 @@ class ChatClovaX(BaseChatModel):
             kwargs["stream"] = False
 
         stream = kwargs["stream"]
+        client = cast(httpx.Client, self.client)
         if stream:
 
             def iter_sse() -> Iterator[ServerSentEvent]:
                 with connect_sse(
-                    self.client, "POST", self._api_url, json=kwargs
+                    client, "POST", self._api_url, json=kwargs
                 ) as event_source:
                     _raise_on_error(event_source.response)
                     for sse in event_source.iter_sse():
@@ -376,7 +377,7 @@ class ChatClovaX(BaseChatModel):
 
             return iter_sse()
         else:
-            response = self.client.post(url=self._api_url, json=kwargs)
+            response = client.post(url=self._api_url, json=kwargs)
             _raise_on_error(response)
             return response.json()
 
@@ -395,13 +396,14 @@ class ChatClovaX(BaseChatModel):
             if "stream" not in kwargs:
                 kwargs["stream"] = False
             stream = kwargs["stream"]
+            async_client = cast(httpx.AsyncClient, self.async_client)
             if stream:
                 event_source = aconnect_sse(
-                    self.async_client, "POST", self._api_url, json=kwargs
+                    async_client, "POST", self._api_url, json=kwargs
                 )
                 return _aiter_sse(event_source)
             else:
-                response = await self.async_client.post(url=self._api_url, json=kwargs)
+                response = await async_client.post(url=self._api_url, json=kwargs)
                 await _araise_on_error(response)
                 return response.json()
 

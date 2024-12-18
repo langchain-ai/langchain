@@ -22,7 +22,7 @@ from typing import (
 from pydantic import BaseModel
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
-from langchain_core._api import deprecated
+from langchain_core._api import beta, deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -494,20 +494,27 @@ def convert_to_openai_tool(
     return {"type": "function", "function": oai_function}
 
 
+@beta()
 def tool_example_to_messages(
-    input: str, tool_calls: list[BaseModel], tool_outputs: Optional[list[str]] = None
+    input: str,
+    tool_calls: list[BaseModel],
+    tool_outputs: Optional[list[str]] = None,
+    *,
+    ai_response: Optional[str] = None,
 ) -> list[BaseMessage]:
     """Convert an example into a list of messages that can be fed into an LLM.
 
     This code is an adapter that converts a single example to a list of messages
     that can be fed into a chat model.
 
-    The list of messages per example corresponds to:
+    The list of messages per example by default corresponds to:
 
     1) HumanMessage: contains the content from which content should be extracted.
     2) AIMessage: contains the extracted information from the model
     3) ToolMessage: contains confirmation to the model that the model requested a tool
         correctly.
+
+    If `ai_response` is specified, there will be a final AIMessage with that response.
 
     The ToolMessage is required because some chat models are hyper-optimized for agents
     rather than for an extraction use case.
@@ -519,6 +526,7 @@ def tool_example_to_messages(
         tool_outputs: Optional[List[str]], a list of tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
             will be inserted. Defaults to None.
+        ai_response: Optional[str], if provided, content for a final AIMessage.
 
     Returns:
         A list of messages
@@ -584,6 +592,9 @@ def tool_example_to_messages(
     )
     for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
         messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))  # type: ignore
+
+    if ai_response:
+        messages.append(AIMessage(content=ai_response))
     return messages
 
 
@@ -604,7 +615,8 @@ def _parse_google_docstring(
                 arg for arg in args if arg not in ("run_manager", "callbacks", "return")
             }
             if filtered_annotations and (
-                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
+                len(docstring_blocks) < 2
+                or not any(block.startswith("Args:") for block in docstring_blocks[1:])
             ):
                 msg = "Found invalid Google-Style docstring."
                 raise ValueError(msg)
@@ -635,9 +647,13 @@ def _parse_google_docstring(
         for line in args_block.split("\n")[1:]:
             if ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
+                arg = arg.strip()
+                arg_name, _, _annotations = arg.partition(" ")
+                if _annotations.startswith("(") and _annotations.endswith(")"):
+                    arg = arg_name
+                arg_descriptions[arg] = desc.strip()
             elif arg:
-                arg_descriptions[arg.strip()] += " " + line.strip()
+                arg_descriptions[arg] += " " + line.strip()
     return description, arg_descriptions
 
 

@@ -1,8 +1,93 @@
 /* eslint-disable react/jsx-props-no-spreading, react/destructuring-assignment */
-import React from "react";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
+
+// Create a custom dropdown since Docusaurus's dropdown component isn't easily accessible
+export const CustomDropdown = ({ selectedOption, options, onSelect, modelType }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && !event.target.closest('.dropdown')) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen]);
+
+  // Determine the text and link based on the modelType
+  const getModelTextAndLink = () => {
+    switch (modelType) {
+      case 'chat':
+        return { text: 'chat model', link: '/docs/integrations/chat/' };
+      case 'embeddings':
+        return { text: 'embeddings model', link: '/docs/integrations/text_embedding/' };
+      case 'vectorstore':
+        return { text: 'vector store', link: '/docs/integrations/vectorstores/' };
+      default:
+        return { text: 'chat model', link: '/docs/integrations/chat/' };
+    }
+  };
+
+  const { text, link } = getModelTextAndLink();
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
+      <span style={{ 
+        fontSize: '1rem',
+        fontWeight: '500',
+      }}>
+        Select <a href={link}>{text}</a>:
+      </span>
+      <div className={`dropdown ${isOpen ? 'dropdown--show' : ''}`}>
+        <button 
+          className="button button--secondary" 
+          onClick={() => setIsOpen(!isOpen)}
+          style={{ 
+            backgroundColor: 'var(--ifm-background-color)',
+            border: '1px solid var(--ifm-color-emphasis-300)',
+            fontWeight: 'normal',
+            fontSize: '1rem',
+            padding: '0.5rem 1rem',
+            color: 'var(--ifm-font-color-base)',
+          }}
+        >
+          {selectedOption.label}
+          <span style={{ 
+            marginLeft: '0.4rem',
+            fontSize: '0.875rem'
+          }}>▾</span>
+        </button>
+        <div className="dropdown__menu" style={{
+          maxHeight: '210px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          marginBottom: 0,
+        }}>
+          {options.map((option) => (
+            <li key={option.value}>
+              <a 
+                className={`dropdown__link ${option.value === selectedOption.value ? 'dropdown__link--active' : ''}`}
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelect(option.value);
+                  setIsOpen(false);
+                }}
+              >
+                {option.label}
+              </a>
+            </li>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 /**
  * @typedef {Object} ChatModelTabsProps - Component props.
@@ -15,6 +100,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
+  * @property {string} [databricksParams] - Parameters for Databricks model. Defaults to `endpoint="databricks-meta-llama-3-1-70b-instruct"`
  * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
@@ -27,6 +113,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
+ * @property {boolean} [hideDatabricks] - Whether or not to hide Databricks models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -34,6 +121,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
+  const [selectedModel, setSelectedModel] = useState("OpenAI");
   const {
     openaiParams,
     anthropicParams,
@@ -46,6 +134,7 @@ export default function ChatModelTabs(props) {
     azureParams,
     nvidiaParams,
     awsBedrockParams,
+    databricksParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -57,6 +146,7 @@ export default function ChatModelTabs(props) {
     hideAzure,
     hideNvidia,
     hideAWS,
+    hideDatabricks,
     customVarName,
   } = props;
 
@@ -79,6 +169,7 @@ export default function ChatModelTabs(props) {
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
   const awsBedrockParamsOrDefault = awsBedrockParams ?? `model="anthropic.claude-3-5-sonnet-20240620-v1:0",\n    beta_use_converse_api=True`;
+  const databricksParamsOrDefault = databricksParams ?? `endpoint="databricks-meta-llama-3-1-70b-instruct"`
 
   const llmVarName = customVarName ?? "model";
 
@@ -148,7 +239,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "FireworksAI",
-      label: "FireworksAI",
+      label: "Fireworks AI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
       apiKeyName: "FIREWORKS_API_KEY",
       packageName: "langchain-fireworks",
@@ -166,7 +257,7 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "MistralAI",
-      label: "MistralAI",
+      label: "Mistral AI",
       text: `from langchain_mistralai import ChatMistralAI\n\n${llmVarName} = ChatMistralAI(${mistralParamsOrDefault})`,
       apiKeyName: "MISTRAL_API_KEY",
       packageName: "langchain-mistralai",
@@ -175,47 +266,65 @@ export default function ChatModelTabs(props) {
     },
     {
       value: "TogetherAI",
-      label: "TogetherAI",
+      label: "Together AI",
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
       packageName: "langchain-openai",
       default: false,
       shouldHide: hideTogether,
     },
+    {
+      value: "Databricks",
+      label: "Databricks",
+      text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(${databricksParamsOrDefault})`,
+      apiKeyName: "DATABRICKS_TOKEN",
+      packageName: "databricks-langchain",
+      default: false,
+      shouldHide: hideDatabricks,
+    },
   ];
 
-  return (
-    <Tabs groupId="modelTabs">
-      {tabItems
-        .filter((tabItem) => !tabItem.shouldHide)
-        .map((tabItem) => {
-          let apiKeyText = "";
-          if (tabItem.apiKeyName) {
-            apiKeyText = `import getpass
+  const modelOptions = tabItems
+  .filter((item) => !item.shouldHide)
+  .map((item) => ({
+    value: item.value,
+    label: item.label,
+    text: item.text,
+    apiKeyName: item.apiKeyName,
+    apiKeyText: item.apiKeyText,
+    packageName: item.packageName,
+  }));
+
+const selectedOption = modelOptions.find(
+  (option) => option.value === selectedModel
+);
+
+let apiKeyText = "";
+if (selectedOption.apiKeyName) {
+  apiKeyText = `import getpass
 import os
 
-os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
-          } else if (tabItem.apiKeyText) {
-            apiKeyText = tabItem.apiKeyText;
-          }
+if not os.environ.get("${selectedOption.apiKeyName}"):
+  os.environ["${selectedOption.apiKeyName}"] = getpass.getpass("Enter API key for ${selectedOption.label}: ")`;
+  } else if (selectedOption.apiKeyText) {
+    apiKeyText = selectedOption.apiKeyText;
+  }
 
-          return (
-            <TabItem
-              key={tabItem.value}
-              value={tabItem.value}
-              label={tabItem.label}
-              default={tabItem.default}
-            >
-              <CodeBlock language="bash">
-                {`pip install -qU ${tabItem.packageName}`}
-              </CodeBlock>
-              <CodeBlock language="python">
-                {apiKeyText ? apiKeyText + "\n\n" + tabItem.text : tabItem.text}
-              </CodeBlock>
-            </TabItem>
-          );
-        })
-      }
-    </Tabs>
-  );
+return (
+  <div>
+    <CustomDropdown 
+      selectedOption={selectedOption}
+      options={modelOptions}
+      onSelect={setSelectedModel}
+      modelType="chat"
+    />
+
+    <CodeBlock language="bash">
+      {`pip install -qU ${selectedOption.packageName}`}
+    </CodeBlock>
+    <CodeBlock language="python">
+      {apiKeyText ? apiKeyText + "\n\n" + selectedOption.text : selectedOption.text}
+    </CodeBlock>
+  </div>
+);
 }

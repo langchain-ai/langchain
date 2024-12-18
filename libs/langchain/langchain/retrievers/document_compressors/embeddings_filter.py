@@ -75,7 +75,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         )
         embedded_query = self.embeddings.embed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
-        included_idxs = np.arange(len(embedded_documents))
+        included_idxs: np.ndarray = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
@@ -110,7 +110,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         )
         embedded_query = await self.embeddings.aembed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
-        included_idxs = np.arange(len(embedded_documents))
+        included_idxs: np.ndarray = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
