@@ -616,7 +616,7 @@ class ChatSambaNovaCloud(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if kwargs is not None:
+        if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
