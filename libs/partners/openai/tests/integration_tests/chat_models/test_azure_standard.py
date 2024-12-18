@@ -5,7 +5,7 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import AzureChatOpenAI
 
@@ -29,6 +29,10 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
 
     @property
     def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_json_mode(self) -> bool:
         return True
 
     @pytest.mark.xfail(reason="Not yet supported.")

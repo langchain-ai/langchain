@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import numpy as np
 from langchain_core.documents import Document
@@ -75,7 +75,7 @@ class USearch(VectorStore):
         self.index.add(np.array(ids), np.array(embeddings))
         self.docstore.add(dict(zip(ids, documents)))
         self.ids.extend(ids)
-        return ids.tolist()
+        return cast(List[str], ids.tolist())
 
     def similarity_search_with_score(
         self,
@@ -171,4 +171,4 @@ class USearch(VectorStore):
         usearch = guard_import("usearch.index")
         index = usearch.Index(ndim=len(embeddings[0]), metric=metric)
         index.add(np.array(ids), np.array(embeddings))
-        return cls(embedding, index, docstore, ids.tolist())
+        return cls(embedding, index, docstore, cast(List[str], ids.tolist()))

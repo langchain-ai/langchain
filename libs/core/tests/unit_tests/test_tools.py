@@ -22,6 +22,7 @@ from typing import (
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict
 
 from langchain_core import tools
@@ -30,6 +31,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
+from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -45,10 +47,11 @@ from langchain_core.tools import (
 )
 from langchain_core.tools.base import (
     InjectedToolArg,
+    InjectedToolCallId,
     SchemaAnnotationError,
-    _get_all_basemodel_annotations,
     _is_message_content_block,
     _is_message_content_type,
+    get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
@@ -825,7 +828,7 @@ def test_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -842,7 +845,9 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -853,6 +858,7 @@ def test_validation_error_handling_non_validation_error(
         def _parse_input(
             self,
             tool_input: Union[str, dict],
+            tool_call_id: Optional[str],
         ) -> Union[str, dict[str, Any]]:
             raise NotImplementedError
 
@@ -887,7 +893,7 @@ async def test_async_validation_error_handling_callable() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
 
-    def handling(e: ValidationError) -> str:
+    def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
@@ -904,7 +910,9 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]],
+    handler: Union[
+        bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
+    ],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -915,6 +923,7 @@ async def test_async_validation_error_handling_non_validation_error(
         def _parse_input(
             self,
             tool_input: Union[str, dict],
+            tool_call_id: Optional[str],
         ) -> Union[str, dict[str, Any]]:
             raise NotImplementedError
 
@@ -1179,6 +1188,87 @@ def test_tool_arg_descriptions() -> None:
     as_tool = tool(foo5, parse_docstring=True)
     args_schema = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema["description"] == expected["description"]
+
+
+def test_docstring_parsing() -> None:
+    expected = {
+        "title": "foo",
+        "description": "The foo.",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
+            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+    # Simple case
+    def foo(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo, parse_docstring=True)
+    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema["description"] == "The foo."
+    assert args_schema["properties"] == expected["properties"]
+
+    # Multi-line description
+    def foo2(bar: str, baz: int) -> str:
+        """The foo.
+
+        Additional description here.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo2, parse_docstring=True)
+    args_schema2 = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema2["description"] == "The foo. Additional description here."
+    assert args_schema2["properties"] == expected["properties"]
+
+    # Multi-line wth Returns block
+    def foo3(bar: str, baz: int) -> str:
+        """The foo.
+
+        Additional description here.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+
+        Returns:
+            str: description of returned value.
+        """
+        return bar
+
+    as_tool = tool(foo3, parse_docstring=True)
+    args_schema3 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema3["title"] = "foo2"
+    assert args_schema2 == args_schema3
+
+    # Single argument
+    def foo4(bar: str) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+        """
+        return bar
+
+    as_tool = tool(foo4, parse_docstring=True)
+    args_schema4 = _schema(as_tool.args_schema)  # type: ignore
+    assert args_schema4["description"] == "The foo."
+    assert args_schema4["properties"] == {
+        "bar": {"description": "The bar.", "title": "Bar", "type": "string"}
+    }
 
 
 def test_tool_invalid_docstrings() -> None:
@@ -1899,19 +1989,19 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         c: dict
 
     expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
-    actual = _get_all_basemodel_annotations(ModelC)
+    actual = get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
     expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"]}
-    actual = _get_all_basemodel_annotations(ModelB)
+    actual = get_all_basemodel_annotations(ModelB)
     assert actual == expected
 
     expected = {"a": Any}
-    actual = _get_all_basemodel_annotations(ModelA)
+    actual = get_all_basemodel_annotations(ModelA)
     assert actual == expected
 
     expected = {"a": int}
-    actual = _get_all_basemodel_annotations(ModelA[int])
+    actual = get_all_basemodel_annotations(ModelA[int])
     assert actual == expected
 
     D = TypeVar("D", bound=Union[str, int])
@@ -1925,7 +2015,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         "c": dict,
         "d": Union[str, int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD)
+    actual = get_all_basemodel_annotations(ModelD)
     assert actual == expected
 
     expected = {
@@ -1934,7 +2024,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
         "c": dict,
         "d": Union[int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD[int])
+    actual = get_all_basemodel_annotations(ModelD[int])
     assert actual == expected
 
 
@@ -1956,19 +2046,19 @@ def test__get_all_basemodel_annotations_v1() -> None:
         c: dict
 
     expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
-    actual = _get_all_basemodel_annotations(ModelC)
+    actual = get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
     expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"]}
-    actual = _get_all_basemodel_annotations(ModelB)
+    actual = get_all_basemodel_annotations(ModelB)
     assert actual == expected
 
     expected = {"a": Any}
-    actual = _get_all_basemodel_annotations(ModelA)
+    actual = get_all_basemodel_annotations(ModelA)
     assert actual == expected
 
     expected = {"a": int}
-    actual = _get_all_basemodel_annotations(ModelA[int])
+    actual = get_all_basemodel_annotations(ModelA[int])
     assert actual == expected
 
     D = TypeVar("D", bound=Union[str, int])
@@ -1982,7 +2072,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
         "c": dict,
         "d": Union[str, int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD)
+    actual = get_all_basemodel_annotations(ModelD)
     assert actual == expected
 
     expected = {
@@ -1991,7 +2081,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
         "c": dict,
         "d": Union[int, None],
     }
-    actual = _get_all_basemodel_annotations(ModelD[int])
+    actual = get_all_basemodel_annotations(ModelD[int])
     assert actual == expected
 
 
@@ -2105,3 +2195,63 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+
+
+def test_tool_injected_tool_call_id() -> None:
+    @tool
+    def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
+        """foo"""
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+
+    assert foo.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+
+    with pytest.raises(ValueError):
+        assert foo.invoke({"x": 0})
+
+    @tool
+    def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
+        """foo"""
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+
+    assert foo2.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+
+
+def test_tool_uninjected_tool_call_id() -> None:
+    @tool
+    def foo(x: int, tool_call_id: str) -> ToolMessage:
+        """foo"""
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+
+    with pytest.raises(ValueError):
+        foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
+
+    assert foo.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 0, "tool_call_id": "zap"},
+            "name": "foo",
+            "id": "bar",
+        }
+    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore
+
+
+def test_tool_return_output_mixin() -> None:
+    class Bar(ToolOutputMixin):
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+        def __eq__(self, other: Any) -> bool:
+            return isinstance(other, self.__class__) and self.x == other.x
+
+    @tool
+    def foo(x: int) -> Bar:
+        """Foo."""
+        return Bar(x=x)
+
+    assert foo.invoke(
+        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+    ) == Bar(x=0)

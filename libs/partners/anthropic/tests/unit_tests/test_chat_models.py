@@ -331,7 +331,7 @@ def dummy_tool() -> BaseTool:
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
-    class DummyFunction(BaseTool):
+    class DummyFunction(BaseTool):  # type: ignore[override]
         args_schema: Type[BaseModel] = Schema
         name: str = "dummy_function"
         description: str = "dummy function"
@@ -690,6 +690,28 @@ def test__format_messages_with_cache_control() -> None:
             ],
         }
     ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert expected_system == actual_system
+    assert expected_messages == actual_messages
+
+
+def test__format_messages_with_multiple_system() -> None:
+    messages = [
+        HumanMessage("baz"),
+        SystemMessage("bar"),
+        SystemMessage("baz"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ]
+        ),
+    ]
+    expected_system = [
+        {"type": "text", "text": "bar"},
+        {"type": "text", "text": "baz"},
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+    ]
+    expected_messages = [{"role": "user", "content": "baz"}]
     actual_system, actual_messages = _format_messages(messages)
     assert expected_system == actual_system
     assert expected_messages == actual_messages

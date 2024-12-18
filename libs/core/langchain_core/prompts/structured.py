@@ -2,7 +2,6 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import (
     Any,
     Callable,
-    Literal,
     Optional,
     Union,
 )
@@ -15,6 +14,7 @@ from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     MessageLikeRepresentation,
 )
+from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -38,7 +38,7 @@ class StructuredPrompt(ChatPromptTemplate):
         schema_: Optional[Union[dict, type[BaseModel]]] = None,
         *,
         structured_output_kwargs: Optional[dict[str, Any]] = None,
-        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        template_format: PromptTemplateFormat = "f-string",
         **kwargs: Any,
     ) -> None:
         schema_ = schema_ or kwargs.pop("schema")

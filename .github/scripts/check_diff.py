@@ -32,6 +32,10 @@ IGNORED_PARTNERS = [
     "huggingface",
 ]
 
+PY_312_MAX_PACKAGES = [
+    "libs/partners/huggingface",  # https://github.com/pytorch/pytorch/issues/130249
+]
+
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -110,23 +114,30 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12"]
+        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
         # milvus poetry doesn't allow 3.12 because they
         # declare deps in funny way
         py_versions = ["3.9", "3.11"]
 
-    elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
-        # community extended test resolution in 3.12 is slow
-        # even in uv
-        py_versions = ["3.9", "3.11"]
+    elif dir_ in PY_312_MAX_PACKAGES:
+        py_versions = ["3.9", "3.12"]
+
+    elif dir_ == "libs/langchain" and job == "extended-tests":
+        py_versions = ["3.9", "3.13"]
+
+    elif dir_ == "libs/community" and job == "extended-tests":
+        py_versions = ["3.9", "3.12"]
 
     elif dir_ == "libs/community" and job == "compile-integration-tests":
         # community integration deps are slow in 3.12
         py_versions = ["3.9", "3.11"]
-    else:
+    elif dir_ == ".":
+        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
         py_versions = ["3.9", "3.12"]
+    else:
+        py_versions = ["3.9", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -261,6 +272,9 @@ if __name__ == "__main__":
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
             # note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
+            dirs_to_run["test"].add("libs/standard-tests")
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
@@ -268,8 +282,9 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
-            # todo: add cli makefile
-            pass
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
+            
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
@@ -279,12 +294,14 @@ if __name__ == "__main__":
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+        elif file == "libs/packages.yml":
+            continue
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
+        elif any(file.startswith(p) for p in ["docs/", "cookbook/"]):
             if file.startswith("docs/"):
                 docs_edited = True
             dirs_to_run["lint"].add(".")
