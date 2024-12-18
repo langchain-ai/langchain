@@ -37,7 +37,6 @@ ignore_missing_imports = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.25"
-beautifulsoup4 = "^4.12.3"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "D"]
