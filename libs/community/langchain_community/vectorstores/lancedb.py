@@ -152,7 +152,7 @@ class LanceDB(VectorStore):
         else:
             score_col = None
         # Check if 'metadata' is in the columns
-        has_metadata = 'metadata' in columns
+        has_metadata = "metadata" in columns
 
         if score_col is None or not score:
             return [
@@ -167,7 +167,9 @@ class LanceDB(VectorStore):
                 (
                     Document(
                         page_content=results[self._text_key][idx].as_py(),
-                        metadata=results["metadata"][idx].as_py() if has_metadata else {},
+                        metadata=results["metadata"][idx].as_py()
+                        if has_metadata
+                        else {},
                     ),
                     results[score_col][idx].as_py(),
                 )
