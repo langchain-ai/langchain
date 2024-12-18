@@ -197,7 +197,7 @@ class SitemapLoader(WebBaseLoader):
             if not loc:
                 continue
 
-            soup_child = asyncio.run(self.scrape_all([loc.text], "xml"))[0]
+            soup_child = asyncio.run(self.ascrape_all([loc.text], "xml"))[0]
             els.extend(self.parse_sitemap(soup_child, depth=depth + 1))
         return els
 
@@ -229,7 +229,7 @@ class SitemapLoader(WebBaseLoader):
                 els = elblocks[self.blocknum]
 
         results = asyncio.run(
-            self.scrape_all([el["loc"].strip() for el in els if "loc" in el])
+            self.ascrape_all([el["loc"].strip() for el in els if "loc" in el])
         )
 
         for i, result in enumerate(results):
