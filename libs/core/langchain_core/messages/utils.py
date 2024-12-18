@@ -287,7 +287,7 @@ def _create_message_from_message_type(
     else:
         msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system' or 'developer'."
         )
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
