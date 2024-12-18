@@ -141,6 +141,13 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return AIMessage(**message["data"])
     elif _type == "system":
         return SystemMessage(**message["data"])
+    elif _type == "developer":
+        # The `developer` role is a new role that OpenAI has introduced to replace
+        # the `system` role.
+        # As of the time of writing, the developer role is mostly a drop-in replacement
+        # for the system role, so for now we will treat it as a system message.
+        # https://cdn.openai.com/spec/model-spec-2024-05-08.html
+        return SystemMessage(**message["data"])
     elif _type == "chat":
         return ChatMessage(**message["data"])
     elif _type == "function":
@@ -262,6 +269,13 @@ def _create_message_from_message_type(
     elif message_type in ("ai", "assistant"):
         message = AIMessage(content=content, **kwargs)
     elif message_type == "system":
+        message = SystemMessage(content=content, **kwargs)
+    elif message_type == "developer":
+        # The `developer` role is a new role that OpenAI has introduced to replace
+        # the `system` role.
+        # As of the time of writing, the developer role is mostly a drop-in replacement
+        # for the system role, so for now we will treat it as a system message.
+        # https://cdn.openai.com/spec/model-spec-2024-05-08.html
         message = SystemMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
