@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-text-splitters"
-version = "0.3.0"
+version = "0.3.3"
 description = "LangChain text splitting utilities"
 authors = []
 license = "MIT"
@@ -21,6 +21,12 @@ module = [
     "konlpy.tag",
     "bs4",
     "pytest",
+    "spacy",
+    "spacy.lang.en",
+    "numpy",
+    "nltk",
+    "spacy.cli",
+    "torch",
 ]
 ignore_missing_imports = "True"
 
@@ -30,10 +36,11 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.0"
+langchain-core = "^0.3.25"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = ["E", "F", "I", "T201", "D"]
+ignore = ["D100"]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -58,6 +65,12 @@ optional = true
 [tool.poetry.group.test]
 optional = true
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
@@ -65,21 +78,28 @@ ruff = "^0.5"
 mypy = "^1.10"
 lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
-tiktoken = "^0.6.0"
-spacy = "^3.7.4"
+tiktoken = "^0.8.0"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 
+
 [tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
+pytest = "^8"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-pytest-profiling = "^1.7.0"
+pytest-socket = "^0.7.0"
+
+[tool.poetry.group.test_integration]
+optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+spacy = { version = "*", python = "<3.13" }
+nltk = "^3.9.1"
+transformers = "^4.47.0"
+sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
 
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"

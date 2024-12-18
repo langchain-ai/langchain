@@ -1,5 +1,6 @@
 import base64
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any, Union, cast
 
@@ -32,6 +33,7 @@ from langchain_core.prompts.chat import (
     _convert_to_message,
 )
 from langchain_core.prompts.string import PromptTemplateFormat
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -718,7 +720,7 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
 
 
 async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
-    """Verify that we can pass `path` for an image as a variable."""
+    """Verify that we cannot pass `path` for an image as a variable."""
     in_mem = "base64mem"
     in_file_data = "base64file01"
 
@@ -745,35 +747,19 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
                 ),
             ]
         )
-        expected = [
-            SystemMessage(content="You are an AI assistant named R2D2."),
-            HumanMessage(
-                content=[
-                    {"type": "text", "text": "What's in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{in_mem}"},
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{in_file_data}"},
-                    },
-                ]
-            ),
-        ]
-        messages = template.format_messages(
-            name="R2D2",
-            in_mem=in_mem,
-            file_path=temp_file.name,
-        )
-        assert messages == expected
+        with pytest.raises(ValueError):
+            template.format_messages(
+                name="R2D2",
+                in_mem=in_mem,
+                file_path=temp_file.name,
+            )
 
-        messages = await template.aformat_messages(
-            name="R2D2",
-            in_mem=in_mem,
-            file_path=temp_file.name,
-        )
-        assert messages == expected
+        with pytest.raises(ValueError):
+            await template.aformat_messages(
+                name="R2D2",
+                in_mem=in_mem,
+                file_path=temp_file.name,
+            )
 
 
 def test_messages_placeholder() -> None:
@@ -867,18 +853,22 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     assert prompt_all_required.optional_variables == []
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
-    assert _normalize_schema(prompt_all_required.get_input_jsonschema()) == snapshot(
-        name="required"
-    )
+
+    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+        assert _normalize_schema(
+            prompt_all_required.get_input_jsonschema()
+        ) == snapshot(name="required")
     prompt_optional = ChatPromptTemplate(
         messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
     )
     # input variables only lists required variables
     assert set(prompt_optional.input_variables) == {"input"}
     prompt_optional.input_schema(input="")  # won't raise error
-    assert _normalize_schema(prompt_optional.get_input_jsonschema()) == snapshot(
-        name="partial"
-    )
+
+    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+        assert _normalize_schema(prompt_optional.get_input_jsonschema()) == snapshot(
+            name="partial"
+        )
 
 
 def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> None:
@@ -947,7 +937,8 @@ def test_chat_prompt_template_variable_names() -> None:
 
     Verify that no run time warnings are raised.
     """
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         prompt = ChatPromptTemplate([("system", "{schema}")])
         prompt.get_input_schema()
 

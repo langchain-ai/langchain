@@ -17,7 +17,8 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -34,6 +35,11 @@ def test_openai_model_param() -> None:
     assert llm.model_name == "foo"
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+
+    llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    llm = ChatOpenAI(max_completion_tokens=10)
+    assert llm.max_tokens == 10
 
 
 def test_openai_o1_temperature() -> None:
@@ -167,7 +173,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                     "Function GenerateUsername arguments:\n\noops\n\nare not "
                     "valid JSON. Received JSONDecodeError Expecting value: line 1 "
                     "column 1 (char 0)\nFor troubleshooting, visit: https://python"
-                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE "
                 ),
                 type="invalid_tool_call",
             )
@@ -805,3 +811,42 @@ def test__convert_to_openai_response_format() -> None:
 
     with pytest.raises(ValueError):
         _convert_to_openai_response_format(response_format, strict=False)
+
+
+@pytest.mark.parametrize("method", ["function_calling", "json_schema"])
+@pytest.mark.parametrize("strict", [True, None])
+def test_structured_output_strict(
+    method: Literal["function_calling", "json_schema"], strict: Optional[bool]
+) -> None:
+    """Test to verify structured output with strict=True."""
+
+    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+
+    class Joke(BaseModel):
+        """Joke to tell user."""
+
+        setup: str = Field(description="question to set up a joke")
+        punchline: str = Field(description="answer to resolve the joke")
+
+    llm.with_structured_output(Joke, method=method, strict=strict)
+    # Schema
+    llm.with_structured_output(Joke.model_json_schema(), method=method, strict=strict)
+
+
+def test_nested_structured_output_strict() -> None:
+    """Test to verify structured output with strict=True for nested object."""
+
+    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+
+    class SelfEvaluation(TypedDict):
+        score: int
+        text: str
+
+    class JokeWithEvaluation(TypedDict):
+        """Joke to tell user."""
+
+        setup: str
+        punchline: str
+        self_evaluation: SelfEvaluation
+
+    llm.with_structured_output(JokeWithEvaluation, method="json_schema")

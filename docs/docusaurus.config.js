@@ -26,6 +26,7 @@ const config = {
   trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
+  onBrokenAnchors: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {

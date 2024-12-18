@@ -1,5 +1,8 @@
 import base64
 import json
+import typing
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import pytest
 
@@ -19,6 +22,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
+from langchain_core.tools import BaseTool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -53,6 +57,24 @@ def test_merge_message_runs_str_without_separator(
     actual = merge_message_runs(messages, chunk_separator="")
     assert actual == expected
     assert messages == messages_model_copy
+
+
+def test_merge_message_runs_response_metadata() -> None:
+    messages = [
+        AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
+        AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
+    ]
+    expected = [
+        AIMessage(
+            "foo\nbar",
+            id="1",
+            response_metadata={"input_tokens": 1},
+        )
+    ]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    # Check it's not mutated
+    assert messages[1].response_metadata == {"input_tokens": 2}
 
 
 def test_merge_message_runs_content() -> None:
@@ -301,6 +323,42 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def test_trim_messages_allow_partial_one_message() -> None:
+    expected = [
+        HumanMessage("Th", id="third"),
+    ]
+
+    actual = trim_messages(
+        [HumanMessage("This is a funky text.", id="third")],
+        max_tokens=2,
+        token_counter=lambda messages: sum(len(m.content) for m in messages),
+        text_splitter=lambda x: list(x),
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def test_trim_messages_last_allow_partial_one_message() -> None:
+    expected = [
+        HumanMessage("t.", id="third"),
+    ]
+
+    actual = trim_messages(
+        [HumanMessage("This is a funky text.", id="third")],
+        max_tokens=2,
+        token_counter=lambda messages: sum(len(m.content) for m in messages),
+        text_splitter=lambda x: list(x),
+        strategy="last",
+        allow_partial=True,
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
 def test_trim_messages_allow_partial_text_splitter() -> None:
     expected = [
         HumanMessage("a 4 token text.", id="third"),
@@ -395,7 +453,15 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
 
 
 class FakeTokenCountingModel(FakeChatModel):
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[
+            Sequence[
+                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+            ]
+        ] = None,
+    ) -> int:
         return dummy_token_counter(messages)
 
 
