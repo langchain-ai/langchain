@@ -158,6 +158,9 @@ packages:
   - name: langchain-linkup
     repo: LinkupPlatform/langchain-linkup
     path: .
+  - name: langchain-yt-dlp
+    repo: aqib0770/langchain-yt-dlp
+    path: .
   - name: langchain-oceanbase
     repo: oceanbase/langchain-oceanbase
     path: .
