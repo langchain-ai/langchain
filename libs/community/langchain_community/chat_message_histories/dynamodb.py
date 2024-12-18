@@ -58,6 +58,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             limit. If not None then only the latest `history_size` messages are stored.
         history_messages_key: Key for the chat history where the messages
             are stored and updated
+        coerce_float_to_decimal: If True, all float values in the messages will be
+            converted to Decimal.
     """
 
     def __init__(
@@ -73,6 +75,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         ttl_key_name: str = "expireAt",
         history_size: Optional[int] = None,
         history_messages_key: Optional[str] = "History",
+        *,
+        coerce_float_to_decimal: bool = False,
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -94,6 +98,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.ttl_key_name = ttl_key_name
         self.history_size = history_size
         self.history_messages_key = history_messages_key
+        self.coerce_float_to_decimal = coerce_float_to_decimal
 
         if kms_key_id:
             try:
@@ -170,7 +175,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         _message = message_to_dict(message)
         messages.append(_message)
 
-        messages = convert_messages(messages)
+        if self.coerce_float_to_decimal:
+            messages = convert_messages(messages)
 
         if self.history_size:
             messages = messages[-self.history_size :]
