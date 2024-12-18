@@ -261,7 +261,9 @@ def _create_message_from_message_type(
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
         message = AIMessage(content=content, **kwargs)
-    elif message_type == "system":
+    elif message_type in ("system", "developer"):
+        kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
+        kwargs["additional_kwargs"]["__openai_role__"] = message_type
         message = SystemMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
@@ -1385,7 +1387,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     elif isinstance(message, ToolMessage):
         return "tool"
     elif isinstance(message, SystemMessage):
-        return "system"
+        return message.additional_kwargs.get("__openai_role__", "system")
     elif isinstance(message, FunctionMessage):
         return "function"
     elif isinstance(message, ChatMessage):

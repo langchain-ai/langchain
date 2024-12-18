@@ -233,7 +233,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             )
             message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
-        message_dict["role"] = "system"
+        message_dict["role"] = message.additional_kwargs.get(
+            "__openai_role__", "system"
+        )
     elif isinstance(message, FunctionMessage):
         message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
