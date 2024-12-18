@@ -28,12 +28,12 @@ class Node:
     Represents a node in a hierarchical structure.
 
     Attributes:
-        name (str): The name of the node.
-        tag_type (str): The type of the node.
-        content (str): The content of the node.
-        level (int): The level of the node in the hierarchy.
-        dom_depth (int): The depth of the node in the DOM structure.
-        parent (Optional[Node]): The parent node. Defaults to None.
+        name: The name of the node.
+        tag_type: The type of the node.
+        content: The content of the node.
+        level: The level of the node in the hierarchy.
+        dom_depth: The depth of the node in the DOM structure.
+        parent: The parent node. Defaults to None.
     """
     name: str
     tag_type: str
@@ -56,25 +56,20 @@ class HTMLHeaderTextSplitter:
     If the content does not contain any of the specified headers, the splitter
     returns a single `Document` with the aggregated content and no additional
     metadata.
-
-    Attributes:
-        headers_to_split_on (List[Tuple[str, str]]): List of header tags to split
-            on, specified as tuples of (`tag_name`, `display_name`), e.g.,
-            `("h1", "Header 1")`.
     """
 
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        return_each_element: bool = False  # Added parameter
+        return_each_element: bool = False
     ) -> None:
         """
         Initialize with headers to split on.
 
         Args:
-            headers_to_split_on (List[Tuple[str, str]]): A list of tuples where
+            headers_to_split_on: A list of tuples where
                 each tuple contains a header tag and its corresponding value.
-            return_each_element (bool, optional): Whether to return each HTML
+            return_each_element: Whether to return each HTML
                 element as a separate Document. Defaults to False.
         """
         self.headers_to_split_on = sorted(
@@ -83,7 +78,7 @@ class HTMLHeaderTextSplitter:
         self.header_mapping = dict(self.headers_to_split_on)
         self.header_tags = [tag for tag, _ in self.headers_to_split_on]
         self.elements_tree: Dict[int, Tuple[str, str, int, int]] = {}
-        self.return_each_element = return_each_element  # Store the parameter
+        self.return_each_element = return_each_element
 
     def _header_level(self, element) -> int:
         """
@@ -93,7 +88,7 @@ class HTMLHeaderTextSplitter:
             element: A BeautifulSoup element.
 
         Returns:
-            int: The heading level (1-6) if a heading, else a large number.
+            The heading level (1-6) if a heading, else a large number.
         """
         tag_name = element.name.lower() if hasattr(element, 'name') else ''
         if tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
@@ -108,7 +103,7 @@ class HTMLHeaderTextSplitter:
             element: A BeautifulSoup element.
 
         Returns:
-            int: The depth of the element in the DOM tree.
+            The depth of the element in the DOM tree.
         """
         depth = 0
         for _ in element.parents:
@@ -146,10 +141,10 @@ class HTMLHeaderTextSplitter:
         Split the given text into a list of Document objects.
 
         Args:
-            text (str): The HTML text to split.
+            text: The HTML text to split.
 
         Returns:
-            List[Document]: A list of split Document objects.
+            A list of split Document objects.
         """
         return self.split_text_from_file(StringIO(text))
 
@@ -163,12 +158,12 @@ class HTMLHeaderTextSplitter:
         Fetch text content from a URL and split it into documents.
 
         Args:
-            url (str): The URL to fetch content from.
-            timeout (int, optional): Timeout for the request. Defaults to 10.
+            url: The URL to fetch content from.
+            timeout: Timeout for the request. Defaults to 10.
             **kwargs: Additional keyword arguments for the request.
 
         Returns:
-            List[Document]: A list of split Document objects.
+            A list of split Document objects.
 
         Raises:
             requests.RequestException: If the HTTP request fails.
@@ -209,10 +204,10 @@ class HTMLHeaderTextSplitter:
         Generate a list of Document objects from a node structure.
 
         Args:
-            nodes (Dict[int, Node]): A dictionary of nodes indexed by their position.
+            A dictionary of nodes indexed by their position.
 
         Returns:
-            List[Document]: A list of generated Document objects.
+            A list of generated Document objects.
         """
         documents: List[Document] = []
         active_headers: Dict[str, Tuple[str, int, int]] = {}
@@ -226,10 +221,8 @@ class HTMLHeaderTextSplitter:
             Processes a given node and updates the current chunk, active headers, and
             documents based on the node's type and content.
             Args:
-                node (Node): The node to be processed. It should have attributes
+                node: The node to be processed. It should have attributes
                     'tag_type', 'content', 'level', and 'dom_depth'.
-            Returns:
-                None
             """
 
             nonlocal chunk_dom_depth
@@ -285,10 +278,10 @@ class HTMLHeaderTextSplitter:
         Split HTML content from a file into a list of Document objects.
 
         Args:
-            file (Any): A file path or a file-like object containing HTML content.
+            file: A file path or a file-like object containing HTML content.
 
         Returns:
-            List[Document]: A list of split Document objects.
+            A list of split Document objects.
         """
         if isinstance(file, str):
             with open(file, 'r', encoding='utf-8') as f:
@@ -351,10 +344,10 @@ class HTMLHeaderTextSplitter:
         Aggregate documents based on headers.
 
         Args:
-            nodes (Dict[int, Node]): A dictionary of nodes indexed by their position.
+            nodes: A dictionary of nodes indexed by their position.
 
         Returns:
-            List[Document]: A list of aggregated Document objects.
+            A list of aggregated Document objects.
         """
         # Reuse the existing _generate_documents method for aggregation
         return self._generate_documents(nodes)
@@ -364,10 +357,10 @@ class HTMLHeaderTextSplitter:
         Generate individual Document objects for each element.
 
         Args:
-            nodes (Dict[int, Node]): A dictionary of nodes indexed by their position.
+            nodes: A dictionary of nodes indexed by their position.
 
         Returns:
-            List[Document]: A list of individual Document objects.
+            A list of individual Document objects.
         """
         documents: List[Document] = []
         active_headers: Dict[str, Tuple[str, int, int]] = {}
@@ -379,7 +372,7 @@ class HTMLHeaderTextSplitter:
             Process a single node to create Document objects based on header tags.
 
             Args:
-                node (Node): The node to process.
+                node: The node to process.
             """
             node_type = node.type  # type: ignore[attr-defined]
             node_content = node.content  # type: ignore[attr-defined]
