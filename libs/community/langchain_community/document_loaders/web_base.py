@@ -71,6 +71,7 @@ class WebBaseLoader(BaseLoader):
                 # bs_kwargs = None,
                 # session = None,
                 # show_progress = True,
+                # trust_env = False,
             )
 
     Lazy load:
@@ -141,6 +142,8 @@ class WebBaseLoader(BaseLoader):
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
             show_progress: Show progress bar when loading pages.
+            trust_env: set to True if using proxy to make web requests, for example
+                using http(s)_proxy environment variables. Defaults to False.
         """
         # web_path kept for backwards-compatibility.
         if web_path and web_paths:
