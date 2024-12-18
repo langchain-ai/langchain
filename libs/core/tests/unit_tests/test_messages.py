@@ -408,37 +408,39 @@ def test_multiple_msg_with_name() -> None:
     "input_message, expected_message",
     [
         (
-                {"type": "human", "data": {"content": "Hello!", "id": "human1"}},
-                HumanMessage(content="Hello!", id="human1"),
+            {"type": "human", "data": {"content": "Hello!", "id": "human1"}},
+            HumanMessage(content="Hello!", id="human1"),
         ),
         (
-                {"type": "ai", "data": {"content": "Hi!", "id": "ai1"}},
-                AIMessage(content="Hi!", id="ai1"),
+            {"type": "ai", "data": {"content": "Hi!", "id": "ai1"}},
+            AIMessage(content="Hi!", id="ai1"),
         ),
         (
-                {"type": "system", "data": {"content": "You are a helpful assistant."}},
-                SystemMessage(content="You are a helpful assistant."),
+            {"type": "system", "data": {"content": "You are a helpful assistant."}},
+            SystemMessage(content="You are a helpful assistant."),
         ),
         (
-                {"type": "developer", "data": {"content": "System-level control."}},
-                SystemMessage(content="System-level control."),
+            {"type": "developer", "data": {"content": "System-level control."}},
+            SystemMessage(content="System-level control."),
         ),
         (
-                {"type": "function", "data": {"name": "greet", "content": "Hello!"}},
-                FunctionMessage(name="greet", content="Hello!"),
+            {"type": "function", "data": {"name": "greet", "content": "Hello!"}},
+            FunctionMessage(name="greet", content="Hello!"),
         ),
         (
-                {"type": "tool",
-                 "data": {"tool_call_id": "tool1", "content": "Tool output"}},
-                ToolMessage(tool_call_id="tool1", content="Tool output"),
+            {
+                "type": "tool",
+                "data": {"tool_call_id": "tool1", "content": "Tool output"},
+            },
+            ToolMessage(tool_call_id="tool1", content="Tool output"),
         ),
         (
-                {"type": "remove", "data": {"id": "remove1", "content": ""}},
-                RemoveMessage(id="remove1"),
+            {"type": "remove", "data": {"id": "remove1", "content": ""}},
+            RemoveMessage(id="remove1"),
         ),
         (
-                {"type": "AIMessageChunk", "data": {"content": "AI chunk"}},
-                AIMessageChunk(content="AI chunk"),
+            {"type": "AIMessageChunk", "data": {"content": "AI chunk"}},
+            AIMessageChunk(content="AI chunk"),
         ),
     ],
 )
