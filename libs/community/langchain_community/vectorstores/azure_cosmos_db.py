@@ -82,7 +82,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         index_name: str = "vectorSearchIndex",
         text_key: str = "textContent",
         embedding_key: str = "vectorContent",
-        application_name: str = "LANGCHAIN_PYTHON",
+        application_name: str = "LangChain-CDBMongoVCore-VectorStore-Python",
     ):
         """Constructor for AzureCosmosDBVectorSearch
 
@@ -121,7 +121,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         connection_string: str,
         namespace: str,
         embedding: Embeddings,
-        application_name: str = "LANGCHAIN_PYTHON",
+        application_name: str = "LangChain-CDBMongoVCore-VectorStore-Python",
         **kwargs: Any,
     ) -> AzureCosmosDBVectorSearch:
         """Creates an Instance of AzureCosmosDBVectorSearch
@@ -131,6 +131,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
             connection_string: The MongoDB vCore instance connection string
             namespace: The namespace (database.collection)
             embedding: The embedding utility
+            application_name: The user agent for telemetry
             **kwargs: Dynamic keyword arguments
 
         Returns:

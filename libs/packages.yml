@@ -44,6 +44,9 @@ packages:
   - name: langchain-ibm
     repo: langchain-ai/langchain-ibm
     path: libs/ibm
+  - name: langchain-localai
+    repo: mkhludnev/langchain-localai
+    path: libs/localai
   - name: langchain-milvus
     repo: langchain-ai/langchain-milvus
     path: libs/milvus
@@ -95,7 +98,6 @@ packages:
   - name: langchain-google-vertexai
     repo: langchain-ai/langchain-google
     path: libs/vertexai
-    disabled: true
   - name: langchain-google-community
     repo: langchain-ai/langchain-google
     path: libs/community
@@ -155,4 +157,10 @@ packages:
     path: libs/neo4j
   - name: langchain-linkup
     repo: LinkupPlatform/langchain-linkup
+    path: .
+  - name: langchain-yt-dlp
+    repo: aqib0770/langchain-yt-dlp
+    path: .
+  - name: langchain-oceanbase
+    repo: oceanbase/langchain-oceanbase
     path: .
