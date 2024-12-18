@@ -699,6 +699,7 @@ def test_convert_to_messages() -> None:
     actual = convert_to_messages(
         [
             {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "developer", "content": "You are a helpful assistant 2."},
             {"role": "user", "content": "Hello!"},
             {"role": "ai", "content": "Hi!", "id": "ai1"},
             {"type": "human", "content": "Hello!", "name": "Jane", "id": "human1"},
@@ -733,6 +734,7 @@ def test_convert_to_messages() -> None:
     )
     expected = [
         SystemMessage(content="You are a helpful assistant."),
+        SystemMessage(content="You are a helpful assistant 2."),
         HumanMessage(content="Hello!"),
         AIMessage(content="Hi!", id="ai1"),
         HumanMessage(content="Hello!", name="Jane", id="human1"),
