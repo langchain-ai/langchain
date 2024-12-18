@@ -272,6 +272,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             raise ValueError(msg)
 
+    def _standardize_tools(
+        self, tools: Optional[Sequence]
+    ) -> Optional[List[_ToolSchema]]:
+        """Convert tools to standard format for tracing."""
+        if not tools:
+            return tools
+
+        try:
+            return [convert_to_openai_tool(tool) for tool in tools]
+        except Exception:
+            return None
+
     def invoke(
         self,
         input: LanguageModelInput,
@@ -357,6 +369,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[list[str]] = None,
+        tools: Optional[Sequence] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
@@ -367,6 +380,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
+            tools_to_trace = self._standardize_tools(tools)
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
             inheritable_metadata = {
@@ -390,6 +404,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 name=config.get("run_name"),
                 run_id=config.pop("run_id", None),
                 batch_size=1,
+                tools=tools_to_trace,
             )
             generation: Optional[ChatGenerationChunk] = None
 
