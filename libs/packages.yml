@@ -158,3 +158,6 @@ packages:
   - name: langchain-linkup
     repo: LinkupPlatform/langchain-linkup
     path: .
+  - name: langchain-oceanbase
+    repo: oceanbase/langchain-oceanbase
+    path: .
