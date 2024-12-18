@@ -366,7 +366,6 @@ class AmazonKendraRetriever(BaseRetriever):
             retriever = AmazonKendraRetriever(
                 index_id="c0806df7-e76b-4bce-9b5c-d5582f6b1a03"
             )
-
     """
 
     index_id: str
