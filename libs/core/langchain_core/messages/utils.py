@@ -139,12 +139,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return HumanMessage(**message["data"])
     elif _type == "ai":
         return AIMessage(**message["data"])
-    elif _type in ("system", "developer"):
-        if _type == "developer":
-            message["data"]["additional_kwargs"] = (
-                message["data"].get("additional_kwargs") or {}
-            )
-            message["data"]["additional_kwargs"]["__openai_role__"] = "developer"
+    elif _type == "system":
         return SystemMessage(**message["data"])
     elif _type == "chat":
         return ChatMessage(**message["data"])
