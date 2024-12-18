@@ -404,6 +404,51 @@ def test_multiple_msg_with_name() -> None:
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 
 
+@pytest.mark.parametrize(
+    "input_message, expected_message",
+    [
+        (
+                {"type": "human", "data": {"content": "Hello!", "id": "human1"}},
+                HumanMessage(content="Hello!", id="human1"),
+        ),
+        (
+                {"type": "ai", "data": {"content": "Hi!", "id": "ai1"}},
+                AIMessage(content="Hi!", id="ai1"),
+        ),
+        (
+                {"type": "system", "data": {"content": "You are a helpful assistant."}},
+                SystemMessage(content="You are a helpful assistant."),
+        ),
+        (
+                {"type": "developer", "data": {"content": "System-level control."}},
+                SystemMessage(content="System-level control."),
+        ),
+        (
+                {"type": "function", "data": {"name": "greet", "content": "Hello!"}},
+                FunctionMessage(name="greet", content="Hello!"),
+        ),
+        (
+                {"type": "tool",
+                 "data": {"tool_call_id": "tool1", "content": "Tool output"}},
+                ToolMessage(tool_call_id="tool1", content="Tool output"),
+        ),
+        (
+                {"type": "remove", "data": {"id": "remove1", "content": ""}},
+                RemoveMessage(id="remove1"),
+        ),
+        (
+                {"type": "AIMessageChunk", "data": {"content": "AI chunk"}},
+                AIMessageChunk(content="AI chunk"),
+        ),
+    ],
+)
+def test_message_from_dict(input_message: dict, expected_message: BaseMessage):
+    """Test that messages can be created from dictionaries."""
+    base_messages = messages_from_dict([input_message])
+    assert len(base_messages) == 1
+    assert base_messages[0] == expected_message
+
+
 def test_message_chunk_to_message() -> None:
     assert message_chunk_to_message(
         AIMessageChunk(content="I am", additional_kwargs={"foo": "bar"})
