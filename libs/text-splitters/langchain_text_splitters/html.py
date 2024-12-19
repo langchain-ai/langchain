@@ -21,7 +21,6 @@ from typing import (
 import requests
 from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
-
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
 class ElementType(TypedDict):
@@ -136,8 +135,7 @@ class HTMLHeaderTextSplitter:
         headers_to_split_on: List[Tuple[str, str]],
         return_each_element: bool = False
     ) -> None:
-        """
-        Initialize with headers to split on.
+        """Initialize with headers to split on.
 
         Args:
             headers_to_split_on: A list of tuples where
@@ -154,8 +152,7 @@ class HTMLHeaderTextSplitter:
         self.return_each_element = return_each_element
 
     def _header_level(self, element) -> int:
-        """
-        Determine the heading level of an element.
+        """Determine the heading level of an element.
 
         Args:
             element: A BeautifulSoup element.
@@ -169,8 +166,7 @@ class HTMLHeaderTextSplitter:
         return 9999
 
     def _dom_depth(self, element) -> int:
-        """
-        Compute the DOM depth of an element.
+        """Compute the DOM depth of an element.
 
         Args:
             element: A BeautifulSoup element.
@@ -184,8 +180,7 @@ class HTMLHeaderTextSplitter:
         return depth
 
     def _build_tree(self, elements) -> None:
-        """
-        Build a tree structure from a list of HTML elements.
+        """Build a tree structure from a list of HTML elements.
 
         Args:
             elements: A list of BeautifulSoup elements.
@@ -210,8 +205,7 @@ class HTMLHeaderTextSplitter:
             )
 
     def split_text(self, text: str) -> List[Document]:
-        """
-        Split the given text into a list of Document objects.
+        """Split the given text into a list of Document objects.
 
         Args:
             text: The HTML text to split.
@@ -227,8 +221,7 @@ class HTMLHeaderTextSplitter:
         timeout: int = 10,
         **kwargs: Any
     ) -> List[Document]:
-        """
-        Fetch text content from a URL and split it into documents.
+        """Fetch text content from a URL and split it into documents.
 
         Args:
             url: The URL to fetch content from.
@@ -274,8 +267,7 @@ class HTMLHeaderTextSplitter:
 
 
     def _generate_documents(self, nodes: Dict[int, Node]) -> List[Document]:
-        """
-        Generate a list of Document objects from a node structure.
+        """Generate a list of Document objects from a node structure.
 
         Args:
             A dictionary of nodes indexed by their position.
@@ -293,14 +285,13 @@ class HTMLHeaderTextSplitter:
         def process_node(node: Node) -> None:
             """Process a node and update chunk, headers, and documents accordingly.
 
-            Updates current chunk, active headers, and documents based on the node's type
-            and content.
+            Updates current chunk, active headers, and documents based on the
+            node's type and content.
 
             Args:
                 node: The node to be processed. It should have attributes
                     'tag_type', 'content', 'level', and 'dom_depth'.
             """
-
             nonlocal chunk_dom_depth
             node_type = node.tag_type  # type: ignore[attr-defined]
             node_content = node.content  # type: ignore[attr-defined]
@@ -319,14 +310,15 @@ class HTMLHeaderTextSplitter:
                 ]
                 for key in headers_to_remove:
                     del active_headers[key]
-                header_key = self.header_mapping[node_type]  # type: ignore[attr-defined]
+                header_key = self.header_mapping[node_type] # type: ignore[attr-defined]
                 active_headers[header_key] = (
                     node_content,
                     node_level,
                     node_dom_depth
                 )
                 header_meta: Dict[str, str] = {
-                    key: content for key, (content, lvl, dd) in active_headers.items()
+                    key: content
+                    for key, (content, _, dd) in active_headers.items()
                     if node_dom_depth >= dd
                 }
                 documents.append(
@@ -350,12 +342,14 @@ class HTMLHeaderTextSplitter:
         for _, node in sorted_nodes:
             process_node(node)
 
-        self._finalize_chunk(current_chunk, active_headers, documents, chunk_dom_depth)
+        self._finalize_chunk(current_chunk,
+                             active_headers,
+                             documents,
+                             chunk_dom_depth)
         return documents
 
     def split_text_from_file(self, file: Any) -> List[Document]:
-        """
-        Split HTML content from a file into a list of Document objects.
+        """Split HTML content from a file into a list of Document objects.
 
         Args:
             file: A file path or a file-like object containing HTML content.
@@ -473,7 +467,7 @@ class HTMLHeaderTextSplitter:
                     del active_headers[key]
 
                 # Update active headers with the current header
-                header_key = self.header_mapping[node_type]  # type: ignore[attr-defined]
+                header_key = self.header_mapping[node_type] # type: ignore[attr-defined]
                 active_headers[header_key] = (
                     node_content,
                     node_level,
@@ -497,7 +491,8 @@ class HTMLHeaderTextSplitter:
                 # For non-header elements, associate with current headers
                 if node_content.strip():
                     header_meta: Dict[str, str] = {
-                        key: content for key, (content, lvl, dd) in active_headers.items()
+                        key: content
+                        for key, (content, lvl, dd) in active_headers.items()
                         if node_dom_depth >= dd
                     }
                     documents.append(
