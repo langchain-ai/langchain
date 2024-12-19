@@ -2,7 +2,7 @@
 Unit tests for the PebbloRetrievalQA chain
 """
 
-from typing import List
+from typing import Any, List
 from unittest.mock import Mock
 
 import pytest
@@ -35,26 +35,18 @@ class FakeRetriever(VectorStoreRetriever):
     vectorstore: VectorStore = Mock()
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         return [Document(page_content=query)]
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content=query)]
-
-
-@pytest.fixture
-def unsupported_retriever() -> FakeRetriever:
-    """
-    Create a FakeRetriever instance
-    """
-    retriever = FakeRetriever()
-    retriever.search_kwargs = {}
-    # Set the class of vectorstore
-    retriever.vectorstore.__class__ = InMemoryVectorStore
-    return retriever
 
 
 @pytest.fixture
@@ -110,9 +102,7 @@ def test_invoke(pebblo_retrieval_qa: PebbloRetrievalQA) -> None:
     assert response is not None
 
 
-def test_validate_vectorstore(
-    retriever: FakeRetriever, unsupported_retriever: FakeRetriever
-) -> None:
+def test_validate_vectorstore(retriever: FakeRetriever) -> None:
     """
     Test vectorstore validation
     """
@@ -126,6 +116,11 @@ def test_validate_vectorstore(
         description="description",
         app_name="app_name",
     )
+
+    unsupported_retriever = FakeRetriever()
+    unsupported_retriever.search_kwargs = {}
+    # Set the class of vectorstore
+    unsupported_retriever.vectorstore.__class__ = InMemoryVectorStore
 
     # validate_vectorstore method should raise a ValueError for unsupported vectorstores
     with pytest.raises(ValueError) as exc_info:

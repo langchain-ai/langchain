@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Sequence
 import numpy as np
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utils.math import cosine_similarity
 
@@ -153,8 +153,9 @@ class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
     """Threshold for determining when two documents are similar enough
     to be considered redundant."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
@@ -201,8 +202,9 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     clusters.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any

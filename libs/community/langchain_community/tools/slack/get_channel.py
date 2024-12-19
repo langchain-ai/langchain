@@ -7,7 +7,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_community.tools.slack.base import SlackBaseTool
 
 
-class SlackGetChannel(SlackBaseTool):
+class SlackGetChannel(SlackBaseTool):  # type: ignore[override]
     """Tool that gets Slack channel information."""
 
     name: str = "get_channelid_name_dict"

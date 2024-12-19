@@ -6,11 +6,13 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache as BaseCache
 from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.callbacks import Callbacks as Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable
+from pydantic import ConfigDict, model_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.natbot.prompt import PROMPT
@@ -59,12 +61,14 @@ class NatBotChain(Chain):
     previous_command: str = ""  #: :meta private:
     output_key: str = "command"  #: :meta private:
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
@@ -154,3 +158,6 @@ class NatBotChain(Chain):
     @property
     def _chain_type(self) -> str:
         return "nat_bot_chain"
+
+
+NatBotChain.model_rebuild()

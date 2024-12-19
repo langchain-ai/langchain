@@ -12,11 +12,11 @@ from wsgiref.handlers import format_date_time
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import (
     secret_from_env,
 )
 from numpy import ndarray
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 # SparkLLMTextEmbeddings is an embedding model provided by iFLYTEK Co., Ltd.. (https://iflytek.com/en/).
 
@@ -124,8 +124,9 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     If "para"(default), it belongs to document Embedding. 
     If "query", it belongs to query Embedding."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     def _embed(self, texts: List[str], host: str) -> Optional[List[List[float]]]:
         """Internal method to call Spark Embedding API and return embeddings.

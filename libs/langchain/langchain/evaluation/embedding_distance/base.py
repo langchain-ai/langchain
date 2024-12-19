@@ -10,8 +10,8 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict, Field
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -113,8 +113,9 @@ class _EmbeddingDistanceChainMixin(Chain):
                 )
         return values
 
-    class Config:
-        arbitrary_types_allowed: bool = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def output_keys(self) -> List[str]:

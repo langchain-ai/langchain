@@ -7,7 +7,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 # Ignoring type because below is valid pydantic code

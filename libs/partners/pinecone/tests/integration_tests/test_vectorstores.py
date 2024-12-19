@@ -91,6 +91,7 @@ class TestPinecone:
         )
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search(unique_id, k=1, namespace=NAMESPACE_NAME)
+        output[0].id = None  # overwrite ID for ease of comparison
         assert output == [Document(page_content=needs)]
 
     def test_from_texts_with_metadatas(
@@ -115,6 +116,7 @@ class TestPinecone:
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search(needs, k=1, namespace=namespace)
 
+        output[0].id = None
         # TODO: why metadata={"page": 0.0}) instead of {"page": 0}?
         assert output == [Document(page_content=needs, metadata={"page": 0.0})]
 
@@ -140,6 +142,8 @@ class TestPinecone:
         sorted_documents = sorted(docs, key=lambda x: x.metadata["page"])
         print(sorted_documents)  # noqa: T201
 
+        for document in sorted_documents:
+            document.id = None  # overwrite IDs for ease of comparison
         # TODO: why metadata={"page": 0.0}) instead of {"page": 0}, etc???
         assert sorted_documents == [
             Document(page_content="foo", metadata={"page": 0.0}),

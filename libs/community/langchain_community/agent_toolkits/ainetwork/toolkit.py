@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, List, Literal, Optional
 
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import ConfigDict, model_validator
 
 from langchain_community.tools.ainetwork.app import AINAppOps
 from langchain_community.tools.ainetwork.owner import AINOwnerOps
@@ -36,8 +36,9 @@ class AINetworkToolkit(BaseToolkit):
     network: Optional[Literal["mainnet", "testnet"]] = "testnet"
     interface: Optional[Ain] = None
 
-    @root_validator(pre=True)
-    def set_interface(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def set_interface(cls, values: dict) -> Any:
         """Set the interface if not provided.
 
         If the interface is not provided, attempt to authenticate with the
@@ -53,9 +54,10 @@ class AINetworkToolkit(BaseToolkit):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
-        validate_all = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        validate_default=True,
+    )
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

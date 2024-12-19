@@ -299,6 +299,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.mongodb import (
         MongodbLoader,
     )
+    from langchain_community.document_loaders.needle import (
+        NeedleLoader,
+    )
     from langchain_community.document_loaders.news import (
         NewsURLLoader,
     )
@@ -359,6 +362,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.pebblo import (
         PebbloSafeLoader,
+        PebbloTextLoader,
     )
     from langchain_community.document_loaders.polars_dataframe import (
         PolarsDataFrameLoader,
@@ -630,6 +634,7 @@ _module_lookup = {
     "MergedDataLoader": "langchain_community.document_loaders.merge",
     "ModernTreasuryLoader": "langchain_community.document_loaders.modern_treasury",
     "MongodbLoader": "langchain_community.document_loaders.mongodb",
+    "NeedleLoader": "langchain_community.document_loaders.needle",
     "NewsURLLoader": "langchain_community.document_loaders.news",
     "NotebookLoader": "langchain_community.document_loaders.notebook",
     "NotionDBLoader": "langchain_community.document_loaders.notiondb",
@@ -650,6 +655,7 @@ _module_lookup = {
     "PDFPlumberLoader": "langchain_community.document_loaders.pdf",
     "PagedPDFSplitter": "langchain_community.document_loaders.pdf",
     "PebbloSafeLoader": "langchain_community.document_loaders.pebblo",
+    "PebbloTextLoader": "langchain_community.document_loaders.pebblo",
     "PlaywrightURLLoader": "langchain_community.document_loaders.url_playwright",
     "PolarsDataFrameLoader": "langchain_community.document_loaders.polars_dataframe",
     "PsychicLoader": "langchain_community.document_loaders.psychic",
@@ -835,6 +841,7 @@ __all__ = [
     "MergedDataLoader",
     "ModernTreasuryLoader",
     "MongodbLoader",
+    "NeedleLoader",
     "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",
@@ -855,6 +862,7 @@ __all__ = [
     "PDFPlumberLoader",
     "PagedPDFSplitter",
     "PebbloSafeLoader",
+    "PebbloTextLoader",
     "PlaywrightURLLoader",
     "PolarsDataFrameLoader",
     "PsychicLoader",

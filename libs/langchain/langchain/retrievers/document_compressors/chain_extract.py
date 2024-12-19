@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence, cast
 
 from langchain_core.callbacks.manager import Callbacks
@@ -11,6 +10,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
+from pydantic import ConfigDict
 
 from langchain.chains.llm import LLMChain
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
@@ -56,8 +56,9 @@ class LLMChainExtractor(BaseDocumentCompressor):
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def compress_documents(
         self,
@@ -90,12 +91,8 @@ class LLMChainExtractor(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents asynchronously."""
-        outputs = await asyncio.gather(
-            *[
-                self.llm_chain.ainvoke(self.get_input(query, doc), callbacks=callbacks)
-                for doc in documents
-            ]
-        )
+        inputs = [self.get_input(query, doc) for doc in documents]
+        outputs = await self.llm_chain.abatch(inputs, {"callbacks": callbacks})
         compressed_docs = []
         for i, doc in enumerate(documents):
             if len(outputs[i]) == 0:

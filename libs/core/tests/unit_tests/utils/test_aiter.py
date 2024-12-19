@@ -1,4 +1,4 @@
-from typing import AsyncIterator, List
+from collections.abc import AsyncIterator
 
 import pytest
 
@@ -15,11 +15,11 @@ from langchain_core.utils.aiter import abatch_iterate
     ],
 )
 async def test_abatch_iterate(
-    input_size: int, input_iterable: List[str], expected_output: List[str]
+    input_size: int, input_iterable: list[str], expected_output: list[str]
 ) -> None:
     """Test batching function."""
 
-    async def _to_async_iterable(iterable: List[str]) -> AsyncIterator[str]:
+    async def _to_async_iterable(iterable: list[str]) -> AsyncIterator[str]:
         for item in iterable:
             yield item
 

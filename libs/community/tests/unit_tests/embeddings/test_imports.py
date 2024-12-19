@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
+    "ClovaXEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
     "ElasticsearchEmbeddings",
@@ -25,6 +26,7 @@ EXPECTED_ALL = [
     "MlflowAIGatewayEmbeddings",
     "MlflowEmbeddings",
     "MlflowCohereEmbeddings",
+    "Model2vecEmbeddings",
     "ModelScopeEmbeddings",
     "TensorflowHubEmbeddings",
     "SagemakerEndpointEmbeddings",
@@ -81,6 +83,7 @@ EXPECTED_ALL = [
     "AscendEmbeddings",
     "ZhipuAIEmbeddings",
     "TextEmbedEmbeddings",
+    "HunyuanEmbeddings",
 ]
 
 
