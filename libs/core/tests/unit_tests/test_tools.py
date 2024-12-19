@@ -101,6 +101,17 @@ class _MockStructuredTool(BaseTool):
         raise NotImplementedError
 
 
+def test_tool_typing() -> None:
+    """Test typing annotations (checked with mypy)."""
+
+    @tool
+    def multiply(a: int, b: int) -> int:
+        """multiply two ints"""
+        return a * b
+
+    _: StructuredTool = multiply
+
+
 def test_structured_args() -> None:
     """Test functionality with structured arguments."""
     structured_api = _MockStructuredTool()
