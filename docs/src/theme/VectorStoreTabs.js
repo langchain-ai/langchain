@@ -21,7 +21,7 @@ export default function VectorStoreTabs(props) {
         {
             value: "ApertureDB",
             label: "ApertureDB",
-            text: `from langchain_community.vectorstores import ApertureDB\n`${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = ApertureDB(\n    embeddings=embeddings, \n    descriptor_set="test",\n)`,
+            text: `from langchain_community.vectorstores import ApertureDB\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = ApertureDB(\n    embeddings=embeddings, \n    descriptor_set="test",\n)`,
             packageName: "langchain-community aperturedb",
             default: false,
         },
