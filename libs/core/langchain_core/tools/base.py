@@ -605,6 +605,9 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
+        if self.args_schema is not None and not get_fields(self.args_schema):
+            # StructuredTool with no args
+            return (), {}
         tool_input = self._parse_input(tool_input, tool_call_id)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
