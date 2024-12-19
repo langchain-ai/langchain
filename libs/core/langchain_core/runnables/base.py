@@ -190,7 +190,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 
         def buggy_double(y: int) -> int:
-            '''Buggy code that will fail 70% of the time'''
+            \"\"\"Buggy code that will fail 70% of the time\"\"\"
             if random.random() > 0.3:
                 print('This code failed, and will probably be retried!')  # noqa: T201
                 raise ValueError('Triggered buggy code')
