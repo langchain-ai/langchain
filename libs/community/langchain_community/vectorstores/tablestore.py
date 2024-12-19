@@ -458,6 +458,11 @@ class TablestoreVectorStore(VectorStore):
             row_id = ids[i]
             text = text_list[i]
             embedding_vector = embeddings[i]
+            if len(embedding_vector) != self.__vector_dimension:
+                raise RuntimeError(
+                    "embedding vector size:%d is not the same as vector store dim:%d"
+                    % (len(embedding_vector), self.__vector_dimension)
+                )
             metadata = dict()
             if metadatas and metadatas[i]:
                 metadata = metadatas[i]
