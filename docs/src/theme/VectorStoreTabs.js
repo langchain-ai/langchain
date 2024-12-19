@@ -19,6 +19,13 @@ export default function VectorStoreTabs(props) {
             default: true,
         },
         {
+            value: "ApertureDB",
+            label: "ApertureDB",
+            text: `from langchain_community.vectorstores import ApertureDB\n`${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = ApertureDB(\n    embeddings=embeddings, \n    descriptor_set="test",\n)`,
+            packageName: "langchain-community aperturedb",
+            default: false,
+        },
+        {
             value: "AstraDB",
             label: "AstraDB",
             text: `from langchain_astradb import AstraDBVectorStore\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = AstraDBVectorStore(\n    embedding=embeddings,\n    api_endpoint=ASTRA_DB_API_ENDPOINT,\n    collection_name="astra_vector_langchain",\n    token=ASTRA_DB_APPLICATION_TOKEN,\n    namespace=ASTRA_DB_NAMESPACE,\n)`,
