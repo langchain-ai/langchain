@@ -116,6 +116,7 @@ def test_configurable() -> None:
             "request_timeout": None,
             "max_retries": 2,
             "presence_penalty": None,
+            "reasoning_effort": None,
             "frequency_penalty": None,
             "seed": None,
             "logprobs": None,
