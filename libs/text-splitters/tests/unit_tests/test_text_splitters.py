@@ -2049,7 +2049,6 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
     return _create_splitter
 
-
 @pytest.mark.parametrize(
     "headers_to_split_on, html_input, expected_documents, test_case",
     [
@@ -2268,6 +2267,7 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
         ),
     ]
 )
+@pytest.mark.requires("bs4")
 def test_html_header_text_splitter(
 
     html_header_splitter_splitter_factory: Any,
