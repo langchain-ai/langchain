@@ -116,6 +116,7 @@ def init_chat_model(
             - 'huggingface'         -> langchain-huggingface
             - 'groq'                -> langchain-groq
             - 'ollama'              -> langchain-ollama
+            - 'google_anthropic_vertex'    -> langchain-google-vertexai
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -410,6 +411,11 @@ def _init_chat_model_helper(
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
+    elif model_provider == "google_anthropic_vertex":
+        _check_pkg("langchain_google_vertexai")
+        from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+
+        return ChatAnthropicVertex(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -433,6 +439,7 @@ _SUPPORTED_PROVIDERS = {
     "groq",
     "bedrock",
     "bedrock_converse",
+    "google_anthropic_vertex",
 }
 
 

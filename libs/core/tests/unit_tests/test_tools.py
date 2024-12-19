@@ -575,6 +575,19 @@ def test_structured_tool_from_function_with_run_manager() -> None:
     )
 
 
+def test_structured_tool_from_parameterless_function() -> None:
+    """Test parameterless function of structured tool."""
+
+    def foo() -> str:
+        """Docstring."""
+        return "invoke foo"
+
+    structured_tool = StructuredTool.from_function(foo)
+
+    assert structured_tool.run({}) == "invoke foo"
+    assert structured_tool.run("") == "invoke foo"
+
+
 def test_named_tool_decorator() -> None:
     """Test functionality when arguments are provided as input to decorator."""
 
@@ -2255,3 +2268,20 @@ def test_tool_return_output_mixin() -> None:
     assert foo.invoke(
         {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
     ) == Bar(x=0)
+
+
+def test_tool_mutate_input() -> None:
+    class MyTool(BaseTool):
+        name: str = "MyTool"
+        description: str = "a tool"
+
+        def _run(
+            self,
+            x: str,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            return "hi"
+
+    my_input = {"x": "hi"}
+    MyTool().invoke(my_input)
+    assert my_input == {"x": "hi"}
