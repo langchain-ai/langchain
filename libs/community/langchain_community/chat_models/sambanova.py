@@ -616,7 +616,7 @@ class ChatSambaNovaCloud(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if kwargs is not None:
+        if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
@@ -629,8 +629,8 @@ class ChatSambaNovaCloud(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike[Any] = PydanticToolsParser(
-                    tools=[schema],
-                    first_tool_only=True,
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -642,7 +642,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             # llm = self.bind(response_format={"type": "json_object"})
             if is_pydantic_schema:
                 schema = cast(Type[BaseModel], schema)
-                output_parser = PydanticOutputParser(pydantic_object=schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
             else:
                 output_parser = JsonOutputParser()
 
@@ -660,7 +660,7 @@ class ChatSambaNovaCloud(BaseChatModel):
             # )
             if is_pydantic_schema:
                 schema = cast(Type[BaseModel], schema)
-                output_parser = PydanticOutputParser(pydantic_object=schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
             else:
                 output_parser = JsonOutputParser()
         else:

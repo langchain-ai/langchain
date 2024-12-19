@@ -139,8 +139,17 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
         )
-    elif role == "system":
-        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
+    elif role in ("system", "developer"):
+        if role == "developer":
+            additional_kwargs = {"__openai_role__": role}
+        else:
+            additional_kwargs = {}
+        return SystemMessage(
+            content=_dict.get("content", ""),
+            name=name,
+            id=id_,
+            additional_kwargs=additional_kwargs,
+        )
     elif role == "function":
         return FunctionMessage(
             content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
@@ -233,7 +242,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             )
             message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
-        message_dict["role"] = "system"
+        message_dict["role"] = message.additional_kwargs.get(
+            "__openai_role__", "system"
+        )
     elif isinstance(message, FunctionMessage):
         message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
@@ -284,8 +295,14 @@ def _convert_delta_to_message_chunk(
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
         )
-    elif role == "system" or default_class == SystemMessageChunk:
-        return SystemMessageChunk(content=content, id=id_)
+    elif role in ("system", "developer") or default_class == SystemMessageChunk:
+        if role == "developer":
+            additional_kwargs = {"__openai_role__": "developer"}
+        else:
+            additional_kwargs = {}
+        return SystemMessageChunk(
+            content=content, id=id_, additional_kwargs=additional_kwargs
+        )
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"], id=id_)
     elif role == "tool" or default_class == ToolMessageChunk:

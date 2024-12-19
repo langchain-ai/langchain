@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-text-splitters"
-version = "0.3.3"
+version = "0.3.4"
 description = "LangChain text splitting utilities"
 authors = []
 license = "MIT"
@@ -36,7 +36,7 @@ ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.25"
+langchain-core = "^0.3.26"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "D"]
@@ -74,14 +74,17 @@ convention = "google"
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
+
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
 tiktoken = "^0.8.0"
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
+
 
 
 [tool.poetry.group.test.dependencies]
@@ -92,6 +95,7 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-socket = "^0.7.0"
 
+
 [tool.poetry.group.test_integration]
 optional = true
 
@@ -101,13 +105,16 @@ nltk = "^3.9.1"
 transformers = "^4.47.0"
 sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
 
+
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"
 develop = true
 
+
 [tool.poetry.group.dev.dependencies.langchain-core]
 path = "../core"
 develop = true
+
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../core"

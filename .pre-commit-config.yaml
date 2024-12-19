@@ -1,0 +1,129 @@
+repos:
+- repo: local
+  hooks:
+    - id: core
+      name: format core
+      language: system
+      entry: make -C libs/core format
+      files: ^libs/core/
+      pass_filenames: false
+    - id: community
+      name: format community
+      language: system
+      entry: make -C libs/community format
+      files: ^libs/community/
+      pass_filenames: false
+    - id: langchain
+      name: format langchain
+      language: system
+      entry: make -C libs/langchain format
+      files: ^libs/langchain/
+      pass_filenames: false
+    - id: standard-tests
+      name: format standard-tests
+      language: system
+      entry: make -C libs/standard-tests format
+      files: ^libs/standard-tests/
+      pass_filenames: false
+    - id: text-splitters
+      name: format text-splitters
+      language: system
+      entry: make -C libs/text-splitters format
+      files: ^libs/text-splitters/
+      pass_filenames: false
+    - id: anthropic
+      name: format partners/anthropic
+      language: system
+      entry: make -C libs/partners/anthropic format
+      files: ^libs/partners/anthropic/
+      pass_filenames: false
+    - id: chroma
+      name: format partners/chroma
+      language: system
+      entry: make -C libs/partners/chroma format
+      files: ^libs/partners/chroma/
+      pass_filenames: false
+    - id: couchbase
+      name: format partners/couchbase
+      language: system
+      entry: make -C libs/partners/couchbase format
+      files: ^libs/partners/couchbase/
+      pass_filenames: false
+    - id: exa
+      name: format partners/exa
+      language: system
+      entry: make -C libs/partners/exa format
+      files: ^libs/partners/exa/
+      pass_filenames: false
+    - id: fireworks
+      name: format partners/fireworks
+      language: system
+      entry: make -C libs/partners/fireworks format
+      files: ^libs/partners/fireworks/
+      pass_filenames: false
+    - id: groq
+      name: format partners/groq
+      language: system
+      entry: make -C libs/partners/groq format
+      files: ^libs/partners/groq/
+      pass_filenames: false
+    - id: huggingface
+      name: format partners/huggingface
+      language: system
+      entry: make -C libs/partners/huggingface format
+      files: ^libs/partners/huggingface/
+      pass_filenames: false
+    - id: mistralai
+      name: format partners/mistralai
+      language: system
+      entry: make -C libs/partners/mistralai format
+      files: ^libs/partners/mistralai/
+      pass_filenames: false
+    - id: nomic
+      name: format partners/nomic
+      language: system
+      entry: make -C libs/partners/nomic format
+      files: ^libs/partners/nomic/
+      pass_filenames: false
+    - id: ollama
+      name: format partners/ollama
+      language: system
+      entry: make -C libs/partners/ollama format
+      files: ^libs/partners/ollama/
+      pass_filenames: false
+    - id: openai
+      name: format partners/openai
+      language: system
+      entry: make -C libs/partners/openai format
+      files: ^libs/partners/openai/
+      pass_filenames: false
+    - id: pinecone
+      name: format partners/pinecone
+      language: system
+      entry: make -C libs/partners/pinecone format
+      files: ^libs/partners/pinecone/
+      pass_filenames: false
+    - id: prompty
+      name: format partners/prompty
+      language: system
+      entry: make -C libs/partners/prompty format
+      files: ^libs/partners/prompty/
+      pass_filenames: false
+    - id: qdrant
+      name: format partners/qdrant
+      language: system
+      entry: make -C libs/partners/qdrant format
+      files: ^libs/partners/qdrant/
+      pass_filenames: false
+    - id: voyageai
+      name: format partners/voyageai
+      language: system
+      entry: make -C libs/partners/voyageai format
+      files: ^libs/partners/voyageai/
+      pass_filenames: false
+    - id: root
+      name: format docs, cookbook
+      language: system
+      entry: make format
+      files: ^(docs|cookbook)/
+      pass_filenames: false
