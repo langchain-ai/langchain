@@ -19,10 +19,8 @@ from typing import (
 )
 
 import requests
-from bs4 import BeautifulSoup
-from langchain.docstore.document import Document as DocstoreDocument
 from langchain_core._api import beta
-from langchain_core.documents import BaseDocumentTransformer, Document as CoreDocument
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
@@ -297,6 +295,14 @@ class HTMLHeaderTextSplitter:
         Returns:
             A list of split Document objects.
         """
+        try:
+            from bs4 import BeautifulSoup  # type: ignore[import-untyped]
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import BeautifulSoup/PageElement, \
+                    please install with `pip install \
+                    bs4`."
+            ) from e
         if isinstance(file, str):
             with open(file, 'r', encoding='utf-8') as f:
                 html_content = f.read()
