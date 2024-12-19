@@ -36,8 +36,7 @@ class ElementType(TypedDict):
 
 @dataclass
 class Node:
-    """
-    Represents a node in a hierarchical structure.
+    """Represents a node in a hierarchical structure.
 
     Attributes:
         name: The name of the node.
@@ -55,19 +54,81 @@ class Node:
     parent: Optional[Node] = field(default=None)
 
 class HTMLHeaderTextSplitter:
-    """
-    Splits HTML content into structured `Document` objects based on specified header
-    tags.
+    """Split HTML content into structured Documents based on specified headers.
 
-    This splitter processes HTML by identifying header elements (e.g., `<h1>`,
-    `<h2>`) and segments the content accordingly. Each header and the text that
-    follows, up to the next header of the same or higher level, are grouped into a
-    `Document`. The metadata of each `Document` reflects the hierarchy of headers,
-    providing an organized content structure.
+    Splits HTML content by detecting specified header tags (e.g., <h1>, <h2>) and
+    creating hierarchical Document objects that reflect the semantic structure
+    of the original content. For each identified section, the splitter associates
+    the extracted text with metadata corresponding to the encountered headers.
 
-    If the content does not contain any of the specified headers, the splitter
-    returns a single `Document` with the aggregated content and no additional
-    metadata.
+    If no specified headers are found, the entire content is returned as a single
+    Document. This allows for flexible handling of HTML input, ensuring that
+    information is organized according to its semantic headers.
+
+    The splitter provides the option to return each HTML element as a separate
+    Document or aggregate them into semantically meaningful chunks. It also
+    gracefully handles multiple levels of nested headers, creating a rich,
+    hierarchical representation of the content.
+
+    Args:
+        headers_to_split_on (List[Tuple[str, str]]): A list of (header_tag,
+            header_name) pairs representing the headers that define splitting
+            boundaries. For example, [("h1", "Header 1"), ("h2", "Header 2")]
+            will split content by <h1> and <h2> tags, assigning their textual
+            content to the Document metadata.
+        return_each_element (bool): If True, every HTML element encountered
+            (including headers, paragraphs, etc.) is returned as a separate
+            Document. If False, content under the same header hierarchy is
+            aggregated into fewer Documents.
+
+    Returns:
+        List[Document]: A list of Document objects. Each Document contains
+        `page_content` holding the extracted text and `metadata` that maps
+        the header hierarchy to their corresponding titles.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_text_splitters.html_header_text_splitter import (
+                HTMLHeaderTextSplitter,
+            )
+
+            # Define headers for splitting on h1 and h2 tags.
+            headers_to_split_on = [("h1", "Main Topic"), ("h2", "Sub Topic")]
+
+            splitter = HTMLHeaderTextSplitter(
+                headers_to_split_on=headers_to_split_on,
+                return_each_element=False
+            )
+
+            html_content = \"\"\"
+            <html>
+              <body>
+                <h1>Introduction</h1>
+                <p>Welcome to the introduction section.</p>
+                <h2>Background</h2>
+                <p>Some background details here.</p>
+                <h1>Conclusion</h1>
+                <p>Final thoughts.</p>
+              </body>
+            </html>
+            \"\"\"
+
+            documents = splitter.split_text(html_content)
+
+            # 'documents' now contains Document objects reflecting the hierarchy:
+            # - Document with metadata={"Main Topic": "Introduction"} and
+            #   content="Introduction"
+            # - Document with metadata={"Main Topic": "Introduction"} and
+            #   content="Welcome to the introduction section."
+            # - Document with metadata={"Main Topic": "Introduction",
+            #   "Sub Topic": "Background"} and content="Background"
+            # - Document with metadata={"Main Topic": "Introduction",
+            #   "Sub Topic": "Background"} and content="Some background details here."
+            # - Document with metadata={"Main Topic": "Conclusion"} and
+            #   content="Conclusion"
+            # - Document with metadata={"Main Topic": "Conclusion"} and
+            #   content="Final thoughts."
     """
 
     def __init__(
@@ -185,8 +246,8 @@ class HTMLHeaderTextSplitter:
             response = requests.get(url, **kwargs)  # noqa: E501
             response.raise_for_status()
         except requests.RequestException as e:
-            print(f"Error fetching URL {url}: {e}")
-            raise e
+            msg = f"Error fetching URL {url}: {e}"
+            raise requests.RequestException(msg) from e
         return self.split_text_from_file(BytesIO(response.content))
 
     def _finalize_chunk(
@@ -198,7 +259,8 @@ class HTMLHeaderTextSplitter:
 
         if current_chunk:
             final_meta: Dict[str, str] = {
-                key: content for key, (content, level, dom_depth) in active_headers.items()
+                key: content
+                for key, (content, level, dom_depth) in active_headers.items()
                 if chunk_dom_depth >= dom_depth
             }
             combined_text = "  \n".join(
@@ -229,9 +291,11 @@ class HTMLHeaderTextSplitter:
 
 
         def process_node(node: Node) -> None:
-            """
-            Processes a given node and updates the current chunk, active headers, and
-            documents based on the node's type and content.
+            """Process a node and update chunk, headers, and documents accordingly.
+
+            Updates current chunk, active headers, and documents based on the node's type
+            and content.
+
             Args:
                 node: The node to be processed. It should have attributes
                     'tag_type', 'content', 'level', and 'dom_depth'.
@@ -244,7 +308,11 @@ class HTMLHeaderTextSplitter:
             node_dom_depth = node.dom_depth  # type: ignore[attr-defined]
 
             if node_type in self.header_tags:
-                self._finalize_chunk(current_chunk, active_headers, documents, chunk_dom_depth)
+                self._finalize_chunk(
+                    current_chunk,
+                    active_headers,
+                    documents,
+                    chunk_dom_depth)
                 headers_to_remove = [
                     key for key, (_, lvl, _) in active_headers.items()
                     if lvl >= node_level
@@ -360,21 +428,18 @@ class HTMLHeaderTextSplitter:
         return self._generate_individual_documents(nodes)
 
     def _aggregate_documents(self, nodes: Dict[int, Node]) -> List[Document]:
-        """
-        Aggregate documents based on headers.
+        """Generate documents from a list of nodes.
 
         Args:
-            nodes: A dictionary of nodes indexed by their position.
+            nodes: List of Node objects representing the HTML structure.
 
         Returns:
-            A list of aggregated Document objects.
+            List of CoreDocument objects containing the processed text chunks.
         """
-        # Reuse the existing _generate_documents method for aggregation
         return self._generate_documents(nodes)
 
     def _generate_individual_documents(self, nodes: Dict[int, Node]) -> List[Document]:
-        """
-        Generate individual Document objects for each element.
+        """Generate individual Document objects for each element.
 
         Args:
             nodes: A dictionary of nodes indexed by their position.
@@ -388,8 +453,7 @@ class HTMLHeaderTextSplitter:
         sorted_nodes = sorted(nodes.items())
 
         def process_node(node: Node) -> None:
-            """
-            Process a single node to create Document objects based on header tags.
+            """Process a single node to create Document objects based on header tags.
 
             Args:
                 node: The node to process.
