@@ -61,6 +61,7 @@ JSON_TO_PYTHON_TYPES = {
     "integer": "int",
     "array": "List",
     "object": "Dict",
+    "any": "any",
 }
 
 
@@ -323,7 +324,7 @@ class CohereProvider(Provider):
                         if "description" in p_def
                         else "",
                         type=JSON_TO_PYTHON_TYPES.get(
-                            p_def.get("type"), p_def.get("type")
+                            p_def.get("type"), p_def.get("type", "any")
                         ),
                         is_required="default" not in p_def,
                     )
@@ -342,7 +343,7 @@ class CohereProvider(Provider):
                     p_name: self.oci_tool_param(
                         description=p_def.get("description"),
                         type=JSON_TO_PYTHON_TYPES.get(
-                            p_def.get("type"), p_def.get("type")
+                            p_def.get("type"), p_def.get("type", "any")
                         ),
                         is_required="default" not in p_def,
                     )
@@ -363,7 +364,7 @@ class CohereProvider(Provider):
                     p_name: self.oci_tool_param(
                         description=p_def.get("description"),
                         type=JSON_TO_PYTHON_TYPES.get(
-                            p_def.get("type"), p_def.get("type")
+                            p_def.get("type"), p_def.get("type", "any")
                         ),
                         is_required=p_name in parameters.get("required", []),
                     )
