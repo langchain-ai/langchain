@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-ollama"
-version = "0.2.1"
+version = "0.2.2"
 description = "An integration package connecting Ollama and LangChain"
 authors = []
 readme = "README.md"
@@ -21,7 +21,7 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 ollama = ">=0.4.4,<1"
-langchain-core = "^0.3.20"
+langchain-core = "^0.3.27"
 
 [tool.ruff.lint]
 select = [

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-anthropic"
-version = "0.3.0"
+version = "0.3.1"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
@@ -21,7 +21,7 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 anthropic = ">=0.39.0,<1"
-langchain-core = "^0.3.17"
+langchain-core = "^0.3.27"
 pydantic = "^2.7.4"
 
 [tool.ruff.lint]

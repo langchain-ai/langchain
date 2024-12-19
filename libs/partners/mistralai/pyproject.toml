@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.2.3"
+version = "0.2.4"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.21"
+langchain-core = "^0.3.27"
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"
