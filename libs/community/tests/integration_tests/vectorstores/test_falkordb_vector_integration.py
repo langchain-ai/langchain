@@ -102,8 +102,8 @@ def test_falkordbvector() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert type(output) is list
-    assert type(output[0]) is Document
+    assert isinstance(output, list)
+    assert isinstance(output[0], Document)
     assert output[0].page_content == "foo"
 
     drop_vector_indexes(docsearch)
@@ -121,8 +121,8 @@ def test_falkordbvector_embeddings() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert type(output) is list
-    assert type(output[0]) is Document
+    assert isinstance(output, list)
+    assert isinstance(output[0], Document)
     assert output[0].page_content == "foo"
 
     drop_vector_indexes(docsearch)
@@ -168,8 +168,8 @@ def test_falkordbvector_with_metadatas() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert type(output) is list
-    assert type(output[0]) is Document
+    assert isinstance(output, list)
+    assert isinstance(output[0], Document)
     assert output[0].metadata.get("page") == "0"
 
     drop_vector_indexes(docsearch)
