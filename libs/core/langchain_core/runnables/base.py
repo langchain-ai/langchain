@@ -520,13 +520,13 @@ class Runnable(Generic[Input, Output], ABC):
     def get_config_jsonschema(
         self, *, include: Optional[Sequence[str]] = None
     ) -> dict[str, Any]:
-        """Get a JSON schema that represents the output of the Runnable.
+        """Get a JSON schema that represents the config of the Runnable.
 
         Args:
             include: A list of fields to include in the config schema.
 
         Returns:
-            A JSON schema that represents the output of the Runnable.
+            A JSON schema that represents the config of the Runnable.
 
         .. versionadded:: 0.3.0
         """
