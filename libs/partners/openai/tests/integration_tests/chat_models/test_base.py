@@ -706,6 +706,12 @@ async def test_openai_response_headers_async() -> None:
     assert "content-type" in headers
 
 
+@pytest.mark.xfail(
+    reason=(
+        "As of 12.19.24 OpenAI API returns 1151 instead of 1118. Not clear yet if "
+        "this is an undocumented API change or a bug on their end."
+    )
+)
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -738,6 +744,12 @@ def test_image_token_counting_jpeg() -> None:
     assert expected == actual
 
 
+@pytest.mark.xfail(
+    reason=(
+        "As of 12.19.24 OpenAI API returns 871 instead of 779. Not clear yet if "
+        "this is an undocumented API change or a bug on their end."
+    )
+)
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
