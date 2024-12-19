@@ -19,6 +19,7 @@ vectorstore_list = [
     "Redis",
     "Clickhouse",
     "InMemoryVectorStore",
+    "ApertureDB",
 ]
 
 from_partners = [
@@ -193,6 +194,17 @@ def get_vectorstore_table():
             "Passes Standard Tests": False,
             "Multi Tenancy": False,
             "Local/Cloud": "Local",
+            "IDs in add Documents": True,
+        },
+        "ApertureDB": {
+            "Delete by ID": True,
+            "Filtering": True,
+            "similarity_search_by_vector": True,
+            "similarity_search_with_score": True,
+            "asearch": True,
+            "Passes Standard Tests": True,
+            "Multi Tenancy": False,
+            "Local/Cloud": "Both",
             "IDs in add Documents": True,
         },
     }
