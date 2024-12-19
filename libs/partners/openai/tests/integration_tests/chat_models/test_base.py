@@ -1089,11 +1089,18 @@ async def test_astream_response_format() -> None:
         pass
 
 
-def test_o1_max_tokens() -> None:
-    response = ChatOpenAI(model="o1-mini", max_tokens=10).invoke("how are you")  # type: ignore[call-arg]
-    assert isinstance(response, AIMessage)
-
-    response = ChatOpenAI(model="gpt-4o", max_completion_tokens=10).invoke(
-        "how are you"
+@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
+def test_o1(use_max_completion_tokens: bool) -> None:
+    if use_max_completion_tokens:
+        kwargs: dict = {"max_completion_tokens": 10}
+    else:
+        kwargs = {"max_tokens": 10}
+    response = ChatOpenAI(model="o1", reasoning_effort="low", **kwargs).invoke(
+        [
+            {"role": "developer", "content": "respond in all caps"},
+            {"role": "user", "content": "HOW ARE YOU"},
+        ]
     )
     assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert response.content.upper() == response.content

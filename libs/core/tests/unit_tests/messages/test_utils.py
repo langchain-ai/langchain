@@ -59,6 +59,24 @@ def test_merge_message_runs_str_without_separator(
     assert messages == messages_model_copy
 
 
+def test_merge_message_runs_response_metadata() -> None:
+    messages = [
+        AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
+        AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
+    ]
+    expected = [
+        AIMessage(
+            "foo\nbar",
+            id="1",
+            response_metadata={"input_tokens": 1},
+        )
+    ]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    # Check it's not mutated
+    assert messages[1].response_metadata == {"input_tokens": 2}
+
+
 def test_merge_message_runs_content() -> None:
     messages = [
         AIMessage("foo", id="1"),
@@ -451,6 +469,7 @@ def test_convert_to_messages() -> None:
     message_like: list = [
         # BaseMessage
         SystemMessage("1"),
+        SystemMessage("1.1", additional_kwargs={"__openai_role__": "developer"}),
         HumanMessage([{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"),
         AIMessage(
             [
@@ -485,6 +504,7 @@ def test_convert_to_messages() -> None:
         ToolMessage("5.1", tool_call_id="5.2", name="5.3"),
         # OpenAI dict
         {"role": "system", "content": "6"},
+        {"role": "developer", "content": "6.1"},
         {
             "role": "user",
             "content": [{"type": "image_url", "image_url": {"url": "7.1"}}],
@@ -508,6 +528,7 @@ def test_convert_to_messages() -> None:
         {"role": "tool", "content": "10.1", "tool_call_id": "10.2"},
         # Tuple/List
         ("system", "11.1"),
+        ("developer", "11.2"),
         ("human", [{"type": "image_url", "image_url": {"url": "12.1"}}]),
         (
             "ai",
@@ -533,6 +554,9 @@ def test_convert_to_messages() -> None:
     ]
     expected = [
         SystemMessage(content="1"),
+        SystemMessage(
+            content="1.1", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(
             content=[{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"
         ),
@@ -568,6 +592,9 @@ def test_convert_to_messages() -> None:
         ),
         ToolMessage(content="5.1", name="5.3", tool_call_id="5.2"),
         SystemMessage(content="6"),
+        SystemMessage(
+            content="6.1", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(
             content=[{"type": "image_url", "image_url": {"url": "7.1"}}], name="7.2"
         ),
@@ -585,6 +612,9 @@ def test_convert_to_messages() -> None:
         ),
         ToolMessage(content="10.1", tool_call_id="10.2"),
         SystemMessage(content="11.1"),
+        SystemMessage(
+            content="11.2", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(content=[{"type": "image_url", "image_url": {"url": "12.1"}}]),
         AIMessage(
             content=[
@@ -919,3 +949,12 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
     assert isinstance(result[0]["content"][0], dict)
     assert isinstance(result[0]["content"][1], dict)
     assert isinstance(result[0]["content"][2], dict)
+
+
+def test_convert_to_openai_messages_developer() -> None:
+    messages: list = [
+        SystemMessage("a", additional_kwargs={"__openai_role__": "developer"}),
+        {"role": "developer", "content": "a"},
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result == [{"role": "developer", "content": "a"}] * 2

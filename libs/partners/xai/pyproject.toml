@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-xai"
-version = "0.1.0"
+version = "0.1.1"
 description = "An integration package connecting xAI and LangChain"
 authors = []
 readme = "README.md"
@@ -21,7 +21,7 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-openai = ">=0.2,<0.3"
-langchain-core = ">=0.3.18,<0.4"
+langchain-core = "^0.3.27"
 requests = ">=2,<3"
 aiohttp = ">=3.9.1,<4"
 
@@ -76,8 +76,10 @@ langchain-openai = { path = "../openai", develop = true }
 langchain-core = { path = "../../core", develop = true }
 langchain-tests = { path = "../../standard-tests", develop = true }
 
+
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
+
 
 [tool.poetry.group.test_integration.dependencies]
 [[tool.poetry.group.test_integration.dependencies.numpy]]
@@ -88,13 +90,16 @@ python = "<3.12"
 version = "^1.26.0"
 python = ">=3.12"
 
+
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 types-requests = "^2"
 langchain-core = { path = "../../core", develop = true }
+
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "../../core", develop = true }

@@ -1,4 +1,4 @@
-"""Utilities for tests."""
+"""Utilities for pydantic."""
 
 from __future__ import annotations
 

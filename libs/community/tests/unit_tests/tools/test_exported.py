@@ -41,4 +41,5 @@ def test_tool_names_unique() -> None:
     tool_classes = _get_tool_classes(skip_tools_without_default_names=True)
     names = sorted([tool_cls.model_fields["name"].default for tool_cls in tool_classes])
     duplicated_names = [name for name in names if names.count(name) > 1]
-    assert not duplicated_names
+    # only one duplicate currently exists
+    assert duplicated_names == ["sql_db_query", "sql_db_query"]

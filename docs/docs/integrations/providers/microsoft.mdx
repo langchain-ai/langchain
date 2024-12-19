@@ -343,6 +343,31 @@ See a [usage example](/docs/integrations/memory/postgres_chat_message_history/).
 
 Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
 
+### Azure SQL Database
+
+>[Azure SQL Database](https://learn.microsoft.com/azure/azure-sql/database/sql-database-paas-overview?view=azuresql) is a robust service that combines scalability, security, and high availability, providing all the benefits of a modern database solution.  It also provides a dedicated Vector data type & built-in functions that simplifies the storage and querying of vector embeddings directly within a relational database. This eliminates the need for separate vector databases and related integrations, increasing the security of your solutions while reducing the overall complexity.
+
+By leveraging your current SQL Server databases for vector search, you can enhance data capabilities while minimizing expenses and avoiding the challenges of transitioning to new systems.
+
+##### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/sqlserver).
+
+We need to install the `langchain-sqlserver` python package.
+
+```bash
+!pip install langchain-sqlserver==0.1.1
+```
+
+##### Deploy Azure SQL DB on Microsoft Azure
+
+[Sign Up](https://learn.microsoft.com/azure/azure-sql/database/free-offer?view=azuresql) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/sqlserver).
+
+```python
+from langchain_sqlserver import SQLServer_VectorStore
+```
 
 ### Azure AI Search
 
