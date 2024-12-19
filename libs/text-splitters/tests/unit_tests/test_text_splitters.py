@@ -2040,6 +2040,7 @@ def test_haskell_code_splitter() -> None:
 
 
 @pytest.fixture
+@pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
@@ -3047,7 +3048,7 @@ def test_html_splitter_with_small_chunk_size() -> None:
     """Test HTML splitting with a very small chunk size to validate chunking."""
     html_content = """
     <h1>Section 1</h1>
-    <p>This is some long text that should be split into multiple chunks due to the 
+    <p>This is some long text that should be split into multiple chunks due to the
     small chunk size.</p>
     """
     splitter = HTMLSemanticPreservingSplitter(
