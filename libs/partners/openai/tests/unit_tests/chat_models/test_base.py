@@ -882,3 +882,9 @@ def test__get_request_payload() -> None:
     }
     payload = llm._get_request_payload(messages)
     assert payload == expected
+
+
+def test_init_o1() -> None:
+    with pytest.warns(None) as record:  # type: ignore[call-overload]
+        ChatOpenAI(model="o1", reasoning_effort="medium")
+    assert len(record) == 0

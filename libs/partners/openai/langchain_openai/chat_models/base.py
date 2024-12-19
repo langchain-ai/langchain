@@ -454,6 +454,16 @@ class BaseChatOpenAI(BaseChatModel):
     """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
+    reasoning_effort: Optional[str] = None
+    """Constrains effort on reasoning for reasoning models. 
+    
+    o1 models only.
+
+    Currently supported values are low, medium, and high. Reducing reasoning effort 
+    can result in faster responses and fewer tokens used on reasoning in a response.
+    
+    .. versionadded:: 0.2.14
+    """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
     Tiktoken is used to count the number of tokens in documents to constrain 
@@ -599,6 +609,7 @@ class BaseChatOpenAI(BaseChatModel):
             "stop": self.stop or None,  # also exclude empty list for this
             "max_tokens": self.max_tokens,
             "extra_body": self.extra_body,
+            "reasoning_effort": self.reasoning_effort,
         }
 
         params = {
