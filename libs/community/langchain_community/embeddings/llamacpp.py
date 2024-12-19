@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, final
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -116,7 +116,14 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.create_embedding(texts)
-        return [list(map(float, e["embedding"])) for e in embeddings["data"]]
+        if not isinstance(embeddings["data"][0]["embedding"][0], list):
+            return [list(map(float, e["embedding"])) for e in embeddings["data"]]
+        else:
+            final_embeddings = []
+            for e in embeddings["data"]:
+                for data in e["embedding"]:
+                    final_embeddings.append(list(map(float, data)))
+            return final_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the Llama model.
@@ -128,4 +135,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         embedding = self.client.embed(text)
-        return list(map(float, embedding))
+        if not isinstance(embedding, list):
+            return list(map(float, embedding))
+        else:
+            return list(map(float, embedding[0]))
