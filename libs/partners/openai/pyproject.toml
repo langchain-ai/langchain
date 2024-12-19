@@ -24,7 +24,7 @@ ignore_missing_imports = true
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = "^0.3.27"
-openai = "^1.55.3"
+openai = "^1.58.1"
 tiktoken = ">=0.7,<1"
 
 [tool.ruff.lint]
