@@ -12,7 +12,7 @@ from typing_extensions import Self, cast
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
-class AzureOpenAIEmbeddings(OpenAIEmbeddings):
+class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """AzureOpenAI embedding model integration.
 
     Setup:

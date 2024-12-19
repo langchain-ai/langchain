@@ -1,6 +1,5 @@
 """**Text Splitters** are classes for splitting text.
 
-
 **Class hierarchy:**
 
 .. code-block::

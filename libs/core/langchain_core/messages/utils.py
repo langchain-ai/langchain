@@ -221,14 +221,14 @@ def _create_message_from_message_type(
         tool_call_id: (str) the tool call id. Default is None.
         tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
         id: (str) the id of the message. Default is None.
-        **additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        additional_kwargs: (dict[str, Any]) additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
 
     Raises:
         ValueError: if the message type is not one of "human", "user", "ai",
-            "assistant", "system", "function", or "tool".
+            "assistant", "function", "tool", "system", or "developer".
     """
     kwargs: dict[str, Any] = {}
     if name is not None:
@@ -261,7 +261,10 @@ def _create_message_from_message_type(
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
         message = AIMessage(content=content, **kwargs)
-    elif message_type == "system":
+    elif message_type in ("system", "developer"):
+        if message_type == "developer":
+            kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
+            kwargs["additional_kwargs"]["__openai_role__"] = "developer"
         message = SystemMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
@@ -273,7 +276,7 @@ def _create_message_from_message_type(
     else:
         msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
         )
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
@@ -556,6 +559,8 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
+            if curr_chunk.response_metadata:
+                curr_chunk.response_metadata.clear()
             if (
                 isinstance(last_chunk.content, str)
                 and isinstance(curr_chunk.content, str)
@@ -590,7 +595,7 @@ def trim_messages(
     include_system: bool = False,
     text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
 ) -> list[BaseMessage]:
-    """Trim messages to be below a token count.
+    r"""Trim messages to be below a token count.
 
     trim_messages can be used to reduce the size of a chat history to a specified token
     count or specified message count.
@@ -1210,13 +1215,14 @@ def _first_max_tokens(
     ] = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
+    if not messages:
+        return messages
     idx = 0
     for i in range(len(messages)):
         if token_counter(messages[:-i] if i else messages) <= max_tokens:
             idx = len(messages) - i
             break
-
-    if idx < len(messages) - 1 and partial_strategy:
+    if partial_strategy and (idx < len(messages) - 1 or idx == 0):
         included_partial = False
         if isinstance(messages[idx].content, list):
             excluded = messages[idx].model_copy(deep=True)
@@ -1382,7 +1388,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     elif isinstance(message, ToolMessage):
         return "tool"
     elif isinstance(message, SystemMessage):
-        return "system"
+        return message.additional_kwargs.get("__openai_role__", "system")
     elif isinstance(message, FunctionMessage):
         return "function"
     elif isinstance(message, ChatMessage):

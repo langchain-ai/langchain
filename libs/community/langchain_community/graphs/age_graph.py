@@ -491,11 +491,14 @@ class AGEGraph(GraphStore):
         $$) AS ({fields});"""
 
         # if there are any returned fields they must be added to the pgsql query
-        if "return" in query.lower():
+        return_match = re.search(r'\breturn\b(?![^"]*")', query, re.IGNORECASE)
+        if return_match:
+            # Extract the part of the query after the RETURN keyword
+            return_clause = query[return_match.end() :]
+
             # parse return statement to identify returned fields
             fields = (
-                query.lower()
-                .split("return")[-1]
+                return_clause.lower()
                 .split("distinct")[-1]
                 .split("order by")[0]
                 .split("skip")[0]
@@ -517,7 +520,11 @@ class AGEGraph(GraphStore):
 
             # build resulting pgsql relation
             fields_str = ", ".join(
-                [field.split(".")[-1] + " agtype" for field in fields]
+                [
+                    field.split(".")[-1] + " agtype"
+                    for field in fields
+                    if field.split(".")[-1]
+                ]
             )
 
         # if no return statement we still need to return a single field of type agtype
@@ -690,8 +697,9 @@ class AGEGraph(GraphStore):
         # query for inserting nodes
         node_insert_query = (
             """
-            MERGE (n:`{label}` {properties})
-        """
+            MERGE (n:`{label}` {{`id`: "{id}"}})
+            SET n = {properties}
+            """
             if not include_source
             else """
             MERGE (n:`{label}` {properties})
@@ -728,6 +736,7 @@ class AGEGraph(GraphStore):
                     query = node_insert_query.format(
                         label=AGEGraph.clean_graph_labels(node.type),
                         properties=self._format_properties(node.properties),
+                        id=node.id,
                     )
 
                 self.query(query)

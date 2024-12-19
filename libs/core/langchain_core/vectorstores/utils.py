@@ -53,7 +53,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         )
         raise ValueError(msg)
     try:
-        import simsimd as simd  # type: ignore[import-not-found]
+        import simsimd as simd  # type: ignore
 
         x = np.array(x, dtype=np.float32)
         y = np.array(y, dtype=np.float32)

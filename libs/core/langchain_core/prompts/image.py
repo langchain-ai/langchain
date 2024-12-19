@@ -9,7 +9,6 @@ from langchain_core.prompts.string import (
     PromptTemplateFormat,
 )
 from langchain_core.runnables import run_in_executor
-from langchain_core.utils import image as image_utils
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
@@ -80,8 +79,8 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             A formatted string.
 
         Raises:
-            ValueError: If the url or path is not provided.
-            ValueError: If the path or url is not a string.
+            ValueError: If the url is not provided.
+            ValueError: If the url is not a string.
 
         Example:
 
@@ -98,23 +97,24 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             else:
                 formatted[k] = v
         url = kwargs.get("url") or formatted.get("url")
-        path = kwargs.get("path") or formatted.get("path")
-        detail = kwargs.get("detail") or formatted.get("detail")
-        if not url and not path:
-            msg = "Must provide either url or path."
+        if kwargs.get("path") or formatted.get("path"):
+            msg = (
+                "Loading images from 'path' has been removed as of 0.3.15 for security "
+                "reasons. Please specify images by 'url'."
+            )
             raise ValueError(msg)
+        detail = kwargs.get("detail") or formatted.get("detail")
         if not url:
-            if not isinstance(path, str):
-                msg = "path must be a string."
-                raise ValueError(msg)
-            url = image_utils.image_to_data_url(path)
-        if not isinstance(url, str):
+            msg = "Must provide url."
+            raise ValueError(msg)
+        elif not isinstance(url, str):
             msg = "url must be a string."
             raise ValueError(msg)
-        output: ImageURL = {"url": url}
-        if detail:
-            # Don't check literal values here: let the API check them
-            output["detail"] = detail  # type: ignore[typeddict-item]
+        else:
+            output: ImageURL = {"url": url}
+            if detail:
+                # Don't check literal values here: let the API check them
+                output["detail"] = detail  # type: ignore[typeddict-item]
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
@@ -127,7 +127,6 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             A formatted string.
 
         Raises:
-            ValueError: If the url or path is not provided.
             ValueError: If the path or url is not a string.
         """
         return await run_in_executor(None, self.format, **kwargs)

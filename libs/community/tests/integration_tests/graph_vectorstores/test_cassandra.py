@@ -440,6 +440,17 @@ class TestCassandraGraphVectorStore:
         ts_labels = {doc.metadata["label"] for doc in ts_response}
         assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
 
+        # verify the same works as a retriever
+        retriever = g_store.as_retriever(
+            search_type="traversal", search_kwargs={"k": 2, "depth": 2}
+        )
+
+        ts_labels = {
+            doc.metadata["label"]
+            for doc in retriever.get_relevant_documents(query="[2, 10]")
+        }
+        assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
+
     async def test_gvs_traversal_search_async(
         self,
         populated_graph_vector_store_d2: CassandraGraphVectorStore,
@@ -451,6 +462,17 @@ class TestCassandraGraphVectorStore:
             ts_labels.add(doc.metadata["label"])
         # this is a set, as some of the internals of trav.search are set-driven
         # so ordering is not deterministic:
+        assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
+
+        # verify the same works as a retriever
+        retriever = g_store.as_retriever(
+            search_type="traversal", search_kwargs={"k": 2, "depth": 2}
+        )
+
+        ts_labels = {
+            doc.metadata["label"]
+            for doc in await retriever.aget_relevant_documents(query="[2, 10]")
+        }
         assert ts_labels == {"AR", "A0", "BR", "B0", "TR", "T0"}
 
     def test_gvs_mmr_traversal_search_sync(

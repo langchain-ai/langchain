@@ -17,7 +17,7 @@ class ReadFileInput(BaseModel):
     file_path: str = Field(..., description="name of file")
 
 
-class ReadFileTool(BaseFileToolMixin, BaseTool):
+class ReadFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, override]
     """Tool that reads a file."""
 
     name: str = "read_file"

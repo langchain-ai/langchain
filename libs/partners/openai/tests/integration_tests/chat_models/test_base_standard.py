@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Type, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import ChatOpenAI
 
@@ -23,6 +23,10 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
     @property
     def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_json_mode(self) -> bool:
         return True
 
     @property
