@@ -2268,3 +2268,20 @@ def test_tool_return_output_mixin() -> None:
     assert foo.invoke(
         {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
     ) == Bar(x=0)
+
+
+def test_tool_mutate_input() -> None:
+    class MyTool(BaseTool):
+        name: str = "MyTool"
+        description: str = "a tool"
+
+        def _run(
+            self,
+            x: str,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            return "hi"
+
+    my_input = {"x": "hi"}
+    MyTool().invoke(my_input)
+    assert my_input == {"x": "hi"}
