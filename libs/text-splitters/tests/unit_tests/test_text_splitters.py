@@ -2424,6 +2424,7 @@ def test_html_header_text_splitter(
         )
     ]
 )
+@pytest.mark.requires("bs4")
 def test_additional_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
     headers_to_split_on: List[Tuple[str, str]],
@@ -2492,7 +2493,8 @@ def test_additional_html_header_text_splitter(
         )
     ]
 )
-def test_no_headers_with_multiple_splitters(
+@pytest.mark.requires("bs4")
+def test_html_no_headers_with_multiple_splitters(
     html_header_splitter_splitter_factory: Any,
     headers_to_split_on: List[Tuple[str, str]],
     html_content: str,
