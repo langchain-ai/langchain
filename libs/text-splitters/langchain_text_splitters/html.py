@@ -18,6 +18,7 @@ from typing import (
 )
 
 import requests
+from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
@@ -364,6 +365,7 @@ class HTMLSectionSplitter:
         ]
 
 
+@beta()
 class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     """Split HTML content preserving semantic structure.
 
