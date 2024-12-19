@@ -365,7 +365,8 @@ class HTMLSectionSplitter:
 
 
 class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
-    """
+    """Split HTML content preserving semantic structure.
+
     Splits HTML content by headers into generalized chunks, preserving semantic
     structure. If chunks exceed the maximum chunk size, it uses
     RecursiveCharacterTextSplitter for further splitting.
@@ -375,7 +376,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     elements by converting them into Markdown format. Note that some chunks may
     exceed the maximum size to maintain semantic integrity.
 
-    .. versionadded: 0.2.4
+    .. versionadded: 0.3.5
 
     Args:
         headers_to_split_on (List[Tuple[str, str]]): HTML headers (e.g., "h1", "h2")
@@ -435,7 +436,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 preserve_images=True,
                 custom_handlers={"iframe": custom_iframe_extractor}
             )
-    """  # noqa: E501
+    """  # noqa: E501, D214
 
     def __init__(
         self,
@@ -458,6 +459,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         denylist_tags: Optional[List[str]] = None,
         preserve_parent_metadata: bool = False,
     ):
+        """Initialize splitter."""
         try:
             from bs4 import BeautifulSoup, Tag
 
@@ -465,8 +467,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             self._Tag = Tag
         except ImportError:
             raise ImportError(
-                "Could not import BeautifulSoup. \
-                              Please install it with 'pip install bs4'."
+                "Could not import BeautifulSoup. "
+                "Please install it with 'pip install bs4'."
             )
 
         self._headers_to_split_on = sorted(headers_to_split_on)
@@ -518,8 +520,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 )
 
     def split_text(self, text: str) -> List[Document]:
-        """
-        Splits the provided HTML text into smaller chunks based on the configuration.
+        """Splits the provided HTML text into smaller chunks based on the configuration.
 
         Args:
             text (str): The HTML content to be split.
@@ -558,14 +559,14 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return transformed
 
     def _process_media(self, soup: Any) -> None:
-        """
-        Processes the media elements in the HTML content by wrapping them in a
-        <media-wrapper> tag and converting them to Markdown format.
+        """Processes the media elements.
+
+        Process elements in the HTML content by wrapping them in a <media-wrapper> tag
+        and converting them to Markdown format.
 
         Args:
             soup (Any): Parsed HTML content using BeautifulSoup.
         """
-
         if self._preserve_images:
             for img_tag in soup.find_all("img"):
                 img_src = img_tag.get("src", "")
@@ -591,8 +592,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 audio_tag.replace_with(wrapper)
 
     def _process_links(self, soup: Any) -> None:
-        """
-        Processes the links in the HTML content.
+        """Processes the links in the HTML content.
 
         Args:
             soup (Any): Parsed HTML content using BeautifulSoup.
@@ -606,8 +606,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             a_tag.replace_with(markdown_link)
 
     def _filter_tags(self, soup: Any) -> None:
-        """
-        Filters the HTML content based on the allowlist and denylist tags.
+        """Filters the HTML content based on the allowlist and denylist tags.
 
         Args:
             soup (Any): Parsed HTML content using BeautifulSoup.
@@ -622,8 +621,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 tag.decompose()
 
     def _normalize_and_clean_text(self, text: str) -> str:
-        """
-        Normalizes the text by removing extra spaces and newlines.
+        """Normalizes the text by removing extra spaces and newlines.
 
         Args:
             text (str): The text to be normalized.
@@ -644,9 +642,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         return text
 
     def _process_html(self, soup: Any) -> List[Document]:
-        """
-        Processes the HTML content using BeautifulSoup and splits it
-        based on the headers.
+        """Processes the HTML content using BeautifulSoup and splits it using headers.
 
         Args:
             soup (Any): Parsed HTML content using BeautifulSoup.
@@ -661,9 +657,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         placeholder_count: int = 0
 
         def _get_element_text(element: Any) -> str:
-            """
-            Recursively extracts and processes the text of an element,
-            applying custom handlers where applicable, and ensures correct spacing.
+            """Recursively extracts and processes the text of an element.
+
+            Applies custom handlers where applicable, and ensures correct spacing.
 
             Args:
                 element (Any): The HTML element to process.
@@ -778,9 +774,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     def _create_documents(
         self, headers: dict, content: str, preserved_elements: dict
     ) -> List[Document]:
-        """
-        Creates Document objects from the provided headers, content,
-        and preserved elements.
+        """Creates Document objects from the provided headers, content, and elements.
 
         Args:
             headers (dict): The headers to attach as metadata to the Document.
@@ -806,9 +800,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     def _further_split_chunk(
         self, content: str, metadata: dict, preserved_elements: dict
     ) -> List[Document]:
-        """
-        Further splits the content into smaller chunks
-        if it exceeds the maximum chunk size.
+        """Further splits the content into smaller chunks.
 
         Args:
             content (str): The content to be split.
@@ -838,8 +830,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     def _reinsert_preserved_elements(
         self, content: str, preserved_elements: dict
     ) -> str:
-        """
-        Reinserts preserved elements into the content into their original positions.
+        """Reinserts preserved elements into the content into their original positions.
 
         Args:
             content (str): The content where placeholders need to be replaced.
