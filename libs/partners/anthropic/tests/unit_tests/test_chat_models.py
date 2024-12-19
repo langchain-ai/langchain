@@ -5,10 +5,6 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import Message, TextBlock, Usage
-from anthropic.types.beta.prompt_caching import (
-    PromptCachingBetaMessage,
-    PromptCachingBetaUsage,
-)
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -110,14 +106,14 @@ def test__format_output() -> None:
 
 
 def test__format_output_cached() -> None:
-    anthropic_msg = PromptCachingBetaMessage(
+    anthropic_msg = Message(
         id="foo",
         content=[TextBlock(type="text", text="bar")],
         model="baz",
         role="assistant",
         stop_reason=None,
         stop_sequence=None,
-        usage=PromptCachingBetaUsage(
+        usage=Usage(
             input_tokens=2,
             output_tokens=1,
             cache_creation_input_tokens=3,
