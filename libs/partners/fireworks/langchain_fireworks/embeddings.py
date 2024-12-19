@@ -68,7 +68,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
              [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
     """
 
-    client: OpenAI = Field(default=None, exclude=True)  #: :meta private:
+    client: OpenAI = Field(default=None, exclude=True)  # type: ignore[assignment] # :meta private:
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
