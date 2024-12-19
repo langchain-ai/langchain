@@ -541,8 +541,8 @@ class ChatAnthropic(BaseChatModel):
         populate_by_name=True,
     )
 
-    _client: anthropic.Client = PrivateAttr(default=None)
-    _async_client: anthropic.AsyncClient = PrivateAttr(default=None)
+    _client: anthropic.Client = PrivateAttr(default=None)  # type: ignore[assignment]
+    _async_client: anthropic.AsyncClient = PrivateAttr(default=None)  # type: ignore[assignment]
 
     model: str = Field(alias="model_name")
     """Model name to use."""
