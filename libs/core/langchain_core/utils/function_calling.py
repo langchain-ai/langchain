@@ -20,7 +20,7 @@ from typing import (
 )
 
 from pydantic import BaseModel
-from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import NotRequired, TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import beta, deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -45,10 +45,16 @@ class FunctionDescription(TypedDict):
 
     name: str
     """The name of the function."""
-    description: str
+    description: NotRequired[str]
     """A description of the function."""
-    parameters: dict
+    parameters: NotRequired[dict]
     """The parameters of the function."""
+    strict: NotRequired[Optional[bool]]
+    """Whether to enable strict schema adherence when generating the function call.
+    
+    If set to True, the model will follow the exact schema defined in the parameters
+    field. Only a subset of JSON Schema is supported when strict is True.
+    """
 
 
 class ToolDescription(TypedDict):
@@ -294,9 +300,8 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
     else:
-        return {
+        oai_function = {
             "name": tool.name,
-            "description": tool.description,
             "parameters": {
                 # This is a hack to get around the fact that some tools
                 # do not expose an args_schema, and expect an argument
@@ -310,6 +315,9 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "type": "object",
             },
         }
+        if tool.description:
+            oai_function["description"] = tool.description
+        return cast(FunctionDescription, oai_function)
 
 
 @deprecated(

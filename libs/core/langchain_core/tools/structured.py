@@ -32,7 +32,7 @@ from langchain_core.utils.pydantic import TypeBaseModel
 class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
-    description: str = ""
+    description: Optional[str] = ""
     args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
         ..., description="The tool schema."
     )
@@ -185,16 +185,14 @@ class StructuredTool(BaseTool):
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             description_ = args_schema.__doc__ or None
-        if description_ is None:
-            msg = "Function must have a docstring if description not provided."
-            raise ValueError(msg)
-        if description is None:
+        if description is None and description_ is not None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        description_ = f"{description_.strip()}"
+        if description_:
+            description_ = f"{description_.strip()}"
         return cls(
             name=name,
             func=func,
