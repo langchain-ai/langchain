@@ -885,4 +885,6 @@ def test__get_request_payload() -> None:
 
 
 def test_init_o1() -> None:
-    ChatOpenAI(model="o1", reasoning_effort="medium")
+    with pytest.warns(None) as record:
+        ChatOpenAI(model="o1", reasoning_effort="medium")
+    assert len(record) == 0
