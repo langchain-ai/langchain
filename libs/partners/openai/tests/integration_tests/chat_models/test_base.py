@@ -930,7 +930,8 @@ def test_nested_structured_output_strict(
 def test_json_mode() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = llm.invoke(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks.",  # noqa: E501
+        response_format={"type": "json_object"},
     )
     assert isinstance(response.content, str)
     assert json.loads(response.content) == {"a": 1}
@@ -949,7 +950,7 @@ def test_json_mode() -> None:
 async def test_json_mode_async() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = await llm.ainvoke(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks."  # noqa: E501
     )
     assert isinstance(response.content, str)
     assert json.loads(response.content) == {"a": 1}
