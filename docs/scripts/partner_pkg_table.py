@@ -124,10 +124,7 @@ If you'd like to contribute an integration, see [Contributing integrations](/doc
 
 :::
 
-LangChain integrates with many providers. 
-To search a specific provider, click `Search` field on the top-right corner of the screen.
-It is the best way to find the provider you are looking for.
-
+LangChain integrates with many providers.
 
 ## Integration Packages
 
@@ -137,7 +134,8 @@ These providers have standalone `langchain-{{provider}}` packages for improved v
 
 ## All Providers
 
-Click [here](/docs/integrations/providers/all) to see all providers.
+Click [here](/docs/integrations/providers/all) to see all providers. Or search for a
+provider using the Search field in the top-right corner of the screen.
 
 """
 
