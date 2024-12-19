@@ -712,8 +712,8 @@ class Runnable(Generic[Input, Output], ABC):
             print(chain_with_assign.input_schema.model_json_schema())
             # {'title': 'PromptInput', 'type': 'object', 'properties':
             {'question': {'title': 'Question', 'type': 'string'}}}
-            print(chain_with_assign.output_schema.model_json_schema()) #
-            {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
+            print(chain_with_assign.output_schema.model_json_schema())
+            # {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
             {'str': {'title': 'Str',
             'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
 
