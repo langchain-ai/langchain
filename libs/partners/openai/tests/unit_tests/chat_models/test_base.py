@@ -100,6 +100,16 @@ def test__convert_dict_to_message_system() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_developer() -> None:
+    message = {"role": "developer", "content": "foo"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(
+        content="foo", additional_kwargs={"__openai_role__": "developer"}
+    )
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
 def test__convert_dict_to_message_system_with_name() -> None:
     message = {"role": "system", "content": "foo", "name": "test"}
     result = _convert_dict_to_message(message)
@@ -850,3 +860,25 @@ def test_nested_structured_output_strict() -> None:
         self_evaluation: SelfEvaluation
 
     llm.with_structured_output(JokeWithEvaluation, method="json_schema")
+
+
+def test__get_request_payload() -> None:
+    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    messages: list = [
+        SystemMessage("hello"),
+        SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
+        {"role": "human", "content": "how are you"},
+    ]
+    expected = {
+        "messages": [
+            {"role": "system", "content": "hello"},
+            {"role": "developer", "content": "bye"},
+            {"role": "user", "content": "how are you"},
+        ],
+        "model": "gpt-4o-2024-08-06",
+        "stream": False,
+        "n": 1,
+        "temperature": 0.7,
+    }
+    payload = llm._get_request_payload(messages)
+    assert payload == expected
