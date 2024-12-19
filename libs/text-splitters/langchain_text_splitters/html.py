@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import copy
 import pathlib
+from dataclasses import dataclass, field
 from io import BytesIO, StringIO
 from typing import Any, Dict, Iterable, List, Optional, Tuple, TypedDict, cast
 
 import requests
-from langchain_core.documents import Document
+from bs4 import BeautifulSoup
+from langchain.docstore.document import Document
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
-
 
 class ElementType(TypedDict):
     """Element type as typed dict."""
@@ -20,149 +21,413 @@ class ElementType(TypedDict):
     metadata: Dict[str, str]
 
 
-class HTMLHeaderTextSplitter:
-    """Splitting HTML files based on specified headers.
 
-    Requires lxml package.
+@dataclass
+class Node:
+    """
+    Represents a node in a hierarchical structure.
+
+    Attributes:
+        name: The name of the node.
+        tag_type: The type of the node.
+        content: The content of the node.
+        level: The level of the node in the hierarchy.
+        dom_depth: The depth of the node in the DOM structure.
+        parent: The parent node. Defaults to None.
+    """
+    name: str
+    tag_type: str
+    content: str
+    level: int
+    dom_depth: int
+    parent: Optional[Node] = field(default=None)
+
+class HTMLHeaderTextSplitter:
+    """
+    Splits HTML content into structured `Document` objects based on specified header
+    tags.
+
+    This splitter processes HTML by identifying header elements (e.g., `<h1>`,
+    `<h2>`) and segments the content accordingly. Each header and the text that
+    follows, up to the next header of the same or higher level, are grouped into a
+    `Document`. The metadata of each `Document` reflects the hierarchy of headers,
+    providing an organized content structure.
+
+    If the content does not contain any of the specified headers, the splitter
+    returns a single `Document` with the aggregated content and no additional
+    metadata.
     """
 
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        return_each_element: bool = False,
-    ):
-        """Create a new HTMLHeaderTextSplitter.
+        return_each_element: bool = False
+    ) -> None:
+        """
+        Initialize with headers to split on.
 
         Args:
-            headers_to_split_on: list of tuples of headers we want to track mapped to
-                (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
-                h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2)].
-            return_each_element: Return each element w/ associated headers.
+            headers_to_split_on: A list of tuples where
+                each tuple contains a header tag and its corresponding value.
+            return_each_element: Whether to return each HTML
+                element as a separate Document. Defaults to False.
         """
-        # Output element-by-element or aggregated into chunks w/ common headers
+        self.headers_to_split_on = sorted(
+            headers_to_split_on, key=lambda x: int(x[0][1])
+        )
+        self.header_mapping = dict(self.headers_to_split_on)
+        self.header_tags = [tag for tag, _ in self.headers_to_split_on]
+        self.elements_tree: Dict[int, Tuple[str, str, int, int]] = {}
         self.return_each_element = return_each_element
-        self.headers_to_split_on = sorted(headers_to_split_on)
 
-    def aggregate_elements_to_chunks(
-        self, elements: List[ElementType]
-    ) -> List[Document]:
-        """Combine elements with common metadata into chunks.
+    def _header_level(self, element) -> int:
+        """
+        Determine the heading level of an element.
 
         Args:
-            elements: HTML element content with associated identifying info and metadata
+            element: A BeautifulSoup element.
+
+        Returns:
+            The heading level (1-6) if a heading, else a large number.
         """
-        aggregated_chunks: List[ElementType] = []
+        tag_name = element.name.lower() if hasattr(element, 'name') else ''
+        if tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            return int(tag_name[1])
+        return 9999
 
-        for element in elements:
-            if (
-                aggregated_chunks
-                and aggregated_chunks[-1]["metadata"] == element["metadata"]
-            ):
-                # If the last element in the aggregated list
-                # has the same metadata as the current element,
-                # append the current content to the last element's content
-                aggregated_chunks[-1]["content"] += "  \n" + element["content"]
-            else:
-                # Otherwise, append the current element to the aggregated list
-                aggregated_chunks.append(element)
-
-        return [
-            Document(page_content=chunk["content"], metadata=chunk["metadata"])
-            for chunk in aggregated_chunks
-        ]
-
-    def split_text_from_url(self, url: str, **kwargs: Any) -> List[Document]:
-        """Split HTML from web URL.
+    def _dom_depth(self, element) -> int:
+        """
+        Compute the DOM depth of an element.
 
         Args:
-            url: web URL
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the fetch url content request.
+            element: A BeautifulSoup element.
+
+        Returns:
+            The depth of the element in the DOM tree.
         """
-        r = requests.get(url, **kwargs)
-        return self.split_text_from_file(BytesIO(r.content))
+        depth = 0
+        for _ in element.parents:
+            depth += 1
+        return depth
+
+    def _build_tree(self, elements) -> None:
+        """
+        Build a tree structure from a list of HTML elements.
+
+        Args:
+            elements: A list of BeautifulSoup elements.
+        """
+        for idx, element in enumerate(elements):
+            text = ' '.join(
+                t for t in element.find_all(string=True, recursive=False)
+                if isinstance(t, str)
+            ).strip()
+
+            if not text:
+                continue
+
+            level = self._header_level(element)
+            dom_depth = self._dom_depth(element)
+
+            self.elements_tree[idx] = (
+                element.name,
+                text,
+                level,
+                dom_depth
+            )
 
     def split_text(self, text: str) -> List[Document]:
-        """Split HTML text string.
+        """
+        Split the given text into a list of Document objects.
 
         Args:
-            text: HTML text
+            text: The HTML text to split.
+
+        Returns:
+            A list of split Document objects.
         """
         return self.split_text_from_file(StringIO(text))
 
-    def split_text_from_file(self, file: Any) -> List[Document]:
-        """Split HTML file.
+    def split_text_from_url(
+        self,
+        url: str,
+        timeout: int = 10,
+        **kwargs: Any
+    ) -> List[Document]:
+        """
+        Fetch text content from a URL and split it into documents.
 
         Args:
-            file: HTML file
+            url: The URL to fetch content from.
+            timeout: Timeout for the request. Defaults to 10.
+            **kwargs: Additional keyword arguments for the request.
+
+        Returns:
+            A list of split Document objects.
+
+        Raises:
+            requests.RequestException: If the HTTP request fails.
         """
         try:
-            from lxml import etree
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import lxml, please install with `pip install lxml`."
-            ) from e
-        # use lxml library to parse html document and return xml ElementTree
-        # Explicitly encoding in utf-8 allows non-English
-        # html files to be processed without garbled characters
-        parser = etree.HTMLParser(encoding="utf-8")
-        tree = etree.parse(file, parser)
+            kwargs.setdefault('timeout', timeout)
+            response = requests.get(url, **kwargs)  # noqa: E501
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Error fetching URL {url}: {e}")
+            raise e
+        return self.split_text_from_file(BytesIO(response.content))
 
-        # document transformation for "structure-aware" chunking is handled with xsl.
-        # see comments in html_chunks_with_headers.xslt for more detailed information.
-        xslt_path = pathlib.Path(__file__).parent / "xsl/html_chunks_with_headers.xslt"
-        xslt_tree = etree.parse(xslt_path)
-        transform = etree.XSLT(xslt_tree)
-        result = transform(tree)
-        result_dom = etree.fromstring(str(result))
+    def _finalize_chunk(
+        self,
+        current_chunk: List[str],
+        active_headers: Dict[str, Tuple[str, int, int]],
+        documents: List[Document],
+        chunk_dom_depth: int) -> None:
 
-        # create filter and mapping for header metadata
-        header_filter = [header[0] for header in self.headers_to_split_on]
-        header_mapping = dict(self.headers_to_split_on)
+        if current_chunk:
+            final_meta: Dict[str, str] = {
+                key: content for key, (content, level, dom_depth) in active_headers.items()
+                if chunk_dom_depth >= dom_depth
+            }
+            combined_text = "  \n".join(
+                line for line in current_chunk if line.strip()
+            )
+            documents.append(
+                Document(page_content=combined_text, metadata=final_meta)
+            )
+            current_chunk.clear()
+            chunk_dom_depth = 0
 
-        # map xhtml namespace prefix
-        ns_map = {"h": "http://www.w3.org/1999/xhtml"}
 
-        # build list of elements from DOM
-        elements = []
-        for element in result_dom.findall("*//*", ns_map):
-            if element.findall("*[@class='headers']") or element.findall(
-                "*[@class='chunk']"
-            ):
-                elements.append(
-                    ElementType(
-                        url=file,
-                        xpath="".join(
-                            [
-                                node.text or ""
-                                for node in element.findall("*[@class='xpath']", ns_map)
-                            ]
-                        ),
-                        content="".join(
-                            [
-                                node.text or ""
-                                for node in element.findall("*[@class='chunk']", ns_map)
-                            ]
-                        ),
-                        metadata={
-                            # Add text of specified headers to metadata using header
-                            # mapping.
-                            header_mapping[node.tag]: node.text or ""
-                            for node in filter(
-                                lambda x: x.tag in header_filter,
-                                element.findall("*[@class='headers']/*", ns_map),
-                            )
-                        },
+    def _generate_documents(self, nodes: Dict[int, Node]) -> List[Document]:
+        """
+        Generate a list of Document objects from a node structure.
+
+        Args:
+            A dictionary of nodes indexed by their position.
+
+        Returns:
+            A list of generated Document objects.
+        """
+        documents: List[Document] = []
+        active_headers: Dict[str, Tuple[str, int, int]] = {}
+        current_chunk: List[str] = []
+        chunk_dom_depth = 0
+
+
+
+        def process_node(node: Node) -> None:
+            """
+            Processes a given node and updates the current chunk, active headers, and
+            documents based on the node's type and content.
+            Args:
+                node: The node to be processed. It should have attributes
+                    'tag_type', 'content', 'level', and 'dom_depth'.
+            """
+
+            nonlocal chunk_dom_depth
+            node_type = node.tag_type  # type: ignore[attr-defined]
+            node_content = node.content  # type: ignore[attr-defined]
+            node_level = node.level  # type: ignore[attr-defined]
+            node_dom_depth = node.dom_depth  # type: ignore[attr-defined]
+
+            if node_type in self.header_tags:
+                self._finalize_chunk(current_chunk, active_headers, documents, chunk_dom_depth)
+                headers_to_remove = [
+                    key for key, (_, lvl, _) in active_headers.items()
+                    if lvl >= node_level
+                ]
+                for key in headers_to_remove:
+                    del active_headers[key]
+                header_key = self.header_mapping[node_type]  # type: ignore[attr-defined]
+                active_headers[header_key] = (
+                    node_content,
+                    node_level,
+                    node_dom_depth
+                )
+                header_meta: Dict[str, str] = {
+                    key: content for key, (content, lvl, dd) in active_headers.items()
+                    if node_dom_depth >= dd
+                }
+                documents.append(
+                    Document(
+                        page_content=node_content,
+                        metadata=header_meta
                     )
                 )
+            else:
+                headers_to_remove = [
+                    key for key, (_, _, dd) in active_headers.items()
+                    if node_dom_depth < dd
+                ]
+                for key in headers_to_remove:
+                    del active_headers[key]
+                if node_content.strip():
+                    current_chunk.append(node_content)
+                    chunk_dom_depth = max(chunk_dom_depth, node_dom_depth)
+
+        sorted_nodes = sorted(nodes.items())
+        for _, node in sorted_nodes:
+            process_node(node)
+
+        self._finalize_chunk(current_chunk, active_headers, documents, chunk_dom_depth)
+        return documents
+
+    def split_text_from_file(self, file: Any) -> List[Document]:
+        """
+        Split HTML content from a file into a list of Document objects.
+
+        Args:
+            file: A file path or a file-like object containing HTML content.
+
+        Returns:
+            A list of split Document objects.
+        """
+        if isinstance(file, str):
+            with open(file, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+        else:
+            html_content = file.read()
+
+        soup = BeautifulSoup(html_content, 'html.parser')
+        body = soup.body if soup.body else soup
+
+        elements = body.find_all()
+        self._build_tree(elements)
+
+        if not self.elements_tree:
+            return []
+
+        min_level = min(
+            level for (_, _, level, _) in self.elements_tree.values()
+        )
+        root = Node(
+            "root",
+            tag_type="root",
+            content="",
+            level=min_level - 1,
+            dom_depth=0
+        )
+
+        nodes = {
+            idx: Node(
+                f"{tag}_{idx}",
+                tag_type=tag,
+                content=text,
+                level=level,
+                dom_depth=dom_depth
+            )
+            for idx, (tag, text, level, dom_depth) in self.elements_tree.items()
+        }
+
+        stack = []
+        for idx in sorted(nodes):
+            node = nodes[idx]
+            while stack and (
+                stack[-1].level >= node.level
+                or stack[-1].dom_depth >= node.dom_depth
+                ):
+                stack.pop()
+            if stack:
+                node.parent = stack[-1]
+            else:
+                node.parent = root
+            stack.append(node)
 
         if not self.return_each_element:
-            return self.aggregate_elements_to_chunks(elements)
-        else:
-            return [
-                Document(page_content=chunk["content"], metadata=chunk["metadata"])
-                for chunk in elements
-            ]
+            return self._aggregate_documents(nodes)
+
+        return self._generate_individual_documents(nodes)
+
+    def _aggregate_documents(self, nodes: Dict[int, Node]) -> List[Document]:
+        """
+        Aggregate documents based on headers.
+
+        Args:
+            nodes: A dictionary of nodes indexed by their position.
+
+        Returns:
+            A list of aggregated Document objects.
+        """
+        # Reuse the existing _generate_documents method for aggregation
+        return self._generate_documents(nodes)
+
+    def _generate_individual_documents(self, nodes: Dict[int, Node]) -> List[Document]:
+        """
+        Generate individual Document objects for each element.
+
+        Args:
+            nodes: A dictionary of nodes indexed by their position.
+
+        Returns:
+            A list of individual Document objects.
+        """
+        documents: List[Document] = []
+        active_headers: Dict[str, Tuple[str, int, int]] = {}
+
+        sorted_nodes = sorted(nodes.items())
+
+        def process_node(node: Node) -> None:
+            """
+            Process a single node to create Document objects based on header tags.
+
+            Args:
+                node: The node to process.
+            """
+            node_type = node.type  # type: ignore[attr-defined]
+            node_content = node.content  # type: ignore[attr-defined]
+            node_level = node.level  # type: ignore[attr-defined]
+            node_dom_depth = node.dom_depth  # type: ignore[attr-defined]
+
+            if node_type in self.header_tags:
+                # Remove headers of the same or lower level
+                headers_to_remove = [
+                    key for key, (_, lvl, _) in active_headers.items()
+                    if lvl >= node_level
+                ]
+                for key in headers_to_remove:
+                    del active_headers[key]
+
+                # Update active headers with the current header
+                header_key = self.header_mapping[node_type]  # type: ignore[attr-defined]
+                active_headers[header_key] = (
+                    node_content,
+                    node_level,
+                    node_dom_depth
+                )
+
+                # Create metadata based on active headers
+                header_meta: Dict[str, str] = {
+                    key: content for key, (content, lvl, dd) in active_headers.items()
+                    if node_dom_depth >= dd
+                }
+
+                # Create a Document for the header element
+                documents.append(
+                    Document(
+                        page_content=node_content,
+                        metadata=header_meta
+                    )
+                )
+            else:
+                # For non-header elements, associate with current headers
+                if node_content.strip():
+                    header_meta: Dict[str, str] = {
+                        key: content for key, (content, lvl, dd) in active_headers.items()
+                        if node_dom_depth >= dd
+                    }
+                    documents.append(
+                        Document(
+                            page_content=node_content,
+                            metadata=header_meta
+                        )
+                    )
+
+        # Process each node using the inner process_node function
+        for _, node in sorted_nodes:
+            process_node(node)
+
+        return documents
 
 
 class HTMLSectionSplitter:
