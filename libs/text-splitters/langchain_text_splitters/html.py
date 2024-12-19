@@ -5,23 +5,14 @@ import pathlib
 import re
 from dataclasses import dataclass, field
 from io import BytesIO, StringIO
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    cast,
-)
+from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
+                    Tuple, TypedDict, cast)
 
 import requests
 from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
+
 
 class ElementType(TypedDict):
     """Element type as typed dict."""
@@ -270,7 +261,7 @@ class HTMLHeaderTextSplitter:
         """Generate a list of Document objects from a node structure.
 
         Args:
-            A dictionary of nodes indexed by their position.
+            nodes: A dictionary of nodes indexed by their position.
 
         Returns:
             A list of generated Document objects.
@@ -600,7 +591,8 @@ class HTMLSectionSplitter:
                 - 'tag_name': The name of the header tag (e.g., "h1", "h2").
         """
         try:
-            from bs4 import BeautifulSoup, PageElement  # type: ignore[import-untyped]
+            from bs4 import (BeautifulSoup,  # type: ignore[import-untyped]
+                             PageElement)
         except ImportError as e:
             raise ImportError(
                 "Unable to import BeautifulSoup/PageElement, \
