@@ -625,7 +625,7 @@ class Runnable(Generic[Input, Output], ABC):
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, list[str]]) -> RunnableSerializable[Any, Any]:
-        """Pick keys from the dict output of this Runnable.
+        """Pick keys from the output dict of this Runnable.
 
         Pick single key:
             .. code-block:: python
