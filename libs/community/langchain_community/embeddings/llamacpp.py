@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, final
+from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field, model_validator
