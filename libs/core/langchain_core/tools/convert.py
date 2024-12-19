@@ -1,11 +1,21 @@
+import functools
 import inspect
-from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Union,
+    cast,
+    get_type_hints,
+    overload,
+)
 
 from pydantic import BaseModel, Field, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
-from langchain_core.tools.base import BaseTool
+from langchain_core.tools.base import BaseTool, create_schema_from_function
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
 
@@ -421,3 +431,46 @@ def convert_runnable_to_tool(
             description=description,
             args_schema=args_schema,
         )
+
+
+class MethodTool:
+    """A descriptor that converts a method into a tool."""
+
+    def __init__(self, func: Union[Callable, classmethod]) -> None:
+        self.func = func
+
+    def __get__(self, instance: Any, owner: Any) -> BaseTool:
+        # casting to Callable to avoid mypy error
+        tool_func: Callable = cast(
+            Callable,
+            self.func.__func__ if isinstance(self.func, classmethod) else self.func,
+        )
+        outer_instance = owner if isinstance(self.func, classmethod) else instance
+
+        new_func = functools.partial(tool_func, outer_instance)
+        new_func.__doc__ = tool_func.__doc__
+
+        # remove the first argument (typically 'self' or 'cls') from the schema
+        args_schema = create_schema_from_function(
+            tool_func.__name__,
+            tool_func,
+            filter_args=[
+                list(inspect.signature(tool_func).parameters.values())[0].name
+            ],
+        )
+
+        return tool(tool_func.__name__, args_schema=args_schema, infer_schema=False)(
+            new_func
+        )
+
+
+def methodtool(func: Union[Callable, classmethod]) -> MethodTool:
+    """Convert a method into a tool.
+
+    Args:
+        func: The method to convert.
+
+    Returns:
+        The method tool.
+    """
+    return MethodTool(func)

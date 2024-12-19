@@ -45,6 +45,7 @@ from langchain_core.tools.base import (
 from langchain_core.tools.convert import (
     convert_runnable_to_tool as convert_runnable_to_tool,
 )
+from langchain_core.tools.convert import methodtool as methodtool
 from langchain_core.tools.convert import tool as tool
 from langchain_core.tools.render import ToolsRenderer as ToolsRenderer
 from langchain_core.tools.render import (
