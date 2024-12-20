@@ -246,7 +246,6 @@ class HTMLHeaderTextSplitter:
         documents: List[Document],
         chunk_dom_depth: int,
     ) -> None:
-
         if current_chunk:
             final_meta: Dict[str, str] = {
                 key: content
