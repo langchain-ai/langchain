@@ -93,6 +93,10 @@ def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
             dict(role="assistant", content="Hello"),
         ),
         (
+            AIMessage(content="{", additional_kwargs={"prefix": True}),
+            dict(role="assistant", content="{", prefix=True),
+        ),
+        (
             ChatMessage(role="assistant", content="Hello"),
             dict(role="assistant", content="Hello"),
         ),
