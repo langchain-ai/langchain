@@ -8,6 +8,7 @@ from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Sequence,
 
 import aiohttp
 import requests
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -79,12 +80,7 @@ class WebBaseLoader(BaseLoader):
         .. code-block:: python
 
             docs = []
-            docs_lazy = loader.lazy_load()
-
-            # async variant:
-            # docs_lazy = await loader.alazy_load()
-
-            for doc in docs_lazy:
+            for doc in loader.lazy_load():
                 docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
@@ -99,7 +95,9 @@ class WebBaseLoader(BaseLoader):
     Async load:
         .. code-block:: python
 
-            docs = await loader.aload()
+            docs = []
+            async for doc in loader.alazy_load():
+                docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
@@ -108,6 +106,37 @@ class WebBaseLoader(BaseLoader):
             ESPN - Serving Sports Fans. Anytime. Anywhere.
 
             {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
+
+    .. versionchanged:: 0.3.14
+
+        Deprecated ``aload`` (which was not async) and implemented a native async
+        ``alazy_load``. Expand below for more details.
+
+        .. dropdown:: How to update ``aload``
+
+            Instead of using ``aload``, you can use ``load`` for synchronous loading or
+            ``alazy_load`` for asynchronous lazy loading.
+
+            Example using ``load`` (synchronous):
+
+            .. code-block:: python
+
+                docs: List[Document] = loader.load()
+
+            Example using ``alazy_load`` (asynchronous):
+
+            .. code-block:: python
+
+                docs: List[Document] = []
+                async for doc in loader.alazy_load():
+                    docs.append(doc)
+
+            This is in preparation for accommodating an asynchronous ``aload`` in the
+            future:
+
+            .. code-block:: python
+
+                docs: List[Document] = await loader.aload()
 
     """  # noqa: E501
 
@@ -366,41 +395,21 @@ class WebBaseLoader(BaseLoader):
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
+    @deprecated(
+        since="0.3.14",
+        removal="1.0",
+        message=(
+            "See API reference for updated usage: "
+            "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"  # noqa: E501
+        ),
+    )
     def aload(self) -> List[Document]:  # type: ignore
-        """Load text from the urls in web_path async into Documents."""
-
-        logger.warning("""BREAKING CHANGE
-
-Starting with the next major version, the aload() function will introduce a \
-breaking change by transitioning from a synchronous function to an asynchronous one.
-To prepare for this change, avoid using aload() as shown below:
-
-    docs: List[Document] = aload()
-
-Instead, update your code in one of the following ways:
-    1. If you need a synchronous alternative with performance similar to aload(), \
-use load():
-
-        docs: List[Document] = load()
-
-    2. If you want to use an asynchronous function before the major update, \
-use alazy_load():
-
-        docs: List[Document] = []
-        async for doc in alazy_load():
-            docs.append(doc)
-
-After the major version update, \
-both alazy_load() and aload() will support asynchronous usage.
-For a more concise approach, you can use:
-
-    docs: List[Document] = await aload()
-        """)
+        """Load text from the urls in web_path into Documents."""
 
         return self.load()
 
     async def alazy_load(self) -> AsyncIterator[Document]:
-        """A lazy loader for Documents."""
+        """Async lazy loader for Documents."""
 
         results = await self.ascrape_all(self.web_paths)
         for path, soup in zip(self.web_paths, results):

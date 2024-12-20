@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, Iterator, List, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -60,7 +59,7 @@ class GitbookLoader(WebBaseLoader):
             soup_info = self.scrape()
             relative_paths = self._get_paths(soup_info)
             urls = [urljoin(self.base_url, path) for path in relative_paths]
-            soup_infos = asyncio.run(self.ascrape_all(urls))
+            soup_infos = self.scrape_all(urls)
             for soup_info, url in zip(soup_infos, urls):
                 doc = self._get_document(soup_info, url)
                 if doc:
