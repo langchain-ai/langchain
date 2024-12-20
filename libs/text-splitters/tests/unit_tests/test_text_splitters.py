@@ -4,7 +4,7 @@ import random
 import re
 import string
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, Callable, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
@@ -2041,7 +2041,8 @@ def test_haskell_code_splitter() -> None:
 
 @pytest.fixture
 @pytest.mark.requires("bs4")
-def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
+def html_header_splitter_splitter_factory() -> Callable[
+    [List[Tuple[str, str]]], HTMLHeaderTextSplitter]:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.
@@ -2402,7 +2403,7 @@ def test_additional_html_header_text_splitter(
     html_content: str,
     expected_output: List[Document],
     test_case: str,
-):
+) -> None:
     """
     Test the HTML header text splitter.
 
@@ -2473,7 +2474,7 @@ def test_html_no_headers_with_multiple_splitters(
     html_content: str,
     expected_output: List[Document],
     test_case: str,
-):
+) -> None:
     """
     Test HTML content splitting without headers using multiple splitters.
     Args:
