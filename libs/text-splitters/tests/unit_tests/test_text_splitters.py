@@ -2046,8 +2046,9 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.
     """
+
     def _create_splitter(
-        headers_to_split_on: List[Tuple[str, str]]
+        headers_to_split_on: List[Tuple[str, str]],
     ) -> HTMLHeaderTextSplitter:
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
@@ -2366,8 +2367,7 @@ def test_html_header_text_splitter(
                 Document(
                     metadata={"Header 1": "Foo"},
                     page_content=(
-                        "Some text about Baz  \n"
-                        "Some concluding text about Foo"
+                        "Some text about Baz  \nSome concluding text about Foo"
                     ),
                 ),
             ],
