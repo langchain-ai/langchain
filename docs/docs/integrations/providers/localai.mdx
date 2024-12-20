@@ -10,6 +10,11 @@
 For proper compatibility, please ensure you are using the `openai` SDK at version **0.x**.
 :::
 
+:::info
+`langchain-localai` is a 3rd party integration package for LocalAI. It provides a simple way to use LocalAI services in Langchain.
+The source code is available on [Github](https://github.com/mkhludnev/langchain-localai)
+:::
+
 ## Installation and Setup
 
 We have to install several python packages: 
@@ -24,5 +29,5 @@ pip install tenacity openai
 See a [usage example](/docs/integrations/text_embedding/localai).
 
 ```python
-from langchain_community.embeddings import LocalAIEmbeddings
+from langchain_localai import LocalAIEmbeddings
 ```
