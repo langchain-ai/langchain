@@ -2046,9 +2046,13 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.
     """
-    def _create_splitter(headers_to_split_on: List[Tuple[str, str]]) -> HTMLHeaderTextSplitter:
+    def _create_splitter(
+        headers_to_split_on: List[Tuple[str, str]]
+    ) -> HTMLHeaderTextSplitter:
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+
     return _create_splitter
+
 
 @pytest.mark.parametrize(
     "headers_to_split_on, html_input, expected_documents, test_case",
@@ -2070,37 +2074,28 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
             """,
             [
                 Document(
-                    page_content="Introduction",
-                    metadata={"Header 1": "Introduction"}
+                    page_content="Introduction", metadata={"Header 1": "Introduction"}
                 ),
                 Document(
                     page_content="This is the introduction.",
-                    metadata={"Header 1": "Introduction"}
+                    metadata={"Header 1": "Introduction"},
                 ),
                 Document(
                     page_content="Background",
-                    metadata={
-                        "Header 1": "Introduction",
-                        "Header 2": "Background"
-                    }
+                    metadata={"Header 1": "Introduction", "Header 2": "Background"},
                 ),
                 Document(
                     page_content="Background information.",
-                    metadata={
-                        "Header 1": "Introduction",
-                        "Header 2": "Background"
-                    }
+                    metadata={"Header 1": "Introduction", "Header 2": "Background"},
                 ),
                 Document(
-                    page_content="Conclusion",
-                    metadata={"Header 1": "Conclusion"}
+                    page_content="Conclusion", metadata={"Header 1": "Conclusion"}
                 ),
                 Document(
-                    page_content="Final thoughts.",
-                    metadata={"Header 1": "Conclusion"}
-                )
+                    page_content="Final thoughts.", metadata={"Header 1": "Conclusion"}
+                ),
             ],
-            "Simple headers and paragraphs"
+            "Simple headers and paragraphs",
         ),
         (
             # Test Case 2: Nested headers with h1, h2, and h3
@@ -2126,49 +2121,42 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
             """,
             [
                 Document(
-                    page_content="Main Title",
-                    metadata={"Header 1": "Main Title"}
+                    page_content="Main Title", metadata={"Header 1": "Main Title"}
                 ),
                 Document(
                     page_content="Subsection",
-                    metadata={
-                        "Header 1": "Main Title",
-                        "Header 2": "Subsection"
-                    }
+                    metadata={"Header 1": "Main Title", "Header 2": "Subsection"},
                 ),
                 Document(
                     page_content="Details of subsection.",
-                    metadata={
-                        "Header 1": "Main Title",
-                        "Header 2": "Subsection"
-                    }
+                    metadata={"Header 1": "Main Title", "Header 2": "Subsection"},
                 ),
                 Document(
                     page_content="Sub-subsection",
                     metadata={
                         "Header 1": "Main Title",
                         "Header 2": "Subsection",
-                        "Header 3": "Sub-subsection"
-                    }
+                        "Header 3": "Sub-subsection",
+                    },
                 ),
                 Document(
                     page_content="More details.",
                     metadata={
                         "Header 1": "Main Title",
                         "Header 2": "Subsection",
-                        "Header 3": "Sub-subsection"
-                    }
+                        "Header 3": "Sub-subsection",
+                    },
                 ),
                 Document(
                     page_content="Another Main Title",
-                    metadata={"Header 1": "Another Main Title"}
+                    metadata={"Header 1": "Another Main Title"},
                 ),
                 Document(
                     page_content="Content under another main title.",
-                    metadata={"Header 1": "Another Main Title"}
-                )
+                    metadata={"Header 1": "Another Main Title"},
+                ),
             ],
-            "Nested headers with h1, h2, and h3"
+            "Nested headers with h1, h2, and h3",
         ),
         (
             # Test Case 3: No headers
@@ -2187,10 +2175,10 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
             [
                 Document(
                     page_content="Paragraph one.  \nParagraph two.  \nParagraph three.",
-                    metadata={}
+                    metadata={},
                 )
             ],
-            "No headers present"
+            "No headers present",
         ),
         (
             # Test Case 4: Multiple headers of the same level
@@ -2208,32 +2196,23 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
             </html>
             """,
             [
-                Document(
-                    page_content="Chapter 1",
-                    metadata={"Header 1": "Chapter 1"}
-                ),
+                Document(page_content="Chapter 1", metadata={"Header 1": "Chapter 1"}),
                 Document(
                     page_content="Content of chapter 1.",
-                    metadata={"Header 1": "Chapter 1"}
+                    metadata={"Header 1": "Chapter 1"},
                 ),
-                Document(
-                    page_content="Chapter 2",
-                    metadata={"Header 1": "Chapter 2"}
-                ),
+                Document(page_content="Chapter 2", metadata={"Header 1": "Chapter 2"}),
                 Document(
                     page_content="Content of chapter 2.",
-                    metadata={"Header 1": "Chapter 2"}
+                    metadata={"Header 1": "Chapter 2"},
                 ),
-                Document(
-                    page_content="Chapter 3",
-                    metadata={"Header 1": "Chapter 3"}
-                ),
+                Document(page_content="Chapter 3", metadata={"Header 1": "Chapter 3"}),
                 Document(
                     page_content="Content of chapter 3.",
-                    metadata={"Header 1": "Chapter 3"}
-                )
+                    metadata={"Header 1": "Chapter 3"},
+                ),
             ],
-            "Multiple headers of the same level"
+            "Multiple headers of the same level",
         ),
         (
             # Test Case 5: Headers with no content
@@ -2248,34 +2227,24 @@ def html_header_splitter_splitter_factory() -> HTMLHeaderTextSplitter:
             </html>
             """,
             [
-                Document(
-                    page_content="Header 1",
-                    metadata={"Header 1": "Header 1"}
-                ),
+                Document(page_content="Header 1", metadata={"Header 1": "Header 1"}),
                 Document(
                     page_content="Header 2",
-                    metadata={
-                        "Header 1": "Header 1",
-                        "Header 2": "Header 2"
-                    }
+                    metadata={"Header 1": "Header 1", "Header 2": "Header 2"},
                 ),
-                Document(
-                    page_content="Header 3",
-                    metadata={"Header 1": "Header 3"}
-                )
+                Document(page_content="Header 3", metadata={"Header 1": "Header 3"}),
             ],
-            "Headers with no associated content"
+            "Headers with no associated content",
         ),
-    ]
+    ],
 )
 @pytest.mark.requires("bs4")
 def test_html_header_text_splitter(
-
     html_header_splitter_splitter_factory: Any,
     headers_to_split_on: List[Tuple[str, str]],
     html_input: str,
     expected_documents: List[Document],
-    test_case: str
+    test_case: str,
 ):
     """
     Test the HTML header text splitter.
@@ -2293,7 +2262,9 @@ def test_html_header_text_splitter(
             does not match the expected values.
     """
 
-    splitter = html_header_splitter_splitter_factory(headers_to_split_on=headers_to_split_on)
+    splitter = html_header_splitter_splitter_factory(
+        headers_to_split_on=headers_to_split_on
+    )
     docs = splitter.split_text(html_input)
 
     assert len(docs) == len(expected_documents), (
@@ -2303,7 +2274,8 @@ def test_html_header_text_splitter(
     for idx, (doc, expected) in enumerate(zip(docs, expected_documents), start=1):
         assert doc.page_content == expected.page_content, (
             f"Test Case '{test_case}' Failed at Document {idx}: "
-            f"Content mismatch.\nExpected: {expected.page_content}\nGot: {doc.page_content}"
+            f"Content mismatch.\nExpected: {expected.page_content}"
+            "\nGot: {doc.page_content}"
         )
         assert doc.metadata == expected.metadata, (
             f"Test Case '{test_case}' Failed at Document {idx}: "
@@ -2343,64 +2315,63 @@ def test_html_header_text_splitter(
             </html>
             """,
             [
+                Document(metadata={"Header 1": "Foo"}, page_content="Foo"),
                 Document(
-                    metadata={'Header 1': 'Foo'},
-                    page_content='Foo'
+                    metadata={"Header 1": "Foo"},
+                    page_content="Some intro text about Foo.",
                 ),
                 Document(
-                    metadata={'Header 1': 'Foo'},
-                    page_content='Some intro text about Foo.'
+                    metadata={"Header 1": "Foo", "Header 2": "Bar main section"},
+                    page_content="Bar main section",
                 ),
                 Document(
-                    metadata={'Header 1': 'Foo', 'Header 2': 'Bar main section'},
-                    page_content='Bar main section'
-                ),
-                Document(
-                    metadata={'Header 1': 'Foo', 'Header 2': 'Bar main section'},
-                    page_content='Some intro text about Bar.'
+                    metadata={"Header 1": "Foo", "Header 2": "Bar main section"},
+                    page_content="Some intro text about Bar.",
                 ),
                 Document(
                     metadata={
-                        'Header 1': 'Foo',
-                        'Header 2': 'Bar main section',
-                        'Header 3': 'Bar subsection 1'
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 1",
                     },
-                    page_content='Bar subsection 1'
+                    page_content="Bar subsection 1",
                 ),
                 Document(
                     metadata={
-                        'Header 1': 'Foo',
-                        'Header 2': 'Bar main section',
-                        'Header 3': 'Bar subsection 1'
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 1",
                     },
-                    page_content='Some text about the first subtopic of Bar.'
+                    page_content="Some text about the first subtopic of Bar.",
                 ),
                 Document(
                     metadata={
-                        'Header 1': 'Foo',
-                        'Header 2': 'Bar main section',
-                        'Header 3': 'Bar subsection 2'
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 2",
                     },
-                    page_content='Bar subsection 2'
+                    page_content="Bar subsection 2",
                 ),
                 Document(
                     metadata={
-                        'Header 1': 'Foo',
-                        'Header 2': 'Bar main section',
-                        'Header 3': 'Bar subsection 2'
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 2",
                     },
-                    page_content='Some text about the second subtopic of Bar.'
+                    page_content="Some text about the second subtopic of Bar.",
                 ),
                 Document(
-                    metadata={'Header 1': 'Foo', 'Header 2': 'Baz'},
-                    page_content='Baz'
+                    metadata={"Header 1": "Foo", "Header 2": "Baz"}, page_content="Baz"
                 ),
                 Document(
-                    metadata={'Header 1': 'Foo'},
-                    page_content='Some text about Baz  \nSome concluding text about Foo'
-                )
+                    metadata={"Header 1": "Foo"},
+                    page_content=(
+                        "Some text about Baz  \n"
+                        "Some concluding text about Foo"
+                    ),
+                ),
             ],
-            "Test Case A: Split on h1, h2, and h3 with nested headers"
+            "Test Case A: Split on h1, h2, and h3 with nested headers",
         ),
         (
             # Test Case B: Split on h1 only without any headers
@@ -2417,12 +2388,12 @@ def test_html_header_text_splitter(
             [
                 Document(
                     metadata={},
-                    page_content='Paragraph one.  \nParagraph two.  \nParagraph three.'
+                    page_content="Paragraph one.  \nParagraph two.  \nParagraph three.",
                 )
             ],
-            "Test Case B: Split on h1 only without any headers"
-        )
-    ]
+            "Test Case B: Split on h1 only without any headers",
+        ),
+    ],
 )
 @pytest.mark.requires("bs4")
 def test_additional_html_header_text_splitter(
@@ -2430,7 +2401,7 @@ def test_additional_html_header_text_splitter(
     headers_to_split_on: List[Tuple[str, str]],
     html_content: str,
     expected_output: List[Document],
-    test_case: str
+    test_case: str,
 ):
     """
     Test the HTML header text splitter.
@@ -2447,10 +2418,10 @@ def test_additional_html_header_text_splitter(
         AssertionError: If the number of documents or their content/metadata
             does not match the expected output.
     """
-    splitter = html_header_splitter_splitter_factory(headers_to_split_on=headers_to_split_on)
+    splitter = html_header_splitter_splitter_factory(
+        headers_to_split_on=headers_to_split_on
+    )
     docs = splitter.split_text(html_content)
-
-
 
     assert len(docs) == len(expected_output), (
         f"{test_case} Failed: Number of documents mismatch. "
@@ -2459,7 +2430,8 @@ def test_additional_html_header_text_splitter(
     for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
         assert doc.page_content == expected.page_content, (
             f"{test_case} Failed at Document {idx}: "
-            f"Content mismatch.\nExpected: {expected.page_content}\nGot: {doc.page_content}"
+            f"Content mismatch.\nExpected: {expected.page_content}\n"
+            "Got: {doc.page_content}"
         )
         assert doc.metadata == expected.metadata, (
             f"{test_case} Failed at Document {idx}: "
@@ -2485,13 +2457,14 @@ def test_additional_html_header_text_splitter(
             """,
             [
                 Document(
-                    page_content='Just some random text without headers.  \nMore text here.',
-                    metadata={}
+                    page_content="Just some random text without headers."
+                    "  \nMore text here.",
+                    metadata={},
                 )
             ],
-            "Test Case C: Split on h1, h2, and h3 without any headers"
+            "Test Case C: Split on h1, h2, and h3 without any headers",
         )
-    ]
+    ],
 )
 @pytest.mark.requires("bs4")
 def test_html_no_headers_with_multiple_splitters(
@@ -2499,7 +2472,7 @@ def test_html_no_headers_with_multiple_splitters(
     headers_to_split_on: List[Tuple[str, str]],
     html_content: str,
     expected_output: List[Document],
-    test_case: str
+    test_case: str,
 ):
     """
     Test HTML content splitting without headers using multiple splitters.
@@ -2515,10 +2488,10 @@ def test_html_no_headers_with_multiple_splitters(
         AssertionError: If the number of documents or their content/metadata
             does not match the expected output.
     """
-    splitter = html_header_splitter_splitter_factory(headers_to_split_on=headers_to_split_on)
+    splitter = html_header_splitter_splitter_factory(
+        headers_to_split_on=headers_to_split_on
+    )
     docs = splitter.split_text(html_content)
-
-
 
     assert len(docs) == len(expected_output), (
         f"{test_case} Failed: Number of documents mismatch. "
@@ -2527,13 +2500,13 @@ def test_html_no_headers_with_multiple_splitters(
     for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
         assert doc.page_content == expected.page_content, (
             f"{test_case} Failed at Document {idx}: "
-            f"Content mismatch.\nExpected: {expected.page_content}\nGot: {doc.page_content}"
+            f"Content mismatch.\nExpected: {expected.page_content}\n"
+            "Got: {doc.page_content}"
         )
         assert doc.metadata == expected.metadata, (
             f"{test_case} Failed at Document {idx}: "
             f"Metadata mismatch.\nExpected: {expected.metadata}\nGot: {doc.metadata}"
         )
-
 
 
 def test_split_text_on_tokens() -> None:
@@ -2932,7 +2905,8 @@ def test_html_splitter_with_custom_extractor() -> None:
 
     expected = [
         Document(
-            page_content="This is an iframe: [iframe:http://example.com](http://example.com)",
+            page_content="This is an iframe: "
+            "[iframe:http://example.com](http://example.com)",
             metadata={"Header 1": "Section 1"},
         ),
     ]
