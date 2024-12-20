@@ -2041,8 +2041,9 @@ def test_haskell_code_splitter() -> None:
 
 @pytest.fixture
 @pytest.mark.requires("bs4")
-def html_header_splitter_splitter_factory() -> Callable[
-    [List[Tuple[str, str]]], HTMLHeaderTextSplitter]:
+def html_header_splitter_splitter_factory() -> (
+    Callable[[List[Tuple[str, str]]], HTMLHeaderTextSplitter]
+):
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.
@@ -2247,7 +2248,7 @@ def test_html_header_text_splitter(
     html_input: str,
     expected_documents: List[Document],
     test_case: str,
-):
+) -> None:
     """
     Test the HTML header text splitter.
 
