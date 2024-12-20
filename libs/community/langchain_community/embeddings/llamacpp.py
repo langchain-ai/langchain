@@ -20,7 +20,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any = None  #: :meta private:
-    model_path: str
+    model_path: str = Field(default="")
 
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
@@ -88,21 +88,22 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         if self.n_gpu_layers is not None:
             model_params["n_gpu_layers"] = self.n_gpu_layers
 
-        try:
-            from llama_cpp import Llama
+        if not self.client:
+            try:
+                from llama_cpp import Llama
 
-            self.client = Llama(model_path, embedding=True, **model_params)
-        except ImportError:
-            raise ImportError(
-                "Could not import llama-cpp-python library. "
-                "Please install the llama-cpp-python library to "
-                "use this embedding model: pip install llama-cpp-python"
-            )
-        except Exception as e:
-            raise ValueError(
-                f"Could not load Llama model from path: {model_path}. "
-                f"Received error {e}"
-            )
+                self.client = Llama(model_path, embedding=True, **model_params)
+            except ImportError:
+                raise ImportError(
+                    "Could not import llama-cpp-python library. "
+                    "Please install the llama-cpp-python library to "
+                    "use this embedding model: pip install llama-cpp-python"
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Could not load Llama model from path: {model_path}. "
+                    f"Received error {e}"
+                )
 
         return self
 
