@@ -24,6 +24,7 @@ from langchain_community.document_loaders.parsers.language.python import PythonS
 from langchain_community.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain_community.document_loaders.parsers.language.rust import RustSegmenter
 from langchain_community.document_loaders.parsers.language.scala import ScalaSegmenter
+from langchain_community.document_loaders.parsers.language.sql import SQLSegmenter
 from langchain_community.document_loaders.parsers.language.typescript import (
     TypeScriptSegmenter,
 )
@@ -47,6 +48,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "php": "php",
     "ex": "elixir",
     "exs": "elixir",
+    "sql": "sql",
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -67,6 +69,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     "java": JavaSegmenter,
     "php": PHPSegmenter,
     "elixir": ElixirSegmenter,
+    "sql": SQLSegmenter,
 }
 
 Language = Literal[
@@ -83,7 +86,6 @@ Language = Literal[
     "ruby",
     "rust",
     "scala",
-    "swift",
     "markdown",
     "latex",
     "html",
@@ -94,6 +96,7 @@ Language = Literal[
     "lua",
     "perl",
     "elixir",
+    "sql",
 ]
 
 
@@ -123,6 +126,7 @@ class LanguageParser(BaseBlobParser):
     - Ruby: "ruby" (*)
     - Rust: "rust" (*)
     - Scala: "scala" (*)
+    - SQL: "sql" (*)
     - TypeScript: "ts" (*)
 
     Items marked with (*) require the packages `tree_sitter` and
