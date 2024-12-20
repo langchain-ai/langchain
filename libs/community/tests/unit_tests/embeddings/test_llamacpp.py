@@ -1,3 +1,4 @@
+from typing import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,7 +7,7 @@ from langchain_community.embeddings.llamacpp import LlamaCppEmbeddings
 
 
 @pytest.fixture
-def mock_llama_client() -> MagicMock:
+def mock_llama_client() -> Generator[MagicMock, None, None]:
     with patch(
         "langchain_community.embeddings.llamacpp.LlamaCppEmbeddings"
     ) as MockLlama:
