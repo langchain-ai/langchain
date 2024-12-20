@@ -164,3 +164,6 @@ packages:
   - name: langchain-oceanbase
     repo: oceanbase/langchain-oceanbase
     path: .
+  - name: langchain-predictionguard
+    repo: predictionguard/langchain-predictionguard
+    path: .
