@@ -154,7 +154,7 @@ class HTMLHeaderTextSplitter:
         self.elements_tree: Dict[int, Tuple[str, str, int, int]] = {}
         self.return_each_element = return_each_element
 
-    def _header_level(self, element) -> int:
+    def _header_level(self, element: Any) -> int:
         """Determine the heading level of an element.
 
         Args:
@@ -168,7 +168,7 @@ class HTMLHeaderTextSplitter:
             return int(tag_name[1])
         return 9999
 
-    def _dom_depth(self, element) -> int:
+    def _dom_depth(self, element: Any) -> int:
         """Compute the DOM depth of an element.
 
         Args:
@@ -182,7 +182,7 @@ class HTMLHeaderTextSplitter:
             depth += 1
         return depth
 
-    def _build_tree(self, elements) -> None:
+    def _build_tree(self, elements: Any) -> None:
         """Build a tree structure from a list of HTML elements.
 
         Args:
@@ -375,7 +375,7 @@ class HTMLHeaderTextSplitter:
             for idx, (tag, text, level, dom_depth) in self.elements_tree.items()
         }
 
-        stack = []
+        stack: List[Node] = []
         for idx in sorted(nodes):
             node = nodes[idx]
             while stack and (
@@ -428,7 +428,7 @@ class HTMLHeaderTextSplitter:
             node_content = node.content  # type: ignore[attr-defined]
             node_level = node.level  # type: ignore[attr-defined]
             node_dom_depth = node.dom_depth  # type: ignore[attr-defined]
-
+            header_meta: Dict[str, str]
             if node_type in self.header_tags:
                 # Remove headers of the same or lower level
                 headers_to_remove = [
@@ -444,7 +444,7 @@ class HTMLHeaderTextSplitter:
                 active_headers[header_key] = (node_content, node_level, node_dom_depth)
 
                 # Create metadata based on active headers
-                header_meta: Dict[str, str] = {
+                header_meta = {
                     key: content
                     for key, (content, lvl, dd) in active_headers.items()
                     if node_dom_depth >= dd
@@ -457,7 +457,7 @@ class HTMLHeaderTextSplitter:
             else:
                 # For non-header elements, associate with current headers
                 if node_content.strip():
-                    header_meta: Dict[str, str] = {
+                    header_meta = {
                         key: content
                         for key, (content, lvl, dd) in active_headers.items()
                         if node_dom_depth >= dd
