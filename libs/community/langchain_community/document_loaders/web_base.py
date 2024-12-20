@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import warnings
-from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Sequence, Union
 
 import aiohttp
@@ -375,23 +374,17 @@ class WebBaseLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazy load text from the url(s) in web_path."""
+        for path in self.web_paths:
+            soup = self._scrape(path, bs_kwargs=self.bs_kwargs)
+            text = soup.get_text(**self.bs_get_text_kwargs)
+            metadata = _build_metadata(soup, path)
+            yield Document(page_content=text, metadata=metadata)
 
-        try:
-            # Raises RuntimeError if there is no current loop.
-            asyncio.get_running_loop()
-            # If there is a current event loop, we need to run th async code
-            # in a seperate loop, in a seperate thread.
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future: Future[List[str]] = executor.submit(
-                    asyncio.run,  # type: ignore[arg-type]
-                    self.ascrape_all(self.web_paths),  # type: ignore[arg-type]
-                )
-                results = future.result()
-        except RuntimeError:
-            results = asyncio.run(self.ascrape_all(self.web_paths))
-
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """Async lazy load text from the url(s) in web_path."""
+        results = await self.ascrape_all(self.web_paths)
         for path, soup in zip(self.web_paths, results):
-            text = soup.get_text(**self.bs_get_text_kwargs)  # type: ignore
+            text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
@@ -404,15 +397,13 @@ class WebBaseLoader(BaseLoader):
         ),
     )
     def aload(self) -> List[Document]:  # type: ignore
-        """Load text from the urls in web_path into Documents."""
+        """Load text from the urls in web_path async into Documents."""
 
-        return self.load()
-
-    async def alazy_load(self) -> AsyncIterator[Document]:
-        """Async lazy loader for Documents."""
-
-        results = await self.ascrape_all(self.web_paths)
+        results = self.scrape_all(self.web_paths)
+        docs = []
         for path, soup in zip(self.web_paths, results):
             text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
-            yield Document(page_content=text, metadata=metadata)
+            docs.append(Document(page_content=text, metadata=metadata))
+
+        return docs
