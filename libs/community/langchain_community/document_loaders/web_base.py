@@ -280,13 +280,12 @@ class WebBaseLoader(BaseLoader):
                 "`parser` must be one of " + ", ".join(valid_parsers) + "."
             )
 
-    async def ascrape_all(
-        self, urls: List[str], parser: Union[str, None] = None
+    def _unpack_fetch_results(
+        self, results: Any, urls: List[str], parser: Union[str, None] = None
     ) -> List[Any]:
-        """Fetch all urls, then return soups for all results."""
+        """Unpack fetch results into BeautifulSoup objects."""
         from bs4 import BeautifulSoup
 
-        results = await self.fetch_all(urls)
         final_results = []
         for i, result in enumerate(results):
             url = urls[i]
@@ -297,8 +296,19 @@ class WebBaseLoader(BaseLoader):
                     parser = self.default_parser
                 self._check_parser(parser)
             final_results.append(BeautifulSoup(result, parser, **self.bs_kwargs))
-
         return final_results
+
+    def scrape_all(self, urls: List[str], parser: Union[str, None] = None) -> List[Any]:
+        """Fetch all urls, then return soups for all results."""
+        results = asyncio.run(self.fetch_all(urls))
+        return self._unpack_fetch_results(results, urls, parser=parser)
+
+    async def ascrape_all(
+        self, urls: List[str], parser: Union[str, None] = None
+    ) -> List[Any]:
+        """Async fetch all urls, then return soups for all results."""
+        results = await self.fetch_all(urls)
+        return self._unpack_fetch_results(results, urls, parser=parser)
 
     def _scrape(
         self,
