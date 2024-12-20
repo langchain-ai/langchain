@@ -39,6 +39,7 @@ def parse_ai_message_to_tool_action(
         for tool_call in message.additional_kwargs["tool_calls"]:
             function = tool_call["function"]
             function_name = function["name"]
+
             try:
                 args = json.loads(function["arguments"] or "{}")
                 tool_calls.append(
@@ -57,6 +58,9 @@ def parse_ai_message_to_tool_action(
         # We unpack the argument here if it exists.
         # Open AI does not support passing in a JSON array as an argument.
         function_name = tool_call["name"]
+        if function_name == '':
+            continue
+
         _tool_input = tool_call["args"]
         if "__arg1" in _tool_input:
             tool_input = _tool_input["__arg1"]
