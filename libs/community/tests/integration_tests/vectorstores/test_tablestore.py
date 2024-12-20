@@ -91,3 +91,26 @@ def test_tablestore() -> None:
     """
     search_result = store.similarity_search_with_score(query="hello world", k=2)
     assert len(search_result) == 2
+
+
+def test_tablestore_add_documents() -> None:
+    embeddings = FakeEmbeddings(size=128)
+    store = TablestoreVectorStore(
+        embedding=embeddings,
+        endpoint="http://test.a.com",
+        instance_name="test",
+        access_key_id="test",
+        access_key_secret="test",
+        vector_dimension=512,
+    )
+    doc = Document(
+        id="1",
+        page_content="1 hello world",
+        metadata={"type": "pc", "time": 2000},
+    )
+
+    try:
+        store.add_documents([doc])
+        raise RuntimeError("should failed")
+    except Exception as e:
+        assert "not the same as" in e.args[0]
