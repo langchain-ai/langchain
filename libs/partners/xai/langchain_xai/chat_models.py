@@ -252,7 +252,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     """  # noqa: E501
 
-    model_name: str = Field(alias="model")
+    model_name: str = Field(default="grok-beta", alias="model")
     """Model name to use."""
     xai_api_key: Optional[SecretStr] = Field(
         alias="api_key",
@@ -266,7 +266,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """Base URL path for API requests."""
 
     openai_api_key: Optional[SecretStr] = None
-    openai_api_base: Optional[str] = None
 
     model_config = ConfigDict(
         populate_by_name=True,
