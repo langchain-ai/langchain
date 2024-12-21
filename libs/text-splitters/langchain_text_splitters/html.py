@@ -180,12 +180,13 @@ class HTMLHeaderTextSplitter:
     def _get_elements(self, html_content: str) -> List[Any]:
         """Parse HTML content and return a list of BeautifulSoup elements.
 
-        This helper function takes HTML content as input, parses it using BeautifulSoup4,
-        and returns all HTML elements found in the document body. If no body tag exists,
+        This helper function takes HTML content as input,
+        parses it using BeautifulSoup4, and returns all HTML elements
+        found in the document body. If no body tag exists,
         it returns all elements in the full document.
 
         Args:
-            html_content (str): Raw HTML content to be parsed.
+            html_content: Raw HTML content to be parsed.
 
         Returns:
             List[Any]: A list of BeautifulSoup elements found in the HTML document.
@@ -225,7 +226,7 @@ class HTMLHeaderTextSplitter:
         current_chunk: List[str] = []
         chunk_dom_depth = 0
 
-        def finalize_chunk():
+        def finalize_chunk() -> None:
             if current_chunk:
                 final_meta = {
                     key: content
@@ -277,7 +278,8 @@ class HTMLHeaderTextSplitter:
                     if dom_depth >= dd
                 }
                 documents.append(Document(page_content=text, metadata=header_meta))
-                # After encountering a header, no immediate content goes to current_chunk
+                # After encountering a header,
+                # no immediate content goes to current_chunk
                 # (if return_each_element is False, we wait for next content)
                 # (if return_each_element is True, we create docs per element anyway)
             else:
@@ -487,10 +489,13 @@ class HTMLSectionSplitter:
         return str(result)
 
     def split_text_from_file(self, file: Any) -> List[Document]:
-        """Split HTML file.
+        """Split HTML content from a file into a list of Document objects.
 
         Args:
-            file: HTML file
+            file: A file path or a file-like object containing HTML content.
+
+        Returns:
+            A list of split Document objects.
         """
         file_content = file.getvalue()
         file_content = self.convert_possible_tags_to_header(file_content)
