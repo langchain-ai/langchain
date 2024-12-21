@@ -154,9 +154,7 @@ def _modify_frontmatter(
             if re.match(f"{k}: ", body):
                 continue
             else:
-                body = re.sub(
-                    r"^[\s\n]*---\n", f"---\n{k}: {v}\n", body, count=1
-                )
+                body = re.sub(r"^[\s\n]*---\n", f"---\n{k}: {v}\n", body, count=1)
         return body
     else:
         insert = "\n".join([f"{k}: {v}" for k, v in frontmatter.items()])
