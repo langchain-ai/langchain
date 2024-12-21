@@ -267,6 +267,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     model_config = ConfigDict(
         populate_by_name=True,
+        extra="forbid"
     )
 
     @property
