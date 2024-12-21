@@ -117,6 +117,8 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.create_embedding(texts)
+        if not embeddings["data"]:
+            raise ValueError("Embedding Data is Empty")
         if not isinstance(embeddings["data"][0]["embedding"][0], list):
             return [list(map(float, e["embedding"])) for e in embeddings["data"]]
         else:
