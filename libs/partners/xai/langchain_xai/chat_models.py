@@ -265,8 +265,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
 
-  
-
     model_config = ConfigDict(
         populate_by_name=True,
     )
