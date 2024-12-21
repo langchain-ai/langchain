@@ -2,32 +2,25 @@ import glob
 import sys
 from pathlib import Path
 
+import requests
 import yaml
 
-DOCS_DIR = Path(__file__).parents[1]
-PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
-IGNORE_PACKGAGES = {"langchain-experimental"}
+#################
+# CONFIGURATION #
+#################
 
-# for now, only include packages that are in the langchain-ai org
-# because we don't have a policy for inclusion in this table yet,
-# and including all packages will make the list too long
-with open(PACKAGE_YML) as f:
-    data = yaml.safe_load(f)
-    EXTERNAL_PACKAGES = set(
-        p["name"][10:]
-        for p in data["packages"]
-        if p["repo"].startswith("langchain-ai/")
-        and p["repo"] != "langchain-ai/langchain"
-        and p["name"] not in IGNORE_PACKGAGES
-    )
-    IN_REPO_PACKAGES = set(
-        p["name"][10:]
-        for p in data["packages"]
-        if p["repo"] == "langchain-ai/langchain"
-        and p["path"].startswith("libs/partners")
-        and p["name"] not in IGNORE_PACKGAGES
-    )
+# packages to ignore / exclude from the table
+IGNORE_PACKGAGES = {
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain",
+    "langchain-community",
+    "langchain-experimental",
+    "langchain-cli",
+    "langchain-tests",
+}
 
+# list of js packages to look up corresponding ones
 JS_PACKAGES = {
     "google-gauth",
     "openai",
@@ -60,13 +53,14 @@ JS_PACKAGES = {
     "ibm",
 }
 
-ALL_PACKAGES = IN_REPO_PACKAGES.union(EXTERNAL_PACKAGES)
-
+# custom names for packages
 CUSTOM_NAME = {
     "google-genai": "Google Generative AI",
     "aws": "AWS",
     "ibm": "IBM",
 }
+
+# custom provider pages
 CUSTOM_PROVIDER_PAGES = {
     "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",
     "prompty": "/docs/integrations/providers/microsoft/",
@@ -80,32 +74,85 @@ CUSTOM_PROVIDER_PAGES = {
     "sema4": "/docs/integrations/providers/robocorp/",
     "postgres": "/docs/integrations/providers/pgvector/",
 }
-PROVIDER_PAGES = {
-    name: f"/docs/integrations/providers/{name}/"
-    for name in ALL_PACKAGES
-    if glob.glob(str(DOCS_DIR / f"docs/integrations/providers/{name}.*"))
-}
-PROVIDER_PAGES = {
-    **PROVIDER_PAGES,
-    **CUSTOM_PROVIDER_PAGES,
-}
+
+#####################
+# END CONFIGURATION #
+#####################
+
+DOCS_DIR = Path(__file__).parents[1]
+PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
+
+# for now, only include packages that are in the langchain-ai org
+# because we don't have a policy for inclusion in this table yet,
+# and including all packages will make the list too long
 
 
-def package_row(name: str) -> str:
-    js = "✅" if name in JS_PACKAGES else "❌"
-    link = PROVIDER_PAGES.get(name)
-    title = CUSTOM_NAME.get(name) or name.title().replace("-", " ").replace(
-        "db", "DB"
-    ).replace("Db", "DB").replace("ai", "AI").replace("Ai", "AI")
+def _get_type(package: dict) -> str:
+    if package["name"] in IGNORE_PACKGAGES:
+        return "ignore"
+    if package["repo"] == "langchain-ai/langchain":
+        return "B"
+    if package["repo"].startswith("langchain-ai/"):
+        return "C"
+    return "D"
+
+
+def _enrich_package(p: dict) -> dict | None:
+    p["name_short"] = (
+        p["name"][10:] if p["name"].startswith("langchain-") else p["name"]
+    )
+    p["name_title"] = CUSTOM_NAME.get(p["name_short"]) or p[
+        "name_short"
+    ].title().replace("-", " ").replace("db", "DB").replace("Db", "DB").replace(
+        "ai", "AI"
+    ).replace("Ai", "AI")
+    p["type"] = _get_type(p)
+
+    if p["type"] == "ignore":
+        return None
+
+    p["js_exists"] = p["name_short"] in JS_PACKAGES
+    custom_provider_page = CUSTOM_PROVIDER_PAGES.get(p["name_short"])
+    default_provider_page = f"/docs/integrations/providers/{p['name_short']}/"
+    default_provider_page_exists = bool(
+        glob.glob(str(DOCS_DIR / f"docs/integrations/providers/{p['name_short']}.*"))
+    )
+    p["provider_page"] = custom_provider_page or (
+        default_provider_page if default_provider_page_exists else None
+    )
+    if p["provider_page"] is None:
+        msg = (
+            f"Provider page not found for {p['name_short']}. "
+            f"Please add one at docs/integrations/providers/{p['name_short']}.{{mdx,ipynb}}"
+        )
+        raise ValueError(msg)
+
+    return p
+
+
+with open(PACKAGE_YML) as f:
+    data = yaml.safe_load(f)
+
+packages_n = [_enrich_package(p) for p in data["packages"]]
+packages = [p for p in packages_n if p is not None]
+
+# sort by downloads
+packages_sorted = [t[1] for t in sorted((p["downloads"], p) for p in packages)]
+
+
+def package_row(p: dict) -> str:
+    js = "✅" if p["js_exists"] else "❌"
+    link = p["provider_page"]
+    title = p["name_title"]
     provider = f"[{title}]({link})" if link else title
-    return f"| {provider} | [langchain-{name}](https://python.langchain.com/api_reference/{name.replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-{name}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-{name}?style=flat-square&label=%20&color=orange) | {js} |"
+    return f"| {provider} | [{p['name']}](https://python.langchain.com/api_reference/{p['name_short'].replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/{p['name']}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/{p['name']}?style=flat-square&label=%20&color=orange) | {js} |"
 
 
 def table() -> str:
     header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/providers/) |
 | :--- | :---: | :---: | :---: | :---: |
 """
-    return header + "\n".join(package_row(name) for name in sorted(ALL_PACKAGES))
+    return header + "\n".join(package_row(p) for p in packages_sorted)
 
 
 def doc() -> str:
