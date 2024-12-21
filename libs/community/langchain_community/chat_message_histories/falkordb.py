@@ -98,7 +98,8 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
                 raise ValueError(
                     f"Error: {e}"
                     "Could not connect to FalkorDB database. "
-                    "Please ensure that the host, port, username, and password are correct."
+                    "Please ensure that the host, port,"
+                    " username, and password are correct."
                 )
 
         self._database = self._driver.select_graph(session_id)
