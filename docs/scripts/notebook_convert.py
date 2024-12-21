@@ -143,16 +143,22 @@ def _modify_frontmatter(
     edit_url = (
         f"https://github.com/langchain-ai/langchain/edit/master/docs/docs/{rel_path}"
     )
+    frontmatter = {
+        "custom_edit_url": edit_url,
+    }
     if re.match(r"^[\s\n]*---\n", body):
-        # if custom_edit_url already exists, leave it
-        if re.match(r"custom_edit_url: ", body):
-            return body
-        else:
-            return re.sub(
-                r"^[\s\n]*---\n", f"---\ncustom_edit_url: {edit_url}\n", body, count=1
-            )
+        # frontmatter already present
+
+        for k, v in frontmatter.items():
+            # if key already exists, leave it
+            if re.match(f"{k}: ", body):
+                continue
+            else:
+                body = re.sub(r"^[\s\n]*---\n", f"---\n{k}: {v}\n", body, count=1)
+        return body
     else:
-        return f"---\ncustom_edit_url: {edit_url}\n---\n{body}"
+        insert = "\n".join([f"{k}: {v}" for k, v in frontmatter.items()])
+        return f"---\n{insert}\n---\n{body}"
 
 
 def _convert_notebook(
