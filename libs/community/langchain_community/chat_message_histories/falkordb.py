@@ -219,3 +219,4 @@ class FalkorDBChatMessageHistory(BaseChatMessageHistory):
             "WITH m DELETE m"
         )
         self._database.query(query)
+        
