@@ -330,7 +330,8 @@ class OpenAIWhisperParser(BaseBlobParser):
                         )
                     else:
                         transcript =  openai.audio.transcriptions.create(
-                            model="whisper-1", file=file_obj,)  # type: ignore[attr-defined]
+                            model="whisper-1", 
+                            file=file_obj,)  # type: ignore[attr-defined]
                     break
                 except Exception as e:
                     attempts += 1
