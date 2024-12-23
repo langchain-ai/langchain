@@ -49,9 +49,10 @@ for p in data["packages"]:
     if p["name"] in seen:
         raise ValueError(f"Duplicate package: {p['name']}")
     seen.add(p["name"])
-    downloads_updated_at = datetime.fromisoformat(p["downloads_updated_at"])
+    downloads_updated_at_str = p.get("downloads_updated_at")
+    downloads_updated_at = datetime.fromisoformat(downloads_updated_at_str) if downloads_updated_at_str else None
 
-    if downloads_updated_at > yesterday:
+    if downloads_updated_at is not None and downloads_updated_at > yesterday:
         print(f"done: {p['name']}: {p['downloads']}")
         continue
 
