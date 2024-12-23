@@ -1,243 +1,125 @@
 from __future__ import annotations
 
-import ast
-import json
+import base64
 import os
-from io import StringIO
-from sys import version_info
-from typing import IO, TYPE_CHECKING, Any, Callable, List, Optional, Type, Union
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManager,
-    CallbackManagerForToolRun,
-)
-from langchain_core.tools import BaseTool, Tool
-from pydantic import BaseModel, Field, PrivateAttr
-
-from langchain_community.tools.e2b_data_analysis.unparse import Unparser
-
-if TYPE_CHECKING:
-    from e2b import EnvVars
-    from e2b.templates.data_analysis import Artifact
-
-base_description = """Evaluates python code in a sandbox environment. \
-The environment is long running and exists across multiple executions. \
-You must send the whole script every time and print your outputs. \
-Script should be pure python code that can be evaluated. \
-It should be in python format NOT markdown. \
-The code should NOT be wrapped in backticks. \
-All python packages including requests, matplotlib, scipy, numpy, pandas, \
-etc are available. Create and display chart using `plt.show()`."""
+from typing import Any, Optional
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.tools import Tool
+from e2b_code_interpreter import Sandbox
+from IPython.display import display, Image
 
 
-def _unparse(tree: ast.AST) -> str:
-    """Unparse the AST."""
-    if version_info.minor < 9:
-        s = StringIO()
-        Unparser(tree, file=s)
-        source_code = s.getvalue()
-        s.close()
-    else:
-        source_code = ast.unparse(tree)  # type: ignore[attr-defined]
-    return source_code
-
-
-def add_last_line_print(code: str) -> str:
-    """Add print statement to the last line if it's missing.
-
-    Sometimes, the LLM-generated code doesn't have `print(variable_name)`, instead the
-        LLM tries to print the variable only by writing `variable_name` (as you would in
-        REPL, for example).
-
-    This methods checks the AST of the generated Python code and adds the print
-        statement to the last line if it's missing.
-    """
-    tree = ast.parse(code)
-    node = tree.body[-1]
-    if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
-        if isinstance(node.value.func, ast.Name) and node.value.func.id == "print":
-            return _unparse(tree)
-
-    if isinstance(node, ast.Expr):
-        tree.body[-1] = ast.Expr(
-            value=ast.Call(
-                func=ast.Name(id="print", ctx=ast.Load()),
-                args=[node.value],
-                keywords=[],
-            )
-        )
-
-    return _unparse(tree)
-
-
-class UploadedFile(BaseModel):
-    """Description of the uploaded path with its remote path."""
-
-    name: str
-    remote_path: str
-    description: str
-
-
-class E2BDataAnalysisToolArguments(BaseModel):
-    """Arguments for the E2BDataAnalysisTool."""
-
-    python_code: str = Field(
-        ...,
-        examples=["print('Hello World')"],
-        description=(
-            "The python script to be evaluated. "
-            "The contents will be in main.py. "
-            "It should not be in markdown format."
-        ),
-    )
-
-
-class E2BDataAnalysisTool(BaseTool):  # type: ignore[override, override]
-    """Tool for running python code in a sandboxed environment for data analysis."""
-
-    name: str = "e2b_data_analysis"
-    args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
-    session: Any
-    description: str
-    _uploaded_files: List[UploadedFile] = PrivateAttr(default_factory=list)
-
+class E2BDataAnalyzer:
+    """LLM-powered tool for analyzing CSV data using E2B sandbox and GPT-4."""
+    
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        cwd: Optional[str] = None,
-        env_vars: Optional[EnvVars] = None,
-        on_stdout: Optional[Callable[[str], Any]] = None,
-        on_stderr: Optional[Callable[[str], Any]] = None,
-        on_artifact: Optional[Callable[[Artifact], Any]] = None,
-        on_exit: Optional[Callable[[int], Any]] = None,
-        **kwargs: Any,
+        e2b_api_key: Optional[str] = None,
+        openai_api_key: Optional[str] = None,
+        timeout: int = 60,
+        model: str = "gpt-4",
+        temperature: float = 0.5
     ):
-        try:
-            from e2b import DataAnalysis
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import e2b, please install with `pip install e2b`."
-            ) from e
-
-        # If no API key is provided, E2B will try to read it from the environment
-        # variable E2B_API_KEY
-        super().__init__(description=base_description, **kwargs)
-        self.session = DataAnalysis(
-            api_key=api_key,
-            cwd=cwd,
-            env_vars=env_vars,
-            on_stdout=on_stdout,
-            on_stderr=on_stderr,
-            on_exit=on_exit,
-            on_artifact=on_artifact,
+        """
+        Initialize the analyzer with API keys and configuration.
+        
+        Args:
+            e2b_api_key: API key for E2B sandbox
+            openai_api_key: API key for OpenAI
+            timeout: Sandbox timeout in seconds
+            model: OpenAI model to use (default: gpt-4)
+            temperature: LLM temperature setting (default: 0.5)
+        """
+        self.sandbox = Sandbox(api_key=e2b_api_key)
+        self.sandbox.set_timeout(timeout)
+        
+        # Initialize the LLM
+        self.llm = ChatOpenAI(
+            api_key=openai_api_key,
+            model=model,
+            temperature=temperature
         )
+        
+        # Create the tool function
+        def run_analysis(code: str) -> dict:
+            """Execute Python code in the sandbox and handle results."""
+            execution = self.sandbox.run_code(code)
+            
+            if execution.error:
+                return {
+                    "error": execution.error.name,
+                    "value": execution.error.value,
+                    "traceback": execution.error.traceback
+                }
 
-    def close(self) -> None:
-        """Close the cloud sandbox."""
-        self._uploaded_files = []
-        self.session.close()
+            results = []
+            for idx, result in enumerate(execution.results):
+                if result.png:
+                    file_name = f"chart-{idx}.png"
+                    with open(file_name, 'wb') as f:
+                        f.write(base64.b64decode(result.png))
+                    display(Image(filename=file_name))
+                    results.append(file_name)
 
-    @property
-    def uploaded_files_description(self) -> str:
-        if len(self._uploaded_files) == 0:
-            return ""
-        lines = ["The following files available in the sandbox:"]
+            return {"images": results} if results else {"message": "Analysis completed successfully"}
 
-        for f in self._uploaded_files:
-            if f.description == "":
-                lines.append(f"- path: `{f.remote_path}`")
-            else:
-                lines.append(
-                    f"- path: `{f.remote_path}` \n description: `{f.description}`"
-                )
-        return "\n".join(lines)
-
-    def _run(
-        self,
-        python_code: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        callbacks: Optional[CallbackManager] = None,
-    ) -> str:
-        python_code = add_last_line_print(python_code)
-
-        if callbacks is not None:
-            on_artifact = getattr(callbacks.metadata, "on_artifact", None)
-        else:
-            on_artifact = None
-
-        stdout, stderr, artifacts = self.session.run_python(
-            python_code, on_artifact=on_artifact
-        )
-
-        out = {
-            "stdout": stdout,
-            "stderr": stderr,
-            "artifacts": list(map(lambda artifact: artifact.name, artifacts)),
-        }
-        return json.dumps(out)
-
-    async def _arun(
-        self,
-        python_code: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        raise NotImplementedError("e2b_data_analysis does not support async")
-
-    def run_command(
-        self,
-        cmd: str,
-    ) -> dict:
-        """Run shell command in the sandbox."""
-        proc = self.session.process.start(cmd)
-        output = proc.wait()
-        return {
-            "stdout": output.stdout,
-            "stderr": output.stderr,
-            "exit_code": output.exit_code,
-        }
-
-    def install_python_packages(self, package_names: Union[str, List[str]]) -> None:
-        """Install python packages in the sandbox."""
-        self.session.install_python_packages(package_names)
-
-    def install_system_packages(self, package_names: Union[str, List[str]]) -> None:
-        """Install system packages (via apt) in the sandbox."""
-        self.session.install_system_packages(package_names)
-
-    def download_file(self, remote_path: str) -> bytes:
-        """Download file from the sandbox."""
-        return self.session.download_file(remote_path)
-
-    def upload_file(self, file: IO, description: str) -> UploadedFile:
-        """Upload file to the sandbox.
-
-        The file is uploaded to the '/home/user/<filename>' path."""
-        remote_path = self.session.upload_file(file)
-
-        f = UploadedFile(
-            name=os.path.basename(file.name),
-            remote_path=remote_path,
-            description=description,
-        )
-        self._uploaded_files.append(f)
-        self.description = self.description + "\n" + self.uploaded_files_description
-        return f
-
-    def remove_uploaded_file(self, uploaded_file: UploadedFile) -> None:
-        """Remove uploaded file from the sandbox."""
-        self.session.filesystem.remove(uploaded_file.remote_path)
-        self._uploaded_files = [
-            f
-            for f in self._uploaded_files
-            if f.remote_path != uploaded_file.remote_path
+        # Create the tool using the Tool class directly
+        self.tools = [
+            Tool(
+                name="run_analysis",
+                func=run_analysis,
+                description="Execute Python code in the sandbox and handle results"
+            )
         ]
-        self.description = self.description + "\n" + self.uploaded_files_description
+# Define the prompt template
+        self.prompt_template = ChatPromptTemplate.from_messages([
+            ("system", """You are a data analysis expert who converts natural language queries into Python code. 
+            You use pandas for data manipulation and matplotlib for visualization. 
+            Always create clear, informative visualizations with proper titles, labels, and legends when appropriate.
+            Use seaborn styling for better-looking visualizations.
+            The data is already loaded into a pandas DataFrame called 'df'."""),
+            ("human", "{input}"),
+            ("placeholder", "{agent_scratchpad}"),
+        ])
+        
+        # Create the agent
+        self.agent = create_tool_calling_agent(self.llm, self.tools, self.prompt_template)
+        self.executor = AgentExecutor(agent=self.agent, tools=self.tools, verbose=True)
 
-    def as_tool(self) -> Tool:  # type: ignore[override]
-        return Tool.from_function(
-            func=self._run,
-            name=self.name,
-            description=self.description,
-            args_schema=self.args_schema,
-        )
+    
+    def analyze(self, query: str, csv_path: str) -> dict:
+        """
+        Analyze CSV data based on a natural language query.
+        
+        Args:
+            query: Natural language question or analysis request
+            csv_path: Path to the local CSV file
+            
+        Returns:
+            dict: Results of the analysis including any generated images
+        """
+        # Upload the CSV to the sandbox
+        with open(csv_path, "rb") as f:
+            dataset_path = self.sandbox.files.write("dataset.csv", f)
+        
+        # Load the CSV locally to get schema information
+        import pandas as pd
+        data = pd.read_csv(csv_path)
+        columns = ", ".join(data.columns)
+        sample_rows = data.head(3).to_dict(orient="records")
+        
+       # Create the analysis prompt
+        prompt_input = {
+            "input": f"The user asks: '{query}'\n\nThe dataset is located at {dataset_path.path}\nColumns available: {columns}\nSample data: {sample_rows}\n\nGenerate and execute Python code to answer this question. Always:\n1. Start by reading the CSV: df = pd.read_csv('{dataset_path.path}')\n2. Include appropriate data cleaning if needed\n3. Create informative visualizations with proper labels and seaborn styling\n4. Print relevant statistics or insights\n5. Use plt.figure(figsize=(12, 6)) for better sized plots\n6. Add plt.tight_layout() before plt.show()"
+        }
+        
+        # Run the analysis
+        response = self.executor.invoke(prompt_input)
+        return response
+    def close(self):
+        """Clean up resources."""
+        self.sandbox.close()
+
+
