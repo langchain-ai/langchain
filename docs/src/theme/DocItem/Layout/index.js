@@ -38,16 +38,12 @@ export default function DocItemLayout({children}) {
   "https://github.com/langchain-ai/langchain/blob/master/docs/docs/introduction.ipynb"
   "https://colab.research.google.com/github/langchain-ai/langchain/blob/master/docs/docs/introduction.ipynb"
 
-  console.log({metadata, frontMatter})
-
   const linkColab = frontMatter.link_colab || (
     metadata.editUrl?.endsWith(".ipynb") 
       ? metadata.editUrl?.replace("https://github.com/langchain-ai/langchain/edit/", "https://colab.research.google.com/github/langchain-ai/langchain/blob/") 
       : null
   );
   const linkGithub = frontMatter.link_github || metadata.editUrl?.replace("/edit/", "/blob/");
-  
-  console.log({linkColab, linkGithub})
 
   return (
     <div className="row">
