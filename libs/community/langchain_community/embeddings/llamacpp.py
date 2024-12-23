@@ -117,16 +117,17 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.create_embedding(texts)
-        if not embeddings["data"]:
-            raise ValueError("Embedding Data is Empty")
-        if not isinstance(embeddings["data"][0]["embedding"][0], list):
-            return [list(map(float, e["embedding"])) for e in embeddings["data"]]
-        else:
-            final_embeddings = []
-            for e in embeddings["data"]:
-                for data in e["embedding"]:
-                    final_embeddings.append(list(map(float, data)))
-            return final_embeddings
+        final_embeddings = []
+        for e in embeddings["data"]:
+            try:
+                if isinstance(e["embedding"][0], list):
+                    for data in e["embedding"]:
+                        final_embeddings.append(list(map(float, data)))
+                else:
+                    final_embeddings.append(list(map(float, e["embedding"])))
+            except (IndexError, TypeError):
+                final_embeddings.append(list(map(float, e["embedding"])))
+        return final_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the Llama model.
