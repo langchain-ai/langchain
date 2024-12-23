@@ -1,172 +1,310 @@
-# this file is used to define the packages that are used in the project
+# this file is used to definet he packages that are used in the project
 # it is EXPERIMENTAL and may be removed in the future
 
 packages:
-  - name: langchain-core
-    repo: langchain-ai/langchain
-    path: libs/core
-  - name: langchain-text-splitters
-    repo: langchain-ai/langchain
-    path: libs/text-splitters
-  - name: langchain
-    repo: langchain-ai/langchain
-    path: libs/langchain
-  - name: langchain-community
-    repo: langchain-ai/langchain
-    path: libs/community
-  - name: langchain-experimental
-    repo: langchain-ai/langchain-experimental
-    path: libs/experimental
-  - name: langchain-cli
-    repo: langchain-ai/langchain
-    path: libs/cli
-  - name: langchain-ai21
-    repo: langchain-ai/langchain-ai21
-    path: libs/ai21
-  - name: langchain-anthropic
-    repo: langchain-ai/langchain
-    path: libs/partners/anthropic
-  - name: langchain-chroma
-    repo: langchain-ai/langchain
-    path: libs/partners/chroma
-  - name: langchain-exa
-    repo: langchain-ai/langchain
-    path: libs/partners/exa
-  - name: langchain-fireworks
-    repo: langchain-ai/langchain
-    path: libs/partners/fireworks
-  - name: langchain-groq
-    repo: langchain-ai/langchain
-    path: libs/partners/groq
-  - name: langchain-huggingface
-    repo: langchain-ai/langchain
-    path: libs/partners/huggingface
-  - name: langchain-ibm
-    repo: langchain-ai/langchain-ibm
-    path: libs/ibm
-  - name: langchain-localai
-    repo: mkhludnev/langchain-localai
-    path: libs/localai
-  - name: langchain-milvus
-    repo: langchain-ai/langchain-milvus
-    path: libs/milvus
-  - name: langchain-mistralai
-    repo: langchain-ai/langchain
-    path: libs/partners/mistralai
-  - name: langchain-mongodb
-    repo: langchain-ai/langchain-mongodb
-    path: libs/mongodb
-  - name: langchain-nomic
-    repo: langchain-ai/langchain
-    path: libs/partners/nomic
-  - name: langchain-openai
-    repo: langchain-ai/langchain
-    path: libs/partners/openai
-  - name: langchain-pinecone
-    repo: langchain-ai/langchain
-    path: libs/partners/pinecone
-  - name: langchain-prompty
-    repo: langchain-ai/langchain
-    path: libs/partners/prompty
-  - name: langchain-qdrant
-    repo: langchain-ai/langchain
-    path: libs/partners/qdrant
-  - name: langchain-scrapegraph
-    repo: ScrapeGraphAI/langchain-scrapegraph
-    path: .
-  - name: langchain-sema4
-    repo: langchain-ai/langchain-sema4
-    path: libs/sema4
-  - name: langchain-together
-    repo: langchain-ai/langchain-together
-    path: libs/together
-  - name: langchain-upstage
-    repo: langchain-ai/langchain-upstage
-    path: libs/upstage
-  - name: langchain-voyageai
-    repo: langchain-ai/langchain
-    path: libs/partners/voyageai
-  - name: langchain-aws
-    repo: langchain-ai/langchain-aws
-    path: libs/aws
-  - name: langchain-astradb
-    repo: langchain-ai/langchain-datastax
-    path: libs/astradb
-  - name: langchain-google-genai
-    repo: langchain-ai/langchain-google
-    path: libs/genai
-  - name: langchain-google-vertexai
-    repo: langchain-ai/langchain-google
-    path: libs/vertexai
-  - name: langchain-google-community
-    repo: langchain-ai/langchain-google
-    path: libs/community
-  - name: langchain-weaviate
-    repo: langchain-ai/langchain-weaviate
-    path: libs/weaviate
-  - name: langchain-cohere
-    repo: langchain-ai/langchain-cohere
-    path: libs/cohere
-  - name: langchain-elasticsearch
-    repo: langchain-ai/langchain-elastic
-    path: libs/elasticsearch
-  - name: langchain-nvidia-ai-endpoints
-    repo: langchain-ai/langchain-nvidia
-    path: libs/ai-endpoints
-  - name: langchain-postgres
-    repo: langchain-ai/langchain-postgres
-    path: .
-  - name: langchain-redis
-    repo: langchain-ai/langchain-redis
-    path: libs/redis
-  - name: langchain-unstructured
-    repo: langchain-ai/langchain-unstructured
-    path: libs/unstructured
-  - name: langchain-azure-dynamic-sessions
-    repo: langchain-ai/langchain-azure
-    path: libs/azure-dynamic-sessions
-  - name: langchain-sqlserver
-    repo: langchain-ai/langchain-azure
-    path: libs/sqlserver
-  - name: langchain-cerebras
-    repo: langchain-ai/langchain-cerebras
-    path: libs/cerebras
-  - name: langchain-snowflake
-    repo: langchain-ai/langchain-snowflake
-    path: libs/snowflake
-  - name: langchain-databricks
-    repo: langchain-ai/langchain-databricks
-    path: libs/databricks
-  - name: langchain-ibm
-    repo: langchain-ai/langchain-ibm
-    path: libs/ibm
-  - name: langchain-couchbase
-    repo: langchain-ai/langchain
-    path: libs/partners/couchbase
-  - name: langchain-cratedb
-    repo: crate/langchain-cratedb
-    path: .
-  - name: langchain-ollama
-    repo: langchain-ai/langchain
-    path: libs/partners/ollama
-  - name: langchain-box
-    repo: langchain-ai/langchain-box
-    path: libs/box
-  - name: langchain-tests
-    repo: langchain-ai/langchain
-    path: libs/standard-tests
-  - name: langchain-neo4j
-    repo: langchain-ai/langchain-neo4j
-    path: libs/neo4j
-  - name: langchain-linkup
-    repo: LinkupPlatform/langchain-linkup
-    path: .
-  - name: langchain-yt-dlp
-    repo: aqib0770/langchain-yt-dlp
-    path: .
-  - name: langchain-oceanbase
-    repo: oceanbase/langchain-oceanbase
-    path: .
-  - name: langchain-predictionguard
-    repo: predictionguard/langchain-predictionguard
-    path: .
+- name: langchain-core
+  path: libs/core
+  repo: langchain-ai/langchain
+  downloads: 27728892
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-text-splitters
+  path: libs/text-splitters
+  repo: langchain-ai/langchain
+  downloads: 10343427
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain
+  path: libs/langchain
+  repo: langchain-ai/langchain
+  downloads: 27515102
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-community
+  path: libs/community
+  repo: langchain-ai/langchain
+  downloads: 17505668
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-experimental
+  path: libs/experimental
+  repo: langchain-ai/langchain-experimental
+  downloads: 1710421
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-cli
+  path: libs/cli
+  repo: langchain-ai/langchain
+  downloads: 55505
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-ai21
+  path: libs/ai21
+  repo: langchain-ai/langchain-ai21
+  downloads: 3453
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-anthropic
+  path: libs/partners/anthropic
+  repo: langchain-ai/langchain
+  js: '@langchain/anthropic'
+  downloads: 1163020
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-chroma
+  path: libs/partners/chroma
+  repo: langchain-ai/langchain
+  downloads: 450092
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-exa
+  path: libs/partners/exa
+  repo: langchain-ai/langchain
+  provider_page: exa_search
+  js: '@langchain/exa'
+  downloads: 4560
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-fireworks
+  path: libs/partners/fireworks
+  repo: langchain-ai/langchain
+  downloads: 73179
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-groq
+  path: libs/partners/groq
+  repo: langchain-ai/langchain
+  js: '@langchain/groq'
+  downloads: 370373
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-huggingface
+  path: libs/partners/huggingface
+  repo: langchain-ai/langchain
+  downloads: 375151
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-ibm
+  path: libs/ibm
+  repo: langchain-ai/langchain-ibm
+  js: '@langchain/ibm'
+  downloads: 261091
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-localai
+  path: libs/localai
+  repo: mkhludnev/langchain-localai
+  downloads: 510
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-milvus
+  path: libs/milvus
+  repo: langchain-ai/langchain-milvus
+  downloads: 111126
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-mistralai
+  path: libs/partners/mistralai
+  repo: langchain-ai/langchain
+  js: '@langchain/mistralai'
+  downloads: 232463
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-mongodb
+  path: libs/mongodb
+  repo: langchain-ai/langchain-mongodb
+  provider_page: mongodb_atlas
+  js: '@langchain/mongodb'
+  downloads: 113328
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-nomic
+  path: libs/partners/nomic
+  repo: langchain-ai/langchain
+  js: '@langchain/nomic'
+  downloads: 10175
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-openai
+  path: libs/partners/openai
+  repo: langchain-ai/langchain
+  js: '@langchain/openai'
+  downloads: 7994138
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-pinecone
+  path: libs/partners/pinecone
+  repo: langchain-ai/langchain
+  js: '@langchain/pinecone'
+  downloads: 345657
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-prompty
+  path: libs/partners/prompty
+  repo: langchain-ai/langchain
+  provider_page: microsoft
+  downloads: 976
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-qdrant
+  path: libs/partners/qdrant
+  repo: langchain-ai/langchain
+  js: '@langchain/qdrant'
+  downloads: 77743
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-scrapegraph
+  path: .
+  repo: ScrapeGraphAI/langchain-scrapegraph
+  downloads: 907
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-sema4
+  path: libs/sema4
+  repo: langchain-ai/langchain-sema4
+  provider_page: robocorp
+  downloads: 987
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-together
+  path: libs/together
+  repo: langchain-ai/langchain-together
+  downloads: 44887
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-upstage
+  path: libs/upstage
+  repo: langchain-ai/langchain-upstage
+  downloads: 20951
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-voyageai
+  path: libs/partners/voyageai
+  repo: langchain-ai/langchain
+  downloads: 11253
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-aws
+  name_title: AWS
+  path: libs/aws
+  repo: langchain-ai/langchain-aws
+  js: '@langchain/aws'
+  downloads: 1507701
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-astradb
+  path: libs/astradb
+  repo: langchain-ai/langchain-datastax
+  downloads: 64185
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-google-genai
+  name_title: Google Generative AI
+  path: libs/genai
+  repo: langchain-ai/langchain-google
+  provider_page: google
+  js: '@langchain/google-genai'
+  downloads: 732265
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-google-vertexai
+  path: libs/vertexai
+  repo: langchain-ai/langchain-google
+  provider_page: google
+  js: '@langchain/google-vertexai'
+  downloads: 7668881
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-google-community
+  path: libs/community
+  repo: langchain-ai/langchain-google
+  provider_page: google
+  downloads: 3055901
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-weaviate
+  path: libs/weaviate
+  repo: langchain-ai/langchain-weaviate
+  js: '@langchain/weaviate'
+  downloads: 26639
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-cohere
+  path: libs/cohere
+  repo: langchain-ai/langchain-cohere
+  js: '@langchain/cohere'
+  downloads: 513053
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-elasticsearch
+  path: libs/elasticsearch
+  repo: langchain-ai/langchain-elastic
+  downloads: 108874
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-nvidia-ai-endpoints
+  path: libs/ai-endpoints
+  repo: langchain-ai/langchain-nvidia
+  provider_page: nvidia
+  downloads: 129677
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-postgres
+  path: .
+  repo: langchain-ai/langchain-postgres
+  provider_page: pgvector
+  downloads: 293866
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-redis
+  path: libs/redis
+  repo: langchain-ai/langchain-redis
+  js: '@langchain/redis'
+  downloads: 17549
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-unstructured
+  path: libs/unstructured
+  repo: langchain-ai/langchain-unstructured
+  downloads: 88721
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-azure-dynamic-sessions
+  path: libs/azure-dynamic-sessions
+  repo: langchain-ai/langchain-azure
+  provider_page: microsoft
+  js: '@langchain/azure-dynamic-sessions'
+  downloads: 7285
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-sqlserver
+  path: libs/sqlserver
+  repo: langchain-ai/langchain-azure
+  provider_page: microsoft
+  downloads: 1489
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-cerebras
+  path: libs/cerebras
+  repo: langchain-ai/langchain-cerebras
+  downloads: 9426
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-snowflake
+  path: libs/snowflake
+  repo: langchain-ai/langchain-snowflake
+  downloads: 2374
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-databricks
+  path: libs/databricks
+  repo: langchain-ai/langchain-databricks
+  downloads: 35495
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-couchbase
+  path: libs/partners/couchbase
+  repo: langchain-ai/langchain
+  downloads: 347
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-ollama
+  path: libs/partners/ollama
+  repo: langchain-ai/langchain
+  js: '@langchain/ollama'
+  downloads: 310741
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-box
+  path: libs/box
+  repo: langchain-ai/langchain-box
+  downloads: 2749
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-tests
+  path: libs/standard-tests
+  repo: langchain-ai/langchain
+  downloads: 3691
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-neo4j
+  path: libs/neo4j
+  repo: langchain-ai/langchain-neo4j
+  downloads: 8871
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-linkup
+  path: .
+  repo: LinkupPlatform/langchain-linkup
+  downloads: 818
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-yt-dlp
+  path: .
+  repo: aqib0770/langchain-yt-dlp
+  downloads: 776
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-oceanbase
+  path: .
+  repo: oceanbase/langchain-oceanbase
+  downloads: 322
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-predictionguard
+  path: .
+  repo: predictionguard/langchain-predictionguard
+  downloads: 156
+  downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+- name: langchain-cratedb
+  path: .
+  repo: crate/langchain-cratedb
+  downloads: 362
+  downloads_updated_at: '2024-12-23T20:53:27.001852+00:00'
