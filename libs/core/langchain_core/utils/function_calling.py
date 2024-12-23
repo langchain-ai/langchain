@@ -75,6 +75,35 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     return new_kv
 
 
+def _convert_pydantic_to_openai_function(
+    model: type,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    rm_titles: bool = True,
+) -> FunctionDescription:
+    """Converts a Pydantic model to a function description for the OpenAI API."""
+    if hasattr(model, "model_json_schema"):
+        schema = model.model_json_schema()  # Pydantic 2
+    elif hasattr(model, "schema"):
+        schema = model.schema()  # Pydantic 1
+    else:
+        msg = "Model must be a Pydantic model."
+        raise TypeError(msg)
+    schema = dereference_refs(schema)
+    if "definitions" in schema:  # pydantic 1
+        schema.pop("definitions", None)
+    if "$defs" in schema:  # pydantic 2
+        schema.pop("$defs", None)
+    title = schema.pop("title", "")
+    default_description = schema.pop("description", "")
+    return {
+        "name": name or title,
+        "description": description or default_description,
+        "parameters": _rm_titles(schema) if rm_titles else schema,
+    }
+
+
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
@@ -100,25 +129,9 @@ def convert_pydantic_to_openai_function(
     Returns:
         The function description.
     """
-    if hasattr(model, "model_json_schema"):
-        schema = model.model_json_schema()  # Pydantic 2
-    elif hasattr(model, "schema"):
-        schema = model.schema()  # Pydantic 1
-    else:
-        msg = "Model must be a Pydantic model."
-        raise TypeError(msg)
-    schema = dereference_refs(schema)
-    if "definitions" in schema:  # pydantic 1
-        schema.pop("definitions", None)
-    if "$defs" in schema:  # pydantic 2
-        schema.pop("$defs", None)
-    title = schema.pop("title", "")
-    default_description = schema.pop("description", "")
-    return {
-        "name": name or title,
-        "description": description or default_description,
-        "parameters": _rm_titles(schema) if rm_titles else schema,
-    }
+    return _convert_pydantic_to_openai_function(
+        model, name=name, description=description, rm_titles=rm_titles
+    )
 
 
 @deprecated(
@@ -144,7 +157,7 @@ def convert_pydantic_to_openai_tool(
     Returns:
         The tool description.
     """
-    function = convert_pydantic_to_openai_function(
+    function = _convert_pydantic_to_openai_function(
         model, name=name, description=description
     )
     return {"type": "function", "function": function}
@@ -186,7 +199,7 @@ def convert_python_function_to_openai_function(
         error_on_invalid_docstring=False,
         include_injected=False,
     )
-    return convert_pydantic_to_openai_function(
+    return _convert_pydantic_to_openai_function(
         model,
         name=func_name,
         description=model.__doc__,
@@ -201,7 +214,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
         type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
-    return convert_pydantic_to_openai_function(model)  # type: ignore
+    return _convert_pydantic_to_openai_function(model)  # type: ignore
 
 
 _MAX_TYPED_DICT_RECURSION = 25
@@ -290,7 +303,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
     is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
-        return convert_pydantic_to_openai_function(
+        return _convert_pydantic_to_openai_function(
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
     else:
@@ -408,7 +421,7 @@ def convert_to_openai_function(
         if function_copy and "properties" in function_copy:
             oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(dict, convert_pydantic_to_openai_function(function))
+        oai_function = cast(dict, _convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
             dict, _convert_typed_dict_to_openai_function(cast(type, function))
