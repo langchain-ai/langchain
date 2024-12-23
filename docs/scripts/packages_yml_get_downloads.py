@@ -23,8 +23,9 @@ with open(PACKAGE_YML) as f:
 def _reorder_keys(p):
     keys = p.keys()
     key_order = [
-        # "name",
+        "name",
         "name_title",
+        "path",
         "repo",
         "type",
         "provider_page",
@@ -35,8 +36,14 @@ def _reorder_keys(p):
     if set(keys) - set(key_order):
         raise ValueError(f"Unexpected keys: {set(keys) - set(key_order)}")
     return CommentedMap((k, p[k]) for k in key_order if k in p)
-data["packages"] = [CommentedMap(p) for p in data["packages"]]
+
+data["packages"] = [_reorder_keys(p) for p in data["packages"]]
+
+seen = set()
 for p in data["packages"]:
+    if p["name"] in seen:
+        raise ValueError(f"Duplicate package: {p['name']}")
+    seen.add(p["name"])
     downloads_updated_at = datetime.fromisoformat(p["downloads_updated_at"])
 
     if downloads_updated_at > yesterday:
