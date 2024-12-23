@@ -53,6 +53,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.cohere_rag_retriever import (
         CohereRagRetriever,
     )
+    from langchain_community.retrievers.dappier import (
+        DappierRetriever,
+    )
     from langchain_community.retrievers.docarray import (
         DocArrayRetriever,
     )
@@ -159,6 +162,7 @@ _module_lookup = {
     "ChaindeskRetriever": "langchain_community.retrievers.chaindesk",
     "ChatGPTPluginRetriever": "langchain_community.retrievers.chatgpt_plugin_retriever",
     "CohereRagRetriever": "langchain_community.retrievers.cohere_rag_retriever",
+    "DappierRetriever": "langchain_community.retrievers.dappier",
     "DocArrayRetriever": "langchain_community.retrievers.docarray",
     "DriaRetriever": "langchain_community.retrievers.dria_index",
     "ElasticSearchBM25Retriever": "langchain_community.retrievers.elastic_search_bm25",
@@ -216,6 +220,7 @@ __all__ = [
     "ChaindeskRetriever",
     "ChatGPTPluginRetriever",
     "CohereRagRetriever",
+    "DappierRetriever",
     "DocArrayRetriever",
     "DriaRetriever",
     "ElasticSearchBM25Retriever",

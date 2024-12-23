@@ -12,6 +12,7 @@ EXPECTED_ALL = [
     "ChatGPTPluginRetriever",
     "ChaindeskRetriever",
     "CohereRagRetriever",
+    "DappierRetriever",
     "DriaRetriever",
     "ElasticSearchBM25Retriever",
     "EmbedchainRetriever",
