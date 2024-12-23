@@ -143,6 +143,9 @@ packages:
   - name: langchain-couchbase
     repo: langchain-ai/langchain
     path: libs/partners/couchbase
+  - name: langchain-cratedb
+    repo: crate/langchain-cratedb
+    path: .
   - name: langchain-ollama
     repo: langchain-ai/langchain
     path: libs/partners/ollama
