@@ -18,7 +18,7 @@ from typing import (
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import VectorStore, VST
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -210,8 +210,9 @@ class SupabaseVectorStore(VectorStore):
             vector, k=k, filter=filter, **kwargs
         )
 
+    @staticmethod
     def match_args(
-        self, query: List[float], filter: Optional[Dict[str, Any]]
+        query: List[float], filter: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
         ret: Dict[str, Any] = dict(query_embedding=query)
         if filter:
@@ -226,7 +227,7 @@ class SupabaseVectorStore(VectorStore):
         postgrest_filter: Optional[str] = None,
         score_threshold: Optional[float] = None,
     ) -> List[Tuple[Document, float]]:
-        match_documents_params = self.match_args(query, filter)
+        match_documents_params = match_args(query, filter)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
         if postgrest_filter:
@@ -345,6 +346,46 @@ class SupabaseVectorStore(VectorStore):
             chunk = rows[i : i + chunk_size]
 
             result = client.from_(table_name).upsert(chunk).execute()  # type: ignore
+
+            if len(result.data) == 0:
+                raise Exception("Error inserting: No rows added")
+
+            # VectorStore.add_vectors returns ids as strings
+            ids = [str(i.get("id")) for i in result.data if i.get("id")]
+
+            id_list.extend(ids)
+
+        return id_list
+
+    # TODO extract common code
+    @staticmethod
+    async def _aadd_vectors(
+            client: supabase.client.AsyncClient,
+            table_name: str,
+            vectors: List[List[float]],
+            documents: List[Document],
+            ids: List[str],
+            chunk_size: int,
+            **kwargs: Any,
+    ) -> List[str]:
+        """Add vectors to Supabase table."""
+
+        rows: List[Dict[str, Any]] = [
+            {
+                "id": ids[idx],
+                "content": documents[idx].page_content,
+                "embedding": embedding,
+                "metadata": documents[idx].metadata,  # type: ignore
+                **kwargs,
+            }
+            for idx, embedding in enumerate(vectors)
+        ]
+        id_list: List[str] = []
+        for i in range(0, len(rows), chunk_size):
+            chunk = rows[i: i + chunk_size]
+
+            upsert_call = client.from_(table_name).upsert(chunk)
+            result = await upsert_call.execute()  # type: ignore
 
             if len(result.data) == 0:
                 raise Exception("Error inserting: No rows added")
@@ -481,3 +522,130 @@ class SupabaseVectorStore(VectorStore):
         # TODO: Check if this can be done in bulk
         for row in rows:
             self._client.from_(self.table_name).delete().eq("id", row["id"]).execute()
+
+
+class AsyncSupabaseVectorStore(VectorStore):
+    def __init__(
+        self,
+        client: supabase.client.AsyncClient,
+        embedding: Embeddings,
+        table_name: str,
+        chunk_size: int = 500,
+        query_name: Union[str, None] = None,
+    ) -> None:
+        """Initialize with supabase client."""
+        try:
+            import supabase  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "Could not import supabase python package. "
+                "Please install it with `pip install supabase`."
+            )
+
+        self._client = client
+        self._embedding: Embeddings = embedding
+        self.table_name = table_name or "documents"
+        self.query_name = query_name or "match_documents"
+        self.chunk_size = chunk_size or 500
+
+    @classmethod
+    def from_texts(cls: type[VST], texts: list[str], embedding: Embeddings, metadatas: Optional[list[dict]] = None, *,
+                   ids: Optional[list[str]] = None, **kwargs: Any) -> VST:
+        raise NotImplemented()
+
+
+    #TODO figure out, assert kwargs["ids"] precedence
+    async def aadd_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
+        if "ids" not in kwargs:
+            ids = [doc.id or str(uuid.uuid4()) for doc in documents]
+        else:
+            ids = kwargs["ids"]
+        vectors = await self._embedding.aembed_documents([doc.page_content for doc in documents])
+        return await SupabaseVectorStore._aadd_vectors(
+            self._client, self.table_name, vectors, documents, ids, self.chunk_size)
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        vector = await self._embedding.aembed_query(query)
+        return await self.similarity_search_by_vector(vector, k=k, filter=filter, **kwargs)
+
+    async def asimilarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        result = await self.asimilarity_search_by_vector_with_relevance_scores(
+            embedding, k=k, filter=filter, **kwargs
+        )
+
+        documents = [doc for doc, _ in result]
+
+        return documents
+
+    async def asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        vector = await self._embedding.embed_query(query)
+        return await self.asimilarity_search_by_vector_with_relevance_scores(
+            vector, k=k, filter=filter, **kwargs
+        )
+
+
+    async def asimilarity_search_by_vector_with_relevance_scores(
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
+        score_threshold: Optional[float] = None,
+    ) -> List[Tuple[Document, float]]:
+        match_documents_params = SupabaseVectorStore.match_args(query, filter)
+        query_builder = await self._client.rpc(self.query_name, match_documents_params)
+
+        if postgrest_filter:
+            query_builder.params = query_builder.params.set(
+                "and", f"({postgrest_filter})"
+            )
+
+        query_builder.params = query_builder.params.set("limit", k)
+
+        res = query_builder.execute()
+
+        match_result = [
+            (
+                Document(
+                    metadata=search.get("metadata", {}),  # type: ignore
+                    page_content=search.get("content", ""),
+                ),
+                search.get("similarity", 0.0),
+            )
+            for search in res.data
+            if search.get("content")
+        ]
+
+        if score_threshold is not None:
+            match_result = [
+                (doc, similarity)
+                for doc, similarity in match_result
+                if similarity >= score_threshold
+            ]
+            if len(match_result) == 0:
+                warnings.warn(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+
+        return match_result
+
+
