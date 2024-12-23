@@ -1,7 +1,10 @@
 import requests
 from pathlib import Path
-import yaml
+from ruamel.yaml import YAML
 from datetime import datetime, timezone, timedelta
+from ruamel.yaml.comments import CommentedMap
+
+yaml = YAML()
 
 PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
 
@@ -15,7 +18,24 @@ current_datetime = datetime.now(timezone.utc)
 yesterday = current_datetime - timedelta(days=1)
 
 with open(PACKAGE_YML) as f:
-    data = yaml.safe_load(f)
+    data = yaml.load(f)
+
+def _reorder_keys(p):
+    keys = p.keys()
+    key_order = [
+        # "name",
+        "name_title",
+        "repo",
+        "type",
+        "provider_page",
+        "js",
+        "downloads",
+        "downloads_updated_at",
+    ]
+    if set(keys) - set(key_order):
+        raise ValueError(f"Unexpected keys: {set(keys) - set(key_order)}")
+    return CommentedMap((k, p[k]) for k in key_order if k in p)
+data["packages"] = [CommentedMap(p) for p in data["packages"]]
 for p in data["packages"]:
     downloads_updated_at = datetime.fromisoformat(p["downloads_updated_at"])
 

@@ -11,6 +11,7 @@ import yaml
 
 # packages to ignore / exclude from the table
 IGNORE_PACKGAGES = {
+    # top-level packages
     "langchain-core",
     "langchain-text-splitters",
     "langchain",
@@ -18,61 +19,12 @@ IGNORE_PACKGAGES = {
     "langchain-experimental",
     "langchain-cli",
     "langchain-tests",
-}
 
-# list of js packages to look up corresponding ones
-JS_PACKAGES = {
-    "google-gauth",
-    "openai",
-    "anthropic",
-    "google-genai",
-    "pinecone",
-    "aws",
-    "google-vertexai",
-    "qdrant",
-    "azure-dynamic-sessions",
-    "google-vertexai-web",
-    "redis",
-    "azure-openai",
-    "google-webauth",
-    "baidu-qianfan",
-    "groq",
-    "standard-tests",
-    "cloudflare",
-    "mistralai",
-    "textsplitters",
-    "cohere",
-    "mixedbread-ai",
-    "weaviate",
-    "mongodb",
-    "yandex",
-    "exa",
-    "nomic",
-    "google-common",
-    "ollama",
-    "ibm",
-}
-
-# custom names for packages
-CUSTOM_NAME = {
-    "google-genai": "Google Generative AI",
-    "aws": "AWS",
-    "ibm": "IBM",
-}
-
-# custom provider pages
-CUSTOM_PROVIDER_PAGES = {
-    "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",
-    "prompty": "/docs/integrations/providers/microsoft/",
-    "sqlserver": "/docs/integrations/providers/microsoft/",
-    "google-community": "/docs/integrations/providers/google/",
-    "google-genai": "/docs/integrations/providers/google/",
-    "google-vertexai": "/docs/integrations/providers/google/",
-    "nvidia-ai-endpoints": "/docs/integrations/providers/nvidia/",
-    "exa": "/docs/integrations/providers/exa_search/",
-    "mongodb": "/docs/integrations/providers/mongodb_atlas/",
-    "sema4": "/docs/integrations/providers/robocorp/",
-    "postgres": "/docs/integrations/providers/pgvector/",
+    # integration packages that don't have a provider index
+    # do NOT add to these. These were merged before having a
+    # provider index was required
+    # can remove these once they have a provider index
+    "langchain-yt-dlp",
 }
 
 #####################
@@ -101,7 +53,7 @@ def _enrich_package(p: dict) -> dict | None:
     p["name_short"] = (
         p["name"][10:] if p["name"].startswith("langchain-") else p["name"]
     )
-    p["name_title"] = CUSTOM_NAME.get(p["name_short"]) or p[
+    p["name_title"] = p.get("name_title") or p[
         "name_short"
     ].title().replace("-", " ").replace("db", "DB").replace("Db", "DB").replace(
         "ai", "AI"
@@ -111,8 +63,8 @@ def _enrich_package(p: dict) -> dict | None:
     if p["type"] == "ignore":
         return None
 
-    p["js_exists"] = p["name_short"] in JS_PACKAGES
-    custom_provider_page = CUSTOM_PROVIDER_PAGES.get(p["name_short"])
+    p["js_exists"] = bool(p.get("js"))
+    custom_provider_page = p.get("provider_page")
     default_provider_page = f"/docs/integrations/providers/{p['name_short']}/"
     default_provider_page_exists = bool(
         glob.glob(str(DOCS_DIR / f"docs/integrations/providers/{p['name_short']}.*"))
@@ -137,7 +89,7 @@ packages_n = [_enrich_package(p) for p in data["packages"]]
 packages = [p for p in packages_n if p is not None]
 
 # sort by downloads
-packages_sorted = [t[1] for t in sorted((p["downloads"], p) for p in packages)]
+packages_sorted = sorted(packages, key=lambda p: p["downloads"], reverse=True)
 
 
 def package_row(p: dict) -> str:
