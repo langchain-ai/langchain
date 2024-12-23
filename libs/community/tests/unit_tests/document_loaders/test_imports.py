@@ -43,6 +43,7 @@ EXPECTED_ALL = [
     "CassandraLoader",
     "CSVLoader",
     "ChatGPTLoader",
+    "CloudBlobLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
@@ -199,6 +200,7 @@ EXPECTED_ALL = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
+    "ZeroxPDFLoader",
 ]
 
 
