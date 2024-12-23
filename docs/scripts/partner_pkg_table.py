@@ -19,7 +19,6 @@ IGNORE_PACKGAGES = {
     "langchain-experimental",
     "langchain-cli",
     "langchain-tests",
-
     # integration packages that don't have a provider index
     # do NOT add to these. These were merged before having a
     # provider index was required
@@ -53,11 +52,9 @@ def _enrich_package(p: dict) -> dict | None:
     p["name_short"] = (
         p["name"][10:] if p["name"].startswith("langchain-") else p["name"]
     )
-    p["name_title"] = p.get("name_title") or p[
-        "name_short"
-    ].title().replace("-", " ").replace("db", "DB").replace("Db", "DB").replace(
-        "ai", "AI"
-    ).replace("Ai", "AI")
+    p["name_title"] = p.get("name_title") or p["name_short"].title().replace(
+        "-", " "
+    ).replace("db", "DB").replace("Db", "DB").replace("ai", "AI").replace("Ai", "AI")
     p["type"] = _get_type(p)
 
     if p["type"] == "ignore":

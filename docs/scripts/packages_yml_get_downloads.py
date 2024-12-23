@@ -1,12 +1,14 @@
-import requests
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import requests
 from ruamel.yaml import YAML
-from datetime import datetime, timezone, timedelta
 from ruamel.yaml.comments import CommentedMap
 
 yaml = YAML()
 
 PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
+
 
 def _get_downloads(p: dict) -> int:
     url = f"https://pypistats.org/api/packages/{p['name']}/recent?period=month"
@@ -14,11 +16,13 @@ def _get_downloads(p: dict) -> int:
     r.raise_for_status()
     return r.json()["data"]["last_month"]
 
+
 current_datetime = datetime.now(timezone.utc)
 yesterday = current_datetime - timedelta(days=1)
 
 with open(PACKAGE_YML) as f:
     data = yaml.load(f)
+
 
 def _reorder_keys(p):
     keys = p.keys()
@@ -37,6 +41,7 @@ def _reorder_keys(p):
         raise ValueError(f"Unexpected keys: {set(keys) - set(key_order)}")
     return CommentedMap((k, p[k]) for k in key_order if k in p)
 
+
 data["packages"] = [_reorder_keys(p) for p in data["packages"]]
 
 seen = set()
@@ -51,7 +56,7 @@ for p in data["packages"]:
         continue
 
     p["downloads"] = _get_downloads(p)
-    p['downloads_updated_at'] = current_datetime.isoformat()
+    p["downloads_updated_at"] = current_datetime.isoformat()
     with open(PACKAGE_YML, "w") as f:
         yaml.dump(data, f)
     print(f"{p['name']}: {p['downloads']}")
