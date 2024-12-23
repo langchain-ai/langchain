@@ -168,6 +168,28 @@ def _get_python_function_name(function: Callable) -> str:
     return function.__name__
 
 
+def _convert_python_function_to_openai_function(
+    function: Callable,
+) -> FunctionDescription:
+    """Convert a Python function to an OpenAI function-calling API compatible dict."""
+    from langchain_core.tools.base import create_schema_from_function
+
+    func_name = _get_python_function_name(function)
+    model = create_schema_from_function(
+        func_name,
+        function,
+        filter_args=(),
+        parse_docstring=True,
+        error_on_invalid_docstring=False,
+        include_injected=False,
+    )
+    return _convert_pydantic_to_openai_function(
+        model,
+        name=func_name,
+        description=model.__doc__,
+    )
+
+
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
@@ -188,22 +210,7 @@ def convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
-    from langchain_core.tools.base import create_schema_from_function
-
-    func_name = _get_python_function_name(function)
-    model = create_schema_from_function(
-        func_name,
-        function,
-        filter_args=(),
-        parse_docstring=True,
-        error_on_invalid_docstring=False,
-        include_injected=False,
-    )
-    return _convert_pydantic_to_openai_function(
-        model,
-        name=func_name,
-        description=model.__doc__,
-    )
+    return _convert_python_function_to_openai_function(function)
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
@@ -285,20 +292,8 @@ def _convert_any_typed_dicts_to_pydantic(
         return type_
 
 
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)
-def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
-    """Format tool into the OpenAI function API.
-
-    Args:
-        tool: The tool to format.
-
-    Returns:
-        The function description.
-    """
+def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
+    """Format tool into the OpenAI function API."""
     from langchain_core.tools import simple
 
     is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
@@ -327,6 +322,23 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 @deprecated(
     "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="1.0",
+)
+def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
+    """Format tool into the OpenAI function API.
+
+    Args:
+        tool: The tool to format.
+
+    Returns:
+        The function description.
+    """
+    return _format_tool_to_openai_function(tool)
+
+
+@deprecated(
+    "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
     removal="1.0",
 )
@@ -339,7 +351,7 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     Returns:
         The tool description.
     """
-    function = format_tool_to_openai_function(tool)
+    function = _format_tool_to_openai_function(tool)
     return {"type": "function", "function": function}
 
 
@@ -427,9 +439,9 @@ def convert_to_openai_function(
             dict, _convert_typed_dict_to_openai_function(cast(type, function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(dict, format_tool_to_openai_function(function))
+        oai_function = cast(dict, _format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(dict, convert_python_function_to_openai_function(function))
+        oai_function = cast(dict, _convert_python_function_to_openai_function(function))
     else:
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
