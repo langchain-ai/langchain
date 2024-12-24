@@ -147,13 +147,13 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.39.0"
+version = "0.40.0"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "anthropic-0.39.0-py3-none-any.whl", hash = "sha256:ea17093ae0ce0e1768b0c46501d6086b5bcd74ff39d68cd2d6396374e9de7c09"},
-    {file = "anthropic-0.39.0.tar.gz", hash = "sha256:94671cc80765f9ce693f76d63a97ee9bef4c2d6063c044e983d21a2e262f63ba"},
+    {file = "anthropic-0.40.0-py3-none-any.whl", hash = "sha256:442028ae8790ff9e3b6f8912043918755af1230d193904ae2ef78cc22995280c"},
+    {file = "anthropic-0.40.0.tar.gz", hash = "sha256:3efeca6d9e97813f93ed34322c6c7ea2279bf0824cd0aa71b59ce222665e2b87"},
 ]
 
 [package.dependencies]
@@ -1928,6 +1928,27 @@ files = [
 ]
 
 [[package]]
+name = "html5lib"
+version = "1.1"
+description = "HTML parser based on the WHATWG HTML specification"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
+    {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
+]
+
+[package.dependencies]
+six = ">=1.9"
+webencodings = "*"
+
+[package.extras]
+all = ["chardet (>=2.2)", "genshi", "lxml"]
+chardet = ["chardet (>=2.2)"]
+genshi = ["genshi"]
+lxml = ["lxml"]
+
+[[package]]
 name = "httpcore"
 version = "1.0.7"
 description = "A minimal low-level HTTP client."
@@ -2794,7 +2815,7 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "langchain"
-version = "0.3.7"
+version = "0.3.11"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2804,12 +2825,12 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.24"
 langchain-text-splitters = "^0.3.0"
-langsmith = "^0.1.17"
+langsmith = ">=0.1.17,<0.3"
 numpy = [
     {version = ">=1.22.4,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.2,<2", markers = "python_version >= \"3.12\""},
+    {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
 ]
 pydantic = "^2.7.4"
 PyYAML = ">=5.3"
@@ -2877,8 +2898,8 @@ develop = true
 chromadb = ">=0.4.0,<0.6.0,!=0.5.4,!=0.5.5,!=0.5.7,!=0.5.9,!=0.5.10,!=0.5.11,!=0.5.12"
 langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14"
 numpy = [
-    {version = ">=1,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.22.4,<2.0.0", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.2,<2.0.0", markers = "python_version >= \"3.12\""},
 ]
 
 [package.source]
@@ -2887,7 +2908,7 @@ url = "libs/partners/chroma"
 
 [[package]]
 name = "langchain-community"
-version = "0.3.7"
+version = "0.3.11"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2898,12 +2919,12 @@ develop = true
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
 httpx-sse = "^0.4.0"
-langchain = "^0.3.7"
-langchain-core = "^0.3.17"
-langsmith = "^0.1.125"
+langchain = "^0.3.11"
+langchain-core = "^0.3.24"
+langsmith = ">=0.1.125,<0.3"
 numpy = [
     {version = ">=1.22.4,<2", markers = "python_version < \"3.12\""},
-    {version = ">=1.26.2,<2", markers = "python_version >= \"3.12\""},
+    {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
 ]
 pydantic-settings = "^2.4.0"
 PyYAML = ">=5.3"
@@ -2917,7 +2938,7 @@ url = "libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.19"
+version = "0.3.25"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -2926,7 +2947,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.125"
+langsmith = ">=0.1.125,<0.3"
 packaging = ">=23.2,<25"
 pydantic = [
     {version = ">=2.5.2,<3.0.0", markers = "python_full_version < \"3.12.4\""},
@@ -3027,7 +3048,7 @@ url = "libs/partners/groq"
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.1"
+version = "0.2.3"
 description = "An integration package connecting Mistral and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3037,7 +3058,7 @@ develop = true
 [package.dependencies]
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.21"
 pydantic = ">=2,<3"
 tokenizers = ">=0.15.1,<1"
 
@@ -3047,7 +3068,7 @@ url = "libs/partners/mistralai"
 
 [[package]]
 name = "langchain-openai"
-version = "0.2.9"
+version = "0.2.12"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -3055,8 +3076,8 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.17"
-openai = "^1.54.0"
+langchain-core = "^0.3.21"
+openai = "^1.55.3"
 tiktoken = ">=0.7,<1"
 
 [package.source]
@@ -3156,7 +3177,7 @@ langgraph-sdk = "^0.1.32"
 type = "git"
 url = "https://github.com/langchain-ai/langgraph.git"
 reference = "HEAD"
-resolved_reference = "e3e63c70c93d127b632b67538c76d0e4d6b400cf"
+resolved_reference = "7090d7e9a89f62be7c4bc188667436f3baa3ed3b"
 subdirectory = "libs/langgraph"
 
 [[package]]
@@ -4150,13 +4171,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.54.5"
+version = "1.57.4"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.54.5-py3-none-any.whl", hash = "sha256:f55a4450f38501814b53e76311ed7845a6f7f35bab46d0fb2a3728035d7a72d8"},
-    {file = "openai-1.54.5.tar.gz", hash = "sha256:2aab4f9755a3e1e04d8a45ac1f4ce7b6948bab76646020c6386256d7e5cbb7e0"},
+    {file = "openai-1.57.4-py3-none-any.whl", hash = "sha256:7def1ab2d52f196357ce31b9cfcf4181529ce00838286426bb35be81c035dafb"},
+    {file = "openai-1.57.4.tar.gz", hash = "sha256:a8f071a3e9198e2818f63aade68e759417b9f62c0971bdb83de82504b70b77f7"},
 ]
 
 [package.dependencies]
@@ -6647,13 +6668,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.15.14"
+version = "0.16.11"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.15.14-py3-none-any.whl", hash = "sha256:502903cbcc60844c82f5351a0bc2e77f00f16a144cb884ac44d2f175470a1df8"},
-    {file = "unstructured-0.15.14.tar.gz", hash = "sha256:876546c308c257314865996ce15745139c9fd4f79c7b4f09ad9d719d466b5b55"},
+    {file = "unstructured-0.16.11-py3-none-any.whl", hash = "sha256:a92d5bc2c2b7bb23369641fb7a7f0daba1775639199306ce4cd83ca564a03763"},
+    {file = "unstructured-0.16.11.tar.gz", hash = "sha256:33ebf68aae11ce33c8a96335296557b5abd8ba96eaba3e5a1554c0b9eee40bb5"},
 ]
 
 [package.dependencies]
@@ -6663,6 +6684,7 @@ chardet = "*"
 dataclasses-json = "*"
 emoji = "*"
 filetype = "*"
+html5lib = "*"
 langdetect = "*"
 lxml = "*"
 markdown = {version = "*", optional = true, markers = "extra == \"md\""}
@@ -6674,76 +6696,30 @@ python-magic = "*"
 python-oxmsg = "*"
 rapidfuzz = "*"
 requests = "*"
-tabulate = "*"
 tqdm = "*"
 typing-extensions = "*"
 unstructured-client = "*"
 wrapt = "*"
 
 [package.extras]
-airtable = ["pyairtable"]
-all-docs = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
-astradb = ["astrapy"]
-azure = ["adlfs", "fsspec"]
-azure-cognitive-search = ["azure-search-documents"]
-bedrock = ["boto3", "langchain-community"]
-biomed = ["bs4"]
-box = ["boxfs", "fsspec"]
-chroma = ["chromadb (>0.4.14)", "importlib-metadata (>=8.2.0)", "tenacity (==8.5.0)", "typer (<=0.9.0)"]
-clarifai = ["clarifai"]
-confluence = ["atlassian-python-api"]
+all-docs = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
 csv = ["pandas"]
-databricks-volumes = ["databricks-sdk"]
-delta-table = ["deltalake (<=0.19.1)", "fsspec"]
-discord = ["discord-py"]
 doc = ["python-docx (>=1.1.2)"]
 docx = ["python-docx (>=1.1.2)"]
-dropbox = ["dropboxdrivefs", "fsspec"]
-elasticsearch = ["elasticsearch[async]"]
-embed-huggingface = ["langchain-huggingface"]
-embed-mixedbreadai = ["mixedbread-ai"]
-embed-octoai = ["openai", "tiktoken"]
-embed-vertexai = ["langchain", "langchain-community", "langchain-google-vertexai"]
-embed-voyageai = ["langchain", "langchain-voyageai"]
 epub = ["pypandoc"]
-gcs = ["bs4", "fsspec", "gcsfs"]
-github = ["pygithub (>1.58.0)"]
-gitlab = ["python-gitlab"]
-google-drive = ["google-api-python-client"]
-hubspot = ["hubspot-api-client", "urllib3"]
 huggingface = ["langdetect", "sacremoses", "sentencepiece", "torch", "transformers"]
-image = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)"]
-jira = ["atlassian-python-api"]
-kafka = ["confluent-kafka"]
-local-inference = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
+image = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)"]
+local-inference = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
 md = ["markdown"]
-mongodb = ["pymongo"]
-notion = ["htmlBuilder", "notion-client"]
 odt = ["pypandoc", "python-docx (>=1.1.2)"]
-onedrive = ["Office365-REST-Python-Client", "bs4", "msal"]
-openai = ["langchain-openai"]
-opensearch = ["opensearch-py"]
 org = ["pypandoc"]
-outlook = ["Office365-REST-Python-Client", "msal"]
 paddleocr = ["paddlepaddle (==3.0.0b1)", "unstructured.paddleocr (==2.8.1.0)"]
-pdf = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)"]
-pinecone = ["pinecone-client (>=3.7.1)"]
-postgres = ["psycopg2-binary"]
+pdf = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)"]
 ppt = ["python-pptx (>=1.0.1)"]
 pptx = ["python-pptx (>=1.0.1)"]
-qdrant = ["qdrant-client"]
-reddit = ["praw"]
 rst = ["pypandoc"]
 rtf = ["pypandoc"]
-s3 = ["fsspec", "s3fs"]
-salesforce = ["simple-salesforce"]
-sftp = ["fsspec", "paramiko"]
-sharepoint = ["Office365-REST-Python-Client", "msal"]
-singlestore = ["singlestoredb"]
-slack = ["slack-sdk"]
 tsv = ["pandas"]
-weaviate = ["weaviate-client"]
-wikipedia = ["wikipedia"]
 xlsx = ["networkx", "openpyxl", "pandas", "xlrd"]
 
 [[package]]
@@ -7387,4 +7363,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "cb6b45ac7f487c6510a0eeef80c6cfd4b163f671eedb42d9ebf5315f42fa1ab1"
+content-hash = "138c279994b75a02c377fd5fde3808770c9ae6259c59728b9986480d93790aa1"

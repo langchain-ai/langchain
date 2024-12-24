@@ -77,7 +77,7 @@ The central concept to understand is that LangChain provides a standardized inte
 The `.bind_tools()` method can be used to specify which tools are available for a model to call. 
 
 ```python
-model_with_tools = model.bind_tools([tools_list])
+model_with_tools = model.bind_tools(tools_list)
 ```
 
 As a specific example, let's take a function `multiply` and bind it as a tool to a model that supports tool calling.

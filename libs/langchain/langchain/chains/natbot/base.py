@@ -6,7 +6,9 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache as BaseCache
 from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.callbacks import Callbacks as Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import Runnable
@@ -156,3 +158,6 @@ class NatBotChain(Chain):
     @property
     def _chain_type(self) -> str:
         return "nat_bot_chain"
+
+
+NatBotChain.model_rebuild()

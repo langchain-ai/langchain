@@ -36,6 +36,11 @@ def test_openai_model_param() -> None:
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
+    llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    llm = ChatOpenAI(max_completion_tokens=10)
+    assert llm.max_tokens == 10
+
 
 def test_openai_o1_temperature() -> None:
     llm = ChatOpenAI(model="o1-preview")
@@ -91,6 +96,16 @@ def test__convert_dict_to_message_system() -> None:
     message = {"role": "system", "content": "foo"}
     result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_developer() -> None:
+    message = {"role": "developer", "content": "foo"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(
+        content="foo", additional_kwargs={"__openai_role__": "developer"}
+    )
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
 
@@ -168,7 +183,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                     "Function GenerateUsername arguments:\n\noops\n\nare not "
                     "valid JSON. Received JSONDecodeError Expecting value: line 1 "
                     "column 1 (char 0)\nFor troubleshooting, visit: https://python"
-                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE"
+                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE "
                 ),
                 type="invalid_tool_call",
             )
@@ -845,3 +860,31 @@ def test_nested_structured_output_strict() -> None:
         self_evaluation: SelfEvaluation
 
     llm.with_structured_output(JokeWithEvaluation, method="json_schema")
+
+
+def test__get_request_payload() -> None:
+    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    messages: list = [
+        SystemMessage("hello"),
+        SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
+        {"role": "human", "content": "how are you"},
+    ]
+    expected = {
+        "messages": [
+            {"role": "system", "content": "hello"},
+            {"role": "developer", "content": "bye"},
+            {"role": "user", "content": "how are you"},
+        ],
+        "model": "gpt-4o-2024-08-06",
+        "stream": False,
+        "n": 1,
+        "temperature": 0.7,
+    }
+    payload = llm._get_request_payload(messages)
+    assert payload == expected
+
+
+def test_init_o1() -> None:
+    with pytest.warns(None) as record:  # type: ignore[call-overload]
+        ChatOpenAI(model="o1", reasoning_effort="medium")
+    assert len(record) == 0
