@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-ark"
-version = "0.1.3"
+version = "0.1.5"
 description = ""
 authors = ["zbmain <zbmaincn@gmail.com>"]
 readme = "README.md"
