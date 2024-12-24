@@ -103,5 +103,5 @@ def create_retriever_tool(
         func=func,
         coroutine=afunc,
         args_schema=RetrieverInput,
-        response_format=response_format
+        response_format=response_format,
     )
