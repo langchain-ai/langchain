@@ -21,9 +21,9 @@ load_dotenv(override=True)
 def test_invoke() -> None:
     """Test Chat wrapper."""
     chat = ChatArk(
-        model=os.environ["ARK_MODEL_ENDPOINT_ID"],
+        model=os.environ["ARK_CHAT_MODEL"],
         temperature=0.1,
-    )
+    )  # type: ignore[call-arg]
     message = HumanMessage(content="Hello, Doubao")
     response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
