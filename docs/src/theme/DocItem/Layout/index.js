@@ -60,6 +60,7 @@ export default function DocItemLayout({children}) {
               flexDirection: "column",
               alignItems: "flex-end",
               float: "right",
+              marginLeft: 12,
             }}>
               {linkColab && (<a target="_blank" href={linkColab}>
                 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
