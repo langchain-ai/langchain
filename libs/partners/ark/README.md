@@ -15,7 +15,8 @@ pip install langchain-ark
 Request an API key and set it as an environment variable
 ```
 export ARK_API_KEY=...
-export ARK_MODEL_ENDPOINT_ID=ep-...
+export ARK_CHAT_MODEL=ep-...
+export ARK_EMBEDDING_MODEL=ep-...
 ```
 
 ChatModel Example:
@@ -26,7 +27,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 prompt_template = PromptTemplate.from_template("Hello {role}")
-llm = ChatArk(model=os.environ["ARK_MODEL_ENDPOINT_ID"])
+llm = ChatArk(model=os.environ["ARK_CHAT_MODEL"])
 parser = StrOutputParser()
 chain = prompt_template | llm | parser
 print(chain.invoke({"role": "Doubao"}))

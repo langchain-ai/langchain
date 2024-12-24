@@ -7,11 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-langchain-core = "^0.3.17"
-volcengine-python-sdk = {extras = ["ark"], version = "^1.0.109"}
 python-dotenv = "^1.0.1"
 numpy = "^2.1.3"
-
+langchain-core = "^0.3.17"
+volcengine-python-sdk = {extras = ["ark"], version = "^1.0.109"}
 
 [build-system]
 requires = ["poetry-core"]
@@ -19,7 +18,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 disallow_untyped_defs = "False"
-
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
