@@ -1,8 +1,10 @@
 import os
-from typing import Any, Dict, List
+import logging
+import warnings
 
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, Field
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field
 
 
 class ArkEmbeddings(BaseModel, Embeddings):
@@ -11,7 +13,6 @@ class ArkEmbeddings(BaseModel, Embeddings):
     Example:
 
     """
-
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
     query_encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
@@ -27,11 +28,9 @@ class ArkEmbeddings(BaseModel, Embeddings):
             ) from exc
 
         self._client = Ark(api_key=os.environ.get("ARK_API_KEY"))
-        self._model = os.environ.get("ARK_EMBEDDING_ENDPOINT_ID")
+        self._model = os.environ.get("ARK_EMBEDDING_MODEL")
 
-    def _embed(
-        self, texts: list[str], encode_kwargs: Dict[str, Any]
-    ) -> List[List[float]]:
+    def _embed(self, texts: list[str], encode_kwargs: Dict[str, Any]) -> List[List[float]]:
         texts = list(map(lambda x: x.replace("\n", " "), texts))
 
         resp = self._client.embeddings.create(

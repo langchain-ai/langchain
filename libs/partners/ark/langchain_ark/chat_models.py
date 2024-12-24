@@ -105,7 +105,7 @@ class ChatArk(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of ark model to use. "model_endpoint_id".
+            Name of ark model to use. "chat_model_endpoint".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
@@ -136,7 +136,7 @@ class ChatArk(BaseChatModel):
             from langchain_ark import ChatArk
 
             llm = ChatArk(
-                model="model_endpoint_id",
+                model="chat_model_endpoint",
                 temperature=0.0,
                 max_retries=2,
                 # other params...
@@ -159,7 +159,7 @@ class ChatArk(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    stop: Optional[Union[List[str], str]] = Field(alias="stop_sequences", default=None)
+    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -257,11 +257,14 @@ class ChatArk(BaseChatModel):
         }
 
         try:
-            from volcenginesdkarkruntime import Ark, AsyncArk
+            from volcenginesdkarkruntime import Ark
+            from volcenginesdkarkruntime import AsyncArk
 
             sync_specific: Dict[str, Any] = {"http_client": self.http_client}
             if not self.client:
-                self.client = Ark(**client_params, **sync_specific).chat.completions
+                self.client = Ark(
+                    **client_params, **sync_specific
+                ).chat.completions
             if not self.async_client:
                 async_specific: Dict[str, Any] = {"http_client": self.http_async_client}
                 self.async_client = AsyncArk(
@@ -295,7 +298,7 @@ class ChatArk(BaseChatModel):
         return "ark-chat"
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+            self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -312,11 +315,11 @@ class ChatArk(BaseChatModel):
         return ls_params
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._stream(
@@ -332,11 +335,11 @@ class ChatArk(BaseChatModel):
         return self._create_chat_result(response)
 
     async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
             stream_iter = self._astream(
@@ -353,11 +356,11 @@ class ChatArk(BaseChatModel):
         return self._create_chat_result(response)
 
     def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
 
@@ -389,11 +392,11 @@ class ChatArk(BaseChatModel):
             yield generation_chunk
 
     async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
 
@@ -401,7 +404,7 @@ class ChatArk(BaseChatModel):
 
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
+                messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -479,7 +482,7 @@ class ChatArk(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+            self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
@@ -514,12 +517,12 @@ class ChatArk(BaseChatModel):
         removal="0.3.0",
     )
     def bind_functions(
-        self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]
-        ] = None,
-        **kwargs: Any,
+            self,
+            functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+            function_call: Optional[
+                Union[_FunctionCall, str, Literal["auto", "none"]]
+            ] = None,
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
 
@@ -546,7 +549,7 @@ class ChatArk(BaseChatModel):
             function_call = (
                 {"name": function_call}
                 if isinstance(function_call, str)
-                and function_call not in ("auto", "none")
+                   and function_call not in ("auto", "none")
                 else function_call
             )
             if isinstance(function_call, dict) and len(formatted_functions) != 1:
@@ -555,8 +558,8 @@ class ChatArk(BaseChatModel):
                     "function."
                 )
             if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
+                    isinstance(function_call, dict)
+                    and formatted_functions[0]["name"] != function_call["name"]
             ):
                 raise ValueError(
                     f"Function call {function_call} was specified, but the only "
@@ -569,13 +572,13 @@ class ChatArk(BaseChatModel):
         )
 
     def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "any", "none"], bool]
-        ] = None,
-        **kwargs: Any,
+            self,
+            tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+            *,
+            tool_choice: Optional[
+                Union[dict, str, Literal["auto", "any", "none"], bool]
+            ] = None,
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
 
@@ -598,7 +601,7 @@ class ChatArk(BaseChatModel):
             if tool_choice == "any":
                 tool_choice = "required"
             if isinstance(tool_choice, str) and (
-                tool_choice not in ("auto", "none", "required")
+                    tool_choice not in ("auto", "none", "required")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
             if isinstance(tool_choice, bool):
@@ -617,12 +620,12 @@ class ChatArk(BaseChatModel):
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
-        self,
-        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
-        *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
-        include_raw: bool = False,
-        **kwargs: Any,
+            self,
+            schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+            *,
+            method: Literal["function_calling", "json_mode"] = "function_calling",
+            include_raw: bool = False,
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
@@ -692,7 +695,7 @@ class ChatArk(BaseChatModel):
                     )
 
 
-                llm = ChatArk(model="model-endpoint-id", temperature=0)
+                llm = ChatArk(model="model-endpoint", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -718,7 +721,7 @@ class ChatArk(BaseChatModel):
                     justification: str
 
 
-                llm = ChatArk(model="model-endpoint-id", temperature=0)
+                llm = ChatArk(model="model-endpoint", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -751,7 +754,7 @@ class ChatArk(BaseChatModel):
                     ]
 
 
-                llm = ChatArk(model="model-endpoint-id", temperature=0)
+                llm = ChatArk(model="model-endpoint", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -780,7 +783,7 @@ class ChatArk(BaseChatModel):
                    }
                }
 
-                llm = ChatArk(model="model-endpoint-id", temperature=0)
+                llm = ChatArk(model="chat-model-endpoint", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
 
                 structured_llm.invoke(
@@ -801,7 +804,7 @@ class ChatArk(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatArk(model="model-endpoint-id", temperature=0)
+                llm = ChatArk(model="chat-model-endpoint", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -918,11 +921,11 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 message_dict["content"] = None
         if message.tool_calls or message.invalid_tool_calls:
             message_dict["tool_calls"] = [
-                _lc_tool_call_to_ark_tool_call(tc) for tc in message.tool_calls
-            ] + [
-                _lc_invalid_tool_call_to_ark_tool_call(tc)
-                for tc in message.invalid_tool_calls
-            ]
+                                             _lc_tool_call_to_ark_tool_call(tc) for tc in message.tool_calls
+                                         ] + [
+                                             _lc_invalid_tool_call_to_ark_tool_call(tc)
+                                             for tc in message.invalid_tool_calls
+                                         ]
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             # If tool calls only, content is None not empty string
@@ -950,7 +953,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def _convert_chunk_to_message_chunk(
-    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+        chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     choice = chunk["choices"][0]
     _dict = choice["delta"]
@@ -1060,7 +1063,7 @@ def _lc_tool_call_to_ark_tool_call(tool_call: ToolCall) -> dict:
 
 
 def _lc_invalid_tool_call_to_ark_tool_call(
-    invalid_tool_call: InvalidToolCall,
+        invalid_tool_call: InvalidToolCall,
 ) -> dict:
     return {
         "type": "function",

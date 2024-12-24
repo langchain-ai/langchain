@@ -1,90 +1,22 @@
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.poetry]
 name = "langchain-ark"
-version = "0.1.4"
-description = "An integration package connecting Volcengine ARK and LangChain"
-authors = []
+version = "0.1.3"
+description = ""
+authors = ["zbmain <zbmaincn@gmail.com>"]
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
-
-[tool.mypy]
-disallow_untyped_defs = "True"
-
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ark"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
 langchain-core = "^0.3.17"
 volcengine-python-sdk = {extras = ["ark"], version = "^1.0.109"}
+python-dotenv = "^1.0.1"
 numpy = "^2.1.3"
 
-[tool.ruff.lint]
-select = ["E", "F", "I", "W"]
-
-[tool.coverage.run]
-omit = ["tests/*"]
-
-[tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --durations=5"
-markers = [
-    "compile: mark placeholder test used to compile integration tests without running them",
-    "scheduled: mark tests to run in scheduled testing",
-]
-asyncio_mode = "auto"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.test_integration]
-optional = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
-pytest-mock = "^3.10.0"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-python-dotenv = "^1.0.1"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
 
 
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-tests]
-path = "../../standard-tests"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
