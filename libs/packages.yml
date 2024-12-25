@@ -167,3 +167,6 @@ packages:
   - name: langchain-predictionguard
     repo: predictionguard/langchain-predictionguard
     path: .
+  - name: langchain-falkordb
+    repo: kingtroga/langchain-falkordb
+    path: .
