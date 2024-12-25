@@ -210,17 +210,18 @@ class ToolCall(TypedDict):
 
 
 def tool_call(*, name: str, args: dict[str, Any], id: Optional[str]) -> ToolCall:
-    if isinstance(args, str):
-        try:
-            # Extract JSON-like dictionary from string using regex
-            match = re.search(r'\{.*\}', args)
-            if match:
+    try:
+        return ToolCall(name=name, args=args, id=id, type="tool_call")
+    except:
+        # Attempt to extract JSON-like dictionary from string using regex
+        match = re.search(r'\{.*\}', args)
+        if match:
+            try:
                 args = json.loads(match.group())
-            else:
-                raise ValueError("No valid JSON object found in args string")
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON string for args")
-    return ToolCall(name=name, args=args, id=id, type="tool_call")
+            except json.JSONDecodeError:
+                pass
+        return ToolCall(name=name, args=args, id=id, type="tool_call")
+    
 
 
 class ToolCallChunk(TypedDict):
