@@ -7,7 +7,6 @@ from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.utils._merge import merge_dicts, merge_obj
-import re
 
 
 class ToolOutputMixin:
@@ -210,6 +209,7 @@ class ToolCall(TypedDict):
 
 
 def tool_call(*, name: str, args: dict[str, Any], id: Optional[str]) -> ToolCall:
+    import re
     if isinstance(args, str):
         try:
             # Extract JSON-like dictionary from string using regex
