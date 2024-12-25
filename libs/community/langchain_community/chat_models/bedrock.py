@@ -266,7 +266,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
             delta = chunk.text
             cg_chunk =  ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
-                run_manager.on_llm_new_token(delta, chunk = cg_chunk )
+                run_manager.on_llm_new_token(delta, chunk=cg_chunk )
             yield cg_chunk
 
     def _generate(
