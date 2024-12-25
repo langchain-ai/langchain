@@ -534,8 +534,6 @@ class Runnable(Generic[Input, Output], ABC):
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
-        from langchain_core.runnables.graph import Graph
-
         graph = Graph()
         try:
             input_node = graph.add_node(self.get_input_schema(config))
