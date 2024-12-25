@@ -2,110 +2,106 @@ import glob
 import sys
 from pathlib import Path
 
+import requests
 import yaml
+
+#################
+# CONFIGURATION #
+#################
+
+# packages to ignore / exclude from the table
+IGNORE_PACKGAGES = {
+    # top-level packages
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain",
+    "langchain-community",
+    "langchain-experimental",
+    "langchain-cli",
+    "langchain-tests",
+    # integration packages that don't have a provider index
+    # do NOT add to these. These were merged before having a
+    # provider index was required
+    # can remove these once they have a provider index
+    "langchain-yt-dlp",
+}
+
+#####################
+# END CONFIGURATION #
+#####################
 
 DOCS_DIR = Path(__file__).parents[1]
 PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
-IGNORE_PACKGAGES = {"langchain-experimental"}
 
 # for now, only include packages that are in the langchain-ai org
 # because we don't have a policy for inclusion in this table yet,
 # and including all packages will make the list too long
+
+
+def _get_type(package: dict) -> str:
+    if package["name"] in IGNORE_PACKGAGES:
+        return "ignore"
+    if package["repo"] == "langchain-ai/langchain":
+        return "B"
+    if package["repo"].startswith("langchain-ai/"):
+        return "C"
+    return "D"
+
+
+def _enrich_package(p: dict) -> dict | None:
+    p["name_short"] = (
+        p["name"][10:] if p["name"].startswith("langchain-") else p["name"]
+    )
+    p["name_title"] = p.get("name_title") or p["name_short"].title().replace(
+        "-", " "
+    ).replace("db", "DB").replace("Db", "DB").replace("ai", "AI").replace("Ai", "AI")
+    p["type"] = _get_type(p)
+
+    if p["type"] == "ignore":
+        return None
+
+    p["js_exists"] = bool(p.get("js"))
+    custom_provider_page = p.get("provider_page")
+    default_provider_page = f"/docs/integrations/providers/{p['name_short']}/"
+    default_provider_page_exists = bool(
+        glob.glob(str(DOCS_DIR / f"docs/integrations/providers/{p['name_short']}.*"))
+    )
+    p["provider_page"] = custom_provider_page or (
+        default_provider_page if default_provider_page_exists else None
+    )
+    if p["provider_page"] is None:
+        msg = (
+            f"Provider page not found for {p['name_short']}. "
+            f"Please add one at docs/integrations/providers/{p['name_short']}.{{mdx,ipynb}}"
+        )
+        raise ValueError(msg)
+
+    return p
+
+
 with open(PACKAGE_YML) as f:
     data = yaml.safe_load(f)
-    EXTERNAL_PACKAGES = set(
-        p["name"][10:]
-        for p in data["packages"]
-        if p["repo"].startswith("langchain-ai/")
-        and p["repo"] != "langchain-ai/langchain"
-        and p["name"] not in IGNORE_PACKGAGES
-    )
-    IN_REPO_PACKAGES = set(
-        p["name"][10:]
-        for p in data["packages"]
-        if p["repo"] == "langchain-ai/langchain"
-        and p["path"].startswith("libs/partners")
-        and p["name"] not in IGNORE_PACKGAGES
-    )
 
-JS_PACKAGES = {
-    "google-gauth",
-    "openai",
-    "anthropic",
-    "google-genai",
-    "pinecone",
-    "aws",
-    "google-vertexai",
-    "qdrant",
-    "azure-dynamic-sessions",
-    "google-vertexai-web",
-    "redis",
-    "azure-openai",
-    "google-webauth",
-    "baidu-qianfan",
-    "groq",
-    "standard-tests",
-    "cloudflare",
-    "mistralai",
-    "textsplitters",
-    "cohere",
-    "mixedbread-ai",
-    "weaviate",
-    "mongodb",
-    "yandex",
-    "exa",
-    "nomic",
-    "google-common",
-    "ollama",
-    "ibm",
-}
+packages_n = [_enrich_package(p) for p in data["packages"]]
+packages = [p for p in packages_n if p is not None]
 
-ALL_PACKAGES = IN_REPO_PACKAGES.union(EXTERNAL_PACKAGES)
-
-CUSTOM_NAME = {
-    "google-genai": "Google Generative AI",
-    "aws": "AWS",
-    "ibm": "IBM",
-}
-CUSTOM_PROVIDER_PAGES = {
-    "azure-dynamic-sessions": "/docs/integrations/providers/microsoft/",
-    "prompty": "/docs/integrations/providers/microsoft/",
-    "sqlserver": "/docs/integrations/providers/microsoft/",
-    "google-community": "/docs/integrations/providers/google/",
-    "google-genai": "/docs/integrations/providers/google/",
-    "google-vertexai": "/docs/integrations/providers/google/",
-    "nvidia-ai-endpoints": "/docs/integrations/providers/nvidia/",
-    "exa": "/docs/integrations/providers/exa_search/",
-    "mongodb": "/docs/integrations/providers/mongodb_atlas/",
-    "sema4": "/docs/integrations/providers/robocorp/",
-    "postgres": "/docs/integrations/providers/pgvector/",
-}
-PROVIDER_PAGES = {
-    name: f"/docs/integrations/providers/{name}/"
-    for name in ALL_PACKAGES
-    if glob.glob(str(DOCS_DIR / f"docs/integrations/providers/{name}.*"))
-}
-PROVIDER_PAGES = {
-    **PROVIDER_PAGES,
-    **CUSTOM_PROVIDER_PAGES,
-}
+# sort by downloads
+packages_sorted = sorted(packages, key=lambda p: p["downloads"], reverse=True)
 
 
-def package_row(name: str) -> str:
-    js = "✅" if name in JS_PACKAGES else "❌"
-    link = PROVIDER_PAGES.get(name)
-    title = CUSTOM_NAME.get(name) or name.title().replace("-", " ").replace(
-        "db", "DB"
-    ).replace("Db", "DB").replace("ai", "AI").replace("Ai", "AI")
+def package_row(p: dict) -> str:
+    js = "✅" if p["js_exists"] else "❌"
+    link = p["provider_page"]
+    title = p["name_title"]
     provider = f"[{title}]({link})" if link else title
-    return f"| {provider} | [langchain-{name}](https://python.langchain.com/api_reference/{name.replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-{name}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-{name}?style=flat-square&label=%20&color=orange) | {js} |"
+    return f"| {provider} | [{p['name']}](https://python.langchain.com/api_reference/{p['name_short'].replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/{p['name']}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/{p['name']}?style=flat-square&label=%20&color=orange) | {js} |"
 
 
 def table() -> str:
     header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/providers/) |
 | :--- | :---: | :---: | :---: | :---: |
 """
-    return header + "\n".join(package_row(name) for name in sorted(ALL_PACKAGES))
+    return header + "\n".join(package_row(p) for p in packages_sorted)
 
 
 def doc() -> str:
