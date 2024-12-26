@@ -122,6 +122,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.modelscope_endpoint import (
+        ModelscopeChatEndpoint,
+    )
     from langchain_community.chat_models.moonshot import (
         MoonshotChat,
     )
@@ -251,6 +254,7 @@ __all__ = [
     "JinaChat",
     "LlamaEdgeChatService",
     "MiniMaxChat",
+    "ModelscopeChatEndpoint",
     "MoonshotChat",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
@@ -316,6 +320,7 @@ _module_lookup = {
     "JinaChat": "langchain_community.chat_models.jinachat",
     "LlamaEdgeChatService": "langchain_community.chat_models.llama_edge",
     "MiniMaxChat": "langchain_community.chat_models.minimax",
+    "ModelscopeChatEndpoint": "langchain_community.chat_models.modelscope_endpoint",
     "MoonshotChat": "langchain_community.chat_models.moonshot",
     "PaiEasChatEndpoint": "langchain_community.chat_models.pai_eas_endpoint",
     "PromptLayerChatOpenAI": "langchain_community.chat_models.promptlayer_openai",
