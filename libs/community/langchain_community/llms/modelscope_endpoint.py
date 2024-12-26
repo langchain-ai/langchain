@@ -105,7 +105,7 @@ class ModelScopeClient(BaseModel):
 class ModelScopeCommon(BaseModel):
     """Common parameters for Modelscope LLMs."""
 
-    client: Any
+    client: Any = Field(default=None)
     base_url: str = MODELSCOPE_SERVICE_URL_BASE
     modelscope_sdk_token: Optional[SecretStr] = Field(default=None, alias="api_key")
     model_name: str = Field(default="Qwen/Qwen2.5-Coder-32B-Instruct", alias="model")

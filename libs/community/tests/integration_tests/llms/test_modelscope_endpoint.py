@@ -7,14 +7,14 @@ from langchain_community.llms.modelscope_endpoint import ModelScopeEndpoint
 
 def test_modelscope_call() -> None:
     """Test valid call to Modelscope."""
-    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")
+    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")  # type: ignore
     output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
 def test_modelscope_streaming() -> None:
     """Test streaming call to Modelscope."""
-    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")
+    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")  # type: ignore
     generator = llm.stream("write a quick sort in python")
     stream_results_string = ""
     assert isinstance(generator, Iterator)
@@ -26,13 +26,13 @@ def test_modelscope_streaming() -> None:
 
 
 async def test_modelscope_call_async() -> None:
-    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")
+    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")  # type: ignore
     output = await llm.ainvoke("write a quick sort in python")
     assert isinstance(output, str)
 
 
 async def test_modelscope_streaming_async() -> None:
-    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")
+    llm = ModelScopeEndpoint(model="Qwen/Qwen2.5-Coder-32B-Instruct")  # type: ignore
     generator = llm.astream("write a quick sort in python")
     stream_results_string = ""
     assert isinstance(generator, AsyncIterator)
