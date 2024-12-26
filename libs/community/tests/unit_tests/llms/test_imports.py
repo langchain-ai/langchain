@@ -54,6 +54,7 @@ EXPECT_ALL = [
     "MlflowAIGateway",
     "MLXPipeline",
     "Modal",
+    "ModelScopeEndpoint",
     "MosaicML",
     "Nebula",
     "OCIModelDeploymentLLM",

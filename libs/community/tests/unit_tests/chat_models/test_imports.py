@@ -57,6 +57,7 @@ EXPECTED_ALL = [
     "LlamaEdgeChatService",
     "MiniMaxChat",
     "MoonshotChat",
+    "ModelScopeChatEndpoint",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
     "SolarChat",
