@@ -24,6 +24,7 @@ EXPECTED_ALL = [
     "ErnieBotChat",
     "ChatJavelinAIGateway",
     "ChatKonko",
+    "ModelScopeChatEndpoint",
     "PaiEasChatEndpoint",
     "QianfanChatEndpoint",
     "ChatFireworks",

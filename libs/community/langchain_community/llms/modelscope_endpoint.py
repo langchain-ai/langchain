@@ -150,7 +150,7 @@ class ModelScopeCommon(BaseModel):
         """
         return values
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["modelscope_sdk_token"] = convert_to_secret_str(
@@ -161,8 +161,8 @@ class ModelScopeCommon(BaseModel):
 
         values["client"] = ModelScopeClient(
             api_key=values["modelscope_sdk_token"],
-            base_url=values["base_url"],
-            timeout=values["timeout"],
+            base_url=values["base_url"] if "base_url" in values else MODELSCOPE_SERVICE_URL_BASE,
+            timeout=values["timeout"] if "timeout" in values else 60,
         )
         return values
 

@@ -43,6 +43,7 @@ EXPECT_ALL = [
     "ManifestWrapper",
     "Minimax",
     "MlflowAIGateway",
+    "ModelScopeEndpoint",
     "Modal",
     "MosaicML",
     "Nebula",

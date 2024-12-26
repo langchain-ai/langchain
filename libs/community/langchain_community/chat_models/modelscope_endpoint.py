@@ -4,8 +4,7 @@ from typing import Dict
 
 from langchain_core.utils import (
     convert_to_secret_str,
-    get_from_dict_or_env,
-    pre_init,
+    get_from_dict_or_env
 )
 
 from langchain_community.chat_models import ChatOpenAI
@@ -13,6 +12,7 @@ from langchain_community.llms.modelscope_endpoint import (
     MODELSCOPE_SERVICE_URL_BASE,
     ModelScopeCommon,
 )
+from pydantic import model_validator
 
 
 class ModelScopeChatEndpoint(ModelScopeCommon, ChatOpenAI):  # type: ignore[misc, override, override]
@@ -60,8 +60,8 @@ class ModelScopeChatEndpoint(ModelScopeCommon, ChatOpenAI):  # type: ignore[misc
         .. code-block:: python
 
             messages = [
-                ("system", "你擅长编程"),
-                ("human", "写一个快速排序的代码"),
+                ("system", "You are a helpful assistant."),
+                ("human", "Write a quick sort code."),
             ]
             chat.invoke(messages)
 
@@ -91,7 +91,7 @@ class ModelScopeChatEndpoint(ModelScopeCommon, ChatOpenAI):  # type: ignore[misc
 
     """  # noqa: E501
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["modelscope_sdk_token"] = convert_to_secret_str(
