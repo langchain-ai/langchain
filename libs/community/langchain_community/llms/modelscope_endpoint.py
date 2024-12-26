@@ -35,7 +35,7 @@ def _convert_chunk_to_str(chunk: str) -> str:
     return text
 
 
-class ModelscopeClient(BaseModel):
+class ModelScopeClient(BaseModel):
     """An API client that talks to the Modelscope api inference server."""
 
     api_key: SecretStr
@@ -102,7 +102,7 @@ class ModelscopeClient(BaseModel):
                         yield text
 
 
-class ModelscopeCommon(BaseModel):
+class ModelScopeCommon(BaseModel):
     """Common parameters for Modelscope LLMs."""
 
     client: Any
@@ -159,7 +159,7 @@ class ModelscopeCommon(BaseModel):
             )
         )
 
-        values["client"] = ModelscopeClient(
+        values["client"] = ModelScopeClient(
             api_key=values["modelscope_sdk_token"],
             base_url=values["base_url"],
             timeout=values["timeout"],
@@ -167,7 +167,7 @@ class ModelscopeCommon(BaseModel):
         return values
 
 
-class ModelscopeEndpoint(ModelscopeCommon, LLM):
+class ModelScopeEndpoint(ModelScopeCommon, LLM):
     """Modelscope model inference API endpoint.
 
     To use, you should have a modelscope account and the environment variable ``MODELSCOPE_SDK_TOKEN`` set with your

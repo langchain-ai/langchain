@@ -11,11 +11,11 @@ from langchain_core.utils import (
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.modelscope_endpoint import (
     MODELSCOPE_SERVICE_URL_BASE,
-    ModelscopeCommon,
+    ModelScopeCommon,
 )
 
 
-class ModelscopeChatEndpoint(ModelscopeCommon, ChatOpenAI):  # type: ignore[misc, override, override]
+class ModelScopeChatEndpoint(ModelScopeCommon, ChatOpenAI):  # type: ignore[misc, override, override]
     """Modelscope chat model inference api integration. To use, must have a modelscope account and a modelscope sdk token.
     Refer to https://modelscope.cn/docs/model-service/API-Inference/intro for more details.
 

@@ -369,9 +369,9 @@ def _import_modal() -> Type[BaseLLM]:
 
 
 def _import_modelscope_endpoint() -> Type[BaseLLM]:
-    from langchain_community.llms.modelscope_endpoint import ModelscopeEndpoint
+    from langchain_community.llms.modelscope_endpoint import ModelScopeEndpoint
 
-    return ModelscopeEndpoint
+    return ModelScopeEndpoint
 
 
 def _import_mosaicml() -> Type[BaseLLM]:
@@ -791,7 +791,7 @@ def __getattr__(name: str) -> Any:
         return _import_mlx_pipeline()
     elif name == "Modal":
         return _import_modal()
-    elif name == "ModelscopeEndpoint":
+    elif name == "ModelScopeEndpoint":
         return _import_modelscope_endpoint()
     elif name == "MosaicML":
         return _import_mosaicml()
@@ -955,7 +955,7 @@ __all__ = [
     "MlflowAIGateway",
     "MLXPipeline",
     "Modal",
-    "ModelscopeEndpoint",
+    "ModelScopeEndpoint",
     "MosaicML",
     "NIBittensorLLM",
     "NLPCloud",
