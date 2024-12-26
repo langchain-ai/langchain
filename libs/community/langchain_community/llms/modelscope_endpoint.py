@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import LLM
 from langchain_core.outputs.generation import GenerationChunk
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -109,7 +109,8 @@ class ModelScopeCommon(BaseModel):
     base_url: str = MODELSCOPE_SERVICE_URL_BASE
     modelscope_sdk_token: Optional[SecretStr] = Field(default=None, alias="api_key")
     model_name: str = Field(default="Qwen/Qwen2.5-Coder-32B-Instruct", alias="model")
-    """Model name. Available models listed here: https://modelscope.cn/docs/model-service/API-Inference/intro """
+    """Model name. Available models listed here: 
+        https://modelscope.cn/docs/model-service/API-Inference/intro """
     max_tokens: int = 1024
     """Maximum number of tokens to generate."""
     temperature: float = 0.3
@@ -161,7 +162,9 @@ class ModelScopeCommon(BaseModel):
 
         values["client"] = ModelScopeClient(
             api_key=values["modelscope_sdk_token"],
-            base_url=values["base_url"] if "base_url" in values else MODELSCOPE_SERVICE_URL_BASE,
+            base_url=values["base_url"]
+            if "base_url" in values
+            else MODELSCOPE_SERVICE_URL_BASE,  # noqa: E501
             timeout=values["timeout"] if "timeout" in values else 60,
         )
         return values
@@ -191,7 +194,7 @@ class ModelScopeEndpoint(ModelScopeCommon, LLM):
             async for chunk in llm.astream("write a quick sort in python"):
                 print(chunk, end='', flush=True)
 
-    """
+    """  # noqa: E501
 
     model_config = ConfigDict(
         populate_by_name=True,

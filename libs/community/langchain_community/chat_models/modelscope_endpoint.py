@@ -2,17 +2,14 @@
 
 from typing import Dict
 
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env
-)
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import model_validator
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.modelscope_endpoint import (
     MODELSCOPE_SERVICE_URL_BASE,
     ModelScopeCommon,
 )
-from pydantic import model_validator
 
 
 class ModelScopeChatEndpoint(ModelScopeCommon, ChatOpenAI):  # type: ignore[misc, override, override]
