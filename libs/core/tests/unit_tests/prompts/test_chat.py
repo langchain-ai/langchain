@@ -227,7 +227,7 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
         "System: Here's some context: context\n"
         "Human: Hello foo, I'm bar. Thanks for the context\n"
         "AI: I'm an AI. I'm foo. I'm bar.\n"
-        "test: I'm a generic message. I'm foo. I'm bar.",
+        "test: I'm a generic message. I'm foo. I'm bar.\n"
         "Developer: I'm a developer. I'm foo. I'm bar."
     )
     assert string == expected
