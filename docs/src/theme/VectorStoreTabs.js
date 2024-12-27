@@ -56,7 +56,7 @@ export default function VectorStoreTabs(props) {
         {
             value: "PGVector",
             label: "PGVector",
-            text: `from langchain_postgres import PGVector\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = PGVector(\n    embedding=embeddings,\n    collection_name="my_docs",\n    connection="postgresql+psycopg://...",\n)`,
+            text: `from langchain_postgres import PGVector\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = PGVector(\n    embeddings=embeddings,\n    collection_name="my_docs",\n    connection="postgresql+psycopg://...",\n)`,
             packageName: "langchain-postgres",
             default: false,
         },

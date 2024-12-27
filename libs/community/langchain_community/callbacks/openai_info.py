@@ -41,6 +41,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4o-2024-08-06": 0.0025,
     "gpt-4o-2024-08-06-cached": 0.00125,
     "gpt-4o-2024-11-20": 0.0025,
+    "gpt-4o-2024-11-20-cached": 0.00125,
     # GPT-4o output
     "gpt-4o-completion": 0.01,
     "gpt-4o-2024-05-13-completion": 0.015,
