@@ -32,6 +32,7 @@ from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.developer import DeveloperMessage, DeveloperMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -67,9 +68,11 @@ AnyMessage = Annotated[
         Annotated[ChatMessage, Tag(tag="chat")],
         Annotated[SystemMessage, Tag(tag="system")],
         Annotated[FunctionMessage, Tag(tag="function")],
+        Annotated[DeveloperMessage, Tag(tag="DeveloperMessage")],
         Annotated[ToolMessage, Tag(tag="tool")],
         Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
         Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
+        Annotated[DeveloperMessageChunk, Tag(tag="DeveloperMessageChunk")],
         Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
         Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
         Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
@@ -122,6 +125,8 @@ def get_buffer_string(
             role = "Tool"
         elif isinstance(m, ChatMessage):
             role = m.role
+        elif isinstance(m, DeveloperMessage):
+            role = "Developer"
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)
@@ -149,6 +154,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return ToolMessage(**message["data"])
     elif _type == "remove":
         return RemoveMessage(**message["data"])
+    elif _type == "developer":
+        return DeveloperMessage(**message["data"])
     elif _type == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
     elif _type == "HumanMessageChunk":
@@ -161,6 +168,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return SystemMessageChunk(**message["data"])
     elif _type == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
+    elif _type == "DeveloperMessageChunk":
+        return DeveloperMessageChunk(**message["data"])
     else:
         msg = f"Got unexpected message type: {_type}"
         raise ValueError(msg)
