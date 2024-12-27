@@ -30,6 +30,7 @@ from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
     ChatMessage,
+    DeveloperMessage,
     HumanMessage,
     SystemMessage,
     convert_to_messages,
@@ -724,6 +725,12 @@ class AIMessagePromptTemplate(_StringImageMessagePromptTemplate):
         return ["langchain", "prompts", "chat"]
 
 
+class DeveloperMessagePromptTemplate(_StringImageMessagePromptTemplate):
+    """Developer message prompt template. This is a message sent from the developer."""
+
+    _msg_class: type[BaseMessage] = DeveloperMessage
+
+
 class SystemMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """System message prompt template.
     This is a message that is not sent to the user.
@@ -1388,6 +1395,10 @@ def _create_template_from_message_type(
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(
             cast(str, template), template_format=template_format
+        )
+    elif message_type == "developer":
+        message: BaseMessagePromptTemplate = DeveloperMessagePromptTemplate.from_template(
+            template, template_format=template_format
         )
     elif message_type == "placeholder":
         if isinstance(template, str):
