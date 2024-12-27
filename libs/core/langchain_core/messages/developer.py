@@ -25,6 +25,7 @@ class DeveloperMessage(BaseMessage):
             ]
 
     """
+
     type: Literal["developer"] = "developer"
 
     @classmethod
@@ -52,6 +53,7 @@ class DeveloperMessageChunk(DeveloperMessage, BaseMessageChunk):
     processing or transmission of these messages in parts.
 
     """
+
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
