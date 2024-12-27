@@ -27,6 +27,7 @@ from langchain_core.prompts.chat import (
     ChatMessage,
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
+    DeveloperMessagePromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
@@ -58,6 +59,12 @@ def messages() -> list[BaseMessagePromptTemplate]:
             input_variables=["foo", "bar"],
         )
     )
+    developer_message_prompt = DeveloperMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="I'm a developer. I'm {foo}. I'm {bar}.",
+            input_variables=["foo", "bar"],
+        )
+    )
     chat_message_prompt = ChatMessagePromptTemplate(
         role="test",
         prompt=PromptTemplate(
@@ -70,6 +77,7 @@ def messages() -> list[BaseMessagePromptTemplate]:
         human_message_prompt,
         ai_message_prompt,
         chat_message_prompt,
+        developer_message_prompt,
     ]
 
 
@@ -201,11 +209,12 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
     prompt = chat_prompt_template.format_prompt(foo="foo", bar="bar", context="context")
     assert isinstance(prompt, ChatPromptValue)
     messages = prompt.to_messages()
-    assert len(messages) == 4
+    assert len(messages) == 5
     assert messages[0].content == "Here's some context: context"
     assert messages[1].content == "Hello foo, I'm bar. Thanks for the context"
     assert messages[2].content == "I'm an AI. I'm foo. I'm bar."
     assert messages[3].content == "I'm a generic message. I'm foo. I'm bar."
+    assert messages[4].content == "I'm a developer. I'm {foo}. I'm {bar}."
 
     async_prompt = await chat_prompt_template.aformat_prompt(
         foo="foo", bar="bar", context="context"
@@ -218,7 +227,8 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
         "System: Here's some context: context\n"
         "Human: Hello foo, I'm bar. Thanks for the context\n"
         "AI: I'm an AI. I'm foo. I'm bar.\n"
-        "test: I'm a generic message. I'm foo. I'm bar."
+        "test: I'm a generic message. I'm foo. I'm bar.",
+        "Developer: I'm a generic message. I'm foo. I'm bar."
     )
     assert string == expected
 
@@ -237,7 +247,7 @@ def test_chat_prompt_template_from_messages(
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
     )
-    assert len(chat_prompt_template.messages) == 4
+    assert len(chat_prompt_template.messages) == 5
 
 
 async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
@@ -380,7 +390,7 @@ def test_chat_prompt_template_with_messages(
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
     )
-    assert len(chat_prompt_template.messages) == 5
+    assert len(chat_prompt_template.messages) == 6
     prompt_value = chat_prompt_template.format_prompt(
         context="see", foo="this", bar="magic"
     )
