@@ -1173,7 +1173,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
+        ] = "json_schema",
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
