@@ -27,6 +27,7 @@ from langchain_core.messages.base import (
     messages_to_dict,
 )
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.developer import DeveloperMessage, DeveloperMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -64,6 +65,8 @@ __all__ = [
     "FunctionMessageChunk",
     "HumanMessage",
     "HumanMessageChunk",
+    "DeveloperMessage",
+    "DeveloperMessageChunk",
     "InvalidToolCall",
     "MessageLikeRepresentation",
     "SystemMessage",
