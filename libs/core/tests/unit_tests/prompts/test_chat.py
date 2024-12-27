@@ -214,7 +214,7 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
     assert messages[1].content == "Hello foo, I'm bar. Thanks for the context"
     assert messages[2].content == "I'm an AI. I'm foo. I'm bar."
     assert messages[3].content == "I'm a generic message. I'm foo. I'm bar."
-    assert messages[4].content == "I'm a developer. I'm {foo}. I'm {bar}."
+    assert messages[4].content == "I'm a developer. I'm foo. I'm bar."
 
     async_prompt = await chat_prompt_template.aformat_prompt(
         foo="foo", bar="bar", context="context"
@@ -228,7 +228,7 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
         "Human: Hello foo, I'm bar. Thanks for the context\n"
         "AI: I'm an AI. I'm foo. I'm bar.\n"
         "test: I'm a generic message. I'm foo. I'm bar.",
-        "Developer: I'm a generic message. I'm foo. I'm bar."
+        "Developer: I'm a developer. I'm foo. I'm bar."
     )
     assert string == expected
 
