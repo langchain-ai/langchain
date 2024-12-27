@@ -1397,10 +1397,8 @@ def _create_template_from_message_type(
             cast(str, template), template_format=template_format
         )
     elif message_type == "developer":
-        message = (
-            DeveloperMessagePromptTemplate.from_template(
-                template, template_format=template_format
-            )
+        message = DeveloperMessagePromptTemplate.from_template(
+            template, template_format=template_format
         )
     elif message_type == "placeholder":
         if isinstance(template, str):
