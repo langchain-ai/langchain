@@ -1922,10 +1922,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             schema:
                 The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
                 - a JSON Schema,
                 - a TypedDict class,
-                - or a Pydantic class.
+                - or a Pydantic class,
+                - an OpenAI function/tool schema.
 
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -2034,9 +2034,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
 
                 llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification
-                )
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
