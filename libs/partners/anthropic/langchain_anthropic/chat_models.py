@@ -16,7 +16,6 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypedDict,
     Union,
     cast,
 )
@@ -72,7 +71,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -973,7 +972,7 @@ class ChatAnthropic(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[Dict, Type[BaseModel]],
+        schema: Union[Dict, type],
         *,
         include_raw: bool = False,
         **kwargs: Any,
