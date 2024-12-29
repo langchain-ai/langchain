@@ -1,8 +1,10 @@
 from pathlib import Path
 
 from langchain_community.document_loaders import MarkItDownLoader
+import pytest
 
 
+@pytest.mark.requires("markitdown")
 def test_markitdown_loader() -> None:
     """Test MarkItDown loader."""
     file_path = Path(__file__).parent.parent / "examples/example.html"
