@@ -28,6 +28,7 @@ from langchain_text_splitters.markdown import (
     MarkdownHeaderTextSplitter,
 )
 from langchain_text_splitters.python import PythonCodeTextSplitter
+from langchain_text_splitters.jsx import JSXTextSplitter
 
 FAKE_PYTHON_TEXT = """
 class Foo:
@@ -411,6 +412,48 @@ def test_python_text_splitter() -> None:
     split_3 = """def bar():"""
     expected_splits = [split_0, split_1, split_2, split_3]
     assert splits == expected_splits
+
+
+FAKE_JSX_TEXT = """
+import React from 'react';
+import OtherComponent from './OtherComponent';
+
+function MyComponent() {
+  const [count, setCount] = React.useState(0);
+
+  const handleClick = () => {
+    setCount(count + 1);
+  };
+
+  return (
+    <div>
+      <h1>Counter: {count}</h1>
+      <button onClick={handleClick}>
+        Increment
+      </button>
+      <OtherComponent />
+    </div>
+  );
+}
+
+export default MyComponent;
+"""
+def test_jsx_text_splitter() -> None:
+    splitter = JSXTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_JSX_TEXT)
+
+    expected_splits = [
+        "\nimport React from 'react';\nimport OtherComponent from './OtherComponent';\n",
+        '\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);',
+        '\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };',
+        'return (',
+        '<div>',
+        '<h1>Counter: {count}</h1>\n      ',
+        '<button onClick={handleClick}>\n        Increment\n      </button>\n      ',
+        '<OtherComponent />\n    </div>\n  );\n}\n',
+        'export default MyComponent;'
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
 
 
 CHUNK_SIZE = 16

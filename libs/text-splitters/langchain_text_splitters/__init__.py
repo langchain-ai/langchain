@@ -51,6 +51,7 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 from langchain_text_splitters.spacy import SpacyTextSplitter
+from langchain_text_splitters.jsx import JSXTextSplitter
 
 __all__ = [
     "TokenTextSplitter",
@@ -60,6 +61,7 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
     "LatexTextSplitter",
+    "JSXTextSplitter",
     "PythonCodeTextSplitter",
     "KonlpyTextSplitter",
     "SpacyTextSplitter",
