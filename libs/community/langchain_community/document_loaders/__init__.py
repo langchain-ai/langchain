@@ -278,6 +278,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.markdown import (
         UnstructuredMarkdownLoader,
     )
+    from langchain_community.document_loaders.markitdown import (
+        MarkItDownLoader,
+    )
     from langchain_community.document_loaders.mastodon import (
         MastodonTootsLoader,
     )
@@ -625,6 +628,7 @@ _module_lookup = {
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
     "MHTMLLoader": "langchain_community.document_loaders.mhtml",
     "MWDumpLoader": "langchain_community.document_loaders.mediawikidump",
+    "MarkItDownLoader": "langchain_community.document_loaders.markitdown",
     "MastodonTootsLoader": "langchain_community.document_loaders.mastodon",
     "MathpixPDFLoader": "langchain_community.document_loaders.pdf",
     "MaxComputeLoader": "langchain_community.document_loaders.max_compute",
@@ -829,6 +833,7 @@ __all__ = [
     "LakeFSLoader",
     "LarkSuiteDocLoader",
     "LLMSherpaFileLoader",
+    "MarkItDownLoader",
     "MastodonTootsLoader",
     "MHTMLLoader",
     "MWDumpLoader",
