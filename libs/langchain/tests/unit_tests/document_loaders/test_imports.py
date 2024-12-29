@@ -83,6 +83,7 @@ EXPECTED_ALL = [
     "LakeFSLoader",
     "MHTMLLoader",
     "MWDumpLoader",
+    "MarkItDownLoader",
     "MastodonTootsLoader",
     "MathpixPDFLoader",
     "MaxComputeLoader",
