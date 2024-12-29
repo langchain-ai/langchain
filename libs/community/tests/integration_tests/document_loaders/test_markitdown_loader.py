@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from langchain_community.document_loaders import MarkItDownLoader
 import pytest
+
+from langchain_community.document_loaders import MarkItDownLoader
 
 
 @pytest.mark.requires("markitdown")
