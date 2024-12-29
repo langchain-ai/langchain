@@ -1,7 +1,7 @@
 """Loader that uses MarkItDown to load files."""
 
 from collections.abc import Iterator
-from typing import Union
+from typing import Any, Dict, Union
 
 import requests
 from langchain_core.documents import Document
@@ -13,7 +13,9 @@ from langchain_community.document_loaders.base import BaseLoader
 class MarkItDownLoader(BaseLoader):
     """Loader using MarkItDown to load files."""
 
-    def __init__(self, source: Union[str, requests.Response], **markitdown_kwargs):
+    def __init__(
+        self, source: Union[str, requests.Response], **markitdown_kwargs: Dict[str, Any]
+    ):
         self.client = MarkItDown(**markitdown_kwargs)
         self.source = source
         super().__init__()
