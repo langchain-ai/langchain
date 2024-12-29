@@ -25,4 +25,6 @@ class MarkItDownLoader(BaseLoader):
         result = self.client.convert(self.source)
         page_content = result.__dict__.pop("text_content")
         metadata = result.__dict__
+        if "source" not in metadata:
+            metadata["source"] = self.source
         yield Document(page_content=page_content, metadata=metadata)
