@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
@@ -20,6 +21,15 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"  # noqa: E501
+    ),
+)
 class RefineDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by doing a first pass and then refining on more documents.
 
@@ -98,20 +108,23 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_return_intermediate_steps(cls, values: Dict) -> Any:
         """For backwards compatibility."""
         if "return_refine_steps" in values:
             values["return_intermediate_steps"] = values["return_refine_steps"]
             del values["return_refine_steps"]
         return values
 
-    @root_validator(pre=True)
-    def get_default_document_variable_name(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def get_default_document_variable_name(cls, values: Dict) -> Any:
         """Get default document variable name, if not provided."""
         if "initial_llm_chain" not in values:
             raise ValueError("initial_llm_chain must be provided")

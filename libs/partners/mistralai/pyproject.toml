@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.1.12"
+version = "0.2.4"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
@@ -19,11 +19,12 @@ disallow_untyped_defs = "True"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-mistralai%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.26"
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.27"
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"
+pydantic = ">=2,<3"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
@@ -33,7 +34,7 @@ omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]
@@ -54,6 +55,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
+pytest-watcher = "^0.3.4"
 
 [tool.poetry.group.test_integration.dependencies]
 
@@ -70,7 +72,7 @@ mypy = "^1.10"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../../standard-tests"
 develop = true
 

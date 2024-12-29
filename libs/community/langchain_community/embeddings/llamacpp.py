@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -18,8 +19,8 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             llama = LlamaCppEmbeddings(model_path="/path/to/model.bin")
     """
 
-    client: Any  #: :meta private:
-    model_path: str
+    client: Any = None  #: :meta private:
+    model_path: str = Field(default="")
 
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
@@ -57,13 +58,18 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     verbose: bool = Field(True, alias="verbose")
     """Print verbose output to stderr."""
 
-    class Config:
-        extra = "forbid"
+    device: Optional[str] = Field(None, alias="device")
+    """Device type to use and pass to the model"""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    model_config = ConfigDict(
+        extra="forbid",
+        protected_namespaces=(),
+    )
+
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that llama-cpp-python library is installed."""
-        model_path = values["model_path"]
+        model_path = self.model_path
         model_param_names = [
             "n_ctx",
             "n_parts",
@@ -75,29 +81,31 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             "n_threads",
             "n_batch",
             "verbose",
+            "device",
         ]
-        model_params = {k: values[k] for k in model_param_names}
+        model_params = {k: getattr(self, k) for k in model_param_names}
         # For backwards compatibility, only include if non-null.
-        if values["n_gpu_layers"] is not None:
-            model_params["n_gpu_layers"] = values["n_gpu_layers"]
+        if self.n_gpu_layers is not None:
+            model_params["n_gpu_layers"] = self.n_gpu_layers
 
-        try:
-            from llama_cpp import Llama
+        if not self.client:
+            try:
+                from llama_cpp import Llama
 
-            values["client"] = Llama(model_path, embedding=True, **model_params)
-        except ImportError:
-            raise ImportError(
-                "Could not import llama-cpp-python library. "
-                "Please install the llama-cpp-python library to "
-                "use this embedding model: pip install llama-cpp-python"
-            )
-        except Exception as e:
-            raise ValueError(
-                f"Could not load Llama model from path: {model_path}. "
-                f"Received error {e}"
-            )
+                self.client = Llama(model_path, embedding=True, **model_params)
+            except ImportError:
+                raise ImportError(
+                    "Could not import llama-cpp-python library. "
+                    "Please install the llama-cpp-python library to "
+                    "use this embedding model: pip install llama-cpp-python"
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Could not load Llama model from path: {model_path}. "
+                    f"Received error {e}"
+                )
 
-        return values
+        return self
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of documents using the Llama model.
@@ -108,8 +116,18 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = [self.client.embed(text) for text in texts]
-        return [list(map(float, e)) for e in embeddings]
+        embeddings = self.client.create_embedding(texts)
+        final_embeddings = []
+        for e in embeddings["data"]:
+            try:
+                if isinstance(e["embedding"][0], list):
+                    for data in e["embedding"]:
+                        final_embeddings.append(list(map(float, data)))
+                else:
+                    final_embeddings.append(list(map(float, e["embedding"])))
+            except (IndexError, TypeError):
+                final_embeddings.append(list(map(float, e["embedding"])))
+        return final_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the Llama model.
@@ -121,4 +139,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         embedding = self.client.embed(text)
-        return list(map(float, embedding))
+        if not isinstance(embedding, list):
+            return list(map(float, embedding))
+        else:
+            return list(map(float, embedding[0]))

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import re
 import uuid
 from operator import itemgetter
@@ -65,17 +66,19 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    root_validator,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -342,6 +345,8 @@ def _convert_message_to_mistral_chat_message(
             message_dict["content"] = ""
         else:
             message_dict["content"] = message.content
+        if "prefix" in message.additional_kwargs:
+            message_dict["prefix"] = message.additional_kwargs["prefix"]
         return message_dict
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)
@@ -350,6 +355,9 @@ def _convert_message_to_mistral_chat_message(
             "role": "tool",
             "content": message.content,
             "name": message.name,
+            "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
+                message.tool_call_id
+            ),
         }
     else:
         raise ValueError(f"Got unknown type {message}")
@@ -358,13 +366,20 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    # The type for client and async_client is ignored because the type is not
+    # an Optional after the model is initialized and the model_validator
+    # is run.
+    client: httpx.Client = Field(  # type: ignore # : meta private:
+        default=None, exclude=True
+    )
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
+        default=None, exclude=True
+    )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
-    endpoint: str = "https://api.mistral.ai/v1"
+    endpoint: Optional[str] = Field(default=None, alias="base_url")
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
@@ -375,14 +390,13 @@ class ChatMistralAI(BaseChatModel):
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
-    safe_mode: bool = False
+    safe_mode: Optional[bool] = None
     streaming: bool = False
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -468,40 +482,50 @@ class ChatMistralAI(BaseChatModel):
         combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
-        api_key_str = values["mistral_api_key"].get_secret_value()
+        if isinstance(self.mistral_api_key, SecretStr):
+            api_key_str: Optional[str] = self.mistral_api_key.get_secret_value()
+        else:
+            api_key_str = self.mistral_api_key
+
         # todo: handle retries
-        if not values.get("client"):
-            values["client"] = httpx.Client(
-                base_url=values["endpoint"],
+        base_url_str = (
+            self.endpoint
+            or os.environ.get("MISTRAL_BASE_URL")
+            or "https://api.mistral.ai/v1"
+        )
+        self.endpoint = base_url_str
+        if not self.client:
+            self.client = httpx.Client(
+                base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": f"Bearer {api_key_str}",
                 },
-                timeout=values["timeout"],
+                timeout=self.timeout,
             )
         # todo: handle retries and max_concurrency
-        if not values.get("async_client"):
-            values["async_client"] = httpx.AsyncClient(
-                base_url=values["endpoint"],
+        if not self.async_client:
+            self.async_client = httpx.AsyncClient(
+                base_url=base_url_str,
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": f"Bearer {api_key_str}",
                 },
-                timeout=values["timeout"],
+                timeout=self.timeout,
             )
 
-        if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
+        if self.temperature is not None and not 0 <= self.temperature <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
 
-        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+        if self.top_p is not None and not 0 <= self.top_p <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
-        return values
+        return self
 
     def _generate(
         self,
@@ -573,7 +597,7 @@ class ChatMistralAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -599,7 +623,7 @@ class ChatMistralAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -720,7 +744,7 @@ class ChatMistralAI(BaseChatModel):
                 from typing import Optional
 
                 from langchain_mistralai import ChatMistralAI
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
@@ -751,7 +775,7 @@ class ChatMistralAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_mistralai import ChatMistralAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
 
                 class AnswerWithJustification(BaseModel):
@@ -838,7 +862,7 @@ class ChatMistralAI(BaseChatModel):
             .. code-block::
 
                 from langchain_mistralai import ChatMistralAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str

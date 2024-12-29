@@ -122,6 +122,17 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.moonshot import (
+        MoonshotChat,
+    )
+    from langchain_community.chat_models.naver import (
+        ChatClovaX,
+    )
+    from langchain_community.chat_models.oci_data_science import (
+        ChatOCIModelDeployment,
+        ChatOCIModelDeploymentTGI,
+        ChatOCIModelDeploymentVLLM,
+    )
     from langchain_community.chat_models.oci_generative_ai import (
         ChatOCIGenAI,  # noqa: F401
     )
@@ -132,6 +143,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.openai import (
         ChatOpenAI,
     )
+    from langchain_community.chat_models.outlines import ChatOutlines
     from langchain_community.chat_models.pai_eas_endpoint import (
         PaiEasChatEndpoint,
     )
@@ -143,6 +155,13 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
+    )
+    from langchain_community.chat_models.reka import (
+        ChatReka,
+    )
+    from langchain_community.chat_models.sambanova import (
+        ChatSambaNovaCloud,
+        ChatSambaStudio,
     )
     from langchain_community.chat_models.snowflake import (
         ChatSnowflakeCortex,
@@ -181,6 +200,7 @@ __all__ = [
     "ChatAnthropic",
     "ChatAnyscale",
     "ChatBaichuan",
+    "ChatClovaX",
     "ChatCohere",
     "ChatCoze",
     "ChatOctoAI",
@@ -204,10 +224,17 @@ __all__ = [
     "ChatMlflow",
     "ChatNebula",
     "ChatOCIGenAI",
+    "ChatOCIModelDeployment",
+    "ChatOCIModelDeploymentVLLM",
+    "ChatOCIModelDeploymentTGI",
     "ChatOllama",
     "ChatOpenAI",
+    "ChatOutlines",
     "ChatPerplexity",
+    "ChatReka",
     "ChatPremAI",
+    "ChatSambaNovaCloud",
+    "ChatSambaStudio",
     "ChatSparkLLM",
     "ChatSnowflakeCortex",
     "ChatTongyi",
@@ -224,6 +251,7 @@ __all__ = [
     "JinaChat",
     "LlamaEdgeChatService",
     "MiniMaxChat",
+    "MoonshotChat",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
     "QianfanChatEndpoint",
@@ -239,6 +267,7 @@ _module_lookup = {
     "ChatAnthropic": "langchain_community.chat_models.anthropic",
     "ChatAnyscale": "langchain_community.chat_models.anyscale",
     "ChatBaichuan": "langchain_community.chat_models.baichuan",
+    "ChatClovaX": "langchain_community.chat_models.naver",
     "ChatCohere": "langchain_community.chat_models.cohere",
     "ChatCoze": "langchain_community.chat_models.coze",
     "ChatDatabricks": "langchain_community.chat_models.databricks",
@@ -262,9 +291,16 @@ _module_lookup = {
     "ChatNebula": "langchain_community.chat_models.symblai_nebula",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
     "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
+    "ChatOCIModelDeployment": "langchain_community.chat_models.oci_data_science",
+    "ChatOCIModelDeploymentVLLM": "langchain_community.chat_models.oci_data_science",
+    "ChatOCIModelDeploymentTGI": "langchain_community.chat_models.oci_data_science",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
+    "ChatOutlines": "langchain_community.chat_models.outlines",
+    "ChatReka": "langchain_community.chat_models.reka",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
+    "ChatSambaNovaCloud": "langchain_community.chat_models.sambanova",
+    "ChatSambaStudio": "langchain_community.chat_models.sambanova",
     "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
     "ChatSparkLLM": "langchain_community.chat_models.sparkllm",
     "ChatTongyi": "langchain_community.chat_models.tongyi",
@@ -280,6 +316,7 @@ _module_lookup = {
     "JinaChat": "langchain_community.chat_models.jinachat",
     "LlamaEdgeChatService": "langchain_community.chat_models.llama_edge",
     "MiniMaxChat": "langchain_community.chat_models.minimax",
+    "MoonshotChat": "langchain_community.chat_models.moonshot",
     "PaiEasChatEndpoint": "langchain_community.chat_models.pai_eas_endpoint",
     "PromptLayerChatOpenAI": "langchain_community.chat_models.promptlayer_openai",
     "SolarChat": "langchain_community.chat_models.solar",

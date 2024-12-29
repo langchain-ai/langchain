@@ -3,10 +3,11 @@
 import asyncio
 import logging
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Sequence, Union
 
 import aiohttp
 import requests
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -71,18 +72,14 @@ class WebBaseLoader(BaseLoader):
                 # bs_kwargs = None,
                 # session = None,
                 # show_progress = True,
+                # trust_env = False,
             )
 
     Lazy load:
         .. code-block:: python
 
             docs = []
-            docs_lazy = loader.lazy_load()
-
-            # async variant:
-            # docs_lazy = await loader.alazy_load()
-
-            for doc in docs_lazy:
+            for doc in loader.lazy_load():
                 docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
@@ -97,7 +94,9 @@ class WebBaseLoader(BaseLoader):
     Async load:
         .. code-block:: python
 
-            docs = await loader.aload()
+            docs = []
+            async for doc in loader.alazy_load():
+                docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
@@ -106,6 +105,37 @@ class WebBaseLoader(BaseLoader):
             ESPN - Serving Sports Fans. Anytime. Anywhere.
 
             {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
+
+    .. versionchanged:: 0.3.14
+
+        Deprecated ``aload`` (which was not async) and implemented a native async
+        ``alazy_load``. Expand below for more details.
+
+        .. dropdown:: How to update ``aload``
+
+            Instead of using ``aload``, you can use ``load`` for synchronous loading or
+            ``alazy_load`` for asynchronous lazy loading.
+
+            Example using ``load`` (synchronous):
+
+            .. code-block:: python
+
+                docs: List[Document] = loader.load()
+
+            Example using ``alazy_load`` (asynchronous):
+
+            .. code-block:: python
+
+                docs: List[Document] = []
+                async for doc in loader.alazy_load():
+                    docs.append(doc)
+
+            This is in preparation for accommodating an asynchronous ``aload`` in the
+            future:
+
+            .. code-block:: python
+
+                docs: List[Document] = await loader.aload()
 
     """  # noqa: E501
 
@@ -128,6 +158,7 @@ class WebBaseLoader(BaseLoader):
         session: Any = None,
         *,
         show_progress: bool = True,
+        trust_env: bool = False,
     ) -> None:
         """Initialize loader.
 
@@ -140,6 +171,8 @@ class WebBaseLoader(BaseLoader):
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
             show_progress: Show progress bar when loading pages.
+            trust_env: set to True if using proxy to make web requests, for example
+                using http(s)_proxy environment variables. Defaults to False.
         """
         # web_path kept for backwards-compatibility.
         if web_path and web_paths:
@@ -189,6 +222,7 @@ class WebBaseLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.autoset_encoding = autoset_encoding
         self.encoding = encoding
+        self.trust_env = trust_env
 
     @property
     def web_path(self) -> str:
@@ -199,7 +233,7 @@ class WebBaseLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
                     kwargs: Dict = dict(
@@ -208,7 +242,10 @@ class WebBaseLoader(BaseLoader):
                     )
                     if not self.session.verify:
                         kwargs["ssl"] = False
-                    async with session.get(url, **kwargs) as response:
+
+                    async with session.get(
+                        url, **(self.requests_kwargs | kwargs)
+                    ) as response:
                         if self.raise_for_status:
                             response.raise_for_status()
                         return await response.text()
@@ -271,11 +308,12 @@ class WebBaseLoader(BaseLoader):
                 "`parser` must be one of " + ", ".join(valid_parsers) + "."
             )
 
-    def scrape_all(self, urls: List[str], parser: Union[str, None] = None) -> List[Any]:
-        """Fetch all urls, then return soups for all results."""
+    def _unpack_fetch_results(
+        self, results: Any, urls: List[str], parser: Union[str, None] = None
+    ) -> List[Any]:
+        """Unpack fetch results into BeautifulSoup objects."""
         from bs4 import BeautifulSoup
 
-        results = asyncio.run(self.fetch_all(urls))
         final_results = []
         for i, result in enumerate(results):
             url = urls[i]
@@ -286,8 +324,19 @@ class WebBaseLoader(BaseLoader):
                     parser = self.default_parser
                 self._check_parser(parser)
             final_results.append(BeautifulSoup(result, parser, **self.bs_kwargs))
-
         return final_results
+
+    def scrape_all(self, urls: List[str], parser: Union[str, None] = None) -> List[Any]:
+        """Fetch all urls, then return soups for all results."""
+        results = asyncio.run(self.fetch_all(urls))
+        return self._unpack_fetch_results(results, urls, parser=parser)
+
+    async def ascrape_all(
+        self, urls: List[str], parser: Union[str, None] = None
+    ) -> List[Any]:
+        """Async fetch all urls, then return soups for all results."""
+        results = await self.fetch_all(urls)
+        return self._unpack_fetch_results(results, urls, parser=parser)
 
     def _scrape(
         self,
@@ -331,6 +380,22 @@ class WebBaseLoader(BaseLoader):
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """Async lazy load text from the url(s) in web_path."""
+        results = await self.ascrape_all(self.web_paths)
+        for path, soup in zip(self.web_paths, results):
+            text = soup.get_text(**self.bs_get_text_kwargs)
+            metadata = _build_metadata(soup, path)
+            yield Document(page_content=text, metadata=metadata)
+
+    @deprecated(
+        since="0.3.14",
+        removal="1.0",
+        message=(
+            "See API reference for updated usage: "
+            "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"  # noqa: E501
+        ),
+    )
     def aload(self) -> List[Document]:  # type: ignore
         """Load text from the urls in web_path async into Documents."""
 

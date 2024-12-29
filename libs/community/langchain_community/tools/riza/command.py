@@ -10,15 +10,15 @@ from typing import Any, Optional, Type
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool, ToolException
+from pydantic import BaseModel, Field
 
 
 class ExecPythonInput(BaseModel):
     code: str = Field(description="the Python code to execute")
 
 
-class ExecPython(BaseTool):
+class ExecPython(BaseTool):  # type: ignore[override, override]
     """Riza Code tool.
 
     Setup:
@@ -94,7 +94,7 @@ class ExecJavaScriptInput(BaseModel):
     code: str = Field(description="the JavaScript code to execute")
 
 
-class ExecJavaScript(BaseTool):
+class ExecJavaScript(BaseTool):  # type: ignore[override, override]
     """A tool implementation to execute JavaScript via Riza's Code Interpreter API."""
 
     name: str = "riza_exec_javascript"

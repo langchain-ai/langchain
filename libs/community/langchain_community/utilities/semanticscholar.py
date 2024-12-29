@@ -1,9 +1,9 @@
 """Utils for interacting with the Semantic Scholar API."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class SemanticScholarAPIWrapper(BaseModel):
     S2_MAX_QUERY_LENGTH: int = 300
     load_max_docs: int = 100
     doc_content_chars_max: Optional[int] = 4000
-    returned_fields = [
+    returned_fields: List[str] = [
         "title",
         "abstract",
         "venue",
@@ -51,8 +51,9 @@ class SemanticScholarAPIWrapper(BaseModel):
         "externalIds",
     ]
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that the python package exists in environment."""
         try:
             from semanticscholar import SemanticScholar

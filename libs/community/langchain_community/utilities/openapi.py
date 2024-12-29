@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import requests
 import yaml
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -129,11 +129,31 @@ class OpenAPISpec(OpenAPI):
             raise ValueError(f"No schema found for {ref_name}")
         return schemas[ref_name]
 
-    def get_schema(self, schema: Union[Reference, Schema]) -> Schema:
+    def get_schema(
+        self,
+        schema: Union[Reference, Schema],
+        depth: int = 0,
+        max_depth: Optional[int] = None,
+    ) -> Schema:
+        if max_depth is not None and depth >= max_depth:
+            raise RecursionError(
+                f"Max depth of {max_depth} has been exceeded when resolving references."
+            )
+
         from openapi_pydantic import Reference
 
         if isinstance(schema, Reference):
-            return self.get_referenced_schema(schema)
+            schema = self.get_referenced_schema(schema)
+
+        # TODO: Resolve references on all fields of Schema ?
+        # (e.g. patternProperties, etc...)
+        if schema.properties is not None:
+            for p_name, p in schema.properties.items():
+                schema.properties[p_name] = self.get_schema(p, depth + 1, max_depth)
+
+        if schema.items is not None:
+            schema.items = self.get_schema(schema.items, depth + 1, max_depth)
+
         return schema
 
     def _get_root_referenced_schema(self, ref: Reference) -> Schema:

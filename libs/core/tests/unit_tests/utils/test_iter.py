@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from langchain_core.utils.iter import batch_iterate
@@ -15,7 +13,7 @@ from langchain_core.utils.iter import batch_iterate
     ],
 )
 def test_batch_iterate(
-    input_size: int, input_iterable: List[str], expected_output: List[str]
+    input_size: int, input_iterable: list[str], expected_output: list[str]
 ) -> None:
     """Test batching function."""
     assert list(batch_iterate(input_size, input_iterable)) == expected_output
