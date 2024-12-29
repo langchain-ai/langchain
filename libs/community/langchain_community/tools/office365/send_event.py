@@ -9,6 +9,7 @@ from typing import List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
+from zoneinfo import ZoneInfo
 
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.office365.utils import UTC_FORMAT
@@ -73,12 +74,22 @@ class O365SendEvent(O365BaseTool):  # type: ignore[override, override]
 
         event.body = body
         event.subject = subject
-        event.start = dt.strptime(start_datetime, UTC_FORMAT)
-        event.end = dt.strptime(end_datetime, UTC_FORMAT)
+        try:
+            event.start = dt.fromisoformat(start_datetime).replace(
+                tzinfo=ZoneInfo("UTC")
+            )
+        except ValueError:
+            # fallback for backwards compatibility
+            event.start = dt.strptime(start_datetime, UTC_FORMAT)
+        try:
+            event.end = dt.fromisoformat(end_datetime).replace(tzinfo=ZoneInfo("UTC"))
+        except ValueError:
+            # fallback for backwards compatibility
+            event.end = dt.strptime(end_datetime, UTC_FORMAT)
+
         for attendee in attendees:
             event.attendees.add(attendee)
 
-        # TO-DO: Look into PytzUsageWarning
         event.save()
 
         output = "Event sent: " + str(event)

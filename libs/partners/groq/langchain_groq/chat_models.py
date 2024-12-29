@@ -305,7 +305,7 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -654,7 +654,7 @@ class ChatGroq(BaseChatModel):
     @deprecated(
         since="0.2.1",
         alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
-        removal="0.3.0",
+        removal="1.0.0",
     )
     def bind_functions(
         self,

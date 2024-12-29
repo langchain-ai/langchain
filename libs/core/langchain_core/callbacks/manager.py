@@ -1298,7 +1298,7 @@ class CallbackManager(BaseCallbackManager):
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
-        """Run when LLM starts running.
+        """Run when chat model starts running.
 
         Args:
             serialized (Dict[str, Any]): The serialized LLM.
@@ -2379,6 +2379,7 @@ def _configure(
                             if run_tree is not None
                             else tracing_context["client"]
                         ),
+                        tags=tracing_tags,
                     )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:

@@ -139,8 +139,17 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
         )
-    elif role == "system":
-        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
+    elif role in ("system", "developer"):
+        if role == "developer":
+            additional_kwargs = {"__openai_role__": role}
+        else:
+            additional_kwargs = {}
+        return SystemMessage(
+            content=_dict.get("content", ""),
+            name=name,
+            id=id_,
+            additional_kwargs=additional_kwargs,
+        )
     elif role == "function":
         return FunctionMessage(
             content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
@@ -233,7 +242,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             )
             message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
-        message_dict["role"] = "system"
+        message_dict["role"] = message.additional_kwargs.get(
+            "__openai_role__", "system"
+        )
     elif isinstance(message, FunctionMessage):
         message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
@@ -284,8 +295,14 @@ def _convert_delta_to_message_chunk(
             id=id_,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
         )
-    elif role == "system" or default_class == SystemMessageChunk:
-        return SystemMessageChunk(content=content, id=id_)
+    elif role in ("system", "developer") or default_class == SystemMessageChunk:
+        if role == "developer":
+            additional_kwargs = {"__openai_role__": "developer"}
+        else:
+            additional_kwargs = {}
+        return SystemMessageChunk(
+            content=content, id=id_, additional_kwargs=additional_kwargs
+        )
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"], id=id_)
     elif role == "tool" or default_class == ToolMessageChunk:
@@ -435,8 +452,18 @@ class BaseChatOpenAI(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = Field(default=None)
     """Maximum number of tokens to generate."""
+    reasoning_effort: Optional[str] = None
+    """Constrains effort on reasoning for reasoning models. 
+    
+    o1 models only.
+
+    Currently supported values are low, medium, and high. Reducing reasoning effort 
+    can result in faster responses and fewer tokens used on reasoning in a response.
+    
+    .. versionadded:: 0.2.14
+    """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class. 
     Tiktoken is used to count the number of tokens in documents to constrain 
@@ -582,6 +609,7 @@ class BaseChatOpenAI(BaseChatModel):
             "stop": self.stop or None,  # also exclude empty list for this
             "max_tokens": self.max_tokens,
             "extra_body": self.extra_body,
+            "reasoning_effort": self.reasoning_effort,
         }
 
         params = {
@@ -632,24 +660,6 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
-        if "response_format" in payload and is_basemodel_subclass(
-            payload["response_format"]
-        ):
-            # TODO: Add support for streaming with Pydantic response_format.
-            warnings.warn("Streaming with Pydantic response_format not yet supported.")
-            chat_result = self._generate(
-                messages, stop, run_manager=run_manager, **kwargs
-            )
-            msg = chat_result.generations[0].message
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(
-                    **msg.dict(exclude={"type", "additional_kwargs"}),
-                    # preserve the "parsed" Pydantic object without converting to dict
-                    additional_kwargs=msg.additional_kwargs,
-                ),
-                generation_info=chat_result.generations[0].generation_info,
-            )
-            return
         if self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -717,6 +727,7 @@ class BaseChatOpenAI(BaseChatModel):
         messages = self._convert_input(input_).to_messages()
         if stop is not None:
             kwargs["stop"] = stop
+
         return {
             "messages": [_convert_message_to_dict(m) for m in messages],
             **self._default_params,
@@ -783,24 +794,6 @@ class BaseChatOpenAI(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
-        if "response_format" in payload and is_basemodel_subclass(
-            payload["response_format"]
-        ):
-            # TODO: Add support for streaming with Pydantic response_format.
-            warnings.warn("Streaming with Pydantic response_format not yet supported.")
-            chat_result = await self._agenerate(
-                messages, stop, run_manager=run_manager, **kwargs
-            )
-            msg = chat_result.generations[0].message
-            yield ChatGenerationChunk(
-                message=AIMessageChunk(
-                    **msg.dict(exclude={"type", "additional_kwargs"}),
-                    # preserve the "parsed" Pydantic object without converting to dict
-                    additional_kwargs=msg.additional_kwargs,
-                ),
-                generation_info=chat_result.generations[0].generation_info,
-            )
-            return
         if self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -889,7 +882,9 @@ class BaseChatOpenAI(BaseChatModel):
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
-        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens) or params.get(
+            "max_completion_tokens", self.max_tokens
+        ):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
@@ -922,8 +917,13 @@ class BaseChatOpenAI(BaseChatModel):
         _, encoding_model = self._get_encoding_model()
         return encoding_model.encode(text)
 
-    # TODO: Count bound tools as part of input.
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: List[BaseMessage],
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
+    ) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
@@ -933,7 +933,18 @@ class BaseChatOpenAI(BaseChatModel):
         counting.
 
         OpenAI reference: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb
+
+        Args:
+            messages: The message inputs to tokenize.
+            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+                to be converted to tool schemas.
+        """
+        # TODO: Count bound tools as part of input.
+        if tools is not None:
+            warnings.warn(
+                "Counting tokens in tool schemas is not yet supported. Ignoring tools."
+            )
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
@@ -999,10 +1010,29 @@ class BaseChatOpenAI(BaseChatModel):
         num_tokens += 3
         return num_tokens
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        response_format: Optional[Union[dict, type]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        if isinstance(response_format, type) and is_basemodel_subclass(response_format):
+            # TODO: Add support for streaming with Pydantic response_format.
+            warnings.warn("Streaming with Pydantic response_format not yet supported.")
+            return False
+
+        return super()._should_stream(
+            async_api=async_api, run_manager=run_manager, **kwargs
+        )
+
     @deprecated(
         since="0.2.1",
         alternative="langchain_openai.chat_models.base.ChatOpenAI.bind_tools",
-        removal="0.3.0",
+        removal="1.0.0",
     )
     def bind_functions(
         self,
@@ -1502,7 +1532,7 @@ class BaseChatOpenAI(BaseChatModel):
         return filtered
 
 
-class ChatOpenAI(BaseChatOpenAI):
+class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     """OpenAI chat model integration.
 
     .. dropdown:: Setup
@@ -1964,6 +1994,9 @@ class ChatOpenAI(BaseChatOpenAI):
     message chunks will be generated during the stream including usage metadata.
     """
 
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    """Maximum number of tokens to generate."""
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
@@ -1992,6 +2025,29 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        params = super()._default_params
+        if "max_tokens" in params:
+            params["max_completion_tokens"] = params.pop("max_tokens")
+
+        return params
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        # max_tokens was deprecated in favor of max_completion_tokens
+        # in September 2024 release
+        if "max_tokens" in payload:
+            payload["max_completion_tokens"] = payload.pop("max_tokens")
+        return payload
 
     def _should_stream_usage(
         self, stream_usage: Optional[bool] = None, **kwargs: Any

@@ -1,6 +1,5 @@
 """**Text Splitters** are classes for splitting text.
 
-
 **Class hierarchy:**
 
 .. code-block::
@@ -34,6 +33,7 @@ from langchain_text_splitters.html import (
     ElementType,
     HTMLHeaderTextSplitter,
     HTMLSectionSplitter,
+    HTMLSemanticPreservingSplitter,
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
@@ -71,6 +71,7 @@ __all__ = [
     "LineType",
     "HTMLHeaderTextSplitter",
     "HTMLSectionSplitter",
+    "HTMLSemanticPreservingSplitter",
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",

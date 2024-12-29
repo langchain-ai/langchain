@@ -1,4 +1,4 @@
-"""Utilities for tests."""
+"""Utilities for pydantic."""
 
 from __future__ import annotations
 
@@ -48,7 +48,18 @@ def get_pydantic_major_version() -> int:
         return 0
 
 
+def _get_pydantic_minor_version() -> int:
+    """Get the minor version of Pydantic."""
+    try:
+        import pydantic
+
+        return int(pydantic.__version__.split(".")[1])
+    except ImportError:
+        return 0
+
+
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+PYDANTIC_MINOR_VERSION = _get_pydantic_minor_version()
 
 
 if PYDANTIC_MAJOR_VERSION == 1:
@@ -200,7 +211,7 @@ def pre_init(func: Callable) -> Any:
                     name not in values or values[name] is None
                 ) and not field_info.is_required():
                     if field_info.default_factory is not None:
-                        values[name] = field_info.default_factory()
+                        values[name] = field_info.default_factory()  # type: ignore
                     else:
                         values[name] = field_info.default
 
@@ -268,7 +279,7 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import ConfigDict, create_model
+    from pydantic import create_model
     from pydantic.fields import FieldInfo
 
     descriptions_ = descriptions or {}

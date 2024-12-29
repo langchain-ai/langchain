@@ -1,0 +1,132 @@
+# CrateDB
+
+> [CrateDB] is a distributed and scalable SQL database for storing and
+> analyzing massive amounts of data in near real-time, even with complex
+> queries. It is PostgreSQL-compatible, based on Lucene, and inheriting
+> from Elasticsearch.
+
+
+## Installation and Setup
+
+### Setup CrateDB
+There are two ways to get started with CrateDB quickly. Alternatively,
+choose other [CrateDB installation options].
+
+#### Start CrateDB on your local machine
+Example: Run a single-node CrateDB instance with security disabled,
+using Docker or Podman. This is not recommended for production use.
+
+```bash
+docker run --name=cratedb --rm \
+  --publish=4200:4200 --publish=5432:5432 --env=CRATE_HEAP_SIZE=2g \
+  crate:latest -Cdiscovery.type=single-node
+```
+
+#### Deploy cluster on CrateDB Cloud
+[CrateDB Cloud] is a managed CrateDB service. Sign up for a
+[free trial][CrateDB Cloud Console].
+
+### Install Client
+Install the most recent version of the `langchain-cratedb` package
+and a few others that are needed for this tutorial.
+```bash
+pip install --upgrade langchain-cratedb langchain-openai unstructured
+```
+
+
+## Documentation
+For a more detailed walkthrough of the CrateDB wrapper, see
+[using LangChain with CrateDB]. See also [all features of CrateDB]
+to learn about other functionality provided by CrateDB.
+
+
+## Features
+The CrateDB adapter for LangChain provides APIs to use CrateDB as vector store,
+document loader, and storage for chat messages.
+
+### Vector Store
+Use the CrateDB vector store functionality around `FLOAT_VECTOR` and `KNN_MATCH`
+for similarity search and other purposes. See also [CrateDBVectorStore Tutorial].
+
+Make sure you've configured a valid OpenAI API key.
+```bash
+export OPENAI_API_KEY=sk-XJZ...
+```
+```python
+from langchain_community.document_loaders import UnstructuredURLLoader
+from langchain_cratedb import CrateDBVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+
+loader = UnstructuredURLLoader(urls=["https://github.com/langchain-ai/langchain/raw/refs/tags/langchain-core==0.3.28/docs/docs/how_to/state_of_the_union.txt"])
+documents = loader.load()
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)
+
+embeddings = OpenAIEmbeddings()
+
+# Connect to a self-managed CrateDB instance on localhost.
+CONNECTION_STRING = "crate://?schema=testdrive"
+
+store = CrateDBVectorStore.from_documents(
+    documents=docs,
+    embedding=embeddings,
+    collection_name="state_of_the_union",
+    connection=CONNECTION_STRING,
+)
+
+query = "What did the president say about Ketanji Brown Jackson"
+docs_with_score = store.similarity_search_with_score(query)
+```
+
+### Document Loader
+Load load documents from a CrateDB database table, using the document loader
+`CrateDBLoader`, which is based on SQLAlchemy. See also [CrateDBLoader Tutorial].
+
+To use the document loader in your applications:
+```python
+import sqlalchemy as sa
+from langchain_community.utilities import SQLDatabase
+from langchain_cratedb import CrateDBLoader
+
+# Connect to a self-managed CrateDB instance on localhost.
+CONNECTION_STRING = "crate://?schema=testdrive"
+
+db = SQLDatabase(engine=sa.create_engine(CONNECTION_STRING))
+
+loader = CrateDBLoader(
+    'SELECT * FROM sys.summits LIMIT 42',
+    db=db,
+)
+documents = loader.load()
+```
+
+### Chat Message History
+Use CrateDB as the storage for your chat messages.
+See also [CrateDBChatMessageHistory Tutorial].
+
+To use the chat message history in your applications:
+```python
+from langchain_cratedb import CrateDBChatMessageHistory
+
+# Connect to a self-managed CrateDB instance on localhost.
+CONNECTION_STRING = "crate://?schema=testdrive"
+
+message_history = CrateDBChatMessageHistory(
+    session_id="test-session",
+    connection=CONNECTION_STRING,
+)
+
+message_history.add_user_message("hi!")
+```
+
+
+[all features of CrateDB]: https://cratedb.com/docs/guide/feature/
+[CrateDB]: https://cratedb.com/database
+[CrateDB Cloud]: https://cratedb.com/database/cloud
+[CrateDB Cloud Console]: https://console.cratedb.cloud/?utm_source=langchain&utm_content=documentation
+[CrateDB installation options]: https://cratedb.com/docs/guide/install/
+[CrateDBChatMessageHistory Tutorial]: https://github.com/crate/cratedb-examples/blob/main/topic/machine-learning/llm-langchain/conversational_memory.ipynb
+[CrateDBLoader Tutorial]: https://github.com/crate/cratedb-examples/blob/main/topic/machine-learning/llm-langchain/document_loader.ipynb
+[CrateDBVectorStore Tutorial]: https://github.com/crate/cratedb-examples/blob/main/topic/machine-learning/llm-langchain/vector_search.ipynb
+[using LangChain with CrateDB]: https://cratedb.com/docs/guide/integrate/langchain/

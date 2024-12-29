@@ -116,6 +116,7 @@ def init_chat_model(
             - 'huggingface'         -> langchain-huggingface
             - 'groq'                -> langchain-groq
             - 'ollama'              -> langchain-ollama
+            - 'google_anthropic_vertex'    -> langchain-google-vertexai
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -149,7 +150,16 @@ def init_chat_model(
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
             config_prefix is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
-        kwargs: Additional keyword args to pass to
+        temperature: Model temperature.
+        max_tokens: Max output tokens.
+        timeout: The maximum time (in seconds) to wait for a response from the model
+            before canceling the request.
+        max_retries: The maximum number of attempts the system will make to resend a
+            request if it fails due to issues like network timeouts or rate limits.
+        base_url: The URL of the API endpoint where requests are sent.
+        rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
+            rate limits.
+        kwargs: Additional model-specific keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
     Returns:
@@ -319,13 +329,7 @@ def init_chat_model(
 def _init_chat_model_helper(
     model: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
-    model_provider = model_provider or _attempt_infer_model_provider(model)
-    if not model_provider:
-        raise ValueError(
-            f"Unable to infer model provider for {model=}, please specify "
-            f"model_provider directly."
-        )
-    model_provider = model_provider.replace("-", "_").lower()
+    model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
         _check_pkg("langchain_openai")
         from langchain_openai import ChatOpenAI
@@ -407,6 +411,11 @@ def _init_chat_model_helper(
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
+    elif model_provider == "google_anthropic_vertex":
+        _check_pkg("langchain_google_vertexai")
+        from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+
+        return ChatAnthropicVertex(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -430,6 +439,7 @@ _SUPPORTED_PROVIDERS = {
     "groq",
     "bedrock",
     "bedrock_converse",
+    "google_anthropic_vertex",
 }
 
 
@@ -450,6 +460,24 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "mistralai"
     else:
         return None
+
+
+def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":")[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":")[0]
+        model = ":".join(model.split(":")[1:])
+    model_provider = model_provider or _attempt_infer_model_provider(model)
+    if not model_provider:
+        raise ValueError(
+            f"Unable to infer model provider for {model=}, please specify "
+            f"model_provider directly."
+        )
+    model_provider = model_provider.replace("-", "_").lower()
+    return model, model_provider
 
 
 def _check_pkg(pkg: str) -> None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import (
     Any,
     AsyncIterator,
@@ -96,7 +97,10 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
 
     """
     name = tool_call["function"].get("name", "")
-    args = json.loads(tool_call["function"]["arguments"])
+    try:
+        args = json.loads(tool_call["function"]["arguments"])
+    except (JSONDecodeError, TypeError):
+        args = {}
     id = tool_call.get("id")
     return create_tool_call(name=name, args=args, id=id)
 
@@ -203,6 +207,10 @@ class ChatDeepInfra(BaseChatModel):
     # client: Any  #: :meta private:
     model_name: str = Field(default="meta-llama/Llama-2-70b-chat-hf", alias="model")
     """Model name to use."""
+
+    url: str = "https://api.deepinfra.com/v1/openai/chat/completions"
+    """URL to use for the API call."""
+
     deepinfra_api_token: Optional[str] = None
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
@@ -282,7 +290,7 @@ class ChatDeepInfra(BaseChatModel):
                 async with request.apost(
                     url=self._url(), data=self._body(kwargs), timeout=request_timeout
                 ) as response:
-                    self._handle_status(response.status, response.text)
+                    self._handle_status(response.status, await response.text())
                     return await response.json()
             except Exception as e:
                 print("EX", e)  # noqa: T201
@@ -465,7 +473,7 @@ class ChatDeepInfra(BaseChatModel):
             )
 
     def _url(self) -> str:
-        return "https://stage.api.deepinfra.com/v1/openai/chat/completions"
+        return self.url
 
     def _headers(self) -> Dict:
         return {
