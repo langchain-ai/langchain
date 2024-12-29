@@ -3,13 +3,11 @@
 from collections.abc import Iterator
 from typing import Union
 
-
-from langchain_community.document_loaders.base import BaseLoader
+import requests
 from langchain_core.documents import Document
-
 from markitdown import MarkItDown
 
-import requests
+from langchain_community.document_loaders.base import BaseLoader
 
 
 class MarkItDownLoader(BaseLoader):
