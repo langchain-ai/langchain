@@ -460,6 +460,7 @@ class AzureMLBaseEndpoint(BaseModel):
         if field_value == AzureMLEndpointApiType.serverless and not (
             endpoint_url.endswith("/completions")  # type: ignore[union-attr]
             or endpoint_url.endswith("/chat/completions")  # type: ignore[union-attr]
+            or endpoint_url.endswith("/models/chat/completions")  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Endpoints of type `serverless` should follow the format "
