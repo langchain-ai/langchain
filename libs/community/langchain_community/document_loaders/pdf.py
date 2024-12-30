@@ -82,7 +82,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> list:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
+        return partition_pdf(filename=str(self.file_path), **self.unstructured_kwargs)
 
 
 class BasePDFLoader(BaseLoader, ABC):
@@ -1176,6 +1176,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 "Could not import amazon-textract-caller python package. "
                 "Please install it with `pip install amazon-textract-caller`."
             )
+
         if textract_features:
             features = [tc.Textract_Features[x] for x in textract_features]
         else:
@@ -1227,9 +1228,8 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         # the self.file_path is local, but the blob has to include
         # the S3 location if the file originated from S3 for multi-page documents
         # raises ValueError when multi-page and not on S3"""
-
         if self.web_path and self._is_s3_url(self.web_path):
-            blob = Blob(path=self.web_path)  # type: ignore[call-arg] # type: ignore[misc]
+            blob = Blob(path=self.web_path)
         else:
             blob = Blob.from_path(self.file_path)
             if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:

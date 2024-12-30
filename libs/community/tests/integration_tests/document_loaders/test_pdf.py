@@ -4,12 +4,176 @@ from typing import Sequence, Union
 
 import pytest
 
-import langchain_community.document_loaders as pdf_loaders
 from langchain_community.document_loaders import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
+    PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PDFPlumberLoader,
+    PyMuPDFLoader,
+    PyPDFium2Loader,
+    PyPDFLoader,
 )
+
+
+def test_pypdf_loader() -> None:
+    """Test PDFMiner loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyPDFLoader(file_path)
+    docs = loader.load()
+    assert len(docs) == 1
+    assert len(docs[0].metadata) == 6
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(file_path)
+
+    docs = loader.load()
+    assert len(docs) == 16
+    assert len(docs[0].metadata) == 13
+
+    # Verify that extraction_mode parameter works
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(
+        file_path,
+        mode="single",
+        extract_images=False,
+    )
+    docs = loader.load()
+    assert len(docs) == 1
+    assert len(docs[0].metadata) == 12
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(
+        file_path,
+        mode="page",
+        extract_images=False,
+    )
+    docs = loader.load()
+    assert len(docs) == 16
+    assert len(docs[0].metadata) == 13
+
+    loader = PyPDFLoader(
+        file_path,
+        extract_images=False,
+    )
+    from langchain_text_splitters import CharacterTextSplitter
+
+    text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+        encoding_name="cl100k_base",
+        chunk_size=1000,
+        chunk_overlap=0,
+        separator="\n",
+    )
+    docs = loader.load_and_split(text_splitter)
+    assert len(docs) == 18
+    assert len(docs[0].metadata) == 13
+
+    # Verify that extract_images
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(
+        file_path,
+        mode="single",
+        extract_images=True,
+    )
+    docs = loader.load()
+    assert len(docs) == 1
+    assert len(docs[0].metadata) == 12
+
+
+def test_pdfplumber_loader() -> None:
+    """Test PDFMiner loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFPlumberLoader(file_path)
+    docs = loader.load()
+    assert len(docs) == 1
+    assert len(docs[0].metadata) == 7
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFPlumberLoader(file_path)
+
+    docs = loader.load()
+    assert len(docs) == 16
+    assert len(docs[0].metadata) == 14
+
+    # Verify that extraction_mode parameter works
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFPlumberLoader(
+        file_path,
+        mode="single",
+        extract_tables="markdown",
+        extract_images=False,
+    )
+    docs = loader.load()
+    assert len(docs) == 1
+    assert len(docs[0].metadata) == 13
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFPlumberLoader(
+        file_path,
+        mode="page",
+        extract_tables="html",
+        extract_images=False,
+    )
+    docs = loader.load()
+    assert len(docs) == 16
+    assert len(docs[0].metadata) == 14
+
+    loader = PDFPlumberLoader(
+        file_path,
+        extract_tables="markdown",
+        extract_images=False,
+    )
+    from langchain_text_splitters import CharacterTextSplitter
+
+    text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+        encoding_name="cl100k_base",
+        chunk_size=1000,
+        chunk_overlap=0,
+        separator="\n",
+    )
+    docs = loader.load_and_split(text_splitter)
+    assert len(docs) == 18
+    assert len(docs[0].metadata) == 14
+
+    # Verify that extract_tables and extract_images
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFPlumberLoader(
+        file_path,
+        mode="single",
+        extract_tables="markdown",
+        extract_images=True,
+    )
+    docs = loader.load()
+    assert len(docs) == 1
+    assert len(docs[0].metadata) == 13
+
+
+def test_pdfminer_loader() -> None:
+    """Test PDFMiner loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFMinerLoader(file_path)
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFMinerLoader(file_path)
+
+    docs = loader.load()
+    assert len(docs) == 1
+
+    # Verify that concatenating pages parameter works
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFMinerLoader(file_path, concatenate_pages=True)
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFMinerLoader(file_path, concatenate_pages=False)
+
+    docs = loader.load()
+    assert len(docs) == 16
 
 
 def test_pdfminer_pdf_as_html_loader() -> None:
@@ -24,6 +188,45 @@ def test_pdfminer_pdf_as_html_loader() -> None:
     loader = PDFMinerPDFasHTMLLoader(file_path)
 
     docs = loader.load()
+    assert len(docs) == 1
+
+
+def test_pypdfium2_loader() -> None:
+    """Test PyPDFium2Loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyPDFium2Loader(file_path)
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFium2Loader(file_path)
+
+    docs = loader.load()
+    assert len(docs) == 16
+
+
+def test_pymupdf_loader() -> None:
+    """Test PyMuPDF loader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyMuPDFLoader(file_path)
+
+    docs = loader.load()
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyMuPDFLoader(file_path)
+
+    docs = loader.load()
+    assert len(docs) == 16
+    assert loader.web_path is None
+
+    web_path = "https://people.sc.fsu.edu/~jpeterson/hello_world.pdf"
+    loader = PyMuPDFLoader(web_path)
+
+    docs = loader.load()
+    assert loader.web_path == web_path
+    assert loader.file_path != web_path
     assert len(docs) == 1
 
 
@@ -132,40 +335,3 @@ def test_amazontextract_loader_failures() -> None:
     loader = AmazonTextractPDFLoader(two_page_pdf)
     with pytest.raises(ValueError):
         loader.load()
-
-
-@pytest.mark.parametrize(
-    "parser_factory,params",
-    [
-        ("PDFMinerLoader", {}),
-        ("PDFPlumberLoader", {}),
-        ("PDFMinerLoader", {}),
-        ("PyMuPDFLoader", {}),
-        ("PyPDFLoader", {}),
-        ("PyPDFium2Loader", {}),
-        ("ZeroxPDFLoader", {}),
-    ],
-)
-def test_standard_parameters(
-    parser_factory: str,
-    params: dict,
-) -> None:
-    loader_class = getattr(pdf_loaders, parser_factory)
-
-    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = loader_class(file_path)
-    docs = loader.load()
-    assert len(docs) == 1
-
-    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
-    loader = loader_class(file_path, mode="page")
-    docs = loader.load()
-    assert len(docs) == 16
-    assert loader.web_path is None
-
-    web_path = "https://people.sc.fsu.edu/~jpeterson/hello_world.pdf"
-    loader = loader_class(web_path)
-    docs = loader.load()
-    assert loader.web_path == web_path
-    assert loader.file_path != web_path
-    assert len(docs) == 1

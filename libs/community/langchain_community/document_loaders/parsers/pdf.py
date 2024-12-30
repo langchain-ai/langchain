@@ -1,7 +1,5 @@
 """Module contains common parsers for PDFs."""
 
-from __future__ import annotations
-
 import asyncio
 import base64
 import html
@@ -29,6 +27,7 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+from langchain.prompts import Prompt
 from langchain_core._api.deprecation import (
     deprecated,
 )
@@ -42,9 +41,14 @@ from langchain_community.document_loaders.blob_loaders import Blob
 
 if TYPE_CHECKING:
     import pdfplumber
+    import pdfplumber.page
     import pymupdf
+    import pymupdf.pymupdf
     import pypdf
+    import pypdf._page
     import pypdfium2
+    import pypdfium2._helpers.page
+    from pypdf import PageObject
     from textractor.data.text_linearization_config import TextLinearizationConfig
 
 _PDF_FILTER_WITH_LOSS = ["DCTDecode", "DCT", "JPXDecode"]
@@ -511,7 +515,7 @@ class PyPDFParser(ImagesPdfParser):
                 "pypdf package not found, please install it with `pip install pypdf`"
             )
 
-        def _extract_text_from_page(page: pypdf.PageObject) -> str:
+        def _extract_text_from_page(page: "PageObject") -> str:
             """
             Extract text from image given the version of pypdf.
 
@@ -559,7 +563,7 @@ class PyPDFParser(ImagesPdfParser):
                     metadata=doc_metadata,
                 )
 
-    def extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
+    def extract_images_from_page(self, page: "pypdf._page.PageObject") -> str:
         """Extract images from a PDF page and get the text using images_to_text.
 
         Args:
@@ -977,15 +981,15 @@ class PyMuPDFParser(ImagesPdfParser):
 
     def __init__(
         self,
-        text_kwargs: Optional[dict[str, Any]] = None,
-        extract_images: bool = False,
         *,
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
         pages_delimitor: str = _default_page_delimitor,
+        extract_images: bool = False,
         images_to_text: CONVERT_IMAGE_TO_TEXT = None,
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
+        text_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize a parser based on PyMuPDF.
 
@@ -1111,7 +1115,7 @@ class PyMuPDFParser(ImagesPdfParser):
                     )
 
     def _get_page_content(
-        self, doc: pymupdf.Document, page: pymupdf.Page, blob: Blob
+        self, doc: "pymupdf.pymupdf.Document", page: "pymupdf.pymupdf.Page", blob: Blob
     ) -> str:
         """
         Get the text of the page using PyMuPDF and RapidOCR and issue a warning
@@ -1145,7 +1149,7 @@ class PyMuPDFParser(ImagesPdfParser):
 
         return all_text
 
-    def _extract_metadata(self, doc: pymupdf.Document, blob: Blob) -> dict:
+    def _extract_metadata(self, doc: "pymupdf.pymupdf.Document", blob: Blob) -> dict:
         """Extract metadata from the document and page.
 
         Args:
@@ -1171,7 +1175,7 @@ class PyMuPDFParser(ImagesPdfParser):
         )
 
     def _extract_images_from_page(
-        self, doc: pymupdf.Document, page: pymupdf.Page
+        self, doc: "pymupdf.pymupdf.Document", page: "pymupdf.pymupdf.Page"
     ) -> str:
         """Extract images from a PDF page and get the text using images_to_text.
 
@@ -1204,7 +1208,7 @@ class PyMuPDFParser(ImagesPdfParser):
             image_text=_join_images.join(self.convert_image_to_text(images))
         )
 
-    def _extract_tables_from_page(self, page: pymupdf.Page) -> str:
+    def _extract_tables_from_page(self, page: "pymupdf.pymupdf.Page") -> str:
         """Extract tables from a PDF page.
 
         Args:
@@ -1419,7 +1423,7 @@ class PyPDFium2Parser(ImagesPdfParser):
                     if pdf_reader:
                         pdf_reader.close()
 
-    def _extract_images_from_page(self, page: pypdfium2._helpers.page.PdfPage) -> str:
+    def _extract_images_from_page(self, page: "pypdfium2._helpers.page.PdfPage") -> str:
         """Extract images from a PDF page and get the text using images_to_text.
 
         Args:
@@ -1686,7 +1690,7 @@ class PDFPlumberParser(ImagesPdfParser):
                     metadata=_PDFPlumberParserMetadata(doc_metadata),
                 )
 
-    def _process_page_content(self, page: pdfplumber.page.Page) -> str:
+    def _process_page_content(self, page: "pdfplumber.page.Page") -> str:
         """Process the page content based on dedupe.
 
         Args:
@@ -1701,7 +1705,7 @@ class PDFPlumberParser(ImagesPdfParser):
 
     def _split_page_content(
         self,
-        page: pdfplumber.page.Page,
+        page: "pdfplumber.page.Page",
         tables_bbox: list[tuple[float, float, float, float]],
         tables_content: list[list[list[Any]]],
         images_bbox: list[tuple[float, float, float, float]],
@@ -1792,7 +1796,9 @@ class PDFPlumberParser(ImagesPdfParser):
         for content in images_content:
             yield content
 
-    def _extract_images_from_page(self, page: pdfplumber.page.Page) -> list[np.ndarray]:
+    def _extract_images_from_page(
+        self, page: "pdfplumber.page.Page"
+    ) -> list[np.ndarray]:
         """Extract images from a PDF page.
 
         Args:
@@ -1824,7 +1830,7 @@ class PDFPlumberParser(ImagesPdfParser):
 
     def _extract_tables_bbox_from_page(
         self,
-        page: pdfplumber.page.Page,
+        page: "pdfplumber.page.Page",
     ) -> list[tuple]:
         """Extract bounding boxes of tables from a PDF page.
 
@@ -1844,7 +1850,7 @@ class PDFPlumberParser(ImagesPdfParser):
 
     def _extract_tables_from_page(
         self,
-        page: pdfplumber.page.Page,
+        page: "pdfplumber.page.Page",
     ) -> list[list[list[Any]]]:
         """Extract tables from a PDF page.
 
@@ -2040,7 +2046,7 @@ class ZeroxPDFParser(BaseBlobParser):
         "diagram or other illustration, "
         "describe it. ",
     }
-    _prompt = PromptTemplate.from_template(
+    _prompt = Prompt.from_template(
         "Convert the following PDF page to markdown. "
         "{prompt_tables}"
         "{prompt_images}"
@@ -2048,12 +2054,6 @@ class ZeroxPDFParser(BaseBlobParser):
         "Return only the markdown with no explanation text. "
         "Do not exclude any content from the page. ",
     )
-
-    @staticmethod
-    def _is_valid_url(url: str) -> bool:
-        """Check if the url is valid."""
-        parsed = urlparse(url)
-        return bool(parsed.netloc) and bool(parsed.scheme)
 
     def __init__(
         self,
@@ -2139,12 +2139,6 @@ class ZeroxPDFParser(BaseBlobParser):
         self.select_pages = select_pages
         self.zerox_kwargs = zerox_kwargs
 
-    @staticmethod
-    def _is_valid_url(url: str) -> bool:
-        """Check if the url is valid."""
-        parsed = urlparse(url)
-        return bool(parsed.netloc) and bool(parsed.scheme)
-
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob.
 
@@ -2166,7 +2160,7 @@ class ZeroxPDFParser(BaseBlobParser):
             )
         temp_file = None
         try:
-            if not ZeroxPDFParser._is_valid_url(str(blob.path)):
+            if not blob.path:
                 temp_file = NamedTemporaryFile()
                 with open(temp_file.name, "wb") as f:
                     f.write(blob.as_bytes())
@@ -2174,10 +2168,8 @@ class ZeroxPDFParser(BaseBlobParser):
             else:
                 file_path = str(blob.path)
 
-            with blob.as_bytes_io() as pdf_file_obj, TemporaryDirectory() as tempdir:
-                doc_metadata = purge_metadata(self._get_metadata(pdf_file_obj))
-
-            doc_metadata["source"] = blob.source or blob.path
+            pdf_metadata = purge_metadata(self._get_metadata(file_path))
+            pdf_metadata["source"] = blob.source or blob.path
             zerox_prompt = self.custom_system_prompt
 
             if not zerox_prompt and self.extract_tables:
@@ -2209,7 +2201,7 @@ class ZeroxPDFParser(BaseBlobParser):
             # Convert zerox output to Document instances and yield them
             if len(zerox_output.pages) > 0:
                 doc_metadata = purge_metadata(
-                    doc_metadata
+                    pdf_metadata
                     | {
                         "total_pages": zerox_output.pages[-1].page,
                         "num_pages": zerox_output.pages[-1].page,  # Deprecated
@@ -2238,52 +2230,32 @@ class ZeroxPDFParser(BaseBlobParser):
             if temp_file:
                 temp_file.close()
 
+    def _get_metadata(self, file_path: str) -> dict[str, Any]:
+        from pdfminer.pdfpage import PDFDocument, PDFParser
 
-    def _get_metadata(
-        self,
-        fp: BinaryIO,
-        password: str = "",
-        caching: bool = True,
-    ) -> dict[str, Any]:
-        """
-        Extract metadata from a PDF file.
+        with open(file_path, "rb") as file:
+            parser = PDFParser(cast(BinaryIO, file))
 
-        Args:
-            fp: The file pointer to the PDF file.
-            password: The password for the PDF file, if encrypted. Defaults to an empty
-                string.
-            caching: Whether to cache the PDF structure. Defaults to True.
+            # Create a PDF document object that stores the document structure.
+            doc = PDFDocument(parser)
+            metadata: dict[str, Any] = {}
+            for info in doc.info:
+                metadata.update(info)
+            for k, v in metadata.items():
+                try:
+                    metadata[k] = PDFMinerParser.resolve_and_decode(v)
+                except Exception as e:  # pragma: nocover
+                    # This metadata value could not be parsed. Instead of failing
+                    # the PDF read, treat it as a warning only if
+                    # `strict_metadata=False`.
+                    logger.warning(
+                        '[WARNING] Metadata key "%s" could not be parsed due to '
+                        "exception: %s",
+                        k,
+                        str(e),
+                    )
 
-        Returns:
-            Metadata of the PDF file.
-        """
-        from pdfminer.pdfpage import PDFDocument, PDFPage, PDFParser
-
-        # Create a PDF parser object associated with the file object.
-        parser = PDFParser(fp)
-        # Create a PDF document object that stores the document structure.
-        doc = PDFDocument(parser, password=password, caching=caching)
-        metadata = {}
-
-        for info in doc.info:
-            metadata.update(info)
-        for k, v in metadata.items():
-            try:
-                metadata[k] = PDFMinerParser.resolve_and_decode(v)
-            except Exception as e:  # pragma: nocover
-                # This metadata value could not be parsed. Instead of failing the PDF
-                # read, treat it as a warning only if `strict_metadata=False`.
-                logger.warning(
-                    '[WARNING] Metadata key "%s" could not be parsed due to '
-                    "exception: %s",
-                    k,
-                    str(e),
-                )
-
-        # Count number of pages.
-        metadata["total_pages"] = len(list(PDFPage.create_pages(doc)))
-
-        return metadata
+            return metadata
 
 
 class AmazonTextractPDFParser(BaseBlobParser):
@@ -2337,7 +2309,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
         textract_features: Optional[Sequence[int]] = None,
         client: Optional[Any] = None,
         *,
-        linearization_config: Optional[TextLinearizationConfig] = None,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
     ) -> None:
         """Initializes the parser.
 
@@ -2450,7 +2422,7 @@ class DocumentIntelligenceParser(BaseBlobParser):
     (formerly Form Recognizer) and chunks at character level."""
 
     def __init__(self, client: Any, model: str):
-        warnings.warn(
+        logger.warning(
             "langchain_community.document_loaders.parsers.pdf.DocumentIntelligenceParser"
             "and langchain_community.document_loaders.pdf.DocumentIntelligenceLoader"
             " are deprecated. Please upgrade to "
