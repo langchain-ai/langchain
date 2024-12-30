@@ -16,4 +16,5 @@ def test_parsers_public_api_correct() -> None:
         "PyPDFium2Parser",
         "PDFPlumberParser",
         "VsdxParser",
+        "ZeroxPDFParser",
     }
