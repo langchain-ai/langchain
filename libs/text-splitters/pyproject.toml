@@ -75,6 +75,7 @@ convention = "google"
 ruff = "^0.5"
 
 
+
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 lxml-stubs = "^0.5.1"
@@ -82,8 +83,10 @@ types-requests = "^2.31.0.20240218"
 tiktoken = "^0.8.0"
 
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
+
 
 
 
@@ -94,6 +97,8 @@ pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-socket = "^0.7.0"
+pytest-xdist = "^3.6.1"
+
 
 
 [tool.poetry.group.test_integration]
@@ -106,14 +111,17 @@ transformers = "^4.47.0"
 sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
 
 
+
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"
 develop = true
 
 
+
 [tool.poetry.group.dev.dependencies.langchain-core]
 path = "../core"
 develop = true
+
 
 
 [tool.poetry.group.test.dependencies.langchain-core]
