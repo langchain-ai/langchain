@@ -1,5 +1,6 @@
 import re
 from typing import Any, List, Optional
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
@@ -59,7 +60,9 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
         ))
         # Create separators list with extracted tags and default separators
         jsx_separators = [f'<{tag}' for tag in jsx_tags]
-        jsx_separators = sorted(jsx_separators, key=lambda x: abs(len(jsx_separators)//2 - jsx_separators.index(x)))
+        jsx_separators = sorted(jsx_separators, key=lambda x: abs(
+            len(jsx_separators)//2 - jsx_separators.index(x))
+        )
         jsx_separators = list(set(jsx_separators))
 
         js_separators = [
