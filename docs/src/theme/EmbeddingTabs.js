@@ -1,9 +1,9 @@
-import React from "react";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
+import React, { useState } from "react";
 import CodeBlock from "@theme-original/CodeBlock";
+import { CustomDropdown } from './ChatModelTabs';
 
 export default function EmbeddingTabs(props) {
+    const [selectedModel, setSelectedModel] = useState("OpenAI");
     const {
       openaiParams,
       hideOpenai,
@@ -25,11 +25,13 @@ export default function EmbeddingTabs(props) {
       hideNomic,
       nvidiaParams,
       hideNvidia,
+      voyageaiParams,
+      hideVoyageai,
       fakeEmbeddingParams,
       hideFakeEmbedding,
       customVarName,
     } = props;
-  
+
     const openAIParamsOrDefault = openaiParams ?? `model="text-embedding-3-large"`;
     const azureParamsOrDefault =
       azureOpenaiParams ??
@@ -42,10 +44,11 @@ export default function EmbeddingTabs(props) {
     const mistralParamsOrDefault = mistralParams ?? `model="mistral-embed"`;
     const nomicsParamsOrDefault = nomicParams ?? `model="nomic-embed-text-v1.5"`;
     const nvidiaParamsOrDefault = nvidiaParams ?? `model="NV-Embed-QA"`;
+    const voyageaiParamsOrDefault = voyageaiParams ?? `model="voyage-3"`;
     const fakeEmbeddingParamsOrDefault = fakeEmbeddingParams ?? `size=4096`;
-  
+
     const embeddingVarName = customVarName ?? "embeddings";
-  
+
     const tabItems = [
       {
         value: "OpenAI",
@@ -138,6 +141,15 @@ export default function EmbeddingTabs(props) {
         shouldHide: hideNvidia,
       },
       {
+        value: "Voyage AI",
+        label: "Voyage AI",
+        text: `from langchain-voyageai import VoyageAIEmbeddings\n\n${embeddingVarName} = VoyageAIEmbeddings(${voyageaiParamsOrDefault})`,
+        apiKeyName: "VOYAGE_API_KEY",
+        packageName: "langchain-voyageai",
+        default: false,
+        shouldHide: hideVoyageai,
+      },
+      {
         value: "Fake",
         label: "Fake",
         text: `from langchain_core.embeddings import DeterministicFakeEmbedding\n\n${embeddingVarName} = DeterministicFakeEmbedding(${fakeEmbeddingParamsOrDefault})`,
@@ -148,24 +160,47 @@ export default function EmbeddingTabs(props) {
       },
     ];
   
-    return (
-        <Tabs groupId="modelTabs">
-            {tabItems
-                .filter((tabItem) => !tabItem.shouldHide)
-                .map((tabItem) => {
-                    const apiKeyText = tabItem.apiKeyName ? `import getpass\n\nos.environ["${tabItem.apiKeyName}"] = getpass.getpass()` : '';
-                    return (
-                        <TabItem
-                            value={tabItem.value}
-                            label={tabItem.label}
-                            default={tabItem.default}
-                        >
-                            <CodeBlock language="bash">{`pip install -qU ${tabItem.packageName}`}</CodeBlock>              
-                            <CodeBlock language="python">{apiKeyText + (apiKeyText ? "\n\n" : '') + tabItem.text}</CodeBlock>
-                        </TabItem>
-                    );
-                })
-            }
-        </Tabs>
-    );
+  const modelOptions = tabItems
+  .filter((item) => !item.shouldHide)
+  .map((item) => ({
+    value: item.value,
+    label: item.label,
+    text: item.text,
+    apiKeyName: item.apiKeyName,
+    apiKeyText: item.apiKeyText,
+    packageName: item.packageName,
+  }));
+
+const selectedOption = modelOptions.find(
+  (option) => option.value === selectedModel
+);
+
+let apiKeyText = "";
+if (selectedOption.apiKeyName) {
+  apiKeyText = `import getpass
+import os
+
+if not os.environ.get("${selectedOption.apiKeyName}"):
+  os.environ["${selectedOption.apiKeyName}"] = getpass.getpass("Enter API key for ${selectedOption.label}: ")`;
+  } else if (selectedOption.apiKeyText) {
+    apiKeyText = selectedOption.apiKeyText;
   }
+
+return (
+  <div>
+    <CustomDropdown 
+      selectedOption={selectedOption}
+      options={modelOptions}
+      onSelect={setSelectedModel}
+      modelType="embeddings"
+    />
+
+    <CodeBlock language="bash">
+      {`pip install -qU ${selectedOption.packageName}`}
+    </CodeBlock>
+    <CodeBlock language="python">
+      {apiKeyText ? apiKeyText + "\n\n" + selectedOption.text : selectedOption.text}
+    </CodeBlock>
+  </div>
+);
+}

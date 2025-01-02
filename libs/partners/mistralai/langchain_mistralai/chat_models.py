@@ -345,6 +345,8 @@ def _convert_message_to_mistral_chat_message(
             message_dict["content"] = ""
         else:
             message_dict["content"] = message.content
+        if "prefix" in message.additional_kwargs:
+            message_dict["prefix"] = message.additional_kwargs["prefix"]
         return message_dict
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)

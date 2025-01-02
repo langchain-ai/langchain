@@ -360,10 +360,9 @@ def deprecated(
             _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        package = (
-            _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
+        package = _package or (
+            _name.split(".")[0].replace("_", "-") if "." in _name else None
         )
-        since_str = f"{package}=={since}" if package else since
         if removal:
             if removal.startswith("1.") and package and package.startswith("langchain"):
                 removal_str = f"It will not be removed until {package}=={removal}."
@@ -372,7 +371,7 @@ def deprecated(
         else:
             removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since_str} {details} {removal_str}
+.. deprecated:: {since} {details} {removal_str}
 
 {old_doc}\
 """

@@ -22,7 +22,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             from sentence_transformers import SentenceTransformer
         except ImportError:
             raise ImportError(
-                "Could not import sentence_transformer python package. "
+                "Could not import sentence_transformers python package. "
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )

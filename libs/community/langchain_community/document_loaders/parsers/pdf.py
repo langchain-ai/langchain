@@ -236,17 +236,39 @@ class PDFMinerParser(BaseBlobParser):
 
         images = []
 
-        for img in list(filter(bool, map(get_image, page))):
-            if img.stream["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
+        for img in filter(bool, map(get_image, page)):
+            img_filter = img.stream["Filter"]
+            if isinstance(img_filter, list):
+                filter_names = [f.name for f in img_filter]
+            else:
+                filter_names = [img_filter.name]
+
+            without_loss = any(
+                name in _PDF_FILTER_WITHOUT_LOSS for name in filter_names
+            )
+            with_loss = any(name in _PDF_FILTER_WITH_LOSS for name in filter_names)
+            non_matching = {name for name in filter_names} - {
+                *_PDF_FILTER_WITHOUT_LOSS,
+                *_PDF_FILTER_WITH_LOSS,
+            }
+
+            if without_loss and with_loss:
+                warnings.warn(
+                    "Image has both lossy and lossless filters. Defaulting to lossless"
+                )
+
+            if non_matching:
+                warnings.warn(f"Unknown PDF Filter(s): {non_matching}")
+
+            if without_loss:
                 images.append(
                     np.frombuffer(img.stream.get_data(), dtype=np.uint8).reshape(
                         img.stream["Height"], img.stream["Width"], -1
                     )
                 )
-            elif img.stream["Filter"].name in _PDF_FILTER_WITH_LOSS:
+            elif with_loss:
                 images.append(img.stream.get_data())
-            else:
-                warnings.warn("Unknown PDF Filter!")
+
         return extract_from_images_with_rapidocr(images)
 
 
@@ -405,6 +427,13 @@ class PDFPlumberParser(BaseBlobParser):
             text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
             dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
         """
+        try:
+            import PIL  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "pillow package not found, please install it with"
+                " `pip install pillow`"
+            )
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe
         self.extract_images = extract_images
@@ -446,17 +475,30 @@ class PDFPlumberParser(BaseBlobParser):
 
     def _extract_images_from_page(self, page: pdfplumber.page.Page) -> str:
         """Extract images from page and get the text with RapidOCR."""
+        from PIL import Image
+
         if not self.extract_images:
             return ""
 
         images = []
         for img in page.images:
             if img["stream"]["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
-                images.append(
-                    np.frombuffer(img["stream"].get_data(), dtype=np.uint8).reshape(
-                        img["stream"]["Height"], img["stream"]["Width"], -1
+                if img["stream"]["BitsPerComponent"] == 1:
+                    images.append(
+                        np.array(
+                            Image.frombytes(
+                                "1",
+                                (img["stream"]["Width"], img["stream"]["Height"]),
+                                img["stream"].get_data(),
+                            ).convert("L")
+                        )
                     )
-                )
+                else:
+                    images.append(
+                        np.frombuffer(img["stream"].get_data(), dtype=np.uint8).reshape(
+                            img["stream"]["Height"], img["stream"]["Width"], -1
+                        )
+                    )
             elif img["stream"]["Filter"].name in _PDF_FILTER_WITH_LOSS:
                 images.append(img["stream"].get_data())
             else:

@@ -35,6 +35,25 @@ def _get_posts(client: Client) -> list:
     return posts
 
 
+def test_tracing_context() -> None:
+    mock_session = MagicMock()
+    mock_client_ = Client(
+        session=mock_session, api_key="test", auto_batch_tracing=False
+    )
+
+    @RunnableLambda
+    def my_function(a: int) -> int:
+        return a + 1
+
+    name = uuid.uuid4().hex
+    project_name = f"Some project {name}"
+    with tracing_context(project_name=project_name, client=mock_client_, enabled=True):
+        assert my_function.invoke(1) == 2
+    posts = _get_posts(mock_client_)
+    assert posts
+    assert all(post["session_name"] == project_name for post in posts)
+
+
 def test_config_traceable_handoff() -> None:
     get_env_var.cache_clear()
     mock_session = MagicMock()

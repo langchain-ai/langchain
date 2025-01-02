@@ -40,14 +40,14 @@ def test_faiss() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(id=output[0].id, page_content="foo")]
 
     # Retriever standard params
     retriever = docsearch.as_retriever()
@@ -67,14 +67,14 @@ async def test_faiss_afrom_texts() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(id=output[0].id, page_content="foo")]
 
 
 @pytest.mark.requires("faiss")
@@ -85,15 +85,15 @@ def test_faiss_vector_sim() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = FakeEmbeddings().embed_query(text="foo")
     output = docsearch.similarity_search_by_vector(query_vec, k=1)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(id=output[0].id, page_content="foo")]
 
 
 @pytest.mark.requires("faiss")
@@ -104,15 +104,15 @@ async def test_faiss_async_vector_sim() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
     output = await docsearch.asimilarity_search_by_vector(query_vec, k=1)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(id=output[0].id, page_content="foo")]
 
 
 @pytest.mark.requires("faiss")
@@ -123,15 +123,15 @@ def test_faiss_vector_sim_with_score_threshold() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = FakeEmbeddings().embed_query(text="foo")
     output = docsearch.similarity_search_by_vector(query_vec, k=2, score_threshold=0.2)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(id=output[0].id, page_content="foo")]
 
 
 @pytest.mark.requires("faiss")
@@ -142,9 +142,9 @@ async def test_faiss_vector_async_sim_with_score_threshold() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -152,7 +152,7 @@ async def test_faiss_vector_async_sim_with_score_threshold() -> None:
     output = await docsearch.asimilarity_search_by_vector(
         query_vec, k=2, score_threshold=0.2
     )
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(id=output[0].id, page_content="foo")]
 
 
 @pytest.mark.requires("faiss")
@@ -163,16 +163,16 @@ def test_similarity_search_with_score_by_vector() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = FakeEmbeddings().embed_query(text="foo")
     output = docsearch.similarity_search_with_score_by_vector(query_vec, k=1)
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo")
+    assert output[0][0] == Document(id=output[0][0].id, page_content="foo")
 
 
 @pytest.mark.requires("faiss")
@@ -183,16 +183,16 @@ async def test_similarity_async_search_with_score_by_vector() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = await FakeEmbeddings().aembed_query(text="foo")
     output = await docsearch.asimilarity_search_with_score_by_vector(query_vec, k=1)
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo")
+    assert output[0][0] == Document(id=output[0][0].id, page_content="foo")
 
 
 @pytest.mark.requires("faiss")
@@ -203,9 +203,9 @@ def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -216,7 +216,7 @@ def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
         score_threshold=0.2,
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo")
+    assert output[0][0] == Document(id=output[0][0].id, page_content="foo")
     assert output[0][1] < 0.2
 
 
@@ -228,9 +228,9 @@ async def test_sim_asearch_with_score_by_vector_with_score_threshold() -> None:
     index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            index_to_id[0]: Document(page_content="foo"),
-            index_to_id[1]: Document(page_content="bar"),
-            index_to_id[2]: Document(page_content="baz"),
+            index_to_id[0]: Document(id=index_to_id[0], page_content="foo"),
+            index_to_id[1]: Document(id=index_to_id[1], page_content="bar"),
+            index_to_id[2]: Document(id=index_to_id[2], page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -241,7 +241,7 @@ async def test_sim_asearch_with_score_by_vector_with_score_threshold() -> None:
         score_threshold=0.2,
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo")
+    assert output[0][0] == Document(id=output[0][0].id, page_content="foo")
     assert output[0][1] < 0.2
 
 
@@ -255,9 +255,9 @@ def test_faiss_mmr() -> None:
         query_vec, k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0][0] == Document(page_content="foo")
+    assert output[0][0] == Document(id=output[0][0].id, page_content="foo")
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo")
+    assert output[1][0] != Document(id=output[1][0].id, page_content="foo")
 
 
 @pytest.mark.requires("faiss")
@@ -270,9 +270,9 @@ async def test_faiss_async_mmr() -> None:
         query_vec, k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0][0] == Document(page_content="foo")
+    assert output[0][0] == Document(id=output[0][0].id, page_content="foo")
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo")
+    assert output[1][0] != Document(id=output[1][0].id, page_content="foo")
 
 
 @pytest.mark.requires("faiss")
@@ -285,9 +285,13 @@ def test_faiss_mmr_with_metadatas() -> None:
         query_vec, k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 0}
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -300,9 +304,13 @@ async def test_faiss_async_mmr_with_metadatas() -> None:
         query_vec, k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 0}
+    )
 
 
 @pytest.mark.requires("faiss")
@@ -315,7 +323,9 @@ def test_faiss_mmr_with_metadatas_and_filter() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": 1}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
@@ -332,7 +342,9 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_eq() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$eq": 1}}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] == 1
@@ -349,10 +361,16 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_neq() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$neq": 1}}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
-    assert output[2][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 0}
+    )
+    assert output[2][0] != Document(
+        id=output[2][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] != 1
     )
@@ -368,10 +386,16 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_gt() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$gt": 0}}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 1})
-    assert output[2][0] != Document(page_content="foo", metadata={"page": 1})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 1}
+    )
+    assert output[2][0] != Document(
+        id=output[2][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] > 0
     )
@@ -387,9 +411,13 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_lt() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$lt": 2}}
     )
     assert len(output) == 2
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[1][1] == 1.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] < 2
@@ -406,10 +434,16 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_gte() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$gte": 1}}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 1})
-    assert output[2][0] != Document(page_content="foo", metadata={"page": 1})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 1}
+    )
+    assert output[2][0] != Document(
+        id=output[2][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] >= 1
     )
@@ -425,7 +459,9 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_lte() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$lte": 0}}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="fou", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="fou", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] <= 0
@@ -442,7 +478,9 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in_1() -> None
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$in": [0]}}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] in [0]
@@ -459,9 +497,13 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_in_2() -> None
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$in": [1, 2]}}
     )
     assert len(output) == 2
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="fou", metadata={"page": 2})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="fou", metadata={"page": 2}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] in [1, 2]
     )
@@ -477,9 +519,13 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin_1() -> Non
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$nin": [0, 1]}}
     )
     assert len(output) == 2
-    assert output[0][0] == Document(page_content="fou", metadata={"page": 2})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="fou", metadata={"page": 2}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foy", metadata={"page": 3})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foy", metadata={"page": 3}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] not in [0, 1]
     )
@@ -495,7 +541,9 @@ def test_faiss_mmr_with_metadatas_and_comparison_operators_filter_nin_2() -> Non
         query_vec, k=10, lambda_mult=0.1, filter={"page": {"$nin": [0, 1, 2]}}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foy", metadata={"page": 3})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foy", metadata={"page": 3}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] not in [0, 1, 2]
@@ -512,10 +560,16 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_not() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"$not": {"page": 1}}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foy", metadata={"page": 3})
-    assert output[2][0] == Document(page_content="fou", metadata={"page": 2})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foy", metadata={"page": 3}
+    )
+    assert output[2][0] == Document(
+        id=output[2][0].id, page_content="fou", metadata={"page": 2}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: not di["page"] == 1
     )
@@ -531,7 +585,9 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_1() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"$or": [{"page": 0}]}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: (di["page"] == 0)
@@ -548,9 +604,13 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_2() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"$or": [{"page": 0}, {"page": 1}]}
     )
     assert len(output) == 2
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[1][1] == 1.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
@@ -573,10 +633,16 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_or_3() -> None:
         filter={"$or": [{"page": 0}, {"page": 1}, {"page": 2}]},
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
-    assert output[2][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 0}
+    )
+    assert output[2][0] != Document(
+        id=output[2][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
         k=10,
@@ -595,7 +661,9 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_1() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"$and": [{"page": 0}]}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: (di["page"] == 0)
@@ -654,7 +722,9 @@ def test_faiss_mmr_with_metadatas_and_logical_operators_filter_and_4() -> None:
         filter={"$and": [{"page": 0}, {"page": 0}, {"page": 0}]},
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
@@ -677,7 +747,9 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_1() -> Non
         filter={"$and": [{"$or": [{"page": 1}, {"page": 2}]}, {"$not": {"page": 1}}]},
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="fou", metadata={"page": 2})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="fou", metadata={"page": 2}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
         k=10,
@@ -705,7 +777,9 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_operators_filter_2() -> Non
         },
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="fou", metadata={"page": 2})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="fou", metadata={"page": 2}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
         k=10,
@@ -755,9 +829,13 @@ def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_1() ->
         filter={"$or": [{"page": {"$lt": 1}}, {"page": {"$gt": 2}}]},
     )
     assert len(output) == 2
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foy", metadata={"page": 3})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foy", metadata={"page": 3}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
         k=10,
@@ -776,10 +854,16 @@ def test_faiss_mmr_with_metadatas_and_logical_comparsion_operators_filter_2() ->
         query_vec, k=10, lambda_mult=0.1, filter={"$not": {"page": {"$lt": 1}}}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foy", metadata={"page": 3})
-    assert output[2][0] == Document(page_content="fou", metadata={"page": 2})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foy", metadata={"page": 3}
+    )
+    assert output[2][0] == Document(
+        id=output[2][0].id, page_content="fou", metadata={"page": 2}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: not di["page"] < 1
     )
@@ -803,7 +887,9 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_ops_filter_1() -
         },
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
         k=10,
@@ -861,9 +947,13 @@ def test_faiss_mmr_with_metadatas_and_nested_logical_comparsion_ops_filter_3() -
         },
     )
     assert len(output) == 2
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] == Document(page_content="foy", metadata={"page": 3})
+    assert output[1][0] == Document(
+        id=output[1][0].id, page_content="foy", metadata={"page": 3}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec,
         k=10,
@@ -1134,7 +1224,9 @@ async def test_faiss_async_mmr_with_metadatas_and_filter() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": 1}
     )
     assert len(output) == 1
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 1})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 1}
+    )
     assert output[0][1] == 0.0
     assert (
         output
@@ -1154,9 +1246,13 @@ def test_faiss_mmr_with_metadatas_and_list_filter() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": [0, 1, 2]}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output == docsearch.max_marginal_relevance_search_with_score_by_vector(
         query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] in [0, 1, 2]
     )
@@ -1172,9 +1268,13 @@ async def test_faiss_async_mmr_with_metadatas_and_list_filter() -> None:
         query_vec, k=10, lambda_mult=0.1, filter={"page": [0, 1, 2]}
     )
     assert len(output) == 3
-    assert output[0][0] == Document(page_content="foo", metadata={"page": 0})
+    assert output[0][0] == Document(
+        id=output[0][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output[0][1] == 0.0
-    assert output[1][0] != Document(page_content="foo", metadata={"page": 0})
+    assert output[1][0] != Document(
+        id=output[1][0].id, page_content="foo", metadata={"page": 0}
+    )
     assert output == (
         await docsearch.amax_marginal_relevance_search_with_score_by_vector(
             query_vec, k=10, lambda_mult=0.1, filter=lambda di: di["page"] in [0, 1, 2]
@@ -1191,19 +1291,27 @@ def test_faiss_with_metadatas() -> None:
     expected_docstore = InMemoryDocstore(
         {
             docsearch.index_to_docstore_id[0]: Document(
-                page_content="foo", metadata={"page": 0}
+                id=docsearch.index_to_docstore_id[0],
+                page_content="foo",
+                metadata={"page": 0},
             ),
             docsearch.index_to_docstore_id[1]: Document(
-                page_content="bar", metadata={"page": 1}
+                id=docsearch.index_to_docstore_id[1],
+                page_content="bar",
+                metadata={"page": 1},
             ),
             docsearch.index_to_docstore_id[2]: Document(
-                page_content="baz", metadata={"page": 2}
+                id=docsearch.index_to_docstore_id[2],
+                page_content="baz",
+                metadata={"page": 2},
             ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output == [
+        Document(id=output[0].id, page_content="foo", metadata={"page": 0})
+    ]
 
 
 @pytest.mark.requires("faiss")
@@ -1215,19 +1323,27 @@ async def test_faiss_async_with_metadatas() -> None:
     expected_docstore = InMemoryDocstore(
         {
             docsearch.index_to_docstore_id[0]: Document(
-                page_content="foo", metadata={"page": 0}
+                id=docsearch.index_to_docstore_id[0],
+                page_content="foo",
+                metadata={"page": 0},
             ),
             docsearch.index_to_docstore_id[1]: Document(
-                page_content="bar", metadata={"page": 1}
+                id=docsearch.index_to_docstore_id[1],
+                page_content="bar",
+                metadata={"page": 1},
             ),
             docsearch.index_to_docstore_id[2]: Document(
-                page_content="baz", metadata={"page": 2}
+                id=docsearch.index_to_docstore_id[2],
+                page_content="baz",
+                metadata={"page": 2},
             ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output == [
+        Document(id=output[0].id, page_content="foo", metadata={"page": 0})
+    ]
 
 
 @pytest.mark.requires("faiss")
@@ -1238,13 +1354,19 @@ def test_faiss_with_metadatas_and_filter() -> None:
     expected_docstore = InMemoryDocstore(
         {
             docsearch.index_to_docstore_id[0]: Document(
-                page_content="foo", metadata={"page": 0}
+                id=docsearch.index_to_docstore_id[0],
+                page_content="foo",
+                metadata={"page": 0},
             ),
             docsearch.index_to_docstore_id[1]: Document(
-                page_content="bar", metadata={"page": 1}
+                id=docsearch.index_to_docstore_id[1],
+                page_content="bar",
+                metadata={"page": 1},
             ),
             docsearch.index_to_docstore_id[2]: Document(
-                page_content="baz", metadata={"page": 2}
+                id=docsearch.index_to_docstore_id[2],
+                page_content="baz",
+                metadata={"page": 2},
             ),
         }
     )
@@ -1252,7 +1374,9 @@ def test_faiss_with_metadatas_and_filter() -> None:
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
     # make sure it returns the result that matches the filter.
     # Not the one who's text matches better.
-    assert output == [Document(page_content="bar", metadata={"page": 1})]
+    assert output == [
+        Document(id=output[0].id, page_content="bar", metadata={"page": 1})
+    ]
     assert output == docsearch.similarity_search(
         "foo", k=1, filter=lambda di: di["page"] == 1
     )
@@ -1266,13 +1390,19 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     expected_docstore = InMemoryDocstore(
         {
             docsearch.index_to_docstore_id[0]: Document(
-                page_content="foo", metadata={"page": 0}
+                id=docsearch.index_to_docstore_id[0],
+                page_content="foo",
+                metadata={"page": 0},
             ),
             docsearch.index_to_docstore_id[1]: Document(
-                page_content="bar", metadata={"page": 1}
+                id=docsearch.index_to_docstore_id[1],
+                page_content="bar",
+                metadata={"page": 1},
             ),
             docsearch.index_to_docstore_id[2]: Document(
-                page_content="baz", metadata={"page": 2}
+                id=docsearch.index_to_docstore_id[2],
+                page_content="baz",
+                metadata={"page": 2},
             ),
         }
     )
@@ -1280,7 +1410,9 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     output = await docsearch.asimilarity_search("foo", k=1, filter={"page": 1})
     # make sure it returns the result that matches the filter.
     # Not the one who's text matches better.
-    assert output == [Document(page_content="bar", metadata={"page": 1})]
+    assert output == [
+        Document(id=output[0].id, page_content="bar", metadata={"page": 1})
+    ]
     assert output == await docsearch.asimilarity_search(
         "foo", k=1, filter=lambda di: di["page"] == 1
     )
@@ -1294,25 +1426,37 @@ def test_faiss_with_metadatas_and_list_filter() -> None:
     expected_docstore = InMemoryDocstore(
         {
             docsearch.index_to_docstore_id[0]: Document(
-                page_content="foo", metadata={"page": 0}
+                id=docsearch.index_to_docstore_id[0],
+                page_content="foo",
+                metadata={"page": 0},
             ),
             docsearch.index_to_docstore_id[1]: Document(
-                page_content="bar", metadata={"page": 1}
+                id=docsearch.index_to_docstore_id[1],
+                page_content="bar",
+                metadata={"page": 1},
             ),
             docsearch.index_to_docstore_id[2]: Document(
-                page_content="baz", metadata={"page": 2}
+                id=docsearch.index_to_docstore_id[2],
+                page_content="baz",
+                metadata={"page": 2},
             ),
             docsearch.index_to_docstore_id[3]: Document(
-                page_content="foo", metadata={"page": 3}
+                id=docsearch.index_to_docstore_id[3],
+                page_content="foo",
+                metadata={"page": 3},
             ),
             docsearch.index_to_docstore_id[4]: Document(
-                page_content="qux", metadata={"page": 3}
+                id=docsearch.index_to_docstore_id[4],
+                page_content="qux",
+                metadata={"page": 3},
             ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foor", k=1, filter={"page": [0, 1, 2]})
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output == [
+        Document(id=output[0].id, page_content="foo", metadata={"page": 0})
+    ]
     assert output == docsearch.similarity_search(
         "foor", k=1, filter=lambda di: di["page"] in [0, 1, 2]
     )
@@ -1326,25 +1470,37 @@ async def test_faiss_async_with_metadatas_and_list_filter() -> None:
     expected_docstore = InMemoryDocstore(
         {
             docsearch.index_to_docstore_id[0]: Document(
-                page_content="foo", metadata={"page": 0}
+                id=docsearch.index_to_docstore_id[0],
+                page_content="foo",
+                metadata={"page": 0},
             ),
             docsearch.index_to_docstore_id[1]: Document(
-                page_content="bar", metadata={"page": 1}
+                id=docsearch.index_to_docstore_id[1],
+                page_content="bar",
+                metadata={"page": 1},
             ),
             docsearch.index_to_docstore_id[2]: Document(
-                page_content="baz", metadata={"page": 2}
+                id=docsearch.index_to_docstore_id[2],
+                page_content="baz",
+                metadata={"page": 2},
             ),
             docsearch.index_to_docstore_id[3]: Document(
-                page_content="foo", metadata={"page": 3}
+                id=docsearch.index_to_docstore_id[3],
+                page_content="foo",
+                metadata={"page": 3},
             ),
             docsearch.index_to_docstore_id[4]: Document(
-                page_content="qux", metadata={"page": 3}
+                id=docsearch.index_to_docstore_id[4],
+                page_content="qux",
+                metadata={"page": 3},
             ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foor", k=1, filter={"page": [0, 1, 2]})
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    assert output == [
+        Document(id=output[0].id, page_content="foo", metadata={"page": 0})
+    ]
     assert output == await docsearch.asimilarity_search(
         "foor", k=1, filter=lambda di: di["page"] in [0, 1, 2]
     )
@@ -1381,7 +1537,10 @@ def test_faiss_add_texts() -> None:
     # Test adding a similar document as before.
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
-    assert output == [Document(page_content="foo"), Document(page_content="foo")]
+    assert output == [
+        Document(id=output[0].id, page_content="foo"),
+        Document(id=output[1].id, page_content="foo"),
+    ]
 
 
 @pytest.mark.requires("faiss")
@@ -1393,7 +1552,10 @@ async def test_faiss_async_add_texts() -> None:
     # Test adding a similar document as before.
     await docsearch.aadd_texts(["foo"])
     output = await docsearch.asimilarity_search("foo", k=2)
-    assert output == [Document(page_content="foo"), Document(page_content="foo")]
+    assert output == [
+        Document(id=output[0].id, page_content="foo"),
+        Document(id=output[1].id, page_content="foo"),
+    ]
 
 
 @pytest.mark.requires("faiss")
@@ -1451,7 +1613,7 @@ def test_faiss_similarity_search_with_relevance_scores() -> None:
     )
     outputs = docsearch.similarity_search_with_relevance_scores("foo", k=1)
     output, score = outputs[0]
-    assert output == Document(page_content="foo")
+    assert output == Document(id=output.id, page_content="foo")
     assert score == 1.0
 
 
@@ -1466,7 +1628,7 @@ async def test_faiss_async_similarity_search_with_relevance_scores() -> None:
     )
     outputs = await docsearch.asimilarity_search_with_relevance_scores("foo", k=1)
     output, score = outputs[0]
-    assert output == Document(page_content="foo")
+    assert output == Document(id=output.id, page_content="foo")
     assert score == 1.0
 
 
@@ -1484,7 +1646,7 @@ def test_faiss_similarity_search_with_relevance_scores_with_threshold() -> None:
     )
     assert len(outputs) == 1
     output, score = outputs[0]
-    assert output == Document(page_content="foo")
+    assert output == Document(id=output.id, page_content="foo")
     assert score == 1.0
 
 
@@ -1502,7 +1664,7 @@ async def test_faiss_asimilarity_search_with_relevance_scores_with_threshold() -
     )
     assert len(outputs) == 1
     output, score = outputs[0]
-    assert output == Document(page_content="foo")
+    assert output == Document(id=output.id, page_content="foo")
     assert score == 1.0
 
 
@@ -1604,3 +1766,34 @@ def test_faiss_with_duplicate_ids() -> None:
         FAISS.from_texts(texts, FakeEmbeddings(), ids=duplicate_ids)
 
     assert "Duplicate ids found in the ids list." in str(exc_info.value)
+
+
+@pytest.mark.requires("faiss")
+def test_faiss_document_ids() -> None:
+    """Test whether FAISS assigns the correct document ids."""
+    ids = ["id1", "id2", "id3"]
+    texts = ["foo", "bar", "baz"]
+
+    vstore = FAISS.from_texts(texts, FakeEmbeddings(), ids=ids)
+    for id_, text in zip(ids, texts):
+        doc = vstore.docstore.search(id_)
+        assert isinstance(doc, Document)
+        assert doc.id == id_
+        assert doc.page_content == text
+
+
+@pytest.mark.requires("faiss")
+def test_faiss_get_by_ids() -> None:
+    """Test FAISS `get_by_ids` method."""
+    ids = ["id1", "id2", "id3"]
+    texts = ["foo", "bar", "baz"]
+
+    vstore = FAISS.from_texts(texts, FakeEmbeddings(), ids=ids)
+    docs = vstore.get_by_ids(ids)
+    assert len(docs) == 3
+    assert {doc.id for doc in docs} == set(ids)
+
+    for id_ in ids:
+        res = vstore.get_by_ids([id_])
+        assert len(res) == 1
+        assert res[0].id == id_

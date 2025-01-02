@@ -605,6 +605,9 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
+        if self.args_schema is not None and not get_fields(self.args_schema):
+            # StructuredTool with no args
+            return (), {}
         tool_input = self._parse_input(tool_input, tool_call_id)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
@@ -684,9 +687,9 @@ class ChildTool(BaseTool):
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
+                tool_kwargs = tool_kwargs | {"run_manager": run_manager}
             if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs[config_param] = config
+                tool_kwargs = tool_kwargs | {config_param: config}
             response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:

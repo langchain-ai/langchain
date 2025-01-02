@@ -42,6 +42,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 logger = logging.getLogger()
 
 if TYPE_CHECKING:
+    from azure.core.credentials import TokenCredential
+    from azure.core.credentials_async import AsyncTokenCredential
     from azure.search.documents import SearchClient, SearchItemPaged
     from azure.search.documents.aio import (
         AsyncSearchItemPaged,
@@ -96,10 +98,13 @@ def _get_search_client(
     cors_options: Optional[CorsOptions] = None,
     async_: bool = False,
     additional_search_client_options: Optional[Dict[str, Any]] = None,
+    azure_credential: Optional[TokenCredential] = None,
+    azure_async_credential: Optional[AsyncTokenCredential] = None,
 ) -> Union[SearchClient, AsyncSearchClient]:
     from azure.core.credentials import AccessToken, AzureKeyCredential, TokenCredential
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
+    from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCredential
     from azure.search.documents import SearchClient
     from azure.search.documents.aio import SearchClient as AsyncSearchClient
     from azure.search.documents.indexes import SearchIndexClient
@@ -119,6 +124,21 @@ def _get_search_client(
         VectorSearchProfile,
     )
 
+    class AzureBearerTokenCredential(TokenCredential):
+        def __init__(self, token: str):
+            # set the expiry to an hour from now.
+            self._token = AccessToken(token, int(time.time()) + 3600)
+
+        def get_token(
+            self,
+            *scopes: str,
+            claims: Optional[str] = None,
+            tenant_id: Optional[str] = None,
+            enable_cae: bool = False,
+            **kwargs: Any,
+        ) -> AccessToken:
+            return self._token
+
     additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
     credential: Union[AzureKeyCredential, TokenCredential, InteractiveBrowserCredential]
@@ -128,18 +148,22 @@ def _get_search_client(
         if key.upper() == "INTERACTIVE":
             credential = InteractiveBrowserCredential()
             credential.get_token("https://search.azure.com/.default")
+            async_credential = credential
         else:
             credential = AzureKeyCredential(key)
+            async_credential = credential
     elif azure_ad_access_token is not None:
-        credential = TokenCredential(
-            lambda *scopes, **kwargs: AccessToken(
-                azure_ad_access_token, int(time.time()) + 3600
-            )
-        )
+        credential = AzureBearerTokenCredential(azure_ad_access_token)
+        async_credential = credential
     else:
-        credential = DefaultAzureCredential()
+        credential = azure_credential or DefaultAzureCredential()
+        async_credential = azure_async_credential or AsyncDefaultAzureCredential()
+
     index_client: SearchIndexClient = SearchIndexClient(
-        endpoint=endpoint, credential=credential, user_agent=user_agent
+        endpoint=endpoint,
+        credential=credential,
+        user_agent=user_agent,
+        **additional_search_client_options,
     )
     try:
         index_client.get_index(name=index_name)
@@ -252,7 +276,7 @@ def _get_search_client(
         return AsyncSearchClient(
             endpoint=endpoint,
             index_name=index_name,
-            credential=credential,
+            credential=async_credential,
             user_agent=user_agent,
             **additional_search_client_options,
         )
@@ -264,7 +288,7 @@ class AzureSearch(VectorStore):
     def __init__(
         self,
         azure_search_endpoint: str,
-        azure_search_key: str,
+        azure_search_key: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
@@ -281,6 +305,8 @@ class AzureSearch(VectorStore):
         vector_search_dimensions: Optional[int] = None,
         additional_search_client_options: Optional[Dict[str, Any]] = None,
         azure_ad_access_token: Optional[str] = None,
+        azure_credential: Optional[TokenCredential] = None,
+        azure_async_credential: Optional[AsyncTokenCredential] = None,
         **kwargs: Any,
     ):
         try:
@@ -347,6 +373,7 @@ class AzureSearch(VectorStore):
             user_agent=user_agent,
             cors_options=cors_options,
             additional_search_client_options=additional_search_client_options,
+            azure_credential=azure_credential,
         )
         self.async_client = _get_search_client(
             azure_search_endpoint,
@@ -363,6 +390,8 @@ class AzureSearch(VectorStore):
             user_agent=user_agent,
             cors_options=cors_options,
             async_=True,
+            azure_credential=azure_credential,
+            azure_async_credential=azure_async_credential,
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name

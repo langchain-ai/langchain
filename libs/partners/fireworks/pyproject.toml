@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-fireworks"
-version = "0.2.5"
+version = "0.2.6"
 description = "An integration package connecting Fireworks and LangChain"
 authors = []
 readme = "README.md"
@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.27"
 fireworks-ai = ">=0.13.0"
 openai = "^1.10.0"
 requests = "^2"
