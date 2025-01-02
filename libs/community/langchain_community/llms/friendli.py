@@ -16,14 +16,19 @@ from langchain_core.utils.utils import convert_to_secret_str
 from pydantic import Field, SecretStr
 
 
-def _stream_response_to_generation_chunk(stream_response: Any) -> GenerationChunk:
+def _stream_response_to_generation_chunk(
+    stream_response: Any,
+) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
-    if stream_response.event == "token_sampled":
-        return GenerationChunk(
-            text=stream_response.text,
-            generation_info={"token": str(stream_response.token)},
-        )
-    return GenerationChunk(text="")
+    if not stream_response.get("choices", None):
+        return GenerationChunk(text="")
+    return GenerationChunk(
+        text=stream_response.choices[0].text,
+        # generation_info=dict(
+        #     finish_reason=stream_response.choices[0].get("finish_reason", None),
+        #     logprobs=stream_response.choices[0].get("logprobs", None),
+        # ),
+    )
 
 
 class BaseFriendli(Serializable):
@@ -34,7 +39,7 @@ class BaseFriendli(Serializable):
     # Friendli Async client.
     async_client: Any = Field(default=None, exclude=True)
     # Model name to use.
-    model: str = "mixtral-8x7b-instruct-v0-1"
+    model: str = "meta-llama-3.1-8b-instruct"
     # Friendli personal access token to run as.
     friendli_token: Optional[SecretStr] = None
     # Friendli team ID to run as.
@@ -107,7 +112,7 @@ class Friendli(LLM, BaseFriendli):
             from langchain_community.llms import Friendli
 
             friendli = Friendli(
-                model="mixtral-8x7b-instruct-v0-1", friendli_token="YOUR FRIENDLI TOKEN"
+                model="meta-llama-3.1-8b-instruct", friendli_token="YOUR FRIENDLI TOKEN"
             )
     """
 

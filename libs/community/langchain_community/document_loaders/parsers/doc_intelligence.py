@@ -79,7 +79,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         with blob.as_bytes_io() as file_obj:
             poller = self.client.begin_analyze_document(
                 self.api_model,
-                file_obj,
+                body=file_obj,
                 content_type="application/octet-stream",
                 output_content_format="markdown" if self.mode == "markdown" else "text",
             )
@@ -97,8 +97,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         poller = self.client.begin_analyze_document(
             self.api_model,
-            AnalyzeDocumentRequest(url_source=url),
-            # content_type="application/octet-stream",
+            body=AnalyzeDocumentRequest(url_source=url),
             output_content_format="markdown" if self.mode == "markdown" else "text",
         )
         result = poller.result()
@@ -115,8 +114,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         poller = self.client.begin_analyze_document(
             self.api_model,
-            analyze_request=AnalyzeDocumentRequest(bytes_source=bytes_source),
-            # content_type="application/octet-stream",
+            body=AnalyzeDocumentRequest(bytes_source=bytes_source),
             output_content_format="markdown" if self.mode == "markdown" else "text",
         )
         result = poller.result()
