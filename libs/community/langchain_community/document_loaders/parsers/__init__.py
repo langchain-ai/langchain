@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         PyMuPDFParser,
         PyPDFium2Parser,
         PyPDFParser,
+        ZeroxPDFParser,
     )
     from langchain_community.document_loaders.parsers.vsdx import (
         VsdxParser,
@@ -55,6 +56,7 @@ _module_lookup = {
     "RapidOCRBlobParser": "langchain_community.document_loaders.parsers.images",
     "TesseractBlobParser": "langchain_community.document_loaders.parsers.images",
     "VsdxParser": "langchain_community.document_loaders.parsers.vsdx",
+    "ZeroxPDFParser": "langchain_community.document_loaders.parsers.pdf",
 }
 
 
@@ -82,4 +84,5 @@ __all__ = [
     "RapidOCRBlobParser",
     "TesseractBlobParser",
     "VsdxParser",
+    "ZeroxPDFParser",
 ]
