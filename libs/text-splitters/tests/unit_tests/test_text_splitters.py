@@ -438,6 +438,8 @@ function MyComponent() {
 
 export default MyComponent;
 """
+
+
 def test_jsx_text_splitter() -> None:
     splitter = JSXTextSplitter(chunk_size=30, chunk_overlap=0)
     splits = splitter.split_text(FAKE_JSX_TEXT)
@@ -445,14 +447,14 @@ def test_jsx_text_splitter() -> None:
     expected_splits = [
         "\nimport React from 'react';\n"
         "import OtherComponent from './OtherComponent';\n",
-        '\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);',
-        '\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };',
-        'return (',
-        '<div>',
-        '<h1>Counter: {count}</h1>\n      ',
-        '<button onClick={handleClick}>\n        Increment\n      </button>\n      ',
-        '<OtherComponent />\n    </div>\n  );\n}\n',
-        'export default MyComponent;'
+        "\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);",
+        "\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };",
+        "return (",
+        "<div>",
+        "<h1>Counter: {count}</h1>\n      ",
+        "<button onClick={handleClick}>\n        Increment\n      </button>\n      ",
+        "<OtherComponent />\n    </div>\n  );\n}\n",
+        "export default MyComponent;",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
 

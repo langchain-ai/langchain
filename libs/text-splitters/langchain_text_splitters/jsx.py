@@ -37,7 +37,7 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(chunk_size=chunk_size, chunk_overlap=chunk_overlap, **kwargs)
         self._separators = separators or []
 
-    def split_text(self, text):
+    def split_text(self, text: str) -> List[str]:
         """Split text into chunks.
 
         This method splits the text into chunks by:
@@ -53,15 +53,18 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
             List of text chunks split on JSX and JS boundaries
         """
         # Extract unique opening JSX tags using regex
-        jsx_tags = list(set(
-            tag.split(' ')[0].strip('<>\n')
-            for tag in re.findall(r'<[^/\s][^>]*>', text)  # Match opening tags
-            if tag.strip()
-        ))
+        jsx_tags = list(
+            set(
+                tag.split(" ")[0].strip("<>\n")
+                for tag in re.findall(r"<[^/\s][^>]*>", text)  # Match opening tags
+                if tag.strip()
+            )
+        )
         # Create separators list with extracted tags and default separators
-        jsx_separators = [f'<{tag}' for tag in jsx_tags]
-        jsx_separators = sorted(jsx_separators, key=lambda x: abs(
-            len(jsx_separators)//2 - jsx_separators.index(x))
+        jsx_separators = [f"<{tag}" for tag in jsx_tags]
+        jsx_separators = sorted(
+            jsx_separators,
+            key=lambda x: abs(len(jsx_separators) // 2 - jsx_separators.index(x)),
         )
         jsx_separators = list(set(jsx_separators))
 
@@ -89,10 +92,12 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
             "\ndefault ",
             " default ",
         ]
-        separators = self._separators + \
-            js_separators + \
-            jsx_separators + \
-            ['<>', '\n\n', '&&\n', '||\n']
+        separators = (
+            self._separators
+            + js_separators
+            + jsx_separators
+            + ["<>", "\n\n", "&&\n", "||\n"]
+        )
         self._separators = separators
 
         # Split the text using the separators
@@ -107,7 +112,7 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
                     final_chunks.append(chunks[i])
                 else:
                     # Add the overlap from the previous chunk
-                    overlap_chunk = chunks[i-1][-self._chunk_overlap:] + chunks[i]
+                    overlap_chunk = chunks[i - 1][-self._chunk_overlap :] + chunks[i]
                     final_chunks.append(overlap_chunk)
 
             return final_chunks
