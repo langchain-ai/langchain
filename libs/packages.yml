@@ -308,3 +308,7 @@ packages:
   repo: crate/langchain-cratedb
   downloads: 362
   downloads_updated_at: '2024-12-23T20:53:27.001852+00:00'
+- name: langchain-modelscope
+  path: .
+  repo: modelscope/langchain-modelscope
+  downloads: 0
