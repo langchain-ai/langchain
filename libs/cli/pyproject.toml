@@ -18,7 +18,7 @@ gitpython = "^3"
 langserve = { extras = ["all"], version = ">=0.0.51" }
 uvicorn = ">=0.23,<1.0"
 tomlkit = ">=0.12"
-gritql = "^0.1.1"
+gritql = "^0.2.0"
 
 [tool.poetry.scripts]
 langchain = "langchain_cli.cli:app"
