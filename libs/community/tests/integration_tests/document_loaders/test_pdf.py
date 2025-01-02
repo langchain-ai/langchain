@@ -170,12 +170,18 @@ def test_amazontextract_loader_failures() -> None:
         ("PyMuPDFLoader", {}),
         ("PyPDFium2Loader", {}),
         ("PyPDFLoader", {}),
+        ("ZeroxPDFLoader", {}),
     ],
 )
 def test_standard_parameters(
     parser_factory: str,
     params: dict,
 ) -> None:
+    if parser_factory == "ZeroxPDFLoader":
+        try:
+            import pyzerox  # noqa: F401
+        except ImportError:
+            pytest.skip("pyzerox is valid only with Python +3.11")
     loader_class = getattr(pdf_loaders, parser_factory)
 
     file_path = Path(__file__).parent.parent / "examples/hello.pdf"

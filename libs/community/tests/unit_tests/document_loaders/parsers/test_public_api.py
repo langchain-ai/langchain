@@ -20,4 +20,5 @@ def test_parsers_public_api_correct() -> None:
         "RapidOCRBlobParser",
         "TesseractBlobParser",
         "VsdxParser",
+        "ZeroxPDFParser",
     }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import html
 import io
 import logging
@@ -9,11 +10,12 @@ import threading
 import warnings
 from datetime import datetime
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
     BinaryIO,
+    Dict,
     Iterable,
     Iterator,
     Literal,
@@ -28,9 +30,14 @@ from urllib.parse import urlparse
 import numpy
 import numpy as np
 from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers import (
+    LLMImageBlobParser,
+    TesseractBlobParser,
+)
 from langchain_community.document_loaders.parsers.images import (
     BaseImageBlobParser,
     RapidOCRBlobParser,
@@ -1462,6 +1469,326 @@ class PDFPlumberParser(BaseBlobParser):
                 warnings.warn("Unknown PDF Filter!")
 
         return extract_from_images_with_rapidocr(images)
+
+
+class ZeroxPDFParser(BaseBlobParser):
+    """Parse a blob from a PDF using `py-zerox` library.
+
+    This class provides methods to parse a blob from a PDF document, supporting various
+    configurations such as handling password-protected PDFs, extracting images.
+    It integrates the 'py-zerox' library for PDF processing and offers synchronous blob
+    parsing.
+
+    Examples:
+        Setup:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community py-zerox
+
+        Load a blob from a PDF file:
+
+        .. code-block:: python
+
+            from langchain_core.documents.base import Blob
+
+            blob = Blob.from_path("./example_data/layout-parser-paper.pdf")
+
+        Instantiate the parser:
+
+        .. code-block:: python
+
+            from langchain_community.document_loaders.parsers import ZeroxPDFParser
+
+            parser = ZeroxPDFParser(
+                # password = None,
+                mode = "single",
+                pages_delimiter = "\n\f",
+                # extract_images = True,
+                # images_to_text = convert_images_to_text_with_tesseract(),
+            )
+
+        Lazily parse the blob:
+
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = parser.lazy_parse(blob)
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    """
+
+    warnings.filterwarnings(
+        "ignore",
+        module=r"^pyzerox.models.modellitellm$",
+        message=r"\s*Custom system prompt was provided which.*",
+    )
+    _warn_images_to_text = False
+    _warn_creator = False
+    _map_extract_tables: Dict[Literal["markdown", "html", None], str] = {
+        "markdown": "",
+        "html": "But, use html syntax for convert all tables. ",
+    }
+    _map_extract_images = {
+        RapidOCRBlobParser: "",
+        TesseractBlobParser: "",
+        LLMImageBlobParser: "If you come across a picture, "
+        "diagram or other illustration, "
+        "describe it. ",
+    }
+    _prompt = (
+        "Convert the following PDF page to markdown. "
+        "{prompt_tables}"
+        "{prompt_images}"
+        "Remove the header, footer and page number. "
+        "Return only the markdown with no explanation text. "
+        "Do not exclude any content from the page. "
+    )
+
+    def __init__(
+        self,
+        mode: Literal["single", "page"] = "page",
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
+        images_parser: Optional[BaseImageBlobParser] = None,
+        images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
+        extract_tables: Union[Literal["markdown", "html"], None] = "markdown",
+        cleanup: bool = True,
+        concurrency: int = 10,
+        maintain_format: bool = False,
+        model: str = "gpt-4o-mini",
+        custom_system_prompt: Optional[str] = None,
+        select_pages: Optional[Union[int, Iterable[int]]] = None,
+        **zerox_kwargs: dict[str, Any],
+    ):
+        """
+        Initialize the parser with arguments to be passed to the zerox function.
+        Make sure to set necessary environment variables such as API key, endpoint, etc.
+        Check zerox documentation for list of necessary environment variables for
+        any given model.
+
+        Args:
+            mode: The extraction mode, either "single" for the entire document or "page"
+                for page-wise extraction.
+            pages_delimiter: A string delimiter to separate pages in single-mode
+                extraction.
+            images_parser: Optional image blob parser.
+            images_inner_format: The format for the parsed output.
+                - "text" = return the content as is
+                - "markdown-img" = wrap the content into an image markdown link, w/ link
+                pointing to (`![body)(#)`]
+                - "html-img" = wrap the content as the `alt` text of an tag and link to
+                (`<img alt="{body}" src="#"/>`)
+            model:
+                Vision capable model to use. Defaults to "gpt-4o-mini".
+                Hosted models are passed in format "<provider>/<model>"
+                Examples: "azure/gpt-4o-mini", "vertex_ai/gemini-1.5-flash-001"
+                          See more details in zerox documentation.
+            cleanup:
+                Whether to cleanup the temporary files after processing, defaults
+                to True
+            concurrency:
+                The number of concurrent processes to run, defaults to 10
+            maintain_format:
+                Whether to maintain the format from the previous page, defaults to False
+            model:
+                The model to use for generating completions, defaults to "gpt-4o-mini".
+                Note - Refer: https://docs.litellm.ai/docs/providers to pass correct
+                model name as according to provider it might be different from actual
+                name.
+            output_dir:
+                The directory to save the markdown output, defaults to None
+            temp_dir:
+                The directory to store temporary files, defaults to some named folder
+                in system's temp directory. If already exists, the contents will be
+                deleted for zerox uses it.
+            custom_system_prompt:
+                The system prompt to use for the model, this overrides the default
+                system prompt of zerox. Generally it is not required unless you want
+                some specific behaviour. When set, it will raise a friendly warning,
+                defaults to None
+            select_pages:
+                Pages to process, can be a single page number or an iterable of page
+                numbers, defaults to None
+            **zerox_kwargs:
+                Arguments specific to the zerox function.
+        """
+        if mode not in ["single", "page"]:
+            raise ValueError("mode must be single or page")
+        if extract_tables not in ["markdown", "html", None]:
+            logger.warning("extract_tables must be markdown or html")
+            extract_tables = "markdown"
+        if not images_parser:
+            images_parser = RapidOCRBlobParser()
+        self.mode = mode
+        self.pages_delimiter = pages_delimiter
+        self.images_parser = images_parser
+        self.images_inner_format = images_inner_format
+        self.extract_tables = extract_tables
+
+        self.cleanup = cleanup
+        self.concurrency = concurrency
+        self.maintain_format = maintain_format
+        self.model = model
+        if not custom_system_prompt:
+            custom_system_prompt = ZeroxPDFParser._prompt
+        self.custom_system_prompt = custom_system_prompt
+        self.select_pages = select_pages
+        self.zerox_kwargs = zerox_kwargs
+
+    @staticmethod
+    def _is_valid_url(url: str) -> bool:
+        """Check if the url is valid."""
+        parsed = urlparse(url)
+        return bool(parsed.netloc) and bool(parsed.scheme)
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        """Lazily parse the blob.
+
+        Args:
+            blob: The blob to parse.
+
+        Raises:
+            ImportError: If the `py-zerox` package is not installed.
+
+        Yields:
+            An iterator over the parsed documents.
+        """
+        try:
+            from pyzerox import zerox
+        except ImportError:
+            raise ImportError(
+                "Could not import pyzerox python package. "
+                "Please install it with `pip install py-zerox`."
+            )
+        temp_file = None
+        try:
+            if not ZeroxPDFParser._is_valid_url(str(blob.path)):
+                temp_file = NamedTemporaryFile()
+                with open(temp_file.name, "wb") as f:
+                    f.write(blob.as_bytes())
+                file_path = temp_file.name
+            else:
+                file_path = str(blob.path)
+
+            with blob.as_bytes_io() as pdf_file_obj:
+                doc_metadata = _purge_metadata(self._get_metadata(pdf_file_obj))
+
+            doc_metadata["source"] = blob.source or blob.path
+            zerox_prompt = self.custom_system_prompt
+
+            if not zerox_prompt and self.images_parser or self.extract_tables:
+                prompt_tables = ZeroxPDFParser._map_extract_tables[self.extract_tables]
+                clazz = self.images_parser.__class__
+                if clazz in ZeroxPDFParser._map_extract_images:
+                    prompt_images = ZeroxPDFParser._map_extract_images[clazz]
+                else:
+                    if not ZeroxPDFParser._warn_creator:
+                        ZeroxPDFParser._warn_creator = True
+                        logger.warning("images_parser can not be simulated")
+                    prompt_images = ""
+                zerox_prompt = PromptTemplate.from_template(
+                    self.custom_system_prompt
+                ).format(prompt_tables=prompt_tables, prompt_images=prompt_images)
+            zerox_output = asyncio.run(
+                zerox(
+                    file_path=str(file_path),
+                    model=self.model,
+                    cleanup=self.cleanup,
+                    concurrency=self.concurrency,
+                    maintain_format=self.maintain_format,
+                    custom_system_prompt=zerox_prompt,
+                    select_pages=self.select_pages,
+                    **self.zerox_kwargs,
+                )
+            )
+
+            # Convert zerox output to Document instances and yield them
+            if len(zerox_output.pages) > 0:
+                doc_metadata = _purge_metadata(
+                    {
+                        "producer": "ZeroxPDF",
+                        "creator": "ZeroxPDF",
+                        "creationdate": "",
+                    }
+                    | doc_metadata
+                    | {
+                        "total_pages": zerox_output.pages[-1].page,
+                        "num_pages": zerox_output.pages[-1].page,  # Deprecated
+                    }
+                )
+                single_texts = []
+                for page in zerox_output.pages:
+                    text_from_page = page.content
+                    images_from_page = ""  # FIXME
+                    all_text = _merge_text_and_extras(
+                        [images_from_page], text_from_page
+                    )
+                    if self.mode == "page":
+                        yield Document(
+                            page_content=all_text,
+                            metadata=_validate_metadata(
+                                doc_metadata | {"page": page.page - 1}
+                            ),
+                        )
+                    else:
+                        single_texts.append(all_text)
+                if self.mode == "single":
+                    yield Document(
+                        page_content=self.pages_delimiter.join(single_texts),
+                        metadata=_validate_metadata(doc_metadata),
+                    )
+        finally:
+            if temp_file:
+                temp_file.close()
+
+    def _get_metadata(
+        self,
+        fp: BinaryIO,
+        password: str = "",
+        caching: bool = True,
+    ) -> dict[str, Any]:
+        """
+        Extract metadata from a PDF file.
+
+        Args:
+            fp: The file pointer to the PDF file.
+            password: The password for the PDF file, if encrypted. Defaults to an empty
+                string.
+            caching: Whether to cache the PDF structure. Defaults to True.
+
+        Returns:
+            Metadata of the PDF file.
+        """
+        from pdfminer.pdfpage import PDFDocument, PDFPage, PDFParser
+
+        # Create a PDF parser object associated with the file object.
+        parser = PDFParser(fp)
+        # Create a PDF document object that stores the document structure.
+        doc = PDFDocument(parser, password=password, caching=caching)
+        metadata = {}
+
+        for info in doc.info:
+            metadata.update(info)
+        for k, v in metadata.items():
+            try:
+                metadata[k] = PDFMinerParser.resolve_and_decode(v)
+            except Exception as e:  # pragma: nocover
+                # This metadata value could not be parsed. Instead of failing the PDF
+                # read, treat it as a warning only if `strict_metadata=False`.
+                logger.warning(
+                    '[WARNING] Metadata key "%s" could not be parsed due to '
+                    "exception: %s",
+                    k,
+                    str(e),
+                )
+
+        # Count number of pages.
+        metadata["total_pages"] = len(list(PDFPage.create_pages(doc)))
+
+        return metadata
 
 
 class AmazonTextractPDFParser(BaseBlobParser):

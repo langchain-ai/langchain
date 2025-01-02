@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         PyMuPDFParser,
         PyPDFium2Parser,
         PyPDFParser,
+        ZeroxPDFParser,
     )
 
 # Create a way to dynamically look up deprecated imports.
@@ -34,6 +35,7 @@ DEPRECATED_LOOKUP = {
     "PyMuPDFParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFium2Parser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFParser": "langchain_community.document_loaders.parsers.pdf",
+    "ZeroxPDFParser": "langchain_community.document_loaders.parsers.pdf",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -55,4 +57,5 @@ __all__ = [
     "PyMuPDFParser",
     "PyPDFium2Parser",
     "PyPDFParser",
+    "ZeroxPDFParser",
 ]
