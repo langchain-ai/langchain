@@ -1,0 +1,28 @@
+diff --git a/libs/text-splitters/tests/unit_tests/test_text_splitters.py b/libs/text-splitters/tests/unit_tests/test_text_splitters.py
+index 4d113bc06..de3a042a3 100644
+--- a/libs/text-splitters/tests/unit_tests/test_text_splitters.py
++++ b/libs/text-splitters/tests/unit_tests/test_text_splitters.py
+@@ -23,12 +23,12 @@ from langchain_text_splitters.html import (
+     HTMLSemanticPreservingSplitter,
+ )
+ from langchain_text_splitters.json import RecursiveJsonSplitter
++from langchain_text_splitters.jsx import JSXTextSplitter
+ from langchain_text_splitters.markdown import (
+     ExperimentalMarkdownSyntaxTextSplitter,
+     MarkdownHeaderTextSplitter,
+ )
+ from langchain_text_splitters.python import PythonCodeTextSplitter
+-from langchain_text_splitters.jsx import JSXTextSplitter
+ 
+ FAKE_PYTHON_TEXT = """
+ class Foo:
+@@ -443,7 +443,8 @@ def test_jsx_text_splitter() -> None:
+     splits = splitter.split_text(FAKE_JSX_TEXT)
+ 
+     expected_splits = [
+-        "\nimport React from 'react';\nimport OtherComponent from './OtherComponent';\n",
++        "\nimport React from 'react';\n"
++        "import OtherComponent from './OtherComponent';\n",
+         '\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);',
+         '\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };',
+         'return (',
