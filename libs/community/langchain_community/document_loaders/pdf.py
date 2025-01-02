@@ -12,6 +12,7 @@ from typing import (
     Any,
     BinaryIO,
     Iterator,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -28,6 +29,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.dedoc import DedocBaseLoader
 from langchain_community.document_loaders.parsers.pdf import (
+    CONVERT_IMAGE_TO_TEXT,
     AmazonTextractPDFParser,
     DocumentIntelligenceParser,
     PDFMinerParser,
@@ -35,6 +37,7 @@ from langchain_community.document_loaders.parsers.pdf import (
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
+    _default_page_delimitor,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
@@ -96,7 +99,8 @@ class BasePDFLoader(BaseLoader, ABC):
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
-        # If the file is a web path or S3, download it to a temporary file, and use that
+        # If the file is a web path or S3, download it to a temporary file,
+        # and use that. It's better to use a BlobLoader.
         if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
             self.temp_dir = tempfile.TemporaryDirectory()
             _, suffix = os.path.splitext(self.file_path)
@@ -412,50 +416,128 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
 
 
 class PyMuPDFLoader(BasePDFLoader):
-    """Load `PDF` files using `PyMuPDF`."""
+    """Load and parse a PDF file using 'PyMuPDF' library.
+
+    This class provides methods to load and parse PDF documents, supporting various
+    configurations such as handling password-protected files, extracting tables,
+    extracting images, and defining extraction mode. It integrates the `PyMuPDF`
+    library for PDF processing and offers both synchronous and asynchronous document
+    loading.
+
+    Examples:
+        Setup:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community pymupdf
+
+        Instantiate the loader:
+
+        .. code-block:: python
+
+            from langchain_community.document_loaders import PyMuPDFLoader
+
+            loader = PyMuPDFLoader(
+                file_path = "./example_data/layout-parser-paper.pdf",
+                # headers = None
+                # password = None,
+                mode = "single",
+                pages_delimitor = "\n\f",
+                # extract_images = True,
+                # images_to_text = convert_images_to_text_with_tesseract(),
+                # extract_tables = "markdown",
+                # extract_tables_settings = None,
+            )
+
+        Lazy load documents:
+
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        Load documents asynchronously:
+
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    """
 
     def __init__(
         self,
         file_path: Union[str, PurePath],
         *,
-        headers: Optional[dict] = None,
+        password: Optional[str] = None,
+        mode: Literal["single", "page"] = "page",
+        pages_delimitor: str = _default_page_delimitor,
         extract_images: bool = False,
+        images_to_text: CONVERT_IMAGE_TO_TEXT = None,
+        extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
+        headers: Optional[dict] = None,
+        extract_tables_settings: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with a file path."""
-        try:
-            import fitz  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "`PyMuPDF` package not found, please install it with "
-                "`pip install pymupdf`"
-            )
+        """Initialize with a file path.
+
+        Args:
+            file_path: The path to the PDF file to be loaded.
+            headers: Optional headers to use for GET request to download a file from a
+              web path.
+            password: Optional password for opening encrypted PDFs.
+            mode: The extraction mode, either "single" for the entire document or "page"
+                for page-wise extraction.
+            pages_delimitor: A string delimiter to separate pages in single-mode
+                extraction.
+            extract_images: Whether to extract images from the PDF.
+            images_to_text: Optional function or callable to convert images to text
+                during extraction.
+            extract_tables: Whether to extract tables in a specific format, such as
+                "csv", "markdown", or "html".
+            extract_tables_settings: Optional dictionary of settings for customizing
+                table extraction.
+            **kwargs: Additional keyword arguments for customizing text extraction
+                behavior.
+
+        Returns:
+            This method does not directly return data. Use the `load`, `lazy_load`, or
+            `aload` methods to retrieve parsed documents with content and metadata.
+
+        Raises:
+            ValueError: If the `mode` argument is not one of "single" or "page".
+        """
+        if mode not in ["single", "page"]:
+            raise ValueError("mode must be single or page")
         super().__init__(file_path, headers=headers)
-        self.extract_images = extract_images
-        self.text_kwargs = kwargs
-
-    def _lazy_load(self, **kwargs: Any) -> Iterator[Document]:
-        if kwargs:
-            logger.warning(
-                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
-                f" is deprecated. Please pass arguments during initialization instead."
-            )
-
-        text_kwargs = {**self.text_kwargs, **kwargs}
-        parser = PyMuPDFParser(
-            text_kwargs=text_kwargs, extract_images=self.extract_images
+        self.parser = PyMuPDFParser(
+            password=password,
+            mode=mode,
+            pages_delimitor=pages_delimitor,
+            text_kwargs=kwargs,
+            extract_images=extract_images,
+            images_to_text=images_to_text,
+            extract_tables=extract_tables,
+            extract_tables_settings=extract_tables_settings,
         )
+
+    def lazy_load(self) -> Iterator[Document]:
+        """
+        Lazy load given path as pages.
+        Insert image, if possible, between two paragraphs.
+        In this way, a paragraph can be continued on the next page.
+        """
+        parser = self.parser
         if self.web_path:
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
             blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from parser.lazy_parse(blob)
-
-    def load(self, **kwargs: Any) -> list[Document]:
-        return list(self._lazy_load(**kwargs))
-
-    def lazy_load(self) -> Iterator[Document]:
-        yield from self._lazy_load()
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:

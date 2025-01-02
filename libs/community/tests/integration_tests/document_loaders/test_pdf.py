@@ -4,12 +4,12 @@ from typing import Sequence, Union
 
 import pytest
 
+import langchain_community.document_loaders as pdf_loaders
 from langchain_community.document_loaders import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
-    PyMuPDFLoader,
     PyPDFium2Loader,
     UnstructuredPDFLoader,
 )
@@ -98,30 +98,6 @@ def test_pypdfium2_loader() -> None:
 
     docs = loader.load()
     assert len(docs) == 16
-
-
-def test_pymupdf_loader() -> None:
-    """Test PyMuPDF loader."""
-    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = PyMuPDFLoader(file_path)
-
-    docs = loader.load()
-    assert len(docs) == 1
-
-    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
-    loader = PyMuPDFLoader(file_path)
-
-    docs = loader.load()
-    assert len(docs) == 16
-    assert loader.web_path is None
-
-    web_path = "https://people.sc.fsu.edu/~jpeterson/hello_world.pdf"
-    loader = PyMuPDFLoader(web_path)
-
-    docs = loader.load()
-    assert loader.web_path == web_path
-    assert loader.file_path != web_path
-    assert len(docs) == 1
 
 
 @pytest.mark.skipif(
@@ -230,3 +206,34 @@ def test_amazontextract_loader_failures() -> None:
     loader = AmazonTextractPDFLoader(two_page_pdf)
     with pytest.raises(ValueError):
         loader.load()
+
+
+@pytest.mark.parametrize(
+    "parser_factory,params",
+    [
+        ("PyMuPDFLoader", {}),
+    ],
+)
+def test_standard_parameters(
+    parser_factory: str,
+    params: dict,
+) -> None:
+    loader_class = getattr(pdf_loaders, parser_factory)
+
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = loader_class(file_path)
+    docs = loader.load()
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = loader_class(file_path, mode="page")
+    docs = loader.load()
+    assert len(docs) == 16
+    assert loader.web_path is None
+
+    web_path = "https://people.sc.fsu.edu/~jpeterson/hello_world.pdf"
+    loader = loader_class(web_path)
+    docs = loader.load()
+    assert loader.web_path == web_path
+    assert loader.file_path != web_path
+    assert len(docs) == 1
