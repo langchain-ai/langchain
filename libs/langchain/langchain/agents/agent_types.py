@@ -15,13 +15,7 @@ from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 class AgentType(str, Enum):
     """An enum for agent types.
 
-    This feature has been depricated.
-    For detailed guidance on transitioning from 
-    LangChain's `AgentType` to LangGraph agents, 
-    refer to the documentation: 
-    https://python.langchain.com/docs/how_to/migrate_agent/
-    This page provides step-by-step instructions 
-    for the migration process.
+    See documentation: https://python.langchain.com/docs/modules/agents/agent_types/
     """
 
     ZERO_SHOT_REACT_DESCRIPTION = "zero-shot-react-description"
