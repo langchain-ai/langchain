@@ -264,7 +264,7 @@ class BasePromptTemplate(
         """Return a partial of the prompt template.
 
         Args:
-            kwargs: Union[str, Callable[[], str], partial variables to set.
+            kwargs: Union[str, Callable[[], str]], partial variables to set.
 
         Returns:
             BasePromptTemplate: A partial of the prompt template.
