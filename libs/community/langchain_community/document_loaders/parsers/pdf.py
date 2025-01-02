@@ -129,6 +129,7 @@ def _validate_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
 
     The standard keys are:
     - source
+    - page (if mode='page')
     - total_page
     - creationdate
     - creator
@@ -453,7 +454,9 @@ class PyPDFParser(BaseBlobParser):
                     image_bytes = io.BytesIO()
                     Image.fromarray(np_image).save(image_bytes, format="PNG")
                     blob = Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
-                    image_text = next(self.images_parser.lazy_parse(blob)).page_content
+                    image_text = next(
+                        self.images_parser.lazy_parse(blob)  # type: ignore
+                    ).page_content
                     images.append(
                         _format_inner_image(blob, image_text, self.images_inner_format)
                     )
@@ -748,7 +751,7 @@ class PDFMinerParser(BaseBlobParser):
                                 blob = Blob.from_path(Path(tempdir) / filename)
                                 blob.metadata["source"] = "#"
                                 image_text = next(
-                                    self.images_parser.lazy_parse(blob)
+                                    self.images_parser.lazy_parse(blob)  # type: ignore
                                 ).page_content
 
                                 text_io.write(
@@ -1101,7 +1104,9 @@ class PyMuPDFParser(BaseBlobParser):
                 blob = Blob.from_data(
                     image_bytes.getvalue(), mime_type="application/x-npy"
                 )
-                image_text = next(self.images_parser.lazy_parse(blob)).page_content
+                image_text = next(
+                    self.images_parser.lazy_parse(blob)  # type: ignore
+                ).page_content
 
                 images.append(
                     _format_inner_image(blob, image_text, self.images_inner_format)
@@ -1191,8 +1196,6 @@ class PyPDFium2Parser(BaseBlobParser):
                 # password=None,
                 mode="page",
                 pages_delimiter="\n\f",
-                # extract_images = True,
-                # images_to_text = convert_images_to_text_with_tesseract(),
             )
 
         Lazily parse the blob:
@@ -1362,7 +1365,9 @@ class PyPDFium2Parser(BaseBlobParser):
                 continue
             numpy.save(image_bytes, image.get_bitmap().to_numpy())
             blob = Blob.from_data(image_bytes.getvalue(), mime_type="application/x-npy")
-            text_from_image = next(self.images_parser.lazy_parse(blob)).page_content
+            text_from_image = next(
+                self.images_parser.lazy_parse(blob)  # type: ignore
+            ).page_content
             str_images.append(
                 _format_inner_image(blob, text_from_image, self.images_inner_format)
             )
@@ -1370,98 +1375,561 @@ class PyPDFium2Parser(BaseBlobParser):
         return _FORMAT_IMAGE_STR.format(image_text=_JOIN_IMAGES.join(str_images))
 
 
+# The legacy PDFPlumberParser use key with upper case.
+# This is not aligned with the new convention, which requires the key to be in
+# lower case.
+class _PDFPlumberParserMetadata(dict):
+    _warning_keys: set[str] = set()
+
+    def __init__(self, d: dict[str, Any]):
+        super().__init__({k.lower(): v for k, v in d.items()})
+        self._pdf_metadata_keys = set(d.keys())
+
+    def _lower(self, k: object) -> object:
+        assert isinstance(k, str)
+        if k in self._pdf_metadata_keys:
+            lk = k.lower()
+            if lk != k:
+                if k not in _PDFPlumberParserMetadata._warning_keys:
+                    _PDFPlumberParserMetadata._warning_keys.add(str(k))
+                    logger.warning(
+                        'The key "%s" with uppercase is deprecated. '
+                        "Update your code and vectorstore.",
+                        k,
+                    )
+            return lk
+        else:
+            return k
+
+    def __contains__(self, k: object) -> bool:
+        return super().__contains__(self._lower(k))
+
+    def __delitem__(self, k: object) -> None:
+        super().__delitem__(self._lower(k))
+
+    def __getitem__(self, k: object) -> Any:
+        return super().__getitem__(self._lower(k))
+
+    def get(self, k: object, default: Any = None) -> Any:
+        return super().get(self._lower(str(k)), default)
+
+    def __setitem__(self, k: object, v: Any) -> None:
+        super().__setitem__(self._lower(str(k)), v)
+
+
 class PDFPlumberParser(BaseBlobParser):
-    """Parse `PDF` with `PDFPlumber`."""
+    """Parse a blob from a PDF using `pdfplumber` library.
+
+    This class provides methods to parse a blob from a PDF document, supporting various
+    configurations such as handling password-protected PDFs, extracting images, and
+    defining extraction mode.
+    It integrates the 'pdfplumber' library for PDF processing and offers synchronous
+    blob parsing.
+
+    Examples:
+        Setup:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community pdfplumber
+
+        Load a blob from a PDF file:
+
+        .. code-block:: python
+
+            from langchain_core.documents.base import Blob
+
+            blob = Blob.from_path("./example_data/layout-parser-paper.pdf")
+
+        Instantiate the parser:
+
+        .. code-block:: python
+
+            from langchain_community.document_loaders.parsers import PDFPlumberParser
+
+            parser = PDFPlumberParser(
+                # password = None,
+                mode = "single",
+                pages_delimiter = "\n\f",
+                # extract_tables="markdown",
+            )
+
+        Lazily parse the blob:
+
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = parser.lazy_parse(blob)
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    """
 
     def __init__(
         self,
         text_kwargs: Optional[Mapping[str, Any]] = None,
         dedupe: bool = False,
         extract_images: bool = False,
+        *,
+        password: Optional[str] = None,
+        mode: Literal["single", "page"] = "page",
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
+        images_parser: Optional[BaseImageBlobParser] = None,
+        images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
+        extract_tables: Optional[Literal["csv", "markdown", "html"]] = None,
+        extract_tables_settings: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize the parser.
 
         Args:
+            password: Optional password for opening encrypted PDFs.
+            mode: The extraction mode, either "single" for the entire document or "page"
+                for page-wise extraction.
+            pages_delimiter: A string delimiter to separate pages in single-mode
+                extraction.
+            extract_images: Whether to extract images from the PDF.
+            images_parser: Optional image blob parser.
+            images_inner_format: The format for the parsed output.
+                - "text" = return the content as is
+                - "markdown-img" = wrap the content into an image markdown link, w/ link
+                pointing to (`![body)(#)`]
+                - "html-img" = wrap the content as the `alt` text of an tag and link to
+                (`<img alt="{body}" src="#"/>`)
+            extract_tables: Whether to extract images from the PDF in a specific
+                format, such as "csv", "markdown" or "html".
             text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
-            dedupe: Avoiding the error of duplicate characters if `dedupe=True`.
+            dedupe:  Avoiding the error of duplicate characters if `dedupe=True`
+            extract_tables_settings: Optional dictionary of settings for customizing
+            table extraction.
+
+        Returns:
+            This method does not directly return data. Use the `parse` or `lazy_parse`
+            methods to retrieve parsed documents with content and metadata.
+
+        Raises:
+            ValueError: If the `mode` is not "single" or "page".
+            ValueError: If the `extract_tables` is not "csv", "markdown" or "html".
+
         """
-        try:
-            import PIL  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "pillow package not found, please install it with `pip install pillow`"
-            )
-        self.text_kwargs = text_kwargs or {}
-        self.dedupe = dedupe
+        super().__init__()
+        if mode not in ["single", "page"]:
+            raise ValueError("mode must be single or page")
+        if extract_tables and extract_tables not in ["csv", "markdown", "html"]:
+            raise ValueError("mode must be csv, markdown or html")
+        if not extract_images and not images_parser:
+            images_parser = RapidOCRBlobParser()
+        self.password = password
         self.extract_images = extract_images
+        self.images_parser = images_parser
+        self.images_inner_format = images_inner_format
+        self.mode = mode
+        self.pages_delimiter = pages_delimiter
+        self.dedupe = dedupe
+        self.text_kwargs = text_kwargs or {}
+        self.extract_tables = extract_tables
+        self.extract_tables_settings = extract_tables_settings or {
+            "vertical_strategy": "lines",
+            "horizontal_strategy": "lines",
+            "snap_y_tolerance": 5,
+            "intersection_x_tolerance": 15,
+        }
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
-        """Lazily parse the blob."""
-        import pdfplumber
+        """
+        Lazily parse the blob.
+        Insert image, if possible, between two paragraphs.
+        In this way, a paragraph can be continued on the next page.
+
+        Args:
+            blob: The blob to parse.
+
+        Raises:
+            ImportError: If the `pypdf` package is not found.
+
+        Yield:
+            An iterator over the parsed documents.
+        """
+        try:
+            import pdfplumber
+        except ImportError:
+            raise ImportError(
+                "pdfplumber package not found, please install it "
+                "with `pip install pdfplumber`"
+            )
 
         with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
-            doc = pdfplumber.open(file_path)  # open document
+            doc = pdfplumber.open(file_path, password=self.password)  # open document
+            from pdfplumber.utils import geometry  # import WordExctractor, TextMap
 
-            yield from [
-                Document(
-                    page_content=self._process_page_content(page)
-                    + "\n"
-                    + self._extract_images_from_page(page),
-                    metadata=dict(
-                        {
-                            "source": blob.source,  # type: ignore[attr-defined]
-                            "file_path": blob.source,  # type: ignore[attr-defined]
-                            "page": page.page_number - 1,
-                            "total_pages": len(doc.pages),
-                        },
-                        **{
-                            k: doc.metadata[k]
-                            for k in doc.metadata
-                            if type(doc.metadata[k]) in [str, int]
-                        },
+            contents = []
+            doc_metadata = _purge_metadata(
+                (
+                    doc.metadata
+                    | {
+                        "source": blob.source,
+                        "file_path": blob.source,
+                        "total_pages": len(doc.pages),
+                    }
+                )
+            )
+            for page in doc.pages:
+                tables_bbox: list[tuple[float, float, float, float]] = (
+                    self._extract_tables_bbox_from_page(page)
+                )
+                tables_content = self._extract_tables_from_page(page)
+                images_bbox = [geometry.obj_to_bbox(image) for image in page.images]
+                image_from_page = self._extract_images_from_page(page)
+                page_text = []
+                extras = []
+                for content in self._split_page_content(
+                    page,
+                    tables_bbox,
+                    tables_content,
+                    images_bbox,
+                    image_from_page,
+                ):
+                    if isinstance(content, str):  # Text
+                        page_text.append(content)
+                    elif isinstance(content, list):  # Table
+                        page_text.append(_JOIN_TABLES + self._convert_table(content))
+                    else:  # Image
+                        image_bytes = io.BytesIO()
+                        numpy.save(image_bytes, content)
+                        blob = Blob.from_data(
+                            image_bytes.getvalue(), mime_type="application/x-npy"
+                        )
+                        text_from_image = next(
+                            self.images_parser.lazy_parse(blob)  # type: ignore
+                        ).page_content
+                        extras.append(
+                            _format_inner_image(
+                                blob, text_from_image, self.images_inner_format
+                            )
+                        )
+
+                all_text = _merge_text_and_extras(extras, "".join(page_text).strip())
+
+                if self.mode == "page":
+                    # For legacy compatibility, add the last '\n'_
+                    if not all_text.endswith("\n"):
+                        all_text += "\n"
+                    yield Document(
+                        page_content=all_text,
+                        metadata=_validate_metadata(
+                            _PDFPlumberParserMetadata(
+                                doc_metadata
+                                | {
+                                    "page": page.page_number - 1,
+                                }
+                            )
+                        ),
+                    )
+                else:
+                    contents.append(all_text)
+                # "tables_as_html": [self._convert_table_to_html(table)
+                #                    for
+                #                    table in tables_content],
+                # "images": images_content,
+                # tables_as_html.extend([self._convert_table(table)
+                #                        for
+                #                        table in tables_content])
+            if self.mode == "single":
+                yield Document(
+                    page_content=self.pages_delimiter.join(contents),
+                    metadata=_validate_metadata(
+                        _PDFPlumberParserMetadata(doc_metadata)
                     ),
                 )
-                for page in doc.pages
-            ]
 
     def _process_page_content(self, page: pdfplumber.page.Page) -> str:
-        """Process the page content based on dedupe."""
+        """Process the page content based on dedupe.
+
+        Args:
+            page: The PDF page to process.
+
+        Returns:
+            The extracted text from the page.
+        """
         if self.dedupe:
             return page.dedupe_chars().extract_text(**self.text_kwargs)
         return page.extract_text(**self.text_kwargs)
 
-    def _extract_images_from_page(self, page: pdfplumber.page.Page) -> str:
-        """Extract images from page and get the text with RapidOCR."""
+    def _split_page_content(
+        self,
+        page: pdfplumber.page.Page,
+        tables_bbox: list[tuple[float, float, float, float]],
+        tables_content: list[list[list[Any]]],
+        images_bbox: list[tuple[float, float, float, float]],
+        images_content: list[np.ndarray],
+        **kwargs: Any,
+    ) -> Iterator[Union[str, list[list[str]], np.ndarray]]:
+        """Split the page content into text, tables, and images.
+
+        Args:
+            page: The PDF page to process.
+            tables_bbox: Bounding boxes of tables on the page.
+            tables_content: Content of tables on the page.
+            images_bbox: Bounding boxes of images on the page.
+            images_content: Content of images on the page.
+            **kwargs: Additional keyword arguments.
+
+        Yields:
+            An iterator over the split content (text, tables, images).
+        """
+        from pdfplumber.utils import (
+            geometry,
+            text,
+        )
+
+        # Iterate over words. If a word is in a table,
+        # yield the accumulated text, and the table
+        # A the word is in a previously see table, ignore it
+        # Finish with the accumulated text
+        kwargs.update(
+            {
+                "keep_blank_chars": True,
+                # "use_text_flow": True,
+                "presorted": True,
+                "layout_bbox": kwargs.get("layout_bbox")
+                # or geometry.objects_to_bbox(page.chars),
+                or page.cropbox,
+            }
+        )
+        chars = page.dedupe_chars().objects["char"] if self.dedupe else page.chars
+
+        extractor = text.WordExtractor(
+            **{k: kwargs[k] for k in text.WORD_EXTRACTOR_KWARGS if k in kwargs}
+        )
+        wordmap = extractor.extract_wordmap(chars)
+        extract_wordmaps: list[Any] = []
+        used_arrays = [False] * len(tables_bbox)
+        for word, o in wordmap.tuples:
+            # print(f"  Try with '{word['text']}' ...")
+            is_table = False
+            word_bbox = geometry.obj_to_bbox(word)
+            for i, table_bbox in enumerate(tables_bbox):
+                if geometry.get_bbox_overlap(word_bbox, table_bbox):
+                    # Find a world in a table
+                    # print("  Find in an array")
+                    is_table = True
+                    if not used_arrays[i]:
+                        # First time I see a word in this array
+                        # Yield the previous part
+                        if extract_wordmaps:
+                            new_wordmap = text.WordMap(tuples=extract_wordmaps)
+                            new_textmap = new_wordmap.to_textmap(
+                                **{
+                                    k: kwargs[k]
+                                    for k in text.TEXTMAP_KWARGS
+                                    if k in kwargs
+                                }
+                            )
+                            # print(f"yield {new_textmap.to_string()}")
+                            yield new_textmap.to_string()
+                            extract_wordmaps.clear()
+                        # and yield the table
+                        used_arrays[i] = True
+                        # print(f"yield table {i}")
+                        yield tables_content[i]
+                    break
+            if not is_table:
+                # print(f'  Add {word["text"]}')
+                extract_wordmaps.append((word, o))
+        if extract_wordmaps:
+            # Text after the array ?
+            new_wordmap = text.WordMap(tuples=extract_wordmaps)
+            new_textmap = new_wordmap.to_textmap(
+                **{k: kwargs[k] for k in text.TEXTMAP_KWARGS if k in kwargs}
+            )
+            # print(f"yield {new_textmap.to_string()}")
+            yield new_textmap.to_string()
+        # Add images-
+        for content in images_content:
+            yield content
+
+    def _extract_images_from_page(self, page: pdfplumber.page.Page) -> list[np.ndarray]:
+        """Extract images from a PDF page.
+
+        Args:
+            page: The PDF page to extract images from.
+
+        Returns:
+            A list of extracted images as numpy arrays.
+        """
         from PIL import Image
 
-        if not self.extract_images:
-            return ""
+        if not self.images_parser:
+            return []
 
         images = []
         for img in page.images:
-            if img["stream"]["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
-                if img["stream"]["BitsPerComponent"] == 1:
-                    images.append(
-                        np.array(
-                            Image.frombytes(
-                                "1",
-                                (img["stream"]["Width"], img["stream"]["Height"]),
-                                img["stream"].get_data(),
-                            ).convert("L")
-                        )
-                    )
-                else:
+            if "Filter" in img["stream"]:
+                if img["stream"]["Filter"].name in _PDF_FILTER_WITHOUT_LOSS:
                     images.append(
                         np.frombuffer(img["stream"].get_data(), dtype=np.uint8).reshape(
                             img["stream"]["Height"], img["stream"]["Width"], -1
                         )
                     )
-            elif img["stream"]["Filter"].name in _PDF_FILTER_WITH_LOSS:
-                images.append(img["stream"].get_data())
-            else:
-                warnings.warn("Unknown PDF Filter!")
+                elif img["stream"]["Filter"].name in _PDF_FILTER_WITH_LOSS:
+                    buf = np.frombuffer(img["stream"].get_data(), dtype=np.uint8)
+                    images.append(
+                        np.array(Image.open(io.BytesIO(buf.tobytes())))  # type: ignore
+                    )
+                else:
+                    logger.warning("Unknown PDF Filter!")
 
-        return extract_from_images_with_rapidocr(images)
+        return images
+
+    def _extract_tables_bbox_from_page(
+        self,
+        page: pdfplumber.page.Page,
+    ) -> list[tuple]:
+        """Extract bounding boxes of tables from a PDF page.
+
+        Args:
+            page: The PDF page to extract table bounding boxes from.
+
+        Returns:
+            A list of bounding boxes for tables on the page.
+        """
+        if not self.extract_tables:
+            return []
+        from pdfplumber.table import TableSettings
+
+        table_settings = self.extract_tables_settings
+        tset = TableSettings.resolve(table_settings)
+        return [table.bbox for table in page.find_tables(tset)]
+
+    def _extract_tables_from_page(
+        self,
+        page: pdfplumber.page.Page,
+    ) -> list[list[list[Any]]]:
+        """Extract tables from a PDF page.
+
+        Args:
+            page: The PDF page to extract tables from.
+
+        Returns:
+            A list of tables, where each table is a list of rows, and each row is a
+            list of cell values.
+        """
+        if not self.extract_tables:
+            return []
+        table_settings = self.extract_tables_settings
+        tables_list = page.extract_tables(table_settings)
+        return tables_list
+
+    def _convert_table(self, table: list[list[str]]) -> str:
+        """Convert a table to the specified format.
+
+        Args:
+            table: The table to convert.
+
+        Returns:
+            The table content as a string in the specified format.
+        """
+        format = self.extract_tables
+        if format is None:
+            return ""
+        if format == "markdown":
+            return self._convert_table_to_markdown(table)
+        elif format == "html":
+            return self._convert_table_to_html(table)
+        elif format == "csv":
+            return self._convert_table_to_csv(table)
+        else:
+            raise ValueError(f"Unknown table format: {format}")
+
+    def _convert_table_to_csv(self, table: list[list[str]]) -> str:
+        """Convert a table to CSV format.
+
+        Args:
+            table: The table to convert.
+
+        Returns:
+            The table content as a string in CSV format.
+        """
+        if not table:
+            return ""
+
+        output = ["\n\n"]
+
+        # skip first row in details if header is part of the table
+        # j = 0 if self.header.external else 1
+
+        # iterate over detail rows
+        for row in table:
+            line = ""
+            for i, cell in enumerate(row):
+                # output None cells with empty string
+                cell = "" if cell is None else cell.replace("\n", " ")
+                line += cell + ","
+            output.append(line)
+        return "\n".join(output) + "\n\n"
+
+    def _convert_table_to_html(self, table: list[list[str]]) -> str:
+        """
+        Convert table content as a string in HTML format.
+        If clean is true, markdown syntax is removed from cell content.
+
+        Args:
+            table: The table to convert.
+
+        Returns:
+            The table content as a string in HTML format.
+        """
+        if not len(table):
+            return ""
+        output = "<table>\n"
+        clean = True
+
+        # iterate over detail rows
+        for row in table:
+            line = "<tr>"
+            for i, cell in enumerate(row):
+                # output None cells with empty string
+                cell = "" if cell is None else cell.replace("\n", " ")
+                if clean:  # remove sensitive syntax
+                    cell = html.escape(cell.replace("-", "&#45;"))
+                line += "<td>" + cell + "</td>"
+            line += "</tr>\n"
+            output += line
+        return output + "</table>\n"
+
+    def _convert_table_to_markdown(self, table: list[list[str]]) -> str:
+        """Convert table content as a string in Github-markdown format.
+
+        Args:
+            table: The table to convert.
+
+        Returns:
+            The table content as a string in Markdown format.
+        """
+        clean = False
+        if not table:
+            return ""
+        col_count = len(table[0])
+
+        output = "|" + "|".join("" for i in range(col_count)) + "|\n"
+        output += "|" + "|".join("---" for i in range(col_count)) + "|\n"
+
+        # skip first row in details if header is part of the table
+        # j = 0 if self.header.external else 1
+
+        # iterate over detail rows
+        for row in table:
+            line = "|"
+            for i, cell in enumerate(row):
+                # output None cells with empty string
+                cell = "" if cell is None else cell.replace("\n", " ")
+                if clean:  # remove sensitive syntax
+                    cell = html.escape(cell.replace("-", "&#45;"))
+                line += cell + "|"
+            line += "\n"
+            output += line
+        return output + "\n"
 
 
 class AmazonTextractPDFParser(BaseBlobParser):
