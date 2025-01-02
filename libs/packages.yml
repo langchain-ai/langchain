@@ -312,3 +312,8 @@ packages:
   path: .
   repo: modelscope/langchain-modelscope
   downloads: 0
+- name: langchain-falkordb
+  path: .
+  repo: kingtroga/langchain-falkordb
+  downloads: 610
+  downloads_updated_at: '2025-01-02T20:23:02.544257+00:00'
