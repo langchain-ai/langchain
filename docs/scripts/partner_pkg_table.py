@@ -98,7 +98,7 @@ def package_row(p: dict) -> str:
 
 
 def table() -> str:
-    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/providers/) |
+    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/docs/integrations/platforms/) |
 | :--- | :---: | :---: | :---: | :---: |
 """
     return header + "\n".join(package_row(p) for p in packages_sorted)

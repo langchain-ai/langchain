@@ -308,3 +308,16 @@ packages:
   repo: crate/langchain-cratedb
   downloads: 362
   downloads_updated_at: '2024-12-23T20:53:27.001852+00:00'
+- name: langchain-modelscope
+  path: .
+  repo: modelscope/langchain-modelscope
+  downloads: 0
+- name: langchain-falkordb
+  path: .
+  repo: kingtroga/langchain-falkordb
+  downloads: 610
+  downloads_updated_at: '2025-01-02T20:23:02.544257+00:00'
+- name: langchain-dappier
+  path: .
+  repo: DappierAI/langchain-dappier
+  downloads: 0

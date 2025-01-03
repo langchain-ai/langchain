@@ -233,7 +233,7 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: Union[dict, type[BaseModel]], **kwargs: Any
+        self, schema: Union[dict, type], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
