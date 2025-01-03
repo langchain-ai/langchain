@@ -12,7 +12,8 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
 
 import contextlib
 import functools
-import inspect
+import sys
+import types
 import warnings
 from collections.abc import Generator
 from typing import (
@@ -34,6 +35,44 @@ class LangChainDeprecationWarning(DeprecationWarning):
 
 class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
+
+
+def _iscoroutinefunction(f: Any) -> bool:
+    """Replication of inspect.iscoroutinefunction."""
+    while isinstance(f, types.MethodType):
+        f = f.__func__
+    f = functools._unwrap_partial(f)  # type: ignore[attr-defined]
+    if not isinstance(f, types.FunctionType):
+        return False
+    return bool(f.__code__.co_flags & 0x80)
+
+
+def _cleandoc(doc: str) -> str:
+    """Replication of inspect.cleandoc."""
+    try:
+        lines = doc.expandtabs().split("\n")
+    except UnicodeError:
+        return ""
+    else:
+        # Find minimum indentation of any non-blank lines after first line.
+        margin = sys.maxsize
+        for line in lines[1:]:
+            content = len(line.lstrip())
+            if content:
+                indent = len(line) - content
+                margin = min(margin, indent)
+        # Remove indentation.
+        if lines:
+            lines[0] = lines[0].lstrip()
+        if margin < sys.maxsize:
+            for i in range(1, len(lines)):
+                lines[i] = lines[i][margin:]
+        # Remove any trailing or leading blank lines.
+        while lines and not lines[-1]:
+            lines.pop()
+        while lines and not lines[0]:
+            lines.pop(0)
+        return "\n".join(lines)
 
 
 # PUBLIC API
@@ -329,7 +368,7 @@ def deprecated(
                 wrapper.__doc__ = new_doc
                 return cast(T, wrapper)
 
-        old_doc = inspect.cleandoc(old_doc or "").strip("\n")
+        old_doc = _cleandoc(old_doc or "").strip("\n")
 
         # old_doc can be None
         if not old_doc:
@@ -376,7 +415,7 @@ def deprecated(
 {old_doc}\
 """
 
-        if inspect.iscoroutinefunction(obj):
+        if _iscoroutinefunction(obj):
             finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
             finalized = finalize(warning_emitting_wrapper, new_doc)
