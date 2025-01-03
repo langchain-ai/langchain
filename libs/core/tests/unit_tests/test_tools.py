@@ -2145,7 +2145,9 @@ def test_create_retriever_tool() -> None:
             id="123",
             type="tool_call",
         )
-    ) == ToolMessage("foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content")
+    ) == ToolMessage(
+        "foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content"
+    )
 
     retriever_tool_artifact = tools.create_retriever_tool(
         retriever,
@@ -2166,7 +2168,7 @@ def test_create_retriever_tool() -> None:
         )
     ) == ToolMessage(
         "foo bar\n\nbar",
-        artifact=[Document(page_content= "foo bar"), Document(page_content="bar")],
+        artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
         tool_call_id="123",
         name="retriever_tool_artifact",
     )
