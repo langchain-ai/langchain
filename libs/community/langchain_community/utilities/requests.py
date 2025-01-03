@@ -26,54 +26,88 @@ class Requests(BaseModel):
         extra="forbid",
     )
 
-    def get(self, url: str, **kwargs: Any) -> requests.Response:
+    def _merge_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
+        """Merges headers from the class attributes with headers passed to a request."""
+        return {**(self.headers or {}), **({k: str(v) for k, v in headers.items()})}
+
+    def get(
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
+    ) -> requests.Response:
         """GET the URL and return the text."""
         return requests.get(
-            url, headers=self.headers, auth=self.auth, verify=self.verify, **kwargs
+            url,
+            headers=self._merge_headers(headers),
+            auth=self.auth,
+            verify=self.verify,
+            **kwargs,
         )
 
-    def post(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
+    def post(
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
+    ) -> requests.Response:
         """POST to the URL and return the text."""
         return requests.post(
             url,
             json=data,
-            headers=self.headers,
+            headers=self._merge_headers(headers),
             auth=self.auth,
             verify=self.verify,
             **kwargs,
         )
 
-    def patch(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
+    def patch(
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
+    ) -> requests.Response:
         """PATCH the URL and return the text."""
         return requests.patch(
             url,
             json=data,
-            headers=self.headers,
+            headers=self._merge_headers(headers),
             auth=self.auth,
             verify=self.verify,
             **kwargs,
         )
 
-    def put(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
+    def put(
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
+    ) -> requests.Response:
         """PUT the URL and return the text."""
         return requests.put(
             url,
             json=data,
-            headers=self.headers,
+            headers=self._merge_headers(headers),
             auth=self.auth,
             verify=self.verify,
             **kwargs,
         )
 
-    def delete(self, url: str, **kwargs: Any) -> requests.Response:
+    def delete(
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
+    ) -> requests.Response:
         """DELETE the URL and return the text."""
         return requests.delete(
-            url, headers=self.headers, auth=self.auth, verify=self.verify, **kwargs
+            url,
+            headers=self._merge_headers(headers),
+            auth=self.auth,
+            verify=self.verify,
+            **kwargs,
         )
 
     @asynccontextmanager
     async def _arequest(
-        self, method: str, url: str, **kwargs: Any
+        self, method: str, url: str, headers: Dict[str, str] = {}, **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """Make an async request."""
         if not self.aiosession:
@@ -81,7 +115,7 @@ class Requests(BaseModel):
                 async with session.request(
                     method,
                     url,
-                    headers=self.headers,
+                    headers=self._merge_headers(headers),
                     auth=self.auth,
                     **kwargs,
                 ) as response:
@@ -90,7 +124,7 @@ class Requests(BaseModel):
             async with self.aiosession.request(
                 method,
                 url,
-                headers=self.headers,
+                headers=self._merge_headers(headers),
                 auth=self.auth,
                 **kwargs,
             ) as response:
@@ -98,42 +132,58 @@ class Requests(BaseModel):
 
     @asynccontextmanager
     async def aget(
-        self, url: str, **kwargs: Any
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """GET the URL and return the text asynchronously."""
-        async with self._arequest("GET", url, **kwargs) as response:
+        async with self._arequest("GET", url, headers, **kwargs) as response:
             yield response
 
     @asynccontextmanager
     async def apost(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """POST to the URL and return the text asynchronously."""
-        async with self._arequest("POST", url, json=data, **kwargs) as response:
+        async with self._arequest(
+            "POST", url, headers, json=data, **kwargs
+        ) as response:
             yield response
 
     @asynccontextmanager
     async def apatch(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PATCH the URL and return the text asynchronously."""
-        async with self._arequest("PATCH", url, json=data, **kwargs) as response:
+        async with self._arequest(
+            "PATCH", url, headers, json=data, **kwargs
+        ) as response:
             yield response
 
     @asynccontextmanager
     async def aput(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """PUT the URL and return the text asynchronously."""
-        async with self._arequest("PUT", url, json=data, **kwargs) as response:
+        async with self._arequest("PUT", url, headers, json=data, **kwargs) as response:
             yield response
 
     @asynccontextmanager
     async def adelete(
-        self, url: str, **kwargs: Any
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
     ) -> AsyncGenerator[aiohttp.ClientResponse, None]:
         """DELETE the URL and return the text asynchronously."""
-        async with self._arequest("DELETE", url, **kwargs) as response:
+        async with self._arequest("DELETE", url, headers, **kwargs) as response:
             yield response
 
 
@@ -178,61 +228,93 @@ class GenericRequestsWrapper(BaseModel):
         else:
             raise ValueError(f"Invalid return type: {self.response_content_type}")
 
-    def get(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
+    def get(
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
+    ) -> Union[str, Dict[str, Any]]:
         """GET the URL and return the text."""
-        return self._get_resp_content(self.requests.get(url, **kwargs))
+        return self._get_resp_content(self.requests.get(url, headers, **kwargs))
 
     def post(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """POST to the URL and return the text."""
-        return self._get_resp_content(self.requests.post(url, data, **kwargs))
+        return self._get_resp_content(self.requests.post(url, data, headers, **kwargs))
 
     def patch(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """PATCH the URL and return the text."""
-        return self._get_resp_content(self.requests.patch(url, data, **kwargs))
+        return self._get_resp_content(self.requests.patch(url, data, headers, **kwargs))
 
     def put(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """PUT the URL and return the text."""
-        return self._get_resp_content(self.requests.put(url, data, **kwargs))
+        return self._get_resp_content(self.requests.put(url, data, headers, **kwargs))
 
-    def delete(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
+    def delete(
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
+    ) -> Union[str, Dict[str, Any]]:
         """DELETE the URL and return the text."""
-        return self._get_resp_content(self.requests.delete(url, **kwargs))
+        return self._get_resp_content(self.requests.delete(url, headers, **kwargs))
 
-    async def aget(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
+    async def aget(
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
+    ) -> Union[str, Dict[str, Any]]:
         """GET the URL and return the text asynchronously."""
-        async with self.requests.aget(url, **kwargs) as response:
+        async with self.requests.aget(url, headers, **kwargs) as response:
             return await self._aget_resp_content(response)
 
     async def apost(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """POST to the URL and return the text asynchronously."""
-        async with self.requests.apost(url, data, **kwargs) as response:
+        async with self.requests.apost(url, data, headers, **kwargs) as response:
             return await self._aget_resp_content(response)
 
     async def apatch(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """PATCH the URL and return the text asynchronously."""
-        async with self.requests.apatch(url, data, **kwargs) as response:
+        async with self.requests.apatch(url, data, headers, **kwargs) as response:
             return await self._aget_resp_content(response)
 
     async def aput(
-        self, url: str, data: Dict[str, Any], **kwargs: Any
+        self,
+        url: str,
+        data: Dict[str, Any],
+        headers: Dict[str, str] = {},
+        **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """PUT the URL and return the text asynchronously."""
-        async with self.requests.aput(url, data, **kwargs) as response:
+        async with self.requests.aput(url, data, headers, **kwargs) as response:
             return await self._aget_resp_content(response)
 
-    async def adelete(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
+    async def adelete(
+        self, url: str, headers: Dict[str, str] = {}, **kwargs: Any
+    ) -> Union[str, Dict[str, Any]]:
         """DELETE the URL and return the text asynchronously."""
-        async with self.requests.adelete(url, **kwargs) as response:
+        async with self.requests.adelete(url, headers, **kwargs) as response:
             return await self._aget_resp_content(response)
 
 

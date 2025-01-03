@@ -95,7 +95,8 @@ def test_load_tools_with_callbacks_is_called() -> None:
         "langchain.requests.TextRequestsWrapper.get",
         return_value=Mock(text="Hello world!"),
     ):
-        result = tools[0].run("https://www.google.com")
+        input_data = '{"url": "https://www.google.com"}'
+        result = tools[0].run(input_data)
         assert result.text == "Hello world!"
     assert callbacks[0].tool_starts == 1
     assert callbacks[0].tool_ends == 1

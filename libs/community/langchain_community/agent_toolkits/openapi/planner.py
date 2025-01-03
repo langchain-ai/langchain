@@ -87,7 +87,10 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):  # type: ignore[ov
             raise e
         data_params = data.get("params")
         response: str = cast(
-            str, self.requests_wrapper.get(data["url"], params=data_params)
+            str,
+            self.requests_wrapper.get(
+                data["url"], data.get("headers", {}), params=data_params
+            ),
         )
         response = response[: self.response_length]
         return self.llm_chain.predict(
