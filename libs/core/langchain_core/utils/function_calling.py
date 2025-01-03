@@ -82,7 +82,17 @@ def _convert_pydantic_to_openai_function(
     description: Optional[str] = None,
     rm_titles: bool = True,
 ) -> FunctionDescription:
-    """Converts a Pydantic model to a function description for the OpenAI API."""
+    """Converts a Pydantic model to a function description for the OpenAI API.
+    Args:
+        model: The Pydantic model to convert.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
+        rm_titles: Whether to remove titles from the schema. Defaults to True.
+    Returns:
+        The function description.
+    """
     if hasattr(model, "model_json_schema"):
         schema = model.model_json_schema()  # Pydantic 2
     elif hasattr(model, "schema"):
@@ -104,36 +114,11 @@ def _convert_pydantic_to_openai_function(
     }
 
 
-@deprecated(
+convert_pydantic_to_openai_function = deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
     removal="1.0",
-)
-def convert_pydantic_to_openai_function(
-    model: type,
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    rm_titles: bool = True,
-) -> FunctionDescription:
-    """Converts a Pydantic model to a function description for the OpenAI API.
-
-    Args:
-        model: The Pydantic model to convert.
-        name: The name of the function. If not provided, the title of the schema will be
-            used.
-        description: The description of the function. If not provided, the description
-            of the schema will be used.
-        rm_titles: Whether to remove titles from the schema. Defaults to True.
-
-    Returns:
-        The function description.
-    """
-    return _convert_pydantic_to_openai_function(
-        model, name=name, description=description, rm_titles=rm_titles
-    )
-
-
+)(_convert_pydantic_to_openai_function)
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
