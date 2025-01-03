@@ -17,7 +17,7 @@ class FakeRequestsChain(TextRequestsWrapper):
 
     output: str
 
-    def get(self, url: str, **kwargs: Any) -> str:
+    def get(self, url: str, headers: dict = {}, **kwargs: Any) -> str:
         """Just return the specified output."""
         return self.output
 
