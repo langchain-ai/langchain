@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
@@ -29,13 +30,13 @@ def _get_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
     response_format: Literal["content", "content_and_artifact"] = "content",
-) -> Union[str, tuple[str, list[dict[str, Any]]]]:
+) -> Union[str, tuple[str, list[Document]]]:
     docs = retriever.invoke(query, config={"callbacks": callbacks})
     content = document_separator.join(
         format_document(doc, document_prompt) for doc in docs
     )
     if response_format == "content_and_artifact":
-        return (content, [doc.model_dump() for doc in docs])
+        return (content, docs)
 
     return content
 
@@ -47,14 +48,14 @@ async def _aget_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
     response_format: Literal["content", "content_and_artifact"] = "content",
-) -> Union[str, tuple[str, list[dict[str, Any]]]]:
+) -> Union[str, tuple[str, list[Document]]]:
     docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
     content = document_separator.join(
         [await aformat_document(doc, document_prompt) for doc in docs]
     )
 
     if response_format == "content_and_artifact":
-        return (content, [doc.model_dump() for doc in docs])
+        return (content, docs)
 
     return content
 
@@ -78,6 +79,11 @@ def create_retriever_tool(
             model, so should be descriptive.
         document_prompt: The prompt to use for the document. Defaults to None.
         document_separator: The separator to use between documents. Defaults to "\n\n".
+        response_format: The tool response format. If "content" then the output of
+                the tool is interpreted as the contents of a ToolMessage. If
+                "content_and_artifact" then the output is expected to be a two-tuple
+                corresponding to the (content, artifact) of a ToolMessage.
+                Defaults to "content".
 
     Returns:
         Tool class to pass to an agent.
