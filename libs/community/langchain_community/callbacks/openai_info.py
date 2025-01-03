@@ -207,7 +207,11 @@ def standardize_model_name(
     if token_type == TokenType.PROMPT_CACHED and (
         model_name.startswith("gpt-4o") or model_name.startswith("o1")
     ):
-        return model_name + "-cached"
+        cached_model_name = model_name + "-cached"
+        if cached_model_name in MODEL_COST_PER_1K_TOKENS:
+            return cached_model_name
+        else:
+            return model_name
     else:
         return model_name
 
