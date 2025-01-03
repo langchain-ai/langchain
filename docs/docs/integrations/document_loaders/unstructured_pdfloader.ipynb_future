@@ -1,0 +1,622 @@
+{
+ "cells": [
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "# UnstructuredPDFLoader\n",
+    "\n",
+    "[Unstructured](https://unstructured-io.github.io/unstructured/) supports a common interface for working with unstructured or semi-structured file formats, such as Markdown or PDF. LangChain's [UnstructuredPDFLoader](https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.UnstructuredPDFLoader.html) integrates with Unstructured to parse PDF documents into LangChain [Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html) objects.\n",
+    "\n",
+    "Please see [this page](https://python.langchain.com/docs/integrations/providers/unstructured/) for more information on installing system requirements.\n",
+    "\n",
+    "This notebook provides a quick overview for getting started with `Unstructured` [document loader](https://python.langchain.com/docs/concepts/document_loaders). For detailed documentation of all __ModuleName__Loader features and configurations head to the [API reference](https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredPDFLoader.html).\n",
+    "\n",
+    "  \n",
+    "\n",
+    "## Overview\n",
+    "### Integration details\n",
+    "\n",
+    "| Class                                                                                                                                                      | Package                                                                                   | Local | Serializable | JS support|\n",
+    "|:-----------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------| :---: | :---: |  :---: |\n",
+    "| [UnstructuredPDFLoader](https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredPDFLoader.html) | [langchain_unstructured](https://python.langchain.com/api_reference/unstructured/index.html) | ✅ | ❌ | ❌ |\n",
+    "\n",
+    "---------   \n",
+    "\n",
+    "### Loader features\n",
+    "\n",
+    "|        Source         | Document Lazy Loading | Native Async Support | Extract Images | Extract Tables |\n",
+    "|:---------------------:| :---: | :---: | :---: |:---: |\n",
+    "| UnstructuredPDFLoader | ✅ | ❌ | ✅ | ✅ |\n",
+    "\n",
+    "  \n",
+    "\n",
+    "## Setup\n",
+    "\n",
+    "### Credentials\n",
+    "\n",
+    "No credentials are required to use UnstructuredPDFLoader"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "If you want to get automated best in-class tracing of your model calls you can also set your [LangSmith](https://docs.smith.langchain.com/) API key by uncommenting below:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "# os.environ[\"LANGSMITH_API_KEY\"] = getpass.getpass(\"Enter your LangSmith API key: \")\n",
+    "# os.environ[\"LANGSMITH_TRACING\"] = \"true\""
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "### Installation\n",
+    "\n",
+    "Install **langchain_unstructured**."
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": "%pip install -qU langchain_unstructured"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "## Initialization\n",
+    "\n",
+    "Now we can instantiate our model object and load documents:"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from langchain_unstructured.document_loaders import UnstructuredPDFLoader\n",
+    "\n",
+    "STRATEGY = \"fast\"\n",
+    "file_path = \"./example_data/layout-parser-paper.pdf\"\n",
+    "loader = UnstructuredPDFLoader(file_path, strategy=STRATEGY)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "## Load"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "docs = loader.load()\n",
+    "docs[0]"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "import pprint\n",
+    "\n",
+    "pprint.pp(docs[0].metadata)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "## Lazy Load\n"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "pages = []\n",
+    "for doc in loader.lazy_load():\n",
+    "    pages.append(doc)\n",
+    "    if len(pages) >= 10:\n",
+    "        # do some paged operation, e.g.\n",
+    "        # index.upsert(page)\n",
+    "\n",
+    "        pages = []\n",
+    "len(pages)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "print(pages[0].page_content[:100])\n",
+    "pprint.pp(pages[0].metadata)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "The metadata attribute contains at least the following keys:\n",
+    "- source\n",
+    "- page (if in mode *page*)\n",
+    "- total_page\n",
+    "- creationdate\n",
+    "- creator\n",
+    "- producer\n",
+    "\n",
+    "Additional metadata are specific to each parser.\n",
+    "These pieces of information can be helpful (to categorize your PDFs for example)."
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "### Retain Elements\n",
+    "\n",
+    "Under the hood, Unstructured creates different \"elements\" for different chunks of text. By default we combine those together, but you can easily keep that separation by specifying `mode=\"elements\"`."
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "file_path = \"./example_data/layout-parser-paper.pdf\"\n",
+    "loader = UnstructuredPDFLoader(file_path,\n",
+    "                               mode=\"elements\",\n",
+    "                               strategy=STRATEGY,\n",
+    "                               )\n",
+    "\n",
+    "data = loader.load()\n",
+    "data[0]"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "See the full set of element types for this particular document:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": "set(doc.metadata[\"category\"] for doc in data)"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "## Splitting mode & custom pages delimiter"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "When loading the PDF file you can split it in two different ways:\n",
+    "- By page\n",
+    "- As a single text flow\n",
+    "\n",
+    "By default PDFPlumberLoader will split the PDF by page."
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### Extract the PDF by page. Each page is extracted as a langchain Document object:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"page\",\n",
+    "    strategy=STRATEGY,\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(len(docs))\n",
+    "pprint.pp(docs[0].metadata)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "In this mode the pdf is split by pages and the resulting Documents metadata contains the page number. But in some cases we could want to process the pdf as a single text flow (so we don't cut some paragraphs in half). In this case you can use the *single* mode :"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### Extract the whole PDF as a single langchain Document object:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"single\",\n",
+    "    strategy=STRATEGY,\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(len(docs))\n",
+    "pprint.pp(docs[0].metadata)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "Logically, in this mode, the ‘page_number’ metadata disappears. Here's how to clearly identify where pages end in the text flow :"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### Add a custom *pages_delimitor* to identify where are ends of pages in *single* mode:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"single\",\n",
+    "    strategy=STRATEGY,\n",
+    "    pages_delimitor=\"\\n-------THIS IS A CUSTOM END OF PAGE-------\\n\",\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(docs[0].page_content[:5780])"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "This could simply be \\n, or \\f to clearly indicate a page change, or \\<!-- PAGE BREAK --> for seamless injection in a Markdown viewer without a visual effect."
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "# Extract images from the PDF"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "You can extract images from your PDFs with a choice of three different solutions:\n",
+    "- rapidOCR (lightweight Optical Character Recognition tool)\n",
+    "- Tesseract (OCR tool with high precision)\n",
+    "- Multimodal language model\n",
+    "\n",
+    "You can tune these functions to choose the output format of the extracted images among *html*, *markdown* or *text*\n",
+    "\n",
+    "The result is inserted between the last and the second-to-last paragraphs of text of the page."
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### Extract images from the PDF with rapidOCR:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": "%pip install -qU rapidocr-onnxruntime"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from langchain_community.document_loaders.parsers.pdf import (\n",
+    "    convert_images_to_text_with_rapidocr,\n",
+    ")\n",
+    "\n",
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"page\",\n",
+    "    strategy=STRATEGY,\n",
+    "    extract_images=True,\n",
+    "    images_to_text=convert_images_to_text_with_rapidocr(format=\"html\"),\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "\n",
+    "print(docs[5].page_content)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "Be careful, RapidOCR is designed to work with Chinese and English, not other languages."
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### Extract images from the PDF with Tesseract:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": "%pip install -qU pytesseract"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from langchain_community.document_loaders.parsers.pdf import (\n",
+    "    convert_images_to_text_with_tesseract,\n",
+    ")\n",
+    "\n",
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"page\",\n",
+    "    strategy=STRATEGY,\n",
+    "    extract_images=True,\n",
+    "    images_to_text=convert_images_to_text_with_tesseract(format=\"text\"),\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(docs[5].page_content)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "### Extract images from the PDF with multimodal model:"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": "%pip install -qU langchain_openai"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "import os\n",
+    "\n",
+    "from dotenv import load_dotenv\n",
+    "\n",
+    "load_dotenv()"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from getpass import getpass\n",
+    "\n",
+    "if not os.environ.get(\"OPENAI_API_KEY\"):\n",
+    "    os.environ[\"OPENAI_API_KEY\"] = getpass(\"OpenAI API key =\")"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from langchain_community.document_loaders.parsers.pdf import (\n",
+    "    convert_images_to_description,\n",
+    ")\n",
+    "from langchain_openai import ChatOpenAI\n",
+    "\n",
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"page\",\n",
+    "    strategy=STRATEGY,\n",
+    "    extract_images=True,\n",
+    "    images_to_text=convert_images_to_description(\n",
+    "        model=ChatOpenAI(model=\"gpt-4o\", max_tokens=1024), format=\"markdown\"\n",
+    "    ),\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(docs[5].page_content)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "# Extract tables from the PDF"
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "With PyMUPDF you can extract tables from your PDFs in *html*, *markdown* or *csv* format :"
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "loader = UnstructuredPDFLoader(\n",
+    "    \"./example_data/layout-parser-paper.pdf\",\n",
+    "    mode=\"page\",\n",
+    "    strategy=STRATEGY,\n",
+    "    extract_tables=\"markdown\",\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(docs[4].page_content)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "## Working with Files\n",
+    "\n",
+    "Many document loaders involve parsing files. The difference between such loaders usually stems from how the file is parsed, rather than how the file is loaded. For example, you can use `open` to read the binary content of either a PDF or a markdown file, but you need different parsing logic to convert that binary data into text.\n",
+    "\n",
+    "As a result, it can be helpful to decouple the parsing logic from the loading logic, which makes it easier to re-use a given parser regardless of how the data was loaded.\n",
+    "You can use this strategy to analyze different files, with the same parsing parameters."
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from langchain_community.document_loaders import FileSystemBlobLoader\n",
+    "from langchain_community.document_loaders.generic import GenericLoader\n",
+    "from langchain_unstructured.document_loaders import UnstructuredPDFParser\n",
+    "\n",
+    "loader = GenericLoader(\n",
+    "    blob_loader=FileSystemBlobLoader(\n",
+    "        path=\"./example_data/\",\n",
+    "        glob=\"*.pdf\",\n",
+    "    ),\n",
+    "    blob_parser=UnstructuredPDFParser(\n",
+    "        strategy=STRATEGY,\n",
+    "    ),\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(docs[0].page_content)\n",
+    "pprint.pp(docs[0].metadata)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": "It is possible to work with files from cloud storage."
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "from langchain_community.document_loaders import CloudBlobLoader\n",
+    "from langchain_community.document_loaders.generic import GenericLoader\n",
+    "\n",
+    "loader = GenericLoader(\n",
+    "    blob_loader=CloudBlobLoader(\n",
+    "        url=\"s3:/mybucket\",  # Supports s3://, az://, gs://, file:// schemes.\n",
+    "        glob=\"*.pdf\",\n",
+    "    ),\n",
+    "    blob_parser=UnstructuredPDFParser(\n",
+    "        strategy=STRATEGY,\n",
+    "    ),\n",
+    ")\n",
+    "docs = loader.load()\n",
+    "print(docs[0].page_content)\n",
+    "pprint.pp(docs[0].metadata)"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "### Using Unstructured via API\n",
+    "\n",
+    "UNSTRUCTURED_API_KEY"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "import os\n",
+    "\n",
+    "from dotenv import load_dotenv\n",
+    "\n",
+    "load_dotenv()\n",
+    "from getpass import getpass\n",
+    "\n",
+    "if not os.environ.get(\"UNSTRUCTURED_API_KEY\"):\n",
+    "    os.environ[\"UNSTRUCTURED_API_KEY\"] = getpass(\"Unstructured API key =\")"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": [
+    "    loader = UnstructuredPDFLoader(\n",
+    "        file_path=file_path,\n",
+    "        partition_via_api=True,\n",
+    "        strategy=\"fast\",\n",
+    "        include_page_breaks=True,\n",
+    "        coordinates=True,\n",
+    "    )\n",
+    "\n",
+    "    docs = loader.load()\n"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "markdown",
+   "source": [
+    "## API reference\n",
+    "\n",
+    "For detailed documentation of all `UnstructuredPDFLoader` features and configurations head to the API reference: https://python.langchain.com/api_reference/unstructured/"
+   ]
+  },
+  {
+   "metadata": {},
+   "cell_type": "code",
+   "outputs": [],
+   "execution_count": null,
+   "source": ""
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
