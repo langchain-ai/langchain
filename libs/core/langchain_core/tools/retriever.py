@@ -82,8 +82,8 @@ def create_retriever_tool(
         response_format: The tool response format. If "content" then the output of
                 the tool is interpreted as the contents of a ToolMessage. If
                 "content_and_artifact" then the output is expected to be a two-tuple
-                corresponding to the (content, artifact) of a ToolMessage.
-                Defaults to "content".
+                corresponding to the (content, artifact) of a ToolMessage (artifact
+                being a list of documents in this case). Defaults to "content".
 
     Returns:
         Tool class to pass to an agent.
