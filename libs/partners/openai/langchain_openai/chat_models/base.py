@@ -120,7 +120,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
         invalid_tool_calls = []
-        if raw_tool_calls := _dict.get("tool_calls"):
+        if raw_tool_calls := _dict.get("tool_calls") or _dict.get("toolCalls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
@@ -271,7 +271,7 @@ def _convert_delta_to_message_chunk(
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
     tool_call_chunks = []
-    if raw_tool_calls := _dict.get("tool_calls"):
+    if raw_tool_calls := _dict.get("tool_calls") or _dict.get('toolCalls'):
         additional_kwargs["tool_calls"] = raw_tool_calls
         try:
             tool_call_chunks = [
@@ -2255,9 +2255,9 @@ class OpenAIRefusalError(Exception):
 
 
 def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
-    input_tokens = oai_token_usage.get("prompt_tokens", 0)
-    output_tokens = oai_token_usage.get("completion_tokens", 0)
-    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    input_tokens = oai_token_usage.get("prompt_tokens", 0) or oai_token_usage.get("promptTokens", 0)
+    output_tokens = oai_token_usage.get("completion_tokens", 0) or oai_token_usage.get("completionTokens", 0)
+    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens) or oai_token_usage.get("totalTokens", input_tokens + output_tokens)
     input_token_details: dict = {
         "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
             "audio_tokens"
