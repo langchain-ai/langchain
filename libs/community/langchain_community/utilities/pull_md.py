@@ -1,7 +1,6 @@
 """Utility that calls the Pull.md API for markdown conversion."""
 
 import logging
-from typing import Any, Dict
 
 from pydantic import BaseModel
 import requests
