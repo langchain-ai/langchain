@@ -317,3 +317,7 @@ packages:
   repo: kingtroga/langchain-falkordb
   downloads: 610
   downloads_updated_at: '2025-01-02T20:23:02.544257+00:00'
+- name: langchain-dappier
+  path: .
+  repo: DappierAI/langchain-dappier
+  downloads: 0
