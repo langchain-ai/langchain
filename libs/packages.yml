@@ -270,7 +270,7 @@ packages:
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-box
   path: libs/box
-  repo: langchain-ai/langchain-box
+  repo: box-community/langchain-box
   downloads: 2749
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-tests
