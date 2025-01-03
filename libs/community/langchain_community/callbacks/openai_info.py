@@ -204,14 +204,12 @@ def standardize_model_name(
         or ("finetuned" in model_name and "legacy" not in model_name)
     ):
         return model_name + "-completion"
-    if token_type == TokenType.PROMPT_CACHED and (
-        model_name.startswith("gpt-4o") or model_name.startswith("o1")
+    if (
+        token_type == TokenType.PROMPT_CACHED
+        and (model_name.startswith("gpt-4o") or model_name.startswith("o1"))
+        and not (model_name.startswith("gpt-4o-2024-05-13"))
     ):
-        cached_model_name = model_name + "-cached"
-        if cached_model_name in MODEL_COST_PER_1K_TOKENS:
-            return cached_model_name
-        else:
-            return model_name
+        return model_name + "-cached"
     else:
         return model_name
 
