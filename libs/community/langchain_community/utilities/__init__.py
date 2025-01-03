@@ -125,6 +125,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.pubmed import (
         PubMedAPIWrapper,
     )
+    from langchain_community.utilities.pull_md import (
+        PullMdAPIWrapper,
+    )
     from langchain_community.utilities.rememberizer import RememberizerAPIWrapper
     from langchain_community.utilities.requests import (
         Requests,
@@ -216,6 +219,7 @@ __all__ = [
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
+    "PullMdAPIWrapper",
     "RememberizerAPIWrapper",
     "Requests",
     "RequestsWrapper",
@@ -280,6 +284,7 @@ _module_lookup = {
     "Portkey": "langchain_community.utilities.portkey",
     "PowerBIDataset": "langchain_community.utilities.powerbi",
     "PubMedAPIWrapper": "langchain_community.utilities.pubmed",
+    "PullMdAPIWrapper": "langchain_community.utilities.pull_md",
     "RememberizerAPIWrapper": "langchain_community.utilities.rememberizer",
     "Requests": "langchain_community.utilities.requests",
     "RequestsWrapper": "langchain_community.utilities.requests",

@@ -51,6 +51,7 @@ from langchain_community.tools.merriam_webster.tool import MerriamWebsterQueryRu
 from langchain_community.tools.metaphor_search.tool import MetaphorSearchResults
 from langchain_community.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain_community.tools.pubmed.tool import PubmedQueryRun
+from langchain_community.tools.pull_md.tool import PullMdQueryRun
 from langchain_community.tools.reddit_search.tool import RedditSearchRun
 from langchain_community.tools.requests.tool import (
     RequestsDeleteTool,
@@ -90,6 +91,7 @@ from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapp
 from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain_community.utilities.pubmed import PubMedAPIWrapper
+from langchain_community.utilities.pull_md import PullMdAPIWrapper
 from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 from langchain_community.utilities.requests import TextRequestsWrapper
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
@@ -333,6 +335,8 @@ def _get_golden_query(**kwargs: Any) -> BaseTool:
 def _get_pubmed(**kwargs: Any) -> BaseTool:
     return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
 
+def _get_pull_md(**kwargs: Any) -> BaseTool:
+    return PullMdQueryRun(api_wrapper=PullMdAPIWrapper(**kwargs))
 
 def _get_google_books(**kwargs: Any) -> BaseTool:
     from langchain_community.tools.google_books import GoogleBooksQueryRun
@@ -537,6 +541,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "golden-query": (_get_golden_query, ["golden_api_key"]),
     "pubmed": (_get_pubmed, ["top_k_results"]),
+    "pull-md": (_get_pull_md, []),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
     "awslambda": (
         _get_lambda_api,
