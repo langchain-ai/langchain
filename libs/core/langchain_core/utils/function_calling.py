@@ -83,6 +83,7 @@ def _convert_pydantic_to_openai_function(
     rm_titles: bool = True,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API.
+
     Args:
         model: The Pydantic model to convert.
         name: The name of the function. If not provided, the title of the schema will be
@@ -90,6 +91,7 @@ def _convert_pydantic_to_openai_function(
         description: The description of the function. If not provided, the description
             of the schema will be used.
         rm_titles: Whether to remove titles from the schema. Defaults to True.
+
     Returns:
         The function description.
     """
