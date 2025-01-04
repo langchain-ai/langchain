@@ -1,8 +1,8 @@
 import logging
 import time
 from decimal import Decimal
-from itertools import batched
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from itertools import islice
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Union, cast
 
 from langchain_core.indexing import RecordManager
 
@@ -22,6 +22,19 @@ KEY_FIELD = "index_key"
 NAMESPACE_FIELD = "namespace"
 GROUP_ID_FIELD = "group_id"
 UPDATED_AT_FIELD = "updated_at"
+
+
+def batched(iterable: Iterable, n: int):
+      """
+      Batch data into lists of length n. The last batch may be shorter.
+      Drop-in for itertools.batched, which is only available in later Python versions.
+      """
+      # batched('ABCDEFG', 3) --> ABC DEF G
+      if n < 1:
+          raise ValueError('n must be >= 1')
+      it = iter(iterable)
+      while (batch := list(islice(it, n))):
+          yield batch
 
 
 def _to_decimal(value: float) -> Decimal:
