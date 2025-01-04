@@ -26,18 +26,12 @@ from langchain_community.indexes._dynamodb_manager import (
 
 
 @pytest.fixture
-def table_name():
+def table_name() -> str:
     return "test_langchain_records"
 
 
 @pytest.fixture
-def dynamodb_client():  # type: ignore[no-untyped-def]
-    """Create a DynamoDB client for testing."""
-    return
-
-
-@pytest.fixture
-def create_table(dynamodb_client, table_name: str) -> Generator[None, None, None]:
+def create_table(table_name: str) -> Generator[None, None, None]:
     """Create a test table."""
     try:
         import boto3
