@@ -24,17 +24,17 @@ GROUP_ID_FIELD = "group_id"
 UPDATED_AT_FIELD = "updated_at"
 
 
-def batched(iterable: Iterable, n: int):
-      """
-      Batch data into lists of length n. The last batch may be shorter.
-      Drop-in for itertools.batched, which is only available in later Python versions.
-      """
-      # batched('ABCDEFG', 3) --> ABC DEF G
-      if n < 1:
-          raise ValueError('n must be >= 1')
-      it = iter(iterable)
-      while (batch := list(islice(it, n))):
-          yield batch
+def batched(iterable: Iterable, n: int) -> Iterable[list]:
+    """
+    Batch data into lists of length n. The last batch may be shorter.
+    Drop-in for itertools.batched, which is only available in later Python versions.
+    """
+    # batched('ABCDEFG', 3) --> ABC DEF G
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    it = iter(iterable)
+    while batch := list(islice(it, n)):
+        yield batch
 
 
 def _to_decimal(value: float) -> Decimal:
