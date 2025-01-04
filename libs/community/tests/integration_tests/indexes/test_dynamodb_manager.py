@@ -10,6 +10,11 @@ from unittest.mock import patch
 import pytest
 from langchain.indexes import index
 from langchain.indexes._api import _HashedDocument
+from langchain_core.document_loaders import BaseLoader
+from langchain_core.documents import Document
+from langchain_core.embeddings import DeterministicFakeEmbedding
+from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
+
 from langchain_community.indexes._dynamodb_manager import (
     GROUP_ID_FIELD,
     IMPORT_BOTO3_ERROR,
@@ -18,10 +23,6 @@ from langchain_community.indexes._dynamodb_manager import (
     UPDATED_AT_FIELD,
     DynamoDBRecordManager,
 )
-from langchain_core.document_loaders import BaseLoader
-from langchain_core.documents import Document
-from langchain_core.embeddings import DeterministicFakeEmbedding
-from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
 
 @pytest.fixture
