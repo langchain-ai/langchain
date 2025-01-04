@@ -47,9 +47,12 @@ class DynamoDBRecordManager(RecordManager):
             namespace: The namespace associated with this record manager.
             table_name: The name of the DynamoDB table to use.
                 Default is 'langchain_records'.
-            region_name: AWS region name. If not provided, will use default from AWS config.
-            aws_access_key_id: AWS access key ID. If not provided, will use default credentials.
-            aws_secret_access_key: AWS secret access key. If not provided, will use default credentials.
+            region_name: AWS region name.
+                If not provided, will use default from AWS config.
+            aws_access_key_id: AWS access key ID.
+                If not provided, will use default credentials.
+            aws_secret_access_key: AWS secret access key.
+                If not provided, will use default credentials.
             endpoint_url: Optional endpoint URL for DynamoDB (useful for local testing).
         """
         try:
@@ -111,7 +114,8 @@ class DynamoDBRecordManager(RecordManager):
 
     def get_time(self) -> float:
         # The docstring in the parent class mentions using a monotonic clock,
-        # but it seems the official langchain implementations use the database server time,
+        # but it seems the official langchain implementations
+        # use the database server time,
         # which isn't guaranteed to be monotonic either.
         return time.time()
 
@@ -140,7 +144,8 @@ class DynamoDBRecordManager(RecordManager):
                 f"is less than required time {time_at_least}"
             )
 
-        # Create a list of (key, group_id) tuples, filtering out duplicates while preserving order
+        # Create a list of (key, group_id) tuples,
+        # filtering out duplicates while preserving order
         key_group_pairs: List[tuple[str, Optional[str]]] = []
         seen_keys = set()
 
@@ -199,7 +204,7 @@ class DynamoDBRecordManager(RecordManager):
             table_responses = response.get("Responses", {})
             if self.table_name in table_responses:
                 for item in table_responses[self.table_name]:
-                    key = cast(str, item[KEY_FIELD])  # Convert DynamoDB type to str
+                    key = cast(str, item[KEY_FIELD])
                     if key in key_to_index:
                         results[key_to_index[key]] = True
 
@@ -211,7 +216,8 @@ class DynamoDBRecordManager(RecordManager):
                 if unprocessed_count > 0:
                     total_keys = len(keys_chunk)
                     raise RuntimeError(
-                        f"Failed to process {unprocessed_count} out of {total_keys} keys in batch. "
+                        f"Failed to process {unprocessed_count} "
+                        f"out of {total_keys} keys in batch. "
                         "This may indicate throughput limits being reached."
                     )
 
@@ -229,7 +235,9 @@ class DynamoDBRecordManager(RecordManager):
         limit: Optional[int] = None,
     ) -> set[str]:
         keys: set[str] = set()
-        max_iterations = 1000  # Safety limit to prevent infinite loops
+
+        # Safety limit to prevent infinite loops
+        max_iterations = 1000
         iteration = 0
 
         response = operation_func(**operation_kwargs)
@@ -275,7 +283,8 @@ class DynamoDBRecordManager(RecordManager):
             # Build key condition expression (partition key and both time conditions)
             key_condition_parts = ["#group_id = :group_id"]
 
-            # Both time conditions must go in KeyConditionExpression since updated_at is a key
+            # Both time conditions must go in KeyConditionExpression
+            # since updated_at is a key
             if before is not None and after is not None:
                 key_condition_parts.append("#updated_at BETWEEN :after AND :before")
             elif before is not None:
