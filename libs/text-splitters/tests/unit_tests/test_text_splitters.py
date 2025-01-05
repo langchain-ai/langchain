@@ -501,10 +501,13 @@ def test_vue_text_splitter() -> None:
         "<template>",
         "<div>",
         "<h1>{{ title }}</h1>",
-        '<button @click="increment">\n      Count is: {{ count }}\n    </button>\n  </div>\n</template>',
+        '<button @click="increment">\n      Count is: {{ count }}\n'
+        "    </button>\n  </div>\n</template>",
         "<script>",
         "export",
-        " default {\n  data() {\n    return {\n      title: 'Counter App',\n      count: 0\n    }\n  },\n  methods: {\n    increment() {\n      this.count++\n    }\n  }\n}\n</script>",
+        " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
+        "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
+        "this.count++\n    }\n  }\n}\n</script>",
         "<style>\nbutton {\n  color: blue;\n}\n</style>",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
