@@ -35,6 +35,7 @@ api_docs_build:
 
 API_PKG ?= text-splitters
 
+## api_docs_quick_preview: Quickly preview API documentation for a specific package.
 api_docs_quick_preview:
 	poetry run python docs/api_reference/create_api_rst.py $(API_PKG)
 	cd docs/api_reference && poetry run make html
@@ -75,3 +76,21 @@ lint lint_package lint_tests:
 format format_diff:
 	poetry run ruff format docs cookbook
 	poetry run ruff check --select I --fix docs cookbook
+
+## test-community: Run tests for the langchain-community package.
+test-community:
+	poetry run pytest libs/community/tests
+
+.PHONY: format lint test spell_check
+
+format:
+	black .
+
+lint:
+	ruff .
+
+test:
+	pytest
+
+spell_check:
+	codespell

@@ -33,6 +33,7 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
+langchain-core = { path = "../core", develop = true }
 langchain-core = "^0.3.17"
 langchain = "^0.3.7"
 SQLAlchemy = ">=1.4,<2.0.36"
@@ -168,3 +169,9 @@ develop = true
 [tool.poetry.group.typing.dependencies.langchain]
 path = "../langchain"
 develop = true
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+black = "^22.3.0"
+ruff = "^0.0.241"
+codespell = "^2.1.0"

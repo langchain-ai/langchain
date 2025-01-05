@@ -4,9 +4,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain"
-version = "0.3.7"
-description = "Building applications with LLMs through composability"
-authors = []
+version = "0.1.0"
+description = "LangChain project"
+authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
@@ -49,6 +49,8 @@ python = "<3.12"
 [[tool.poetry.dependencies.numpy]]
 version = ">=1.26.2,<2"
 python = ">=3.12"
+
+langchain-community = { path = "../community", develop = true }
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
@@ -149,6 +151,7 @@ mypy-protobuf = "^3.0.0"
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
+codespell = "^2.2.0"
 
 [tool.poetry.group.test.dependencies.langchain-tests]
 path = "../standard-tests"
@@ -190,3 +193,9 @@ develop = true
 [tool.poetry.group.dev.dependencies.langchain-text-splitters]
 path = "../text-splitters"
 develop = true
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+black = "^22.3.0"
+ruff = "^0.0.241"
+codespell = "^2.1.0"

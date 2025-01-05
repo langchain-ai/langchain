@@ -17,7 +17,7 @@ Thank you for contributing to LangChain!
   2. an example notebook showing its use. It lives in `docs/docs/integrations` directory.
 
 
-- [ ] **Lint and test**: Run `make format`, `make lint` and `make test` from the root of the package(s) you've modified. See contribution guidelines for more: https://python.langchain.com/docs/contributing/
+- [ ] **Lint and test**: Run `make format`, `make lint`, `make test`, and `make spell_check` from the root of the package(s) you've modified. See contribution guidelines for more: https://python.langchain.com/docs/contributing/
 
 Additional guidelines:
 - Make sure optional dependencies are imported within a function.

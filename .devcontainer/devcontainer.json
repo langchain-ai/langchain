@@ -15,15 +15,15 @@
 	"workspaceFolder": "/workspaces/langchain",
 
 	// Prevent the container from shutting down
-	"overrideCommand": true
+	"overrideCommand": true,
 
 	// Features to add to the dev container. More info: https://containers.dev/features
-	// "features": {
-	// 	"ghcr.io/devcontainers-contrib/features/poetry:2": {}
-	// }
+	"features": {
+		"ghcr.io/devcontainers-contrib/features/poetry:2": {}
+	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	"forwardPorts": [8000],
 
 	// Uncomment the next line to run commands after the container is created.
 	// "postCreateCommand": "cat /etc/os-release",
