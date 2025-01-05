@@ -1,4 +1,4 @@
-"""Utilities for tests."""
+"""Utilities for pydantic."""
 
 from __future__ import annotations
 
@@ -279,7 +279,7 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import ConfigDict, create_model
+    from pydantic import create_model
     from pydantic.fields import FieldInfo
 
     descriptions_ = descriptions or {}

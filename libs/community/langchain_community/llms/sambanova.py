@@ -27,20 +27,20 @@ class SambaStudio(LLM):
                 sambastudio_url="your-SambaStudio-environment-URL",
                 sambastudio_api_key="your-SambaStudio-API-key,
                 model_kwargs={
-                    "model" : model or expert name (set for CoE endpoints),
+                    "model" : model or expert name (set for Bundle endpoints),
                     "max_tokens" : max number of tokens to generate,
                     "temperature" : model temperature,
                     "top_p" : model top p,
                     "top_k" : model top k,
                     "do_sample" : wether to do sample
                     "process_prompt": wether to process prompt
-                        (set for CoE generic v1 and v2 endpoints)
+                        (set for Bundle generic v1 and v2 endpoints)
                 },
             )
     Key init args — completion params:
         model: str
             The name of the model to use, e.g., Meta-Llama-3-70B-Instruct-4096
-            (set for CoE endpoints).
+            (set for Bundle endpoints).
         streaming: bool
             Whether to use streaming handler when using non streaming methods
         model_kwargs: dict
@@ -56,7 +56,8 @@ class SambaStudio(LLM):
                 do_sample: bool
                     wether to do sample
                 process_prompt:
-                    wether to process prompt (set for CoE generic v1 and v2 endpoints)
+                    wether to process prompt
+                    (set for Bundle generic v1 and v2 endpoints)
     Key init args — client params:
         sambastudio_url: str
             SambaStudio endpoint Url
@@ -72,14 +73,14 @@ class SambaStudio(LLM):
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key,
                 model_kwargs = {
-                    "model" : model or expert name (set for CoE endpoints),
+                    "model" : model or expert name (set for Bundle endpoints),
                     "max_tokens" : max number of tokens to generate,
                     "temperature" : model temperature,
                     "top_p" : model top p,
                     "top_k" : model top k,
                     "do_sample" : wether to do sample
                     "process_prompt" : wether to process prompt
-                        (set for CoE generic v1 and v2 endpoints)
+                        (set for Bundle generic v1 and v2 endpoints)
                 }
             )
 
@@ -174,7 +175,7 @@ class SambaStudio(LLM):
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
         """
-        if "openai" in url:
+        if "chat/completions" in url:
             base_url = url
             stream_url = url
         else:
@@ -213,7 +214,7 @@ class SambaStudio(LLM):
             _model_kwargs["stop_sequences"] = _stop_sequences
 
         # set the parameters structure depending of the API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             if "select_expert" in _model_kwargs.keys():
                 _model_kwargs["model"] = _model_kwargs.pop("select_expert")
             if "max_tokens_to_generate" in _model_kwargs.keys():
@@ -278,7 +279,7 @@ class SambaStudio(LLM):
         params = self._get_tuning_params(stop)
 
         # create request payload for openAI v1 API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dict = [{"role": "user", "content": prompt[0]}]
             data = {"messages": messages_dict, "stream": streaming, **params}
             data = {key: value for key, value in data.items() if value is not None}
@@ -377,7 +378,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             completion = response_dict["choices"][0]["message"]["content"]
         # process response payload for generic v2 API
         elif "api/v2/predict/generic" in self.sambastudio_url:
@@ -412,7 +413,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             client = sseclient.SSEClient(response)
             for event in client.events():
                 if event.event == "error_event":

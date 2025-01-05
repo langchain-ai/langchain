@@ -345,6 +345,8 @@ def _convert_message_to_mistral_chat_message(
             message_dict["content"] = ""
         else:
             message_dict["content"] = message.content
+        if "prefix" in message.additional_kwargs:
+            message_dict["prefix"] = message.additional_kwargs["prefix"]
         return message_dict
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)
@@ -388,7 +390,7 @@ class ChatMistralAI(BaseChatModel):
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
-    safe_mode: bool = False
+    safe_mode: Optional[bool] = None
     streaming: bool = False
 
     model_config = ConfigDict(
@@ -595,7 +597,7 @@ class ChatMistralAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -621,7 +623,7 @@ class ChatMistralAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk

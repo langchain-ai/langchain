@@ -39,7 +39,7 @@ In some cases, you may need to stream **custom data** that goes beyond the infor
 
 ## Streaming APIs
 
-LangChain two main APIs for streaming output in real-time. These APIs are supported by any component that implements the [Runnable Interface](/docs/concepts/runnables), including [LLMs](/docs/concepts/chat_models), [compiled LangGraph graphs](https://langchain-ai.github.io/langgraph/concepts/low_level/), and any Runnable generated with [LCEL](/docs/concepts/lcel).
+LangChain has two main APIs for streaming output in real-time. These APIs are supported by any component that implements the [Runnable Interface](/docs/concepts/runnables), including [LLMs](/docs/concepts/chat_models), [compiled LangGraph graphs](https://langchain-ai.github.io/langgraph/concepts/low_level/), and any Runnable generated with [LCEL](/docs/concepts/lcel).
 
 1. sync [stream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.stream) and async [astream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream): Use to stream outputs from individual Runnables (e.g., a chat model) as they are generated or stream any workflow created with LangGraph.
 2. The async only [astream_events](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream_events): Use this API to get access to custom events and intermediate outputs from LLM  applications built entirely with [LCEL](/docs/concepts/lcel). Note that this API is available, but not needed when working with LangGraph.

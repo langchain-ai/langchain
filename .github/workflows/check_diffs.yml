@@ -5,6 +5,7 @@ on:
   push:
     branches: [master]
   pull_request:
+  merge_group:
 
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
@@ -17,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
@@ -119,6 +120,7 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
       fail-fast: false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}

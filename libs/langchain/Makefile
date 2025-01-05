@@ -19,7 +19,7 @@ coverage:
 		$(TEST_FILE)
 
 test tests:
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	poetry run pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
 	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests

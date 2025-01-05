@@ -19,6 +19,7 @@ CONST_MODEL_NAME = "odsc-vllm"
 CONST_ENDPOINT = "https://oci.endpoint/ocid/predict"
 CONST_PROMPT = "This is a prompt."
 CONST_COMPLETION = "This is a completion."
+CONST_COMPLETION_ROUTE = "/v1/chat/completions"
 CONST_COMPLETION_RESPONSE = {
     "id": "chat-123456789",
     "object": "chat.completion",
@@ -120,6 +121,7 @@ def mocked_requests_post(url: str, **kwargs: Any) -> MockResponse:
 def test_invoke_vllm(*args: Any) -> None:
     """Tests invoking vLLM endpoint."""
     llm = ChatOCIModelDeploymentVLLM(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
+    assert llm._headers().get("route") == CONST_COMPLETION_ROUTE
     output = llm.invoke(CONST_PROMPT)
     assert isinstance(output, AIMessage)
     assert output.content == CONST_COMPLETION
@@ -132,6 +134,7 @@ def test_invoke_vllm(*args: Any) -> None:
 def test_invoke_tgi(*args: Any) -> None:
     """Tests invoking TGI endpoint using OpenAI Spec."""
     llm = ChatOCIModelDeploymentTGI(endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME)
+    assert llm._headers().get("route") == CONST_COMPLETION_ROUTE
     output = llm.invoke(CONST_PROMPT)
     assert isinstance(output, AIMessage)
     assert output.content == CONST_COMPLETION
@@ -146,6 +149,7 @@ def test_stream_vllm(*args: Any) -> None:
     llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
     )
+    assert llm._headers().get("route") == CONST_COMPLETION_ROUTE
     output = None
     count = 0
     for chunk in llm.stream(CONST_PROMPT):
@@ -184,6 +188,7 @@ async def test_stream_async(*args: Any) -> None:
     llm = ChatOCIModelDeploymentVLLM(
         endpoint=CONST_ENDPOINT, model=CONST_MODEL_NAME, streaming=True
     )
+    assert llm._headers().get("route") == CONST_COMPLETION_ROUTE
     with mock.patch.object(
         llm,
         "_aiter_sse",

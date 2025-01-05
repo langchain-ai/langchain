@@ -64,6 +64,52 @@ def test_lazy_load(mock_get: Any) -> None:
 
 @pytest.mark.requires("bs4")
 @patch("aiohttp.ClientSession.get")
+async def test_alazy_load(mock_get: Any) -> None:
+    async def mock_text() -> str:
+        return "<html><body><p>Test content</p></body></html>"
+
+    import bs4
+
+    mock_response = MagicMock()
+    mock_response.text = mock_text
+    mock_get.return_value.__aenter__.return_value = mock_response
+
+    loader = WebBaseLoader(web_paths=["https://www.example.com"])
+    results = []
+    async for result in loader.alazy_load():
+        results.append(result)
+    # mock_get.assert_called_with("https://www.example.com")
+    assert len(results) == 1
+    assert results[0].page_content == "Test content"
+
+    # Test bs4 kwargs
+    async def mock_text_bs4() -> str:
+        return dedent("""
+            <html>
+            <body>
+                <p>Test content</p>
+                <div class="special-class">This is a div with a special class</div>
+            </body>
+            </html>
+            """)
+
+    mock_response = MagicMock()
+    mock_response.text = mock_text_bs4
+    mock_get.return_value.__aenter__.return_value = mock_response
+
+    loader = WebBaseLoader(
+        web_paths=["https://www.example.com"],
+        bs_kwargs={"parse_only": bs4.SoupStrainer(class_="special-class")},
+    )
+    results = []
+    async for result in loader.alazy_load():
+        results.append(result)
+    assert len(results) == 1
+    assert results[0].page_content == "This is a div with a special class"
+
+
+@pytest.mark.requires("bs4")
+@patch("aiohttp.ClientSession.get")
 def test_aload(mock_get: Any) -> None:
     async def mock_text() -> str:
         return "<html><body><p>Test content</p></body></html>"

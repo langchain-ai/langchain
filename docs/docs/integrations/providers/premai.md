@@ -124,7 +124,7 @@ Dense retrieval models typically include:
             "repository_id": 1985,
             "document_id": 1306,
             "chunk_id": 173899,
-            "document_name": "[D] Difference between sparse and dense informati\u2026",
+            "document_name": "[D] Difference between sparse and dense information\u2026",
             "similarity_score": 0.3209080100059509,
             "content": "with the difference or anywhere\nwhere I can read about it?\n\n\n      17                  9\n\n\n      u/ScotiabankCanada        \u2022  Promoted\n\n\n                       Accelerate your study permit process\n                       with Scotiabank's Student GIC\n                       Program. We're here to help you tur\u2026\n\n\n                       startright.scotiabank.com         Learn More\n\n\n                            Add a Comment\n\n\nSort by:   Best\n\n\n      DinosParkour      \u2022 1y ago\n\n\n     Dense Retrieval (DR) m"
         }
