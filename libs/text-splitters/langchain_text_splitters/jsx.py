@@ -4,19 +4,21 @@ from typing import Any, List, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-class JSXTextSplitter(RecursiveCharacterTextSplitter):
-    """Text splitter that handles JSX/React code.
+class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
+    """Text splitter that handles React (JSX), Vue, and Svelte code.
 
-    This splitter extends RecursiveCharacterTextSplitter to handle JSX/React code by:
-    1. Detecting and extracting JSX component tags from the text
+    This splitter extends RecursiveCharacterTextSplitter to handle
+    React (JSX), Vue, and Svelte code by:
+    1. Detecting and extracting custom component tags from the text
     2. Using those tags as additional separators along with standard JS syntax
 
     The splitter combines:
-    - JSX component tags as separators (e.g. <Component, <div)
+    - Custom component tags as separators (e.g. <Component, <div)
     - JavaScript syntax elements (function, const, if, etc)
     - Standard text splitting on newlines
 
-    This allows chunks to break at natural boundaries in React component code.
+    This allows chunks to break at natural boundaries in
+    React, Vue, and Svelte component code.
     """
 
     def __init__(
@@ -26,7 +28,7 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
         chunk_overlap: int = 0,
         **kwargs: Any,
     ) -> None:
-        """Initialize the JSX text splitter.
+        """Initialize the JS Framework text splitter.
 
         Args:
             separators: Optional list of custom separator strings to use
@@ -41,19 +43,19 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
         """Split text into chunks.
 
         This method splits the text into chunks by:
-        - Extracting unique opening JSX tags using regex
+        - Extracting unique opening component tags using regex
         - Creating separators list with extracted tags and JS separators
         - Splitting the text using the separators by calling the parent class method
         - Handling chunk overlap if enabled
 
         Args:
-            text: String containing JSX/React code to split
+            text: String containing code to split
 
         Returns:
-            List of text chunks split on JSX and JS boundaries
+            List of text chunks split on component and JS boundaries
         """
-        # Extract unique opening JSX tags using regex
-        jsx_tags = list(
+        # Extract unique opening component tags using regex
+        component_tags = list(
             set(
                 tag.split(" ")[0].strip("<>\n")
                 for tag in re.findall(r"<[^/\s][^>]*>", text)  # Match opening tags
@@ -61,12 +63,14 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
             )
         )
         # Create separators list with extracted tags and default separators
-        jsx_separators = [f"<{tag}" for tag in jsx_tags]
-        jsx_separators = sorted(
-            jsx_separators,
-            key=lambda x: abs(len(jsx_separators) // 2 - jsx_separators.index(x)),
+        component_separators = [f"<{tag}" for tag in component_tags]
+        component_separators = sorted(
+            component_separators,
+            key=lambda x: abs(
+                len(component_separators) // 2 - component_separators.index(x)
+            ),
         )
-        jsx_separators = list(set(jsx_separators))
+        component_separators = list(set(component_separators))
 
         js_separators = [
             "\nexport ",
@@ -95,7 +99,7 @@ class JSXTextSplitter(RecursiveCharacterTextSplitter):
         separators = (
             self._separators
             + js_separators
-            + jsx_separators
+            + component_separators
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
         self._separators = separators
