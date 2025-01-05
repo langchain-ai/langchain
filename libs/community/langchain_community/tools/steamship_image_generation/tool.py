@@ -113,3 +113,11 @@ class SteamshipImageGenerationTool(BaseTool):  # type: ignore[override]
                 return blocks[0].id
 
         raise RuntimeError(f"[{self.name}] Tool unable to generate image!")
+
+    def _debug(self, query: str) -> None:
+        """Debug method to print internal state."""
+        print(f"Model Name: {self.model_name}")
+        print(f"Size: {self.size}")
+        print(f"Return URLs: {self.return_urls}")
+        print(f"Query: {query}")
+        print(f"Steamship: {self.steamship}")
