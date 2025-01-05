@@ -318,10 +318,14 @@ def _convert_delta_to_message_chunk(
 def _convert_chunk_to_generation_chunk(
     chunk: dict, default_chunk_class: Type, base_generation_info: Optional[Dict]
 ) -> Optional[ChatGenerationChunk]:
-    if chunk.get("type") == "content.delta":
+    if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
         return None
     token_usage = chunk.get("usage")
-    choices = chunk.get("choices", []) or chunk.get("snapshot", {}).get("choices", [])
+    choices = (
+        chunk.get("choices", [])
+        # from beta.chat.completions.stream
+        or chunk.get("chunk", {}).get("choices", [])
+    )
 
     usage_metadata: Optional[UsageMetadata] = (
         _create_usage_metadata(token_usage) if token_usage else None
@@ -334,20 +338,12 @@ def _convert_chunk_to_generation_chunk(
         return generation_chunk
 
     choice = choices[0]
-    if chunk.get("type") == "chunk":
-        refusal = choice.get("message", {}).get("refusal")
-        content = choice.get("message", {}).get("content")
-        message_chunk = AIMessageChunk(
-            content,
-            additional_kwargs={"refusal": refusal},
-        )
-    else:
-        if choice["delta"] is None:
-            return None
+    if choice["delta"] is None:
+        return None
 
-        message_chunk = _convert_delta_to_message_chunk(
-            choice["delta"], default_chunk_class
-        )
+    message_chunk = _convert_delta_to_message_chunk(
+        choice["delta"], default_chunk_class
+    )
     generation_info = {**base_generation_info} if base_generation_info else {}
 
     if finish_reason := choice.get("finish_reason"):
@@ -710,13 +706,20 @@ class BaseChatOpenAI(BaseChatModel):
         if hasattr(response, "get_final_completion"):
             final_completion = response.get_final_completion()
             if isinstance(final_completion, openai.BaseModel):
+                chat_result = self._create_chat_result(final_completion)
+                chat_message = chat_result.generations[0].message
+                if isinstance(chat_message, AIMessage):
+                    usage_metadata = chat_message.usage_metadata
+                else:
+                    usage_metadata = None
                 message = AIMessageChunk(
-                    "",
-                    additional_kwargs={
-                        "parsed": final_completion.choices[0].message.parsed
-                    },
+                    content="",
+                    additional_kwargs=chat_message.additional_kwargs,
+                    usage_metadata=usage_metadata,
                 )
-                yield ChatGenerationChunk(message=message)
+                yield ChatGenerationChunk(
+                    message=message, generation_info=chat_result.llm_output
+                )
 
     def _generate(
         self,
