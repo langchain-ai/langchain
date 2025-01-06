@@ -659,8 +659,8 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client_params(self) -> Dict[str, Any]:
         client_params: Dict[str, Any] = {
-            "api_key": api_key,
-            "base_url": api_url,
+            "api_key": self.anthropic_api_key.get_secret_value(),
+            "base_url": self.anthropic_api_url,
             "default_headers": (self.default_headers or None),
         }
         if self.max_retries is not None:
