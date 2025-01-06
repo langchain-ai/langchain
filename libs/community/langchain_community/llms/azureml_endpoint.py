@@ -9,7 +9,7 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from pydantic import BaseModel, SecretStr, model_validator, validator
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator, validator
 
 DEFAULT_TIMEOUT = 50
 
@@ -382,6 +382,8 @@ class AzureMLBaseEndpoint(BaseModel):
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     @model_validator(mode="before")
     @classmethod
     def validate_environ(cls, values: Dict) -> Any:
@@ -432,7 +434,8 @@ class AzureMLBaseEndpoint(BaseModel):
             raise ValueError(
                 "`endpoint_url` should contain the full invocation URL including "
                 "`/score` for `endpoint_api_type='dedicated'` or `/completions` "
-                "or `/chat/completions` for `endpoint_api_type='serverless'`"
+                "or `/models/chat/completions` "
+                "for `endpoint_api_type='serverless'`"
             )
         return field_value
 
@@ -453,16 +456,17 @@ class AzureMLBaseEndpoint(BaseModel):
                 "Endpoints of type `dedicated` should follow the format "
                 "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/score`."
                 " If your endpoint URL ends with `/completions` or"
-                "`/chat/completions`, use `endpoint_api_type='serverless'` instead."
+                "`/models/chat/completions`,"
+                "use `endpoint_api_type='serverless'` instead."
             )
         if field_value == AzureMLEndpointApiType.serverless and not (
             endpoint_url.endswith("/completions")  # type: ignore[union-attr]
-            or endpoint_url.endswith("/chat/completions")  # type: ignore[union-attr]
+            or endpoint_url.endswith("/models/chat/completions")  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Endpoints of type `serverless` should follow the format "
-                "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/chat/completions`"
-                " or `https://<your-endpoint>.<your_region>.inference.ml.azure.com/chat/completions`"
+                "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/completions`"
+                " or `https://<your-endpoint>.<your_region>.inference.ml.azure.com/models/chat/completions`"
             )
 
         return field_value

@@ -388,6 +388,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         return name
 
 
+@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
@@ -496,12 +497,9 @@ def add(addables: Iterable[Addable]) -> Optional[Addable]:
     Returns:
         Optional[Addable]: The result of adding the addable objects.
     """
-    final = None
+    final: Optional[Addable] = None
     for chunk in addables:
-        if final is None:
-            final = chunk
-        else:
-            final = final + chunk
+        final = chunk if final is None else final + chunk
     return final
 
 
@@ -514,12 +512,9 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
     Returns:
         Optional[Addable]: The result of adding the addable objects.
     """
-    final = None
+    final: Optional[Addable] = None
     async for chunk in addables:
-        if final is None:
-            final = chunk
-        else:
-            final = final + chunk
+        final = chunk if final is None else final + chunk
     return final
 
 
@@ -642,15 +637,14 @@ def get_unique_config_specs(
     for id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
-        if len(others) == 0:
-            unique.append(first)
-        elif all(o == first for o in others):
+        if len(others) == 0 or all(o == first for o in others):
             unique.append(first)
         else:
-            raise ValueError(
+            msg = (
                 "RunnableSequence contains conflicting config specs"
                 f"for {id}: {[first] + others}"
             )
+            raise ValueError(msg)
     return unique
 
 

@@ -28,9 +28,9 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     Options: d, w, m, y
     """
     max_results: int = 5
-    backend: str = "api"
+    backend: str = "auto"
     """
-    Options: api, html, lite
+    Options: auto, html, lite
     """
     source: str = "text"
     """
@@ -63,7 +63,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.text(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,
@@ -82,7 +82,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.news(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,

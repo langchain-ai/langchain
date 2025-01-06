@@ -305,7 +305,7 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: Optional[float] = None
     """What sampling temperature to use."""
-    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -656,7 +656,7 @@ class ChatGroq(BaseChatModel):
     @deprecated(
         since="0.2.1",
         alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
-        removal="0.3.0",
+        removal="1.0.0",
     )
     def bind_functions(
         self,
@@ -741,31 +741,11 @@ class ChatGroq(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
-                if len(tools) > 1:
-                    raise ValueError(
-                        f"Groq does not currently support {tool_choice=}. Should "
-                        f"be one of 'auto', 'none', or the name of the tool to call."
-                    )
-                else:
-                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+                tool_choice = "required"
             if isinstance(tool_choice, str) and (
-                tool_choice not in ("auto", "any", "none")
+                tool_choice not in ("auto", "none", "required")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            # TODO: Remove this update once 'any' is supported.
-            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
-            if isinstance(tool_choice, dict) and (
-                formatted_tools[0]["function"]["name"]
-                != tool_choice["function"]["name"]
-            ):
-                raise ValueError(
-                    f"Tool choice {tool_choice} was specified, but the only "
-                    f"provided tool was {formatted_tools[0]['function']['name']}."
-                )
             if isinstance(tool_choice, bool):
                 if len(tools) > 1:
                     raise ValueError(

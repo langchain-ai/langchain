@@ -94,6 +94,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -206,6 +207,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -290,6 +292,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -364,6 +367,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -435,6 +439,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -497,6 +502,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -595,6 +601,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -669,12 +676,48 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
           'content',
         ]),
         'title': 'HumanMessageChunk',
+        'type': 'object',
+      }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+          
+          .. versionadded:: 0.3.9
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
         'type': 'object',
       }),
       'InvalidToolCall': dict({
@@ -732,6 +775,7 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -741,6 +785,36 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+          
+          .. versionadded:: 0.3.9
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'SystemMessage': dict({
@@ -827,6 +901,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -896,6 +971,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -944,6 +1020,7 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1022,6 +1099,7 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1144,6 +1222,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1225,6 +1304,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1245,15 +1325,34 @@
               .. code-block:: python
           
                   {
-                      "input_tokens": 10,
-                      "output_tokens": 20,
-                      "total_tokens": 30
+                      "input_tokens": 350,
+                      "output_tokens": 240,
+                      "total_tokens": 590,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
+          
+          .. versionchanged:: 0.3.9
+          
+              Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/$defs/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/$defs/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -1425,6 +1524,7 @@
             'const': 'ai',
             'default': 'ai',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -1537,6 +1637,7 @@
             'const': 'AIMessageChunk',
             'default': 'AIMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
           'usage_metadata': dict({
             'anyOf': list([
@@ -1621,6 +1722,7 @@
             'const': 'chat',
             'default': 'chat',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1695,6 +1797,7 @@
             'const': 'ChatMessageChunk',
             'default': 'ChatMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1766,6 +1869,7 @@
             'const': 'function',
             'default': 'function',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1828,6 +1932,7 @@
             'const': 'FunctionMessageChunk',
             'default': 'FunctionMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -1926,6 +2031,7 @@
             'const': 'human',
             'default': 'human',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2000,12 +2106,48 @@
             'const': 'HumanMessageChunk',
             'default': 'HumanMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
           'content',
         ]),
         'title': 'HumanMessageChunk',
+        'type': 'object',
+      }),
+      'InputTokenDetails': dict({
+        'description': '''
+          Breakdown of input token counts.
+          
+          Does *not* need to sum to full input token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "cache_creation": 200,
+                      "cache_read": 100,
+                  }
+          
+          .. versionadded:: 0.3.9
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'cache_creation': dict({
+            'title': 'Cache Creation',
+            'type': 'integer',
+          }),
+          'cache_read': dict({
+            'title': 'Cache Read',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'InputTokenDetails',
         'type': 'object',
       }),
       'InvalidToolCall': dict({
@@ -2063,6 +2205,7 @@
           'type': dict({
             'const': 'invalid_tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2072,6 +2215,36 @@
           'error',
         ]),
         'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'OutputTokenDetails': dict({
+        'description': '''
+          Breakdown of output token counts.
+          
+          Does *not* need to sum to full output token count. Does *not* need to have all keys.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  {
+                      "audio": 10,
+                      "reasoning": 200,
+                  }
+          
+          .. versionadded:: 0.3.9
+        ''',
+        'properties': dict({
+          'audio': dict({
+            'title': 'Audio',
+            'type': 'integer',
+          }),
+          'reasoning': dict({
+            'title': 'Reasoning',
+            'type': 'integer',
+          }),
+        }),
+        'title': 'OutputTokenDetails',
         'type': 'object',
       }),
       'SystemMessage': dict({
@@ -2158,6 +2331,7 @@
             'const': 'system',
             'default': 'system',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2227,6 +2401,7 @@
             'const': 'SystemMessageChunk',
             'default': 'SystemMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2275,6 +2450,7 @@
           'type': dict({
             'const': 'tool_call',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2353,6 +2529,7 @@
           'type': dict({
             'const': 'tool_call_chunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2475,6 +2652,7 @@
             'const': 'tool',
             'default': 'tool',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2556,6 +2734,7 @@
             'const': 'ToolMessageChunk',
             'default': 'ToolMessageChunk',
             'title': 'Type',
+            'type': 'string',
           }),
         }),
         'required': list([
@@ -2576,15 +2755,34 @@
               .. code-block:: python
           
                   {
-                      "input_tokens": 10,
-                      "output_tokens": 20,
-                      "total_tokens": 30
+                      "input_tokens": 350,
+                      "output_tokens": 240,
+                      "total_tokens": 590,
+                      "input_token_details": {
+                          "audio": 10,
+                          "cache_creation": 200,
+                          "cache_read": 100,
+                      },
+                      "output_token_details": {
+                          "audio": 10,
+                          "reasoning": 200,
+                      }
                   }
+          
+          .. versionchanged:: 0.3.9
+          
+              Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
+          'input_token_details': dict({
+            '$ref': '#/$defs/InputTokenDetails',
+          }),
           'input_tokens': dict({
             'title': 'Input Tokens',
             'type': 'integer',
+          }),
+          'output_token_details': dict({
+            '$ref': '#/$defs/OutputTokenDetails',
           }),
           'output_tokens': dict({
             'title': 'Output Tokens',
@@ -2951,6 +3149,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,{my_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2970,6 +3169,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,{my_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2989,6 +3189,7 @@
                   'template': dict({
                     'url': '{my_other_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3009,6 +3210,7 @@
                     'detail': 'medium',
                     'url': '{my_other_image}',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3027,6 +3229,7 @@
                   'template': dict({
                     'url': 'https://www.langchain.com/image.png',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3045,6 +3248,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,foobar',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -3063,6 +3267,7 @@
                   'template': dict({
                     'url': 'data:image/jpeg;base64,foobar',
                   }),
+                  'template_format': 'f-string',
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',

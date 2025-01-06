@@ -1,0 +1,35 @@
+# General guidelines
+
+Here are some things to keep in mind for all types of contributions:
+
+- Follow the ["fork and pull request"](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) workflow.
+- Fill out the checked-in pull request template when opening pull requests. Note related issues and tag relevant maintainers.
+- Ensure your PR passes formatting, linting, and testing checks before requesting a review.
+  - If you would like comments or feedback on your current progress, please open an issue or discussion and tag a maintainer.
+  - See the sections on [Testing](setup.mdx#testing) and [Formatting and Linting](setup.mdx#formatting-and-linting) for how to run these checks locally.
+- Backwards compatibility is key. Your changes must not be breaking, except in case of critical bug and security fixes.
+- Look for duplicate PRs or issues that have already been opened before opening a new one.
+- Keep scope as isolated as possible. As a general rule, your changes should not affect more than one package at a time.
+
+## Bugfixes
+
+We encourage and appreciate bugfixes. We ask that you:
+
+- Explain the bug in enough detail for maintainers to be able to reproduce it.
+  - If an accompanying issue exists, link to it. Prefix with `Fixes` so that the issue will close automatically when the PR is merged.
+- Avoid breaking changes if possible.
+- Include unit tests that fail without the bugfix.
+
+If you come across a bug and don't know how to fix it, we ask that you open an issue for it describing in detail the environment in which you encountered the bug.
+
+## New features
+
+We aim to keep the bar high for new features. We generally don't accept new core abstractions, changes to infra, changes to dependencies,
+or new agents/chains from outside contributors without an existing GitHub discussion or issue that demonstrates an acute need for them.
+
+- New features must come with docs, unit tests, and (if appropriate) integration tests.
+- New integrations must come with docs, unit tests, and (if appropriate) integration tests.
+  - See [this page](../integrations/index.mdx) for more details on contributing new integrations.
+- New functionality should not inherit from or use deprecated methods or classes.
+- We will reject features that are likely to lead to security vulnerabilities or reports.
+- Do not add any hard dependencies. Integrations may add optional dependencies.

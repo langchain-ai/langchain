@@ -14,7 +14,7 @@ on:
 
 jobs:
   langchain-people:
-    if: github.repository_owner == 'langchain-ai'
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions: write-all
     steps:

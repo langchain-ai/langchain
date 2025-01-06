@@ -13,6 +13,7 @@ from typing import (
     Type,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -113,6 +114,11 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)  # type: ignore[call-arg]
 
 
+@deprecated(
+    since="0.3.5",
+    removal="1.0",
+    alternative_import="langchain_gigachat.GigaChat",
+)
 class GigaChat(_BaseGigaChat, BaseChatModel):
     """`GigaChat` large language models API.
 

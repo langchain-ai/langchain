@@ -96,7 +96,10 @@ class ClickhouseSettings(BaseSettings):
         return getattr(self, item)
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", env_prefix="clickhouse_"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="clickhouse_",
+        extra="ignore",
     )
 
 
@@ -306,6 +309,14 @@ class Clickhouse(VectorStore):
             **kwargs,
         )
         # Enable JSON type
+        try:
+            self.client.command("SET allow_experimental_json_type=1")
+        except Exception as _:
+            logger.debug(
+                f"Clickhouse version={self.client.server_version} - "
+                "There is no allow_experimental_json_type parameter."
+            )
+
         self.client.command("SET allow_experimental_object_type=1")
         if self.config.index_type:
             # Enable index

@@ -45,6 +45,7 @@ class PebbloSafeLoader(BaseLoader):
         classifier_url: Optional[str] = None,
         *,
         classifier_location: str = "local",
+        anonymize_snippets: bool = False,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -78,6 +79,7 @@ class PebbloSafeLoader(BaseLoader):
             api_key=api_key,
             classifier_location=classifier_location,
             classifier_url=classifier_url,
+            anonymize_snippets=anonymize_snippets,
         )
         self.pb_client.send_loader_discover(self.app)
 

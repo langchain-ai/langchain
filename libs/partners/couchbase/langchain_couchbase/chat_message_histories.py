@@ -3,7 +3,8 @@
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Sequence
+from datetime import timedelta
+from typing import Any, Dict, List, Optional, Sequence
 
 from couchbase.cluster import Cluster
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -20,6 +21,16 @@ DEFAULT_MESSAGE_KEY = "message"
 DEFAULT_TS_KEY = "ts"
 DEFAULT_INDEX_NAME = "LANGCHAIN_CHAT_HISTORY"
 DEFAULT_BATCH_SIZE = 100
+
+
+def _validate_ttl(ttl: Optional[timedelta]) -> None:
+    """Validate the time to live"""
+    if not isinstance(ttl, timedelta):
+        raise ValueError(f"ttl should be of type timedelta but was {type(ttl)}.")
+    if ttl <= timedelta(seconds=0):
+        raise ValueError(
+            f"ttl must be greater than 0 but was {ttl.total_seconds()} seconds."
+        )
 
 
 class CouchbaseChatMessageHistory(BaseChatMessageHistory):
@@ -77,6 +88,7 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         session_id_key: str = DEFAULT_SESSION_ID_KEY,
         message_key: str = DEFAULT_MESSAGE_KEY,
         create_index: bool = True,
+        ttl: Optional[timedelta] = None,
     ) -> None:
         """Initialize the Couchbase Chat Message History
         Args:
@@ -92,6 +104,8 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
             message_key (str): name of the field to use for the messages
                 Set to "message" by default.
             create_index (bool): create an index if True. Set to True by default.
+            ttl (timedelta): time to live for the documents in the collection.
+                When set, the documents are automatically deleted after the ttl expires.
         """
         if not isinstance(cluster, Cluster):
             raise ValueError(
@@ -104,6 +118,7 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         self._bucket_name = bucket_name
         self._scope_name = scope_name
         self._collection_name = collection_name
+        self._ttl = None
 
         # Check if the bucket exists
         if not self._check_bucket_exists():
@@ -134,6 +149,10 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         self._session_id = session_id
         self._ts_key = DEFAULT_TS_KEY
 
+        if ttl is not None:
+            _validate_ttl(ttl)
+            self._ttl = ttl
+
         # Create an index if it does not exist if requested
         if create_index:
             index_fields = (
@@ -156,15 +175,27 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         # get utc timestamp for ordering the messages
         timestamp = time.time()
         message_content = message_to_dict(message)
+
         try:
-            self._collection.insert(
-                document_key,
-                value={
-                    self._message_key: message_content,
-                    self._session_id_key: self._session_id,
-                    self._ts_key: timestamp,
-                },
-            )
+            if self._ttl:
+                self._collection.insert(
+                    document_key,
+                    value={
+                        self._message_key: message_content,
+                        self._session_id_key: self._session_id,
+                        self._ts_key: timestamp,
+                    },
+                    expiry=self._ttl,
+                )
+            else:
+                self._collection.insert(
+                    document_key,
+                    value={
+                        self._message_key: message_content,
+                        self._session_id_key: self._session_id,
+                        self._ts_key: timestamp,
+                    },
+                )
         except Exception as e:
             logger.error("Error adding message: ", e)
 
@@ -192,7 +223,10 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
                 batch = messages_to_insert[i : i + batch_size]
                 # Convert list of dictionaries to a single dictionary to insert
                 insert_batch = {list(d.keys())[0]: list(d.values())[0] for d in batch}
-                self._collection.insert_multi(insert_batch)
+                if self._ttl:
+                    self._collection.insert_multi(insert_batch, expiry=self._ttl)
+                else:
+                    self._collection.insert_multi(insert_batch)
         except Exception as e:
             logger.error("Error adding messages: ", e)
 

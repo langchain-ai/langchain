@@ -47,7 +47,8 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     only_core = config.getoption("--only-core") or False
 
     if only_extended and only_core:
-        raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")
+        msg = "Cannot specify both `--only-extended` and `--only-core`."
+        raise ValueError(msg)
 
     for item in items:
         requires_marker = item.get_closest_marker("requires")

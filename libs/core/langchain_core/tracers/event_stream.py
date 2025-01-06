@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
@@ -135,10 +136,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         while parent_id := self.parent_map.get(run_id):
             str_parent_id = str(parent_id)
             if str_parent_id in parent_ids:
-                raise AssertionError(
+                msg = (
                     f"Parent ID {parent_id} is already in the parent_ids list. "
                     f"This should never happen."
                 )
+                raise AssertionError(msg)
             parent_ids.append(str_parent_id)
             run_id = parent_id
 
@@ -410,7 +412,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
-            raise AssertionError(f"Run ID {run_id} not found in run map.")
+            msg = f"Run ID {run_id} not found in run map."
+            raise AssertionError(msg)
         if self.is_tapped.get(run_id):
             return
         if run_info["run_type"] == "chat_model":
@@ -428,7 +431,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             else:
                 chunk_ = cast(GenerationChunk, chunk)
         else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+            msg = f"Unexpected run type: {run_info['run_type']}"
+            raise ValueError(msg)
 
         self._send(
             {
@@ -483,7 +487,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             }
             event = "on_llm_end"
         else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+            msg = f"Unexpected run type: {run_info['run_type']}"
+            raise ValueError(msg)
 
         self._send(
             {
@@ -625,10 +630,11 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """End a trace for a tool run."""
         run_info = self.run_map.pop(run_id)
         if "inputs" not in run_info:
-            raise AssertionError(
+            msg = (
                 f"Run ID {run_id} is a tool call and is expected to have "
                 f"inputs associated with it."
             )
+            raise AssertionError(msg)
         inputs = run_info["inputs"]
 
         self._send(
@@ -814,10 +820,7 @@ async def _astream_events_implementation_v1(
             data: EventData = {}
             log_entry: LogEntry = run_log.state["logs"][path]
             if log_entry["end_time"] is None:
-                if log_entry["streamed_output"]:
-                    event_type = "stream"
-                else:
-                    event_type = "start"
+                event_type = "stream" if log_entry["streamed_output"] else "start"
             else:
                 event_type = "end"
 
@@ -829,7 +832,6 @@ async def _astream_events_implementation_v1(
                 inputs = log_entry["inputs"]
                 if inputs is not None:
                     data["input"] = inputs
-                pass
 
             if event_type == "end":
                 inputs = log_entry["inputs"]
@@ -842,11 +844,12 @@ async def _astream_events_implementation_v1(
             if event_type == "stream":
                 num_chunks = len(log_entry["streamed_output"])
                 if num_chunks != 1:
-                    raise AssertionError(
+                    msg = (
                         f"Expected exactly one chunk of streamed output, "
                         f"got {num_chunks} instead. This is impossible. "
                         f"Encountered in: {log_entry['name']}"
                     )
+                    raise AssertionError(msg)
 
                 data = {"chunk": log_entry["streamed_output"][0]}
                 # Clean up the stream, we don't need it anymore.
@@ -869,11 +872,12 @@ async def _astream_events_implementation_v1(
         if state["streamed_output"]:
             num_chunks = len(state["streamed_output"])
             if num_chunks != 1:
-                raise AssertionError(
+                msg = (
                     f"Expected exactly one chunk of streamed output, "
                     f"got {num_chunks} instead. This is impossible. "
                     f"Encountered in: {state['name']}"
                 )
+                raise AssertionError(msg)
 
             data = {"chunk": state["streamed_output"][0]}
             # Clean up the stream, we don't need it anymore.
@@ -948,10 +952,11 @@ async def _astream_events_implementation_v2(
         callbacks.add_handler(event_streamer, inherit=True)
         config["callbacks"] = callbacks
     else:
-        raise ValueError(
+        msg = (
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )
+        raise ValueError(msg)
 
     # Call the runnable in streaming mode,
     # add each chunk to the output stream
@@ -984,21 +989,24 @@ async def _astream_events_implementation_v2(
                 yield event
                 continue
 
-            if event["run_id"] == first_event_run_id and event["event"].endswith(
-                "_end"
+            # If it's the end event corresponding to the root runnable
+            # we dont include the input in the event since it's guaranteed
+            # to be included in the first event.
+            if (
+                event["run_id"] == first_event_run_id
+                and event["event"].endswith("_end")
+                and "input" in event["data"]
             ):
-                # If it's the end event corresponding to the root runnable
-                # we dont include the input in the event since it's guaranteed
-                # to be included in the first event.
-                if "input" in event["data"]:
-                    del event["data"]["input"]
+                del event["data"]["input"]
 
             yield event
+    except asyncio.CancelledError as exc:
+        # Cancel the task if it's still running
+        task.cancel(exc.args[0] if exc.args else None)
+        raise
     finally:
         # Cancel the task if it's still running
         task.cancel()
         # Await it anyway, to run any cleanup code, and propagate any exceptions
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass

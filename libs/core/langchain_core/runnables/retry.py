@@ -96,10 +96,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.
-    
+
     In general you should only retry on exceptions that are likely to be
     transient, such as network errors.
-    
+
     Good exceptions to retry are all server errors (5xx) and selected client
     errors (4xx) such as 429 Too Many Requests.
     """
@@ -117,7 +117,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     @property
     def _kwargs_retrying(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = dict()
+        kwargs: dict[str, Any] = {}
 
         if self.max_attempt_number:
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)

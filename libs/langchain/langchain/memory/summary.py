@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Type
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache as BaseCache  # For model_rebuild
+from langchain_core.callbacks import Callbacks as Callbacks  # For model_rebuild
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
@@ -57,8 +59,21 @@ class SummarizerMixin(BaseModel):
         return await chain.apredict(summary=existing_summary, new_lines=new_lines)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
-    """Conversation summarizer to chat memory."""
+    """Continually summarizes the conversation history.
+
+    The summary is updated after each conversation turn.
+    The implementations returns a summary of the conversation history which
+    can be used to provide context to the model.
+    """
 
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:
@@ -118,3 +133,6 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         """Clear memory contents."""
         super().clear()
         self.buffer = ""
+
+
+ConversationSummaryMemory.model_rebuild()

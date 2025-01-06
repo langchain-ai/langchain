@@ -273,7 +273,6 @@ async def async_gen_mock_streaming_response() -> AsyncGenerator[Dict, None]:
         yield item
 
 
-@pytest.mark.asyncio
 async def test_bedrock_async_streaming_call() -> None:
     # Mock boto3 import
     mock_boto3 = MagicMock()

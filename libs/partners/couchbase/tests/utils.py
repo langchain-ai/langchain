@@ -1,7 +1,11 @@
-"""Fake Embedding class for testing purposes."""
+"""Utilities for testing purposes."""
 
+import hashlib
+from datetime import datetime
 from typing import Any, Dict, List, Mapping, Optional, cast
 
+from couchbase.cluster import Cluster
+from couchbase.options import GetOptions
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM
@@ -97,3 +101,36 @@ class FakeLLM(LLM):
         response = queries[list(queries.keys())[self.response_index]]
         self.response_index = self.response_index + 1
         return response
+
+
+def cache_key_hash_function(_input: str) -> str:
+    """Use a deterministic hashing approach."""
+    return hashlib.md5(_input.encode()).hexdigest()
+
+
+def fetch_document_expiry_time(
+    cluster: Cluster,
+    bucket_name: str,
+    scope_name: str,
+    collection_name: str,
+    document_key: str,
+) -> datetime:
+    """Fetch the document's expiry time from the database."""
+    collection = (
+        cluster.bucket(bucket_name).scope(scope_name).collection(collection_name)
+    )
+    result = collection.get(document_key, GetOptions(with_expiry=True))
+
+    return result.expiryTime
+
+
+def get_document_keys(
+    cluster: Cluster, bucket_name: str, scope_name: str, query: str
+) -> List[str]:
+    """Get the document key from the database based on the query using meta().id."""
+    scope = cluster.bucket(bucket_name).scope(scope_name)
+
+    result = scope.query(query).execute()
+
+    document_keys = [row["id"] for row in result]
+    return document_keys
