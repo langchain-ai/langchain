@@ -331,10 +331,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             ),
             "base_url": self.xai_api_base,
             "timeout": self.request_timeout,
-            "max_retries": self.max_retries,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.max_retries is not None:
+            client_params["max_retries"] = self.max_retries
 
         if client_params["api_key"] is None:
             raise ValueError(
