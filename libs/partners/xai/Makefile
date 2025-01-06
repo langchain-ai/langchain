@@ -8,7 +8,13 @@ TEST_FILE ?= tests/unit_tests/
 
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
-test tests integration_test integration_tests:
+test tests:
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+test_watch:
+	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)
+
+integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 ######################

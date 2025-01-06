@@ -316,7 +316,7 @@ class ChatFireworks(BaseChatModel):
         default="accounts/fireworks/models/mixtral-8x7b-instruct", alias="model"
     )
     """Model name to use."""
-    temperature: float = 0.0
+    temperature: Optional[float] = None
     """What sampling temperature to use."""
     stop: Optional[Union[str, List[str]]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
