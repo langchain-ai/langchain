@@ -9,6 +9,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 from typing_extensions import override
@@ -65,6 +66,8 @@ class BaseGenerationOutputParser(
 ):
     """Base class to parse the output of an LLM call."""
 
+    return_message: bool = False
+
     @property
     @override
     def InputType(self) -> Any:
@@ -75,9 +78,12 @@ class BaseGenerationOutputParser(
     @override
     def OutputType(self) -> type[T]:
         """Return the output type for the parser."""
-        # even though mypy complains this isn't valid,
-        # it is good enough for pydantic to build the schema from
-        return T  # type: ignore[misc]
+        if self.return_message:
+            return cast(type[T], AnyMessage)
+        else:
+            # even though mypy complains this isn't valid,
+            # it is good enough for pydantic to build the schema from
+            return T  # type: ignore[misc]
 
     def invoke(
         self,
@@ -86,7 +92,7 @@ class BaseGenerationOutputParser(
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
+            parsed = self._call_with_config(
                 lambda inner_input: self.parse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -94,6 +100,10 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
+            if self.return_message:
+                return cast(T, input.model_copy(update={"parsed": parsed}))
+            else:
+                return parsed
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
@@ -109,7 +119,7 @@ class BaseGenerationOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
+            parsed = await self._acall_with_config(
                 lambda inner_input: self.aparse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -117,6 +127,10 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
+            if self.return_message:
+                return cast(T, input.model_copy(update={"parsed": parsed}))
+            else:
+                return parsed
         else:
             return await self._acall_with_config(
                 lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
@@ -155,6 +169,8 @@ class BaseOutputParser(
                     return "boolean_output_parser"
     """  # noqa: E501
 
+    return_message: bool = False
+
     @property
     @override
     def InputType(self) -> Any:
@@ -171,6 +187,9 @@ class BaseOutputParser(
         Raises:
             TypeError: If the class doesn't have an inferable OutputType.
         """
+        if self.return_message:
+            return cast(type[T], AnyMessage)
+
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
@@ -190,7 +209,7 @@ class BaseOutputParser(
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
-            return self._call_with_config(
+            parsed = self._call_with_config(
                 lambda inner_input: self.parse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -198,6 +217,10 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
+            if self.return_message:
+                return cast(T, input.model_copy(update={"parsed": parsed}))
+            else:
+                return parsed
         else:
             return self._call_with_config(
                 lambda inner_input: self.parse_result([Generation(text=inner_input)]),
@@ -213,7 +236,7 @@ class BaseOutputParser(
         **kwargs: Optional[Any],
     ) -> T:
         if isinstance(input, BaseMessage):
-            return await self._acall_with_config(
+            parsed = await self._acall_with_config(
                 lambda inner_input: self.aparse_result(
                     [ChatGeneration(message=inner_input)]
                 ),
@@ -221,6 +244,10 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
+            if self.return_message:
+                return cast(T, input.model_copy(update={"parsed": parsed}))
+            else:
+                return parsed
         else:
             return await self._acall_with_config(
                 lambda inner_input: self.aparse_result([Generation(text=inner_input)]),

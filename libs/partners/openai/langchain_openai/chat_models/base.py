@@ -10,7 +10,6 @@ import sys
 import warnings
 from io import BytesIO
 from math import ceil
-from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
@@ -85,11 +84,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import (
-    PydanticBaseModel,
-    TypeBaseModel,
-    is_basemodel_subclass,
-)
+from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -777,7 +772,7 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             message = response.choices[0].message  # type: ignore[attr-defined]
             if hasattr(message, "parsed"):
-                generations[0].message.parsed = message.parsed
+                cast(AIMessage, generations[0].message).parsed = message.parsed
                 # For backwards compatibility.
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
@@ -1474,17 +1469,18 @@ class BaseChatOpenAI(BaseChatModel):
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
                     first_tool_only=True,  # type: ignore[list-item]
+                    return_message=True,
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
-                    key_name=tool_name, first_tool_only=True
+                    key_name=tool_name, first_tool_only=True, return_message=True
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                PydanticOutputParser(pydantic_object=schema, return_message=True)  # type: ignore[arg-type]
                 if is_pydantic_schema
-                else JsonOutputParser()
+                else JsonOutputParser(return_message=True)
             )
         elif method == "json_schema":
             if schema is None:
@@ -1496,10 +1492,10 @@ class BaseChatOpenAI(BaseChatModel):
             llm = self.bind(response_format=response_format)
             if is_pydantic_schema:
                 output_parser = _oai_structured_outputs_parser.with_types(
-                    output_type=cast(type, schema)
+                    output_type=AIMessage
                 )
             else:
-                output_parser = JsonOutputParser()
+                output_parser = JsonOutputParser(return_message=True)
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
@@ -1507,8 +1503,8 @@ class BaseChatOpenAI(BaseChatModel):
             )
 
         if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            parser_assign = RunnablePassthrough.assign(raw=output_parser).assign(
+                parsed=lambda x: x["raw"].parsed, parsing_error=lambda _: None
             )
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
             parser_with_fallback = parser_assign.with_fallbacks(
@@ -2231,15 +2227,15 @@ def _convert_to_openai_response_format(
 
 
 @chain
-def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
-    if ai_msg.additional_kwargs.get("parsed"):
-        return ai_msg.additional_kwargs["parsed"]
+def _oai_structured_outputs_parser(ai_msg: AIMessage) -> AIMessage:
+    if ai_msg.parsed is not None:
+        return ai_msg
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            "field. Received message:\n\n{ai_msg}"
+            f"field. Received message:\n\n{ai_msg}"
         )
 
 
