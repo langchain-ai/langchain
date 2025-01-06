@@ -877,6 +877,8 @@ def test__get_request_payload() -> None:
         ],
         "model": "gpt-4o-2024-08-06",
         "stream": False,
+        "n": 1,
+        "temperature": 0.7,
     }
     payload = llm._get_request_payload(messages)
     assert payload == expected
