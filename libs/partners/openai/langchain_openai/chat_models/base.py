@@ -777,6 +777,8 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             message = response.choices[0].message  # type: ignore[attr-defined]
             if hasattr(message, "parsed"):
+                generations[0].message.parsed = message.parsed
+                # For backwards compatibility.
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
