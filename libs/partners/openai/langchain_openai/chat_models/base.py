@@ -703,17 +703,16 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                 is_first_chunk = False
                 yield generation_chunk
-        if hasattr(response, "get_final_completion"):
+        if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
-            if isinstance(final_completion, openai.BaseModel):
-                generation_chunk = self._get_generation_chunk_from_completion(
-                    final_completion
+            generation_chunk = self._get_generation_chunk_from_completion(
+                final_completion
+            )
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk
                 )
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        generation_chunk.text, chunk=generation_chunk
-                    )
-                yield generation_chunk
+            yield generation_chunk
 
     def _generate(
         self,
@@ -864,17 +863,16 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                 is_first_chunk = False
                 yield generation_chunk
-        if hasattr(response, "get_final_completion"):
+        if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = await response.get_final_completion()
-            if isinstance(final_completion, openai.BaseModel):
-                generation_chunk = self._get_generation_chunk_from_completion(
-                    final_completion
+            generation_chunk = self._get_generation_chunk_from_completion(
+                final_completion
+            )
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk
                 )
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        generation_chunk.text, chunk=generation_chunk
-                    )
-                yield generation_chunk
+            yield generation_chunk
 
     async def _agenerate(
         self,
