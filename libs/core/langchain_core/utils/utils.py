@@ -8,11 +8,13 @@ import os
 import warnings
 from collections.abc import Sequence
 from importlib.metadata import version
-from typing import Any, Callable, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, overload
 
 from packaging.version import parse
 from pydantic import SecretStr
-from requests import HTTPError, Response
+
+if TYPE_CHECKING:
+    from requests import Response
 
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
@@ -57,7 +59,7 @@ def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
     return decorator
 
 
-def raise_for_status_with_text(response: Response) -> None:
+def raise_for_status_with_text(response: "Response") -> None:
     """Raise an error with the response text.
 
     Args:
@@ -66,6 +68,7 @@ def raise_for_status_with_text(response: Response) -> None:
     Raises:
         ValueError: If the response has an error status code.
     """
+    from requests import HTTPError
     try:
         response.raise_for_status()
     except HTTPError as e:

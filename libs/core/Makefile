@@ -73,3 +73,29 @@ help:
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'test_watch                   - run unit tests in watch mode'
+
+##########
+# CUSTOM #
+##########
+
+bench-imports:
+	time poetry run python -c "from typing import Any"
+	time poetry run python -c "from typing import Any"
+	time poetry run python -c "from langchain_core import __version__"
+	time poetry run python -c "from langchain_core.tools import tool"
+	time poetry run python -c "from langchain_core.messages import AIMessage"
+	time poetry run python -c "from langchain_core.documents import Document"
+	time poetry run python -c "from langchain_core._api import deprecated"
+	time poetry run python -c "from langchain_core._api import beta"
+	time poetry run python -c "from langchain_core.callbacks import BaseCallbackHandler"
+	time poetry run python -c "from langchain_core.document_loaders import BaseLoader"
+	time poetry run python -c "from langchain_core.embeddings import Embeddings"
+	time poetry run python -c "from langchain_core.language_models import BaseChatModel"
+	time poetry run python -c "from langchain_core.language_models import BaseLLM"
+	time poetry run python -c "from langchain_core.load import loads"
+	time poetry run python -c "from langchain_core.output_parsers import BaseOutputParser"
+	time poetry run python -c "from langchain_core.prompts import ChatPromptTemplate"
+	time poetry run python -c "from langchain_core.runnables import RunnableSerializable"
+	time poetry run python -c "from langchain_core.tools import BaseTool"
+	time poetry run python -c "from langchain_core.tracers import BaseTracer"
+	time poetry run python -c "from langchain_core.vectorstores import VectorStore"
