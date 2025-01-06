@@ -235,9 +235,26 @@ def _get_configs_for_multi_dirs(
     ]
 
 
+def check_spelling_errors(files: List[str]) -> bool:
+    """
+    Check for spelling errors in the given files using codespell.
+    """
+    import subprocess
+
+    result = subprocess.run(["codespell", "--check-filenames", "--ignore-words-list", "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"] + files, capture_output=True, text=True)
+    if result.returncode != 0:
+        print("Spelling errors found:")
+        print(result.stdout)
+        return False
+    return True
+
+
 if __name__ == "__main__":
     files = sys.argv[1:]
     print(f"Files to process: {files}")  # Debug print statement
+
+    if not check_spelling_errors(files):
+        sys.exit(1)
 
     dirs_to_run: Dict[str, set] = {
         "lint": set(),

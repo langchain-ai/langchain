@@ -1,6 +1,6 @@
-# 🦜️🔗 LangChain
+# LangChain
 
-⚡ Build context-aware reasoning applications ⚡
+LangChain is a library for building applications with LLMs through composability.
 
 [![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain?style=flat-square)](https://github.com/langchain-ai/langchain/releases)
 [![CI](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml)
@@ -18,9 +18,9 @@ To help you ship LangChain apps to production faster, check out [LangSmith](http
 [LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
 Fill out [this form](https://www.langchain.com/contact-sales) to speak with our sales team.
 
-## Quick Install
+## Installation
 
-With pip:
+To install LangChain, use the following command:
 
 ```bash
 pip install langchain
@@ -130,6 +130,25 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 - [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
 - [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
 - [🦜🕸️ LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/#langgraph-platform): Deploy LLM applications built with LangGraph into production.
+
+## Troubleshooting
+
+### Git Diff Error: Unable to Find Specified Commit
+
+If you encounter an error message related to a Git command that is attempting to compare changes between two commits, such as:
+
+```plaintext
+git diff --name-status -z --diff-filter=ADMR 4c5bedd889af561afe8b72f41f38e579c67dbb08^...4c5bedd889af561afe8b72f41f38e579c67dbb08
+```
+
+This error indicates that Git is unable to find the specified commit or its parent in the working tree. To resolve this issue, follow these steps:
+
+1. Verify that the commit hash `4c5bedd889af561afe8b72f41f38e579c67dbb08` is correct and exists in your repository.
+2. Ensure that you are on the correct branch where the commit exists.
+3. Use the `git log` command to check the commit history and confirm the presence of the specified commit.
+4. If the commit is from a different branch, you may need to check out that branch or use the full reference path to the commit.
+
+By addressing these potential issues, you should be able to successfully run the `git diff` command and view the differences between the specified commits.
 
 ## 💁 Contributing
 

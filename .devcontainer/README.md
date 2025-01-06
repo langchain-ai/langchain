@@ -44,3 +44,4 @@ You can learn more in the [Dev Containers documentation](https://code.visualstud
 * If you'd like to review the contents of the image used in this dev container, you can check it out in the [devcontainers/images](https://github.com/devcontainers/images/tree/main/src/python) repo.
 * Remember to run `make spell_check` to ensure there are no spelling errors in your code or documentation.
 * Remember to run `make spell_check` to ensure there are no spelling errors in your code or documentation.
+* Remember to run `make spell_check` to ensure there are no spelling errors in your code or documentation.

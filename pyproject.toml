@@ -22,6 +22,7 @@ langchain = { path = "libs/langchain/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
 ipykernel = "^6.29.2"
 codespell = "^2.2.0"
+codespell = "^2.2.0"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
