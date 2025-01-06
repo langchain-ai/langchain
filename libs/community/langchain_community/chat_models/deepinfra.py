@@ -290,7 +290,7 @@ class ChatDeepInfra(BaseChatModel):
                 async with request.apost(
                     url=self._url(), data=self._body(kwargs), timeout=request_timeout
                 ) as response:
-                    self._handle_status(response.status, response.text)
+                    self._handle_status(response.status, await response.text())
                     return await response.json()
             except Exception as e:
                 print("EX", e)  # noqa: T201
