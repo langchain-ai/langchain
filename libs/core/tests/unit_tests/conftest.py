@@ -5,8 +5,25 @@ from importlib import util
 from uuid import UUID
 
 import pytest
+from blockbuster import blockbuster_ctx
 from pytest import Config, Function, Parser
 from pytest_mock import MockerFixture
+
+
+@pytest.fixture(autouse=True)
+def blockbuster(request):
+    with blockbuster_ctx() as bb:
+        for func in ["os.stat", "os.path.abspath"]:
+            bb.functions[func].can_block_in(
+                "langchain_core/_api/internal.py", "is_caller_internal"
+            )
+
+        for func in ["os.stat", "io.TextIOWrapper.read"]:
+            bb.functions[func].can_block_in(
+                "langsmith/client.py", "_default_retry_config"
+            )
+
+        yield bb
 
 
 def pytest_addoption(parser: Parser) -> None:

@@ -121,7 +121,7 @@ def _config_with_context(
     return patch_config(config, configurable=context_funcs)
 
 
-def aconfig_with_context(
+async def aconfig_with_context(
     config: RunnableConfig,
     steps: list[Runnable],
 ) -> RunnableConfig:
@@ -134,7 +134,9 @@ def aconfig_with_context(
     Returns:
         The patched runnable config.
     """
-    return _config_with_context(config, steps, _asetter, _agetter, asyncio.Event)
+    return await asyncio.to_thread(
+        _config_with_context, config, steps, _asetter, _agetter, asyncio.Event
+    )
 
 
 def config_with_context(

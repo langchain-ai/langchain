@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -90,9 +91,11 @@ async def test_inmemory_dump_load(tmp_path: Path) -> None:
     output = await store.asimilarity_search("foo", k=1)
 
     test_file = str(tmp_path / "test.json")
-    store.dump(test_file)
+    await asyncio.to_thread(store.dump, test_file)
 
-    loaded_store = InMemoryVectorStore.load(test_file, embedding)
+    loaded_store = await asyncio.to_thread(
+        InMemoryVectorStore.load, test_file, embedding
+    )
     loaded_output = await loaded_store.asimilarity_search("foo", k=1)
 
     assert output == loaded_output

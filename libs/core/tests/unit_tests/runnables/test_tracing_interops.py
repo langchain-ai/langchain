@@ -1,3 +1,4 @@
+import asyncio
 import json
 import sys
 import uuid
@@ -298,17 +299,17 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
     # Now run the chain and check the resulting posts
     cb = [tracer]
     if method == "invoke":
-        res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
+        res: Any = await asyncio.to_thread(parent.invoke, 1, {"callbacks": cb})  # type: ignore
     elif method == "ainvoke":
         res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
     elif method == "stream":
-        results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
+        results = await asyncio.to_thread(list, parent.stream(1, {"callbacks": cb}))  # type: ignore
         res = results[-1]
     elif method == "astream":
         results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
         res = results[-1]
     elif method == "batch":
-        res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
+        res = (await asyncio.to_thread(parent.batch, [1], {"callbacks": cb}))[0]  # type: ignore
     elif method == "abatch":
         res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
     else:

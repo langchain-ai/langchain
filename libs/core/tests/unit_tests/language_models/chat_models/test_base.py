@@ -18,6 +18,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.tracers import LogStreamCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
@@ -303,39 +304,48 @@ class StreamingModel(NoStreamingModel):
 
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
-async def test_disable_streaming(
+def test_disable_streaming(
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
     assert model.invoke([]).content == "invoke"
-    assert (await model.ainvoke([])).content == "invoke"
 
     expected = "invoke" if disable_streaming is True else "stream"
     assert next(model.stream([])).content == expected
-    async for c in model.astream([]):
-        assert c.content == expected
-        break
+    assert (
+        model.invoke([], config={"callbacks": [LogStreamCallbackHandler()]}).content
+        == expected
+    )
+
+    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    assert next(model.stream([], tools=[{"type": "function"}])).content == expected
     assert (
         model.invoke(
-            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
+            [], config={"callbacks": [LogStreamCallbackHandler()]}, tools=[{}]
         ).content
         == expected
     )
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming_async(
+    disable_streaming: Union[bool, Literal["tool_calling"]],
+) -> None:
+    model = StreamingModel(disable_streaming=disable_streaming)
+    assert (await model.ainvoke([])).content == "invoke"
+
+    expected = "invoke" if disable_streaming is True else "stream"
+    async for c in model.astream([]):
+        assert c.content == expected
+        break
     assert (
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
     ).content == expected
 
     expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
-    assert next(model.stream([], tools=[{"type": "function"}])).content == expected
     async for c in model.astream([], tools=[{}]):
         assert c.content == expected
         break
-    assert (
-        model.invoke(
-            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
-        ).content
-        == expected
-    )
     assert (
         await model.ainvoke(
             [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
@@ -344,26 +354,31 @@ async def test_disable_streaming(
 
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
-async def test_disable_streaming_no_streaming_model(
+def test_disable_streaming_no_streaming_model(
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
     assert model.invoke([]).content == "invoke"
-    assert (await model.ainvoke([])).content == "invoke"
     assert next(model.stream([])).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [LogStreamCallbackHandler()]}).content
+        == "invoke"
+    )
+    assert next(model.stream([], tools=[{}])).content == "invoke"
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming_no_streaming_model_async(
+    disable_streaming: Union[bool, Literal["tool_calling"]],
+) -> None:
+    model = NoStreamingModel(disable_streaming=disable_streaming)
+    assert (await model.ainvoke([])).content == "invoke"
     async for c in model.astream([]):
         assert c.content == "invoke"
         break
     assert (
-        model.invoke(
-            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
-        ).content
-        == "invoke"
-    )
-    assert (
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
     ).content == "invoke"
-    assert next(model.stream([], tools=[{}])).content == "invoke"
     async for c in model.astream([], tools=[{}]):
         assert c.content == "invoke"
         break

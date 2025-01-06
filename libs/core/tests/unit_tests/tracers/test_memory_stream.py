@@ -2,7 +2,6 @@ import asyncio
 import math
 import time
 from collections.abc import AsyncIterator
-from concurrent.futures import ThreadPoolExecutor
 
 from langchain_core.tracers.memory_stream import _MemoryStream
 
@@ -93,9 +92,9 @@ async def test_queue_for_streaming_via_sync_call() -> None:
                 **item,
             }
 
-    with ThreadPoolExecutor() as executor:
-        executor.submit(sync_call)
-        items = [item async for item in consumer()]
+    task = asyncio.create_task(asyncio.to_thread(sync_call))
+    items = [item async for item in consumer()]
+    await task
 
     for item in items:
         delta_time = item["receive_time"] - item["produce_time"]

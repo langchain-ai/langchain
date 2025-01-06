@@ -222,6 +222,20 @@ webencodings = "*"
 css = ["tinycss2 (>=1.1.0,<1.5)"]
 
 [[package]]
+name = "blockbuster"
+version = "1.5.8"
+description = "Utility to detect blocking calls in the async event loop"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "blockbuster-1.5.8-py3-none-any.whl", hash = "sha256:ea0352823acbd837872785a96ec87701f1c7938410d66c6a8857ae11646d9744"},
+    {file = "blockbuster-1.5.8.tar.gz", hash = "sha256:0018080fd735e84f0b138f15ff0a339f99444ecdc0045f16056c7b23db92706b"},
+]
+
+[package.dependencies]
+forbiddenfruit = ">=0.1.4"
+
+[[package]]
 name = "certifi"
 version = "2024.12.14"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -552,6 +566,16 @@ files = [
 
 [package.extras]
 devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benchmark", "pytest-cache", "validictory"]
+
+[[package]]
+name = "forbiddenfruit"
+version = "0.1.4"
+description = "Patch python built-in objects"
+optional = false
+python-versions = "*"
+files = [
+    {file = "forbiddenfruit-0.1.4.tar.gz", hash = "sha256:e3f7e66561a29ae129aac139a85d610dbf3dd896128187ed5454b6421f624253"},
+]
 
 [[package]]
 name = "fqdn"
@@ -1188,7 +1212,7 @@ files = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.9"
+version = "0.3.10"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1197,7 +1221,7 @@ develop = true
 
 [package.dependencies]
 httpx = ">=0.25.0,<1"
-langchain-core = "^0.3.31"
+langchain-core = "^0.3.33"
 numpy = [
     {version = ">=1.24.0,<2.0.0", markers = "python_version < \"3.12\""},
     {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
@@ -3247,4 +3271,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "2a262498da93ae3991e5eade787affab38f1ddef5212cb745eafdd0a40f0e986"
+content-hash = "ea6041d2f8abfa7d0c2e6ade0da16db7338180180c74610747d803819208cdf8"
