@@ -1,4 +1,4 @@
-# this file is used to definet he packages that are used in the project
+# this file is used to define the packages that are used in the project
 # it is EXPERIMENTAL and may be removed in the future
 
 packages:
@@ -270,7 +270,7 @@ packages:
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-box
   path: libs/box
-  repo: langchain-ai/langchain-box
+  repo: box-community/langchain-box
   downloads: 2749
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-tests
@@ -317,3 +317,11 @@ packages:
   repo: kingtroga/langchain-falkordb
   downloads: 610
   downloads_updated_at: '2025-01-02T20:23:02.544257+00:00'
+- name: langchain-dappier
+  path: .
+  repo: DappierAI/langchain-dappier
+  downloads: 0
+- name: langchain-pull-md
+  path: .
+  repo: chigwell/langchain-pull-md
+  downloads: 0

@@ -282,7 +282,7 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [('human', '{input}'), ('ai', '{output}')]
+            [('human', 'What is {input}?'), ('ai', '{output}')]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
