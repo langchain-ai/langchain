@@ -32,6 +32,8 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         return_timestamps = True,
         return_language = "en",
         chunk_length_s = 30,
+        load_in_8bit = False,
+        batch_size = 1,
     ):
         """
         Initializes the OpenVINOSpeechToTextLoader.
@@ -53,6 +55,8 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         self.return_timestamps = return_timestamps
         self.return_language = return_language
         self.chunk_length_s = chunk_length_s
+        self.load_in_8bit = load_in_8bit
+        self.batch_size = batch_size
 
     def load(self) -> List[Document]:
         """Transcribes the audio file and loads the transcript into documents.
@@ -80,13 +84,14 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
 
         processor = AutoProcessor.from_pretrained(self.model_id)
         model = OVModelForSpeechSeq2Seq.from_pretrained(self.model_id , 
-                load_in_4bit=False,
+                load_in_8bit=self.load_in_8bit,
                 export=False)
 
         model = model.to(self.device)
         model.compile()
         pipe = pipeline("automatic-speech-recognition",
                 model=model,
+                batch_size=self.batch_size,
                 chunk_length_s=self.chunk_length_s,
                 return_language=self.return_language,
                 tokenizer=processor.tokenizer,
