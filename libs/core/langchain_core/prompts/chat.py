@@ -1243,9 +1243,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 else:
                     # If no template variables, use original message
                     result.append(message_template)
-                    
+
             elif isinstance(
-                message_template, 
+                message_template,
                 (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
                 message = message_template.format_messages(**kwargs)
@@ -1253,7 +1253,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             else:
                 error_msg = "Unexpected input: " + str(message_template)
                 raise ValueError(error_msg)
-        
+
         return result
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
