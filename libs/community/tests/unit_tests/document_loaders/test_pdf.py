@@ -59,4 +59,4 @@ def test_pypdf_loader_with_layout() -> None:
     expected = path_to_layout_pdf_txt.read_text(encoding="utf-8")
     cleaned_first_page = re.sub(r"\x00", "", first_page)
     cleaned_expected = re.sub(r"\x00", "", expected)
-    assert cleaned_first_page == cleaned_expected.strip()
+    assert cleaned_first_page == cleaned_expected
