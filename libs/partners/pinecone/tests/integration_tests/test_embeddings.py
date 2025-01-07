@@ -76,7 +76,7 @@ def test_vector_store(
     vectorstore = PineconeVectorStore(index_name=INDEX_NAME, embedding=embd_client)
     vectorstore.add_documents(
         [Document("Hello, world!"), Document("This is a test.")],
-        namespace=NAMESPACE_NAME
+        namespace=NAMESPACE_NAME,
     )
     time.sleep(10)  # Increase wait time to ensure indexing is complete
     resp = vectorstore.similarity_search(query="hello", namespace=NAMESPACE_NAME)

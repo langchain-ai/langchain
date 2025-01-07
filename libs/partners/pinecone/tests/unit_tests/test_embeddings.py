@@ -1,9 +1,8 @@
-from typing import Type
+from typing import Any, Type
 from unittest.mock import patch
 
 import aiohttp
 import pytest
-from langchain_core.embeddings import Embeddings
 from langchain_core.utils import convert_to_secret_str
 from langchain_tests.unit_tests.embeddings import EmbeddingsTests
 
@@ -14,7 +13,7 @@ MODEL_NAME = "multilingual-e5-large"
 
 
 @pytest.fixture(autouse=True)
-def mock_pinecone():
+def mock_pinecone() -> Any:
     """Mock Pinecone client for all tests."""
     with patch("langchain_pinecone.embeddings.PineconeClient") as mock:
         yield mock
@@ -42,17 +41,20 @@ class TestPineconeEmbeddingsConfig:
 
     def test_default_config(self) -> None:
         """Test default configuration is set correctly."""
-        embeddings = PineconeEmbeddings(model=MODEL_NAME, pinecone_api_key=API_KEY)
+        embeddings = PineconeEmbeddings(model=MODEL_NAME, pinecone_api_key=API_KEY)  # type: ignore
         assert embeddings.batch_size == 96
         assert embeddings.query_params == {"input_type": "query", "truncation": "END"}
-        assert embeddings.document_params == {"input_type": "passage", "truncation": "END"}
+        assert embeddings.document_params == {
+            "input_type": "passage",
+            "truncation": "END",
+        }
         assert embeddings.dimension == 1024
 
     def test_custom_config(self) -> None:
         """Test custom configuration overrides defaults."""
         embeddings = PineconeEmbeddings(
             model=MODEL_NAME,
-            pinecone_api_key=API_KEY,
+            api_key=API_KEY,
             batch_size=128,
             query_params={"custom": "param"},
             document_params={"other": "param"},
@@ -64,14 +66,14 @@ class TestPineconeEmbeddingsConfig:
     @pytest.mark.asyncio
     async def test_async_client_initialization(self) -> None:
         """Test async client is initialized correctly and only when needed."""
-        embeddings = PineconeEmbeddings(model=MODEL_NAME, pinecone_api_key=API_KEY)
+        embeddings = PineconeEmbeddings(model=MODEL_NAME, api_key=API_KEY)
         assert embeddings._async_client is None
-        
+
         # Access async_client property
         client = embeddings.async_client
         assert client is not None
         assert isinstance(client, aiohttp.ClientSession)
-        
+
         # Ensure headers are set correctly
         expected_headers = {
             "Api-Key": API_KEY.get_secret_value(),
