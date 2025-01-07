@@ -75,10 +75,13 @@ docarray = "^0.32.1"
 langchain-openai = { path = "../openai", develop = true }
 langchain-core = { path = "../../core", develop = true }
 langchain-tests = { path = "../../standard-tests", develop = true }
+pytest-socket = "^0.7.0"
+
 
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
+
 
 
 [tool.poetry.group.test_integration.dependencies]
@@ -91,14 +94,17 @@ version = "^1.26.0"
 python = ">=3.12"
 
 
+
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+
 
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 types-requests = "^2"
 langchain-core = { path = "../../core", develop = true }
+
 
 
 [tool.poetry.group.dev.dependencies]

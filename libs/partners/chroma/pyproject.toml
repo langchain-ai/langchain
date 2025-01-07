@@ -80,7 +80,11 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 # hack to make sure py3.9 compatible versionof onnxruntime is installed for testing
-onnxruntime = [{version = "<1.20", python = "<3.10"}, {version = "*", python = ">=3.10"}]
+onnxruntime = [
+    { version = "<1.20", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
+pytest-socket = "^0.7.0"
 [[tool.poetry.group.test.dependencies.langchain-core]]
 path = "../../core"
 develop = true
@@ -94,15 +98,22 @@ python = "<3.9"
 path = "../../standard-tests"
 develop = true
 
+
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
+
 [tool.poetry.group.test_integration.dependencies]
+
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 # hack to make sure py3.9 compatible versionof onnxruntime is installed for testing
-onnxruntime = [{version = "<1.20", python = "<3.10"}, {version = "*", python = ">=3.10"}]
+onnxruntime = [
+    { version = "<1.20", python = "<3.10" },
+    { version = "*", python = ">=3.10" },
+]
+
 
 [tool.poetry.group.dev.dependencies]
 [[tool.poetry.group.dev.dependencies.langchain-core]]
@@ -113,6 +124,7 @@ python = ">=3.9"
 [[tool.poetry.group.dev.dependencies.langchain-core]]
 version = ">=0.1.40,<0.3"
 python = "<3.9"
+
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
