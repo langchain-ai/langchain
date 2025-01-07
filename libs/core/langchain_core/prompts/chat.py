@@ -1219,17 +1219,37 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         result = []
+        
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):
-                result.extend([message_template])
-            elif isinstance(
-                message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
-            ):
+                # Check if the content contains any template variables
+                if any(char in message_template.content for char in "{}"):
+                    try:
+                        # Create a temporary template from the message content
+                        temp_template = PromptTemplate.from_template(
+                            message_template.content
+                        )
+                        # Format the content with provided variables
+                        formatted_content = temp_template.format(**kwargs)
+                        # Create a new message with formatted content
+                        formatted_message = type(message_template)(
+                            content=formatted_content,
+                            additional_kwargs=message_template.additional_kwargs.copy()
+                        )
+                        result.append(formatted_message)
+                    except (KeyError, ValueError):
+                        # If formatting fails, use original message
+                        result.append(message_template)
+                else:
+                    # If no template variables, use original message
+                    result.append(message_template)
+                    
+            elif isinstance(message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
-                msg = f"Unexpected input: {message_template}"
-                raise ValueError(msg)
+                raise ValueError(f"Unexpected input: {message_template}")
+        
         return result
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
