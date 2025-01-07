@@ -1238,17 +1238,19 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm = self.bind_tools([schema], tool_choice="any")
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[cast(TypeBaseModel, schema)], first_tool_only=True
+                tools=[cast(TypeBaseModel, schema)],
+                first_tool_only=True,
+                return_message=True,
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]
             output_parser = JsonOutputKeyToolsParser(
-                key_name=key_name, first_tool_only=True
+                key_name=key_name, first_tool_only=True, return_message=True
             )
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
-            )
+                raw=itemgetter("raw") | output_parser
+            ).assign(parsed=(lambda x: x["raw"].parsed), parsing_error=lambda _: None)
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"

@@ -48,8 +48,16 @@ from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
-from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.output_parsers.base import (
+    BaseGenerationOutputParser,
+    OutputParserLike,
+)
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    Generation,
+)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -819,6 +827,7 @@ class ChatAnthropic(BaseChatModel):
         tool_choice: Optional[
             Union[Dict[str, str], Literal["any", "auto"], str]
         ] = None,
+        response_format: Optional[Union[dict, type]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         r"""Bind tool-like objects to this chat model.
@@ -954,8 +963,13 @@ class ChatAnthropic(BaseChatModel):
                 AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 
         """  # noqa: E501
+        if response_format:
+            tools.append(response_format)
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
-        if not tool_choice:
+        # If we have a response format, enforce that a tool is called.
+        if response_format and not tool_choice:
+            kwargs["tool_choice"] = {"type": "any"}
+        elif not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
             kwargs["tool_choice"] = tool_choice
@@ -968,7 +982,11 @@ class ChatAnthropic(BaseChatModel):
                 f"Unrecognized 'tool_choice' type {tool_choice=}. Expected dict, "
                 f"str, or None."
             )
-        return self.bind(tools=formatted_tools, **kwargs)
+        llm = self.bind(tools=formatted_tools, **kwargs)
+        if response_format:
+            return llm | _ToolsToParsedMessage(response_format=response_format)
+        else:
+            return llm
 
     def with_structured_output(
         self,
@@ -1355,3 +1373,46 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None}
         ),
     )
+
+
+class _ToolsToParsedMessage(BaseGenerationOutputParser):
+    """..."""
+
+    response_format: Union[dict, type[BaseModel]]
+    """..."""
+    model_config = ConfigDict(extra="forbid")
+
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse a list of candidate model Generations into a specific format.
+
+        Args:
+            result: A list of Generations to be parsed. The Generations are assumed
+                to be different candidate outputs for a single model input.
+
+        Returns:
+            Structured output.
+        """
+        if not result or not isinstance(result[0], ChatGeneration):
+            msg = "..."
+            raise ValueError(msg)
+        message = cast(AIMessage, result[0].message)
+        drop = None
+        for tool_call in message.tool_calls:
+            if tool_call["name"] == self._response_format_name:
+                message.parsed = (
+                    tool_call["args"]
+                    if isinstance(self.response_format, dict)
+                    else self.response_format(**tool_call["args"])
+                )
+                drop = tool_call["id"]
+                break
+        message.tool_calls = [tc for tc in message.tool_calls if tc["id"] != drop]
+        if isinstance(message, AIMessageChunk):
+            message.tool_call_chunks = [
+                tc for tc in message.tool_call_chunks if tc["id"] != drop
+            ]
+        return message
+
+    @property
+    def _response_format_name(self) -> str:
+        return convert_to_anthropic_tool(self.response_format)["name"]

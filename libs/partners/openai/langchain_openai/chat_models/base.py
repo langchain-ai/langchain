@@ -10,6 +10,7 @@ import sys
 import warnings
 from io import BytesIO
 from math import ceil
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
@@ -1092,6 +1093,7 @@ class BaseChatOpenAI(BaseChatModel):
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
         strict: Optional[bool] = None,
+        response_format: Optional[_DictOrPydanticClass] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -1162,6 +1164,11 @@ class BaseChatOpenAI(BaseChatModel):
                     f"Received: {tool_choice}"
                 )
             kwargs["tool_choice"] = tool_choice
+        if response_format:
+            response_format = _convert_to_openai_response_format(
+                response_format, strict=strict
+            )
+            kwargs["response_format"] = response_format
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -1503,9 +1510,9 @@ class BaseChatOpenAI(BaseChatModel):
             )
 
         if include_raw:
-            parser_assign = RunnablePassthrough.assign(raw=output_parser).assign(
-                parsed=lambda x: x["raw"].parsed, parsing_error=lambda _: None
-            )
+            parser_assign = RunnablePassthrough.assign(
+                raw=itemgetter("raw") | output_parser
+            ).assign(parsed=lambda x: x["raw"].parsed, parsing_error=lambda _: None)
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
