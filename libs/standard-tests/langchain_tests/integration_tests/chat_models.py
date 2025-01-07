@@ -21,6 +21,7 @@ from langchain_core.utils.function_calling import tool_example_to_messages
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
+from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -1306,6 +1307,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
+        # Pydantic
         class Joke(BaseModel):
             """Joke to tell user."""
 
@@ -1322,6 +1324,22 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
         assert isinstance(joke_result, Joke)
+
+        # Schema
+        chat = model.with_structured_output(Joke.model_json_schema())
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+
+        # TypedDict
+        class JokeDict(TypedDict):
+            """Joke to tell user."""
+
+            setup: Annotated[str, ..., "question to set up a joke"]
+            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+
+        chat = model.with_structured_output(JokeDict)
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
         """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_
