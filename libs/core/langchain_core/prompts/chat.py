@@ -1219,7 +1219,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         result = []
-        
+
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):
                 # Check if the content contains any template variables
