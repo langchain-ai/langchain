@@ -336,7 +336,7 @@ class PDFMinerLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, PurePath],
         *,
         headers: Optional[dict] = None,
         extract_images: bool = False,
@@ -376,7 +376,10 @@ class PDFMinerLoader(BasePDFLoader):
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
     """Load `PDF` files as HTML content using `PDFMiner`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[dict] = None):
+    def __init__(self,
+                 file_path: Union[str, PurePath],
+                 *,
+                 headers: Optional[dict] = None):
         """Initialize with a file path."""
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
@@ -414,7 +417,7 @@ class PyMuPDFLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, PurePath],
         *,
         headers: Optional[dict] = None,
         extract_images: bool = False,
@@ -611,7 +614,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, PurePath],
         text_kwargs: Optional[Mapping[str, Any]] = None,
         dedupe: bool = False,
         headers: Optional[dict] = None,
@@ -890,7 +893,7 @@ class DedocPDFLoader(DedocBaseLoader):
         from dedoc.utils.langchain import make_manager_pdf_config
 
         return make_manager_pdf_config(
-            file_path=self.file_path,
+            file_path=str(self.file_path),
             parsing_params=self.parsing_parameters,
             split=self.split,
         )
@@ -901,7 +904,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, PurePath],
         client: Any,
         model: str = "prebuilt-document",
         headers: Optional[dict] = None,
@@ -1008,7 +1011,7 @@ class ZeroxPDFLoader(BasePDFLoader):
 
         # Directly call asyncio.run to execute zerox synchronously
         zerox_output = asyncio.run(
-            zerox(file_path=self.file_path, model=self.model, **self.zerox_kwargs)
+            zerox(file_path=str(self.file_path), model=self.model, **self.zerox_kwargs)
         )
 
         # Convert zerox output to Document instances and yield them
