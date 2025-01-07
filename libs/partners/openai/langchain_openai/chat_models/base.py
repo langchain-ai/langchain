@@ -2197,7 +2197,8 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 def _update_schema_with_optional_fields(input_dict: dict) -> dict:
     """Convert optional fields to required fields allowing 'null' type."""
-    def _update_properties(schema: dict):
+
+    def _update_properties(schema: dict) -> None:
         if schema.get("type") != "object":
             return
 

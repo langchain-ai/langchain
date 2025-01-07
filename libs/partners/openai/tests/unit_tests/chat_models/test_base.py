@@ -851,17 +851,19 @@ def test__convert_to_openai_response_format() -> None:
     assert expected == actual
 
     ## JSON Schema
-    class Entity(BaseModel):
+    class EntityModel(BaseModel):
         """Extracted entity."""
 
         animal: str = Field(description="The animal")
         color: Optional[str] = Field(default=None, description="The color")
 
-    actual = _convert_to_openai_response_format(Entity.model_json_schema(), strict=True)
+    actual = _convert_to_openai_response_format(
+        EntityModel.model_json_schema(), strict=True
+    )
     expected = {
         "type": "json_schema",
         "json_schema": {
-            "name": "Entity",
+            "name": "EntityModel",
             "description": "Extracted entity.",
             "strict": True,
             "schema": {
