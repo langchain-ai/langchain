@@ -1,6 +1,6 @@
 """Toolkit for interacting with an SQL database."""
 
-from typing import List
+from typing import List, Dict, Any
 
 from langchain_core.caches import BaseCache as BaseCache
 from langchain_core.callbacks import Callbacks as Callbacks
@@ -14,6 +14,7 @@ from langchain_community.tools.sql_database.tool import (
     ListSQLDatabaseTool,
     QuerySQLCheckerTool,
     QuerySQLDatabaseTool,
+    QuerySQLGeneratorTool,
 )
 from langchain_community.tools.sql_database.tool import (
     QuerySQLDataBaseTool as QuerySQLDataBaseTool,  # keep import for backwards compat.
@@ -124,16 +125,29 @@ class SQLDatabaseToolkit(BaseToolkit):
         query_sql_checker_tool = QuerySQLCheckerTool(
             db=self.db, llm=self.llm, description=query_sql_checker_tool_description
         )
+        query_sql_generator_tool = QuerySQLGeneratorTool(
+            db=self.db,
+            llm=self.llm,
+            description=(
+                "Convert a natural language question into a SQL query. "
+                "Use this tool first to generate a query, then use the checker "
+                "tool to verify it before execution."
+            )
+        )
         return [
             query_sql_database_tool,
             info_sql_database_tool,
             list_sql_database_tool,
             query_sql_checker_tool,
+            query_sql_generator_tool,
         ]
 
     def get_context(self) -> dict:
         """Return db context that you may want in agent prompt."""
-        return self.db.get_context()
+        context = self.db.get_context()
+        context["foreign_key_info_str"] = self.db.foreign_key_info_str
+        context["table_info_str"] = self.db.table_info_str
+        return context
 
 
 SQLDatabaseToolkit.model_rebuild()

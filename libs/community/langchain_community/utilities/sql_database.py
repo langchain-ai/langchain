@@ -93,6 +93,10 @@ class SQLDatabase:
         usable_tables = self.get_usable_table_names()
         self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
 
+        self._table_info_str = self.get_table_info_str()
+
+        self._foreign_key_info_str = self.get_foreign_key_info_str()
+
         if not isinstance(sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
 
@@ -130,13 +134,81 @@ class SQLDatabase:
     @classmethod
     def from_uri(
         cls,
-        database_uri: Union[str, URL],
+        database_uri: str,
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> SQLDatabase:
-        """Construct a SQLAlchemy engine from URI."""
+        """Construct a SQLDatabase from a database URI."""
         _engine_args = engine_args or {}
-        return cls(create_engine(database_uri, **_engine_args), **kwargs)
+        engine = create_engine(database_uri, **_engine_args)
+        
+        # Auto-generate custom table info before creating the SQLDatabase instance
+        inspector = inspect(engine)
+        custom_table_info = {}
+        
+        for table in inspector.get_table_names():
+            # Get columns and their details
+            columns = inspector.get_columns(table)
+            # Get foreign keys
+            foreign_keys = inspector.get_foreign_keys(table)
+            # Get primary keys
+            pk_constraint = inspector.get_pk_constraint(table)
+            primary_keys = pk_constraint.get('constrained_columns', []) if pk_constraint else []
+            
+            # Build CREATE TABLE statement with comments
+            create_table = f"CREATE TABLE {table} (\n"
+            column_defs = []
+            
+            for col in columns:
+                # Basic column definition
+                col_def = f"    {col['name']} {str(col['type'])}"
+                
+                # Add constraints
+                constraints = []
+                if col['name'] in primary_keys:
+                    constraints.append("PRIMARY KEY")
+                if not col.get('nullable', True):
+                    constraints.append("NOT NULL")
+                if col.get('default') is not None:
+                    constraints.append(f"DEFAULT {col['default']}")
+                
+                if constraints:
+                    col_def += f" {' '.join(constraints)}"
+                
+                # Add column comment describing the type and constraints
+                col_def += f"  -- {str(col['type'])}"
+                if constraints:
+                    col_def += f", {', '.join(constraints)}"
+                
+                column_defs.append(col_def)
+            
+            create_table += ",\n".join(column_defs)
+            create_table += "\n);"
+            
+            # Add foreign key documentation
+            if foreign_keys:
+                create_table += "\n\n/* Foreign Keys:"
+                for fk in foreign_keys:
+                    create_table += f"\n- {', '.join(fk['constrained_columns'])} references {fk['referred_table']}({', '.join(fk['referred_columns'])})"
+                create_table += "\n*/\n"
+            
+            # Add table metadata documentation
+            create_table += "\n/* Additional Context:"
+            create_table += f"\n- Primary Keys: {', '.join(primary_keys) if primary_keys else 'None'}"
+            
+            # Add index information
+            indexes = inspector.get_indexes(table)
+            if indexes:
+                create_table += "\n- Indexes:"
+                for idx in indexes:
+                    create_table += f"\n  * {idx['name']}: columns={idx['column_names']}, unique={idx['unique']}"
+            
+            create_table += "\n*/\n"
+            
+            custom_table_info[table] = create_table
+        
+        kwargs['custom_table_info'] = custom_table_info
+        return cls(engine=engine, **kwargs)
 
     @classmethod
     def from_databricks(
@@ -356,6 +428,14 @@ class SQLDatabase:
                 table_info += f"\n{self._get_sample_rows(table)}\n"
             if has_extra_info:
                 table_info += "*/"
+
+            # Add column documentation if available
+            if hasattr(self, '_column_docs') and table.name in self._column_docs:
+                table_info += "\n\n/* Column Documentation:"
+                for col, desc in self._column_docs[table.name].items():
+                    table_info += f"\n{col}: {desc}"
+                table_info += "\n*/"
+
             tables.append(table_info)
         tables.sort()
         final_str = "\n\n".join(tables)
@@ -571,3 +651,103 @@ class SQLDatabase:
         table_names = list(self.get_usable_table_names())
         table_info = self.get_table_info_no_throw()
         return {"table_info": table_info, "table_names": ", ".join(table_names)}
+
+    def get_all_table_names(self) -> List[str]:
+        """Get names of all tables in the database.
+        
+        Returns:
+            List[str]: List of table names
+        """
+        return list(self._usable_tables)
+
+    def get_all_column_names(self, table_name: str) -> List[str]:
+        """Get names of all columns in specified table.
+        
+        Args:
+            table_name (str): Name of table to get column names from
+            
+        Returns:
+            List[str]: List of column names
+        """
+        if table_name not in self._usable_tables:
+            raise ValueError(f"Table '{table_name}' not found in database")
+            
+        columns = self._inspector.get_columns(table_name, schema=self._schema)
+        return [col['name'] for col in columns]
+
+    def get_foreign_key_info(self, table_name: str) -> List[Dict[str, Any]]:
+        """Get foreign key information for specified table.
+        
+        Args:
+            table_name (str): Name of table to get foreign keys from
+            
+        Returns:
+            List[Dict]: List of foreign key information dictionaries
+        """
+        if table_name not in self._usable_tables:
+            raise ValueError(f"Table '{table_name}' not found in database")
+            
+        return self._inspector.get_foreign_keys(table_name, schema=self._schema)
+
+    def get_table_info_str(self) -> str:
+        """Get formatted string of table information.
+        
+        Returns:
+            str: Formatted string containing table and column information
+        """
+        table_str = '#\n# '
+        for table in self.get_all_table_names():
+            column_list = self.get_all_column_names(table)
+            column_list = [f'`{column}`' for column in column_list]
+            columns_str = f'{table}(' + ', '.join(column_list) + ')'
+            table_str += columns_str + '\n# '
+        return table_str
+
+    def get_foreign_key_info_str(self) -> str:
+        """Get formatted string of foreign key information.
+        
+        Returns:
+            str: Formatted string containing foreign key relationships
+        """
+        foreign_str = '#\n# '
+        for table in self.get_all_table_names():
+            foreign_keys = self.get_foreign_key_info(table)
+            for fk in foreign_keys:
+                constrained_cols = ', '.join(fk['constrained_columns'])
+                referred_cols = ', '.join(fk['referred_columns'])
+                foreign_one = f"{table}({constrained_cols}) references {fk['referred_table']}({referred_cols})"
+                foreign_str += foreign_one + '\n# '
+        return foreign_str
+
+    def get_sample_rows_str(self, num_rows: int = 3) -> str:
+        """Get formatted string of sample rows from each table.
+        
+        Args:
+            num_rows (int): Number of sample rows to fetch per table
+            
+        Returns:
+            str: Formatted string containing sample data
+        """
+        simplified_ddl_data = []
+        
+        for table in self.get_all_table_names():
+            # Get column names
+            columns = self.get_all_column_names(table)
+            
+            # Get sample rows
+            query = f"SELECT * FROM {table} LIMIT {num_rows}"
+            results = self._execute(query)
+            
+            if not results:
+                continue
+                
+            # Format column data
+            sample_data = []
+            for col in columns:
+                values = [str(row[col]) for row in results]
+                sample_data.append(f"`{col}`[{','.join(values)}]")
+                
+            table_data = f"{table}({','.join(sample_data)})"
+            simplified_ddl_data.append(table_data)
+            
+        return "# " + ";\n# ".join(simplified_ddl_data) + ";\n"
