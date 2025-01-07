@@ -107,7 +107,7 @@ class BaseMessage(Serializable):
             block
             for block in self.content
             if isinstance(block, str)
-            or block["type"] == "text"
+            or block.get("type") == "text"
             and isinstance(block.get("text"), str)
         ]
         return "".join(
