@@ -1,4 +1,5 @@
 import time
+from typing import AsyncGenerator
 
 import pytest
 from langchain_core.documents import Document
@@ -6,14 +7,18 @@ from pinecone import Pinecone, ServerlessSpec  # type: ignore
 
 from langchain_pinecone import PineconeEmbeddings, PineconeVectorStore
 
+pytestmark = pytest.mark.asyncio
+
 DIMENSION = 1024
 INDEX_NAME = "langchain-pinecone-embeddings"
 MODEL = "multilingual-e5-large"
 
 
-@pytest.fixture()
-def embd_client() -> PineconeEmbeddings:
-    return PineconeEmbeddings(model=MODEL)
+@pytest.fixture(scope="function")
+async def embd_client() -> AsyncGenerator[PineconeEmbeddings, None]:
+    client = PineconeEmbeddings(model=MODEL)
+    yield client
+    await client.async_client.close()
 
 
 @pytest.fixture

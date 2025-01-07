@@ -35,6 +35,7 @@ omit = [ "tests/*",]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.poetry.group.test]
 optional = true
