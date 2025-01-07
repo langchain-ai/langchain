@@ -114,7 +114,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
- * @property {boolean} [hideAWS] - Whether or not to hide SambaNova models.
+ * @property {boolean} [hideSambaNova] - Whether or not to hide SambaNova models.
  * @property {boolean} [hideDatabricks] - Whether or not to hide Databricks models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
