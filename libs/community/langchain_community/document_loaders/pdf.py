@@ -225,7 +225,7 @@ class PyPDFLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, PurePath],
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[dict] = None,
         extract_images: bool = False,
@@ -264,7 +264,7 @@ class PyPDFium2Loader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, PurePath],
         *,
         headers: Optional[dict] = None,
         extract_images: bool = False,
@@ -376,10 +376,9 @@ class PDFMinerLoader(BasePDFLoader):
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
     """Load `PDF` files as HTML content using `PDFMiner`."""
 
-    def __init__(self,
-                 file_path: Union[str, PurePath],
-                 *,
-                 headers: Optional[dict] = None):
+    def __init__(
+        self, file_path: Union[str, PurePath], *, headers: Optional[dict] = None
+    ):
         """Initialize with a file path."""
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
@@ -407,7 +406,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
                 output_type="html",
             )
         metadata = {
-            "source": self.file_path if self.web_path is None else self.web_path
+            "source": str(self.file_path) if self.web_path is None else self.web_path
         }
         yield Document(page_content=output_string.getvalue(), metadata=metadata)
 
