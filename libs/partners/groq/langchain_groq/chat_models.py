@@ -86,6 +86,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_groq.version import __version__
+
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -386,6 +388,10 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
+        default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
+            self.default_headers or {}
+        )
+
         client_params: Dict[str, Any] = {
             "api_key": (
                 self.groq_api_key.get_secret_value() if self.groq_api_key else None
@@ -393,7 +399,7 @@ class ChatGroq(BaseChatModel):
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": default_headers,
             "default_query": self.default_query,
         }
 
