@@ -100,8 +100,9 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
-  * @property {string} [databricksParams] - Parameters for Databricks model. Defaults to `endpoint="databricks-meta-llama-3-1-70b-instruct"`
+ * @property {string} [databricksParams] - Parameters for Databricks model. Defaults to `endpoint="databricks-meta-llama-3-1-70b-instruct"`
  * @property {string} [awsBedrockParams] - Parameters for AWS Bedrock chat model.
+ * @property {string} [sambanovaParams] - Parameters for SambaNova chat model. Defaults to `model="Meta-Llama-3.1-70B-Instruct".
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -113,6 +114,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {boolean} [hideAWS] - Whether or not to hide AWS models.
+ * @property {boolean} [hideAWS] - Whether or not to hide SambaNova models.
  * @property {boolean} [hideDatabricks] - Whether or not to hide Databricks models.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
@@ -134,6 +136,7 @@ export default function ChatModelTabs(props) {
     azureParams,
     nvidiaParams,
     awsBedrockParams,
+    sambanovaParams,
     databricksParams,
     hideOpenai,
     hideAnthropic,
@@ -146,6 +149,7 @@ export default function ChatModelTabs(props) {
     hideAzure,
     hideNvidia,
     hideAWS,
+    hideSambaNova,
     hideDatabricks,
     customVarName,
   } = props;
@@ -169,6 +173,7 @@ export default function ChatModelTabs(props) {
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
   const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
   const awsBedrockParamsOrDefault = awsBedrockParams ?? `model="anthropic.claude-3-5-sonnet-20240620-v1:0",\n    beta_use_converse_api=True`;
+  const sambanovaParamsOrDefault = sambanovaParams ?? `model="Meta-Llama-3.1-70B-Instruct"`;
   const databricksParamsOrDefault = databricksParams ?? `endpoint="databricks-meta-llama-3-1-70b-instruct"`
 
   const llmVarName = customVarName ?? "model";
@@ -281,6 +286,15 @@ export default function ChatModelTabs(props) {
       packageName: "databricks-langchain",
       default: false,
       shouldHide: hideDatabricks,
+    },
+    {
+      value: "SambaNova",
+      label: "SambaNova",
+      text: `from langchain_community.chat_models import ChatSambaNovaCloud\n\n${llmVarName} = ChatSambaNova(${sambanovaParamsOrDefault})`,
+      apiKeyName: "SAMBANOVA_API_KEY",
+      packageName: "langchain_community",
+      default: false,
+      shouldHide: hideSambaNova,
     },
   ];
 
