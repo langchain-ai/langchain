@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
-langchain-core = "^0.3.21"
+langchain-core = "^0.3.29"
 pinecone = "^5.4.0"
 aiohttp = ">=3.9.5,<3.10"
 numpy = ">=1.26.0,<2.0.0"
