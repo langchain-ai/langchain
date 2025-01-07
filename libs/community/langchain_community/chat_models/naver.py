@@ -15,6 +15,8 @@ from typing import (
 )
 
 import httpx
+from httpx_sse import SSEError
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -130,6 +132,8 @@ async def _aiter_sse(
             event_data = sse.json()
             if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                 return
+            if sse.event == "error":
+                raise SSEError(message=sse.data)
             yield sse
 
 
@@ -348,7 +352,6 @@ class ChatClovaX(BaseChatModel):
     def _completion_with_retry(self, **kwargs: Any) -> Any:
         from httpx_sse import (
             ServerSentEvent,
-            SSEError,
             connect_sse,
         )
 

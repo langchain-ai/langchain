@@ -1,8 +1,9 @@
 """Test ChatNaver chat model."""
-
-from langchain_core.messages import AIMessage, AIMessageChunk
+import pytest
+from httpx_sse import SSEError
 
 from langchain_community.chat_models import ChatClovaX
+from langchain_core.messages import AIMessage, AIMessageChunk
 
 
 def test_stream() -> None:
@@ -69,3 +70,24 @@ def test_invoke() -> None:
     result = llm.invoke("I'm Clova", config=dict(tags=["foo"]))
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
+
+
+def test_stream_error_event() -> None:
+    """Test streaming error event from ChatClovaX."""
+    llm = ChatClovaX()
+    prompt = "What is the best way to reduce my carbon footprint?"
+
+    with pytest.raises(SSEError):
+        for _ in llm.stream(prompt * 1000):
+            pass
+
+
+async def test_astream_error_event() -> None:
+    """Test streaming error event from ChatClovaX."""
+    llm = ChatClovaX()
+    prompt = "What is the best way to reduce my carbon footprint?"
+
+    with pytest.raises(SSEError):
+        async for _ in llm.astream(prompt * 1000):
+            pass
+
