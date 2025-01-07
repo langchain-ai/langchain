@@ -1244,11 +1244,15 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     # If no template variables, use original message
                     result.append(message_template)
                     
-            elif isinstance(message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
+            elif isinstance(
+                message_template, 
+                (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+            ):
                 message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
-                raise ValueError(f"Unexpected input: {message_template}")
+                error_msg = "Unexpected input: " + str(message_template)
+                raise ValueError(error_msg)
         
         return result
 
