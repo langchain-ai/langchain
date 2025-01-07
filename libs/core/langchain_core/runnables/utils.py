@@ -423,7 +423,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                     else:
                         values.append(vv)
         return values
-    except (SyntaxError, TypeError, OSError, SystemError):
+    except (SyntaxError, TypeError, ValueError, OSError, SystemError):
         return []
 
 
