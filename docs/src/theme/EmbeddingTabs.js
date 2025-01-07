@@ -25,11 +25,13 @@ export default function EmbeddingTabs(props) {
       hideNomic,
       nvidiaParams,
       hideNvidia,
+      voyageaiParams,
+      hideVoyageai,
       fakeEmbeddingParams,
       hideFakeEmbedding,
       customVarName,
     } = props;
-  
+
     const openAIParamsOrDefault = openaiParams ?? `model="text-embedding-3-large"`;
     const azureParamsOrDefault =
       azureOpenaiParams ??
@@ -42,10 +44,11 @@ export default function EmbeddingTabs(props) {
     const mistralParamsOrDefault = mistralParams ?? `model="mistral-embed"`;
     const nomicsParamsOrDefault = nomicParams ?? `model="nomic-embed-text-v1.5"`;
     const nvidiaParamsOrDefault = nvidiaParams ?? `model="NV-Embed-QA"`;
+    const voyageaiParamsOrDefault = voyageaiParams ?? `model="voyage-3"`;
     const fakeEmbeddingParamsOrDefault = fakeEmbeddingParams ?? `size=4096`;
-  
+
     const embeddingVarName = customVarName ?? "embeddings";
-  
+
     const tabItems = [
       {
         value: "OpenAI",
@@ -136,6 +139,15 @@ export default function EmbeddingTabs(props) {
         packageName: "langchain-nvidia-ai-endpoints",
         default: false,
         shouldHide: hideNvidia,
+      },
+      {
+        value: "Voyage AI",
+        label: "Voyage AI",
+        text: `from langchain-voyageai import VoyageAIEmbeddings\n\n${embeddingVarName} = VoyageAIEmbeddings(${voyageaiParamsOrDefault})`,
+        apiKeyName: "VOYAGE_API_KEY",
+        packageName: "langchain-voyageai",
+        default: false,
+        shouldHide: hideVoyageai,
       },
       {
         value: "Fake",

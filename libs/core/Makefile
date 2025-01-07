@@ -12,7 +12,7 @@ test tests:
 	-u LANGCHAIN_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
-	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	poetry run pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	env \

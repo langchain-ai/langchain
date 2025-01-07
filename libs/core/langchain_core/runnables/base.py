@@ -190,7 +190,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 
         def buggy_double(y: int) -> int:
-            '''Buggy code that will fail 70% of the time'''
+            \"\"\"Buggy code that will fail 70% of the time\"\"\"
             if random.random() > 0.3:
                 print('This code failed, and will probably be retried!')  # noqa: T201
                 raise ValueError('Triggered buggy code')
@@ -520,13 +520,13 @@ class Runnable(Generic[Input, Output], ABC):
     def get_config_jsonschema(
         self, *, include: Optional[Sequence[str]] = None
     ) -> dict[str, Any]:
-        """Get a JSON schema that represents the output of the Runnable.
+        """Get a JSON schema that represents the config of the Runnable.
 
         Args:
             include: A list of fields to include in the config schema.
 
         Returns:
-            A JSON schema that represents the output of the Runnable.
+            A JSON schema that represents the config of the Runnable.
 
         .. versionadded:: 0.3.0
         """
@@ -534,8 +534,6 @@ class Runnable(Generic[Input, Output], ABC):
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
-        from langchain_core.runnables.graph import Graph
-
         graph = Graph()
         try:
             input_node = graph.add_node(self.get_input_schema(config))
@@ -625,7 +623,7 @@ class Runnable(Generic[Input, Output], ABC):
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, list[str]]) -> RunnableSerializable[Any, Any]:
-        """Pick keys from the dict output of this Runnable.
+        """Pick keys from the output dict of this Runnable.
 
         Pick single key:
             .. code-block:: python
@@ -712,8 +710,8 @@ class Runnable(Generic[Input, Output], ABC):
             print(chain_with_assign.input_schema.model_json_schema())
             # {'title': 'PromptInput', 'type': 'object', 'properties':
             {'question': {'title': 'Question', 'type': 'string'}}}
-            print(chain_with_assign.output_schema.model_json_schema()) #
-            {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
+            print(chain_with_assign.output_schema.model_json_schema())
+            # {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
             {'str': {'title': 'Str',
             'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
 

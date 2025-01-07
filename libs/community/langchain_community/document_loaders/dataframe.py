@@ -21,9 +21,8 @@ class BaseDataFrameLoader(BaseLoader):
         """Lazy load records from dataframe."""
 
         for _, row in self.data_frame.iterrows():
-            text = row[self.page_content_column]
             metadata = row.to_dict()
-            metadata.pop(self.page_content_column)
+            text = metadata.pop(self.page_content_column)
             yield Document(page_content=text, metadata=metadata)
 
 

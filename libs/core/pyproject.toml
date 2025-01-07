@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.25"
+version = "0.3.29"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -108,6 +108,7 @@ pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
 responses = "^0.25.0"
 pytest-socket = "^0.7.0"
+pytest-xdist = "^3.6.1"
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"
 python = "<3.12"

@@ -86,6 +86,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_groq.version import __version__
+
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -305,7 +307,7 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -386,6 +388,10 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
+        default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
+            self.default_headers or {}
+        )
+
         client_params: Dict[str, Any] = {
             "api_key": (
                 self.groq_api_key.get_secret_value() if self.groq_api_key else None
@@ -393,7 +399,7 @@ class ChatGroq(BaseChatModel):
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": default_headers,
             "default_query": self.default_query,
         }
 

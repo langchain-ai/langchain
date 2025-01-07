@@ -71,6 +71,14 @@
       "destination": "/docs/tutorials/graph#few-shot-prompting"
     },
     {
+      "source": "/docs/how_to/HTML_header_metadata_splitter(/?)",
+      "destination": "/docs/how_to/split_html#using-htmlheadertextsplitter"
+    },
+    {
+      "source": "/docs/how_to/HTML_section_aware_splitter(/?)",
+      "destination": "/docs/how_to/split_html#using-htmlsectionsplitter"
+    },
+    {
       "source": "/docs/tutorials/data_generation",
       "destination": "https://python.langchain.com/v0.2/docs/tutorials/data_generation/"
     },
