@@ -92,7 +92,6 @@ class BaseMessage(Serializable):
         """
         return ["langchain", "schema", "messages"]
 
-    @property
     def text(self) -> str:
         """Get the text content of the message.
 
