@@ -6,7 +6,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Iterable,
     Iterator,
     Mapping,
@@ -23,14 +22,12 @@ from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 
 if TYPE_CHECKING:
-    import fitz.fitz
-    import pdfminer.layout
-    import pdfplumber.page
-    import pypdf._page
-    import pypdfium2._helpers.page
-    from pypdf import PageObject
+    import fitz
+    import pdfminer
+    import pdfplumber
+    import pypdf
+    import pypdfium2
     from textractor.data.text_linearization_config import TextLinearizationConfig
-
 
 _PDF_FILTER_WITH_LOSS = ["DCTDecode", "DCT", "JPXDecode"]
 _PDF_FILTER_WITHOUT_LOSS = [
@@ -90,7 +87,7 @@ class PyPDFParser(BaseBlobParser):
         extract_images: bool = False,
         *,
         extraction_mode: str = "plain",
-        extraction_kwargs: Optional[Dict[str, Any]] = None,
+        extraction_kwargs: Optional[dict[str, Any]] = None,
     ):
         self.password = password
         self.extract_images = extract_images
@@ -107,7 +104,7 @@ class PyPDFParser(BaseBlobParser):
                 "`pip install pypdf`"
             )
 
-        def _extract_text_from_page(page: "PageObject") -> str:
+        def _extract_text_from_page(page: pypdf.PageObject) -> str:
             """
             Extract text from image given the version of pypdf.
             """
@@ -126,12 +123,13 @@ class PyPDFParser(BaseBlobParser):
                 Document(
                     page_content=_extract_text_from_page(page=page)
                     + self._extract_images_from_page(page),
-                    metadata={"source": blob.source, "page": page_number},  # type: ignore[attr-defined]
+                    metadata={"source": blob.source, "page": page_number},
+                    # type: ignore[attr-defined]
                 )
                 for page_number, page in enumerate(pdf_reader.pages)
             ]
 
-    def _extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
+    def _extract_images_from_page(self, page: pypdf.PageObject) -> str:
         """Extract images from page and get the text with RapidOCR."""
         if not self.extract_images or "/XObject" not in page["/Resources"].keys():  # type: ignore[attr-defined]
             return ""
@@ -307,9 +305,7 @@ class PyMuPDFParser(BaseBlobParser):
                 for page in doc
             ]
 
-    def _get_page_content(
-        self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob
-    ) -> str:
+    def _get_page_content(self, doc: fitz.Document, page: fitz.Page, blob: Blob) -> str:
         """
         Get the text of the page using PyMuPDF and RapidOCR and issue a warning
         if it is empty.
@@ -327,7 +323,7 @@ class PyMuPDFParser(BaseBlobParser):
         return content
 
     def _extract_metadata(
-        self, doc: fitz.fitz.Document, page: fitz.fitz.Page, blob: Blob
+        self, doc: fitz.Document, page: fitz.Page, blob: Blob
     ) -> dict:
         """Extract metadata from the document and page."""
         return dict(
@@ -344,9 +340,7 @@ class PyMuPDFParser(BaseBlobParser):
             },
         )
 
-    def _extract_images_from_page(
-        self, doc: fitz.fitz.Document, page: fitz.fitz.Page
-    ) -> str:
+    def _extract_images_from_page(self, doc: fitz.Document, page: fitz.Page) -> str:
         """Extract images from page and get the text with RapidOCR."""
         if not self.extract_images:
             return ""
@@ -558,7 +552,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
         textract_features: Optional[Sequence[int]] = None,
         client: Optional[Any] = None,
         *,
-        linearization_config: Optional["TextLinearizationConfig"] = None,
+        linearization_config: Optional[TextLinearizationConfig] = None,
     ) -> None:
         """Initializes the parser.
 
