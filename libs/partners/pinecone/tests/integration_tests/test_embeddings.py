@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 from pinecone import Pinecone, ServerlessSpec  # type: ignore
 
 from langchain_pinecone import PineconeEmbeddings, PineconeVectorStore
+from tests.integration_tests.test_vectorstores import DEFAULT_SLEEP
 
 DIMENSION = 1024
 INDEX_NAME = "langchain-pinecone-embeddings"
@@ -78,6 +79,6 @@ def test_vector_store(
         [Document("Hello, world!"), Document("This is a test.")],
         namespace=NAMESPACE_NAME,
     )
-    time.sleep(10)  # Increase wait time to ensure indexing is complete
+    time.sleep(DEFAULT_SLEEP)  # Increase wait time to ensure indexing is complete
     resp = vectorstore.similarity_search(query="hello", namespace=NAMESPACE_NAME)
     assert len(resp) == 2
