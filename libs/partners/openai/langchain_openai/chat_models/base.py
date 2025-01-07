@@ -2196,44 +2196,32 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 
 
 def _update_schema_with_optional_fields(input_dict: dict) -> dict:
-
+    """Convert optional fields to required fields allowing 'null' type."""
     def _update_properties(schema: dict):
-        if schema.get('type') != 'object':
+        if schema.get("type") != "object":
             return
 
-        properties = schema.get('properties', {})
-        required_fields = set(schema.get('required', []))
+        properties = schema.get("properties", {})
+        required_fields = schema.get("required", [])
 
         for field, field_schema in properties.items():
-            # Remove the 'default' key if it exists
-            field_schema.pop('default', None)
+            field_schema.pop("default", None)
 
-            if field_schema.get('type') == 'object':
+            if field_schema.get("type") == "object":
                 _update_properties(field_schema)
 
-            if 'allOf' in field_schema:
-                for sub_schema in field_schema['allOf']:
-                    if sub_schema.get('type') == 'object':
-                        _update_properties(sub_schema)
-
-            # if 'anyOf' in field_schema:
-            #     # Check if 'anyOf' contains a 'null' type
-            #     types = [sub_schema.get('type') for sub_schema in field_schema['anyOf']]
-            #     if 'null' not in types:
-            #         field_schema['anyOf'].append({'type': 'null'})
-
             if field not in required_fields:
-                original_type = field_schema.get('type')
+                original_type = field_schema.get("type")
                 if isinstance(original_type, str):
-                    field_schema['type'] = [original_type, 'null']
-                elif isinstance(original_type, list) and 'null' not in original_type:
-                    field_schema['type'].append('null')
+                    field_schema["type"] = [original_type, "null"]
+                elif isinstance(original_type, list) and "null" not in original_type:
+                    field_schema["type"].append("null")
 
-                required_fields.add(field)
+                required_fields.append(field)
 
-        schema['required'] = list(required_fields)
+        schema["required"] = required_fields
 
-    schema = input_dict.get('json_schema', {}).get('schema', {})
+    schema = input_dict.get("json_schema", {}).get("schema", {})
     _update_properties(schema)
 
     return input_dict

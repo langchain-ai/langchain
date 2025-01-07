@@ -18,7 +18,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -821,6 +821,69 @@ def test__convert_to_openai_response_format() -> None:
 
     with pytest.raises(ValueError):
         _convert_to_openai_response_format(response_format, strict=False)
+
+    # Test handling of optional fields
+    ## TypedDict
+    class Entity(TypedDict):
+        """Extracted entity."""
+
+        animal: Annotated[str, ..., "The animal"]
+        color: Annotated[Optional[str], None, "The color"]
+
+    actual = _convert_to_openai_response_format(Entity, strict=True)
+    expected = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "Entity",
+            "description": "Extracted entity.",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "animal": {"description": "The animal", "type": "string"},
+                    "color": {"description": "The color", "type": ["string", "null"]},
+                },
+                "required": ["animal", "color"],
+                "additionalProperties": False,
+            },
+        },
+    }
+    assert expected == actual
+
+    ## JSON Schema
+    class Entity(BaseModel):
+        """Extracted entity."""
+
+        animal: str = Field(description="The animal")
+        color: Optional[str] = Field(default=None, description="The color")
+
+    actual = _convert_to_openai_response_format(Entity.model_json_schema(), strict=True)
+    expected = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "Entity",
+            "description": "Extracted entity.",
+            "strict": True,
+            "schema": {
+                "properties": {
+                    "animal": {
+                        "description": "The animal",
+                        "title": "Animal",
+                        "type": "string",
+                    },
+                    "color": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "description": "The color",
+                        "title": "Color",
+                    },
+                },
+                "required": ["animal", "color"],
+                "type": "object",
+                "additionalProperties": False,
+            },
+        },
+    }
+    assert expected == actual
 
 
 @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
