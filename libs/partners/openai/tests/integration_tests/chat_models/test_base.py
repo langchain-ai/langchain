@@ -637,7 +637,7 @@ def test_openai_structured_output() -> None:
         name: str
         age: int
 
-    llm = ChatOpenAI().with_structured_output(MyModel)
+    llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(MyModel)
     result = llm.invoke("I'm a 27 year old named Erick")
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
