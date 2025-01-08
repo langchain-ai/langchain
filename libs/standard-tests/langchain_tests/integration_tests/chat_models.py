@@ -1326,7 +1326,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(joke_result, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
 
@@ -1337,7 +1339,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             setup: Annotated[str, ..., "question to set up a joke"]
             punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
 
-        chat = model.with_structured_output(JokeDict)
+        chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
 
