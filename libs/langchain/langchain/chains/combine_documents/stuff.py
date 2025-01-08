@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.language_models import LanguageModelLike
+from langchain_core.language_models import LanguageModelInput, LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.runnables import Runnable, RunnablePassthrough
@@ -23,7 +23,7 @@ from langchain.chains.llm import LLMChain
 
 def create_stuff_documents_chain(
     llm: LanguageModelLike,
-    prompt: BasePromptTemplate,
+    prompt: Runnable[dict, LanguageModelInput],
     *,
     output_parser: Optional[BaseOutputParser] = None,
     document_prompt: Optional[BasePromptTemplate] = None,
