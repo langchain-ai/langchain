@@ -1,7 +1,7 @@
 """Standard LangChain interface tests"""
 
 import os
-from typing import Optional, Type
+from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
