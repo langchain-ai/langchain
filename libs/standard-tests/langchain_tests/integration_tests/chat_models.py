@@ -1316,7 +1316,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 default=None, description="answer to resolve the joke"
             )
 
-        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         setup_result = chat.invoke(
             "Give me the setup to a joke about cats, no punchline."
         )
