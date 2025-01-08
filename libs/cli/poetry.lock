@@ -601,13 +601,13 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "gritql"
-version = "0.1.5"
+version = "0.2.0"
 description = "Python bindings for GritQL"
 optional = false
 python-versions = "*"
 files = [
-    {file = "gritql-0.1.5-py2.py3-none-any.whl", hash = "sha256:b17b314d995a11b8e06839280b079ffc8a30bdfb0d2beebcb4332186a0b2cdf0"},
-    {file = "gritql-0.1.5.tar.gz", hash = "sha256:7568ee2d7c7457000374c91289bacb05e92524c77a5d5f63fe777b29622bff4c"},
+    {file = "gritql-0.2.0-py2.py3-none-any.whl", hash = "sha256:6a37f4a6388c09801c25de8753546ca11d4b8a3ad527742821eb032ad069cd13"},
+    {file = "gritql-0.2.0.tar.gz", hash = "sha256:09e26e3d3152d3ec2e4fa80c0af4f2fe1436c82a2c6343cec6ab74ae61474bae"},
 ]
 
 [[package]]
@@ -2068,4 +2068,4 @@ serve = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "c666eaa9945394483db2cf56ec2c147869b2fcefb767184c83c4f0e2f211ea2b"
+content-hash = "58adcda49e89173e501324ed1090cb1765057e46e94230ab90b734b6cec11ff9"

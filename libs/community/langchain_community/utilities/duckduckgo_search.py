@@ -28,9 +28,9 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     Options: d, w, m, y
     """
     max_results: int = 5
-    backend: str = "api"
+    backend: str = "auto"
     """
-    Options: api, html, lite
+    Options: auto, html, lite
     """
     source: str = "text"
     """

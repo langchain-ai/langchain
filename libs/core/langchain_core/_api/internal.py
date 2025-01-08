@@ -14,10 +14,9 @@ def is_caller_internal(depth: int = 2) -> bool:
             frame = frame.f_back
             if frame is None:
                 return False
-        caller_module = inspect.getmodule(frame)
-        if caller_module is None:
-            return False
-        caller_module_name = caller_module.__name__
+        # Directly access the module name from the frame's global variables
+        module_globals = frame.f_globals
+        caller_module_name = module_globals.get("__name__", "")
         return caller_module_name.startswith("langchain")
     finally:
         del frame
