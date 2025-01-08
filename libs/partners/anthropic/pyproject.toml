@@ -66,6 +66,7 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 defusedxml = "^0.7.1"
 pytest-timeout = "^2.3.1"
+pytest-socket = "^0.7.0"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"

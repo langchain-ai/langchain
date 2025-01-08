@@ -1,6 +1,6 @@
 from langchain_groq import __all__
 
-EXPECTED_ALL = ["ChatGroq"]
+EXPECTED_ALL = ["ChatGroq", "__version__"]
 
 
 def test_all_imports() -> None:
