@@ -119,13 +119,13 @@ class AdditionalResultAttribute(BaseModel, extra="allow"):  # type: ignore[call-
 class DocumentAttributeValue(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Value of a document attribute."""
 
-    DateValue: Optional[str]
+    DateValue: Optional[str] = None
     """The date expressed as an ISO 8601 string."""
-    LongValue: Optional[int]
+    LongValue: Optional[int] = None
     """The long value."""
-    StringListValue: Optional[List[str]]
+    StringListValue: Optional[List[str]] = None
     """The string list value."""
-    StringValue: Optional[str]
+    StringValue: Optional[str] = None
     """The string value."""
 
     @property

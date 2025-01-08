@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.33"
+version = "0.0.35"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -18,23 +18,25 @@ gitpython = "^3"
 langserve = { extras = ["all"], version = ">=0.0.51" }
 uvicorn = ">=0.23,<1.0"
 tomlkit = ">=0.12"
-gritql = "^0.1.1"
+gritql = "^0.2.0"
 
 [tool.poetry.scripts]
 langchain = "langchain_cli.cli:app"
 langchain-cli = "langchain_cli.cli:app"
 
 [tool.poetry.group.dev.dependencies]
-poethepoet = "^0.24.1"
 pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
+mypy = "^1.13.0"
 
 [tool.poetry.group.test.dependencies]
+langchain = {path = "../langchain", develop = true}
 
 [tool.poetry.group.typing.dependencies]
+langchain = {path = "../langchain", develop = true}
 
 [tool.poetry.group.test_integration.dependencies]
 
@@ -50,22 +52,11 @@ select = [
   "T201", # print
 ]
 
-[tool.poe.tasks]
-test = "poetry run pytest tests"
-watch = "poetry run ptw"
-version = "poetry version --short"
-bump = ["_bump_1", "_bump_2"]
-lint = ["_lint", "_check_formatting"]
-format = ["_format", "_lint_fix"]
-
-_bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
-_bump_2.uses = { version = "version" }
-
-_bump_1 = "poetry version patch"
-_check_formatting = "poetry run ruff format . --diff"
-_lint = "poetry run ruff check ."
-_format = "poetry run ruff format ."
-_lint_fix = "poetry run ruff check . --fix"
+[tool.mypy]
+exclude = [
+  "langchain_cli/integration_template",
+  "langchain_cli/package_template",
+]
 
 [build-system]
 requires = ["poetry-core"]

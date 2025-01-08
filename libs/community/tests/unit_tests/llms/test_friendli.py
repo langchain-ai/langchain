@@ -114,14 +114,14 @@ async def test_friendli_ainvoke(
 @pytest.mark.requires("friendli")
 def test_friendli_stream(mock_friendli_client: Mock, friendli_llm: Friendli) -> None:
     """Test stream with friendli."""
+    mock_choice_0 = Mock()
+    mock_choice_0.text = "Hello "
+    mock_choice_1 = Mock()
+    mock_choice_1.text = "langchain"
     mock_chunk_0 = Mock()
-    mock_chunk_0.event = "token_sampled"
-    mock_chunk_0.text = "Hello "
-    mock_chunk_0.token = 0
+    mock_chunk_0.choices = [mock_choice_0]
     mock_chunk_1 = Mock()
-    mock_chunk_1.event = "token_sampled"
-    mock_chunk_1.text = "Friendli"
-    mock_chunk_1.token = 1
+    mock_chunk_1.choices = [mock_choice_1]
     mock_stream = MagicMock()
     mock_chunks = [mock_chunk_0, mock_chunk_1]
     mock_stream.__iter__.return_value = mock_chunks
@@ -129,7 +129,7 @@ def test_friendli_stream(mock_friendli_client: Mock, friendli_llm: Friendli) -> 
     mock_friendli_client.completions.create.return_value = mock_stream
     stream = friendli_llm.stream("Hello langchain")
     for i, chunk in enumerate(stream):
-        assert chunk == mock_chunks[i].text
+        assert chunk == mock_chunks[i].choices[0].text
 
     mock_friendli_client.completions.create.assert_called_once_with(
         model=friendli_llm.model,
@@ -149,22 +149,22 @@ async def test_friendli_astream(
     mock_friendli_async_client: AsyncMock, friendli_llm: Friendli
 ) -> None:
     """Test async stream with friendli."""
+    mock_choice_0 = Mock()
+    mock_choice_0.text = "Hello "
+    mock_choice_1 = Mock()
+    mock_choice_1.text = "langchain"
     mock_chunk_0 = Mock()
-    mock_chunk_0.event = "token_sampled"
-    mock_chunk_0.text = "Hello "
-    mock_chunk_0.token = 0
+    mock_chunk_0.choices = [mock_choice_0]
     mock_chunk_1 = Mock()
-    mock_chunk_1.event = "token_sampled"
-    mock_chunk_1.text = "Friendli"
-    mock_chunk_1.token = 1
+    mock_chunk_1.choices = [mock_choice_1]
     mock_stream = AsyncMock()
     mock_chunks = [mock_chunk_0, mock_chunk_1]
-    mock_stream.__aiter__.return_value = mock_chunks
+    mock_stream.__aiter__.return_value = iter(mock_chunks)
 
     mock_friendli_async_client.completions.create.return_value = mock_stream
     stream = friendli_llm.astream("Hello langchain")
     async for i, chunk in aenumerate(stream):
-        assert chunk == mock_chunks[i].text
+        assert chunk == mock_chunks[i].choices[0].text
 
     mock_friendli_async_client.completions.create.assert_awaited_once_with(
         model=friendli_llm.model,

@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -44,10 +45,14 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         # TODO: Chroma can do batch querying,
         # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        (
+            Document(page_content=result[0], metadata=result[1] or {}, id=result[2]),
+            result[3],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
+            results["ids"][0],
             results["distances"][0],
         )
     ]
@@ -313,6 +318,9 @@ class Chroma(VectorStore):
                 client_settings.persist_directory = (
                     persist_directory or client_settings.persist_directory
                 )
+                client_settings.is_persistent = (
+                    client_settings.persist_directory is not None
+                )
 
                 _client_settings = client_settings
             elif persist_directory:
@@ -428,6 +436,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -513,6 +523,9 @@ class Chroma(VectorStore):
         """
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -748,7 +761,7 @@ class Chroma(VectorStore):
 
         The most similar documents will have the lowest relevance score. Default
         relevance score function is euclidean distance. Distance metric must be
-        provided in `collection_metadata` during initizalition of Chroma object.
+        provided in `collection_metadata` during initialization of Chroma object.
         Example: collection_metadata={"hnsw:space": "cosine"}. Available distance
         metrics are: 'cosine', 'l2' and 'ip'.
 
@@ -1024,6 +1037,38 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)  # type: ignore
 
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        """Get documents by their IDs.
+
+        The returned documents are expected to have the ID field set to the ID of the
+        document in the vector store.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            List of Documents.
+
+        .. versionadded:: 0.2.1
+        """
+        results = self.get(ids=list(ids))
+        return [
+            Document(page_content=doc, metadata=meta, id=doc_id)
+            for doc, meta, doc_id in zip(
+                results["documents"], results["metadatas"], results["ids"]
+            )
+        ]
+
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
 
@@ -1127,6 +1172,8 @@ class Chroma(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
             chroma_collection._client, "get_max_batch_size"
         ) or hasattr(  # for Chroma 0.5.1 and above
@@ -1185,6 +1232,8 @@ class Chroma(VectorStore):
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
+        if ids is None:
+            ids = [doc.id if doc.id else str(uuid.uuid4()) for doc in documents]
         return cls.from_texts(
             texts=texts,
             embedding=embedding,

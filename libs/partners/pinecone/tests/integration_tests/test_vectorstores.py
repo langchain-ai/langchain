@@ -8,7 +8,8 @@ import pinecone  # type: ignore
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings  # type: ignore[import-not-found]
-from pinecone import PodSpec
+from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
+from pinecone import ServerlessSpec
 from pytest_mock import MockerFixture  # type: ignore[import-not-found]
 
 from langchain_pinecone import PineconeVectorStore
@@ -20,52 +21,46 @@ DIMENSION = 1536  # dimension of the embeddings
 DEFAULT_SLEEP = 20
 
 
-class TestPinecone:
+class TestPinecone(VectorStoreIntegrationTests):
     index: "pinecone.Index"
+    pc: "pinecone.Pinecone"
 
     @classmethod
-    def setup_class(cls) -> None:
+    def setup_class(self) -> None:
         import pinecone
 
         client = pinecone.Pinecone(api_key=os.environ["PINECONE_API_KEY"])
         index_list = client.list_indexes()
-        for i in index_list:
-            if i["name"] == INDEX_NAME:
-                client.delete_index(INDEX_NAME)
-                break
-        if len(index_list) > 0:
-            time.sleep(DEFAULT_SLEEP)  # prevent race with creation
+        if INDEX_NAME in [
+            i["name"] for i in index_list
+        ]:  # change to list comprehension
+            client.delete_index(INDEX_NAME)
+            time.sleep(DEFAULT_SLEEP)  # prevent race with subsequent creation
         client.create_index(
             name=INDEX_NAME,
             dimension=DIMENSION,
             metric="cosine",
-            spec=PodSpec(environment="gcp-starter"),
+            spec=ServerlessSpec(cloud="aws", region="us-west-2"),
         )
 
-        cls.index = client.Index(INDEX_NAME)
-
-        # insure the index is empty
-        index_stats = cls.index.describe_index_stats()
-        assert index_stats["dimension"] == DIMENSION
-        if index_stats["namespaces"].get(NAMESPACE_NAME) is not None:
-            assert index_stats["namespaces"][NAMESPACE_NAME]["vector_count"] == 0
+        self.index = client.Index(INDEX_NAME)
+        self.pc = client
 
     @classmethod
-    def teardown_class(cls) -> None:
-        index_stats = cls.index.describe_index_stats()
-        for _namespace_name in index_stats["namespaces"].keys():
-            cls.index.delete(delete_all=True, namespace=_namespace_name)
+    def teardown_class(self) -> None:
+        self.pc.delete_index()
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the vectors in the index
         print("called")  # noqa: T201
-        try:
-            self.index.delete(delete_all=True, namespace=NAMESPACE_NAME)
-            time.sleep(DEFAULT_SLEEP)  # prevent race condition with previous step
-        except Exception:
-            # if namespace not found
-            pass
+        index_stats = self.index.describe_index_stats()
+        if index_stats["total_vector_count"] > 0:
+            try:
+                self.index.delete(delete_all=True, namespace=NAMESPACE_NAME)
+            except Exception:
+                # if namespace not found
+                pass
 
     @pytest.fixture
     def embedding_openai(self) -> OpenAIEmbeddings:

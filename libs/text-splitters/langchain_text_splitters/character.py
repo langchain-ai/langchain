@@ -115,17 +115,45 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         return final_chunks
 
     def split_text(self, text: str) -> List[str]:
+        """Split the input text into smaller chunks based on predefined separators.
+
+        Args:
+            text (str): The input text to be split.
+
+        Returns:
+            List[str]: A list of text chunks obtained after splitting.
+        """
         return self._split_text(text, self._separators)
 
     @classmethod
     def from_language(
         cls, language: Language, **kwargs: Any
     ) -> RecursiveCharacterTextSplitter:
+        """Return an instance of this class based on a specific language.
+
+        This method initializes the text splitter with language-specific separators.
+
+        Args:
+            language (Language): The language to configure the text splitter for.
+            **kwargs (Any): Additional keyword arguments to customize the splitter.
+
+        Returns:
+            RecursiveCharacterTextSplitter: An instance of the text splitter configured
+            for the specified language.
+        """
         separators = cls.get_separators_for_language(language)
         return cls(separators=separators, is_separator_regex=True, **kwargs)
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
+        """Retrieve a list of separators specific to the given language.
+
+        Args:
+            language (Language): The language for which to get the separators.
+
+        Returns:
+            List[str]: A list of separators appropriate for the specified language.
+        """
         if language == Language.C or language == Language.CPP:
             return [
                 # Split along class definitions

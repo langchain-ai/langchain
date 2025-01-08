@@ -32,6 +32,7 @@ from pydantic import Field, model_validator
 from langchain_community.utilities.requests import Requests
 
 logger = logging.getLogger(__name__)
+DEFAULT_INFERENCE_ENDPOINT = "/v1/completions"
 
 
 DEFAULT_TIME_OUT = 300
@@ -81,6 +82,9 @@ class BaseOCIModelDeployment(Serializable):
     max_retries: int = 3
     """Maximum number of retries to make when generating."""
 
+    default_headers: Optional[Dict[str, Any]] = None
+    """The headers to be added to the Model Deployment request."""
+
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
@@ -120,12 +124,12 @@ class BaseOCIModelDeployment(Serializable):
         Returns:
             Dict: A dictionary containing the appropriate headers for the request.
         """
+        headers = self.default_headers or {}
         if is_async:
             signer = self.auth["signer"]
             _req = requests.Request("POST", self.endpoint, json=body)
             req = _req.prepare()
             req = signer(req)
-            headers = {}
             for key, value in req.headers.items():
                 headers[key] = value
 
@@ -135,7 +139,7 @@ class BaseOCIModelDeployment(Serializable):
                 )
             return headers
 
-        return (
+        headers.update(
             {
                 "Content-Type": DEFAULT_CONTENT_TYPE_JSON,
                 "enable-streaming": "true",
@@ -146,6 +150,8 @@ class BaseOCIModelDeployment(Serializable):
                 "Content-Type": DEFAULT_CONTENT_TYPE_JSON,
             }
         )
+
+        return headers
 
     def completion_with_retry(
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
@@ -383,6 +389,10 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
                 model="odsc-llm",
                 streaming=True,
                 model_kwargs={"frequency_penalty": 1.0},
+                headers={
+                    "route": "/v1/completions",
+                    # other request headers ...
+                }
             )
             llm.invoke("tell me a joke.")
 
@@ -426,7 +436,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
     temperature: float = 0.2
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    k: int = -1
+    k: int = 50
     """Number of most likely tokens to consider at each step."""
 
     p: float = 0.75
@@ -470,6 +480,25 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         return {
             **{"endpoint": self.endpoint, "model_kwargs": _model_kwargs},
             **self._default_params,
+        }
+
+    def _headers(
+        self, is_async: Optional[bool] = False, body: Optional[dict] = None
+    ) -> Dict:
+        """Construct and return the headers for a request.
+
+        Args:
+            is_async (bool, optional): Indicates if the request is asynchronous.
+                Defaults to `False`.
+            body (optional): The request body to be included in the headers if
+                the request is asynchronous.
+
+        Returns:
+            Dict: A dictionary containing the appropriate headers for the request.
+        """
+        return {
+            "route": DEFAULT_INFERENCE_ENDPOINT,
+            **super()._headers(is_async=is_async, body=body),
         }
 
     def _generate(

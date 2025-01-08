@@ -31,6 +31,7 @@ from langchain_core.tools.base import (
 from langchain_core.tools.base import (
     InjectedToolArg as InjectedToolArg,
 )
+from langchain_core.tools.base import InjectedToolCallId as InjectedToolCallId
 from langchain_core.tools.base import SchemaAnnotationError as SchemaAnnotationError
 from langchain_core.tools.base import (
     ToolException as ToolException,

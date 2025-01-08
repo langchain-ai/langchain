@@ -17,7 +17,7 @@ These abstractions are designed to be as modular and simple as possible. Example
 
 The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the LangChain ecosystem.
 
-For full documentation see the [API reference](https://api.python.langchain.com/en/stable/core_api_reference.html).
+For full documentation see the [API reference](https://python.langchain.com/api_reference/core/index.html).
 
 ## 1️⃣ Core Interface: Runnables
 

@@ -30,6 +30,9 @@ IGNORED_PARTNERS = [
     # specifically in huggingface jobs
     # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
+    # prompty exhibiting issues with numpy for Python 3.13
+    # https://github.com/langchain-ai/langchain/actions/runs/12651104685/job/35251034969?pr=29065
+    "prompty",
 ]
 
 PY_312_MAX_PACKAGES = [
@@ -272,6 +275,9 @@ if __name__ == "__main__":
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
             # note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
+            dirs_to_run["test"].add("libs/standard-tests")
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
@@ -279,8 +285,9 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
-            # todo: add cli makefile
-            pass
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
+            
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
