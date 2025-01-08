@@ -1023,8 +1023,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if method == "function_calling" and strict is None:
-            strict = True
+        if method in ("json_schema", "function_calling") and strict is None:
+            strict = False
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
