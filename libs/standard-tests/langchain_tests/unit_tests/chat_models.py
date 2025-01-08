@@ -133,9 +133,9 @@ class ChatModelTests(BaseStandardTests):
         )
 
     @property
-    def structured_output_method(self) -> Optional[str]:
-        """If specified, override default for with_structured_output."""
-        return None
+    def structured_output_kwargs(self) -> dict:
+        """If specified, additional kwargs for with_structured_output."""
+        return {}
 
     @property
     def supports_json_mode(self) -> bool:
@@ -304,19 +304,18 @@ class ChatModelUnitTests(ChatModelTests):
             def has_structured_output(self) -> bool:
                 return True
 
-    .. dropdown:: structured_output_method
+    .. dropdown:: structured_output_kwargs
 
-        Optional string property that can be used to override the default ``method``
-        parameter for ``with_structured_output``. Useful for testing different
-        models.
+        Dict property that can be used to specify additional kwargs for
+        ``with_structured_output``. Useful for testing different models.
 
         Example:
 
         .. code-block:: python
 
             @property
-            def structured_output_method(self) -> Optional[str]:
-                return "function_calling"
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "function_calling"}
 
     .. dropdown:: supports_json_mode
 

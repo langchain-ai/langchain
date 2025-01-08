@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import Any, List, Optional, cast
+from typing import List, Optional, cast
 
 import httpx
 import pytest
@@ -191,19 +191,18 @@ class ChatModelIntegrationTests(ChatModelTests):
             def has_structured_output(self) -> bool:
                 return True
 
-    .. dropdown:: structured_output_method
+    .. dropdown:: structured_output_kwargs
 
-        Optional string property that can be used to override the default ``method``
-        parameter for ``with_structured_output``. Useful for testing different
-        models.
+        Dict property that can be used to specify additional kwargs for
+        ``with_structured_output``. Useful for testing different models.
 
         Example:
 
         .. code-block:: python
 
             @property
-            def structured_output_method(self) -> Optional[str]:
-                return "function_calling"
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "function_calling"}
 
     .. dropdown:: supports_json_mode
 
@@ -1140,13 +1139,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        kwargs: dict[str, Any] = {}
-        if self.structured_output_method:
-            kwargs["method"] = self.structured_output_method
-
         Joke = _get_joke_class()
         # Pydantic class
-        chat = model.with_structured_output(Joke, **kwargs)
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1154,7 +1149,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.model_json_schema(), **kwargs)
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1194,14 +1191,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        kwargs: dict[str, Any] = {}
-        if self.structured_output_method:
-            kwargs["method"] = self.structured_output_method
-
         Joke = _get_joke_class()
 
         # Pydantic class
-        chat = model.with_structured_output(Joke, **kwargs)
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = await chat.ainvoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1209,7 +1202,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.model_json_schema(), **kwargs)
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
         result = await chat.ainvoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1253,10 +1248,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        kwargs: dict[str, Any] = {}
-        if self.structured_output_method:
-            kwargs["method"] = self.structured_output_method
-
         class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
 
@@ -1264,7 +1255,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
-        chat = model.with_structured_output(Joke, **kwargs)
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1272,7 +1263,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema(), **kwargs)
+        chat = model.with_structured_output(
+            Joke.schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1313,10 +1306,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        kwargs = {}
-        if self.structured_output_method:
-            kwargs["method"] = self.structured_output_method
-
         class Joke(BaseModel):
             """Joke to tell user."""
 
@@ -1325,7 +1314,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 default=None, description="answer to resolve the joke"
             )
 
-        chat = model.with_structured_output(Joke, **kwargs)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)  # type: ignore[arg-type]
         setup_result = chat.invoke(
             "Give me the setup to a joke about cats, no punchline."
         )
