@@ -883,6 +883,13 @@ const FEATURE_TABLES = {
                 source: "Load PDF files using PDFMiner",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PDFMinerLoader.html"
+            },
+            {
+                name: "Upstage Document Parse Loader",
+                link: "upstage",
+                source: "Load PDF files using UpstageDocumentParseLoader",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/upstage/document_parse/langchain_upstage.document_parse.UpstageDocumentParseLoader.html"
             }
         ]
     },
