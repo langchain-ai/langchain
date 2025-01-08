@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.8.4"
+  POETRY_VERSION: "2.0.0"
 
 jobs:
   build:

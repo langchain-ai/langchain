@@ -13,7 +13,7 @@ on:
     - cron:  '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.8.4"
+  POETRY_VERSION: "2.0.0"
   DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
 
 jobs:
