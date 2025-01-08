@@ -1,7 +1,7 @@
 """Standard LangChain interface tests"""
 
 import os
-from typing import Type
+from typing import Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -54,6 +54,10 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
         }
+
+    @property
+    def structured_output_method(self) -> Optional[str]:
+        return "function_calling"
 
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
