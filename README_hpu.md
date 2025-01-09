@@ -34,15 +34,25 @@ Before you begin, ensure you have Docker installed and can run Docker containers
 
 3. Now, you are ready to run any scripts or tests for HuggingFace models on HPU. For example, you can start a training script or load models for inference on the Intel Gaudi (HPU) device.
 
-   ### Example:
+   ### Running HPU-Specific Tests
 
-   To run a sample script, use:
+   To run HPU-specific tests, use the following command:
 
    ```bash
-   poetry run pytest tests/integration_tests/test_llms_hpu.py
+   export RUN_HPU_TEST=1 && make hpu_tests
    ```
 
-   Replace `test_llms_hpu.py` with the actual script you'd like to execute, and make sure to configure your environment to use HPU during model execution.
+   This will set the `RUN_HPU_TEST` environment variable and run all tests that require HPU (those files ending with `_hpu.py`).
+
+   ### Example:
+
+   To run a specific test file that requires HPU, use:
+
+   ```bash
+   export RUN_HPU_TEST=1 && poetry run pytest tests/integration_tests/test_llms_hpu.py
+   ```
+
+   Replace `test_llms_hpu.py` with the actual script you'd like to execute, and ensure that the environment is configured to use HPU during model execution.
 
 ## Dependencies
 
