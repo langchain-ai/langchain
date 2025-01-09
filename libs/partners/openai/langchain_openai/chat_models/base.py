@@ -1266,13 +1266,13 @@ class BaseChatOpenAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
+                - "function_calling":
+                    Uses OpenAI's tool-calling (formerly called function calling)
+                    API: https://platform.openai.com/docs/guides/function-calling
                 - "json_schema":
                     Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
                     Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", "o1", and later
                     models.
-                - "function_calling":
-                    Uses OpenAI's tool-calling (formerly called function calling)
-                    API: https://platform.openai.com/docs/guides/function-calling
                 - "json_mode":
                     Uses OpenAI's JSON mode. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
@@ -1303,10 +1303,6 @@ class BaseChatOpenAI(BaseChatModel):
                     validated.
                 - None:
                     ``strict`` argument will not be passed to the model.
-
-                Defaults to False if ``method`` is ``"json_schema"`` or
-                ``"function_calling"``. Can only be non-null if ``method`` is
-                ``"json_schema"`` or ``"function_calling"``.
 
             kwargs: Additional keyword args aren't supported.
 
@@ -2041,7 +2037,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - "json_schema":
                     Uses OpenAI's Structured Output API:
                     https://platform.openai.com/docs/guides/structured-outputs
-                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
+                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", "o1", and later
                     models.
                 - "function_calling":
                     Uses OpenAI's tool-calling (formerly called function calling)
@@ -2077,9 +2073,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - None:
                     ``strict`` argument will not be passed to the model.
 
-                If ``method`` is "json_schema" or "function_calling" defaults to True.
-                If ``method`` is "json_mode" defaults to None. Can only be non-null
-                if ``method`` is "function_calling" or "json_schema".
+                Defaults to False if ``method`` is ``"json_schema"`` or
+                ``"function_calling"``. Can only be non-null if ``method`` is
+                ``"json_schema"`` or ``"function_calling"``.
 
             kwargs: Additional keyword args aren't supported.
 
