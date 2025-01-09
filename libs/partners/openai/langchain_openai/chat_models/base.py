@@ -1222,13 +1222,13 @@ class BaseChatOpenAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
+                - "json_schema":
+                    Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
+                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", "o1", and later
+                    models.
                 - "function_calling":
                     Uses OpenAI's tool-calling (formerly called function calling)
                     API: https://platform.openai.com/docs/guides/function-calling
-                - "json_schema":
-                    Uses OpenAI's Structured Output API: https://platform.openai.com/docs/guides/structured-outputs
-                    Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
-                    models.
                 - "json_mode":
                     Uses OpenAI's JSON mode. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
@@ -1260,9 +1260,9 @@ class BaseChatOpenAI(BaseChatModel):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
-                If ``method`` is "json_schema" defaults to True. If ``method`` is
-                "function_calling" or "json_mode" defaults to None. Can only be
-                non-null if ``method`` is "function_calling" or "json_schema".
+                Defaults to False if ``method`` is ``"json_schema"`` or
+                ``"function_calling"``. Can only be non-null if ``method`` is
+                ``"json_schema"`` or ``"function_calling"``.
 
             kwargs: Additional keyword args aren't supported.
 
@@ -1950,9 +1950,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Optional[
-            Literal["function_calling", "json_mode", "json_schema"]
-        ] = None,
+        method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
@@ -1997,9 +1995,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
                 - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
-            Defaults to ``"json_schema"``. If both ``method`` and ``strict`` are not
-            supplied, we default to ``"json_schema"`` with ``strict=False`` (see below).
-
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -2019,9 +2014,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 - None:
                     ``strict`` argument will not be passed to the model.
 
-                If ``method`` is not supplied, defaults to False.
-                If ``method`` is "json_schema", defaults to True.
-                If ``method`` is "function_calling" or "json_mode", defaults to None.
+                If ``method`` is "json_schema" or "function_calling" defaults to True.
+                If ``method`` is "json_mode" defaults to None. Can only be non-null
+                if ``method`` is "function_calling" or "json_schema".
 
             kwargs: Additional keyword args aren't supported.
 
@@ -2228,13 +2223,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if method is None:
-            method = "json_schema"
-            strict = False if strict is None else strict
-
-        if strict is None:
-            strict = True if method == "json_schema" else None
-
+        if method in ("json_schema", "function_calling") and strict is None:
+            strict = False
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
