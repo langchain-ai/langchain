@@ -321,3 +321,15 @@ packages:
   path: .
   repo: DappierAI/langchain-dappier
   downloads: 0
+- name: langchain-pull-md
+  path: .
+  repo: chigwell/langchain-pull-md
+  downloads: 0
+- name: langchain-kuzu
+  path: .
+  repo: kuzudb/langchain-kuzu
+  downloads: 0
+- name: langchain-docling
+  path: .
+  repo: DS4SD/docling-langchain
+  downloads: 0

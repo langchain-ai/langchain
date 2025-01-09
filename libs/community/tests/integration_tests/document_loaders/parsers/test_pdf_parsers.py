@@ -61,7 +61,7 @@ def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> 
     assert metadata["source"] == str(LAYOUT_PARSER_PAPER_PDF)
 
     if splits_by_page:
-        assert metadata["page"] == 0
+        assert int(metadata["page"]) == 0
 
 
 def _assert_with_duplicate_parser(parser: BaseBlobParser, dedupe: bool = False) -> None:
