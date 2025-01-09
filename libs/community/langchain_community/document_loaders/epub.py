@@ -45,6 +45,7 @@ class UnstructuredEPubLoader(UnstructuredFileLoader):
                 "multi", or "all". Default is "single".
             **unstructured_kwargs: Any kwargs to pass to the unstructured.
         """
+        file_path = str(file_path)
         validate_unstructured_version("0.5.4")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 

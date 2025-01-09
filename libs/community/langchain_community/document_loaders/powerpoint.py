@@ -47,6 +47,7 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
                 "multi", or "all". Default is "single".
             **unstructured_kwargs: Any kwargs to pass to the unstructured.
         """
+        file_path = str(file_path)
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
