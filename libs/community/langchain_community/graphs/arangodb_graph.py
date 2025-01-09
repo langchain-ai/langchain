@@ -86,7 +86,7 @@ class ArangoGraph:
             limit_amount = ceil(sample_ratio * col_size) or 1
 
             aql = f"""
-                FOR doc in {col_name}
+                FOR doc in `{col_name}`
                     LIMIT {limit_amount}
                     RETURN doc
             """
