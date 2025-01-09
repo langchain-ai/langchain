@@ -60,21 +60,37 @@ _PDF_FILTER_WITHOUT_LOSS = [
 
 logger = logging.getLogger(__name__)
 
-_format_image_str = "\n\n{image_text}\n\n"
-_join_images = "\n"
-_join_tables = "\n"
-_default_page_delimitor = "\n\f"
+_FORMAT_IMAGE_STR = "\n\n{image_text}\n\n"
+_JOIN_IMAGES = "\n"
+_JOIN_TABLES = "\n"
+_DEFAULT_PAGE_DELIMITOR = "\n\f"
 
+_STD_METADATA_KEYS={"source", "total_pages", "creationdate", "creator", "producer"}
 
-def purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+def _validate_metadata(metadata: dict[str, Any]) -> dict[str,Any]:
+    """Validates the presence of at least the following keys:
+    - source
+    - page (if mode='page')
+    - total_page
+    - creationdate
+    - creator
+    - producer
     """
-    Purge metadata from unwanted keys and normalize key names.
+    if not _STD_METADATA_KEYS.issubset(metadata.keys()):
+        raise ValueError("The PDF parser must valorize the standard metadata.")
+    if not isinstance(metadata.get("page",0), int):
+        raise ValueError("The PDF metadata page must be a integer.")
+    return metadata
+
+
+def _purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Purge metadata from unwanted keys and normalize key names.
 
     Args:
         metadata: The original metadata dictionary.
 
     Returns:
-        The cleaned and normalized metadata dictionary.
+        The cleaned and normalized the key format of metadata dictionary.
     """
     new_metadata: dict[str, Any] = {}
     map_key = {
@@ -95,7 +111,7 @@ def purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
             except ValueError:
                 new_metadata[k] = v
         elif k in map_key:
-            # Normliaze key with others PDF parser
+            # Normaliaze key with others PDF parser
             new_metadata[map_key[k]] = v
             new_metadata[k] = v
         elif isinstance(v, str):
@@ -105,53 +121,11 @@ def purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     return new_metadata
 
 
-_delim = ["\n\n\n", "\n\n"]  # To insert images or table in the middle of the page.
-
-
-def __merge_text_and_extras(
-    extras: list[str], text_from_page: str, recurs: bool
-) -> Optional[str]:
-    """
-    Insert extras such as image/table in a text between two paragraphs if possible.
-    Recursive version.
-
-    Args:
-        extras: List of extra content (images/tables) to insert.
-        text_from_page: The text content from the page.
-        recurs: Flag to indicate if the function should recurse.
-
-    Returns:
-        The merged text with extras inserted, or None if no insertion point is found.
-    """
-    if extras:
-        for delim in _delim:
-            pos = text_from_page.rfind(delim)
-            if pos != -1:
-                # search penultimate, to bypass an error in footer
-                previous_text = None
-                if recurs:
-                    previous_text = __merge_text_and_extras(
-                        extras, text_from_page[:pos], False
-                    )
-                if previous_text:
-                    all_text = previous_text + text_from_page[pos:]
-                else:
-                    all_extras = ""
-                    str_extras = "\n\n".join(filter(lambda x: x, extras))
-                    if str_extras:
-                        all_extras = delim + str_extras
-                    all_text = text_from_page[:pos] + all_extras + text_from_page[pos:]
-                break
-        else:
-            all_text = None
-    else:
-        all_text = text_from_page
-    return all_text
+_PARAGRAPH_DELIMITOR = ["\n\n\n", "\n\n"]  # To insert images or table in the middle of the page.
 
 
 def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
-    """
-    Insert extras such as image/table in a text between two paragraphs if possible,
+    """Insert extras such as image/table in a text between two paragraphs if possible,
     else at the end of the text.
 
     Args:
@@ -161,12 +135,42 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
     Returns:
         The merged text with extras inserted.
     """
-    all_text = __merge_text_and_extras(extras, text_from_page, True)
+
+    def _recurs_merge_text_and_extras(
+            extras: list[str], text_from_page: str, recurs: bool
+    ) -> Optional[str]:
+        if extras:
+            for delim in _PARAGRAPH_DELIMITOR:
+                pos = text_from_page.rfind(delim)
+                if pos != -1:
+                    # search penultimate, to bypass an error in footer
+                    previous_text = None
+                    if recurs:
+                        previous_text = _recurs_merge_text_and_extras(
+                            extras, text_from_page[:pos], False
+                        )
+                    if previous_text:
+                        all_text = previous_text + text_from_page[pos:]
+                    else:
+                        all_extras = ""
+                        str_extras = "\n\n".join(filter(lambda x: x, extras))
+                        if str_extras:
+                            all_extras = delim + str_extras
+                        all_text = text_from_page[:pos] + all_extras + text_from_page[
+                                                                       pos:]
+                    break
+            else:
+                all_text = None
+        else:
+            all_text = text_from_page
+        return all_text
+
+    all_text = _recurs_merge_text_and_extras(extras, text_from_page, True)
     if not all_text:
         all_extras = ""
         str_extras = "\n\n".join(filter(lambda x: x, extras))
         if str_extras:
-            all_extras = _delim[-1] + str_extras
+            all_extras = _PARAGRAPH_DELIMITOR[-1] + str_extras
         all_text = text_from_page + all_extras
 
     return all_text
@@ -212,8 +216,7 @@ def convert_images_to_text_with_rapidocr(
     *,
     format: Literal["text", "markdown", "html"] = "text",
 ) -> CONVERT_IMAGE_TO_TEXT:
-    """
-    Return a function to convert images to text using RapidOCR.
+    """Return a function to convert images to text using RapidOCR.
 
     Note: RapidOCR is compatible english and chinese languages.
 
@@ -258,8 +261,7 @@ def convert_images_to_text_with_tesseract(
     format: Literal["text", "markdown", "html"] = "text",
     langs: list[str] = ["eng"],
 ) -> CONVERT_IMAGE_TO_TEXT:
-    """
-    Return a function to convert images to text using Tesseract.
+    """Return a function to convert images to text using Tesseract.
     Args:
         format: Format of the output text. Either "text" or "markdown".
         langs: Array of langs for Tesseract
@@ -291,22 +293,20 @@ def convert_images_to_text_with_tesseract(
     return _convert_images_to_text
 
 
-_prompt_images_to_description = PromptTemplate.from_template(
-    """You are an assistant tasked with summarizing images for retrieval. \
+_prompt_images_to_description = """You are an assistant tasked with summarizing \
+    images for retrieval. \
     These summaries will be embedded and used to retrieve the raw image. \
     Give a concise summary of the image that is well optimized for retrieval \
     and extract all the text from the image."""
-)
 
 
 def convert_images_to_description(
     model: BaseChatModel,
     *,
-    prompt: BasePromptTemplate = _prompt_images_to_description,
+    prompt: str = _prompt_images_to_description,
     format: Literal["text", "markdown", "html"] = "markdown",
 ) -> CONVERT_IMAGE_TO_TEXT:
-    """
-    Return a function to convert images to text using a multimodal model.
+    """Return a function to convert images to text using a multimodal model.
 
     Args:
         model: Multimodal model to use to describe the images.
@@ -326,16 +326,15 @@ def convert_images_to_description(
             raise ImportError(
                 "`PIL` package not found, please install it with `pip install pillow`"
             )
-        chat = model
         for image in images:
             image_bytes = io.BytesIO()
             Image.fromarray(image).save(image_bytes, format="PNG")
             img_base64 = base64.b64encode(image_bytes.getvalue()).decode("utf-8")
-            msg = chat.invoke(
+            msg = model.invoke(
                 [
                     HumanMessage(
                         content=[
-                            {"type": "text", "text": prompt.format()},
+                            {"type": "text", "text": prompt},
                             {
                                 "type": "image_url",
                                 "image_url": {
@@ -416,8 +415,7 @@ class PyPDFParser(BaseBlobParser):
             )
 
         def _extract_text_from_page(page: pypdf.PageObject) -> str:
-            """
-            Extract text from image given the version of pypdf.
+            """Extract text from image given the version of pypdf.
             """
             if pypdf.__version__.startswith("3"):
                 return page.extract_text()
@@ -646,7 +644,7 @@ class PyMuPDFParser(ImagesPdfParser):
         *,
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
-        pages_delimitor: str = _default_page_delimitor,
+        pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
         images_to_text: CONVERT_IMAGE_TO_TEXT = None,
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
@@ -693,8 +691,7 @@ class PyMuPDFParser(ImagesPdfParser):
         self.extract_tables_settings = extract_tables_settings
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
-        """
-        Lazily parse the blob.
+        """Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
         In this way, a paragraph can be continued on the next page.
 
@@ -719,6 +716,7 @@ class PyMuPDFParser(ImagesPdfParser):
                 )
 
                 self.extract_tables_settings = {
+                    # See https://pymupdf.readthedocs.io/en/latest/page.html#Page.find_tables
                     "clip": None,
                     "vertical_strategy": "lines",
                     "horizontal_strategy": "lines",
@@ -761,9 +759,11 @@ class PyMuPDFParser(ImagesPdfParser):
                 for page in doc:
                     all_text = self._get_page_content(doc, page, blob).strip()
                     if self.mode == "page":
+
                         yield Document(
                             page_content=all_text,
-                            metadata=(doc_metadata | {"page": page.number}),
+                            metadata=_validate_metadata(doc_metadata |
+                                                        {"page": page.number}),
                         )
                     else:
                         full_content.append(all_text)
@@ -771,14 +771,13 @@ class PyMuPDFParser(ImagesPdfParser):
                 if self.mode == "single":
                     yield Document(
                         page_content=self.pages_delimitor.join(full_content),
-                        metadata=doc_metadata,
+                        metadata=_validate_metadata(doc_metadata),
                     )
 
     def _get_page_content(
         self, doc: pymupdf.Document, page: pymupdf.Page, blob: Blob
     ) -> str:
-        """
-        Get the text of the page using PyMuPDF and RapidOCR and issue a warning
+        """Get the text of the page using PyMuPDF and RapidOCR and issue a warning
         if it is empty.
 
         Args:
@@ -819,7 +818,7 @@ class PyMuPDFParser(ImagesPdfParser):
         Returns:
             dict: The extracted metadata.
         """
-        return purge_metadata(
+        return _purge_metadata(
             dict(
                 {
                     "source": blob.source,  # type: ignore[attr-defined]
@@ -860,12 +859,12 @@ class PyMuPDFParser(ImagesPdfParser):
                     pix.height, pix.width, -1
                 )
             )
-            _format_image_str.format(
-                image_text=_join_images.join(self.convert_image_to_text(images))
+            _FORMAT_IMAGE_STR.format(
+                image_text=_JOIN_IMAGES.join(self.convert_image_to_text(images))
             )
 
-        return _format_image_str.format(
-            image_text=_join_images.join(self.convert_image_to_text(images))
+        return _FORMAT_IMAGE_STR.format(
+            image_text=_JOIN_IMAGES.join(self.convert_image_to_text(images))
         )
 
     def _extract_tables_from_page(self, page: pymupdf.Page) -> str:
@@ -886,9 +885,9 @@ class PyMuPDFParser(ImagesPdfParser):
         )
         if tables_list:
             if self.extract_tables == "markdown":
-                return _join_tables.join([table.to_markdown() for table in tables_list])
+                return _JOIN_TABLES.join([table.to_markdown() for table in tables_list])
             elif self.extract_tables == "html":
-                return _join_tables.join(
+                return _JOIN_TABLES.join(
                     [
                         table.to_pandas().to_html(
                             header=False,
@@ -899,7 +898,7 @@ class PyMuPDFParser(ImagesPdfParser):
                     ]
                 )
             elif self.extract_tables == "csv":
-                return _join_tables.join(
+                return _JOIN_TABLES.join(
                     [
                         table.to_pandas().to_csv(
                             header=False,

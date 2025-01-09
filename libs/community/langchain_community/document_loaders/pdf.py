@@ -37,7 +37,7 @@ from langchain_community.document_loaders.parsers.pdf import (
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
-    _default_page_delimitor,
+    _DEFAULT_PAGE_DELIMITOR,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
@@ -167,8 +167,7 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """
-    PyPDFLoader document loader integration
+    """PyPDFLoader document loader integration
 
     Setup:
         Install ``langchain-community``.
@@ -476,7 +475,7 @@ class PyMuPDFLoader(BasePDFLoader):
         *,
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
-        pages_delimitor: str = _default_page_delimitor,
+        pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
         extract_images: bool = False,
         images_to_text: CONVERT_IMAGE_TO_TEXT = None,
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
@@ -527,8 +526,7 @@ class PyMuPDFLoader(BasePDFLoader):
         )
 
     def lazy_load(self) -> Iterator[Document]:
-        """
-        Lazy load given path as pages.
+        """Lazy load given path as pages or single document (see `mode`).
         Insert image, if possible, between two paragraphs.
         In this way, a paragraph can be continued on the next page.
         """
@@ -883,8 +881,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 
 
 class DedocPDFLoader(DedocBaseLoader):
-    """
-    DedocPDFLoader document loader integration to load PDF files using `dedoc`.
+    """DedocPDFLoader document loader integration to load PDF files using `dedoc`.
     The file loader can automatically detect the correctness of a textual layer in the
         PDF document.
     Note that `__init__` method supports parameters that differ from ones of
@@ -990,8 +987,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         model: str = "prebuilt-document",
         headers: Optional[dict] = None,
     ) -> None:
-        """
-        Initialize the object for file processing with Azure Document Intelligence
+        """Initialize the object for file processing with Azure Document Intelligence
         (formerly Form Recognizer).
 
         This constructor initializes a DocumentIntelligenceParser object to be used
@@ -1033,8 +1029,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
 
 
 class ZeroxPDFLoader(BasePDFLoader):
-    """
-    Document loader utilizing Zerox library:
+    """Document loader utilizing Zerox library:
     https://github.com/getomni-ai/zerox
 
     Zerox converts PDF document to serties of images (page-wise) and
@@ -1056,8 +1051,7 @@ class ZeroxPDFLoader(BasePDFLoader):
         **zerox_kwargs: Any,
     ) -> None:
         super().__init__(file_path=file_path)
-        """
-        Initialize the parser with arguments to be passed to the zerox function.
+        """Initialize the parser with arguments to be passed to the zerox function.
         Make sure to set necessary environmnet variables such as API key, endpoint, etc.
         Check zerox documentation for list of necessary environment variables for
         any given model.
@@ -1079,8 +1073,7 @@ class ZeroxPDFLoader(BasePDFLoader):
         self.model = model
 
     def lazy_load(self) -> Iterator[Document]:
-        """
-        Loads documnts from pdf utilizing zerox library:
+        """Loads documnts from pdf utilizing zerox library:
         https://github.com/getomni-ai/zerox
 
         Returns:

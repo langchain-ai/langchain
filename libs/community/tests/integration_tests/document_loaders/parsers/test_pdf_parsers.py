@@ -3,7 +3,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Type
 
 import numpy as np
 import pytest
@@ -15,7 +15,7 @@ from langchain_community.document_loaders.parsers import (
     PDFMinerParser,
     PDFPlumberParser,
     PyPDFium2Parser,
-    PyPDFParser,
+    PyPDFParser, PyMuPDFParser,
 )
 
 # PDFs to test parsers on.
@@ -148,7 +148,7 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
         ("PyMuPDFParser", {}),
     ],
 )
-def test_standard_parameters(
+def test_mode_and_extract_images_variations(
     parser_factory: str, params: dict, mode: str, extract_images: bool
 ) -> None:
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
@@ -218,13 +218,13 @@ def test_standard_parameters(
     ["markdown", "html", "csv", None],
 )
 @pytest.mark.parametrize(
-    "parser_factory,params",
+    "parser_class,params",
     [
-        ("PyMuPDFParser", {}),
+        (PyMuPDFParser, {}),
     ],
 )
 def test_parser_with_table(
-    parser_factory: str,
+    parser_class: Type,
     params: dict,
     mode: str,
     extract_tables: str,
@@ -270,13 +270,11 @@ def test_parser_with_table(
         else:
             assert not len(tables)
 
-    os.environ["SCARF_NO_ANALYTICS"] = "false"
-    os.environ["DO_NOT_TRACK"] = "true"
+
 
     def images_to_text(images: list[np.ndarray]) -> Iterator[str]:
         return iter(["<!-- image -->"] * len(images))
 
-    parser_class = getattr(pdf_parsers, parser_factory)
     parser = parser_class(
         mode=mode,
         extract_tables=extract_tables,
