@@ -21,6 +21,7 @@ from langchain_core.utils.function_calling import tool_example_to_messages
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
+from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -190,6 +191,19 @@ class ChatModelIntegrationTests(ChatModelTests):
             @property
             def has_structured_output(self) -> bool:
                 return True
+
+    .. dropdown:: structured_output_kwargs
+
+        Dict property that can be used to specify additional kwargs for
+        ``with_structured_output``. Useful for testing different models.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "function_calling"}
 
     .. dropdown:: supports_json_mode
 
@@ -1128,10 +1142,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Joke = _get_joke_class()
         # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1139,7 +1150,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1182,10 +1195,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         Joke = _get_joke_class()
 
         # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = await chat.ainvoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1193,7 +1203,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
         result = await chat.ainvoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1244,7 +1256,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
-        chat = model.with_structured_output(Joke)
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1252,7 +1264,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
+        chat = model.with_structured_output(
+            Joke.schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1293,6 +1307,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
+        # Pydantic
         class Joke(BaseModel):
             """Joke to tell user."""
 
@@ -1301,7 +1316,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 default=None, description="answer to resolve the joke"
             )
 
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         setup_result = chat.invoke(
             "Give me the setup to a joke about cats, no punchline."
         )
@@ -1309,6 +1324,24 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
         assert isinstance(joke_result, Joke)
+
+        # Schema
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+
+        # TypedDict
+        class JokeDict(TypedDict):
+            """Joke to tell user."""
+
+            setup: Annotated[str, ..., "question to set up a joke"]
+            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+
+        chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
         """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_
