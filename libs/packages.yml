@@ -329,3 +329,7 @@ packages:
   path: .
   repo: kuzudb/langchain-kuzu
   downloads: 0
+- name: langchain-pipeshift
+  path: .
+  repo: 
+  downloads: 107
