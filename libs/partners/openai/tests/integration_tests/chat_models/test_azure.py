@@ -13,6 +13,7 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from pydantic import BaseModel
 
 from langchain_openai import AzureChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -262,3 +263,37 @@ async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+class Foo(BaseModel):
+    response: str
+
+
+def test_stream_response_format(llm: AzureChatOpenAI) -> None:
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    for chunk in llm.stream("how are ya", response_format=Foo):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
+
+
+async def test_astream_response_format(llm: AzureChatOpenAI) -> None:
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    async for chunk in llm.astream("how are ya", response_format=Foo):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]

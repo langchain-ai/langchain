@@ -1092,14 +1092,37 @@ class Foo(BaseModel):
 
 
 def test_stream_response_format() -> None:
-    list(ChatOpenAI(model="gpt-4o-mini").stream("how are ya", response_format=Foo))
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    for chunk in ChatOpenAI(model="gpt-4o-mini").stream(
+        "how are ya", response_format=Foo
+    ):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
 
 
 async def test_astream_response_format() -> None:
-    async for _ in ChatOpenAI(model="gpt-4o-mini").astream(
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    async for chunk in ChatOpenAI(model="gpt-4o-mini").astream(
         "how are ya", response_format=Foo
     ):
-        pass
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
 
 
 @pytest.mark.parametrize("use_max_completion_tokens", [True, False])
