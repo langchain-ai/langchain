@@ -388,6 +388,21 @@ def _update_token_usage(
         return new_usage
 
 
+def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
+    if (
+        "'response_format' of type 'json_schema' is not supported with " "this model"
+    ) in e.message:
+        raise ValueError(
+            "This model does not support OpenAI's structured output "
+            "feature, which is the default method for "
+            "`with_structured_output` as of langchain-openai==0.3. To use "
+            "`with_structured_output` with this model, specify "
+            '`method="function_calling"`.'
+        )
+    else:
+        raise
+
+
 class _FunctionCall(TypedDict):
     name: str
 
@@ -711,7 +726,10 @@ class BaseChatOpenAI(BaseChatModel):
                     "specified."
                 )
             payload.pop("stream")
-            response = self.root_client.beta.chat.completions.parse(**payload)
+            try:
+                response = self.root_client.beta.chat.completions.parse(**payload)
+            except openai.BadRequestError as e:
+                _handle_openai_bad_request(e)
         elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -845,9 +863,12 @@ class BaseChatOpenAI(BaseChatModel):
                     "specified."
                 )
             payload.pop("stream")
-            response = await self.root_async_client.beta.chat.completions.parse(
-                **payload
-            )
+            try:
+                response = await self.root_async_client.beta.chat.completions.parse(
+                    **payload
+                )
+            except openai.BadRequestError as e:
+                _handle_openai_bad_request(e)
         elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()

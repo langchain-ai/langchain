@@ -630,19 +630,25 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
-@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1"])
-def test_openai_structured_output(model: str) -> None:
+def test_openai_structured_output() -> None:
     class MyModel(BaseModel):
         """A Person"""
 
         name: str
         age: int
 
-    llm = ChatOpenAI(model=model).with_structured_output(MyModel)
-    result = llm.invoke("I'm a 27 year old named Erick")
-    assert isinstance(result, MyModel)
-    assert result.name == "Erick"
-    assert result.age == 27
+    for model in ["gpt-4o-mini", "o1"]:
+        llm = ChatOpenAI(model=model).with_structured_output(MyModel)
+        result = llm.invoke("I'm a 27 year old named Erick")
+        assert isinstance(result, MyModel)
+        assert result.name == "Erick"
+        assert result.age == 27
+
+    # Test legacy models raise error
+    llm = ChatOpenAI(model="gpt-4").with_structured_output(MyModel)
+    with pytest.raises(ValueError) as exception_info:
+        _ = llm.invoke("I'm a 27 year old named Erick")
+    assert "with_structured_output" in str(exception_info.value)
 
 
 def test_openai_proxy() -> None:
