@@ -808,6 +808,13 @@ const FEATURE_TABLES = {
                 source: "API service that can be deployed locally, hosted version has free credits.",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Uses Docling to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
             }
         ]
     },
@@ -890,6 +897,13 @@ const FEATURE_TABLES = {
                 source: "Load PDF files using UpstageDocumentParseLoader",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/upstage/document_parse/langchain_upstage.document_parse.UpstageDocumentParseLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Load PDF files using Docling",
+                api: "Package",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
             }
         ]
     },
@@ -931,6 +945,12 @@ const FEATURE_TABLES = {
                 link: "bshtml",
                 source: "HTML files",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
+            },
+            {
+                name: "DoclingLoader",
+                link: "../../integrations/document_loaders/docling",
+                source: "Various file types (see https://ds4sd.github.io/docling/)",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
             },
         ]
     },
