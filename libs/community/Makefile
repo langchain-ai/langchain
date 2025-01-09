@@ -1,10 +1,11 @@
-.PHONY: all format lint test tests test_watch integration_tests hpu_tests skip_hpu_tests docker_tests help extended_tests
+.PHONY: all format lint test tests test_watch integration_tests hpu_tests docker_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+integration_tests: TEST_FILE = tests/integration_tests/
 HPU_TEST_FILES=$(shell find tests -name '*_hpu.py')
 
 # Run unit tests and generate a coverage report.
@@ -23,6 +24,9 @@ integration_tests:
 
 test_watch:
 	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv tests/unit_tests
+
+check_imports: $(shell find langchain_community -name '*.py')
+	poetry run python ./scripts/check_imports.py $^
 
 # Run HPU-specific tests only if RUN_HPU_TEST is set.
 hpu_tests:
