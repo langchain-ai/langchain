@@ -390,7 +390,7 @@ def _update_token_usage(
 
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
-        "'response_format' of type 'json_schema' is not supported with " "this model"
+        "'response_format' of type 'json_schema' is not supported with this model"
     ) in e.message:
         raise ValueError(
             "This model does not support OpenAI's structured output "
