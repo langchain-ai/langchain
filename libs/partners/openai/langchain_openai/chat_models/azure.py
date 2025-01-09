@@ -746,7 +746,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
+        method: Optional[
+            Literal["function_calling", "json_mode", "json_schema"]
+        ] = None,
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
@@ -791,6 +793,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
                 - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
+            Defaults to ``"json_schema"``. If both ``method`` and ``strict`` are not
+            supplied, we default to ``"json_schema"`` with ``strict=False`` (see below).
+
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -810,9 +815,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
-                If ``method`` is "json_schema" or "function_calling" defaults to True.
-                If ``method`` is "json_mode" defaults to None. Can only be non-null
-                if ``method`` is "function_calling" or "json_schema".
+                If ``method`` is not supplied, defaults to False.
+                If ``method`` is "json_schema", defaults to True.
+                If ``method`` is "function_calling" or "json_mode", defaults to None.
 
             kwargs: Additional keyword args aren't supported.
 
@@ -1025,8 +1030,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if method in ("json_schema", "function_calling") and strict is None:
-            strict = False
+        if method is None:
+            method = "json_schema"
+            strict = False if strict is None else strict
+
+        if strict is None:
+            strict = True if method == "json_schema" else None
+
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )

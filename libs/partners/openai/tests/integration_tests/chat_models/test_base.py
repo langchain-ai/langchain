@@ -821,11 +821,13 @@ def test_tool_calling_strict() -> None:
 
 
 @pytest.mark.parametrize(
-    ("model", "method"),
-    [("gpt-4o", "function_calling"), ("gpt-4o-2024-08-06", "json_schema")],
+    ("model", "method", "strict"),
+    [("gpt-4o", "function_calling", True), ("gpt-4o-2024-08-06", "json_schema", None)],
 )
 def test_structured_output_strict(
-    model: str, method: Literal["function_calling", "json_schema"]
+    model: str,
+    method: Literal["function_calling", "json_schema"],
+    strict: Optional[bool],
 ) -> None:
     """Test to verify structured output with strict=True."""
 
@@ -841,7 +843,7 @@ def test_structured_output_strict(
         punchline: str = FieldProper(description="answer to resolve the joke")
 
     # Pydantic class
-    chat = llm.with_structured_output(Joke, method=method, strict=True)
+    chat = llm.with_structured_output(Joke, method=method, strict=strict)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, Joke)
 
@@ -850,7 +852,7 @@ def test_structured_output_strict(
 
     # Schema
     chat = llm.with_structured_output(
-        Joke.model_json_schema(), method=method, strict=True
+        Joke.model_json_schema(), method=method, strict=strict
     )
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
@@ -871,14 +873,14 @@ def test_structured_output_strict(
             default="foo", description="answer to resolve the joke"
         )
 
-    chat = llm.with_structured_output(InvalidJoke, method=method, strict=True)
+    chat = llm.with_structured_output(InvalidJoke, method=method, strict=strict)
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
     with pytest.raises(openai.BadRequestError):
         next(chat.stream("Tell me a joke about cats."))
 
     chat = llm.with_structured_output(
-        InvalidJoke.model_json_schema(), method=method, strict=True
+        InvalidJoke.model_json_schema(), method=method, strict=strict
     )
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
@@ -886,9 +888,11 @@ def test_structured_output_strict(
         next(chat.stream("Tell me a joke about cats."))
 
 
-@pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
+@pytest.mark.parametrize(
+    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
+)
 def test_nested_structured_output_strict(
-    model: str, method: Literal["json_schema"]
+    model: str, method: Literal["json_schema"], strict: Optional[bool]
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
 
@@ -908,7 +912,7 @@ def test_nested_structured_output_strict(
         self_evaluation: SelfEvaluation
 
     # Schema
-    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=True)
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
     assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
