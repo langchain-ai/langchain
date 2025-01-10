@@ -66,6 +66,7 @@ praw>=7.7.1,<8
 premai>=0.3.25,<0.4
 psychicapi>=0.8.0,<0.9
 pydantic>=2.7.4,<3
+pytesseract>=0.3.13
 py-trello>=0.19.0,<0.20
 pyjwt>=2.8.0,<3
 pymupdf>=1.22.3,<2

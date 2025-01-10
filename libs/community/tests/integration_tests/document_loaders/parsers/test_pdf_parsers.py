@@ -2,10 +2,9 @@
 
 import re
 from pathlib import Path
+from typing import Iterator
 
-import numpy as np
 import pytest
-from typing import Iterator, Type
 
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
@@ -14,7 +13,7 @@ from langchain_community.document_loaders.parsers import (
     PDFMinerParser,
     PDFPlumberParser,
     PyPDFium2Parser,
-    PyPDFParser, PyMuPDFParser,
+    PyPDFParser,
 )
 
 # PDFs to test parsers on.
@@ -135,13 +134,11 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
 
 @pytest.mark.parametrize(
     "mode",
-    # ["single", "page"],
-    ["single"],  # FIXME
+    ["single", "page"],
 )
 @pytest.mark.parametrize(
     "extract_images",
-    # [True, False],
-    [True],  # FIXME
+    [True, False],
 )
 @pytest.mark.parametrize(
     "parser_factory,params",
@@ -152,8 +149,15 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
 def test_mode_and_extract_images_variations(
     parser_factory: str, params: dict, mode: str, extract_images: bool
 ) -> None:
+    """Apply the same test for all *standard* PDF parsers.
+
+    - Try with mode `single` and `page`
+    - Try with extract_images `true` and `false`
+    """
+    from PIL.Image import Image
+
     from langchain_community.document_loaders.parsers.images import ImageBlobParser
-    from PIL import Image
+
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
         """Standard tests to verify that the given parser works.
 
@@ -219,17 +223,21 @@ def test_mode_and_extract_images_variations(
     ["markdown", "html", "csv", None],
 )
 @pytest.mark.parametrize(
-    "parser_class,params",
+    "parser_factory,params",
     [
-        (PyMuPDFParser, {}),
+        ("PyMuPDFParser", {}),
     ],
 )
 def test_parser_with_table(
-    parser_class: Type,
+    parser_factory: str,
     params: dict,
     mode: str,
     extract_tables: str,
 ) -> None:
+    from PIL.Image import Image
+
+    from langchain_community.document_loaders.parsers.images import ImageBlobParser
+
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
         """Standard tests to verify that the given parser works.
 
@@ -271,15 +279,16 @@ def test_parser_with_table(
         else:
             assert not len(tables)
 
+    class EmptyImageBlobParser(ImageBlobParser):
+        def _analyze_image(self, img: Image) -> str:
+            return "![image](.)"
 
-
-    def images_to_text(images: list[np.ndarray]) -> Iterator[str]:
-        return iter(["<!-- image -->"] * len(images))
+    parser_class = getattr(pdf_parsers, parser_factory)
 
     parser = parser_class(
         mode=mode,
         extract_tables=extract_tables,
-        # images_to_text=images_to_text, # FIXME
+        images_parser=EmptyImageBlobParser(),
         **params,
     )
     _std_assert_with_parser(parser)

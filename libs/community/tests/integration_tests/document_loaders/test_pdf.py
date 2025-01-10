@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Sequence, Union, Type
+from typing import Sequence, Union
 
 import pytest
 
@@ -209,7 +209,7 @@ def test_amazontextract_loader_failures() -> None:
 
 
 @pytest.mark.parametrize(
-    "loader_class,params",
+    "parser_factory,params",
     [
         ("PyMuPDFLoader", {}),
     ],

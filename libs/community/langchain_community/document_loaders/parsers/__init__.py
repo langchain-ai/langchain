@@ -17,6 +17,11 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.parsers.html import (
         BS4HTMLParser,
     )
+    from langchain_community.document_loaders.parsers.images import (
+        MultimodalBlobParser,
+        RapidOCRBlobParser,
+        TesseractBlobParser,
+    )
     from langchain_community.document_loaders.parsers.language import (
         LanguageParser,
     )
@@ -29,11 +34,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.parsers.vsdx import (
         VsdxParser,
-    )
-    from langchain_community.document_loaders.parsers.images import (
-        MultimodalBlobParser,
-        RapidOCRBlobParser,
-        TesseractBlobParser,
     )
 
 

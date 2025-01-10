@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import html
 import io
 import logging
 import threading
 import warnings
 from datetime import datetime
-from urllib.parse import urlparse
-
-import numpy as np
 from typing import (
     TYPE_CHECKING,
     Any,
+    Iterable,
     Iterator,
     Literal,
     Mapping,
@@ -21,12 +18,17 @@ from typing import (
     Sequence,
     Union,
 )
+from urllib.parse import urlparse
+
+import numpy as np
+from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers.images import ImageBlobParser, \
-    RapidOCRBlobParser
-from langchain_core.documents import Document
+from langchain_community.document_loaders.parsers.images import (
+    ImageBlobParser,
+    RapidOCRBlobParser,
+)
 
 if TYPE_CHECKING:
     import pdfminer
@@ -53,6 +55,38 @@ _PDF_FILTER_WITHOUT_LOSS = [
     "JBIG2Decode",
 ]
 
+
+def extract_from_images_with_rapidocr(
+    images: Sequence[Union[Iterable[np.ndarray], bytes]],
+) -> str:
+    """Extract text from images with RapidOCR.
+
+    Args:
+        images: Images to extract text from.
+
+    Returns:
+        Text extracted from images.
+
+    Raises:
+        ImportError: If `rapidocr-onnxruntime` package is not installed.
+    """
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+    except ImportError:
+        raise ImportError(
+            "`rapidocr-onnxruntime` package not found, please install it with "
+            "`pip install rapidocr-onnxruntime`"
+        )
+    ocr = RapidOCR()
+    text = ""
+    for img in images:
+        result, _ = ocr(img)
+        if result:
+            result = [text[1] for text in result]
+            text += "\n".join(result)
+    return text
+
+
 logger = logging.getLogger(__name__)
 
 _FORMAT_IMAGE_STR = "\n\n{image_text}\n\n"
@@ -60,9 +94,10 @@ _JOIN_IMAGES = "\n"
 _JOIN_TABLES = "\n"
 _DEFAULT_PAGE_DELIMITOR = "\n\f"
 
-_STD_METADATA_KEYS={"source", "total_pages", "creationdate", "creator", "producer"}
+_STD_METADATA_KEYS = {"source", "total_pages", "creationdate", "creator", "producer"}
 
-def _validate_metadata(metadata: dict[str, Any]) -> dict[str,Any]:
+
+def _validate_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     """Validates the presence of at least the following keys:
     - source
     - page (if mode='page')
@@ -73,7 +108,7 @@ def _validate_metadata(metadata: dict[str, Any]) -> dict[str,Any]:
     """
     if not _STD_METADATA_KEYS.issubset(metadata.keys()):
         raise ValueError("The PDF parser must valorize the standard metadata.")
-    if not isinstance(metadata.get("page",0), int):
+    if not isinstance(metadata.get("page", 0), int):
         raise ValueError("The PDF metadata page must be a integer.")
     return metadata
 
@@ -116,7 +151,10 @@ def _purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     return new_metadata
 
 
-_PARAGRAPH_DELIMITOR = ["\n\n\n", "\n\n"]  # To insert images or table in the middle of the page.
+_PARAGRAPH_DELIMITOR = [
+    "\n\n\n",
+    "\n\n",
+]  # To insert images or table in the middle of the page.
 
 
 def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
@@ -132,7 +170,7 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
     """
 
     def _recurs_merge_text_and_extras(
-            extras: list[str], text_from_page: str, recurs: bool
+        extras: list[str], text_from_page: str, recurs: bool
     ) -> Optional[str]:
         if extras:
             for delim in _PARAGRAPH_DELIMITOR:
@@ -151,8 +189,9 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
                         str_extras = "\n\n".join(filter(lambda x: x, extras))
                         if str_extras:
                             all_extras = delim + str_extras
-                        all_text = text_from_page[:pos] + all_extras + text_from_page[
-                                                                       pos:]
+                        all_text = (
+                            text_from_page[:pos] + all_extras + text_from_page[pos:]
+                        )
                     break
             else:
                 all_text = None
@@ -169,7 +208,6 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
         all_text = text_from_page + all_extras
 
     return all_text
-
 
 
 class ImagesPdfParser(BaseBlobParser):
@@ -218,8 +256,7 @@ class PyPDFParser(BaseBlobParser):
             )
 
         def _extract_text_from_page(page: pypdf.PageObject) -> str:
-            """Extract text from image given the version of pypdf.
-            """
+            """Extract text from image given the version of pypdf."""
             if pypdf.__version__.startswith("3"):
                 return page.extract_text()
             else:
@@ -561,11 +598,11 @@ class PyMuPDFParser(ImagesPdfParser):
                 for page in doc:
                     all_text = self._get_page_content(doc, page, blob).strip()
                     if self.mode == "page":
-
                         yield Document(
                             page_content=all_text,
-                            metadata=_validate_metadata(doc_metadata |
-                                                        {"page": page.number}),
+                            metadata=_validate_metadata(
+                                doc_metadata | {"page": page.number}
+                            ),
                         )
                     else:
                         full_content.append(all_text)
@@ -658,17 +695,16 @@ class PyMuPDFParser(ImagesPdfParser):
             if self.images_parser:
                 xref = img[0]
                 pix = pymupdf.Pixmap(doc, xref)
-                image=np.frombuffer(pix.samples, dtype=np.uint8).reshape(
-                        pix.height, pix.width, -1
-                    )
+                image = np.frombuffer(pix.samples, dtype=np.uint8).reshape(
+                    pix.height, pix.width, -1
+                )
                 image_bytes = io.BytesIO()
                 Image.fromarray(image).save(image_bytes, format="PNG")
-                blob=Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
+                blob = Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
                 images.append(next(self.images_parser.lazy_parse(blob)).page_content)
         return _FORMAT_IMAGE_STR.format(
-                image_text=_JOIN_IMAGES.join(filter(None,images))
-            )
-
+            image_text=_JOIN_IMAGES.join(filter(None, images))
+        )
 
     def _extract_tables_from_page(self, page: pymupdf.Page) -> str:
         """Extract tables from a PDF page.
