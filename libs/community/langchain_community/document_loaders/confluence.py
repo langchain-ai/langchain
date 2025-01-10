@@ -408,7 +408,7 @@ class ConfluenceLoader(BaseLoader):
                 include_restricted_content,
                 include_attachments,
                 include_comments,
-                False,  # labels are not included in the search results
+                include_labels,
                 content_format,
                 ocr_languages,
                 keep_markdown_format,

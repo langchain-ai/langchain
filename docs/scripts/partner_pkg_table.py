@@ -76,6 +76,13 @@ def _enrich_package(p: dict) -> dict | None:
         )
         raise ValueError(msg)
 
+    if p["type"] in ("B", "C"):
+        p["package_url"] = (
+            f"https://python.langchain.com/api_reference/{p['name_short'].replace('-', '_')}/"
+        )
+    else:
+        p["package_url"] = f"https://pypi.org/project/{p['name']}/"
+
     return p
 
 
@@ -94,7 +101,7 @@ def package_row(p: dict) -> str:
     link = p["provider_page"]
     title = p["name_title"]
     provider = f"[{title}]({link})" if link else title
-    return f"| {provider} | [{p['name']}](https://python.langchain.com/api_reference/{p['name_short'].replace('-', '_')}/) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/{p['name']}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/{p['name']}?style=flat-square&label=%20&color=orange) | {js} |"
+    return f"| {provider} | [{p['name']}]({p['package_url']}) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/{p['name']}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/{p['name']}?style=flat-square&label=%20&color=orange) | {js} |"
 
 
 def table() -> str:
