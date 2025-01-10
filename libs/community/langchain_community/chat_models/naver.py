@@ -49,14 +49,13 @@ def _convert_chunk_to_message_chunk(
     sse: Any, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     sse_data = sse.json()
-    message = sse_data.get("message")
-    role = message.get("role")
-    content = message.get("content") or ""
-
     if sse.event == "result":
         response_metadata = _sse_data_to_response_metadata(sse_data)
         return AIMessageChunk(content="", response_metadata=response_metadata)
 
+    message = sse_data.get("message")
+    role = message.get("role")
+    content = message.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
@@ -145,6 +144,8 @@ async def _aiter_sse(
             event_data = sse.json()
             if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                 return
+            if sse.event == "error":
+                raise SSEError(message=sse.data)
             yield sse
 
 
@@ -255,10 +256,15 @@ class ChatClovaX(BaseChatModel):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
-            "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
-        }
+        if not self._is_new_api_key():
+            return {
+                "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+            }
+        else:
+            return {
+                "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+                "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
+            }
 
     @property
     def _llm_type(self) -> str:
@@ -300,10 +306,8 @@ class ChatClovaX(BaseChatModel):
                 get_from_env("ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
             )
 
-        if not self.ncp_apigw_api_key:
-            self.ncp_apigw_api_key = convert_to_secret_str(
-                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
-            )
+        if not self._is_new_api_key():
+            self._init_fields_on_old_api_key()
 
         if not self.base_url:
             self.base_url = get_from_env(
@@ -326,6 +330,15 @@ class ChatClovaX(BaseChatModel):
 
         return self
 
+    def _is_new_api_key(self):
+        return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+
+    def _init_fields_on_old_api_key(self):
+        if not self.ncp_apigw_api_key:
+            self.ncp_apigw_api_key = convert_to_secret_str(
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
+            )
+
     def default_headers(self) -> Dict[str, Any]:
         headers = {
             "Content-Type": "application/json",
@@ -337,16 +350,22 @@ class ChatClovaX(BaseChatModel):
             if self.ncp_clovastudio_api_key
             else None
         )
-        if clovastudio_api_key:
-            headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
 
-        apigw_api_key = (
-            self.ncp_apigw_api_key.get_secret_value()
-            if self.ncp_apigw_api_key
-            else None
-        )
-        if apigw_api_key:
-            headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
+        if self._is_new_api_key():
+            ### headers on new api key
+            headers["Authorization"] = f"Bearer {clovastudio_api_key}"
+        else:
+            ### headers on old api key
+            if clovastudio_api_key:
+                headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
+
+            apigw_api_key = (
+                self.ncp_apigw_api_key.get_secret_value()
+                if self.ncp_apigw_api_key
+                else None
+            )
+            if apigw_api_key:
+                headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
 
         return headers
 
@@ -363,7 +382,6 @@ class ChatClovaX(BaseChatModel):
     def _completion_with_retry(self, **kwargs: Any) -> Any:
         from httpx_sse import (
             ServerSentEvent,
-            SSEError,
             connect_sse,
         )
 
