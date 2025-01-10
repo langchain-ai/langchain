@@ -79,7 +79,11 @@ class TestLakeFSLoader(unittest.TestCase):
     @pytest.mark.usefixtures("mock_lakefs_client_no_presign_not_local")
     def test_non_presigned_loading_fail(self, mocker: Mocker) -> None:
         mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
-        with pytest.raises(ValueError, match="Non pre-signed URLs are supported only with 'local' blockstore"):
+        with pytest.raises(
+            ValueError,
+            match="Non pre-signed URLs are supported only\
+                with 'local' blockstore",
+        ):
             self.loader.load()
 
     @requests_mock.Mocker()
