@@ -335,5 +335,5 @@ packages:
   downloads: 0
 - name: langchain-pipeshift
   path: .
-  repo: 
+  repo: pipeshift-org/langchain-pipeshift
   downloads: 107
