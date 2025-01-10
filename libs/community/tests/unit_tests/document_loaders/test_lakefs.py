@@ -64,7 +64,7 @@ class TestLakeFSLoader(unittest.TestCase):
     ref: str = "ref"
     path: str = "path"
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Initialize the LakeFSLoader with real objects
         self.loader = LakeFSLoader(
             lakefs_access_key=self.lakefs_access_key,
