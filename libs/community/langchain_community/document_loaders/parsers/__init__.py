@@ -30,6 +30,11 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.parsers.vsdx import (
         VsdxParser,
     )
+    from langchain_community.document_loaders.parsers.images import (
+        MultimodalBlobParser,
+        RapidOCRBlobParser,
+        TesseractBlobParser,
+    )
 
 
 _module_lookup = {
@@ -38,12 +43,15 @@ _module_lookup = {
     "DocAIParser": "langchain_community.document_loaders.parsers.docai",
     "GrobidParser": "langchain_community.document_loaders.parsers.grobid",
     "LanguageParser": "langchain_community.document_loaders.parsers.language",
+    "MultimodalBlobParser": "langchain_community.document_loaders.parsers.images",
     "OpenAIWhisperParser": "langchain_community.document_loaders.parsers.audio",
     "PDFMinerParser": "langchain_community.document_loaders.parsers.pdf",
     "PDFPlumberParser": "langchain_community.document_loaders.parsers.pdf",
     "PyMuPDFParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFium2Parser": "langchain_community.document_loaders.parsers.pdf",
+    "RapidOCRBlobParser": "langchain_community.document_loaders.parsers.images",
+    "TesseractBlobParser": "langchain_community.document_loaders.parsers.images",
     "VsdxParser": "langchain_community.document_loaders.parsers.vsdx",
 }
 
@@ -61,11 +69,14 @@ __all__ = [
     "DocAIParser",
     "GrobidParser",
     "LanguageParser",
+    "MultimodalBlobParser",
     "OpenAIWhisperParser",
     "PDFMinerParser",
     "PDFPlumberParser",
     "PyMuPDFParser",
     "PyPDFParser",
     "PyPDFium2Parser",
+    "RapidOCRBlobParser",
+    "TesseractBlobParser",
     "VsdxParser",
 ]

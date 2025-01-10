@@ -7,6 +7,9 @@ import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path, PurePath
+from urllib.parse import urlparse
+
+import requests
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,17 +22,13 @@ from typing import (
     Union,
     cast,
 )
-from urllib.parse import urlparse
-
-import requests
-from langchain_core.documents import Document
-from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.dedoc import DedocBaseLoader
+from langchain_community.document_loaders.parsers.images import ImageBlobParser, \
+    RapidOCRBlobParser
 from langchain_community.document_loaders.parsers.pdf import (
-    CONVERT_IMAGE_TO_TEXT,
     AmazonTextractPDFParser,
     DocumentIntelligenceParser,
     PDFMinerParser,
@@ -40,6 +39,8 @@ from langchain_community.document_loaders.parsers.pdf import (
     _DEFAULT_PAGE_DELIMITOR,
 )
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+from langchain_core.documents import Document
+from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     from textractor.data.text_linearization_config import TextLinearizationConfig
@@ -443,7 +444,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 mode = "single",
                 pages_delimitor = "\n\f",
                 # extract_images = True,
-                # images_to_text = convert_images_to_text_with_tesseract(),
+                # images_parser = TesseractBlobParser(),
                 # extract_tables = "markdown",
                 # extract_tables_settings = None,
             )
@@ -477,7 +478,7 @@ class PyMuPDFLoader(BasePDFLoader):
         mode: Literal["single", "page"] = "page",
         pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
         extract_images: bool = False,
-        images_to_text: CONVERT_IMAGE_TO_TEXT = None,
+        images_parser: Optional[ImageBlobParser] = RapidOCRBlobParser(),
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         headers: Optional[dict] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
@@ -495,8 +496,7 @@ class PyMuPDFLoader(BasePDFLoader):
             pages_delimitor: A string delimiter to separate pages in single-mode
                 extraction.
             extract_images: Whether to extract images from the PDF.
-            images_to_text: Optional function or callable to convert images to text
-                during extraction.
+            images_parser: Optional image blob parser.
             extract_tables: Whether to extract tables in a specific format, such as
                 "csv", "markdown", or "html".
             extract_tables_settings: Optional dictionary of settings for customizing
@@ -520,7 +520,7 @@ class PyMuPDFLoader(BasePDFLoader):
             pages_delimitor=pages_delimitor,
             text_kwargs=kwargs,
             extract_images=extract_images,
-            images_to_text=images_to_text,
+            images_parser=images_parser,
             extract_tables=extract_tables,
             extract_tables_settings=extract_tables_settings,
         )

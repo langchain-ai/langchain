@@ -2,36 +2,31 @@
 
 from __future__ import annotations
 
-import base64
 import html
 import io
 import logging
 import threading
 import warnings
 from datetime import datetime
+from urllib.parse import urlparse
+
+import numpy as np
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Iterable,
     Iterator,
     Literal,
     Mapping,
     Optional,
     Sequence,
     Union,
-    cast,
 )
-from urllib.parse import urlparse
-
-import numpy as np
-from langchain_core.documents import Document
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers.images import ImageBlobParser, \
+    RapidOCRBlobParser
+from langchain_core.documents import Document
 
 if TYPE_CHECKING:
     import pdfminer
@@ -176,195 +171,6 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
     return all_text
 
 
-def extract_from_images_with_rapidocr(
-    images: Sequence[Union[Iterable[np.ndarray], bytes]],
-) -> str:
-    """Extract text from images with RapidOCR.
-
-    Args:
-        images: Images to extract text from.
-
-    Returns:
-        Text extracted from images.
-
-    Raises:
-        ImportError: If `rapidocr-onnxruntime` package is not installed.
-    """
-    try:
-        from rapidocr_onnxruntime import RapidOCR
-    except ImportError:
-        raise ImportError(
-            "`rapidocr-onnxruntime` package not found, please install it with "
-            "`pip install rapidocr-onnxruntime`"
-        )
-    ocr = RapidOCR()
-    text = ""
-    for img in images:
-        result, _ = ocr(img)
-        if result:
-            result = [text[1] for text in result]
-            text += "\n".join(result)
-    return text
-
-
-# Type to change the function to convert images to text.
-CONVERT_IMAGE_TO_TEXT = Optional[Callable[[Iterable[np.ndarray]], Iterator[str]]]
-
-
-def convert_images_to_text_with_rapidocr(
-    # Default to text format to be compatible with previous versions.
-    *,
-    format: Literal["text", "markdown", "html"] = "text",
-) -> CONVERT_IMAGE_TO_TEXT:
-    """Return a function to convert images to text using RapidOCR.
-
-    Note: RapidOCR is compatible english and chinese languages.
-
-    Args:
-        format: Format of the output text. Either "text" or "markdown".
-    """
-
-    def _convert_images_to_text(images: Iterable[np.ndarray]) -> Iterator[str]:
-        try:
-            from rapidocr_onnxruntime import RapidOCR
-        except ImportError:
-            raise ImportError(
-                "`rapidocr-onnxruntime` package not found, please install it with "
-                "`pip install rapidocr-onnxruntime`"
-            )
-        ocr = RapidOCR()
-
-        for img in images:
-            ocr_result, _ = ocr(img)
-            if ocr_result:
-                result = ("\n".join([text[1] for text in ocr_result])).strip()
-                if result:
-                    if format == "markdown":
-                        result = result.replace("]", r"\\]")
-                        result = f"![{result}](.)"
-                    elif format == "html":
-                        result = f'<img alt="{html.escape(result, quote=True)}" />'
-                logger.debug("RapidOCR text: %s", result.replace("\n", "\\n"))
-                yield result
-            else:
-                yield ""
-
-    _convert_images_to_text.creator = (  # type: ignore[attr-defined]
-        convert_images_to_text_with_rapidocr
-    )
-    return _convert_images_to_text
-
-
-def convert_images_to_text_with_tesseract(
-    # Default to text format to be compatible with previous versions.
-    *,
-    format: Literal["text", "markdown", "html"] = "text",
-    langs: list[str] = ["eng"],
-) -> CONVERT_IMAGE_TO_TEXT:
-    """Return a function to convert images to text using Tesseract.
-    Args:
-        format: Format of the output text. Either "text" or "markdown".
-        langs: Array of langs for Tesseract
-    """
-
-    def _convert_images_to_text(images: Iterable[np.ndarray]) -> Iterator[str]:
-        try:
-            import pytesseract
-        except ImportError:
-            raise ImportError(
-                "`pytesseract` package not found, please install it with "
-                "`pip install pytesseract`"
-            )
-
-        for img in images:
-            result = pytesseract.image_to_string(img, lang="+".join(langs)).strip()
-            if result:
-                if format == "markdown":
-                    result = result.replace("]", r"\\]")
-                    result = f"![{result}](.)"
-                elif format == "html":
-                    result = f'<img alt="{html.escape(result, quote=True)}" />'
-            logger.debug("Tesseract text: %s", result.replace("\n", "\\n"))
-            yield result
-
-    _convert_images_to_text.creator = (  # type: ignore[attr-defined]
-        convert_images_to_text_with_tesseract
-    )
-    return _convert_images_to_text
-
-
-_prompt_images_to_description = """You are an assistant tasked with summarizing \
-    images for retrieval. \
-    These summaries will be embedded and used to retrieve the raw image. \
-    Give a concise summary of the image that is well optimized for retrieval \
-    and extract all the text from the image."""
-
-
-def convert_images_to_description(
-    model: BaseChatModel,
-    *,
-    prompt: str = _prompt_images_to_description,
-    format: Literal["text", "markdown", "html"] = "markdown",
-) -> CONVERT_IMAGE_TO_TEXT:
-    """Return a function to convert images to text using a multimodal model.
-
-    Args:
-        model: Multimodal model to use to describe the images.
-        prompt: Optional prompt to use to describe the images.
-        format: Format of the output text. Either "text" or "markdown".
-
-    Returns:
-        A function to extract text from images using the multimodal model.
-    """
-
-    def _convert_images_to_description(
-        images: Iterable[np.ndarray],
-    ) -> Iterator[str]:
-        try:
-            from PIL import Image
-        except ImportError:
-            raise ImportError(
-                "`PIL` package not found, please install it with `pip install pillow`"
-            )
-        for image in images:
-            image_bytes = io.BytesIO()
-            Image.fromarray(image).save(image_bytes, format="PNG")
-            img_base64 = base64.b64encode(image_bytes.getvalue()).decode("utf-8")
-            msg = model.invoke(
-                [
-                    HumanMessage(
-                        content=[
-                            {"type": "text", "text": prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{img_base64}"
-                                },
-                            },
-                        ]
-                    )
-                ]
-            )
-            result = msg.content
-            assert isinstance(result, str)
-            if result:
-                if format == "markdown":
-                    result = result.replace("]", r"\\]")
-                    result = f"![{result}](.)"
-                elif format == "html":
-                    result = f'<img alt="{str(html.escape(result, quote=True))}" />'
-                elif format == "text":
-                    pass
-                else:
-                    raise ValueError(f"Unknown format: {format}")
-            logger.debug("LLM description: %s", result.replace("\n", "\\n"))
-            yield result
-
-    _convert_images_to_description.creator = (  # type: ignore[attr-defined]
-        convert_images_to_description
-    )
-    return _convert_images_to_description
-
 
 class ImagesPdfParser(BaseBlobParser):
     """Abstract interface for blob parsers with images_to_text."""
@@ -372,20 +178,17 @@ class ImagesPdfParser(BaseBlobParser):
     def __init__(
         self,
         extract_images: bool,
-        images_to_text: CONVERT_IMAGE_TO_TEXT,
+        images_parser: Optional[ImageBlobParser],
     ):
         """Extract text from images.
 
         Args:
             extract_images: Whether to extract images from PDF.
-            images_to_text: Optional function to extract text from images.
+            images_parser: Optional image blob parser.
         """
         self.extract_images = extract_images
 
-        self.convert_image_to_text = cast(
-            Callable[[Iterable[np.ndarray]], Iterator[str]],
-            (images_to_text or convert_images_to_text_with_rapidocr()),
-        )
+        self.images_parser = images_parser
 
 
 class PyPDFParser(BaseBlobParser):
@@ -614,7 +417,7 @@ class PyMuPDFParser(ImagesPdfParser):
                 mode = "single",
                 pages_delimitor = "\n\f",
                 # extract_images = True,
-                # images_to_text = convert_images_to_text_with_tesseract(),
+                # images_parser = TesseractBlobParser(),
                 # extract_tables="markdown",
                 # extract_tables_settings=None,
                 # text_kwargs=None,
@@ -645,7 +448,7 @@ class PyMuPDFParser(ImagesPdfParser):
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
         pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
-        images_to_text: CONVERT_IMAGE_TO_TEXT = None,
+        images_parser: Optional[ImageBlobParser] = RapidOCRBlobParser(),
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -658,8 +461,7 @@ class PyMuPDFParser(ImagesPdfParser):
             pages_delimitor: A string delimiter to separate pages in single-mode
                 extraction.
             extract_images: Whether to extract images from the PDF.
-            images_to_text: Optional function or callable to convert images to text
-                during extraction.
+            images_parser: Optional image blob parser.
             extract_tables: Whether to extract tables in a specific format, such as
                 "csv", "markdown", or "html".
             extract_tables_settings: Optional dictionary of settings for customizing
@@ -676,7 +478,7 @@ class PyMuPDFParser(ImagesPdfParser):
             ValueError: If the extract_tables format is not "markdown", "html",
             or "csv".
         """
-        super().__init__(extract_images, images_to_text)
+        super().__init__(extract_images, images_parser)
         if mode not in ["single", "page"]:
             raise ValueError("mode must be single or page")
         if extract_tables and extract_tables not in ["markdown", "html", "csv"]:
@@ -848,24 +650,25 @@ class PyMuPDFParser(ImagesPdfParser):
         if not self.extract_images:
             return ""
         import pymupdf
+        from PIL import Image
 
         img_list = page.get_images()
         images = []
         for img in img_list:
-            xref = img[0]
-            pix = pymupdf.Pixmap(doc, xref)
-            images.append(
-                np.frombuffer(pix.samples, dtype=np.uint8).reshape(
-                    pix.height, pix.width, -1
-                )
-            )
-            _FORMAT_IMAGE_STR.format(
-                image_text=_JOIN_IMAGES.join(self.convert_image_to_text(images))
+            if self.images_parser:
+                xref = img[0]
+                pix = pymupdf.Pixmap(doc, xref)
+                image=np.frombuffer(pix.samples, dtype=np.uint8).reshape(
+                        pix.height, pix.width, -1
+                    )
+                image_bytes = io.BytesIO()
+                Image.fromarray(image).save(image_bytes, format="PNG")
+                blob=Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
+                images.append(next(self.images_parser.lazy_parse(blob)).page_content)
+        return _FORMAT_IMAGE_STR.format(
+                image_text=_JOIN_IMAGES.join(filter(None,images))
             )
 
-        return _FORMAT_IMAGE_STR.format(
-            image_text=_JOIN_IMAGES.join(self.convert_image_to_text(images))
-        )
 
     def _extract_tables_from_page(self, page: pymupdf.Page) -> str:
         """Extract tables from a PDF page.
