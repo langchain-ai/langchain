@@ -810,8 +810,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
-                Defaults to False if ``method`` is ``"json_schema"`` or
-                ``"function_calling"``. Can only be non-null if ``method`` is
+                If schema is specified via TypedDict or JSON schema, ``strict`` is not
+                enabled by default. Pass ``strict=True`` to enable it.
+
+                Note: ``strict`` can only be non-null if ``method`` is
                 ``"json_schema"`` or ``"function_calling"``.
 
             kwargs: Additional keyword args aren't supported.
@@ -834,13 +836,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. versionchanged:: 0.1.21
 
             Support for ``strict`` argument added.
-            Support for ``method`` = "json_schema" added.
+            Support for ``method="json_schema"`` added.
 
         .. versionchanged:: 0.3.0
 
-            - ``method`` default changed from "function_calling" to "json_schema".
-            - ``strict`` defaults to True instead of False when ``method`` is
-                "function_calling".
+            ``method`` default changed from "function_calling" to "json_schema".
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
 
@@ -880,6 +880,39 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=False
+
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_openai import AzureChatOpenAI
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Optional[str] = Field(
+                        default=..., description="A justification for the answer."
+                    )
+
+
+                llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, method="function_calling"
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
 
             .. code-block:: python
@@ -909,7 +942,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False
+        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False, strict=False
 
             .. code-block:: python
 
@@ -1025,8 +1058,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if method in ("json_schema", "function_calling") and strict is None:
-            strict = False
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
