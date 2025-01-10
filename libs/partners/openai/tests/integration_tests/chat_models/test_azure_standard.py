@@ -55,6 +55,10 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
             "azure_endpoint": OPENAI_API_BASE,
         }
 
+    @property
+    def structured_output_kwargs(self) -> dict:
+        return {"method": "function_calling"}
+
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         super().test_usage_metadata_streaming(model)

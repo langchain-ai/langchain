@@ -630,18 +630,37 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
-def test_openai_structured_output() -> None:
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1"])
+def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
 
         name: str
         age: int
 
-    llm = ChatOpenAI().with_structured_output(MyModel)
+    llm = ChatOpenAI(model=model).with_structured_output(MyModel)
     result = llm.invoke("I'm a 27 year old named Erick")
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
+
+
+def test_structured_output_errors_with_legacy_models() -> None:
+    class MyModel(BaseModel):
+        """A Person"""
+
+        name: str
+        age: int
+
+    llm = ChatOpenAI(model="gpt-4").with_structured_output(MyModel)
+
+    with pytest.warns(UserWarning, match="with_structured_output"):
+        with pytest.raises(openai.BadRequestError):
+            _ = llm.invoke("I'm a 27 year old named Erick")
+
+    with pytest.warns(UserWarning, match="with_structured_output"):
+        with pytest.raises(openai.BadRequestError):
+            _ = list(llm.stream("I'm a 27 year old named Erick"))
 
 
 def test_openai_proxy() -> None:
@@ -820,20 +839,18 @@ def test_tool_calling_strict() -> None:
 
 
 @pytest.mark.parametrize(
-    ("model", "method", "strict"),
-    [("gpt-4o", "function_calling", True), ("gpt-4o-2024-08-06", "json_schema", None)],
+    ("model", "method"),
+    [("gpt-4o", "function_calling"), ("gpt-4o-2024-08-06", "json_schema")],
 )
 def test_structured_output_strict(
-    model: str,
-    method: Literal["function_calling", "json_schema"],
-    strict: Optional[bool],
+    model: str, method: Literal["function_calling", "json_schema"]
 ) -> None:
     """Test to verify structured output with strict=True."""
 
     from pydantic import BaseModel as BaseModelProper
     from pydantic import Field as FieldProper
 
-    llm = ChatOpenAI(model=model, temperature=0)
+    llm = ChatOpenAI(model=model)
 
     class Joke(BaseModelProper):
         """Joke to tell user."""
@@ -842,10 +859,7 @@ def test_structured_output_strict(
         punchline: str = FieldProper(description="answer to resolve the joke")
 
     # Pydantic class
-    # Type ignoring since the interface only officially supports pydantic 1
-    # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-    # We'll need to do a pass updating the type signatures.
-    chat = llm.with_structured_output(Joke, method=method, strict=strict)
+    chat = llm.with_structured_output(Joke, method=method, strict=True)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, Joke)
 
@@ -854,7 +868,7 @@ def test_structured_output_strict(
 
     # Schema
     chat = llm.with_structured_output(
-        Joke.model_json_schema(), method=method, strict=strict
+        Joke.model_json_schema(), method=method, strict=True
     )
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
@@ -875,14 +889,14 @@ def test_structured_output_strict(
             default="foo", description="answer to resolve the joke"
         )
 
-    chat = llm.with_structured_output(InvalidJoke, method=method, strict=strict)
+    chat = llm.with_structured_output(InvalidJoke, method=method, strict=True)
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
     with pytest.raises(openai.BadRequestError):
         next(chat.stream("Tell me a joke about cats."))
 
     chat = llm.with_structured_output(
-        InvalidJoke.model_json_schema(), method=method, strict=strict
+        InvalidJoke.model_json_schema(), method=method, strict=True
     )
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
@@ -890,11 +904,9 @@ def test_structured_output_strict(
         next(chat.stream("Tell me a joke about cats."))
 
 
-@pytest.mark.parametrize(
-    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
-)
+@pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
 def test_nested_structured_output_strict(
-    model: str, method: Literal["json_schema"], strict: Optional[bool]
+    model: str, method: Literal["json_schema"]
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
 
@@ -914,7 +926,7 @@ def test_nested_structured_output_strict(
         self_evaluation: SelfEvaluation
 
     # Schema
-    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=True)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
     assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
@@ -925,6 +937,46 @@ def test_nested_structured_output_strict(
     assert isinstance(chunk, dict)  # for mypy
     assert set(chunk.keys()) == {"setup", "punchline", "self_evaluation"}
     assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
+
+
+@pytest.mark.parametrize(
+    ("strict", "method"),
+    [
+        (True, "json_schema"),
+        (False, "json_schema"),
+        (True, "function_calling"),
+        (False, "function_calling"),
+    ],
+)
+def test_json_schema_openai_format(
+    strict: bool, method: Literal["json_schema", "function_calling"]
+) -> None:
+    """Test we can pass in OpenAI schema format specifying strict."""
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    schema = {
+        "name": "get_weather",
+        "description": "Fetches the weather in the given location",
+        "strict": strict,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location to get the weather for",
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "The unit to return the temperature in",
+                    "enum": ["F", "C"],
+                },
+            },
+            "additionalProperties": False,
+            "required": ["location", "unit"],
+        },
+    }
+    chat = llm.with_structured_output(schema, method=method)
+    result = chat.invoke("What is the weather in New York?")
+    assert isinstance(result, dict)
 
 
 def test_json_mode() -> None:
