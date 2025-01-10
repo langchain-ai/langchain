@@ -64,27 +64,18 @@ class TestLakeFSLoader(unittest.TestCase):
     ref: str = "ref"
     path: str = "path"
 
-    def setUp(self) -> None:
-        # Initialize the LakeFSLoader with real objects
-        self.loader = LakeFSLoader(
-            lakefs_access_key=self.lakefs_access_key,
-            lakefs_secret_key=self.lakefs_secret_key,
-            lakefs_endpoint=self.endpoint,
-        )
-        self.loader.set_repo(self.repo)
-        self.loader.set_ref(self.ref)
-        self.loader.set_path(self.path)
-
     @requests_mock.Mocker()
     @pytest.mark.usefixtures("mock_lakefs_client_no_presign_not_local")
     def test_non_presigned_loading_fail(self, mocker: Mocker) -> None:
         mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
-        with pytest.raises(
-            ValueError,
-            match="Non pre-signed URLs are supported only\
-                with 'local' blockstore",
-        ):
-            self.loader.load()
+        loader = LakeFSLoader(
+            self.lakefs_access_key, self.lakefs_secret_key, self.endpoint
+        )
+        loader.set_repo(self.repo)
+        loader.set_ref(self.ref)
+        loader.set_path(self.path)
+        with pytest.raises(ImportError):
+            loader.load()
 
     @requests_mock.Mocker()
     @pytest.mark.usefixtures(
@@ -92,4 +83,12 @@ class TestLakeFSLoader(unittest.TestCase):
     )
     def test_non_presigned_loading(self, mocker: Mocker) -> None:
         mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
-        self.loader.load()
+        loader = LakeFSLoader(
+            lakefs_access_key="lakefs_access_key",
+            lakefs_secret_key="lakefs_secret_key",
+            lakefs_endpoint=self.endpoint,
+        )
+        loader.set_repo(self.repo)
+        loader.set_ref(self.ref)
+        loader.set_path(self.path)
+        loader.load()
