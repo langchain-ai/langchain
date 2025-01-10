@@ -22,7 +22,7 @@ disallow_untyped_defs = "True"
 python = ">=3.9,<3.13"
 langchain-core = "^0.3.29"
 pinecone = "^5.4.0"
-aiohttp = ">=3.9.5,<3.10"
+aiohttp = ">=3.10,<3.11"
 numpy = ">=1.26.0,<2.0.0"
 langchain-tests = "^0.3.7"
 
