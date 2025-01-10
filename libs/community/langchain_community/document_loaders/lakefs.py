@@ -1,7 +1,7 @@
 import os
 import tempfile
 import urllib.parse
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, List, Optional
 from urllib.parse import urljoin
 
@@ -110,7 +110,7 @@ class LakeFSLoader(BaseLoader):
         objs = self.__lakefs_client.ls_objects(
             repo=self.repo, ref=self.ref, path=self.path, presign=presigned
         )
-        with ProcessPoolExecutor() as executor:
+        with ThreadPoolExecutor() as executor:
             future_to_obj = {
                 executor.submit(
                     UnstructuredLakeFSLoader(
