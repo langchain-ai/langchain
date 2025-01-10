@@ -1,6 +1,7 @@
 import os
 import tempfile
 import urllib.parse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any, List, Optional
 from urllib.parse import urljoin
 
@@ -109,11 +110,20 @@ class LakeFSLoader(BaseLoader):
         objs = self.__lakefs_client.ls_objects(
             repo=self.repo, ref=self.ref, path=self.path, presign=presigned
         )
-        for obj in objs:
-            lakefs_unstructured_loader = UnstructuredLakeFSLoader(
-                obj[1], self.repo, self.ref, obj[0], presigned
-            )
-            docs.extend(lakefs_unstructured_loader.load())
+        with ProcessPoolExecutor() as executor:
+            future_to_obj = {
+                executor.submit(
+                    UnstructuredLakeFSLoader(
+                        obj[1], self.repo, self.ref, obj[0], presigned
+                    ).load
+                ): obj
+                for obj in objs
+            }
+            for future in as_completed(future_to_obj):
+                try:
+                    docs.extend(future.result())
+                except Exception as e:
+                    print(f"An error occurred for object {future_to_obj[future]}: {e}")
         return docs
 
     def __validate_instance(self) -> None:
