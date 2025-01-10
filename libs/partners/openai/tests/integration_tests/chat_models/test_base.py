@@ -653,13 +653,14 @@ def test_structured_output_errors_with_legacy_models() -> None:
         age: int
 
     llm = ChatOpenAI(model="gpt-4").with_structured_output(MyModel)
-    with pytest.raises(ValueError) as exception_info:
-        _ = llm.invoke("I'm a 27 year old named Erick")
-    assert "with_structured_output" in str(exception_info.value)
 
-    with pytest.raises(ValueError) as exception_info:
-        _ = list(llm.stream("I'm a 27 year old named Erick"))
-    assert "with_structured_output" in str(exception_info.value)
+    with pytest.warns(UserWarning, match="with_structured_output"):
+        with pytest.raises(openai.BadRequestError):
+            _ = llm.invoke("I'm a 27 year old named Erick")
+
+    with pytest.warns(UserWarning, match="with_structured_output"):
+        with pytest.raises(openai.BadRequestError):
+            _ = list(llm.stream("I'm a 27 year old named Erick"))
 
 
 def test_openai_proxy() -> None:
@@ -936,6 +937,46 @@ def test_nested_structured_output_strict(
     assert isinstance(chunk, dict)  # for mypy
     assert set(chunk.keys()) == {"setup", "punchline", "self_evaluation"}
     assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
+
+
+@pytest.mark.parametrize(
+    ("strict", "method"),
+    [
+        (True, "json_schema"),
+        (False, "json_schema"),
+        (True, "function_calling"),
+        (False, "function_calling"),
+    ],
+)
+def test_json_schema_openai_format(
+    strict: bool, method: Literal["json_schema", "function_calling"]
+) -> None:
+    """Test we can pass in OpenAI schema format specifying strict."""
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    schema = {
+        "name": "get_weather",
+        "description": "Fetches the weather in the given location",
+        "strict": strict,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location to get the weather for",
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "The unit to return the temperature in",
+                    "enum": ["F", "C"],
+                },
+            },
+            "additionalProperties": False,
+            "required": ["location", "unit"],
+        },
+    }
+    chat = llm.with_structured_output(schema, method=method)
+    result = chat.invoke("What is the weather in New York?")
+    assert isinstance(result, dict)
 
 
 def test_json_mode() -> None:

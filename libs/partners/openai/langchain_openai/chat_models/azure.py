@@ -810,8 +810,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
-                Defaults to False if ``method`` is ``"json_schema"`` or
-                ``"function_calling"``. Can only be non-null if ``method`` is
+                If schema is specified via TypedDict or JSON schema, ``strict`` is not
+                enabled by default. Pass ``strict=True`` to enable it.
+
+                Note: ``strict`` can only be non-null if ``method`` is
                 ``"json_schema"`` or ``"function_calling"``.
 
             kwargs: Additional keyword args aren't supported.
@@ -1056,8 +1058,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
-        if method in ("json_schema", "function_calling") and strict is None:
-            strict = False
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
