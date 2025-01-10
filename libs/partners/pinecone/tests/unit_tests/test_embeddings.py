@@ -70,7 +70,7 @@ class TestPineconeEmbeddingsConfig:
         assert embeddings._async_client is None
 
         # Access async_client property
-        client = embeddings.async_client
+        client = await embeddings.get_async_client()
         assert client is not None
         assert isinstance(client, aiohttp.ClientSession)
 

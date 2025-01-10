@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -66,7 +65,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         protected_namespaces=(),
     )
 
-    async def _get_async_client(self) -> aiohttp.ClientSession:
+    async def get_async_client(self) -> aiohttp.ClientSession:
         """Lazily initialize the async client."""
         if self._async_client is None:
             self._async_client = aiohttp.ClientSession(
@@ -186,7 +185,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             "inputs": [{"text": text} for text in texts],
             "parameters": parameters,
         }
-        client = await self._get_async_client()
+        client = await self.get_async_client()
         async with client.post("https://api.pinecone.io/embed", json=data) as response:
             response_data = await response.json(content_type=None)
             return response_data

@@ -698,7 +698,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.2.14"
+version = "0.3.0"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -706,7 +706,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.27"
+langchain-core = "^0.3.29"
 openai = "^1.58.1"
 tiktoken = ">=0.7,<1"
 
@@ -2154,4 +2154,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "c6bfaf9d0fdb71fc6aa80ee07d08a558c6ae414481e47f1feb56edcbd0d16bb1"
+content-hash = "244a891a2ad8dd02d0264d86a356e6e5074e2d04830faa93722c8e92fbddb8d3"

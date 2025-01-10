@@ -18,7 +18,8 @@ NAMESPACE_NAME = "test_namespace"
 async def embd_client() -> AsyncGenerator[PineconeEmbeddings, None]:
     client = PineconeEmbeddings(model=MODEL)
     yield client
-    await client.async_client.close()
+    async_client = await client.get_async_client()
+    await async_client.close()
 
 
 @pytest.fixture
