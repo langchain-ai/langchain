@@ -399,11 +399,18 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         "'response_format' of type 'json_schema' is not supported with this model"
     ) in e.message:
         raise ValueError(
-            "This model does not support OpenAI's structured output "
-            "feature, which is the default method for "
-            "`with_structured_output` as of langchain-openai==0.3. To use "
-            "`with_structured_output` with this model, specify "
-            '`method="function_calling"`.'
+            "This model does not support OpenAI's structured output feature, which "
+            "is the default method for `with_structured_output` as of "
+            "langchain-openai==0.3. To use `with_structured_output` with this model, "
+            'specify `method="function_calling"`.'
+        )
+    elif "Invalid schema for response_format" in e.message:
+        raise ValueError(
+            "Invalid schema for OpenAI's structured output feature, which is the "
+            "default method for `with_structured_output` as of langchain-openai==0.3. "
+            'Specify `method="function_calling"` instead or update your schema. '
+            "See supported schemas: "
+            "https://platform.openai.com/docs/guides/structured-outputs#supported-schemas"  # noqa: E501
         )
     else:
         raise
@@ -2097,13 +2104,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. versionchanged:: 0.1.21
 
             Support for ``strict`` argument added.
-            Support for ``method`` = "json_schema" added.
+            Support for ``method="json_schema"`` added.
 
         .. versionchanged:: 0.3.0
 
-            - ``method`` default changed from "function_calling" to "json_schema".
-            - ``strict`` defaults to True instead of False when ``method`` is
-                "function_calling".
+            ``method`` default changed from "function_calling" to "json_schema".
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
 
@@ -2143,6 +2148,39 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=False
+
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_openai import ChatOpenAI
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Optional[str] = Field(
+                        default=..., description="A justification for the answer."
+                    )
+
+
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, method="function_calling"
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
 
             .. code-block:: python
@@ -2172,7 +2210,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False
+        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False, strict=False
 
             .. code-block:: python
 
