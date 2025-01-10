@@ -13,7 +13,14 @@ from langchain_community.tools.slack.send_message import SlackSendMessage
 from langchain_community.tools.slack.utils import login
 
 if TYPE_CHECKING:
+    # This is for linting and IDE typehints
     from slack_sdk import WebClient
+else:
+    try:
+        # We do this so pydantic can resolve the types when instantiating
+        from slack_sdk import WebClient
+    except ImportError:
+        pass
 
 
 class SlackToolkit(BaseToolkit):
