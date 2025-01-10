@@ -1,9 +1,11 @@
 """Test ChatAnthropic chat model."""
 
 import json
+from base64 import b64encode
 from typing import List, Optional
 
 import pytest
+import requests
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
@@ -575,3 +577,29 @@ def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
     response = chat_model_with_tools.invoke("what's the weather in ny and la")
     assert isinstance(response, AIMessage)
+
+
+def test_pdf_document_input() -> None:
+    url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    data = b64encode(requests.get(url).content).decode()
+
+    result = ChatAnthropic(model_name=MODEL_NAME).invoke(  # type: ignore[call-arg]
+        [
+            HumanMessage(
+                [
+                    "summarize this document",
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "data": data,
+                            "media_type": "application/pdf",
+                        },
+                    },
+                ]
+            )
+        ]
+    )
+    assert isinstance(result, AIMessage)
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
