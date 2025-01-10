@@ -123,7 +123,7 @@ class LakeFSLoader(BaseLoader):
                 try:
                     docs.extend(future.result())
                 except Exception as e:
-                    print(f"An error occurred for object {future_to_obj[future]}: {e}")
+                    raise e
         return docs
 
     def __validate_instance(self) -> None:
