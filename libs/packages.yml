@@ -333,3 +333,7 @@ packages:
   path: .
   repo: DS4SD/docling-langchain
   downloads: 0
+- name: langchain-lindorm
+  path: .
+  repo: AlwaysBluer/langchain-lindorm-integration
+  downloads: 0
