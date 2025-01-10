@@ -13,6 +13,7 @@ from typing import (
 )
 
 import pytest
+from blockbuster import BlockBuster
 from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
@@ -2000,7 +2001,7 @@ EXPECTED_EVENTS = [
 ]
 
 
-async def test_sync_in_async_stream_lambdas(blockbuster) -> None:
+async def test_sync_in_async_stream_lambdas(blockbuster: BlockBuster) -> None:
     """Test invoking nested runnable lambda."""
     blockbuster.deactivate()
 

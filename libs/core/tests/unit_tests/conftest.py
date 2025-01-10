@@ -1,17 +1,17 @@
 """Configuration for unit tests."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib import util
 from uuid import UUID
 
 import pytest
-from blockbuster import blockbuster_ctx
+from blockbuster import BlockBuster, blockbuster_ctx
 from pytest import Config, Function, Parser
 from pytest_mock import MockerFixture
 
 
 @pytest.fixture(autouse=True)
-def blockbuster(request):
+def blockbuster() -> Iterator[BlockBuster]:
     with blockbuster_ctx() as bb:
         for func in ["os.stat", "os.path.abspath"]:
             bb.functions[func].can_block_in(

@@ -2907,20 +2907,6 @@ def test_higher_order_lambda_runnable(
     )
     assert result2 == ["4", "2"]
 
-<<<<<<< HEAD
-    result = await chain.ainvoke({"key": "math", "question": "2 + 2"})
-    assert result == "4"
-
-    result2 = await chain.abatch(
-        [
-            {"key": "math", "question": "2 + 2"},
-            {"key": "english", "question": "2 + 2"},
-        ]
-    )
-    assert result2 == ["4", "2"]
-
-=======
->>>>>>> f1c2af60b (Use Blockbuster to detect blocking calls in asyncio during tests)
     # Test invoke
     math_spy = mocker.spy(math_chain.__class__, "invoke")
     tracer = FakeTracer()
@@ -2970,7 +2956,10 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     assert result == "4"
 
     result2 = await chain.abatch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
