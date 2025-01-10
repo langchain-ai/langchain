@@ -1,0 +1,9 @@
+aiogram>=3.12.0
+python-dotenv==1.0.1
+langchain-gigachat>=0.3.0
+langchain_pinecone>=0.2.0
+langchain-openai>=0.2.5
+langchain>=0.3.7
+langchain-community>=0.3.5
+langgraph>=0.2.45
+streamlit==1.40.1
