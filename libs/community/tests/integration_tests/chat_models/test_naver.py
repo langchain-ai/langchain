@@ -13,6 +13,10 @@ def test_stream() -> None:
     for token in llm.stream("I'm Clova"):
         assert isinstance(token, AIMessageChunk)
         assert isinstance(token.content, str)
+        if token.response_metadata:
+            assert "input_length" in token.response_metadata
+            assert "output_length" in token.response_metadata
+            assert "stop_reason" in token.response_metadata
 
 
 async def test_astream() -> None:
@@ -22,6 +26,10 @@ async def test_astream() -> None:
     async for token in llm.astream("I'm Clova"):
         assert isinstance(token, AIMessageChunk)
         assert isinstance(token.content, str)
+        if token.response_metadata:
+            assert "input_length" in token.response_metadata
+            assert "output_length" in token.response_metadata
+            assert "stop_reason" in token.response_metadata
 
 
 async def test_abatch() -> None:
@@ -32,6 +40,10 @@ async def test_abatch() -> None:
     for token in result:
         assert isinstance(token, AIMessage)
         assert isinstance(token.content, str)
+        if token.response_metadata:
+            assert "input_length" in token.response_metadata
+            assert "output_length" in token.response_metadata
+            assert "stop_reason" in token.response_metadata
 
 
 async def test_abatch_tags() -> None:
@@ -42,6 +54,10 @@ async def test_abatch_tags() -> None:
     for token in result:
         assert isinstance(token, AIMessage)
         assert isinstance(token.content, str)
+        if token.response_metadata:
+            assert "input_length" in token.response_metadata
+            assert "output_length" in token.response_metadata
+            assert "stop_reason" in token.response_metadata
 
 
 def test_batch() -> None:
@@ -52,6 +68,10 @@ def test_batch() -> None:
     for token in result:
         assert isinstance(token, AIMessage)
         assert isinstance(token.content, str)
+        if token.response_metadata:
+            assert "input_length" in token.response_metadata
+            assert "output_length" in token.response_metadata
+            assert "stop_reason" in token.response_metadata
 
 
 async def test_ainvoke() -> None:
@@ -61,6 +81,10 @@ async def test_ainvoke() -> None:
     result = await llm.ainvoke("I'm Clova", config={"tags": ["foo"]})
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
+    if result.response_metadata:
+        assert "input_length" in result.response_metadata
+        assert "output_length" in result.response_metadata
+        assert "stop_reason" in result.response_metadata
 
 
 def test_invoke() -> None:
@@ -70,6 +94,10 @@ def test_invoke() -> None:
     result = llm.invoke("I'm Clova", config=dict(tags=["foo"]))
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
+    if result.response_metadata:
+        assert "input_length" in result.response_metadata
+        assert "output_length" in result.response_metadata
+        assert "stop_reason" in result.response_metadata
 
 
 def test_stream_error_event() -> None:
@@ -90,4 +118,3 @@ async def test_astream_error_event() -> None:
     with pytest.raises(SSEError):
         async for _ in llm.astream(prompt * 1000):
             pass
-

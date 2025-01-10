@@ -16,6 +16,8 @@ from typing import (
 
 import httpx
 from httpx_sse import SSEError
+from pydantic import AliasChoices, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -37,8 +39,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import convert_to_secret_str, get_from_env
-from pydantic import AliasChoices, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
 
@@ -54,9 +54,7 @@ def _convert_chunk_to_message_chunk(
     content = message.get("content") or ""
 
     if sse.event == "result":
-        response_metadata = {}
-        if "stopReason" in sse_data:
-            response_metadata["stopReason"] = sse_data["stopReason"]
+        response_metadata = _sse_data_to_response_metadata(sse_data)
         return AIMessageChunk(content="", response_metadata=response_metadata)
 
     if role == "user" or default_class == HumanMessageChunk:
@@ -69,6 +67,21 @@ def _convert_chunk_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _sse_data_to_response_metadata(sse_data):
+    response_metadata = {}
+    if "stopReason" in sse_data:
+        response_metadata["stop_reason"] = sse_data["stopReason"]
+    if "inputLength" in sse_data:
+        response_metadata["input_length"] = sse_data["inputLength"]
+    if "outputLength" in sse_data:
+        response_metadata["output_length"] = sse_data["outputLength"]
+    if "seed" in sse_data:
+        response_metadata["seed"] = sse_data["seed"]
+    if "aiFilter" in sse_data:
+        response_metadata["ai_filter"] = sse_data["aiFilter"]
+    return response_metadata
 
 
 def _convert_message_to_naver_chat_message(
@@ -132,8 +145,6 @@ async def _aiter_sse(
             event_data = sse.json()
             if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                 return
-            if sse.event == "error":
-                raise SSEError(message=sse.data)
             yield sse
 
 
@@ -352,6 +363,7 @@ class ChatClovaX(BaseChatModel):
     def _completion_with_retry(self, **kwargs: Any) -> Any:
         from httpx_sse import (
             ServerSentEvent,
+            SSEError,
             connect_sse,
         )
 
