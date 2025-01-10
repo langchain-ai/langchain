@@ -66,6 +66,7 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 requests = "^2.31.0"
+pytest-socket = "^0.7.0"
 [[tool.poetry.group.test.dependencies.langchain-core]]
 path = "../../core"
 develop = true
