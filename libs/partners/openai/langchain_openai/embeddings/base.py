@@ -552,7 +552,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.model_dump()
-                _cached_empty_embedding = average_embedded["data"][0]["embedding"]
+                if (len(average_embedded["data"]) > 0):
+                    _cached_empty_embedding = average_embedded["data"][0]["embedding"]
+                else:
+                    raise ValueError(average_embedded["message"])
             return _cached_empty_embedding
 
         return [e if e is not None else await empty_embedding() for e in embeddings]
