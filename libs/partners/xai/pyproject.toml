@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-xai"
-version = "0.1.1"
+version = "0.2.0"
 description = "An integration package connecting xAI and LangChain"
 authors = []
 readme = "README.md"
@@ -20,8 +20,8 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-openai = ">=0.2,<0.3"
-langchain-core = "^0.3.27"
+langchain-openai = ">=0.3,<0.4"
+langchain-core = "^0.3.29"
 requests = ">=2,<3"
 aiohttp = ">=3.9.1,<4"
 
