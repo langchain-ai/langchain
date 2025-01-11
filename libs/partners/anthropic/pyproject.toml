@@ -13,6 +13,7 @@ license = "MIT"
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+plugins = ['pydantic.mypy']
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"

@@ -153,7 +153,7 @@ async def test_abatch_tags() -> None:
 
 
 async def test_async_tool_use() -> None:
-    llm = ChatAnthropic(  # type: ignore[call-arg]
+    llm = ChatAnthropic(
         model=MODEL_NAME,
     )
 
@@ -249,7 +249,7 @@ def test_system_invoke() -> None:
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
@@ -258,7 +258,7 @@ def test_anthropic_call() -> None:
 
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -274,7 +274,7 @@ def test_anthropic_generate() -> None:
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     message = HumanMessage(content="Hello")
     response = chat.stream([message])
     for token in response:
@@ -286,7 +286,7 @@ def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(  # type: ignore[call-arg]
+    chat = ChatAnthropic(
         model=MODEL_NAME,
         callback_manager=callback_manager,
         verbose=True,
@@ -302,7 +302,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(  # type: ignore[call-arg]
+    chat = ChatAnthropic(
         model=MODEL_NAME,
         callback_manager=callback_manager,
         verbose=True,
@@ -318,7 +318,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     messages: list[BaseMessage] = [
         HumanMessage(
             content=[
@@ -369,7 +369,7 @@ async def test_astreaming() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME)
     llm_with_tools = llm.bind_tools(
         [
             {
@@ -452,7 +452,7 @@ def test_anthropic_with_empty_text_block() -> None:
         """Type the given letter."""
         return "OK"
 
-    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(  # type: ignore[call-arg]
+    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
         [type_letter]
     )
 
@@ -490,7 +490,7 @@ def test_anthropic_with_empty_text_block() -> None:
 
 
 def test_with_structured_output() -> None:
-    llm = ChatAnthropic(  # type: ignore[call-arg]
+    llm = ChatAnthropic(
         model="claude-3-opus-20240229",
     )
 
@@ -510,7 +510,7 @@ def test_with_structured_output() -> None:
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 
     # Test simple case
     messages = [
@@ -571,7 +571,7 @@ class GetWeather(BaseModel):
 
 @pytest.mark.parametrize("tool_choice", ["GetWeather", "auto", "any"])
 def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
-    chat_model = ChatAnthropic(  # type: ignore[call-arg]
+    chat_model = ChatAnthropic(
         model=MODEL_NAME,
     )
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
@@ -583,7 +583,7 @@ def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
     data = b64encode(requests.get(url).content).decode()
 
-    result = ChatAnthropic(model_name=MODEL_NAME).invoke(  # type: ignore[call-arg]
+    result = ChatAnthropic(model=MODEL_NAME).invoke(
         [
             HumanMessage(
                 [
