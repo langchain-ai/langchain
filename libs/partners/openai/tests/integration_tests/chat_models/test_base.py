@@ -1202,3 +1202,9 @@ def test_o1_doesnt_stream() -> None:
     """
     with pytest.raises(openai.BadRequestError):
         list(ChatOpenAI(model="o1", disable_streaming=False).stream("how are you"))
+
+
+@pytest.mark.scheduled
+def test_o1_stream_default_works() -> None:
+    result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
+    assert len(result) > 0
