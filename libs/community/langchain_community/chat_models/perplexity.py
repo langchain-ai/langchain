@@ -221,7 +221,7 @@ class ChatPerplexity(BaseChatModel):
         if stop:
             params["stop_sequences"] = stop
         stream_resp = self.client.chat.completions.create(
-            messages=message_dicts,stream=True, **params
+            messages=message_dicts, stream=True, **params
         )
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
