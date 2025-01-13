@@ -3,7 +3,7 @@ import html
 import io
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Iterator, Literal
+from typing import TYPE_CHECKING, Iterable, Iterator, Literal
 
 import numpy
 import numpy as np
@@ -11,11 +11,11 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
-if TYPE_CHECKING:
-    from PIL.Image import Image
-
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+
+if TYPE_CHECKING:
+    from PIL.Image import Image
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +167,7 @@ class TesseractBlobParser(BaseImageBlobParser):
         self,
         *,
         format: Literal["text", "markdown", "html"] = "text",
-        langs: list[str] = ("eng",),
+        langs: Iterable[str] = ("eng",),
     ):
         """
         Initializes the TesseractBlobParser.
@@ -179,7 +179,7 @@ class TesseractBlobParser(BaseImageBlobParser):
               The languages to use for OCR.
         """
         super().__init__(format=format)
-        self.langs = langs
+        self.langs = list(langs)
 
     def _analyze_image(self, img: "Image") -> str:
         """
