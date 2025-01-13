@@ -5,6 +5,7 @@ import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Iterator, Literal
 
+import numpy
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseChatModel
@@ -19,53 +20,123 @@ from langchain_community.document_loaders.blob_loaders import Blob
 logger = logging.getLogger(__name__)
 
 
-class ImageBlobParser(BaseBlobParser):
+class BaseImageBlobParser(BaseBlobParser):
+    """
+    Abstract base class for parsing image blobs into text.
+
+    Attributes:
+        format (Literal["text", "markdown", "html"]):
+          Output format of the parsed text.
+    """
+
     def __init__(
         self,
         *,
         format: Literal["text", "markdown", "html"] = "text",
     ):
+        """
+        Initializes the BaseImageBlobParser.
+
+        Args:
+            format (Literal["text", "markdown", "html"]):
+              The format for the parsed output.
+        """
         self.format = format
 
     @abstractmethod
     def _analyze_image(self, img: "Image") -> str:
+        """
+        Abstract method to analyze an image and extract textual content.
+
+        Args:
+            img (Image):
+              The image to be analyzed.
+
+        Returns:
+            str:
+              The extracted text content.
+        """
         pass
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """
+        Lazily parses a blob and yields Document objects containing the parsed content.
+
+        Args:
+            blob (Blob):
+              The blob to be parsed.
+
+        Yields:
+            Document:
+              A document containing the parsed content and metadata.
+        """
         try:
             from PIL import Image as Img
 
             with blob.as_bytes_io() as buf:
-                img = Img.open(buf)
+                if blob.mimetype == "application/x-npy":
+                    img = Img.fromarray(numpy.load(buf))
+                else:
+                    img = Img.open(buf)
                 content = self._analyze_image(img)
                 if content:
+                    source = blob.source or "#"
                     if self.format == "markdown":
                         content = content.replace("]", r"\\]")
-                        content = f"![{content}](.)"
+                        content = f"![{content}]({source})"
                     elif self.format == "html":
-                        content = f'<img alt="{html.escape(content, quote=True)}" />'
+                        content = (
+                            f'<img alt="{html.escape(content, quote=True)} '
+                            f'src="{source}" />'
+                        )
                 logger.debug("Image text: %s", content.replace("\n", "\\n"))
                 yield Document(
                     page_content=content,
-                    metadata={"source": blob.source},
+                    metadata={**blob.metadata, **{"source": blob.source}},
                 )
         except ImportError:
             raise ImportError(
-                "`rapidocr-onnxruntime` package not found, please install it with "
+                "`Pillow` package not found, please install it with "
                 "`pip install Pillow`"
             )
 
 
-class RapidOCRBlobParser(ImageBlobParser):
+class RapidOCRBlobParser(BaseImageBlobParser):
+    """
+    Parser for extracting text from images using the RapidOCR library.
+
+    Attributes:
+        ocr:
+          The RapidOCR instance for performing OCR.
+    """
+
     def __init__(
         self,
         *,
         format: Literal["text", "markdown", "html"] = "text",
     ):
+        """
+        Initializes the RapidOCRBlobParser.
+
+        Args:
+            format (Literal["text", "markdown", "html"]):
+              The format for the parsed output.
+        """
         super().__init__(format=format)
         self.ocr = None
 
     def _analyze_image(self, img: "Image") -> str:
+        """
+        Analyzes an image and extracts text using RapidOCR.
+
+        Args:
+            img (Image):
+              The image to be analyzed.
+
+        Returns:
+            str:
+              The extracted text content.
+        """
         if not self.ocr:
             try:
                 from rapidocr_onnxruntime import RapidOCR
@@ -83,17 +154,44 @@ class RapidOCRBlobParser(ImageBlobParser):
         return content
 
 
-class TesseractBlobParser(ImageBlobParser):
+class TesseractBlobParser(BaseImageBlobParser):
+    """
+    Parser for extracting text from images using the Tesseract OCR library.
+
+    Attributes:
+        langs (list[str]):
+          The languages to use for OCR.
+    """
+
     def __init__(
         self,
         *,
         format: Literal["text", "markdown", "html"] = "text",
-        langs: list[str] = ["eng"],
+        langs: list[str] = ("eng",),
     ):
+        """
+        Initializes the TesseractBlobParser.
+
+        Args:
+            format (Literal["text", "markdown", "html"]):
+              The format for the parsed output.
+            langs (list[str]):
+              The languages to use for OCR.
+        """
         super().__init__(format=format)
         self.langs = langs
 
     def _analyze_image(self, img: "Image") -> str:
+        """
+        Analyzes an image and extracts text using Tesseract OCR.
+
+        Args:
+            img (Image):
+              The image to be analyzed.
+
+        Returns:
+            str: The extracted text content.
+        """
         try:
             import pytesseract
         except ImportError:
@@ -104,7 +202,7 @@ class TesseractBlobParser(ImageBlobParser):
         return pytesseract.image_to_string(img, lang="+".join(self.langs)).strip()
 
 
-_prompt_images_to_description = (
+_PROMPT_IMAGES_TO_DESCRIPTION = (
     "You are an assistant tasked with summarizing "
     "images for retrieval. "
     "These summaries will be embedded and used to retrieve the raw image. "
@@ -113,19 +211,51 @@ _prompt_images_to_description = (
 )
 
 
-class MultimodalBlobParser(ImageBlobParser):
+class LLMImageBlobParser(BaseImageBlobParser):
+    """
+    Parser for analyzing images using a language model (LLM).
+
+    Attributes:
+        model (BaseChatModel):
+          The language model to use for analysis.
+        prompt (str):
+          The prompt to provide to the language model.
+    """
+
     def __init__(
         self,
         *,
         format: Literal["text", "markdown", "html"] = "text",
         model: BaseChatModel,
-        prompt: str = _prompt_images_to_description,
+        prompt: str = _PROMPT_IMAGES_TO_DESCRIPTION,
     ):
+        """
+        Initializes the LLMImageBlobParser.
+
+        Args:
+            format (Literal["text", "markdown", "html"]):
+              The format for the parsed output.
+            model (BaseChatModel):
+              The language model to use for analysis.
+            prompt (str):
+              The prompt to provide to the language model.
+        """
         super().__init__(format=format)
         self.model = model
         self.prompt = prompt
 
     def _analyze_image(self, img: "Image") -> str:
+        """
+        Analyzes an image using the provided language model.
+
+        Args:
+            img (Image):
+              The image to be analyzed.
+
+        Returns:
+            str: *
+              The extracted textual content.
+        """
         image_bytes = io.BytesIO()
         img.save(image_bytes, format="PNG")
         img_base64 = base64.b64encode(image_bytes.getvalue()).decode("utf-8")

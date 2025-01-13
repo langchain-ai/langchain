@@ -29,7 +29,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.dedoc import DedocBaseLoader
 from langchain_community.document_loaders.parsers.images import (
-    ImageBlobParser,
+    BaseImageBlobParser,
     RapidOCRBlobParser,
 )
 from langchain_community.document_loaders.parsers.pdf import (
@@ -480,7 +480,7 @@ class PyMuPDFLoader(BasePDFLoader):
         mode: Literal["single", "page"] = "page",
         pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
         extract_images: bool = False,
-        images_parser: Optional[ImageBlobParser] = RapidOCRBlobParser(),
+        images_parser: Optional[BaseImageBlobParser] = RapidOCRBlobParser(),
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         headers: Optional[dict] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,

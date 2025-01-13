@@ -20,13 +20,14 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+import numpy
 import numpy as np
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.images import (
-    ImageBlobParser,
+    BaseImageBlobParser,
     RapidOCRBlobParser,
 )
 
@@ -216,7 +217,7 @@ class ImagesPdfParser(BaseBlobParser):
     def __init__(
         self,
         extract_images: bool,
-        images_parser: Optional[ImageBlobParser],
+        images_parser: Optional[BaseImageBlobParser],
     ):
         """Extract text from images.
 
@@ -485,7 +486,7 @@ class PyMuPDFParser(ImagesPdfParser):
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
         pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
-        images_parser: Optional[ImageBlobParser] = RapidOCRBlobParser(),
+        images_parser: Optional[BaseImageBlobParser] = RapidOCRBlobParser(),
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -637,14 +638,6 @@ class PyMuPDFParser(ImagesPdfParser):
             extras.append(tables_from_page)
         all_text = _merge_text_and_extras(extras, text_from_page)
 
-        if not all_text:
-            # logger.warning(
-            #     "Warning: Empty content on page %s of document %s",
-            #     page.number,
-            #     blob.source,
-            # )
-            pass
-
         return all_text
 
     def _extract_metadata(self, doc: pymupdf.Document, blob: Blob) -> dict:
@@ -687,7 +680,6 @@ class PyMuPDFParser(ImagesPdfParser):
         if not self.extract_images:
             return ""
         import pymupdf
-        from PIL import Image
 
         img_list = page.get_images()
         images = []
@@ -699,8 +691,10 @@ class PyMuPDFParser(ImagesPdfParser):
                     pix.height, pix.width, -1
                 )
                 image_bytes = io.BytesIO()
-                Image.fromarray(image).save(image_bytes, format="PNG")
-                blob = Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
+                numpy.save(image_bytes, image)
+                blob = Blob.from_data(
+                    image_bytes.getvalue(), mime_type="application/x-npy"
+                )
                 images.append(next(self.images_parser.lazy_parse(blob)).page_content)
         return _FORMAT_IMAGE_STR.format(
             image_text=_JOIN_IMAGES.join(filter(None, images))

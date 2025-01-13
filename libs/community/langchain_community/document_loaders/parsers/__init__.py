@@ -18,7 +18,8 @@ if TYPE_CHECKING:
         BS4HTMLParser,
     )
     from langchain_community.document_loaders.parsers.images import (
-        MultimodalBlobParser,
+        BaseImageBlobParser,
+        LLMImageBlobParser,
         RapidOCRBlobParser,
         TesseractBlobParser,
     )
@@ -40,10 +41,11 @@ if TYPE_CHECKING:
 _module_lookup = {
     "AzureAIDocumentIntelligenceParser": "langchain_community.document_loaders.parsers.doc_intelligence",  # noqa: E501
     "BS4HTMLParser": "langchain_community.document_loaders.parsers.html",
+    "BaseImageBlobParser": "langchain_community.document_loaders.parsers.images",
     "DocAIParser": "langchain_community.document_loaders.parsers.docai",
     "GrobidParser": "langchain_community.document_loaders.parsers.grobid",
     "LanguageParser": "langchain_community.document_loaders.parsers.language",
-    "MultimodalBlobParser": "langchain_community.document_loaders.parsers.images",
+    "LLMImageBlobParser": "langchain_community.document_loaders.parsers.images",
     "OpenAIWhisperParser": "langchain_community.document_loaders.parsers.audio",
     "PDFMinerParser": "langchain_community.document_loaders.parsers.pdf",
     "PDFPlumberParser": "langchain_community.document_loaders.parsers.pdf",
@@ -65,11 +67,12 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AzureAIDocumentIntelligenceParser",
+    "BaseImageBlobParser",
     "BS4HTMLParser",
     "DocAIParser",
     "GrobidParser",
     "LanguageParser",
-    "MultimodalBlobParser",
+    "LLMImageBlobParser",
     "OpenAIWhisperParser",
     "PDFMinerParser",
     "PDFPlumberParser",

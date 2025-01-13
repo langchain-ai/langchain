@@ -8,7 +8,7 @@ from langchain_core.language_models import FakeMessagesListChatModel
 from langchain_core.messages import ChatMessage
 
 from langchain_community.document_loaders.parsers.images import (
-    MultimodalBlobParser,
+    LLMImageBlobParser,
     RapidOCRBlobParser,
     TesseractBlobParser,
 )
@@ -39,7 +39,7 @@ text_image = Blob.from_path(path_base / "examples/text.png")
         (RapidOCRBlobParser, {}),
         (TesseractBlobParser, {}),
         (
-            MultimodalBlobParser,
+            LLMImageBlobParser,
             {
                 "model": FakeMessagesListChatModel(
                     responses=[
@@ -62,7 +62,7 @@ def test_image_parser_with_differents_format_and_files(
     blob: Blob,
     body: str,
 ) -> None:
-    if blob_loader == MultimodalBlobParser and "building" in str(blob.path):
+    if blob_loader == LLMImageBlobParser and "building" in str(blob.path):
         body = ".*building.*"
     documents = list(blob_loader(format=format, **kw).lazy_parse(blob))
     assert len(documents) == 1

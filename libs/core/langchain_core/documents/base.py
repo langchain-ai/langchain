@@ -224,12 +224,12 @@ class Blob(BaseMedia):
     @classmethod
     def from_data(
         cls,
-        data: Union[str, bytes],
+            data: Union[str, bytes],
         *,
-        encoding: str = "utf-8",
-        mime_type: Optional[str] = None,
-        path: Optional[str] = None,
-        metadata: Optional[dict] = None,
+            encoding: str = "utf-8",
+            mime_type: Optional[str] = None,
+            path: Optional[str] = None,
+            metadata: Optional[dict] = None,
     ) -> Blob:
         """Initialize the blob from in-memory data.
 

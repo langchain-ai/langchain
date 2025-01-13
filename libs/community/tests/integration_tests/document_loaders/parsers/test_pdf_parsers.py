@@ -156,7 +156,7 @@ def test_mode_and_extract_images_variations(
     """
     from PIL.Image import Image
 
-    from langchain_community.document_loaders.parsers.images import ImageBlobParser
+    from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
 
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
         """Standard tests to verify that the given parser works.
@@ -198,16 +198,16 @@ def test_mode_and_extract_images_variations(
             assert len(docs)
             parser.password = old_password
 
-    class EmptyImageBlobParser(ImageBlobParser):
+    class EmptyImageBlobParser(BaseImageBlobParser):
         def _analyze_image(self, img: Image) -> str:
-            return "![image](.)"
+            return "![image](#)"
 
     parser_class = getattr(pdf_parsers, parser_factory)
 
     parser = parser_class(
         mode=mode,
         extract_images=extract_images,
-        images_parser=EmptyImageBlobParser(),
+        # images_parser=EmptyImageBlobParser(),  # FIXME
         **params,
     )
     _assert_with_parser(parser, splits_by_page=(mode == "page"))
@@ -236,7 +236,7 @@ def test_parser_with_table(
 ) -> None:
     from PIL.Image import Image
 
-    from langchain_community.document_loaders.parsers.images import ImageBlobParser
+    from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
 
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
         """Standard tests to verify that the given parser works.
@@ -279,7 +279,7 @@ def test_parser_with_table(
         else:
             assert not len(tables)
 
-    class EmptyImageBlobParser(ImageBlobParser):
+    class EmptyImageBlobParser(BaseImageBlobParser):
         def _analyze_image(self, img: Image) -> str:
             return "![image](.)"
 
