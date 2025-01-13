@@ -184,17 +184,6 @@ const FEATURE_TABLES = {
                 "apiLink": "https://python.langchain.com/api_reference/community/chat_models/langchain_community.chat_models.llamacpp.ChatLlamaCpp.html"
             },
             {
-                "name": "ChatPipeshift",
-                "package": "langchain-pipeshift",
-                "link": "pipeshift/",
-                "structured_output": true,
-                "tool_calling": false,
-                "json_mode": true,
-                "multimodal": false,
-                "local": false,
-                "apiLink": "https://python.langchain.com/api_reference/pipeshift/chat_models/langchain_pipeshift.chat_models.ChatPipeshift.html"
-            },
-            {
                 "name": "ChatAI21",
                 "package": "langchain-ai21",
                 "link": "ai21",
@@ -327,12 +316,6 @@ const FEATURE_TABLES = {
                 link: "NVIDIA",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/llm/langchain_nvidia_ai_endpoints.llm.NVIDIA.html"
-            },
-            {
-                name: "PipeshiftLLM",
-                link: "pipeshift",
-                package: "langchain-pipeshift",
-                apiLink: "https://python.langchain.com/api_reference/pipeshift/llms/langchain_pipeshift.llms.Pipeshift.html"
             },
         ],
     },
@@ -832,6 +815,13 @@ const FEATURE_TABLES = {
                 source: "Uses Docling to load and parse web pages",
                 api: "Package",
                 apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
+            },
+            {
+                name: "Hyperbrowser",
+                link: "hyperbrowser",
+                source: "Platform for running and scaling headless browsers, can be used to scrape/crawl any site",
+                api: "API",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/hyperbrowser/"
             }
         ]
     },
