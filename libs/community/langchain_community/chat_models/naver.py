@@ -16,9 +16,6 @@ from typing import (
 
 import httpx
 from httpx_sse import SSEError
-from pydantic import AliasChoices, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
-
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -39,6 +36,14 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import convert_to_secret_str, get_from_env
+from pydantic import (
+    AliasChoices,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
 
@@ -68,7 +73,7 @@ def _convert_chunk_to_message_chunk(
         return default_class(content=content)  # type: ignore[call-arg]
 
 
-def _sse_data_to_response_metadata(sse_data):
+def _sse_data_to_response_metadata(sse_data: Dict) -> Dict[str, Any]:
     response_metadata = {}
     if "stopReason" in sse_data:
         response_metadata["stop_reason"] = sse_data["stopReason"]
@@ -330,10 +335,13 @@ class ChatClovaX(BaseChatModel):
 
         return self
 
-    def _is_new_api_key(self):
-        return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+    def _is_new_api_key(self) -> bool:
+        if self.ncp_clovastudio_api_key:
+            return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+        else:
+            return False
 
-    def _init_fields_on_old_api_key(self):
+    def _init_fields_on_old_api_key(self) -> None:
         if not self.ncp_apigw_api_key:
             self.ncp_apigw_api_key = convert_to_secret_str(
                 get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")

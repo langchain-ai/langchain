@@ -1,9 +1,13 @@
-"""Test ChatNaver chat model."""
+"""Test ChatClovaX chat model."""
+
 import pytest
 from httpx_sse import SSEError
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+)
 
 from langchain_community.chat_models import ChatClovaX
-from langchain_core.messages import AIMessage, AIMessageChunk
 
 
 def test_stream() -> None:

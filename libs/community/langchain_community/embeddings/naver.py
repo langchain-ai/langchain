@@ -2,6 +2,8 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 
 import httpx
+from langchain_core.embeddings import Embeddings
+from langchain_core.utils import convert_to_secret_str, get_from_env
 from pydantic import (
     AliasChoices,
     BaseModel,
@@ -11,9 +13,6 @@ from pydantic import (
     model_validator,
 )
 from typing_extensions import Self
-
-from langchain_core.embeddings import Embeddings
-from langchain_core.utils import convert_to_secret_str, get_from_env
 
 _DEFAULT_BASE_URL = "https://clovastudio.apigw.ntruss.com"
 _DEFAULT_BASE_URL_ON_NEW_API_KEY = "https://clovastudio.stream.ntruss.com"
@@ -109,10 +108,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         app_type = "serviceapp" if self.service_app else "testapp"
         model_name = self.model_name if self.model_name != "bge-m3" else "v2"
         if self._is_new_api_key():
-            return (
-                f"{self.base_url}/{app_type}"
-                f"/v1/api-tools/embedding/{model_name}"
-            )
+            return f"{self.base_url}/{app_type}" f"/v1/api-tools/embedding/{model_name}"
         else:
             return (
                 f"{self.base_url}/{app_type}"
@@ -131,6 +127,9 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         else:
             self._init_fields_on_old_api_key()
 
+        if not self.base_url:
+            raise ValueError("base_url dose not exist.")
+
         if not self.client:
             self.client = httpx.Client(
                 base_url=self.base_url,
@@ -138,7 +137,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
                 timeout=self.timeout,
             )
 
-        if not self.async_client:
+        if not self.async_client and self.base_url:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers=self.default_headers(),
@@ -147,16 +146,21 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
         return self
 
-    def _is_new_api_key(self):
-        return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+    def _is_new_api_key(self) -> bool:
+        if self.ncp_clovastudio_api_key:
+            return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+        else:
+            return False
 
-    def _init_fields_on_new_api_key(self):
+    def _init_fields_on_new_api_key(self) -> None:
         if not self.base_url:
             self.base_url = get_from_env(
-                "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL_ON_NEW_API_KEY
+                "base_url",
+                "NCP_CLOVASTUDIO_API_BASE_URL",
+                _DEFAULT_BASE_URL_ON_NEW_API_KEY,
             )
 
-    def _init_fields_on_old_api_key(self):
+    def _init_fields_on_old_api_key(self) -> None:
         if not self.ncp_apigw_api_key:
             self.ncp_apigw_api_key = convert_to_secret_str(
                 get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
