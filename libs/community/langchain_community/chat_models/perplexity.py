@@ -216,7 +216,6 @@ class ChatPerplexity(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        del params["stream"]
         default_chunk_class = AIMessageChunk
         params.pop("stream", None)
         if stop:
