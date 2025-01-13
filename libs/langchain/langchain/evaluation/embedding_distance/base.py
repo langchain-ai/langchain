@@ -1,7 +1,7 @@
 """A chain for comparing the output of two models using embeddings."""
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -15,9 +15,6 @@ from pydantic import ConfigDict, Field
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from langchain.schema import RUN_KEY
-
-if TYPE_CHECKING:
-    import numpy as np
 
 
 def _import_numpy() -> Any:

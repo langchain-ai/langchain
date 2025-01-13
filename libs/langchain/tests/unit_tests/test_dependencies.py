@@ -46,7 +46,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "langchain-core",
             "langchain-text-splitters",
             "langsmith",
-            "numpy",
             "pydantic",
             "python",
             "requests",
@@ -97,5 +96,6 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "requests-mock",
             # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
             "cffi",
+            "numpy",
         ]
     )
