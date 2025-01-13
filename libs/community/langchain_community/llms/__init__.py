@@ -458,6 +458,12 @@ def _import_openlm() -> Type[BaseLLM]:
     return OpenLM
 
 
+def _import_openvino() -> Type[BaseLLM]:
+    from langchain_community.llms.openvino import OpenVINOLLM
+
+    return OpenVINOLLM
+
+
 def _import_outlines() -> Type[BaseLLM]:
     from langchain_community.llms.outlines import Outlines
 
@@ -813,6 +819,8 @@ def __getattr__(name: str) -> Any:
         return _import_openllm()
     elif name == "OpenLM":
         return _import_openlm()
+    elif name == "OpenVINOLLM":
+        return _import_openvino()
     elif name == "Outlines":
         return _import_outlines()
     elif name == "PaiEasEndpoint":
@@ -962,6 +970,7 @@ __all__ = [
     "OpenAIChat",
     "OpenLLM",
     "OpenLM",
+    "OpenVINOLLM",
     "Outlines",
     "PaiEasEndpoint",
     "Petals",
@@ -1064,6 +1073,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
+        "openvino": _import_openvino,
         "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,
         "pipelineai": _import_pipelineai,
