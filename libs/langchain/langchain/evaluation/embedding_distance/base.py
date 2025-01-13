@@ -167,7 +167,7 @@ class _EmbeddingDistanceChainMixin(Chain):
             raise ValueError(f"Invalid metric: {metric}")
 
     @staticmethod
-    def _cosine_distance(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def _cosine_distance(a: Any, b: Any) -> Any:
         """Compute the cosine distance between two vectors.
 
         Args:
@@ -188,7 +188,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         return 1.0 - cosine_similarity(a, b)
 
     @staticmethod
-    def _euclidean_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+    def _euclidean_distance(a: Any, b: Any) -> Any:
         """Compute the Euclidean distance between two vectors.
 
         Args:
@@ -202,7 +202,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         return np.linalg.norm(a - b)
 
     @staticmethod
-    def _manhattan_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+    def _manhattan_distance(a: Any, b: Any) -> Any:
         """Compute the Manhattan distance between two vectors.
 
         Args:
@@ -216,7 +216,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         return np.sum(np.abs(a - b))
 
     @staticmethod
-    def _chebyshev_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+    def _chebyshev_distance(a: Any, b: Any) -> Any:
         """Compute the Chebyshev distance between two vectors.
 
         Args:
@@ -230,7 +230,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         return np.max(np.abs(a - b))
 
     @staticmethod
-    def _hamming_distance(a: np.ndarray, b: np.ndarray) -> np.floating:
+    def _hamming_distance(a: Any, b: Any) -> Any:
         """Compute the Hamming distance between two vectors.
 
         Args:
@@ -243,7 +243,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         np = _import_numpy()
         return np.mean(a != b)
 
-    def _compute_score(self, vectors: np.ndarray) -> float:
+    def _compute_score(self, vectors: Any) -> float:
         """Compute the score based on the distance metric.
 
         Args:
