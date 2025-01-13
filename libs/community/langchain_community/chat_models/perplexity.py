@@ -231,7 +231,7 @@ class ChatPerplexity(BaseChatModel):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
-            citations = chunk.get("citations", []) # added citations to the chunk
+            citations = chunk.get("citations", [])
             choice = chunk["choices"][0]
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
