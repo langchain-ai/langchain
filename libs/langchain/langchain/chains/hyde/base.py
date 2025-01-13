@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-import numpy as np
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -54,6 +53,13 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
 
     def combine_embeddings(self, embeddings: List[List[float]]) -> List[float]:
         """Combine embeddings into final embeddings."""
+        try:
+            import numpy as np
+        except ImportError as e:
+            raise ImportError(
+                "Could not import numpy,"
+                "please install with `pip install numpy`."
+            ) from e
         return list(np.array(embeddings).mean(axis=0))
 
     def embed_query(self, text: str) -> List[float]:

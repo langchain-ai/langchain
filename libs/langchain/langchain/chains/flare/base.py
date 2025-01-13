@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-import numpy as np
 from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
@@ -57,6 +56,13 @@ def _low_confidence_spans(
     min_token_gap: int,
     num_pad_tokens: int,
 ) -> List[str]:
+    try:
+        import numpy as np
+    except ImportError as e:
+        raise ImportError(
+            "Could not import numpy,"
+            "please install with `pip install numpy`."
+        ) from e
     _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
     low_idx = [i for i in _low_idx if re.search(r"\w", tokens[i])]
     if len(low_idx) == 0:
