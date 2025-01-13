@@ -191,8 +191,6 @@ class ChatPerplexity(BaseChatModel):
             additional_kwargs["function_call"] = function_call
         if _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = _dict["tool_calls"]
-        if _dict.get("citation"):
-            additional_kwargs["citation"] = _dict["citation"]
 
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
