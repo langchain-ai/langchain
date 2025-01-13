@@ -191,6 +191,8 @@ class ChatPerplexity(BaseChatModel):
             additional_kwargs["function_call"] = function_call
         if _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = _dict["tool_calls"]
+        if _dict.get("citation"):
+            additional_kwargs["citation"] = _dict["citation"]
 
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
@@ -229,16 +231,18 @@ class ChatPerplexity(BaseChatModel):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
+            citations = chunk.get("citations", []) # added citations to the chunk
             choice = chunk["choices"][0]
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
+            chunk.additional_kwargs["citations"] = citations
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info) 
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
