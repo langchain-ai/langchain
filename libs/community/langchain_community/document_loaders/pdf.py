@@ -68,6 +68,23 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     https://unstructured-io.github.io/unstructured/bricks.html#partition-pdf
     """
 
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
+        """
+
+        Args:
+            file_path: The path to the PDF file to load.
+            mode: The mode to use when loading the file. Can be one of "single",
+                "multi", or "all". Default is "single".
+            **unstructured_kwargs: Any kwargs to pass to the unstructured.
+        """
+        file_path = str(file_path)
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
     def _get_elements(self) -> list:
         from unstructured.partition.pdf import partition_pdf
 

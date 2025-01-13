@@ -218,7 +218,7 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         del params["stream"]
         default_chunk_class = AIMessageChunk
-
+        params.pop("stream", None)
         if stop:
             params["stop_sequences"] = stop
         stream_resp = self.client.chat.completions.create(

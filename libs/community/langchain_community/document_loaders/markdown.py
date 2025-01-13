@@ -1,6 +1,10 @@
-from typing import List
+from pathlib import Path
+from typing import Any, List, Union
 
-from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+from langchain_community.document_loaders.unstructured import (
+    UnstructuredFileLoader,
+    validate_unstructured_version,
+)
 
 
 class UnstructuredMarkdownLoader(UnstructuredFileLoader):
@@ -68,19 +72,25 @@ class UnstructuredMarkdownLoader(UnstructuredFileLoader):
     https://unstructured-io.github.io/unstructured/core/partition.html#partition-md
     """  # noqa: E501
 
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
+        """
+
+        Args:
+            file_path: The path to the Markdown file to load.
+            mode: The mode to use when loading the file. Can be one of "single",
+                "multi", or "all". Default is "single".
+            **unstructured_kwargs: Any kwargs to pass to the unstructured.
+        """
+        file_path = str(file_path)
+        validate_unstructured_version("0.4.16")
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
     def _get_elements(self) -> List:
-        from unstructured.__version__ import __version__ as __unstructured_version__
         from unstructured.partition.md import partition_md
-
-        # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
-        # versions of unstructured like 0.4.17-dev1
-        _unstructured_version = __unstructured_version__.split("-")[0]
-        unstructured_version = tuple([int(x) for x in _unstructured_version.split(".")])
-
-        if unstructured_version < (0, 4, 16):
-            raise ValueError(
-                f"You are on unstructured version {__unstructured_version__}. "
-                "Partitioning markdown files is only supported in unstructured>=0.4.16."
-            )
 
         return partition_md(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
