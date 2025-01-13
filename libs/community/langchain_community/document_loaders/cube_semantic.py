@@ -92,7 +92,9 @@ class CubeSemanticLoader(BaseLoader):
                     ]
                     return dimension_values
             else:
-                logger.error("Request failed with status code:", response.status_code)
+                logger.error(
+                    "Request failed with status code: %s", response.status_code
+                )
                 break
 
         if retries == self.dimension_values_max_retries:
