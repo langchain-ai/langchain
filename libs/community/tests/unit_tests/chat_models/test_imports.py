@@ -36,6 +36,7 @@ EXPECTED_ALL = [
     "ChatOCIModelDeploymentTGI",
     "ChatOllama",
     "ChatOpenAI",
+    "ChatOpenVINO",
     "ChatOutlines",
     "ChatPerplexity",
     "ChatPremAI",

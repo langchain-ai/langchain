@@ -75,7 +75,7 @@ class OpenVINOLLM(LLM):
                 to manage incremental decoding.
             """
 
-            def __init__(self, tokenizer):
+            def __init__(self, tokenizer: Any) -> None:
                 """
                 Initializes the IterableStreamer with the given tokenizer.
 
@@ -85,17 +85,17 @@ class OpenVINOLLM(LLM):
                 """
                 super().__init__()
                 self.tokenizer = tokenizer
-                self.tokens_cache = []
-                self.text_queue = queue.Queue()
+                self.tokens_cache: list[int] = []
+                self.text_queue: Any = queue.Queue()
                 self.print_len = 0
 
-            def __iter__(self):
+            def __iter__(self) -> IterableStreamer:
                 """
                 Returns the iterator object itself.
                 """
                 return self
 
-            def __next__(self):
+            def __next__(self) -> str:
                 """
                 Returns the next value from the text queue.
 
@@ -112,7 +112,7 @@ class OpenVINOLLM(LLM):
                     raise StopIteration
                 return value
 
-            def get_stop_flag(self):
+            def get_stop_flag(self) -> bool:
                 """
                 Checks whether the generation process should be stopped.
 
@@ -121,7 +121,7 @@ class OpenVINOLLM(LLM):
                 """
                 return False
 
-            def put_word(self, word: str):
+            def put_word(self, word: str) -> None:
                 """
                 Puts a word into the text queue.
 
@@ -164,7 +164,7 @@ class OpenVINOLLM(LLM):
                 else:
                     return False
 
-            def end(self):
+            def end(self) -> None:
                 """
                 Flushes residual tokens from the buffer
                 and puts a None value in the queue to signal the end.
@@ -179,7 +179,7 @@ class OpenVINOLLM(LLM):
                     self.print_len = 0
                 self.put_word(None)
 
-            def reset(self):
+            def reset(self) -> None:
                 """
                 Resets the state.
                 """
@@ -188,7 +188,7 @@ class OpenVINOLLM(LLM):
                 self.print_len = 0
 
         class ChunkStreamer(IterableStreamer):
-            def __init__(self, tokenizer, tokens_len=4):
+            def __init__(self, tokenizer: Any, tokens_len: int = 4) -> None:
                 super().__init__(tokenizer)
                 self.tokens_len = tokens_len
 
@@ -278,7 +278,7 @@ class OpenVINOLLM(LLM):
 
         stream_complete = Event()
 
-        def generate_and_signal_complete():
+        def generate_and_signal_complete() -> None:
             """
             genration function for single thread
             """
