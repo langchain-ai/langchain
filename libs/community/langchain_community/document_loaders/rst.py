@@ -49,7 +49,6 @@ class UnstructuredRSTLoader(UnstructuredFileLoader):
             **unstructured_kwargs: Additional keyword arguments to pass
                 to unstructured.
         """
-        file_path = str(file_path)
         validate_unstructured_version(min_unstructured_version="0.7.5")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
