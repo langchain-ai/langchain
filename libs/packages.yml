@@ -337,3 +337,7 @@ packages:
   path: .
   repo: AlwaysBluer/langchain-lindorm-integration
   downloads: 0
+- name: langchain-hyperbrowser
+  path: .
+  repo: hyperbrowserai/langchain-hyperbrowser
+  downloads: 0
