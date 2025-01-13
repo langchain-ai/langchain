@@ -18,6 +18,15 @@ VALID_TASKS = (
     "translation",
 )
 DEFAULT_BATCH_SIZE = 4
+_MINIMUM_OPTIMUM_VERSION = "1.21"
+
+from ..utils.import_utils import (
+    is_optimum_intel_available,
+    is_ipex_available,
+    is_openvino_available,
+    IMPORT_ERROR,
+    is_optimum_intel_version,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -126,70 +135,44 @@ class HuggingFacePipeline(BaseLLM):
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        try:
-            if task == "text-generation":
-                if backend == "openvino":
-                    try:
-                        from optimum.intel.openvino import (  # type: ignore[import]
-                            OVModelForCausalLM,
-                        )
-
-                    except ImportError:
-                        raise ValueError(
-                            "Could not import optimum-intel python package. "
-                            "Please install it with: "
-                            "pip install 'optimum[openvino,nncf]' "
-                        )
-                    try:
-                        # use local model
-                        model = OVModelForCausalLM.from_pretrained(
-                            model_id, **_model_kwargs
-                        )
-
-                    except Exception:
-                        # use remote model
-                        model = OVModelForCausalLM.from_pretrained(
-                            model_id, export=True, **_model_kwargs
-                        )
-                else:
-                    model = AutoModelForCausalLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
-            elif task in ("text2text-generation", "summarization", "translation"):
-                if backend == "openvino":
-                    try:
-                        from optimum.intel.openvino import OVModelForSeq2SeqLM
-
-                    except ImportError:
-                        raise ValueError(
-                            "Could not import optimum-intel python package. "
-                            "Please install it with: "
-                            "pip install 'optimum[openvino,nncf]' "
-                        )
-                    try:
-                        # use local model
-                        model = OVModelForSeq2SeqLM.from_pretrained(
-                            model_id, **_model_kwargs
-                        )
-
-                    except Exception:
-                        # use remote model
-                        model = OVModelForSeq2SeqLM.from_pretrained(
-                            model_id, export=True, **_model_kwargs
-                        )
-                else:
-                    model = AutoModelForSeq2SeqLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
-            else:
+        if backend in {"openvino", "ipex"}:
+            if task not in VALID_TASKS:
                 raise ValueError(
                     f"Got invalid task {task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
-        except ImportError as e:
-            raise ValueError(
-                f"Could not load the {task} model due to missing dependencies."
-            ) from e
+
+            if not is_optimum_intel_available():
+                raise ImportError(
+                    f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+                )
+
+            if is_optimum_intel_version("<", _MINIMUM_OPTIMUM_VERSION):
+                raise ImportError(
+                    f"Backend: {backend} requires optimum-intel>={_MINIMUM_OPTIMUM_VERSION}. "
+                    f" You can install it with pip: `pip install --upgrade --upgrade-strategy eager optimum[{backend}]`."
+                )
+
+            if backend == "openvino":
+                if not is_openvino_available():
+                    raise ImportError(
+                        f"Backend: {backend} {IMPORT_ERROR.format({backend})}"
+                    )
+
+                from optimum.intel import OVModelForCausalLM, OVModelForSeq2SeqLM
+
+                model_cls = OVModelForCausalLM if task == "text-generation" else OVModelForSeq2SeqLM
+            else:
+                if not is_ipex_available():
+                    raise ImportError(
+                        f"Backend: {backend} {IMPORT_ERROR.format({backend})}"
+                    )
+
+                from optimum.intel import IPEXModelForCausalLM, IPEXModelForSeq2SeqLM
+
+                model_cls = IPEXModelForCausalLM if task == "text-generation" else IPEXModelForSeq2SeqLM
+
+            model = model_cls.from_pretrained(model_id, **_model_kwargs)
 
         if tokenizer.pad_token is None:
             tokenizer.pad_token_id = model.config.eos_token_id
