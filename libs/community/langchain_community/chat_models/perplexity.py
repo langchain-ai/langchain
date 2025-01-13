@@ -242,7 +242,7 @@ class ChatPerplexity(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info) 
+            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
