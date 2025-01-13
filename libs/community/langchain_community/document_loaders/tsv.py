@@ -32,6 +32,7 @@ class UnstructuredTSVLoader(UnstructuredFileLoader):
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
+        file_path = str(file_path)
         validate_unstructured_version(min_unstructured_version="0.7.6")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
