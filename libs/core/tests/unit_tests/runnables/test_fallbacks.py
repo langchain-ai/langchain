@@ -96,9 +96,7 @@ def test_fallbacks(
     "runnable",
     ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
 )
-async def test_fallbacks_async(
-    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
-) -> None:
+async def test_fallbacks_async(runnable: RunnableWithFallbacks, request: Any) -> None:
     runnable = request.getfixturevalue(runnable)
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3

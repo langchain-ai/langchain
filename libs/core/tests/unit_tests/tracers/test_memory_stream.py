@@ -69,7 +69,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         """Produce items with slight delay."""
         tic = time.time()
         for i in range(3):
-            await asyncio.sleep(0.10)
+            await asyncio.sleep(0.2)
             toc = time.time()
             await writer.send(
                 {
@@ -95,6 +95,8 @@ async def test_queue_for_streaming_via_sync_call() -> None:
     task = asyncio.create_task(asyncio.to_thread(sync_call))
     items = [item async for item in consumer()]
     await task
+
+    assert len(items) == 3
 
     for item in items:
         delta_time = item["receive_time"] - item["produce_time"]

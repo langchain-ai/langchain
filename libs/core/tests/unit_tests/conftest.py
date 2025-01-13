@@ -14,13 +14,20 @@ from pytest_mock import MockerFixture
 def blockbuster() -> Iterator[BlockBuster]:
     with blockbuster_ctx() as bb:
         for func in ["os.stat", "os.path.abspath"]:
-            bb.functions[func].can_block_in(
-                "langchain_core/_api/internal.py", "is_caller_internal"
+            (
+                bb.functions[func]
+                .can_block_in("langchain_core/_api/internal.py", "is_caller_internal")
+                .can_block_in("langchain_core/runnables/base.py", "__repr__")
             )
 
         for func in ["os.stat", "io.TextIOWrapper.read"]:
             bb.functions[func].can_block_in(
                 "langsmith/client.py", "_default_retry_config"
+            )
+
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in(
+                "freezegun/api.py", "_get_cached_module_attributes"
             )
 
         yield bb

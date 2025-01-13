@@ -223,13 +223,13 @@ css = ["tinycss2 (>=1.1.0,<1.5)"]
 
 [[package]]
 name = "blockbuster"
-version = "1.5.8"
+version = "1.5.9"
 description = "Utility to detect blocking calls in the async event loop"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "blockbuster-1.5.8-py3-none-any.whl", hash = "sha256:ea0352823acbd837872785a96ec87701f1c7938410d66c6a8857ae11646d9744"},
-    {file = "blockbuster-1.5.8.tar.gz", hash = "sha256:0018080fd735e84f0b138f15ff0a339f99444ecdc0045f16056c7b23db92706b"},
+    {file = "blockbuster-1.5.9-py3-none-any.whl", hash = "sha256:1a3c43f1682866a8a9464c0850341ca72ab91c6e6a5fad1e8e1ce58590a7c98a"},
+    {file = "blockbuster-1.5.9.tar.gz", hash = "sha256:72d5696425cf86a6413043c5da73b8f436b7ea442606c47cd724329ef2fa4a91"},
 ]
 
 [package.dependencies]
@@ -3271,4 +3271,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "ea6041d2f8abfa7d0c2e6ade0da16db7338180180c74610747d803819208cdf8"
+content-hash = "604114dd5cdbe74e4e4f7666620aa9bde004fb7b502446065dc9a255351d087e"
