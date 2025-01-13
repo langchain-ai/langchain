@@ -45,6 +45,7 @@ class UnstructuredODTLoader(UnstructuredFileLoader):
                 "multi", or "all". Default is "single".
             **unstructured_kwargs: Any kwargs to pass to the unstructured.
         """
+        file_path = str(file_path)
         validate_unstructured_version(min_unstructured_version="0.6.3")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 

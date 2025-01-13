@@ -341,3 +341,7 @@ packages:
   path: .
   repo: pipeshift-org/langchain-pipeshift
   downloads: 107
+- name: langchain-hyperbrowser
+  path: .
+  repo: hyperbrowserai/langchain-hyperbrowser
+  downloads: 0
