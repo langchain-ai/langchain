@@ -121,7 +121,7 @@ class OpenVINOLLM(LLM):
                 """
                 return False
 
-            def put_word(self, word: str) -> None:
+            def put_word(self, word: Any) -> None:
                 """
                 Puts a word into the text queue.
 
@@ -208,7 +208,7 @@ class OpenVINOLLM(LLM):
         else:
             pipe = openvino_genai.LLMPipeline(model_path, device)
 
-        config = openvino_genai.GenerationConfig()
+        config = pipe.get_generation_config()
         if tokenizer is None:
             tokenizer = pipe.get_tokenizer()
         streamer = ChunkStreamer(tokenizer)
@@ -231,7 +231,7 @@ class OpenVINOLLM(LLM):
         if stop is not None:
             self.config.stop_strings = set(stop)
         try:
-            import openvino
+            import openvino as ov
             import openvino_genai
 
         except ImportError:
@@ -240,10 +240,13 @@ class OpenVINOLLM(LLM):
                 "Please install it with `pip install openvino-genai`."
             )
         if not isinstance(self.tokenizer, openvino_genai.Tokenizer):
-            prompt = openvino.Tensor(
-                self.tokenizer.encode(
-                    prompt, add_special_tokens=False, return_tensors="np"
-                ),
+            tokens = self.tokenizer(
+                prompt, add_special_tokens=False, return_tensors="np"
+            )
+            input_ids = tokens["input_ids"]
+            attention_mask = tokens["attention_mask"]
+            prompt = openvino_genai.TokenizedInputs(
+                ov.Tensor(input_ids), ov.Tensor(attention_mask)
             )
         output = self.pipe.generate(prompt, self.config)
         return output
@@ -261,7 +264,7 @@ class OpenVINOLLM(LLM):
         if stop is not None:
             self.config.stop_strings = set(stop)
         try:
-            import openvino
+            import openvino as ov
             import openvino_genai
 
         except ImportError:
@@ -270,12 +273,14 @@ class OpenVINOLLM(LLM):
                 "Please install it with `pip install openvino-genai`."
             )
         if not isinstance(self.tokenizer, openvino_genai.Tokenizer):
-            prompt = openvino.Tensor(
-                self.tokenizer.encode(
-                    prompt, add_special_tokens=False, return_tensors="np"
-                ),
+            tokens = self.tokenizer(
+                prompt, add_special_tokens=False, return_tensors="np"
             )
-
+            input_ids = tokens["input_ids"]
+            attention_mask = tokens["attention_mask"]
+            prompt = openvino_genai.TokenizedInputs(
+                ov.Tensor(input_ids), ov.Tensor(attention_mask)
+            )
         stream_complete = Event()
 
         def generate_and_signal_complete() -> None:
