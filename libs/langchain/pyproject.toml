@@ -153,6 +153,15 @@ jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
 
+
+[[tool.poetry.group.test.dependencies.numpy]]
+version = ">=1.22.4,<2"
+python = "<3.12"
+
+[[tool.poetry.group.test.dependencies.numpy]]
+version = ">=1.26.2,<3"
+python = ">=3.12"
+
 [tool.poetry.group.test.dependencies.langchain-tests]
 path = "../standard-tests"
 develop = true
