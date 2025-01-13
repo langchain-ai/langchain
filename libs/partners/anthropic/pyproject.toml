@@ -76,6 +76,7 @@ ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
+types-requests = "^2.32.0.20241016"
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../../core"
@@ -89,6 +90,8 @@ develop = true
 path = "../../core"
 develop = true
 
+[tool.poetry.group.test_integration.dependencies]
+requests = "^2.32.3"
 [tool.poetry.group.test_integration.dependencies.langchain-core]
 path = "../../core"
 develop = true
