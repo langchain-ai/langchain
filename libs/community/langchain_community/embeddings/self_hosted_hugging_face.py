@@ -41,7 +41,7 @@ def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0)
             import torch
             from habana_frameworks.torch.hpu import wrap_in_hpu_graph
             client = wrap_in_hpu_graph(client)
-            return client.eval().to(torch.device(device))
+            return client.eval().to(torch.device("hpu"))
 
     if importlib.util.find_spec("torch") is not None:
         import torch
