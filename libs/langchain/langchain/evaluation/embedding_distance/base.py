@@ -19,15 +19,17 @@ from langchain.schema import RUN_KEY
 if TYPE_CHECKING:
     import numpy as np
 
+
 def _import_numpy() -> Any:
     try:
         import numpy as np
-        return  np
+
+        return np
     except ImportError as e:
         raise ImportError(
-            "Could not import numpy,"
-            "please install with `pip install numpy`."
+            "Could not import numpy," "please install with `pip install numpy`."
         ) from e
+
 
 def _embedding_factory() -> Embeddings:
     """Create an Embeddings object.

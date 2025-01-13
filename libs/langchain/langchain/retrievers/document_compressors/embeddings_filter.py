@@ -68,13 +68,12 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
-        
+
         try:
             import numpy as np
         except ImportError as e:
             raise ImportError(
-                "Could not import numpy,"
-                "please install with `pip install numpy`."
+                "Could not import numpy," "please install with `pip install numpy`."
             ) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
@@ -111,13 +110,12 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
-        
+
         try:
             import numpy as np
         except ImportError as e:
             raise ImportError(
-                "Could not import numpy,"
-                "please install with `pip install numpy`."
+                "Could not import numpy," "please install with `pip install numpy`."
             ) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = await _aget_embeddings_from_stateful_docs(
