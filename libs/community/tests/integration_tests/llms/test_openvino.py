@@ -1,15 +1,24 @@
 """Test OpenVINO LLM wrapper."""
 
-from typing import Generator
-
-import huggingface_hub as hf_hub
+from typing import Any, Generator
 
 from langchain_community.llms.openvino import OpenVINOLLM
 
 
+def import_hf_hub() -> Any:
+    try:
+        import huggingface_hub as hf_hub
+    except ImportError as e:
+        raise ImportError(
+            "Could not import huggingface_hub package. "
+            "Please install it with `pip install huggingface_hub`."
+        ) from e
+    return hf_hub
+
+
 def test_openvino_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
-
+    hf_hub = import_hf_hub()
     model_id = "OpenVINO/TinyLlama-1.1B-Chat-v1.0-int4-ov"
     model_path = "TinyLlama-1.1B-Chat-v1.0-int4-ov"
 
@@ -21,7 +30,7 @@ def test_openvino_text_generation() -> None:
 
 def test_openvino_streaming() -> None:
     """Test streaming tokens from huggingface_pipeline."""
-
+    hf_hub = import_hf_hub()
     model_id = "OpenVINO/TinyLlama-1.1B-Chat-v1.0-int4-ov"
     model_path = "TinyLlama-1.1B-Chat-v1.0-int4-ov"
 
