@@ -3,7 +3,6 @@ from types import SimpleNamespace
 from typing import Any, Dict, Optional, Sequence
 
 import requests
-
 from langchain_core._api.deprecation import deprecated
 
 # Query to find OWL datatype properties
