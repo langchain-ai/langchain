@@ -408,7 +408,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 message_metadata: Metadata to associate with a new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
                     when a new thread is created.
-                instructions: Additional run instructions.
+                instructions: Overrides the instructions of the assistant.
+                additional_instructions: Appends additional instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
                 run_metadata: Metadata to associate with new run.
@@ -507,7 +508,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k
+            in (
+                "instructions",
+                "model",
+                "tools",
+                "additional_instructions",
+                "run_metadata",
+            )
         }
         return self.client.beta.threads.runs.create(
             input["thread_id"],
@@ -637,7 +645,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k
+            in (
+                "instructions",
+                "model",
+                "tools",
+                "additional_instructions",
+                "run_metadata",
+            )
         }
         return await self.async_client.beta.threads.runs.create(
             input["thread_id"],

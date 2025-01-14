@@ -534,7 +534,7 @@ class BaseChatOpenAI(BaseChatModel):
     used, or it's a list of disabled values for the parameter.
     
     For example, older models may not support the 'parallel_tool_calls' parameter at 
-    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can ben passed 
     in.
     
     If a parameter is disabled then it will not be used by default in any methods, e.g.
@@ -560,6 +560,15 @@ class BaseChatOpenAI(BaseChatModel):
         model = values.get("model_name") or values.get("model") or ""
         if model.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_disable_streaming(cls, values: Dict[str, Any]) -> Any:
+        """Disable streaming if n > 1."""
+        model = values.get("model_name") or values.get("model") or ""
+        if model == "o1" and values.get("disable_streaming") is None:
+            values["disable_streaming"] = True
         return values
 
     @model_validator(mode="after")
