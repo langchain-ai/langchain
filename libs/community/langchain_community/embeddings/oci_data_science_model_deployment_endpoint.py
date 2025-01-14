@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Optional, Mapping, Callable
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator, Field
-from langchain_core.utils import get_from_dict_or_env
 from langchain_core.language_models.llms import create_base_retry_decorator
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, Field, model_validator
 import requests
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 
 DEFAULT_HEADER = {
@@ -36,7 +36,7 @@ class OCIModelDeploymentEndpointEmbeddings(BaseModel, Embeddings):
             embeddings = OCIModelDeploymentEndpointEmbeddings(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<md_ocid>/predict",
             )
-    """
+    """ # noqa: E501
 
     auth: dict = Field(default_factory=dict, exclude=True)
     """ADS auth dictionary for OCI authentication:
@@ -59,7 +59,7 @@ class OCIModelDeploymentEndpointEmbeddings(BaseModel, Embeddings):
     max_retries: int = 1
     """The maximum number of retries to make when generating."""
 
-    @root_validator()
+    @model_validator(mode="before")
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
     ) -> Dict:
