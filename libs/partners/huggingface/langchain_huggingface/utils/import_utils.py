@@ -45,7 +45,7 @@ def compare_versions(
     library_or_version: Union[str, version.Version],
     operation: str,
     requirement_version: str,
-):
+) -> bool:
     """
     Compare a library version to some requirement using a given operation.
 
@@ -62,31 +62,32 @@ def compare_versions(
             f"`operation` must be one of {list(STR_OPERATION_TO_FUNC.keys())}"
             f", received {operation}"
         )
-    operation = STR_OPERATION_TO_FUNC[operation]
     if isinstance(library_or_version, str):
         library_or_version = version.parse(
             importlib.metadata.version(library_or_version)
         )
-    return operation(library_or_version, version.parse(requirement_version))
+    return STR_OPERATION_TO_FUNC[operation](
+        library_or_version, version.parse(requirement_version)
+    )
 
 
-def is_optimum_available():
+def is_optimum_available() -> bool:
     return _optimum_available
 
 
-def is_optimum_intel_available():
+def is_optimum_intel_available() -> bool:
     return _optimum_intel_available
 
 
-def is_ipex_available():
+def is_ipex_available() -> bool:
     return _ipex_available
 
 
-def is_openvino_available():
+def is_openvino_available() -> bool:
     return _openvino_available
 
 
-def is_optimum_version(operation: str, reference_version: str):
+def is_optimum_version(operation: str, reference_version: str) -> bool:
     """
     Compare the current Optimum version to a given reference with an operation.
     """
@@ -97,7 +98,7 @@ def is_optimum_version(operation: str, reference_version: str):
     )
 
 
-def is_optimum_intel_version(operation: str, reference_version: str):
+def is_optimum_intel_version(operation: str, reference_version: str) -> bool:
     """
     Compare the current Optimum Intel version to a given reference with an operation.
     """
