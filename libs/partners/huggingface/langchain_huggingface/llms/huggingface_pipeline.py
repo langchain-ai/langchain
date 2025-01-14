@@ -162,7 +162,10 @@ class HuggingFacePipeline(BaseLLM):
                         f"Backend: {backend} {IMPORT_ERROR.format(backend)}"
                     )
 
-                from optimum.intel import OVModelForCausalLM, OVModelForSeq2SeqLM  # type: ignore[import]
+                from optimum.intel import (  # type: ignore[import]
+                    OVModelForCausalLM,
+                    OVModelForSeq2SeqLM,
+                )
 
                 model_cls = (
                     OVModelForCausalLM
@@ -175,7 +178,10 @@ class HuggingFacePipeline(BaseLLM):
                         f"Backend: {backend} {IMPORT_ERROR.format(backend)}"
                     )
 
-                from optimum.intel import IPEXModelForCausalLM, IPEXModelForSeq2SeqLM  # type: ignore[import]
+                from optimum.intel import (  # type: ignore[import]
+                    IPEXModelForCausalLM,
+                    IPEXModelForSeq2SeqLM,
+                )
 
                 model_cls = (
                     IPEXModelForCausalLM
