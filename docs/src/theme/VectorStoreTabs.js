@@ -54,6 +54,13 @@ export default function VectorStoreTabs(props) {
             default: false,
         },
         {
+            value: "Opensearch",
+            label: "Opensearch",
+            text: `from langchain_community.vectorstores import OpenSearchVectorSearch\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = OpenSearchVectorSearch.from_documents(\n      docs,\n     embeddings,\n   opensearch_url="http://localhost:9200",\n   engine="faiss",\n   space_type="innerproduct",\n    ef_construction=256,\n  m=48,\n)`,
+            packageName: "langchain-community",
+            default: false,
+        },
+        {
             value: "PGVector",
             label: "PGVector",
             text: `from langchain_postgres import PGVector\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\n${vectorStoreVarName} = PGVector(\n    embeddings=embeddings,\n    collection_name="my_docs",\n    connection="postgresql+psycopg://...",\n)`,
