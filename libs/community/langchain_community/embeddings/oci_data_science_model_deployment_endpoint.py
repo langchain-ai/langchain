@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Optional, Mapping, Callable
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.language_models.llms import create_base_retry_decorator
+from pydantic import model_validator
 import requests
 
 
@@ -59,7 +60,7 @@ class OCIModelDeploymentEndpointEmbeddings(BaseModel, Embeddings):
     max_retries: int = 1
     """The maximum number of retries to make when generating."""
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
     ) -> Dict:
