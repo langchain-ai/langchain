@@ -310,14 +310,25 @@ from langchain_community.chat_message_histories import DynamoDBChatMessageHistor
 
 ## Graphs
 
+### Amazon Neptune
+
+>[Amazon Neptune](https://aws.amazon.com/neptune/)
+> is a high-performance graph analytics and serverless database for superior scalability and availability.
+
+For the Cypher and SPARQL integrations below, we need to install the `langchain-aws` library.
+
+```bash
+pip install langchain-aws
+```
+
 ### Amazon Neptune with Cypher
 
 See a [usage example](/docs/integrations/graphs/amazon_neptune_open_cypher).
 
 ```python
-from langchain_community.graphs import NeptuneGraph
-from langchain_community.graphs import NeptuneAnalyticsGraph
-from langchain_community.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
+from langchain_aws.graphs import NeptuneGraph
+from langchain_aws.graphs import NeptuneAnalyticsGraph
+from langchain_aws.chains import create_neptune_opencypher_qa_chain
 ```
 
 ### Amazon Neptune with SPARQL
@@ -325,8 +336,8 @@ from langchain_community.chains.graph_qa.neptune_cypher import NeptuneOpenCypher
 See a [usage example](/docs/integrations/graphs/amazon_neptune_sparql).
 
 ```python
-from langchain_community.graphs import NeptuneRdfGraph
-from langchain_community.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
+from langchain_aws.graphs import NeptuneRdfGraph
+from langchain_aws.chains import create_neptune_sparql_qa_chain
 ```
 
 
