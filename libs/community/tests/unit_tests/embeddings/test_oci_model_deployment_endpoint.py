@@ -17,7 +17,11 @@ def test_embedding_call(mocker: MockerFixture) -> None:
         responses.POST,
         endpoint,
         json={
-            "embeddings": expected_output,
+            "data": [
+                {
+                    "embedding": expected_output
+                }
+            ],
         },
         status=200,
     )
