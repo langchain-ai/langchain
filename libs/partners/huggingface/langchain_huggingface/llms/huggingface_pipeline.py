@@ -159,7 +159,7 @@ class HuggingFacePipeline(BaseLLM):
             if backend == "openvino":
                 if not is_openvino_available():
                     raise ImportError(
-                        f"Backend: {backend} {IMPORT_ERROR.format({backend})}"
+                        f"Backend: {backend} {IMPORT_ERROR.format(backend)}"
                     )
 
                 from optimum.intel import OVModelForCausalLM, OVModelForSeq2SeqLM  # type: ignore[import]
@@ -172,7 +172,7 @@ class HuggingFacePipeline(BaseLLM):
             else:
                 if not is_ipex_available():
                     raise ImportError(
-                        f"Backend: {backend} {IMPORT_ERROR.format({backend})}"
+                        f"Backend: {backend} {IMPORT_ERROR.format(backend)}"
                     )
 
                 from optimum.intel import IPEXModelForCausalLM, IPEXModelForSeq2SeqLM  # type: ignore[import]
