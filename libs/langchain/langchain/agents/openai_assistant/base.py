@@ -293,7 +293,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 instructions: Additional run instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
-                parallel_tool_calls: Allow Assistant to disallow parallel_tool_calls.
+                parallel_tool_calls: Allow Assistant to set parallel_tool_calls
+                    for this run.
                 top_p: Override Assistant top_p for this run.
                 temperature: Override Assistant temperature for this run.
                 max_completion_tokens: Allow setting max_completion_tokens for this run.
@@ -417,7 +418,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 additional_instructions: Appends additional instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
-                parallel_tool_calls: Allow Assistant to disallow parallel_tool_calls.
+                parallel_tool_calls: Allow Assistant to set parallel_tool_calls
+                    for this run.
                 top_p: Override Assistant top_p for this run.
                 temperature: Override Assistant temperature for this run.
                 max_completion_tokens: Allow setting max_completion_tokens for this run.
