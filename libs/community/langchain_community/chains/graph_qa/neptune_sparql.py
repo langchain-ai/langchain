@@ -75,6 +75,7 @@ def extract_sparql(query: str) -> str:
         query = query[8:-9]
     return query
 
+
 @deprecated(
     since="0.3.15",
     removal="1.0",

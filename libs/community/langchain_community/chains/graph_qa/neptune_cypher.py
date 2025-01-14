@@ -82,6 +82,7 @@ PROMPT_SELECTOR = ConditionalPromptSelector(
     conditionals=[(use_simple_prompt, NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT)],
 )
 
+
 @deprecated(
     since="0.3.15",
     removal="1.0",
