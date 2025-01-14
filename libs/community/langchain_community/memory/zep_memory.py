@@ -123,6 +123,7 @@ try:
             input_str, output_str = self._get_input_output(inputs, outputs)
             self.chat_memory.add_user_message(input_str, metadata=metadata)
             self.chat_memory.add_ai_message(output_str, metadata=metadata)
+
 except ImportError:
     # Placeholder object
     class ZepMemory:  # type: ignore[no-redef]

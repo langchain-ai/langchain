@@ -100,8 +100,7 @@ class PyPDFParser(BaseBlobParser):
             import pypdf
         except ImportError:
             raise ImportError(
-                "`pypdf` package not found, please install it with "
-                "`pip install pypdf`"
+                "`pypdf` package not found, please install it with `pip install pypdf`"
             )
 
         def _extract_text_from_page(page: pypdf.PageObject) -> str:
@@ -425,8 +424,7 @@ class PDFPlumberParser(BaseBlobParser):
             import PIL  # noqa:F401
         except ImportError:
             raise ImportError(
-                "pillow package not found, please install it with"
-                " `pip install pillow`"
+                "pillow package not found, please install it with `pip install pillow`"
             )
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe

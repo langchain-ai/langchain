@@ -550,15 +550,15 @@ class Milvus(VectorStore):
 
         texts = list(texts)
         if not self.auto_id:
-            assert isinstance(
-                ids, list
-            ), "A list of valid ids are required when auto_id is False."
-            assert len(set(ids)) == len(
-                texts
-            ), "Different lengths of texts and unique ids are provided."
-            assert all(
-                len(x.encode()) <= 65_535 for x in ids
-            ), "Each id should be a string less than 65535 bytes."
+            assert isinstance(ids, list), (
+                "A list of valid ids are required when auto_id is False."
+            )
+            assert len(set(ids)) == len(texts), (
+                "Different lengths of texts and unique ids are provided."
+            )
+            assert all(len(x.encode()) <= 65_535 for x in ids), (
+                "Each id should be a string less than 65535 bytes."
+            )
 
         try:
             embeddings = self.embedding_func.embed_documents(texts)
@@ -953,13 +953,13 @@ class Milvus(VectorStore):
         if isinstance(ids, list) and len(ids) > 0:
             if expr is not None:
                 logger.warning(
-                    "Both ids and expr are provided. " "Ignore expr and delete by ids."
+                    "Both ids and expr are provided. Ignore expr and delete by ids."
                 )
             expr = f"{self._primary_field} in {ids}"
         else:
-            assert isinstance(
-                expr, str
-            ), "Either ids list or expr string must be provided."
+            assert isinstance(expr, str), (
+                "Either ids list or expr string must be provided."
+            )
         return self.col.delete(expr=expr, **kwargs)  # type: ignore[union-attr]
 
     @classmethod

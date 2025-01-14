@@ -165,6 +165,6 @@ def test_init_files_properly_defined() -> None:
 
         missing_imports = set(module.__all__) - set(names)
 
-        assert (
-            not missing_imports
-        ), f"Missing imports: {missing_imports} in file path: {path}"
+        assert not missing_imports, (
+            f"Missing imports: {missing_imports} in file path: {path}"
+        )

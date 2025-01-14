@@ -164,9 +164,13 @@ class CSVLoader(BaseLoader):
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             content = "\n".join(
-                f"""{k.strip() if k is not None else k}: {v.strip()
-                if isinstance(v, str) else ','.join(map(str.strip, v))
-                if isinstance(v, list) else v}"""
+                f"""{k.strip() if k is not None else k}: {
+                    v.strip()
+                    if isinstance(v, str)
+                    else ",".join(map(str.strip, v))
+                    if isinstance(v, list)
+                    else v
+                }"""
                 for k, v in row.items()
                 if (
                     k in self.content_columns

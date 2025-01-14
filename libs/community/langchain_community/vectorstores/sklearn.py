@@ -171,8 +171,7 @@ class SKLearnVectorStore(VectorStore):
     def persist(self) -> None:
         if self._serializer is None:
             raise SKLearnVectorStoreException(
-                "You must specify a persist_path on creation to persist the "
-                "collection."
+                "You must specify a persist_path on creation to persist the collection."
             )
         data = {
             "ids": self._ids,
@@ -185,7 +184,7 @@ class SKLearnVectorStore(VectorStore):
     def _load(self) -> None:
         if self._serializer is None:
             raise SKLearnVectorStoreException(
-                "You must specify a persist_path on creation to load the " "collection."
+                "You must specify a persist_path on creation to load the collection."
             )
         data = self._serializer.load()
         self._embeddings = data["embeddings"]

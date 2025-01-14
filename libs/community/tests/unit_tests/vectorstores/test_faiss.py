@@ -1714,9 +1714,9 @@ def test_ip_score() -> None:
     scores = db.similarity_search_with_relevance_scores("sundays", k=1)
     assert len(scores) == 1, "only one vector should be in db"
     _, score = scores[0]
-    assert (
-        score == 1
-    ), f"expected inner product of equivalent vectors to be 1, not {score}"
+    assert score == 1, (
+        f"expected inner product of equivalent vectors to be 1, not {score}"
+    )
 
 
 @pytest.mark.requires("faiss")

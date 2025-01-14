@@ -148,8 +148,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
             import openai
         except ImportError:
             raise ImportError(
-                "openai package not found, please install it with "
-                "`pip install openai`"
+                "openai package not found, please install it with `pip install openai`"
             )
 
         if is_openai_v1():
@@ -278,14 +277,13 @@ class OpenAIWhisperParser(BaseBlobParser):
             import openai
         except ImportError:
             raise ImportError(
-                "openai package not found, please install it with "
-                "`pip install openai`"
+                "openai package not found, please install it with `pip install openai`"
             )
         try:
             from pydub import AudioSegment
         except ImportError:
             raise ImportError(
-                "pydub package not found, please install it with " "`pip install pydub`"
+                "pydub package not found, please install it with `pip install pydub`"
             )
 
         if is_openai_v1():
@@ -402,7 +400,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             import torch
         except ImportError:
             raise ImportError(
-                "torch package not found, please install it with " "`pip install torch`"
+                "torch package not found, please install it with `pip install torch`"
             )
 
         # Determine the device to use
@@ -533,7 +531,7 @@ class YandexSTTParser(BaseBlobParser):
             from pydub import AudioSegment
         except ImportError:
             raise ImportError(
-                "pydub package not found, please install it with " "`pip install pydub`"
+                "pydub package not found, please install it with `pip install pydub`"
             )
 
         if self.api_key:
