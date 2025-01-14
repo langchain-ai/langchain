@@ -9,6 +9,14 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
 
+from ..utils.import_utils import (
+    IMPORT_ERROR,
+    is_ipex_available,
+    is_openvino_available,
+    is_optimum_intel_available,
+    is_optimum_intel_version,
+)
+
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = (
@@ -18,15 +26,8 @@ VALID_TASKS = (
     "translation",
 )
 DEFAULT_BATCH_SIZE = 4
-_MINIMUM_OPTIMUM_VERSION = "1.21"
+_MIN_OPTIMUM_VERSION = "1.21"
 
-from ..utils.import_utils import (
-    is_optimum_intel_available,
-    is_ipex_available,
-    is_openvino_available,
-    IMPORT_ERROR,
-    is_optimum_intel_version,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -147,10 +148,12 @@ class HuggingFacePipeline(BaseLLM):
                     f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
                 )
 
-            if is_optimum_intel_version("<", _MINIMUM_OPTIMUM_VERSION):
+            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
                 raise ImportError(
-                    f"Backend: {backend} requires optimum-intel>={_MINIMUM_OPTIMUM_VERSION}. "
-                    f" You can install it with pip: `pip install --upgrade --upgrade-strategy eager optimum[{backend}]`."
+                    f"Backend: {backend} requires optimum-intel>="
+                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
+                    "`pip install --upgrade --upgrade-strategy eager "
+                    f"`optimum[{backend}]`."
                 )
 
             if backend == "openvino":
@@ -161,7 +164,11 @@ class HuggingFacePipeline(BaseLLM):
 
                 from optimum.intel import OVModelForCausalLM, OVModelForSeq2SeqLM
 
-                model_cls = OVModelForCausalLM if task == "text-generation" else OVModelForSeq2SeqLM
+                model_cls = (
+                    OVModelForCausalLM
+                    if task == "text-generation"
+                    else OVModelForSeq2SeqLM
+                )
             else:
                 if not is_ipex_available():
                     raise ImportError(
@@ -170,9 +177,19 @@ class HuggingFacePipeline(BaseLLM):
 
                 from optimum.intel import IPEXModelForCausalLM, IPEXModelForSeq2SeqLM
 
-                model_cls = IPEXModelForCausalLM if task == "text-generation" else IPEXModelForSeq2SeqLM
+                model_cls = (
+                    IPEXModelForCausalLM
+                    if task == "text-generation"
+                    else IPEXModelForSeq2SeqLM
+                )
+        else:
+            model_cls = (
+                AutoModelForCausalLM
+                if task == "text-generation"
+                else AutoModelForSeq2SeqLM
+            )
 
-            model = model_cls.from_pretrained(model_id, **_model_kwargs)
+        model = model_cls.from_pretrained(model_id, **_model_kwargs)
 
         if tokenizer.pad_token is None:
             tokenizer.pad_token_id = model.config.eos_token_id

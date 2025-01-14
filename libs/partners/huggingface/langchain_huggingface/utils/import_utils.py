@@ -59,7 +59,8 @@ def compare_versions(
     """
     if operation not in STR_OPERATION_TO_FUNC.keys():
         raise ValueError(
-            f"`operation` must be one of {list(STR_OPERATION_TO_FUNC.keys())}, received {operation}"
+            f"`operation` must be one of {list(STR_OPERATION_TO_FUNC.keys())}"
+            f", received {operation}"
         )
     operation = STR_OPERATION_TO_FUNC[operation]
     if isinstance(library_or_version, str):
@@ -108,6 +109,7 @@ def is_optimum_intel_version(operation: str, reference_version: str):
 
 
 IMPORT_ERROR = """
-requires the {0} library but it was not found in your environment. You can install it with pip:
-`pip install {0}`. Please note that you may need to restart your runtime after installation.
+requires the {0} library but it was not found in your environment.
+You can install it with pip: `pip install {0}`.
+Please note that you may need to restart your runtime after installation.
 """
