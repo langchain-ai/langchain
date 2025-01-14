@@ -166,6 +166,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.nlpcloud import (
         NLPCloudEmbeddings,
     )
+    from langchain_community.embeddings.oci_data_science_model_deployment_endpoint import (
+        OCIModelDeploymentEndpointEmbeddings,
+    )
     from langchain_community.embeddings.oci_generative_ai import (
         OCIGenAIEmbeddings,
     )
@@ -300,6 +303,7 @@ __all__ = [
     "MosaicMLInstructorEmbeddings",
     "NLPCloudEmbeddings",
     "NeMoEmbeddings",
+    "OCIModelDeploymentEndpointEmbeddings",
     "OCIGenAIEmbeddings",
     "OctoAIEmbeddings",
     "OllamaEmbeddings",
@@ -385,6 +389,7 @@ _module_lookup = {
     "MosaicMLInstructorEmbeddings": "langchain_community.embeddings.mosaicml",
     "NLPCloudEmbeddings": "langchain_community.embeddings.nlpcloud",
     "NeMoEmbeddings": "langchain_community.embeddings.nemo",
+    "OCIModelDeploymentEndpointEmbeddings": "langchain_community.embeddings.oci_data_science_model_deployment_endpoint",
     "OCIGenAIEmbeddings": "langchain_community.embeddings.oci_generative_ai",
     "OctoAIEmbeddings": "langchain_community.embeddings.octoai_embeddings",
     "OllamaEmbeddings": "langchain_community.embeddings.ollama",
