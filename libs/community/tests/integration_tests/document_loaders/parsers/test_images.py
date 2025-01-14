@@ -29,8 +29,8 @@ text_image = Blob.from_path(path_base / "examples/text.png")
     "format,pattern",
     [
         ("text", r"(?ism)^{body}$"),
-        ("markdown", r"(?ism)^!\[{body}]\(\.\)|$"),
-        ("html", r'(?ism)^(<img alt="{body}" />|)'),
+        ("markdown-link", r"(?ism)^!\[{body}]\(.*\)|$"),
+        ("html-img", r'(?ism)^(<img alt="{body}" src=".*" />|)'),
     ],
 )
 @pytest.mark.parametrize(
