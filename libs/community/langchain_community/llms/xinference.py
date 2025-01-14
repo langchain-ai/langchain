@@ -81,7 +81,7 @@ class Xinference(LLM):
 
     """  # noqa: E501
 
-    client: Any
+    client: Optional[Any] = None
     server_url: Optional[str]
     """URL of the xinference server"""
     model_uid: Optional[str]
