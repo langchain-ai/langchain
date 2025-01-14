@@ -544,17 +544,28 @@ class PyMuPDFLoader(BasePDFLoader):
             extract_tables_settings=extract_tables_settings,
         )
 
-    def lazy_load(self) -> Iterator[Document]:
+    def _lazy_load(self, **kwargs: Any) -> Iterator[Document]:
         """Lazy load given path as pages or single document (see `mode`).
         Insert image, if possible, between two paragraphs.
         In this way, a paragraph can be continued on the next page.
         """
+        if kwargs:
+            logger.warning(
+                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
+                f" is deprecated. Please pass arguments during initialization instead."
+            )
         parser = self.parser
         if self.web_path:
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
             blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
-        yield from parser.lazy_parse(blob)
+        yield from parser._lazy_parse(blob, text_kwargs=kwargs)
+
+    def load(self, **kwargs: Any) -> list[Document]:
+        return list(self._lazy_load(**kwargs))
+
+    def lazy_load(self) -> Iterator[Document]:
+        yield from self._lazy_load()
 
 
 # MathpixPDFLoader implementation taken largely from Daniel Gross's:

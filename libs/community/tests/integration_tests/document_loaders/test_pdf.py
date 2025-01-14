@@ -237,3 +237,11 @@ def test_standard_parameters(
     assert loader.web_path == web_path
     assert loader.file_path != web_path
     assert len(docs) == 1
+
+
+def test_pymupdf_deprecated_kwards() -> None:
+    from langchain_community.document_loaders import PyMuPDFLoader
+
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PyMuPDFLoader(file_path=file_path)
+    loader.load(sort=True)

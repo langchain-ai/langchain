@@ -531,6 +531,15 @@ class PyMuPDFParser(ImagesPdfParser):
         self.extract_tables_settings = extract_tables_settings
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        return self._lazy_parse(
+            blob,
+        )
+
+    def _lazy_parse(
+        self,
+        blob: Blob,
+        text_kwargs: Optional[dict[str, Any]] = None,  # deprectaed
+    ) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
         In this way, a paragraph can be continued on the next page.
@@ -547,6 +556,8 @@ class PyMuPDFParser(ImagesPdfParser):
         try:
             import pymupdf
 
+            if not text_kwargs:
+                text_kwargs = {}
             if not self.extract_tables_settings:
                 from pymupdf.table import (
                     DEFAULT_JOIN_TOLERANCE,
@@ -597,7 +608,7 @@ class PyMuPDFParser(ImagesPdfParser):
                 doc_metadata = self._extract_metadata(doc, blob)
                 full_content = []
                 for page in doc:
-                    all_text = self._get_page_content(doc, page, blob).strip()
+                    all_text = self._get_page_content(doc, page, text_kwargs).strip()
                     if self.mode == "page":
                         yield Document(
                             page_content=all_text,
@@ -615,7 +626,10 @@ class PyMuPDFParser(ImagesPdfParser):
                     )
 
     def _get_page_content(
-        self, doc: pymupdf.Document, page: pymupdf.Page, blob: Blob
+        self,
+        doc: pymupdf.Document,
+        page: pymupdf.Page,
+        text_kwargs: dict[str, Any],
     ) -> str:
         """Get the text of the page using PyMuPDF and RapidOCR and issue a warning
         if it is empty.
@@ -628,7 +642,7 @@ class PyMuPDFParser(ImagesPdfParser):
         Returns:
             str: The text content of the page.
         """
-        text_from_page = page.get_text(**self.text_kwargs)
+        text_from_page = page.get_text(**{**self.text_kwargs, **text_kwargs})
         images_from_page = self._extract_images_from_page(doc, page)
         tables_from_page = self._extract_tables_from_page(page)
         extras = []
