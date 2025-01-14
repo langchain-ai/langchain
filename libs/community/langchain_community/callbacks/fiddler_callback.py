@@ -100,7 +100,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
 
         if self.project not in self.fiddler_client.get_project_names():
             print(  # noqa: T201
-                f"adding project {self.project}." "This only has to be done once."
+                f"adding project {self.project}.This only has to be done once."
             )
             try:
                 self.fiddler_client.add_project(self.project)

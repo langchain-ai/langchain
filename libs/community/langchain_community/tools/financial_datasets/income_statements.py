@@ -20,7 +20,7 @@ class IncomeStatementsSchema(BaseModel):
         "Default is 'annual'.",
     )
     limit: int = Field(
-        description="The number of income statements to return. " "Default is 10.",
+        description="The number of income statements to return. Default is 10.",
     )
 
 

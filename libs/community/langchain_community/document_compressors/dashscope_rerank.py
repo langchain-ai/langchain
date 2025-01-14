@@ -89,7 +89,10 @@ class DashScopeRerank(BaseDocumentCompressor):
         result_dicts = []
         for res in results.output.results:
             result_dicts.append(
-                {"index": res.index, "relevance_score": res.relevance_score}
+                {
+                    "index": res.index,
+                    "relevance_score": res.relevance_score,
+                }
             )
         return result_dicts
 

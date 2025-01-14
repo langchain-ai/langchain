@@ -392,9 +392,7 @@ class DashVector(VectorStore):
             if resp:
                 collection = dashvector_client.get(collection_name)
             else:
-                raise ValueError(
-                    "Fail to create collection. " f"Error: {resp.message}."
-                )
+                raise ValueError(f"Fail to create collection. Error: {resp.message}.")
 
         dashvector_vector_db = cls(collection, embedding, text_field)
         dashvector_vector_db.add_texts(texts, metadatas, ids, batch_size)

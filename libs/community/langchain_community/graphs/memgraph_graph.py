@@ -488,8 +488,7 @@ class MemgraphGraph(GraphStore):
 
         if baseEntityLabel:
             self.query(
-                f"CREATE CONSTRAINT ON (b:{BASE_ENTITY_LABEL}) "
-                "ASSERT b.id IS UNIQUE;"
+                f"CREATE CONSTRAINT ON (b:{BASE_ENTITY_LABEL}) ASSERT b.id IS UNIQUE;"
             )
             self.query(f"CREATE INDEX ON :{BASE_ENTITY_LABEL}(id);")
             self.query(f"CREATE INDEX ON :{BASE_ENTITY_LABEL};")
