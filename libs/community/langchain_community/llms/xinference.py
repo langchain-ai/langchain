@@ -1,10 +1,13 @@
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Mapping, Optional, Union
+from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, List,
+                    Mapping, Optional, Union)
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
+from langchain_core.outputs import GenerationChunk
 
 if TYPE_CHECKING:
-    from xinference.client import RESTfulChatModelHandle, RESTfulGenerateModelHandle
+    from xinference.client import (RESTfulChatModelHandle,
+                                   RESTfulGenerateModelHandle)
     from xinference.model.llm.core import LlamaCppGenerateConfig
 
 
@@ -81,7 +84,7 @@ class Xinference(LLM):
 
     """  # noqa: E501
 
-    client: Any
+    client: Optional[Any] = None
     server_url: Optional[str]
     """URL of the xinference server"""
     model_uid: Optional[str]
@@ -214,3 +217,68 @@ class Xinference(LLM):
                                 token=token, verbose=self.verbose, log_probs=log_probs
                             )
                         yield token
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        generate_config = kwargs.get("generate_config", {})
+        generate_config = {**self.model_kwargs, **generate_config}
+        if stop:
+            generate_config["stop"] = stop
+        for stream_resp in self._create_generate_stream(prompt, generate_config):
+            if stream_resp:
+                chunk = self._stream_response_to_generation_chunk(stream_resp)
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=self.verbose,
+                    )
+                yield chunk
+
+    def _create_generate_stream(
+        self,
+        prompt: str,
+        generate_config: Optional[Dict[str, List[str]]] = None
+    ) -> Iterator[str]:
+        model = self.client.get_model(self.model_uid)
+        yield from self.create_stream(
+            model,
+            prompt,
+            generate_config,
+        )
+
+    @staticmethod
+    def _stream_response_to_generation_chunk(
+        stream_response: str,
+    ) -> GenerationChunk:
+        """Convert a stream response to a generation chunk."""
+        token = ''
+        if isinstance(stream_response, dict):
+            choices = stream_response.get("choices", [])
+            if choices:
+                choice = choices[0]
+                if isinstance(choice, dict):
+                    token = choice.get("text", "")
+
+        if not stream_response["choices"]:
+            return GenerationChunk(text=token)
+
+        return GenerationChunk(
+            text=token,
+            generation_info=dict(
+                finish_reason=stream_response["choices"][0].get("finish_reason", None),
+                logprobs=stream_response["choices"][0].get("logprobs", None),
+            ),
+        )
+
+    @staticmethod
+    def create_stream(
+        model: Union["RESTfulGenerateModelHandle", "RESTfulChatModelHandle"],
+        prompt: str,
+        generate_config: Optional[Dict[str, List[str]]] = None
+    ) -> Iterator[str]:
+        return model.generate(prompt=prompt, generate_config=generate_config)
