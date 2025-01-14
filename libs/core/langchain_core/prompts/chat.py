@@ -1398,9 +1398,7 @@ def _create_template_from_message_type(
         elif len(template) == 2 and isinstance(template[1], bool):
             var_name_wrapped, is_optional = template
             if not isinstance(var_name_wrapped, str):
-                msg = (
-                    "Expected variable name to be a string." f" Got: {var_name_wrapped}"
-                )
+                msg = f"Expected variable name to be a string. Got: {var_name_wrapped}"
                 raise ValueError(msg)
             if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
                 msg = (

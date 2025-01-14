@@ -215,7 +215,11 @@ async def test_abatch() -> None:
     )
     with pytest.raises(RuntimeError):
         await runnable_with_single.abatch(
-            [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}]
+            [
+                {"text": "foo"},
+                {"text": "bar"},
+                {"text": "baz"},
+            ]
         )
     actual = await runnable_with_single.abatch(
         [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True

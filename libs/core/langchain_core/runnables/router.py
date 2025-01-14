@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterator, Mapping
+from itertools import starmap
 from typing import (
     Any,
     Callable,
@@ -189,10 +190,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         configs = get_config_list(config, len(inputs))
         return await gather_with_concurrency(
             configs[0].get("max_concurrency"),
-            *(
-                ainvoke(runnable, input, config)
-                for runnable, input, config in zip(runnables, actual_inputs, configs)
-            ),
+            *starmap(ainvoke, zip(runnables, actual_inputs, configs)),
         )
 
     def stream(

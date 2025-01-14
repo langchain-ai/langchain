@@ -55,12 +55,12 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
         assert "parent_ids" in event, f"Event {event} does not have parent_ids."
-        assert isinstance(
-            event["run_id"], str
-        ), f"Event {event} run_id is not a string."
-        assert isinstance(
-            event["parent_ids"], list
-        ), f"Event {event} parent_ids is not a list."
+        assert isinstance(event["run_id"], str), (
+            f"Event {event} run_id is not a string."
+        )
+        assert isinstance(event["parent_ids"], list), (
+            f"Event {event} parent_ids is not a list."
+        )
 
     return cast(
         list[StreamEvent],
@@ -828,7 +828,10 @@ async def test_astream_with_model_in_chain() -> None:
 async def test_event_stream_with_simple_chain() -> None:
     """Test as event stream."""
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
     infinite_cycle = cycle(
@@ -1628,7 +1631,10 @@ async def test_event_stream_with_retry() -> None:
 async def test_with_llm() -> None:
     """Test with regular llm."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
     llm = FakeStreamingListLLM(responses=["abc"])
 
@@ -1677,7 +1683,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     }
                 },
                 "event": "on_llm_start",
@@ -1690,7 +1696,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     },
                     "output": {
                         "generations": [
@@ -1865,7 +1871,10 @@ async def test_runnable_with_message_history() -> None:
         return InMemoryHistory(messages=store[session_id])
 
     infinite_cycle = cycle(
-        [AIMessage(content="hello", id="ai3"), AIMessage(content="world", id="ai4")]
+        [
+            AIMessage(content="hello", id="ai3"),
+            AIMessage(content="world", id="ai4"),
+        ]
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -2372,7 +2381,10 @@ async def test_with_explicit_config() -> None:
             return x
 
         chain = passthrough_to_trigger_issue | model.with_config(
-            {"tags": ["hello"], "callbacks": callbacks}
+            {
+                "tags": ["hello"],
+                "callbacks": callbacks,
+            }
         )
 
         return await chain.ainvoke(query)

@@ -122,8 +122,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         ChevronError: If the tag is unclosed.
         ChevronError: If the set delimiter tag is unclosed.
     """
-    global _CURRENT_LINE
-    global _LAST_TAG_LINE
+    global _CURRENT_LINE, _LAST_TAG_LINE
 
     tag_types = {
         "!": "comment",
@@ -140,7 +139,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     try:
         tag, template = template.split(r_del, 1)
     except ValueError as e:
-        msg = "unclosed tag " f"at line {_CURRENT_LINE}"
+        msg = f"unclosed tag at line {_CURRENT_LINE}"
         raise ChevronError(msg) from e
 
     # Find the type meaning of the first character
@@ -161,7 +160,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
 
         # Otherwise we should complain
         else:
-            msg = "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
+            msg = f"unclosed set delimiter tag\nat line {_CURRENT_LINE}"
             raise ChevronError(msg)
 
     elif (

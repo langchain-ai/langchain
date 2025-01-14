@@ -242,17 +242,20 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    xlist = []
-    ylist = []
+    xlist: list[float] = []
+    ylist: list[float] = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left
-        xlist.append(vertex.view.xy[0] - vertex.view.w / 2.0)
-        xlist.append(vertex.view.xy[0] + vertex.view.w / 2.0)
-        ylist.append(vertex.view.xy[1])
-        ylist.append(vertex.view.xy[1] + vertex.view.h)
+        xlist.extend(
+            (
+                vertex.view.xy[0] - vertex.view.w / 2.0,
+                vertex.view.xy[0] + vertex.view.w / 2.0,
+            )
+        )
+        ylist.extend((vertex.view.xy[1], vertex.view.xy[1] + vertex.view.h))
 
     for edge in sug.g.sE:
         for x, y in edge.view._pts:

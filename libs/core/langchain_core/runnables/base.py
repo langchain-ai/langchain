@@ -2862,7 +2862,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # calculate context dependencies
         specs_by_pos = groupby(
             [tup for tup in all_specs if tup[0].id.startswith(CONTEXT_CONFIG_PREFIX)],
-            lambda x: x[1],
+            itemgetter(1),
         )
         next_deps: set[str] = set()
         deps_by_pos: dict[int, set[str]] = {}
@@ -3006,7 +3006,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for i, step in enumerate(self.steps):
                 # mark each step as a child run
                 config = patch_config(
-                    config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    config, callbacks=run_manager.get_child(f"seq:step:{i + 1}")
                 )
                 context = copy_context()
                 context.run(_set_config_context, config)
@@ -3046,7 +3046,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for i, step in enumerate(self.steps):
                 # mark each step as a child run
                 config = patch_config(
-                    config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    config, callbacks=run_manager.get_child(f"seq:step:{i + 1}")
                 )
                 context = copy_context()
                 context.run(_set_config_context, config)
@@ -3131,7 +3131,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                                config,
+                                callbacks=rm.get_child(f"seq:step:{stepidx + 1}"),
                             )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
@@ -3163,7 +3164,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                                config, callbacks=rm.get_child(f"seq:step:{i + 1}")
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
@@ -3260,7 +3261,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                                config,
+                                callbacks=rm.get_child(f"seq:step:{stepidx + 1}"),
                             )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
@@ -3292,7 +3294,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                                config, callbacks=rm.get_child(f"seq:step:{i + 1}")
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
@@ -3339,7 +3341,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         final_pipeline = cast(Iterator[Output], input)
         for idx, step in enumerate(steps):
             config = patch_config(
-                config, callbacks=run_manager.get_child(f"seq:step:{idx+1}")
+                config, callbacks=run_manager.get_child(f"seq:step:{idx + 1}")
             )
             if idx == 0:
                 final_pipeline = step.transform(final_pipeline, config, **kwargs)
@@ -3368,7 +3370,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         for idx, step in enumerate(steps):
             config = patch_config(
                 config,
-                callbacks=run_manager.get_child(f"seq:step:{idx+1}"),
+                callbacks=run_manager.get_child(f"seq:step:{idx + 1}"),
             )
             if idx == 0:
                 final_pipeline = step.atransform(final_pipeline, config, **kwargs)
@@ -4400,7 +4402,7 @@ class RunnableLambda(Runnable[Input, Output]):
         if dict_keys := get_function_first_arg_dict_keys(func):
             return create_model_v2(
                 self.get_name("Input"),
-                field_definitions={key: (Any, ...) for key in dict_keys},
+                field_definitions=dict.fromkeys(dict_keys, (Any, ...)),
             )
 
         return super().get_input_schema(config)
@@ -4524,7 +4526,7 @@ class RunnableLambda(Runnable[Input, Output]):
     def __repr__(self) -> str:
         """A string representation of this Runnable."""
         if hasattr(self, "func") and isinstance(self.func, itemgetter):
-            return f"RunnableLambda({str(self.func)[len('operator.'):]})"
+            return f"RunnableLambda({str(self.func)[len('operator.') :]})"
         elif hasattr(self, "func"):
             return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
         elif hasattr(self, "afunc"):
@@ -4785,8 +4787,7 @@ class RunnableLambda(Runnable[Input, Output]):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
                 msg = (
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {final}."
+                    f"Recursion limit reached when invoking {self} with input {final}."
                 )
                 raise RecursionError(msg)
             for chunk in output.stream(
@@ -4909,8 +4910,7 @@ class RunnableLambda(Runnable[Input, Output]):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
                 msg = (
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {final}."
+                    f"Recursion limit reached when invoking {self} with input {final}."
                 )
                 raise RecursionError(msg)
             async for chunk in output.astream(

@@ -238,6 +238,7 @@ def deprecated(
                         exclude=obj.exclude,
                     ),
                 )
+
         elif isinstance(obj, FieldInfoV2):
             wrapped = None
             if not _obj_type:

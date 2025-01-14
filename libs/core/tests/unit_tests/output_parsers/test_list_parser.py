@@ -123,7 +123,8 @@ def test_numbered_list() -> None:
 def test_markdown_list() -> None:
     parser = MarkdownListOutputParser()
     text1 = (
-        "Your response should be a numbered - not a list item - list with each item on a new line."  # noqa: E501
+        "Your response should be a numbered - not a list item - "
+        "list with each item on a new line."
         "For example: \n- foo\n- bar\n- baz"
     )
 

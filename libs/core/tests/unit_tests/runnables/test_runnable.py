@@ -622,32 +622,29 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
             "byebye": input["yo"],
         }
 
-    assert (
-        _normalize_schema(
-            RunnableLambda(
-                aget_values_typed  # type: ignore[arg-type]
-            ).get_input_jsonschema()
-        )
-        == _normalize_schema(
-            {
-                "$defs": {
-                    "InputType": {
-                        "properties": {
-                            "variable_name": {
-                                "title": "Variable " "Name",
-                                "type": "string",
-                            },
-                            "yo": {"title": "Yo", "type": "integer"},
+    assert _normalize_schema(
+        RunnableLambda(
+            aget_values_typed  # type: ignore[arg-type]
+        ).get_input_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable Name",
+                            "type": "string",
                         },
-                        "required": ["variable_name", "yo"],
-                        "title": "InputType",
-                        "type": "object",
-                    }
-                },
-                "allOf": [{"$ref": "#/$defs/InputType"}],
-                "title": "aget_values_typed_input",
-            }
-        )
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+            "allOf": [{"$ref": "#/$defs/InputType"}],
+            "title": "aget_values_typed_input",
+        }
     )
 
     if PYDANTIC_VERSION >= (2, 9):
@@ -2793,7 +2790,10 @@ async def test_router_runnable(
     assert result == "4"
 
     result2 = chain.batch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -2801,7 +2801,10 @@ async def test_router_runnable(
     assert result == "4"
 
     result2 = await chain.abatch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -2855,7 +2858,10 @@ async def test_higher_order_lambda_runnable(
     assert result == "4"
 
     result2 = chain.batch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -2863,7 +2869,10 @@ async def test_higher_order_lambda_runnable(
     assert result == "4"
 
     result2 = await chain.abatch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -3058,7 +3067,10 @@ def test_map_stream() -> None:
     assert len(streamed_chunks) == len(llm_res)
 
     chain_pick_two = chain.assign(hello=RunnablePick("llm").pipe(llm)).pick(
-        ["llm", "hello"]
+        [
+            "llm",
+            "hello",
+        ]
     )
 
     assert chain_pick_two.get_output_jsonschema() == {
@@ -5441,7 +5453,11 @@ def test_schema_for_prompt_and_chat_model() -> None:
     chain = prompt | chat
     assert (
         chain.invoke(
-            {"model_json_schema": "hello", "_private": "goodbye", "json": "json"}
+            {
+                "model_json_schema": "hello",
+                "_private": "goodbye",
+                "json": "json",
+            }
         ).content
         == chat_res
     )

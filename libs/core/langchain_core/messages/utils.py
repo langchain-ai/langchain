@@ -1008,7 +1008,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(err)
                         content.append(
-                            {"type": "image_url", "image_url": block["image_url"]}
+                            {
+                                "type": "image_url",
+                                "image_url": block["image_url"],
+                            }
                         )
                     # Anthropic and Bedrock converse format
                     elif (block.get("type") == "image") or "image" in block:
@@ -1127,7 +1130,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(msg)
                         content.append(
-                            {"type": "text", "text": json.dumps(block["json"])}
+                            {
+                                "type": "text",
+                                "text": json.dumps(block["json"]),
+                            }
                         )
                     elif (
                         block.get("type") == "guard_content"

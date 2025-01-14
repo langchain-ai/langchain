@@ -110,8 +110,8 @@ COPIABLE_KEYS = [
 DEFAULT_RECURSION_LIMIT = 25
 
 
-var_child_runnable_config = ContextVar(
-    "child_runnable_config", default=RunnableConfig()
+var_child_runnable_config: ContextVar[RunnableConfig | None] = ContextVar(
+    "child_runnable_config", default=None
 )
 
 

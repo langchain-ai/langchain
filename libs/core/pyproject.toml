@@ -82,7 +82,7 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "scripts/**" = [ "S",]
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "~0.9.1"
 
 
 [tool.poetry.group.typing.dependencies]

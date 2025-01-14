@@ -123,9 +123,7 @@ def test_create_system_message_prompt_template_from_template_partial() -> None:
         partial_variables={"instructions": json_prompt_instructions},
     )
     assert graph_analyst_template.format(history="history") == SystemMessage(
-        content="\n    Your instructions are:\n  "
-        "  {}\n    History:\n    "
-        "history\n    "
+        content="\n    Your instructions are:\n    {}\n    History:\n    history\n    "
     )
 
 
@@ -234,7 +232,11 @@ def test_chat_prompt_template_from_messages(
     """Test creating a chat prompt template from messages."""
     chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
-        ["context", "foo", "bar"]
+        [
+            "context",
+            "foo",
+            "bar",
+        ]
     )
     assert len(chat_prompt_template.messages) == 4
 
@@ -377,7 +379,11 @@ def test_chat_prompt_template_with_messages(
         messages + [HumanMessage(content="foo")]
     )
     assert sorted(chat_prompt_template.input_variables) == sorted(
-        ["context", "foo", "bar"]
+        [
+            "context",
+            "foo",
+            "bar",
+        ]
     )
     assert len(chat_prompt_template.messages) == 5
     prompt_value = chat_prompt_template.format_prompt(
@@ -835,7 +841,10 @@ async def test_messages_prompt_accepts_list() -> None:
 
     # Assert still raises a nice error
     prompt = ChatPromptTemplate(
-        [("system", "You are a {foo}"), MessagesPlaceholder("history")]
+        [
+            ("system", "You are a {foo}"),
+            MessagesPlaceholder("history"),
+        ]
     )
     with pytest.raises(TypeError):
         prompt.invoke([("user", "Hi there")])  # type: ignore
@@ -872,7 +881,11 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
 
 def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> None:
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "foo"), MessagesPlaceholder("bar"), ("human", "baz")]
+        [
+            ("system", "foo"),
+            MessagesPlaceholder("bar"),
+            ("human", "baz"),
+        ]
     )
     assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placeholder")
     assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")

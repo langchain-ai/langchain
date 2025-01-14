@@ -389,6 +389,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
         else:
             msg = f"Expected a Pydantic model. Got {type(model)}"
             raise TypeError(msg)
+
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
 
@@ -397,6 +398,7 @@ elif PYDANTIC_MAJOR_VERSION == 1:
     ) -> dict[str, FieldInfoV1]:
         """Get the field names of a Pydantic model."""
         return model.__fields__  # type: ignore
+
 else:
     msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
     raise ValueError(msg)
