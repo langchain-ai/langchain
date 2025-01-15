@@ -32,6 +32,7 @@ def test_pypdf_loader() -> None:
     assert len(docs) == 16
     for page, doc in enumerate(docs):
         assert doc.metadata["page"] == page
+        assert doc.metadata["page_label"] == str(page + 1)
         assert doc.metadata["source"].endswith("layout-parser-paper.pdf")
         assert len(doc.page_content) > 10
 
@@ -49,6 +50,7 @@ def test_pypdf_loader_with_layout() -> None:
     assert len(docs) == 16
     for page, doc in enumerate(docs):
         assert doc.metadata["page"] == page
+        assert doc.metadata["page_label"] == str(page + 1)
         assert doc.metadata["source"].endswith("layout-parser-paper.pdf")
         assert len(doc.page_content) > 10
 
