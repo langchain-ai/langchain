@@ -10,6 +10,7 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
@@ -231,12 +232,14 @@ class TesseractBlobParser(BaseImageBlobParser):
         return pytesseract.image_to_string(img, lang="+".join(self.langs)).strip()
 
 
-_PROMPT_IMAGES_TO_DESCRIPTION = (
-    "You are an assistant tasked with summarizing "
-    "images for retrieval. "
-    "These summaries will be embedded and used to retrieve the raw image. "
-    "Give a concise summary of the image that is well optimized for retrieval "
-    "and extract all the text from the image."
+_PROMPT_IMAGES_TO_DESCRIPTION: BasePromptTemplate = PromptTemplate.from_template(
+    "You are an assistant tasked with summarizing images for retrieval. "
+    "1. These summaries will be embedded and used to retrieve the raw image. "
+    "Give a concise summary of the image that is well optimized for retrieval\n"
+    "2. extract all the text from the image. "
+    "Do not exclude any content from the page.\n"
+    "Format response in {format} format without explanatory text "
+    "and without markdown delimiter ``` at the beginning.\n"
 )
 
 
@@ -252,6 +255,8 @@ class LLMImageBlobParser(BaseImageBlobParser):
           pointing to (`![body)(#)`]
           - "html-img" = wrap the content as the `alt` text of an tag and link to
           (`<img alt="{body}" src="#"/>`)
+          - "markdown" = return markdown content
+          - "html" = return html content
         model (BaseChatModel):
           The language model to use for analysis.
         prompt (str):
@@ -261,9 +266,11 @@ class LLMImageBlobParser(BaseImageBlobParser):
     def __init__(
         self,
         *,
-        format: Literal["text", "markdown-link", "html-img"] = "text",
+        format: Literal[
+            "text", "markdown-link", "html-img", "markdown", "html"
+        ] = "text",
         model: BaseChatModel,
-        prompt: str = _PROMPT_IMAGES_TO_DESCRIPTION,
+        prompt: BasePromptTemplate = _PROMPT_IMAGES_TO_DESCRIPTION,
     ):
         """
         Initializes the LLMImageBlobParser.
@@ -299,7 +306,10 @@ class LLMImageBlobParser(BaseImageBlobParser):
             [
                 HumanMessage(
                     content=[
-                        {"type": "text", "text": self.prompt},
+                        {
+                            "type": "text",
+                            "text": self.prompt.format(format=self.format),
+                        },
                         {
                             "type": "image_url",
                             "image_url": {

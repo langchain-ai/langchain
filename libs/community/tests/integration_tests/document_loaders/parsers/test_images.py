@@ -6,6 +6,7 @@ import pytest
 from langchain_core.documents.base import Blob
 from langchain_core.language_models import FakeMessagesListChatModel
 from langchain_core.messages import ChatMessage
+from langchain_openai import ChatOpenAI
 
 from langchain_community.document_loaders.parsers.images import (
     LLMImageBlobParser,
@@ -16,6 +17,7 @@ from langchain_community.document_loaders.parsers.images import (
 path_base = Path(__file__).parent.parent.parent
 building_image = Blob.from_path(path_base / "examples/building.jpg")
 text_image = Blob.from_path(path_base / "examples/text.png")
+page_image = Blob.from_path(path_base / "examples/page.png")
 
 
 @pytest.mark.parametrize(
@@ -64,6 +66,45 @@ def test_image_parser_with_differents_format_and_files(
 ) -> None:
     if blob_loader == LLMImageBlobParser and "building" in str(blob.path):
         body = ".*building.*"
+    documents = list(blob_loader(format=format, **kw).lazy_parse(blob))
+    assert len(documents) == 1
+    assert re.compile(pattern.format(body=body)).match(documents[0].page_content)
+
+
+@pytest.mark.parametrize(
+    "blob,body",
+    [
+        (page_image, r".*Layout Detection Models.*"),
+    ],
+)
+@pytest.mark.parametrize(
+    "format,pattern",
+    [
+        ("html", r"^<html"),
+        ("markdown", r"^\*\*.*\*\*"),
+    ],
+)
+@pytest.mark.parametrize(
+    "blob_loader,kw",
+    [
+        (
+            LLMImageBlobParser,
+            {
+                "model": ChatOpenAI(
+                    model="gpt-4o",
+                )
+            },
+        ),
+    ],
+)
+def test_image_parser_with_extra_format(
+    blob_loader: Type,
+    kw: dict[str, Any],
+    format: str,
+    pattern: str,
+    blob: Blob,
+    body: str,
+) -> None:
     documents = list(blob_loader(format=format, **kw).lazy_parse(blob))
     assert len(documents) == 1
     assert re.compile(pattern.format(body=body)).match(documents[0].page_content)
