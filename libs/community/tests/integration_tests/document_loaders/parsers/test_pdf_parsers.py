@@ -207,7 +207,7 @@ def test_mode_and_extract_images_variations(
     parser = parser_class(
         mode=mode,
         extract_images=extract_images,
-        # images_parser=EmptyImageBlobParser(),  # FIXME
+        images_parser=EmptyImageBlobParser(),
         **params,
     )
     _assert_with_parser(parser, splits_by_page=(mode == "page"))

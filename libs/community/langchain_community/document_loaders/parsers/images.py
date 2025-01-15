@@ -47,7 +47,7 @@ class BaseImageBlobParser(BaseBlobParser):
               - "html-img" = wrap the content as the `alt` text of an tag and link to
               (`<img alt="{body}" src="#"/>`)
         """
-        self.format = format or "text"
+        self.format = format
 
     @abstractmethod
     def _analyze_image(self, img: "Image") -> str:

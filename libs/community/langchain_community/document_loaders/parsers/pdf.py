@@ -211,25 +211,6 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
     return all_text
 
 
-class ImagesPdfParser(BaseBlobParser):
-    """Abstract interface for blob parsers with images_to_text."""
-
-    def __init__(
-        self,
-        extract_images: bool,
-        images_parser: Optional[BaseImageBlobParser],
-    ):
-        """Extract text from images.
-
-        Args:
-            extract_images: Whether to extract images from PDF.
-            images_parser: Optional image blob parser.
-        """
-        self.extract_images = extract_images
-
-        self.images_parser = images_parser
-
-
 class PyPDFParser(BaseBlobParser):
     """Load `PDF` using `pypdf`"""
 
@@ -420,7 +401,7 @@ class PDFMinerParser(BaseBlobParser):
         return extract_from_images_with_rapidocr(images)
 
 
-class PyMuPDFParser(ImagesPdfParser):
+class PyMuPDFParser(BaseBlobParser):
     """Parse a blob from a PDF using `PyMuPDF` library.
 
     This class provides methods to parse a blob from a PDF document, supporting various
@@ -516,7 +497,9 @@ class PyMuPDFParser(ImagesPdfParser):
             ValueError: If the extract_tables format is not "markdown", "html",
             or "csv".
         """
-        super().__init__(extract_images, images_parser)
+        super().__init__()
+        self.extract_images = extract_images
+        self.images_parser = images_parser
         if mode not in ["single", "page"]:
             raise ValueError("mode must be single or page")
         if extract_tables and extract_tables not in ["markdown", "html", "csv"]:
