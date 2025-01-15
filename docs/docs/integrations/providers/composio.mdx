@@ -8,13 +8,12 @@
 ```shell
 pip install composio-langchain langchain-openai
 ```
-
-after the installation is complete, either run `composio login` or export your composio API key as `COMPOSIO_API_KEY`. Get your Composio API from [here](https://app.composio.dev)
+After the installation is complete, either run `composio login` or export your Composio API key as `COMPOSIO_API_KEY`. Get your Composio API key from [here](https://app.composio.dev)
 
 
 ## Example
 
-In this example, we will use Composio's `GitHub` tool to star a repository on GitHub.
+In this example, we will use Composio's **GitHub** tool to star a repository on GitHub.
 
 ### 1. Initialize Composio toolset & LLM
 
@@ -71,7 +70,7 @@ print(f"Open this URL to authenticate: {request.redirectUrl}")
     tools = toolset.get_tools(actions=filtered_action_enums)
     ```
 
-    Set the `advanced` to True to get actions for complex use cases
+    Set `advanced` to True to get actions for complex use cases
 
 - Using specific tools:
 
