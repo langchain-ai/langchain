@@ -143,13 +143,16 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
 
-            error_msg = (
-                f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
-            )
+            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
             if not is_optimum_intel_available():
-                raise ImportError(error_msg)
+                raise ImportError(err_msg)
 
-            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
+            min_optimum_version = (
+                _MIN_OPTIMUM_VERSION
+                if backend == "ipex" and task != "text-generation"
+                else _MIN_OPTIMUM_VERSION
+            )
+            if is_optimum_intel_version("<", min_optimum_version):
                 raise ImportError(
                     f"Backend: {backend} requires optimum-intel>="
                     f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
@@ -159,7 +162,7 @@ class HuggingFacePipeline(BaseLLM):
 
             if backend == "openvino":
                 if not is_openvino_available():
-                    raise ImportError(error_msg)
+                    raise ImportError(err_msg)
 
                 from optimum.intel import (  # type: ignore[import]
                     OVModelForCausalLM,
@@ -173,7 +176,7 @@ class HuggingFacePipeline(BaseLLM):
                 )
             else:
                 if not is_ipex_available():
-                    raise ImportError(error_msg)
+                    raise ImportError(err_msg)
 
                 from optimum.intel import (  # type: ignore[import]
                     IPEXModelForCausalLM,
