@@ -147,6 +147,7 @@ class HuggingFacePipeline(BaseLLM):
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
+            # TODO: upgrade _MIN_OPTIMUM_VERSION to 1.22 after release
             min_optimum_version = (
                 "1.22"
                 if backend == "ipex" and task != "text-generation"
