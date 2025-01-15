@@ -143,7 +143,9 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
 
-            error_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            error_msg = (
+                f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            )
             if not is_optimum_intel_available():
                 raise ImportError(error_msg)
 
@@ -172,7 +174,7 @@ class HuggingFacePipeline(BaseLLM):
             else:
                 if not is_ipex_available():
                     raise ImportError(error_msg)
-    
+
                 from optimum.intel import (  # type: ignore[import]
                     IPEXModelForCausalLM,
                     IPEXModelForSeq2SeqLM,
