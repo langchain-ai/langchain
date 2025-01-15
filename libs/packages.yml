@@ -342,3 +342,7 @@ packages:
   path: .
   repo: hyperbrowserai/langchain-hyperbrowser
   downloads: 0
+- name: langchain-fmp-data
+  path: .
+  repo: MehdiZare/langchain-fmp-data
+  downloads: 0
