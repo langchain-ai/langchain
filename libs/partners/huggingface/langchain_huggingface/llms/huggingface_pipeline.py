@@ -178,16 +178,19 @@ class HuggingFacePipeline(BaseLLM):
                 if not is_ipex_available():
                     raise ImportError(err_msg)
 
-                from optimum.intel import (  # type: ignore[import]
-                    IPEXModelForCausalLM,
-                    IPEXModelForSeq2SeqLM,
-                )
+                if task == "text-generation":
+                    from optimum.intel import (
+                        IPEXModelForCausalLM,  # type: ignore[import]
+                    )
 
-                model_cls = (
-                    IPEXModelForCausalLM
-                    if task == "text-generation"
-                    else IPEXModelForSeq2SeqLM
-                )
+                    model_cls = IPEXModelForCausalLM
+                else:
+                    from optimum.intel import (
+                        IPEXModelForSeq2SeqLM,  # type: ignore[import]
+                    )
+
+                    model_cls = IPEXModelForSeq2SeqLM
+
         else:
             model_cls = (
                 AutoModelForCausalLM
