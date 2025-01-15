@@ -64,19 +64,23 @@ def main():
     try:
         # Load packages configuration
         package_yaml = load_packages_yaml()
-        packages = [
+
+        # Clean target directories
+        clean_target_directories([
+            p
+            for p in package_yaml["packages"]
+            if p["repo"].startswith("langchain-ai/")
+            and p["repo"] != "langchain-ai/langchain"
+        ])
+
+        # Move libraries to their new locations
+        move_libraries([
             p
             for p in package_yaml["packages"]
             if not p.get("disabled", False)
             and p["repo"].startswith("langchain-ai/")
             and p["repo"] != "langchain-ai/langchain"
-        ]
-
-        # Clean target directories
-        clean_target_directories(packages)
-
-        # Move libraries to their new locations
-        move_libraries(packages)
+        ])
 
         print("Library sync completed successfully!")
 
