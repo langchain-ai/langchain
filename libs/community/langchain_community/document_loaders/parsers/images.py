@@ -3,7 +3,7 @@ import html
 import io
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Iterable, Iterator, Literal
+from typing import TYPE_CHECKING, Iterable, Iterator, Literal, Union
 
 import numpy
 import numpy as np
@@ -33,19 +33,20 @@ class BaseImageBlobParser(BaseBlobParser):
     def __init__(
         self,
         *,
-        format: Literal["text", "markdown-link", "html-img"] = "text",
+        format: Union[Literal["text", "markdown-link", "html-img"], str] = "text",
     ):
         """
         Initializes the BaseImageBlobParser.
 
         Args:
-            format (Literal["text", "markdown-link", "html-img"]):
+            format (Literal["text", "markdown-link", "html-img"]|str):
               The format for the parsed output.
               - "text" = return the content as is
               - "markdown-link" = wrap the content into an image markdown link, w/ link
               pointing to (`![body)(#)`]
               - "html-img" = wrap the content as the `alt` text of an tag and link to
               (`<img alt="{body}" src="#"/>`)
+              - or other formats if the parser supports it
         """
         self.format = format
 
