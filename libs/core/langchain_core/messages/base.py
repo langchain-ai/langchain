@@ -118,6 +118,9 @@ class BaseMessage(Serializable):
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
+    def __getitem__(self, item: str) -> Any:
+        return self.model_dump()[item]
+
 
 def merge_content(
     first_content: Union[str, list[Union[str, dict]]],

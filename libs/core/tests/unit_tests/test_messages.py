@@ -1008,3 +1008,9 @@ def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id=uuid.uuid4())
     ToolMessage("foo", tool_call_id=1)
     ToolMessage("foo", tool_call_id=1.0)
+
+
+def test_message_getitem() -> None:
+    msg = BaseMessage(content="foo", role="bar", id=1, type="baz")
+    for k in msg.model_fields:
+        assert msg[k] == getattr(msg, k)
