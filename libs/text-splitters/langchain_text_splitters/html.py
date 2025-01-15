@@ -696,7 +696,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             placeholder_count: int,
         ) -> Tuple[List[Document], Dict[str, str], List[str], Dict[str, str], int]:
             for elem in element:
-                if elem.name.lower() in ["html", "body", "div"]:
+                if elem.name.lower() in ["html", "body", "div", "main"]:
                     children = elem.find_all(recursive=False)
                     (
                         documents,
