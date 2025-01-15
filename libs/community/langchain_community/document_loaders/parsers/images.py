@@ -50,13 +50,15 @@ class BaseImageBlobParser(BaseBlobParser):
         self.format = format
 
     @abstractmethod
-    def _analyze_image(self, img: "Image") -> str:
+    def _analyze_image(self, img: "Image", format: str) -> str:
         """
         Abstract method to analyze an image and extract textual content.
 
         Args:
             img (Image):
               The image to be analyzed.
+            format (str):
+              The format to use if it's possible
 
         Returns:
             str:
@@ -84,7 +86,12 @@ class BaseImageBlobParser(BaseBlobParser):
                     img = Img.fromarray(numpy.load(buf))
                 else:
                     img = Img.open(buf)
-                content = self._analyze_image(img)
+                format = (
+                    "text"
+                    if self.format in ("markdown-link", "html-img")
+                    else self.format
+                )
+                content = self._analyze_image(img, format)
                 if content:
                     source = blob.source or "#"
                     if self.format == "markdown-link":
@@ -143,13 +150,15 @@ class RapidOCRBlobParser(BaseImageBlobParser):
         super().__init__(format=format)
         self.ocr = None
 
-    def _analyze_image(self, img: "Image") -> str:
+    def _analyze_image(self, img: "Image", format: str) -> str:
         """
         Analyzes an image and extracts text using RapidOCR.
 
         Args:
             img (Image):
               The image to be analyzed.
+            format (str):
+              The format to use if it's possible
 
         Returns:
             str:
@@ -211,13 +220,15 @@ class TesseractBlobParser(BaseImageBlobParser):
         super().__init__(format=format)
         self.langs = list(langs)
 
-    def _analyze_image(self, img: "Image") -> str:
+    def _analyze_image(self, img: "Image", format: str) -> str:
         """
         Analyzes an image and extracts text using Tesseract OCR.
 
         Args:
             img (Image):
               The image to be analyzed.
+            format (str):
+              The format to use if it's possible
 
         Returns:
             str: The extracted text content.
@@ -287,7 +298,7 @@ class LLMImageBlobParser(BaseImageBlobParser):
         self.model = model
         self.prompt = prompt
 
-    def _analyze_image(self, img: "Image") -> str:
+    def _analyze_image(self, img: "Image", format: str) -> str:
         """
         Analyzes an image using the provided language model.
 
@@ -308,7 +319,7 @@ class LLMImageBlobParser(BaseImageBlobParser):
                     content=[
                         {
                             "type": "text",
-                            "text": self.prompt.format(format=self.format),
+                            "text": self.prompt.format(format=format),
                         },
                         {
                             "type": "image_url",

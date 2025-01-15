@@ -199,7 +199,7 @@ def test_mode_and_extract_images_variations(
             parser.password = old_password
 
     class EmptyImageBlobParser(BaseImageBlobParser):
-        def _analyze_image(self, img: Image) -> str:
+        def _analyze_image(self, img: Image, format: str) -> str:
             return "![image](#)"
 
     parser_class = getattr(pdf_parsers, parser_factory)
