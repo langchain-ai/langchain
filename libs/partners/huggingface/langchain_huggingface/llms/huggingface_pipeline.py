@@ -143,10 +143,9 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
 
+            error_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
             if not is_optimum_intel_available():
-                raise ImportError(
-                    f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
-                )
+                raise ImportError(error_msg)
 
             if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
                 raise ImportError(
@@ -158,9 +157,7 @@ class HuggingFacePipeline(BaseLLM):
 
             if backend == "openvino":
                 if not is_openvino_available():
-                    raise ImportError(
-                        f"Backend: {backend} {IMPORT_ERROR.format(backend)}"
-                    )
+                    raise ImportError(error_msg)
 
                 from optimum.intel import (  # type: ignore[import]
                     OVModelForCausalLM,
@@ -174,10 +171,8 @@ class HuggingFacePipeline(BaseLLM):
                 )
             else:
                 if not is_ipex_available():
-                    raise ImportError(
-                        f"Backend: {backend} {IMPORT_ERROR.format(backend)}"
-                    )
-
+                    raise ImportError(error_msg)
+    
                 from optimum.intel import (  # type: ignore[import]
                     IPEXModelForCausalLM,
                     IPEXModelForSeq2SeqLM,
