@@ -293,6 +293,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 instructions: Additional run instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
+                parallel_tool_calls: Allow Assistant to set parallel_tool_calls
+                    for this run.
+                top_p: Override Assistant top_p for this run.
+                temperature: Override Assistant temperature for this run.
+                max_completion_tokens: Allow setting max_completion_tokens for this run.
+                max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
             config: Runnable config. Defaults to None.
 
@@ -412,6 +418,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 additional_instructions: Appends additional instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
+                parallel_tool_calls: Allow Assistant to set parallel_tool_calls
+                    for this run.
+                top_p: Override Assistant top_p for this run.
+                temperature: Override Assistant temperature for this run.
+                max_completion_tokens: Allow setting max_completion_tokens for this run.
+                max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
             config: Runnable config. Defaults to None.
             kwargs: Additional arguments.
@@ -514,6 +526,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 "model",
                 "tools",
                 "additional_instructions",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
                 "run_metadata",
             )
         }
@@ -527,7 +544,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k
+            in (
+                "instructions",
+                "model",
+                "tools",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
+                "run_metadata",
+            )
         }
         run = self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
@@ -651,6 +679,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 "model",
                 "tools",
                 "additional_instructions",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
                 "run_metadata",
             )
         }
@@ -664,7 +697,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k
+            in (
+                "instructions",
+                "model",
+                "tools",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
+                "run_metadata",
+            )
         }
         run = await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
