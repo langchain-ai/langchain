@@ -58,13 +58,6 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         self.load_in_8bit = load_in_8bit
         self.batch_size = batch_size
 
-    def load(self) -> List[Document]:
-        """Transcribes the audio file and loads the transcript into documents.
-
-        It uses the OpenVINO to transcribe the audio file
-        and blocks until the transcription is finished.
-        """
-
         try:
             from transformers import AutoProcessor, pipeline
             from optimum.intel.openvino import OVModelForSpeechSeq2Seq
@@ -74,6 +67,30 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
                 "Please install it with `pip install todo`."
             ) from exc
 
+        processor = AutoProcessor.from_pretrained(self.model_id)
+        model = OVModelForSpeechSeq2Seq.from_pretrained(self.model_id , 
+                load_in_8bit=self.load_in_8bit,
+                export=False)
+
+        model = model.to(self.device)
+        model.compile()
+        self.pipe = pipeline("automatic-speech-recognition",
+                model=model,
+                batch_size=self.batch_size,
+                chunk_length_s=self.chunk_length_s,
+                return_language=self.return_language,
+                tokenizer=processor.tokenizer,
+                feature_extractor=processor.feature_extractor)
+
+
+
+    def load(self) -> List[Document]:
+        """Transcribes the audio file and loads the transcript into documents.
+
+        It uses the OpenVINO to transcribe the audio file
+        and blocks until the transcription is finished.
+        """
+
         try:
             from transformers.pipelines.audio_utils import ffmpeg_read
         except ImportError as exc:
@@ -82,47 +99,36 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
                     "Please install it with `pip install ffmpeg-python`."
                     ) from exc
 
-        processor = AutoProcessor.from_pretrained(self.model_id)
-        model = OVModelForSpeechSeq2Seq.from_pretrained(self.model_id , 
-                load_in_8bit=self.load_in_8bit,
-                export=False)
-
-        model = model.to(self.device)
-        model.compile()
-        pipe = pipeline("automatic-speech-recognition",
-                model=model,
-                batch_size=self.batch_size,
-                chunk_length_s=self.chunk_length_s,
-                return_language=self.return_language,
-                tokenizer=processor.tokenizer,
-                feature_extractor=processor.feature_extractor)
-
         audio_decoded = None
         if "gs://" in self.file_path:
             raise NotImplementedError
         elif ".mp4" in self.file_path:
             raise NotImplementedError
+        elif ".wav" in self.file_path:
+            with open(self.file_path, "rb") as f:
+                content = f.read()
+                audio_decoded = ffmpeg_read(content, self.pipe.feature_extractor.sampling_rate)
         elif ".mp3" in self.file_path:
             with open(self.file_path, "rb") as f:
                 content = f.read()
                 audio_decoded = ffmpeg_read(content, 
-                    pipe.feature_extractor.sampling_rate)
+                    self.pipe.feature_extractor.sampling_rate)
         else:
             raise NotImplementedError
 
         audio_info = {
             "raw": audio_decoded,
-            "sampling_rate": pipe.feature_extractor.sampling_rate,
+            "sampling_rate": self.pipe.feature_extractor.sampling_rate,
             }
 
         start_time = time.time()
-        chunks = pipe(audio_info, 
+        chunks = self.pipe(audio_info, 
                 return_language=self.return_language, 
                 return_timestamps=self.return_timestamps
                 )["chunks"]
 
         result_total_latency = time.time() - start_time
-        print("Inf time (seconds/minutes): " , result_total_latency, "/", result_total_latency/60)
+        print("ASR Inf time (seconds/minutes): " , result_total_latency, "/", result_total_latency/60)
 
         return [
             Document(
