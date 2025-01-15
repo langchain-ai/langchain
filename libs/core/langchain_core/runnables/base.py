@@ -4351,7 +4351,7 @@ class RunnableLambda(Runnable[Input, Output]):
         except AttributeError:
             pass
 
-        self.repr: str | None = None
+        self._repr: str | None = None
 
     @property
     @override
@@ -4531,18 +4531,18 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __repr__(self) -> str:
         """A string representation of this Runnable."""
-        if self.repr is None:
+        if self._repr is None:
             if hasattr(self, "func") and isinstance(self.func, itemgetter):
-                self.repr = f"RunnableLambda({str(self.func)[len('operator.'):]})"
+                self._repr = f"RunnableLambda({str(self.func)[len('operator.'):]})"
             elif hasattr(self, "func"):
-                self.repr = f"RunnableLambda({get_lambda_source(self.func) or '...'})"
+                self._repr = f"RunnableLambda({get_lambda_source(self.func) or '...'})"
             elif hasattr(self, "afunc"):
-                self.repr = (
+                self._repr = (
                     f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
                 )
             else:
-                self.repr = "RunnableLambda(...)"
-        return self.repr
+                self._repr = "RunnableLambda(...)"
+        return self._repr
 
     def _invoke(
         self,
