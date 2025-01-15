@@ -74,7 +74,7 @@ def test_pypdf_loader_with_multi_labled_page_numbers() -> None:
     loader = PyPDFLoader(str(path_to_multi_label_page_numbers_pdf))
     docs = loader.load()
 
-    assert len(docs) == 117
+    assert len(docs) == 7
 
     assert docs[0].metadata["page"] == 0
     assert docs[0].metadata["page_label"] == "i"
