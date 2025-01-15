@@ -100,6 +100,7 @@ packages:
   js: '@langchain/mongodb'
   downloads: 113328
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+  disabled: true
 - name: langchain-nomic
   path: libs/partners/nomic
   repo: langchain-ai/langchain
