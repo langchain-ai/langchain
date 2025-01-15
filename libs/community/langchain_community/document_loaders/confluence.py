@@ -523,11 +523,14 @@ class ConfluenceLoader(BaseLoader):
 
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
+
+        if page["status"] != "current":
+            return False
+
         restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
 
         return (
-            page["status"] == "current"
-            and not restrictions["read"]["restrictions"]["user"]["results"]
+            not restrictions["read"]["restrictions"]["user"]["results"]
             and not restrictions["read"]["restrictions"]["group"]["results"]
         )
 
