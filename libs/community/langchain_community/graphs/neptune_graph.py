@@ -2,6 +2,8 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from langchain_core._api.deprecation import deprecated
+
 
 class NeptuneQueryException(Exception):
     """Exception for the Neptune queries."""
@@ -139,6 +141,11 @@ class BaseNeptuneGraph(ABC):
         """
 
 
+@deprecated(
+    since="0.3.15",
+    removal="1.0",
+    alternative_import="langchain_aws.NeptuneAnalyticsGraph",
+)
 class NeptuneAnalyticsGraph(BaseNeptuneGraph):
     """Neptune Analytics wrapper for graph operations.
 
@@ -269,6 +276,11 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
             return summary
 
 
+@deprecated(
+    since="0.3.15",
+    removal="1.0",
+    alternative_import="langchain_aws.NeptuneGraph",
+)
 class NeptuneGraph(BaseNeptuneGraph):
     """Neptune wrapper for graph operations.
 
