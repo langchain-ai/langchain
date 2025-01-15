@@ -197,7 +197,10 @@ class MarkdownHeaderTextSplitter:
 
         if current_content:
             lines_with_metadata.append(
-                {"content": "\n".join(current_content), "metadata": current_metadata}
+                {
+                    "content": "\n".join(current_content),
+                    "metadata": current_metadata,
+                }
             )
 
         # lines_with_metadata has each line with associated header metadata
