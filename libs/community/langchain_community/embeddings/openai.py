@@ -522,7 +522,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.dict()
-                average = average_embedded["data"][0]["embedding"]
+                if len(average_embedded["data"]) > 0:
+                    average = average_embedded["data"][0]["embedding"]
+                else:
+                    raise ValueError(average_embedded["message"])
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
@@ -645,7 +648,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.dict()
-                average = average_embedded["data"][0]["embedding"]
+                if len(average_embedded["data"]) > 0:
+                    average = average_embedded["data"][0]["embedding"]
+                else:
+                    raise ValueError(average_embedded["message"])
             else:
                 average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
             embeddings[i] = (average / np.linalg.norm(average)).tolist()
