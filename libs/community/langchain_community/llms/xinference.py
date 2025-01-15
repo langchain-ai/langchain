@@ -81,7 +81,7 @@ class Xinference(LLM):
 
     """  # noqa: E501
 
-    client: Any
+    client: Optional[Any] = None
     server_url: Optional[str]
     """URL of the xinference server"""
     model_uid: Optional[str]
@@ -156,6 +156,8 @@ class Xinference(LLM):
         Returns:
             The generated string by the model.
         """
+        if self.client is None:
+            raise ValueError("Client is not initialized!")
         model = self.client.get_model(self.model_uid)
 
         generate_config: "LlamaCppGenerateConfig" = kwargs.get("generate_config", {})
