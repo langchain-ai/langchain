@@ -148,7 +148,7 @@ class HuggingFacePipeline(BaseLLM):
                 raise ImportError(err_msg)
 
             min_optimum_version = (
-                _MIN_OPTIMUM_VERSION
+                "1.22"
                 if backend == "ipex" and task != "text-generation"
                 else _MIN_OPTIMUM_VERSION
             )
