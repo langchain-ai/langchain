@@ -94,7 +94,7 @@ packages:
   downloads: 232463
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-mongodb
-  path: libs/mongodb
+  path: libs/langchain-mongodb
   repo: langchain-ai/langchain-mongodb
   provider_page: mongodb_atlas
   js: '@langchain/mongodb'
