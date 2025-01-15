@@ -1,0 +1,26 @@
+{
+  "imports": {
+    "langchain/": "npm:/langchain@0.3.2/",
+    "@langchain/anthropic": "npm:@langchain/anthropic@0.3.0",
+    "@langchain/cloudflare": "npm:@langchain/cloudflare@0.1.0",
+    "@langchain/community/": "npm:/@langchain/community@0.3.0/",
+    "@langchain/openai": "npm:@langchain/openai@0.3.0",
+    "@langchain/cohere": "npm:@langchain/cohere@0.3.0",
+    "@langchain/textsplitters": "npm:@langchain/textsplitters@0.1.0",
+    "@langchain/google-vertexai-web": "npm:@langchain/google-vertexai-web@0.1.0",
+    "@langchain/mistralai": "npm:@langchain/mistralai@0.1.0",
+    "@langchain/core/": "npm:/@langchain/core@0.3.1/",
+    "@langchain/pinecone": "npm:@langchain/pinecone@0.1.0",
+    "@langchain/google-common": "npm:@langchain/google-common@0.1.0",
+    "@langchain/langgraph": "npm:/@langchain/langgraph@0.2.3",
+    "@langchain/langgraph/": "npm:/@langchain/langgraph@0.2.3/",
+    "langchain-gigachat": "npm:langchain-gigachat@0.0.7",
+    "@faker-js/faker": "npm:@faker-js/faker",
+    "events": "node:events",
+    "cheerio": "npm:cheerio",
+    "chromadb": "npm:/chromadb",
+    "dotenv/": "npm:/dotenv/",
+    "zod": "npm:/zod",
+    "zod-to-json-schema": "npm:/zod-to-json-schema"
+  }
+}
