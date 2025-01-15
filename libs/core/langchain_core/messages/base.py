@@ -119,7 +119,10 @@ class BaseMessage(Serializable):
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
     def __getitem__(self, item: str) -> Any:
-        return self.model_dump()[item]
+        if item in self.model_fields and hasattr(self, item):
+            return getattr(self, item)
+        else:
+            raise KeyError(item)
 
 
 def merge_content(
