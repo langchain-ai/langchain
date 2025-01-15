@@ -123,7 +123,11 @@ class PyPDFParser(BaseBlobParser):
                 Document(
                     page_content=_extract_text_from_page(page=page)
                     + self._extract_images_from_page(page),
-                    metadata={"source": blob.source, "page": page_number},
+                    metadata={
+                        "source": blob.source,
+                        "page": page_number,
+                        "page_label": pdf_reader.page_labels[page_number],
+                    },
                     # type: ignore[attr-defined]
                 )
                 for page_number, page in enumerate(pdf_reader.pages)
