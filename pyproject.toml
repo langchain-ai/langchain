@@ -68,6 +68,14 @@ extend-exclude = [
     "docs/docs/expression_language/why.ipynb", # TODO: look into why linter errors
 ]
 
+[tool.ruff.lint]
+select = [
+    "D",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
     "E402", # allow imports to appear anywhere in docs
@@ -80,3 +88,5 @@ extend-exclude = [
 # Don't require them to change at once, though we should look into them eventually.
 "cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
 "docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
+
+"!libs/langchain/langchain/prompts/vectorstore.py" = ["D"]
