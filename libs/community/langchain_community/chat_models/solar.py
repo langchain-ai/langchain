@@ -24,7 +24,7 @@ class SolarChat(SolarCommon, ChatOpenAI):  # type: ignore[override, override]
 
             from langchain_community.chat_models.solar import SolarChat
 
-            solar = SolarChat(model="solar-1-mini-chat")
+            solar = SolarChat(model="solar-mini")
     """
 
     max_tokens: int = Field(default=1024)

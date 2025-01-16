@@ -4,14 +4,17 @@ import os
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Union
+from typing import Any, List, Union
 from urllib.parse import urlparse
 
 import requests
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+from langchain_community.document_loaders.unstructured import (
+    UnstructuredFileLoader,
+    validate_unstructured_version,
+)
 
 
 class Docx2txtLoader(BaseLoader, ABC):
@@ -92,13 +95,26 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
     https://unstructured-io.github.io/unstructured/bricks.html#partition-docx
     """
 
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
+        """
+
+        Args:
+            file_path: The path to the Word file to load.
+            mode: The mode to use when loading the file. Can be one of "single",
+                "multi", or "all". Default is "single".
+            **unstructured_kwargs: Any kwargs to pass to the unstructured.
+        """
+        file_path = str(file_path)
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
     def _get_elements(self) -> List:
-        from unstructured.__version__ import __version__ as __unstructured_version__
         from unstructured.file_utils.filetype import FileType, detect_filetype
 
-        unstructured_version = tuple(
-            [int(x) for x in __unstructured_version__.split(".")]
-        )
         # NOTE(MthwRobinson) - magic will raise an import error if the libmagic
         # system dependency isn't installed. If it's not installed, we'll just
         # check the file extension
@@ -110,12 +126,8 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
             _, extension = os.path.splitext(str(self.file_path))
             is_doc = extension == ".doc"
 
-        if is_doc and unstructured_version < (0, 4, 11):
-            raise ValueError(
-                f"You are on unstructured version {__unstructured_version__}. "
-                "Partitioning .doc files is only supported in unstructured>=0.4.11. "
-                "Please upgrade the unstructured package and try again."
-            )
+        if is_doc:
+            validate_unstructured_version("0.4.11")
 
         if is_doc:
             from unstructured.partition.doc import partition_doc

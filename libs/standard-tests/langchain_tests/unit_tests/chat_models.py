@@ -133,6 +133,11 @@ class ChatModelTests(BaseStandardTests):
         )
 
     @property
+    def structured_output_kwargs(self) -> dict:
+        """If specified, additional kwargs for with_structured_output."""
+        return {}
+
+    @property
     def supports_json_mode(self) -> bool:
         """(bool) whether the chat model supports JSON mode."""
         return False
@@ -298,6 +303,19 @@ class ChatModelUnitTests(ChatModelTests):
             @property
             def has_structured_output(self) -> bool:
                 return True
+
+    .. dropdown:: structured_output_kwargs
+
+        Dict property that can be used to specify additional kwargs for
+        ``with_structured_output``. Useful for testing different models.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "function_calling"}
 
     .. dropdown:: supports_json_mode
 
