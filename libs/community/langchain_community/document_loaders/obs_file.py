@@ -92,7 +92,7 @@ class OBSFileLoader(BaseLoader):
         self.bucket = bucket
         self.key = key
 
-    def load(self, mode: str = 'single') -> List[Document]:
+    def load(self, mode: str = "single") -> List[Document]:
         """Load documents."""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.bucket}/{self.key}"
