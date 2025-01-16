@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -84,19 +83,17 @@ async def test_inmemory_mmr() -> None:
     assert output[1] == _any_id_document(page_content="fou")
 
 
-async def test_inmemory_dump_load(tmp_path: Path) -> None:
+def test_inmemory_dump_load(tmp_path: Path) -> None:
     """Test end to end construction and search."""
     embedding = DeterministicFakeEmbedding(size=6)
-    store = await InMemoryVectorStore.afrom_texts(["foo", "bar", "baz"], embedding)
-    output = await store.asimilarity_search("foo", k=1)
+    store = InMemoryVectorStore.from_texts(["foo", "bar", "baz"], embedding)
+    output = store.similarity_search("foo", k=1)
 
     test_file = str(tmp_path / "test.json")
-    await asyncio.to_thread(store.dump, test_file)
+    store.dump(test_file)
 
-    loaded_store = await asyncio.to_thread(
-        InMemoryVectorStore.load, test_file, embedding
-    )
-    loaded_output = await loaded_store.asimilarity_search("foo", k=1)
+    loaded_store = InMemoryVectorStore.load(test_file, embedding)
+    loaded_output = loaded_store.similarity_search("foo", k=1)
 
     assert output == loaded_output
 
