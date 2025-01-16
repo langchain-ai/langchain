@@ -259,8 +259,8 @@ packages:
   downloads: 35495
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-couchbase
-  path: libs/partners/couchbase
-  repo: langchain-ai/langchain
+  path: .
+  repo: Couchbase-Ecosystem/langchain-couchbase
   downloads: 347
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-ollama
