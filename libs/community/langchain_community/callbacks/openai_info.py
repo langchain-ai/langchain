@@ -128,6 +128,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-1106-finetuned": 0.003,
     "gpt-3.5-turbo-0125-finetuned": 0.003,
     "gpt-4o-mini-2024-07-18-finetuned": 0.0003,
+    "gpt-4o-mini-2024-07-18-finetuned-cached": 0.00015,
     # Fine Tuned output
     "babbage-002-finetuned-completion": 0.0016,
     "davinci-002-finetuned-completion": 0.012,
