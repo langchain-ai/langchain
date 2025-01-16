@@ -968,6 +968,16 @@ class ChatAnthropic(BaseChatModel):
                 f"Unrecognized 'tool_choice' type {tool_choice=}. Expected dict, "
                 f"str, or None."
             )
+
+        if kwargs.get("parallel_tool_calls") == False:  # noqa: E712
+            if "tool_choice" in kwargs:
+                kwargs["tool_choice"]["disable_parallel_tool_use"] = True
+            else:
+                kwargs["tool_choice"] = {
+                    "type": "any",
+                    "disable_parallel_tool_use": True,
+                }
+        kwargs.pop("parallel_tool_calls", None)
         return self.bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
