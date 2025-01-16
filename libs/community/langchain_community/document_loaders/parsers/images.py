@@ -26,23 +26,23 @@ class BaseImageBlobParser(BaseBlobParser):
     Abstract base class for parsing image blobs into text.
 
     Attributes:
-        format (Literal["text", "markdown-link", "html-img"]):
+        format (Literal["text", "markdown-img", "html-img"]):
           Output format of the parsed text.
     """
 
     def __init__(
         self,
         *,
-        format: Union[Literal["text", "markdown-link", "html-img"], str] = "text",
+        format: Union[Literal["text", "markdown-img", "html-img"], str] = "text",
     ):
         """
         Initializes the BaseImageBlobParser.
 
         Args:
-            format (Literal["text", "markdown-link", "html-img"]|str):
+            format (Literal["text", "markdown-img", "html-img"]|str):
               The format for the parsed output.
               - "text" = return the content as is
-              - "markdown-link" = wrap the content into an image markdown link, w/ link
+              - "markdown-img" = wrap the content into an image markdown link, w/ link
               pointing to (`![body)(#)`]
               - "html-img" = wrap the content as the `alt` text of an tag and link to
               (`<img alt="{body}" src="#"/>`)
@@ -89,13 +89,13 @@ class BaseImageBlobParser(BaseBlobParser):
                     img = Img.open(buf)
                 format = (
                     "text"
-                    if self.format in ("markdown-link", "html-img")
+                    if self.format in ("markdown-img", "html-img")
                     else self.format
                 )
                 content = self._analyze_image(img, format)
                 if content:
                     source = blob.source or "#"
-                    if self.format == "markdown-link":
+                    if self.format == "markdown-img":
                         content = content.replace("]", r"\\]")
                         content = f"![{content}]({source})"
                     elif self.format == "html-img":
@@ -122,10 +122,10 @@ class RapidOCRBlobParser(BaseImageBlobParser):
     Attributes:
         ocr:
           The RapidOCR instance for performing OCR.
-        format (Literal["text", "markdown-link", "html-img"]):
+        format (Literal["text", "markdown-img", "html-img"]):
           The format for the parsed output.
           - "text" = return the content as is
-          - "markdown-link" = wrap the content into an image markdown link, w/ link
+          - "markdown-img" = wrap the content into an image markdown link, w/ link
           pointing to (`![body)(#)`]
           - "html-img" = wrap the content as the `alt` text of an tag and link to
           (`<img alt="{body}" src="#"/>`)
@@ -134,16 +134,16 @@ class RapidOCRBlobParser(BaseImageBlobParser):
     def __init__(
         self,
         *,
-        format: Literal["text", "markdown-link", "html-img"] = "text",
+        format: Literal["text", "markdown-img", "html-img"] = "text",
     ):
         """
         Initializes the RapidOCRBlobParser.
 
         Args:
-            format (Literal["text", "markdown-link", "html-img"]):
+            format (Literal["text", "markdown-img", "html-img"]):
               The format for the parsed output.
               - "text" = return the content as is
-              - "markdown-link" = wrap the content into an image markdown link, w/ link
+              - "markdown-img" = wrap the content into an image markdown link, w/ link
               pointing to (`![body)(#)`]
               - "html-img" = wrap the content as the `alt` text of an tag and link to
               (`<img alt="{body}" src="#"/>`)
@@ -187,10 +187,10 @@ class TesseractBlobParser(BaseImageBlobParser):
     Parser for extracting text from images using the Tesseract OCR library.
 
     Attributes:
-        format (Literal["text", "markdown-link", "html-img"]):
+        format (Literal["text", "markdown-img", "html-img"]):
           The format for the parsed output.
           - "text" = return the content as is
-          - "markdown-link" = wrap the content into an image markdown link, w/ link
+          - "markdown-img" = wrap the content into an image markdown link, w/ link
           pointing to (`![body)(#)`]
           - "html-img" = wrap the content as the `alt` text of an tag and link to
           (`<img alt="{body}" src="#"/>`)
@@ -201,17 +201,17 @@ class TesseractBlobParser(BaseImageBlobParser):
     def __init__(
         self,
         *,
-        format: Literal["text", "markdown-link", "html-img"] = "text",
+        format: Literal["text", "markdown-img", "html-img"] = "text",
         langs: Iterable[str] = ("eng",),
     ):
         """
         Initializes the TesseractBlobParser.
 
         Args:
-            format (Literal["text", "markdown-link", "html-img"]):
+            format (Literal["text", "markdown-img", "html-img"]):
               The format for the parsed output.
               - "text" = return the content as is
-              - "markdown-link" = wrap the content into an image markdown link, w/ link
+              - "markdown-img" = wrap the content into an image markdown link, w/ link
               pointing to (`![body)(#)`]
               - "html-img" = wrap the content as the `alt` text of an tag and link to
               (`<img alt="{body}" src="#"/>`)
@@ -250,8 +250,9 @@ _PROMPT_IMAGES_TO_DESCRIPTION: BasePromptTemplate = PromptTemplate.from_template
     "Give a concise summary of the image that is well optimized for retrieval\n"
     "2. extract all the text from the image. "
     "Do not exclude any content from the page.\n"
-    "Format response in {format} format without explanatory text "
-    "and without markdown delimiter ``` at the beginning.\n"
+    "Format answer in {format} without explanatory text "
+    "and without markdown delimiter ``` at the beginning. "
+    "Respects the start of the format."
 )
 
 
@@ -260,10 +261,10 @@ class LLMImageBlobParser(BaseImageBlobParser):
     Parser for analyzing images using a language model (LLM).
 
     Attributes:
-        format (Literal["text", "markdown-link", "html-img"]):
+        format (Literal["text", "markdown-img", "html-img"]):
           The format for the parsed output.
           - "text" = return the content as is
-          - "markdown-link" = wrap the content into an image markdown link, w/ link
+          - "markdown-img" = wrap the content into an image markdown link, w/ link
           pointing to (`![body)(#)`]
           - "html-img" = wrap the content as the `alt` text of an tag and link to
           (`<img alt="{body}" src="#"/>`)
@@ -279,7 +280,7 @@ class LLMImageBlobParser(BaseImageBlobParser):
         self,
         *,
         format: Literal[
-            "text", "markdown-link", "html-img", "markdown", "html"
+            "text", "markdown-img", "html-img", "markdown", "html"
         ] = "text",
         model: BaseChatModel,
         prompt: BasePromptTemplate = _PROMPT_IMAGES_TO_DESCRIPTION,

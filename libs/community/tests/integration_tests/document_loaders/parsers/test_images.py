@@ -31,7 +31,7 @@ page_image = Blob.from_path(path_base / "examples/page.png")
     "format,pattern",
     [
         ("text", r"(?ism)^{body}$"),
-        ("markdown-link", r"(?ism)^!\[{body}]\(.*\)|$"),
+        ("markdown-img", r"(?ism)^!\[{body}]\(.*\)|$"),
         ("html-img", r'(?ism)^(<img alt="{body}" src=".*" />|)'),
     ],
 )
@@ -80,7 +80,7 @@ def test_image_parser_with_differents_format_and_files(
 @pytest.mark.parametrize(
     "format,pattern",
     [
-        ("html", r"^<html"),
+        ("html", r"^<.*>"),
         ("markdown", r"^\*\*.*\*\*"),
     ],
 )

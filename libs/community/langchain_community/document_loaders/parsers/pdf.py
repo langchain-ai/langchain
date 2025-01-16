@@ -467,7 +467,7 @@ class PyMuPDFParser(BaseBlobParser):
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
         pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
-        images_parser: Optional[BaseImageBlobParser] = RapidOCRBlobParser(),
+        images_parser: Optional[BaseImageBlobParser] = None,
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -498,8 +498,6 @@ class PyMuPDFParser(BaseBlobParser):
             or "csv".
         """
         super().__init__()
-        self.extract_images = extract_images
-        self.images_parser = images_parser
         if mode not in ["single", "page"]:
             raise ValueError("mode must be single or page")
         if extract_tables and extract_tables not in ["markdown", "html", "csv"]:
@@ -509,7 +507,10 @@ class PyMuPDFParser(BaseBlobParser):
         self.pages_delimitor = pages_delimitor
         self.password = password
         self.text_kwargs = text_kwargs or {}
+        if extract_images and not images_parser:
+            images_parser = RapidOCRBlobParser()
         self.extract_images = extract_images
+        self.images_parser = images_parser
         self.extract_tables = extract_tables
         self.extract_tables_settings = extract_tables_settings
 
