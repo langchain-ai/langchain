@@ -156,7 +156,7 @@ class HuggingFacePipeline(BaseLLM):
             if is_optimum_intel_version("<", min_optimum_version):
                 raise ImportError(
                     f"Backend: {backend} requires optimum-intel>="
-                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
+                    f"{min_optimum_version}. You can install it with pip: "
                     "`pip install --upgrade --upgrade-strategy eager "
                     f"`optimum[{backend}]`."
                 )
