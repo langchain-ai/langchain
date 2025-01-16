@@ -12,7 +12,7 @@ from langchain_community.chat_models import ChatClovaX
 
 def test_stream() -> None:
     """Test streaming tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     for token in llm.stream("I'm Clova"):
         assert isinstance(token, AIMessageChunk)
@@ -21,11 +21,12 @@ def test_stream() -> None:
             assert "input_length" in token.response_metadata
             assert "output_length" in token.response_metadata
             assert "stop_reason" in token.response_metadata
+            assert "ai_filter" in token.response_metadata
 
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     async for token in llm.astream("I'm Clova"):
         assert isinstance(token, AIMessageChunk)
@@ -34,11 +35,12 @@ async def test_astream() -> None:
             assert "input_length" in token.response_metadata
             assert "output_length" in token.response_metadata
             assert "stop_reason" in token.response_metadata
+            assert "ai_filter" in token.response_metadata
 
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     result = await llm.abatch(["I'm Clova", "I'm not Clova"])
     for token in result:
@@ -48,11 +50,12 @@ async def test_abatch() -> None:
             assert "input_length" in token.response_metadata
             assert "output_length" in token.response_metadata
             assert "stop_reason" in token.response_metadata
+            assert "ai_filter" in token.response_metadata
 
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     result = await llm.abatch(["I'm Clova", "I'm not Clova"], config={"tags": ["foo"]})
     for token in result:
@@ -62,11 +65,12 @@ async def test_abatch_tags() -> None:
             assert "input_length" in token.response_metadata
             assert "output_length" in token.response_metadata
             assert "stop_reason" in token.response_metadata
+            assert "ai_filter" in token.response_metadata
 
 
 def test_batch() -> None:
     """Test batch tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     result = llm.batch(["I'm Clova", "I'm not Clova"])
     for token in result:
@@ -76,11 +80,12 @@ def test_batch() -> None:
             assert "input_length" in token.response_metadata
             assert "output_length" in token.response_metadata
             assert "stop_reason" in token.response_metadata
+            assert "ai_filter" in token.response_metadata
 
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     result = await llm.ainvoke("I'm Clova", config={"tags": ["foo"]})
     assert isinstance(result, AIMessage)
@@ -89,11 +94,12 @@ async def test_ainvoke() -> None:
         assert "input_length" in result.response_metadata
         assert "output_length" in result.response_metadata
         assert "stop_reason" in result.response_metadata
+        assert "ai_filter" in result.response_metadata
 
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatClovaX."""
-    llm = ChatClovaX()
+    llm = ChatClovaX(include_ai_filters=True)
 
     result = llm.invoke("I'm Clova", config=dict(tags=["foo"]))
     assert isinstance(result, AIMessage)
@@ -102,6 +108,7 @@ def test_invoke() -> None:
         assert "input_length" in result.response_metadata
         assert "output_length" in result.response_metadata
         assert "stop_reason" in result.response_metadata
+        assert "ai_filter" in result.response_metadata
 
 
 def test_stream_error_event() -> None:
