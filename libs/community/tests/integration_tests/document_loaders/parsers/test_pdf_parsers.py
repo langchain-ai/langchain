@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
+from PIL.Image import Image
 
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
+    BaseImageBlobParser,
     PDFMinerParser,
     PDFPlumberParser,
     PyPDFium2Parser,
@@ -132,13 +134,18 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
     _assert_with_parser(PyPDFium2Parser(extract_images=True))
 
 
+class EmptyImageBlobParser(BaseImageBlobParser):
+    def _analyze_image(self, img: Image, format: str) -> str:
+        return "![image](#)"
+
+
 @pytest.mark.parametrize(
     "mode",
     ["single", "page"],
 )
 @pytest.mark.parametrize(
-    "extract_images",
-    [True, False],
+    "image_parser",
+    [EmptyImageBlobParser(), None],
 )
 @pytest.mark.parametrize(
     "parser_factory,params",
@@ -147,16 +154,13 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
     ],
 )
 def test_mode_and_extract_images_variations(
-    parser_factory: str, params: dict, mode: str, extract_images: bool
+    parser_factory: str, params: dict, mode: str, image_parser: BaseImageBlobParser
 ) -> None:
     """Apply the same test for all *standard* PDF parsers.
 
     - Try with mode `single` and `page`
-    - Try with extract_images `true` and `false`
+    - Try with image_parser `None` or others
     """
-    from PIL.Image import Image
-
-    from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
 
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
         """Standard tests to verify that the given parser works.
@@ -198,16 +202,11 @@ def test_mode_and_extract_images_variations(
             assert len(docs)
             parser.password = old_password
 
-    class EmptyImageBlobParser(BaseImageBlobParser):
-        def _analyze_image(self, img: Image, format: str) -> str:
-            return "![image](#)"
-
     parser_class = getattr(pdf_parsers, parser_factory)
 
     parser = parser_class(
         mode=mode,
-        extract_images=extract_images,
-        images_parser=EmptyImageBlobParser(),
+        images_parser=image_parser,
         **params,
     )
     _assert_with_parser(parser, splits_by_page=(mode == "page"))

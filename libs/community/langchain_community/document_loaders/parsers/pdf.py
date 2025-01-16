@@ -655,6 +655,9 @@ class PyMuPDFParser(BaseBlobParser):
         return _purge_metadata(
             dict(
                 {
+                    "producer": "PyMuPDF",
+                    "creator": "PyMuPDF",
+                    "creationdate": "",
                     "source": blob.source,  # type: ignore[attr-defined]
                     "file_path": blob.source,  # type: ignore[attr-defined]
                     "total_pages": len(doc),
@@ -679,7 +682,7 @@ class PyMuPDFParser(BaseBlobParser):
         Returns:
             str: The extracted text from the images on the page.
         """
-        if not self.extract_images:
+        if not self.images_parser:
             return ""
         import pymupdf
 
