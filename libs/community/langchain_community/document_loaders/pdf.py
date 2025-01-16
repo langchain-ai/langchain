@@ -30,7 +30,7 @@ from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.dedoc import DedocBaseLoader
 from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
 from langchain_community.document_loaders.parsers.pdf import (
-    _DEFAULT_PAGE_DELIMITOR,
+    _DEFAULT_PAGES_DELIMITER,
     AmazonTextractPDFParser,
     DocumentIntelligenceParser,
     PDFMinerParser,
@@ -458,7 +458,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 # headers = None
                 # password = None,
                 mode = "single",
-                pages_delimitor = "\n\f",
+                pages_delimiter = "\n\f",
                 # extract_images = True,
                 # images_parser = TesseractBlobParser(),
                 # extract_tables = "markdown",
@@ -492,7 +492,7 @@ class PyMuPDFLoader(BasePDFLoader):
         *,
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
-        pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         extract_images: bool = False,
         images_parser: Optional[BaseImageBlobParser] = None,
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
@@ -509,7 +509,7 @@ class PyMuPDFLoader(BasePDFLoader):
             password: Optional password for opening encrypted PDFs.
             mode: The extraction mode, either "single" for the entire document or "page"
                 for page-wise extraction.
-            pages_delimitor: A string delimiter to separate pages in single-mode
+            pages_delimiter: A string delimiter to separate pages in single-mode
                 extraction.
             extract_images: Whether to extract images from the PDF.
             images_parser: Optional image blob parser.
@@ -533,7 +533,7 @@ class PyMuPDFLoader(BasePDFLoader):
         self.parser = PyMuPDFParser(
             password=password,
             mode=mode,
-            pages_delimitor=pages_delimitor,
+            pages_delimiter=pages_delimiter,
             text_kwargs=kwargs,
             extract_images=extract_images,
             images_parser=images_parser,
@@ -862,8 +862,8 @@ class AmazonTextractPDFLoader(BasePDFLoader):
     ) -> Iterator[Document]:
         """Lazy load documents"""
         # the self.file_path is local, but the blob has to include
-        # the S3 location if the file originated from S3 for multi-page documents
-        # raises ValueError when multi-page and not on S3"""
+        # the S3 location if the file originated from S3 for multipage documents
+        # raises ValueError when multipage and not on S3"""
 
         if self.web_path and self._is_s3_url(self.web_path):
             blob = Blob(path=self.web_path)  # type: ignore[call-arg] # type: ignore[misc]
@@ -1059,7 +1059,7 @@ class ZeroxPDFLoader(BasePDFLoader):
     """Document loader utilizing Zerox library:
     https://github.com/getomni-ai/zerox
 
-    Zerox converts PDF document to serties of images (page-wise) and
+    Zerox converts PDF document to series of images (page-wise) and
     uses vision-capable LLM model to generate Markdown representation.
 
     Zerox utilizes anyc operations. Therefore when using this loader
@@ -1079,7 +1079,7 @@ class ZeroxPDFLoader(BasePDFLoader):
     ) -> None:
         super().__init__(file_path=file_path)
         """Initialize the parser with arguments to be passed to the zerox function.
-        Make sure to set necessary environmnet variables such as API key, endpoint, etc.
+        Make sure to set necessary environment variables such as API key, endpoint, etc.
         Check zerox documentation for list of necessary environment variables for
         any given model.
 
@@ -1100,12 +1100,7 @@ class ZeroxPDFLoader(BasePDFLoader):
         self.model = model
 
     def lazy_load(self) -> Iterator[Document]:
-        """Loads documnts from pdf utilizing zerox library:
-        https://github.com/getomni-ai/zerox
-
-        Returns:
-            Iterator[Document]: An iterator over parsed Document instances.
-        """
+        """Lazily load pages."""
         import asyncio
 
         from pyzerox import zerox

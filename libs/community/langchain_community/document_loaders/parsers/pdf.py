@@ -93,19 +93,22 @@ logger = logging.getLogger(__name__)
 _FORMAT_IMAGE_STR = "\n\n{image_text}\n\n"
 _JOIN_IMAGES = "\n"
 _JOIN_TABLES = "\n"
-_DEFAULT_PAGE_DELIMITOR = "\n\f"
+_DEFAULT_PAGES_DELIMITER = "\n\f"
 
 _STD_METADATA_KEYS = {"source", "total_pages", "creationdate", "creator", "producer"}
 
 
 def _validate_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
-    """Validates the presence of at least the following keys:
+    """Validate that the metadata has all the standard keys and the page is an integer.
+
+    The standard keys are:
     - source
-    - page (if mode='page')
     - total_page
     - creationdate
     - creator
     - producer
+
+    Validate that page is an integer if it is present.
     """
     if not _STD_METADATA_KEYS.issubset(metadata.keys()):
         raise ValueError("The PDF parser must valorize the standard metadata.")
@@ -142,7 +145,7 @@ def _purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
             except ValueError:
                 new_metadata[k] = v
         elif k in map_key:
-            # Normaliaze key with others PDF parser
+            # Normalize key with others PDF parser
             new_metadata[map_key[k]] = v
             new_metadata[k] = v
         elif isinstance(v, str):
@@ -152,7 +155,7 @@ def _purge_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     return new_metadata
 
 
-_PARAGRAPH_DELIMITOR = [
+_PARAGRAPH_DELIMITER = [
     "\n\n\n",
     "\n\n",
 ]  # To insert images or table in the middle of the page.
@@ -174,7 +177,7 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
         extras: list[str], text_from_page: str, recurs: bool
     ) -> Optional[str]:
         if extras:
-            for delim in _PARAGRAPH_DELIMITOR:
+            for delim in _PARAGRAPH_DELIMITER:
                 pos = text_from_page.rfind(delim)
                 if pos != -1:
                     # search penultimate, to bypass an error in footer
@@ -205,7 +208,7 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
         all_extras = ""
         str_extras = "\n\n".join(filter(lambda x: x, extras))
         if str_extras:
-            all_extras = _PARAGRAPH_DELIMITOR[-1] + str_extras
+            all_extras = _PARAGRAPH_DELIMITER[-1] + str_extras
         all_text = text_from_page + all_extras
 
     return all_text
@@ -470,7 +473,7 @@ class PyMuPDFParser(BaseBlobParser):
         *,
         password: Optional[str] = None,
         mode: Literal["single", "page"] = "page",
-        pages_delimitor: str = _DEFAULT_PAGE_DELIMITOR,
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         images_parser: Optional[BaseImageBlobParser] = None,
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
@@ -481,7 +484,7 @@ class PyMuPDFParser(BaseBlobParser):
             password: Optional password for opening encrypted PDFs.
             mode: The extraction mode, either "single" for the entire document or "page"
                 for page-wise extraction.
-            pages_delimitor: A string delimiter to separate pages in single-mode
+            pages_delimiter: A string delimiter to separate pages in single-mode
                 extraction.
             extract_images: Whether to extract images from the PDF.
             images_parser: Optional image blob parser.
@@ -489,8 +492,6 @@ class PyMuPDFParser(BaseBlobParser):
                 "csv", "markdown", or "html".
             extract_tables_settings: Optional dictionary of settings for customizing
                 table extraction.
-            **kwargs: Additional keyword arguments for customizing text extraction
-                behavior.
 
         Returns:
             This method does not directly return data. Use the `parse` or `lazy_parse`
@@ -508,7 +509,7 @@ class PyMuPDFParser(BaseBlobParser):
             raise ValueError("mode must be markdown")
 
         self.mode = mode
-        self.pages_delimitor = pages_delimitor
+        self.pages_delimiter = pages_delimiter
         self.password = password
         self.text_kwargs = text_kwargs or {}
         if extract_images and not images_parser:
@@ -526,7 +527,9 @@ class PyMuPDFParser(BaseBlobParser):
     def _lazy_parse(
         self,
         blob: Blob,
-        text_kwargs: Optional[dict[str, Any]] = None,  # deprectaed
+        # text-kwargs is present for backwards compatibility.
+        # Users should not use it directly.
+        text_kwargs: Optional[dict[str, Any]] = None,
     ) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob.
         Insert image, if possible, between two paragraphs.
@@ -534,6 +537,8 @@ class PyMuPDFParser(BaseBlobParser):
 
         Args:
             blob: The blob to parse.
+            text_kwargs: Optional keyword arguments to pass to the `get_text` method.
+                If provided at run time, it will override the default text_kwargs.
 
         Raises:
             ImportError: If the `pypdf` package is not found.
@@ -544,8 +549,7 @@ class PyMuPDFParser(BaseBlobParser):
         try:
             import pymupdf
 
-            if not text_kwargs:
-                text_kwargs = {}
+            text_kwargs = text_kwargs or self.text_kwargs
             if not self.extract_tables_settings:
                 from pymupdf.table import (
                     DEFAULT_JOIN_TOLERANCE,
@@ -609,7 +613,7 @@ class PyMuPDFParser(BaseBlobParser):
 
                 if self.mode == "single":
                     yield Document(
-                        page_content=self.pages_delimitor.join(full_content),
+                        page_content=self.pages_delimiter.join(full_content),
                         metadata=_validate_metadata(doc_metadata),
                     )
 

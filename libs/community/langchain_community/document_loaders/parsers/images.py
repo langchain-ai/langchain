@@ -22,21 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 class BaseImageBlobParser(BaseBlobParser):
-    """
-    Abstract base class for parsing image blobs into text.
-
-    Attributes:
-        format (Literal["text", "markdown-img", "html-img"]):
-          Output format of the parsed text.
-    """
+    """Abstract base class for parsing image blobs into text."""
 
     def __init__(
         self,
         *,
         format: Union[Literal["text", "markdown-img", "html-img"], str] = "text",
-    ):
-        """
-        Initializes the BaseImageBlobParser.
+    ) -> None:
+        """Initializes the BaseImageBlobParser.
 
         Args:
             format (Literal["text", "markdown-img", "html-img"]|str):
@@ -52,28 +45,21 @@ class BaseImageBlobParser(BaseBlobParser):
 
     @abstractmethod
     def _analyze_image(self, img: "Image", format: str) -> str:
-        """
-        Abstract method to analyze an image and extract textual content.
+        """Abstract method to analyze an image and extract textual content.
 
         Args:
-            img (Image):
-              The image to be analyzed.
-            format (str):
-              The format to use if it's possible
+            img: The image to be analyzed.
+            format: The format to use if it's possible
 
         Returns:
-            str:
-              The extracted text content.
+          The extracted text content.
         """
-        pass
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
-        """
-        Lazily parses a blob and yields Document objects containing the parsed content.
+        """Lazily parse a blob and yields Documents containing the parsed content.
 
         Args:
-            blob (Blob):
-              The blob to be parsed.
+            blob (Blob): The blob to be parsed.
 
         Yields:
             Document:
@@ -116,8 +102,7 @@ class BaseImageBlobParser(BaseBlobParser):
 
 
 class RapidOCRBlobParser(BaseImageBlobParser):
-    """
-    Parser for extracting text from images using the RapidOCR library.
+    """Parser for extracting text from images using the RapidOCR library.
 
     Attributes:
         ocr:
@@ -183,8 +168,7 @@ class RapidOCRBlobParser(BaseImageBlobParser):
 
 
 class TesseractBlobParser(BaseImageBlobParser):
-    """
-    Parser for extracting text from images using the Tesseract OCR library.
+    """Parse for extracting text from images using the Tesseract OCR library.
 
     Attributes:
         format (Literal["text", "markdown-img", "html-img"]):
@@ -204,8 +188,7 @@ class TesseractBlobParser(BaseImageBlobParser):
         format: Literal["text", "markdown-img", "html-img"] = "text",
         langs: Iterable[str] = ("eng",),
     ):
-        """
-        Initializes the TesseractBlobParser.
+        """Initialize the TesseractBlobParser.
 
         Args:
             format (Literal["text", "markdown-img", "html-img"]):
@@ -222,14 +205,11 @@ class TesseractBlobParser(BaseImageBlobParser):
         self.langs = list(langs)
 
     def _analyze_image(self, img: "Image", format: str) -> str:
-        """
-        Analyzes an image and extracts text using Tesseract OCR.
+        """Analyze an image and extracts text using Tesseract OCR.
 
         Args:
-            img (Image):
-              The image to be analyzed.
-            format (str):
-              The format to use if it's possible
+            img: The image to be analyzed.
+            format: The format to use if it's possible
 
         Returns:
             str: The extracted text content.
@@ -257,8 +237,7 @@ _PROMPT_IMAGES_TO_DESCRIPTION: BasePromptTemplate = PromptTemplate.from_template
 
 
 class LLMImageBlobParser(BaseImageBlobParser):
-    """
-    Parser for analyzing images using a language model (LLM).
+    """Parser for analyzing images using a language model (LLM).
 
     Attributes:
         format (Literal["text", "markdown-img", "html-img"]):
@@ -285,8 +264,7 @@ class LLMImageBlobParser(BaseImageBlobParser):
         model: BaseChatModel,
         prompt: BasePromptTemplate = _PROMPT_IMAGES_TO_DESCRIPTION,
     ):
-        """
-        Initializes the LLMImageBlobParser.
+        """Initializes the LLMImageBlobParser.
 
         Args:
             format (Literal["text", "markdown", "html"]):
@@ -301,16 +279,13 @@ class LLMImageBlobParser(BaseImageBlobParser):
         self.prompt = prompt
 
     def _analyze_image(self, img: "Image", format: str) -> str:
-        """
-        Analyzes an image using the provided language model.
+        """Analyze an image using the provided language model.
 
         Args:
-            img (Image):
-              The image to be analyzed.
+            img: The image to be analyzed.
 
         Returns:
-            str: *
-              The extracted textual content.
+            The extracted textual content.
         """
         image_bytes = io.BytesIO()
         img.save(image_bytes, format="PNG")
