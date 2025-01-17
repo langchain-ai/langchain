@@ -819,6 +819,7 @@ class ChatAnthropic(BaseChatModel):
         tool_choice: Optional[
             Union[Dict[str, str], Literal["any", "auto"], str]
         ] = None,
+        parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         r"""Bind tool-like objects to this chat model.
@@ -969,15 +970,18 @@ class ChatAnthropic(BaseChatModel):
                 f"str, or None."
             )
 
-        if kwargs.get("parallel_tool_calls") == False:  # noqa: E712
+        if parallel_tool_calls is not None:
+            disable_parallel_tool_use = not parallel_tool_calls
             if "tool_choice" in kwargs:
-                kwargs["tool_choice"]["disable_parallel_tool_use"] = True
+                kwargs["tool_choice"]["disable_parallel_tool_use"] = (
+                    disable_parallel_tool_use
+                )
             else:
                 kwargs["tool_choice"] = {
                     "type": "any",
-                    "disable_parallel_tool_use": True,
+                    "disable_parallel_tool_use": disable_parallel_tool_use,
                 }
-        kwargs.pop("parallel_tool_calls", None)
+
         return self.bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
