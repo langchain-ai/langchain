@@ -274,12 +274,14 @@ class Xinference(LLM):
     def _create_generate_stream(
         self, prompt: str, generate_config: Optional[Dict[str, List[str]]] = None
     ) -> Iterator[str]:
+        if self.client is None:
+            raise ValueError("Client is not initialized!")
         model = self.client.get_model(self.model_uid)
         yield from model.generate(prompt=prompt, generate_config=generate_config)
 
     @staticmethod
     def _stream_response_to_generation_chunk(
-        stream_response: str,
+        stream_response: Optional[Dict],
     ) -> GenerationChunk:
         """Convert a stream response to a generation chunk."""
         token = ""
@@ -290,13 +292,14 @@ class Xinference(LLM):
                 if isinstance(choice, dict):
                     token = choice.get("text", "")
 
-        if not stream_response["choices"]:
-            return GenerationChunk(text=token)
-
-        return GenerationChunk(
-            text=token,
-            generation_info=dict(
-                finish_reason=stream_response["choices"][0].get("finish_reason", None),
-                logprobs=stream_response["choices"][0].get("logprobs", None),
-            ),
-        )
+                    return GenerationChunk(
+                        text=token,
+                        generation_info=dict(
+                            finish_reason=choice.get("finish_reason", None),
+                            logprobs=choice.get("logprobs", None),
+                        ),
+                    )
+            else:
+                return GenerationChunk(text=token)
+        else:
+            raise TypeError("stream_response type error!")
