@@ -234,7 +234,8 @@ class ChatPerplexity(BaseChatModel):
                 choice["delta"], default_chunk_class
             )
             chunk.additional_kwargs = {
-                **chunk.additional_kwargs, "citations": citations
+                **chunk.additional_kwargs,
+                "citations": citations,
             }
             finish_reason = choice.get("finish_reason")
             generation_info = (
