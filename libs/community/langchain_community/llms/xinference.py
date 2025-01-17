@@ -85,21 +85,21 @@ class Xinference(LLM):
             prompt="Q: where can we visit in the capital of France? A:",
             generate_config={"max_tokens": 1024, "stream": True},
         )
-    
+
     Example:
 
     .. code-block:: python
-    
+
         from langchain_community.llms import Xinference
         from langchain.prompts import PromptTemplate
 
         llm = Xinference(
             server_url="http://0.0.0.0:9997",
-            model_uid = {model_uid}, # replace model_uid with the model UID return from launching the model
-            stream = True
+            model_uid={model_uid}, # replace model_uid with the model UID return from launching the model
+            stream=True
         )
         prompt = PromptTemplate(
-            input=['country'], 
+            input=['country'],
             template="Q: where can we visit in the capital of {country}? A:"
         )
         chain = prompt | llm
@@ -272,23 +272,17 @@ class Xinference(LLM):
                 yield chunk
 
     def _create_generate_stream(
-        self,
-        prompt: str,
-        generate_config: Optional[Dict[str, List[str]]] = None
+        self, prompt: str, generate_config: Optional[Dict[str, List[str]]] = None
     ) -> Iterator[str]:
         model = self.client.get_model(self.model_uid)
-        yield from self.create_stream(
-            model,
-            prompt,
-            generate_config,
-        )
+        yield from model.generate(prompt=prompt, generate_config=generate_config)
 
     @staticmethod
     def _stream_response_to_generation_chunk(
         stream_response: str,
     ) -> GenerationChunk:
         """Convert a stream response to a generation chunk."""
-        token = ''
+        token = ""
         if isinstance(stream_response, dict):
             choices = stream_response.get("choices", [])
             if choices:
@@ -306,11 +300,3 @@ class Xinference(LLM):
                 logprobs=stream_response["choices"][0].get("logprobs", None),
             ),
         )
-
-    @staticmethod
-    def create_stream(
-        model: Union["RESTfulGenerateModelHandle", "RESTfulChatModelHandle"],
-        prompt: str,
-        generate_config: Optional[Dict[str, List[str]]] = None
-    ) -> Iterator[str]:
-        return model.generate(prompt=prompt, generate_config=generate_config)
