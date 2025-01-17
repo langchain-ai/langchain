@@ -1,7 +1,0 @@
-.yarn/
-
-node_modules/
-
-.docusaurus
-.cache-loader
-docs/api
