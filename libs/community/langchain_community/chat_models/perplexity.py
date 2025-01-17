@@ -233,7 +233,9 @@ class ChatPerplexity(BaseChatModel):
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
-            chunk.additional_kwargs = {**chunk.additional_kwargs, "citations": citations}
+            chunk.additional_kwargs = {
+                **chunk.additional_kwargs, "citations": citations
+            }
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
