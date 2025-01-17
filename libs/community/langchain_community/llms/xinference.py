@@ -281,7 +281,7 @@ class Xinference(LLM):
 
     @staticmethod
     def _stream_response_to_generation_chunk(
-        stream_response: Optional[Dict[Any, Any]],
+        stream_response: Optional[dict[Any, Any]],
     ) -> GenerationChunk:
         """Convert a stream response to a generation chunk."""
         token = ""
