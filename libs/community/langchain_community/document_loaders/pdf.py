@@ -495,6 +495,7 @@ class PyMuPDFLoader(BasePDFLoader):
         pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         extract_images: bool = False,
         images_parser: Optional[BaseImageBlobParser] = None,
+        images_inner_format:str="text",
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         headers: Optional[dict] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
@@ -513,6 +514,12 @@ class PyMuPDFLoader(BasePDFLoader):
                 extraction.
             extract_images: Whether to extract images from the PDF.
             images_parser: Optional image blob parser.
+            images_inner_format: The format for the parsed output.
+                - "text" = return the content as is
+                - "markdown-img" = wrap the content into an image markdown link, w/ link
+                pointing to (`![body)(#)`]
+                - "html-img" = wrap the content as the `alt` text of an tag and link to
+                (`<img alt="{body}" src="#"/>`)
             extract_tables: Whether to extract tables in a specific format, such as
                 "csv", "markdown", or "html".
             extract_tables_settings: Optional dictionary of settings for customizing
@@ -537,6 +544,7 @@ class PyMuPDFLoader(BasePDFLoader):
             text_kwargs=kwargs,
             extract_images=extract_images,
             images_parser=images_parser,
+            images_inner_format=images_inner_format,
             extract_tables=extract_tables,
             extract_tables_settings=extract_tables_settings,
         )
