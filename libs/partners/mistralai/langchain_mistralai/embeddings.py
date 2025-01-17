@@ -1,4 +1,5 @@
 import asyncio
+import http.client
 import logging
 import warnings
 from typing import Iterable, List
@@ -225,7 +226,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
             @retry(
                 retry=retry_if_exception_type(
-                    (httpx.TimeoutException, httpx.HTTPStatusError)
+                    (httpx.TimeoutException, http.client.TOO_MANY_REQUESTS)
                 ),
                 wait=wait_fixed(self.wait_time),
                 stop=stop_after_attempt(self.max_retries),
