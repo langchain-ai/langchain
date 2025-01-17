@@ -630,6 +630,18 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
 @pytest.mark.parametrize("model", ["gpt-4o-mini", "o1"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):

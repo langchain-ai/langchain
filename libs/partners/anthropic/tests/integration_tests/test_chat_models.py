@@ -444,6 +444,25 @@ def test_tool_use() -> None:
     assert len(chunks) > 1
 
 
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
 def test_anthropic_with_empty_text_block() -> None:
     """Anthropic SDK can return an empty text block."""
 
