@@ -2,10 +2,9 @@
 
 import re
 from pathlib import Path
-from typing import Iterator
+from typing import TYPE_CHECKING, Iterator
 
 import pytest
-from PIL.Image import Image
 
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
@@ -17,6 +16,10 @@ from langchain_community.document_loaders.parsers import (
     PyPDFium2Parser,
     PyPDFParser,
 )
+
+if TYPE_CHECKING:
+    from PIL.Image import Image
+
 
 # PDFs to test parsers on.
 HELLO_PDF = Path(__file__).parent.parent.parent / "examples" / "hello.pdf"
@@ -135,7 +138,7 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
 
 
 class EmptyImageBlobParser(BaseImageBlobParser):
-    def _analyze_image(self, img: Image) -> str:
+    def _analyze_image(self, img: "Image") -> str:
         return "Hello world"
 
 
@@ -157,6 +160,7 @@ class EmptyImageBlobParser(BaseImageBlobParser):
         ("PyMuPDFParser", {}),
     ],
 )
+@pytest.mark.requires("pillow")
 def test_mode_and_extract_images_variations(
     parser_factory: str,
     params: dict,
