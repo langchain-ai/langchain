@@ -226,7 +226,16 @@ def test_standard_parameters(
     assert len(docs) == 1
 
     file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
-    loader = loader_class(file_path, mode="page")
+    loader = loader_class(
+        file_path,
+        mode="page",
+        page_delimiter="---",
+        images_parser=None,
+        images_inner_format="text",
+        password=None,
+        extract_tables=None,
+        extract_tables_settings=None,
+    )
     docs = loader.load()
     assert len(docs) == 16
     assert loader.web_path is None

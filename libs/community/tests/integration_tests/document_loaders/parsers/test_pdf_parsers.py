@@ -143,13 +143,31 @@ class EmptyImageBlobParser(BaseImageBlobParser):
 
 
 @pytest.mark.parametrize(
-    "mode",
-    ["single", "page"],
+    "mode,image_parser",
+    [("single", EmptyImageBlobParser()), ("page", None)],
 )
 @pytest.mark.parametrize(
-    "image_parser",
-    [EmptyImageBlobParser(), None],
+    "parser_factory,params",
+    [
+        ("PyMuPDFParser", {}),
+    ],
 )
+@pytest.mark.requires("pillow")
+def test_mode_and_extract_images_variations(
+    parser_factory: str,
+    params: dict,
+    mode: str,
+    image_parser: BaseImageBlobParser,
+) -> None:
+    _test_matrix(
+        parser_factory,
+        params,
+        mode,
+        image_parser,
+        images_inner_format="text",
+    )
+
+
 @pytest.mark.parametrize(
     "images_inner_format",
     ["text", "markdown-img", "html-img"],
@@ -161,7 +179,24 @@ class EmptyImageBlobParser(BaseImageBlobParser):
     ],
 )
 @pytest.mark.requires("pillow")
-def test_mode_and_extract_images_variations(
+def test_mode_and_image_formats_variations(
+    parser_factory: str,
+    params: dict,
+    images_inner_format: str,
+) -> None:
+    mode = "single"
+    image_parser = EmptyImageBlobParser()
+
+    _test_matrix(
+        parser_factory,
+        params,
+        mode,
+        image_parser,
+        images_inner_format,
+    )
+
+
+def _test_matrix(
     parser_factory: str,
     params: dict,
     mode: str,

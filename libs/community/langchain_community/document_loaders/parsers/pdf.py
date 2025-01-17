@@ -466,7 +466,7 @@ class PyMuPDFParser(BaseBlobParser):
             parser = PyMuPDFParser(
                 # password = None,
                 mode = "single",
-                pages_delimitor = "\n\f",
+                pages_delimiter = "\n\f",
                 # extract_images = True,
                 # images_parser = TesseractBlobParser(),
                 # extract_tables="markdown",
