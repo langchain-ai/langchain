@@ -82,6 +82,12 @@ def main():
             and p["repo"] != "langchain-ai/langchain"
         ])
 
+        # Delete ones without a pyproject.toml
+        for partner in Path("langchain/libs/partners").iterdir():
+            if partner.is_dir() and not (partner / "pyproject.toml").exists():
+                print(f"Removing {partner} as it does not have a pyproject.toml")
+                shutil.rmtree(partner)
+
         print("Library sync completed successfully!")
 
     except Exception as e:
