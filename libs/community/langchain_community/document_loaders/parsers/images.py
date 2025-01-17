@@ -1,5 +1,4 @@
 import base64
-import html
 import io
 import logging
 from abc import abstractmethod
@@ -10,7 +9,6 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
@@ -44,12 +42,11 @@ class BaseImageBlobParser(BaseBlobParser):
         self.format = format
 
     @abstractmethod
-    def _analyze_image(self, img: "Image", format: str) -> str:
+    def _analyze_image(self, img: "Image") -> str:
         """Abstract method to analyze an image and extract textual content.
 
         Args:
             img: The image to be analyzed.
-            format: The format to use if it's possible
 
         Returns:
           The extracted text content.
@@ -73,22 +70,7 @@ class BaseImageBlobParser(BaseBlobParser):
                     img = Img.fromarray(numpy.load(buf))
                 else:
                     img = Img.open(buf)
-                format = (
-                    "text"
-                    if self.format in ("markdown-img", "html-img")
-                    else self.format
-                )
-                content = self._analyze_image(img, format)
-                if content:
-                    source = blob.source or "#"
-                    if self.format == "markdown-img":
-                        content = content.replace("]", r"\\]")
-                        content = f"![{content}]({source})"
-                    elif self.format == "html-img":
-                        content = (
-                            f'<img alt="{html.escape(content, quote=True)} '
-                            f'src="{source}" />'
-                        )
+                content = self._analyze_image(img)
                 logger.debug("Image text: %s", content.replace("\n", "\\n"))
                 yield Document(
                     page_content=content,
@@ -107,44 +89,24 @@ class RapidOCRBlobParser(BaseImageBlobParser):
     Attributes:
         ocr:
           The RapidOCR instance for performing OCR.
-        format (Literal["text", "markdown-img", "html-img"]):
-          The format for the parsed output.
-          - "text" = return the content as is
-          - "markdown-img" = wrap the content into an image markdown link, w/ link
-          pointing to (`![body)(#)`]
-          - "html-img" = wrap the content as the `alt` text of an tag and link to
-          (`<img alt="{body}" src="#"/>`)
     """
 
     def __init__(
         self,
-        *,
-        format: Literal["text", "markdown-img", "html-img"] = "text",
-    ):
+    ) -> None:
         """
         Initializes the RapidOCRBlobParser.
-
-        Args:
-            format (Literal["text", "markdown-img", "html-img"]):
-              The format for the parsed output.
-              - "text" = return the content as is
-              - "markdown-img" = wrap the content into an image markdown link, w/ link
-              pointing to (`![body)(#)`]
-              - "html-img" = wrap the content as the `alt` text of an tag and link to
-              (`<img alt="{body}" src="#"/>`)
         """
-        super().__init__(format=format)
+        super().__init__()
         self.ocr = None
 
-    def _analyze_image(self, img: "Image", format: str) -> str:
+    def _analyze_image(self, img: "Image") -> str:
         """
         Analyzes an image and extracts text using RapidOCR.
 
         Args:
             img (Image):
               The image to be analyzed.
-            format (str):
-              The format to use if it's possible
 
         Returns:
             str:
@@ -168,48 +130,27 @@ class RapidOCRBlobParser(BaseImageBlobParser):
 
 
 class TesseractBlobParser(BaseImageBlobParser):
-    """Parse for extracting text from images using the Tesseract OCR library.
-
-    Attributes:
-        format (Literal["text", "markdown-img", "html-img"]):
-          The format for the parsed output.
-          - "text" = return the content as is
-          - "markdown-img" = wrap the content into an image markdown link, w/ link
-          pointing to (`![body)(#)`]
-          - "html-img" = wrap the content as the `alt` text of an tag and link to
-          (`<img alt="{body}" src="#"/>`)
-        langs (list[str]):
-          The languages to use for OCR.
-    """
+    """Parse for extracting text from images using the Tesseract OCR library."""
 
     def __init__(
         self,
         *,
-        format: Literal["text", "markdown-img", "html-img"] = "text",
         langs: Iterable[str] = ("eng",),
     ):
         """Initialize the TesseractBlobParser.
 
         Args:
-            format (Literal["text", "markdown-img", "html-img"]):
-              The format for the parsed output.
-              - "text" = return the content as is
-              - "markdown-img" = wrap the content into an image markdown link, w/ link
-              pointing to (`![body)(#)`]
-              - "html-img" = wrap the content as the `alt` text of an tag and link to
-              (`<img alt="{body}" src="#"/>`)
             langs (list[str]):
               The languages to use for OCR.
         """
-        super().__init__(format=format)
+        super().__init__()
         self.langs = list(langs)
 
-    def _analyze_image(self, img: "Image", format: str) -> str:
+    def _analyze_image(self, img: "Image") -> str:
         """Analyze an image and extracts text using Tesseract OCR.
 
         Args:
             img: The image to be analyzed.
-            format: The format to use if it's possible
 
         Returns:
             str: The extracted text content.
@@ -224,15 +165,14 @@ class TesseractBlobParser(BaseImageBlobParser):
         return pytesseract.image_to_string(img, lang="+".join(self.langs)).strip()
 
 
-_PROMPT_IMAGES_TO_DESCRIPTION: BasePromptTemplate = PromptTemplate.from_template(
+_PROMPT_IMAGES_TO_DESCRIPTION: str = (
     "You are an assistant tasked with summarizing images for retrieval. "
     "1. These summaries will be embedded and used to retrieve the raw image. "
     "Give a concise summary of the image that is well optimized for retrieval\n"
     "2. extract all the text from the image. "
     "Do not exclude any content from the page.\n"
-    "Format answer in {format} without explanatory text "
+    "Format answer in markdown without explanatory text "
     "and without markdown delimiter ``` at the beginning. "
-    "Respects the start of the format."
 )
 
 
@@ -240,15 +180,6 @@ class LLMImageBlobParser(BaseImageBlobParser):
     """Parser for analyzing images using a language model (LLM).
 
     Attributes:
-        format (Literal["text", "markdown-img", "html-img"]):
-          The format for the parsed output.
-          - "text" = return the content as is
-          - "markdown-img" = wrap the content into an image markdown link, w/ link
-          pointing to (`![body)(#)`]
-          - "html-img" = wrap the content as the `alt` text of an tag and link to
-          (`<img alt="{body}" src="#"/>`)
-          - "markdown" = return markdown content
-          - "html" = return html content
         model (BaseChatModel):
           The language model to use for analysis.
         prompt (str):
@@ -258,27 +189,22 @@ class LLMImageBlobParser(BaseImageBlobParser):
     def __init__(
         self,
         *,
-        format: Literal[
-            "text", "markdown-img", "html-img", "markdown", "html"
-        ] = "text",
         model: BaseChatModel,
-        prompt: BasePromptTemplate = _PROMPT_IMAGES_TO_DESCRIPTION,
+        prompt: str = _PROMPT_IMAGES_TO_DESCRIPTION,
     ):
         """Initializes the LLMImageBlobParser.
 
         Args:
-            format (Literal["text", "markdown", "html"]):
-              The format for the parsed output.
             model (BaseChatModel):
               The language model to use for analysis.
             prompt (str):
               The prompt to provide to the language model.
         """
-        super().__init__(format=format)
+        super().__init__()
         self.model = model
         self.prompt = prompt
 
-    def _analyze_image(self, img: "Image", format: str) -> str:
+    def _analyze_image(self, img: "Image") -> str:
         """Analyze an image using the provided language model.
 
         Args:

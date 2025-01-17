@@ -135,8 +135,8 @@ def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
 
 
 class EmptyImageBlobParser(BaseImageBlobParser):
-    def _analyze_image(self, img: Image, format: str) -> str:
-        return "![image](#)"
+    def _analyze_image(self, img: Image) -> str:
+        return "Hello world"
 
 
 @pytest.mark.parametrize(
@@ -148,13 +148,21 @@ class EmptyImageBlobParser(BaseImageBlobParser):
     [EmptyImageBlobParser(), None],
 )
 @pytest.mark.parametrize(
+    "images_inner_format",
+    ["text", "markdown-img", "html-img"],
+)
+@pytest.mark.parametrize(
     "parser_factory,params",
     [
         ("PyMuPDFParser", {}),
     ],
 )
 def test_mode_and_extract_images_variations(
-    parser_factory: str, params: dict, mode: str, image_parser: BaseImageBlobParser
+    parser_factory: str,
+    params: dict,
+    mode: str,
+    image_parser: BaseImageBlobParser,
+    images_inner_format: str,
 ) -> None:
     """Apply the same test for all *standard* PDF parsers.
 
@@ -207,6 +215,7 @@ def test_mode_and_extract_images_variations(
     parser = parser_class(
         mode=mode,
         images_parser=image_parser,
+        images_inner_format=images_inner_format,
         **params,
     )
     _assert_with_parser(parser, splits_by_page=(mode == "page"))
@@ -279,7 +288,7 @@ def test_parser_with_table(
             assert not len(tables)
 
     class EmptyImageBlobParser(BaseImageBlobParser):
-        def _analyze_image(self, img: Image, format: str) -> str:
+        def _analyze_image(self, img: Image) -> str:
             return "![image](.)"
 
     parser_class = getattr(pdf_parsers, parser_factory)

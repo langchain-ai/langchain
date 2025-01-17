@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import io
 import logging
 import threading
@@ -96,6 +97,30 @@ _JOIN_TABLES = "\n"
 _DEFAULT_PAGES_DELIMITER = "\n\f"
 
 _STD_METADATA_KEYS = {"source", "total_pages", "creationdate", "creator", "producer"}
+
+
+def _format_inner_image(blob: Blob, content: str, format: str) -> str:
+    """Format the content of the image with the source of the blob.
+
+    blob: The blob containing the image.
+    format::
+      The format for the parsed output.
+      - "text" = return the content as is
+      - "markdown-img" = wrap the content into an image markdown link, w/ link
+      pointing to (`![body)(#)`]
+      - "html-img" = wrap the content as the `alt` text of an tag and link to
+      (`<img alt="{body}" src="#"/>`)
+    """
+    if content:
+        source = blob.source or "#"
+        if format == "markdown-img":
+            content = content.replace("]", r"\\]")
+            content = f"![{content}]({source})"
+        elif format == "html-img":
+            content = (
+                f'<img alt="{html.escape(content, quote=True)} ' f'src="{source}" />'
+            )
+    return content
 
 
 def _validate_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
@@ -475,6 +500,7 @@ class PyMuPDFParser(BaseBlobParser):
         mode: Literal["single", "page"] = "page",
         pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         images_parser: Optional[BaseImageBlobParser] = None,
+        images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -488,6 +514,12 @@ class PyMuPDFParser(BaseBlobParser):
                 extraction.
             extract_images: Whether to extract images from the PDF.
             images_parser: Optional image blob parser.
+            images_inner_format: The format for the parsed output.
+                - "text" = return the content as is
+                - "markdown-img" = wrap the content into an image markdown link, w/ link
+                pointing to (`![body)(#)`]
+                - "html-img" = wrap the content as the `alt` text of an tag and link to
+                (`<img alt="{body}" src="#"/>`)
             extract_tables: Whether to extract tables in a specific format, such as
                 "csv", "markdown", or "html".
             extract_tables_settings: Optional dictionary of settings for customizing
@@ -515,6 +547,7 @@ class PyMuPDFParser(BaseBlobParser):
         if extract_images and not images_parser:
             images_parser = RapidOCRBlobParser()
         self.extract_images = extract_images
+        self.images_inner_format = images_inner_format
         self.images_parser = images_parser
         self.extract_tables = extract_tables
         self.extract_tables_settings = extract_tables_settings
@@ -704,7 +737,11 @@ class PyMuPDFParser(BaseBlobParser):
                 blob = Blob.from_data(
                     image_bytes.getvalue(), mime_type="application/x-npy"
                 )
-                images.append(next(self.images_parser.lazy_parse(blob)).page_content)
+                image_text = next(self.images_parser.lazy_parse(blob)).page_content
+
+                images.append(
+                    _format_inner_image(blob, image_text, self.images_inner_format)
+                )
         return _FORMAT_IMAGE_STR.format(
             image_text=_JOIN_IMAGES.join(filter(None, images))
         )
