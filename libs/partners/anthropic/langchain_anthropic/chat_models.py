@@ -833,6 +833,10 @@ class ChatAnthropic(BaseChatModel):
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
                 - ``"auto"``, ``{"type: "auto"}``, or None: automatically selects a tool (including no tool);
                 - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
+            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
+                Defaults to ``None`` (no specification, which allows parallel tool use).
+
+                .. versionadded:: 0.3.2
             kwargs: Any additional parameters are passed directly to
                 :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
