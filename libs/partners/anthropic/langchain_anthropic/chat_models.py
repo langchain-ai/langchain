@@ -982,7 +982,7 @@ class ChatAnthropic(BaseChatModel):
                 )
             else:
                 kwargs["tool_choice"] = {
-                    "type": "any",
+                    "type": "auto",
                     "disable_parallel_tool_use": disable_parallel_tool_use,
                 }
 
