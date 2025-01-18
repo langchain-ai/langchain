@@ -1,9 +1,11 @@
 """Test Perplexity Chat API wrapper."""
 
 import os
+from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 import pytest
+from pytest_mock import MockerFixture
 
 from langchain_community.chat_models import ChatPerplexity
 
@@ -44,8 +46,13 @@ def test_perplexity_initialization() -> None:
 
 
 @pytest.mark.requires("openai")
-def test_perplexity_stream_includes_citations(mocker) -> None:
-    llm = ChatPerplexity()
+def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
+    """Test that the stream method includes citations in the additional_kwargs."""
+    llm = ChatPerplexity(
+        model="test",
+        timeout=30,
+        verbose=True,
+    )
     mock_chunk_0 = {
         "choices": [
             {
@@ -68,7 +75,7 @@ def test_perplexity_stream_includes_citations(mocker) -> None:
         ],
         "citations": ["example.com", "example2.com"],
     }
-    mock_chunks = [mock_chunk_0, mock_chunk_1]
+    mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
     mock_stream = MagicMock()
     mock_stream.__iter__.return_value = mock_chunks
     patcher = mocker.patch.object(
