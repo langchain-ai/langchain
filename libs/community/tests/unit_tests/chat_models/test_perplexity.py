@@ -1,11 +1,11 @@
 """Test Perplexity Chat API wrapper."""
 
 import os
+from unittest.mock import MagicMock
 
 import pytest
 
 from langchain_community.chat_models import ChatPerplexity
-from unittest.mock import MagicMock
 
 os.environ["PPLX_API_KEY"] = "foo"
 
