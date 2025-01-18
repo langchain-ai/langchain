@@ -22,25 +22,6 @@ logger = logging.getLogger(__name__)
 class BaseImageBlobParser(BaseBlobParser):
     """Abstract base class for parsing image blobs into text."""
 
-    def __init__(
-        self,
-        *,
-        format: Union[Literal["text", "markdown-img", "html-img"], str] = "text",
-    ) -> None:
-        """Initializes the BaseImageBlobParser.
-
-        Args:
-            format (Literal["text", "markdown-img", "html-img"]|str):
-              The format for the parsed output.
-              - "text" = return the content as is
-              - "markdown-img" = wrap the content into an image markdown link, w/ link
-              pointing to (`![body)(#)`]
-              - "html-img" = wrap the content as the `alt` text of an tag and link to
-              (`<img alt="{body}" src="#"/>`)
-              - or other formats if the parser supports it
-        """
-        self.format = format
-
     @abstractmethod
     def _analyze_image(self, img: "Image") -> str:
         """Abstract method to analyze an image and extract textual content.
