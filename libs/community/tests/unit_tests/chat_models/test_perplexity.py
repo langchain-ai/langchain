@@ -1,10 +1,11 @@
 """Test Perplexity Chat API wrapper."""
 
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
 import pytest
+from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from pytest_mock import MockerFixture
 
 from langchain_community.chat_models import ChatPerplexity
@@ -82,7 +83,9 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
+    full: Optional[BaseMessageChunk] = None
     for i, chunk in enumerate(stream):
+        full = chunk if full is None else full + chunk
         assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
         if i == 0:
             assert chunk.additional_kwargs["citations"] == [
@@ -91,5 +94,8 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
             ]
         else:
             assert "citations" not in chunk.additional_kwargs
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "Hello Perplexity"
+    assert full.additional_kwargs == {"citations": ["example.com", "example2.com"]}
 
     patcher.assert_called_once()
