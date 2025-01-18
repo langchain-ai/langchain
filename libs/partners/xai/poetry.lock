@@ -708,7 +708,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.27"
+version = "0.3.29"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -733,7 +733,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.2.13"
+version = "0.3.0"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -741,8 +741,8 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.27"
-openai = "^1.55.3"
+langchain-core = "^0.3.29"
+openai = "^1.58.1"
 tiktoken = ">=0.7,<1"
 
 [package.source]
@@ -2122,4 +2122,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "ab1d2f38bf7404b05ad63b5ebfabd149d65760bbc0ee96c2d2f539912ac8f8ad"
+content-hash = "766771fc8e8ef0ccce3c46f92c24ff279934501821edb22f5ef9314316926c89"

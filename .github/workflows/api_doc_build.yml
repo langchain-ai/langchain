@@ -72,7 +72,7 @@ jobs:
       - name: Install dependencies
         working-directory: langchain
         run: |
-          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}")
+          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
           python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
           python -m uv pip install -r docs/api_reference/requirements.txt
 
