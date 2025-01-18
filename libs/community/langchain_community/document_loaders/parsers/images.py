@@ -2,7 +2,7 @@ import base64
 import io
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Iterable, Iterator, Literal, Union
+from typing import TYPE_CHECKING, Iterable, Iterator
 
 import numpy
 import numpy as np
