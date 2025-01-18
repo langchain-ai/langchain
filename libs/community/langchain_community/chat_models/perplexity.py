@@ -223,6 +223,7 @@ class ChatPerplexity(BaseChatModel):
         stream_resp = self.client.chat.completions.create(
             messages=message_dicts, stream=True, **params
         )
+        first_chunk = True
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
@@ -230,13 +231,13 @@ class ChatPerplexity(BaseChatModel):
                 continue
             choice = chunk["choices"][0]
             citations = chunk.get("citations", [])
+
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
-            chunk.additional_kwargs = {
-                **chunk.additional_kwargs,
-                "citations": citations,
-            }
+            if first_chunk:
+                chunk.additional_kwargs |= {"citations": citations}
+                first_chunk = False
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
