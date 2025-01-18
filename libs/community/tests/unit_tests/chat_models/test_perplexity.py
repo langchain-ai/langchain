@@ -5,6 +5,7 @@ import os
 import pytest
 
 from langchain_community.chat_models import ChatPerplexity
+from unittest.mock import MagicMock
 
 os.environ["PPLX_API_KEY"] = "foo"
 
@@ -40,3 +41,50 @@ def test_perplexity_initialization() -> None:
     ]:
         assert model.request_timeout == 1
         assert model.pplx_api_key == "test"
+
+@pytest.mark.requires("openai")
+def test_perplexity_stream_includes_citations(mocker) -> None:
+    llm = ChatPerplexity()
+    mock_chunk_0 = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Hello ",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "citations": ["example.com", "example2.com"],
+    }
+    mock_chunk_1 = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Perplexity",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "citations": ["example.com", "example2.com"],
+
+    }
+    mock_chunks = [mock_chunk_0, mock_chunk_1]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = mock_chunks
+    patcher = mocker.patch.object(
+        llm.client.chat.completions, 
+        "create", 
+        return_value=mock_stream
+    )
+    
+    stream = llm.stream("Hello langchain")
+    for i, chunk in enumerate(stream):
+        assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
+        if i == 0:
+            assert chunk.additional_kwargs["citations"] == [
+                "example.com", "example2.com"
+            ]
+        else:
+            assert "citations" not in chunk.additional_kwargs
+
+    patcher.assert_called_once()
