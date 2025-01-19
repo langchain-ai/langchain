@@ -900,8 +900,7 @@ class PGVector(VectorStore):
                         )
                 else:
                     raise ValueError(
-                        f"Invalid filter condition. Expected $and or $or "
-                        f"but got: {key}"
+                        f"Invalid filter condition. Expected $and or $or but got: {key}"
                     )
             elif len(filters) > 1:
                 # Then all keys have to be fields (they cannot be operators)

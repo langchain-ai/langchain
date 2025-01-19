@@ -33,8 +33,7 @@ def _create_client(
         client = meilisearch.Client(url=url, api_key=api_key)
     elif not isinstance(client, meilisearch.Client):
         raise ValueError(
-            f"client should be an instance of meilisearch.Client, "
-            f"got {type(client)}"
+            f"client should be an instance of meilisearch.Client, got {type(client)}"
         )
     try:
         client.version()

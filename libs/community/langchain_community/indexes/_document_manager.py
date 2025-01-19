@@ -27,7 +27,7 @@ def _get_pymongo_client(mongodb_url: str, **kwargs: Any) -> Any:
         client = pymongo(mongodb_url, **kwargs)
     except ValueError as e:
         raise ImportError(
-            f"MongoClient string provided is not in proper format. " f"Got error: {e} "
+            f"MongoClient string provided is not in proper format. Got error: {e} "
         )
     return client
 

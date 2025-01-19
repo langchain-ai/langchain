@@ -1,6 +1,6 @@
 """Toolkit for interacting with an SQL database."""
 
-from typing import List, Dict, Any
+from typing import List
 
 from langchain_core.caches import BaseCache as BaseCache
 from langchain_core.callbacks import Callbacks as Callbacks
@@ -132,7 +132,7 @@ class SQLDatabaseToolkit(BaseToolkit):
                 "Convert a natural language question into a SQL query. "
                 "Use this tool first to generate a query, then use the checker "
                 "tool to verify it before execution."
-            )
+            ),
         )
         return [
             query_sql_database_tool,
@@ -145,8 +145,8 @@ class SQLDatabaseToolkit(BaseToolkit):
     def get_context(self) -> dict:
         """Return db context that you may want in agent prompt."""
         context = self.db.get_context()
-        context["foreign_key_info_str"] = self.db.foreign_key_info_str
-        context["table_info_str"] = self.db.table_info_str
+        context["foreign_key_info_str"] = self.db._foreign_key_info_str
+        context["table_info_str"] = self.db._table_info_str
         return context
 
 

@@ -16,7 +16,10 @@ from langchain_core.callbacks import (
 from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.tools import BaseTool
-from langchain_community.tools.sql_database.prompt import QUERY_CHECKER, SQL_GENERATION_PROMPT
+from langchain_community.tools.sql_database.prompt import (
+    QUERY_CHECKER,
+    SQL_GENERATION_PROMPT,
+)
 
 
 class BaseSQLDatabaseTool(BaseModel):
@@ -147,7 +150,13 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
             values["llm_chain"] = LLMChain(
                 llm=values.get("llm"),  # type: ignore[arg-type]
                 prompt=PromptTemplate(
-                    template=QUERY_CHECKER, input_variables=["dialect", "query", "table_info_str", "foreign_key_info_str"]
+                    template=QUERY_CHECKER,
+                    input_variables=[
+                        "dialect",
+                        "query",
+                        "table_info_str",
+                        "foreign_key_info_str",
+                    ],
                 ),
             )
 
@@ -183,12 +192,16 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
             callbacks=run_manager.get_child() if run_manager else None,
         )
 
+
 class _GenerateSQLToolInput(BaseModel):
-    question: str = Field(..., description="The question to be converted into a SQL query.")
+    question: str = Field(
+        ..., description="The question to be converted into a SQL query."
+    )
+
 
 class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for generating SQL queries from natural language questions."""
-    
+
     name: str = "sql_db_query_generator"
     description: str = """
     Convert a natural language question into a SQL query.
@@ -197,7 +210,7 @@ class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
     """
     args_schema: Type[BaseModel] = _GenerateSQLToolInput
     llm: BaseLanguageModel = Field(..., exclude=True)
-    
+
     def _run(
         self,
         question: str,
@@ -206,24 +219,29 @@ class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
         """Generate a SQL query from a natural language question."""
         from langchain.chains import LLMChain
         from langchain_core.prompts import PromptTemplate
-        
+
         # Create the generation prompt
         prompt = PromptTemplate(
             template=SQL_GENERATION_PROMPT,
-            input_variables=["table_info_str", "foreign_key_info_str", "sample_rows", "question"]
+            input_variables=[
+                "table_info_str",
+                "foreign_key_info_str",
+                "sample_rows",
+                "question",
+            ],
         )
-        
+
         # Initialize the chain
         chain = LLMChain(llm=self.llm, prompt=prompt)
-        
+
         # Get database context
         context = {
             "table_info_str": self.db.table_info_str,
             "foreign_key_info_str": self.db.foreign_key_info_str,
             "sample_rows": self.db.get_sample_rows_str(3),
-            "question": question
+            "question": question,
         }
-        
+
         # Generate the query
         return chain.predict(**context)
 
@@ -235,19 +253,24 @@ class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
         """Async version of query generation."""
         from langchain.chains import LLMChain
         from langchain_core.prompts import PromptTemplate
-        
+
         prompt = PromptTemplate(
             template=SQL_GENERATION_PROMPT,
-            input_variables=["table_info_str", "foreign_key_info_str", "sample_rows", "question"]
+            input_variables=[
+                "table_info_str",
+                "foreign_key_info_str",
+                "sample_rows",
+                "question",
+            ],
         )
-        
+
         chain = LLMChain(llm=self.llm, prompt=prompt)
-        
+
         context = {
             "table_info_str": self.db.table_info_str,
             "foreign_key_info_str": self.db.foreign_key_info_str,
             "sample_rows": self.db.get_sample_rows_str(3),
-            "question": question
+            "question": question,
         }
-        
+
         return await chain.apredict(**context)

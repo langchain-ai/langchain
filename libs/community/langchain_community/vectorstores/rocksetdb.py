@@ -271,10 +271,10 @@ class Rockset(VectorStore):
         finalResult: list[Tuple[Document, float]] = []
         for document in query_response.results:
             metadata = {}
-            assert isinstance(
-                document, dict
-            ), "document should be of type `dict[str,Any]`. But found: `{}`".format(
-                type(document)
+            assert isinstance(document, dict), (
+                "document should be of type `dict[str,Any]`. But found: `{}`".format(
+                    type(document)
+                )
             )
             for k, v in document.items():
                 if k == self._text_key:

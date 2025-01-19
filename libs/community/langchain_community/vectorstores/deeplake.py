@@ -425,8 +425,7 @@ class DeepLake(VectorStore):
         if embedding is None:
             if _embedding_function is None:
                 raise ValueError(
-                    "Either `embedding` or `embedding_function` needs to be"
-                    " specified."
+                    "Either `embedding` or `embedding_function` needs to be specified."
                 )
 
             embedding = _embedding_function(query) if query else None

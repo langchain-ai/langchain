@@ -232,8 +232,7 @@ class VDMS(VectorStore):
             return self.embedding.embed_query(text)
         else:
             raise ValueError(
-                "Must provide `embedding` which is expected"
-                " to be an Embeddings object"
+                "Must provide `embedding` which is expected to be an Embeddings object"
             )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
@@ -1099,7 +1098,7 @@ class VDMS(VectorStore):
         """
         if self.embedding is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         # embedding_vector: List[float] = self._embed_query(query)
@@ -1208,7 +1207,7 @@ class VDMS(VectorStore):
         """
         if self.embedding is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):

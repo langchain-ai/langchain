@@ -176,10 +176,10 @@ class StarRocks(VectorStore):
 
         self.schema = f"""\
 CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(    
-    {self.config.column_map['id']} string,
-    {self.config.column_map['document']} string,
-    {self.config.column_map['embedding']} array<float>,
-    {self.config.column_map['metadata']} string
+    {self.config.column_map["id"]} string,
+    {self.config.column_map["document"]} string,
+    {self.config.column_map["embedding"]} array<float>,
+    {self.config.column_map["metadata"]} string
 ) ENGINE = OLAP PRIMARY KEY(id) DISTRIBUTED BY HASH(id) \
   PROPERTIES ("replication_num" = "1")\
 """
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                 INSERT INTO
                     {self.config.database}.{self.config.table}({ks})
                 VALUES
-                {','.join(_data)}
+                {",".join(_data)}
                 """
         return i_str
 
@@ -363,10 +363,10 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map['document']}, 
-                {self.config.column_map['metadata']}, 
+            SELECT {self.config.column_map["document"]}, 
+                {self.config.column_map["metadata"]}, 
                 cosine_similarity_norm(array<float>[{q_emb_str}],
-                  {self.config.column_map['embedding']}) as dist
+                  {self.config.column_map["embedding"]}) as dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
             ORDER BY dist {self.dist_order}

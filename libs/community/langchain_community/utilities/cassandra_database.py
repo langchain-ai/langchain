@@ -433,7 +433,7 @@ class CassandraDatabase:
             import cassio.config
         except ImportError:
             raise ValueError(
-                "cassio package not found, please install with" " `pip install cassio`"
+                "cassio package not found, please install with `pip install cassio`"
             )
 
         # Use pre-existing session on cassio
