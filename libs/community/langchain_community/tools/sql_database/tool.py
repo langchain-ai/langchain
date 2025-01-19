@@ -176,8 +176,8 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
         return self.llm_chain.predict(
             query=query,
             dialect=self.db.dialect,
-            table_info_str=self.db.table_info_str,
-            foreign_key_info_str=self.db.foreign_key_info_str,
+            table_info_str=self.db._table_info_str,
+            foreign_key_info_str=self.db._foreign_key_info_str,
             callbacks=run_manager.get_child() if run_manager else None,
         )
 
@@ -236,8 +236,8 @@ class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
 
         # Get database context
         context = {
-            "table_info_str": self.db.table_info_str,
-            "foreign_key_info_str": self.db.foreign_key_info_str,
+            "table_info_str": self.db._table_info_str,
+            "foreign_key_info_str": self.db._foreign_key_info_str,
             "sample_rows": self.db.get_sample_rows_str(3),
             "question": question,
         }
@@ -267,8 +267,8 @@ class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
         chain = LLMChain(llm=self.llm, prompt=prompt)
 
         context = {
-            "table_info_str": self.db.table_info_str,
-            "foreign_key_info_str": self.db.foreign_key_info_str,
+            "table_info_str": self.db._table_info_str,
+            "foreign_key_info_str": self.db._foreign_key_info_str,
             "sample_rows": self.db.get_sample_rows_str(3),
             "question": question,
         }
