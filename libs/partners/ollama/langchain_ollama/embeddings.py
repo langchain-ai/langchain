@@ -1,11 +1,11 @@
 """Ollama embeddings models."""
 
 from typing import (
+    Any,
     List,
+    Mapping,
     Optional,
     Union,
-    Mapping,
-    Any,
 )
 
 from langchain_core.embeddings import Embeddings
@@ -160,12 +160,20 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
         return self
 
-    def embed_documents(self, texts: List[str], options: Optional[Union[Mapping[str, Any], Options]] = None) -> List[List[float]]:
+    def embed_documents(
+        self,
+        texts: List[str],
+        options: Optional[Union[Mapping[str, Any], Options]] = None,
+    ) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = self._client.embed(self.model, texts, options=options)["embeddings"]
+        embedded_docs = self._client.embed(self.model, texts, options=options)[
+            "embeddings"
+        ]
         return embedded_docs
 
-    def embed_query(self, text: str, options: Optional[Union[Mapping[str, Any], Options]] = None) -> List[float]:
+    def embed_query(
+        self, text: str, options: Optional[Union[Mapping[str, Any], Options]] = None
+    ) -> List[float]:
         """Embed query text."""
         return self.embed_documents([text], options=options)[0]
 
