@@ -194,7 +194,7 @@ class _GenerateSQLToolInput(BaseModel):
     )
 
 
-class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):
+class QuerySQLGeneratorTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[override, override]
     """Tool for generating SQL queries from natural language questions."""
 
     name: str = "sql_db_query_generator"

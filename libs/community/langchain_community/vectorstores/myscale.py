@@ -475,9 +475,9 @@ class MyScale(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        assert not (ids is None and where_str is None), (
-            "You need to specify where to be deleted! Either with `ids` or `where_str`"
-        )
+        assert not (
+            ids is None and where_str is None
+        ), "You need to specify where to be deleted! Either with `ids` or `where_str`"
         conds = []
         if ids and len(ids) > 0:
             id_list = ", ".join([f"'{id}'" for id in ids])

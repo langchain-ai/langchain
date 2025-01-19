@@ -696,7 +696,7 @@ class SQLDatabase:
         if table_name not in self._usable_tables:
             raise ValueError(f"Table '{table_name}' not found in database")
 
-        return self._inspector.get_foreign_keys(table_name, schema=self._schema)
+        return self._inspector.get_foreign_keys(table_name, schema=self._schema)  # type: ignore[return-value]
 
     def get_table_info_str(self) -> str:
         """Get formatted string of table information.
@@ -754,7 +754,7 @@ class SQLDatabase:
             # Format column data
             sample_data = []
             for col in columns:
-                values = [str(row[col]) for row in results]
+                values = [str(dict(row)[col]) for row in results]
                 sample_data.append(f"`{col}`[{','.join(values)}]")
 
             table_data = f"{table}({','.join(sample_data)})"
