@@ -1,10 +1,6 @@
 # flake8: noqa
 QUERY_CHECKER = """
-Table Schema:
-{table_info}
-
-Foreign Key Relationships:
-{foreign_keys}
+{query}
 
 Double check the {dialect} query above for common mistakes, including:
 - Using NOT IN with NULL values

@@ -151,12 +151,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
                 llm=values.get("llm"),  # type: ignore[arg-type]
                 prompt=PromptTemplate(
                     template=QUERY_CHECKER,
-                    input_variables=[
-                        "dialect",
-                        "query",
-                        "table_info_str",
-                        "foreign_key_info_str",
-                    ],
+                    input_variables=["dialect", "query"],
                 ),
             )
 
