@@ -3,10 +3,14 @@
 from typing import (
     List,
     Optional,
+    Union,
+    Mapping,
+    Any,
 )
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
+from ollama._types import Options
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -156,14 +160,14 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str], options: Optional[Union[Mapping[str, Any], Options]] = None) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = self._client.embed(self.model, texts)["embeddings"]
+        embedded_docs = self._client.embed(self.model, texts, options=options)["embeddings"]
         return embedded_docs
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str, options: Optional[Union[Mapping[str, Any], Options]] = None) -> List[float]:
         """Embed query text."""
-        return self.embed_documents([text])[0]
+        return self.embed_documents([text], options=options)[0]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
