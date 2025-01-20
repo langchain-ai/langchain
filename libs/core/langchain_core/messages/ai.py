@@ -128,7 +128,7 @@ class UsageMetadata(TypedDict):
     """Total token count. Sum of input_tokens + output_tokens."""
     input_token_details: NotRequired[InputTokenDetails]
     """Breakdown of input token counts.
- 
+
     Does *not* need to sum to full input token count. Does *not* need to have all keys.
     """
     output_token_details: NotRequired[OutputTokenDetails]
