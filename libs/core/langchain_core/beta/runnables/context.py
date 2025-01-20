@@ -13,6 +13,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
@@ -183,6 +184,7 @@ class ContextGet(RunnableSerializable):
             for id_ in self.ids
         ]
 
+    @override
     def invoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -193,6 +195,7 @@ class ContextGet(RunnableSerializable):
         else:
             return configurable[self.ids[0]]()
 
+    @override
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -281,6 +284,7 @@ class ContextSet(RunnableSerializable):
             for id_ in self.ids
         ]
 
+    @override
     def invoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -293,6 +297,7 @@ class ContextSet(RunnableSerializable):
                 configurable[id_](input)
         return input
 
+    @override
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:

@@ -79,6 +79,7 @@ class BaseGenerationOutputParser(
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
 
+    @override
     def invoke(
         self,
         input: Union[str, BaseMessage],
@@ -102,6 +103,7 @@ class BaseGenerationOutputParser(
                 run_type="parser",
             )
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, BaseMessage],
@@ -183,6 +185,7 @@ class BaseOutputParser(
         )
         raise TypeError(msg)
 
+    @override
     def invoke(
         self,
         input: Union[str, BaseMessage],
@@ -206,6 +209,7 @@ class BaseOutputParser(
                 run_type="parser",
             )
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, BaseMessage],
