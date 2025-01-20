@@ -4,7 +4,7 @@ from langchain_community.embeddings import ClovaXEmbeddings
 
 
 def test_embedding_documents() -> None:
-    """Test cohere embeddings."""
+    """Test ClovaX embeddings."""
     documents = ["foo bar"]
     embedding = ClovaXEmbeddings()
     output = embedding.embed_documents(documents)
@@ -13,7 +13,7 @@ def test_embedding_documents() -> None:
 
 
 async def test_aembedding_documents() -> None:
-    """Test cohere embeddings."""
+    """Test ClovaX embeddings."""
     documents = ["foo bar"]
     embedding = ClovaXEmbeddings()
     output = await embedding.aembed_documents(documents)
@@ -22,7 +22,7 @@ async def test_aembedding_documents() -> None:
 
 
 def test_embedding_query() -> None:
-    """Test cohere embeddings."""
+    """Test ClovaX embeddings."""
     document = "foo bar"
     embedding = ClovaXEmbeddings()
     output = embedding.embed_query(document)
@@ -30,7 +30,7 @@ def test_embedding_query() -> None:
 
 
 async def test_aembedding_query() -> None:
-    """Test cohere embeddings."""
+    """Test ClovaX embeddings."""
     document = "foo bar"
     embedding = ClovaXEmbeddings()
     output = await embedding.aembed_query(document)
