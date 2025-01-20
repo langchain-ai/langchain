@@ -409,7 +409,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    msg = "No generation chunks were returned"
+                    raise ValueError(msg)
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,
@@ -485,7 +487,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     generation = chunk
                 else:
                     generation += chunk
-            assert generation is not None
+            if generation is None:
+                msg = "No generation chunks were returned"
+                raise ValueError(msg)
         except BaseException as e:
             await run_manager.on_llm_error(
                 e,

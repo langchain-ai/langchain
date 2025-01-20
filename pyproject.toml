@@ -69,6 +69,7 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
+
 select = [
     "D",
 ]
@@ -76,13 +77,19 @@ select = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+select = ["D"]
+pydocstyle = { convention = "google" }
+
+
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
     "E402", # allow imports to appear anywhere in docs
     "F401", # allow "imported but unused" example code
     "F811", # allow re-importing the same module, so that cells can stay independent
     "F841", # allow assignments to variables that are never read -- it's example code
+    
 ]
+"!libs/langchain/langchain/model_laboratory.py"=["D"]
 
 # These files were failing the listed rules at the time ruff was adopted for notebooks.
 # Don't require them to change at once, though we should look into them eventually.

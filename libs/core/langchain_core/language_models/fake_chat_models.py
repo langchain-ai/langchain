@@ -258,7 +258,10 @@ class GenericFakeChatModel(BaseChatModel):
         if content:
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
-            assert isinstance(content, str)
+            if not isinstance(content, str):
+                msg = "Expected content to be a string."
+                raise ValueError(msg)
+
             content_chunks = cast(list[str], re.split(r"(\s)", content))
 
             for token in content_chunks:
