@@ -846,6 +846,23 @@ class GitHubAPIWrapper(BaseModel):
 
         return "\n".join(results)
 
+    def get_release(self, tag_name: str) -> str:
+        """
+        Fetches a specific release of the repository.
+
+        Parameters:
+            tag_name(str): The tag name of the release
+
+        Returns:
+            str: The release
+        """
+        release = self.github_repo_instance.get_release(tag_name)
+        return (
+            f"Release: {release.title} "
+            f"tag: {release.tag_name} "
+            f"body: {release.body}"
+        )
+
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issue":
             return json.dumps(self.get_issue(int(query)))
@@ -891,5 +908,7 @@ class GitHubAPIWrapper(BaseModel):
             return self.get_latest_release()
         elif mode == "get_releases":
             return self.get_releases()
+        elif mode == "get_release":
+            return self.get_release(query)
         else:
             raise ValueError("Invalid mode" + mode)

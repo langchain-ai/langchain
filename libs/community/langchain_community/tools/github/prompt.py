@@ -104,3 +104,6 @@ This tool will fetch the latest release of the repository. No input parameters a
 
 GET_RELEASES_PROMPT = """
 This tool will fetch the latest 5 releases of the repository. No input parameters are required."""
+
+GET_RELEASE_PROMPT = """
+This tool will fetch a specific release of the repository. **VERY IMPORTANT**: You must specify the tag name of the release as a string input parameter."""

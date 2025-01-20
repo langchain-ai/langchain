@@ -18,6 +18,7 @@ from langchain_community.tools.github.prompt import (
     GET_ISSUES_PROMPT,
     GET_LATEST_RELEASE_PROMPT,
     GET_PR_PROMPT,
+    GET_RELEASE_PROMPT,
     GET_RELEASES_PROMPT,
     LIST_BRANCHES_IN_REPO_PROMPT,
     LIST_PRS_PROMPT,
@@ -154,6 +155,15 @@ class SearchIssuesAndPRs(BaseModel):
     )
 
 
+class TagName(BaseModel):
+    """Schema for operations that require a tag name as input."""
+
+    tag_name: str = Field(
+        ...,
+        description="The tag name of the release, e.g. `v1.0.0`.",
+    )
+
+
 class GitHubToolkit(BaseToolkit):
     """GitHub Toolkit.
 
@@ -221,7 +231,7 @@ class GitHubToolkit(BaseToolkit):
             Create review request
             Get latest release
             Get releases
-
+            Get release
     Use within an agent:
         .. code-block:: python
 
@@ -420,6 +430,12 @@ class GitHubToolkit(BaseToolkit):
                 "name": "Get releases",
                 "description": GET_RELEASES_PROMPT,
                 "args_schema": NoInput,
+            },
+            {
+                "mode": "get_release",
+                "name": "Get release",
+                "description": GET_RELEASE_PROMPT,
+                "args_schema": TagName,
             },
         ]
         tools = [
