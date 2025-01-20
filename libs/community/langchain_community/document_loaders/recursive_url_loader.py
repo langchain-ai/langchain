@@ -54,7 +54,6 @@ class RecursiveUrlLoader(BaseLoader):
     """Recursively load all child links from a root URL.
 
     **Security Note**:
-        
         This loader is a crawler that will start crawling
         at a given URL and then expand to crawl child links recursively.
 
