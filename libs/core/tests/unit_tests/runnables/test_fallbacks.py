@@ -267,7 +267,6 @@ def _generate(_: Iterator) -> Iterator[str]:
 def _generate_immediate_error(_: Iterator) -> Iterator[str]:
     msg = "immmediate error"
     raise ValueError(msg)
-    yield ""
 
 
 def _generate_delayed_error(_: Iterator) -> Iterator[str]:

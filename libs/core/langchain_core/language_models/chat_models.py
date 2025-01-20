@@ -343,15 +343,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Get the output type for this runnable."""
         return AnyMessage
 
-    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if isinstance(input, PromptValue):
-            return input
-        if isinstance(input, str):
-            return StringPromptValue(text=input)
-        if isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
+    def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
+        if isinstance(model_input, PromptValue):
+            return model_input
+        if isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        if isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
         msg = (
-            f"Invalid input type {type(input)}. "
+            f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
         raise ValueError(msg)

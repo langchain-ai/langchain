@@ -363,7 +363,7 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
+        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
     ) -> list[tuple[Document, float, list[float]]]:
         # get all docs with fixed order in list
         docs = list(self.store.values())
@@ -402,7 +402,7 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
+        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
         **_kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Search for the most similar documents to the given embedding.

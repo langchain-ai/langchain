@@ -943,17 +943,17 @@ def _handle_tool_error(
 
 
 def _prep_run_args(
-    input: Union[str, dict, ToolCall],
+    value: Union[str, dict, ToolCall],
     config: Optional[RunnableConfig],
     **kwargs: Any,
 ) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
-    if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast("ToolCall", input)["id"]
-        tool_input: Union[str, dict] = cast("ToolCall", input)["args"].copy()
+    if _is_tool_call(value):
+        tool_call_id: Optional[str] = cast("ToolCall", value)["id"]
+        tool_input: Union[str, dict] = cast("ToolCall", value)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast("Union[str, dict]", input)
+        tool_input = cast("Union[str, dict]", value)
     return (
         tool_input,
         dict(
