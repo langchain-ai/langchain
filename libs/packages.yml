@@ -342,3 +342,7 @@ packages:
   path: .
   repo: hyperbrowserai/langchain-hyperbrowser
   downloads: 0
+- name: tilores-langchain
+  path: .
+  repo: tilotech/tilores-langchain
+  downloads: 0
