@@ -219,6 +219,8 @@ class GitHubToolkit(BaseToolkit):
             Search issues and pull requests
             Search code
             Create review request
+            Get latest release
+            Get releases
 
     Use within an agent:
         .. code-block:: python
