@@ -94,12 +94,13 @@ packages:
   downloads: 232463
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-mongodb
-  path: libs/mongodb
+  path: libs/langchain-mongodb
   repo: langchain-ai/langchain-mongodb
   provider_page: mongodb_atlas
   js: '@langchain/mongodb'
   downloads: 113328
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
+  disabled: true
 - name: langchain-nomic
   path: libs/partners/nomic
   repo: langchain-ai/langchain
@@ -258,8 +259,8 @@ packages:
   downloads: 35495
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-couchbase
-  path: libs/partners/couchbase
-  repo: langchain-ai/langchain
+  path: .
+  repo: Couchbase-Ecosystem/langchain-couchbase
   downloads: 347
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-ollama
@@ -336,6 +337,14 @@ packages:
 - name: langchain-lindorm
   path: .
   repo: AlwaysBluer/langchain-lindorm-integration
+  downloads: 0
+- name: langchain-hyperbrowser
+  path: .
+  repo: hyperbrowserai/langchain-hyperbrowser
+  downloads: 0
+- name: langchain-fmp-data
+  path: .
+  repo: MehdiZare/langchain-fmp-data
   downloads: 0
 - name: langchain-pipeshift
   path: .
