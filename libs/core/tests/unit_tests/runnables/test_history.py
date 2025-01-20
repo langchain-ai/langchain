@@ -111,9 +111,9 @@ async def test_input_messages_async() -> None:
 
 def test_input_dict() -> None:
     runnable = RunnableLambda(
-        lambda input: "you said: "
+        lambda params: "you said: "
         + "\n".join(
-            str(m.content) for m in input["messages"] if isinstance(m, HumanMessage)
+            str(m.content) for m in params["messages"] if isinstance(m, HumanMessage)
         )
     )
     get_session_history = _get_get_session_history()
@@ -131,9 +131,9 @@ def test_input_dict() -> None:
 
 async def test_input_dict_async() -> None:
     runnable = RunnableLambda(
-        lambda input: "you said: "
+        lambda params: "you said: "
         + "\n".join(
-            str(m.content) for m in input["messages"] if isinstance(m, HumanMessage)
+            str(m.content) for m in params["messages"] if isinstance(m, HumanMessage)
         )
     )
     get_session_history = _get_get_session_history()
@@ -153,10 +153,10 @@ async def test_input_dict_async() -> None:
 
 def test_input_dict_with_history_key() -> None:
     runnable = RunnableLambda(
-        lambda input: "you said: "
+        lambda params: "you said: "
         + "\n".join(
-            [str(m.content) for m in input["history"] if isinstance(m, HumanMessage)]
-            + [input["input"]]
+            [str(m.content) for m in params["history"] if isinstance(m, HumanMessage)]
+            + [params["input"]]
         )
     )
     get_session_history = _get_get_session_history()
@@ -175,10 +175,10 @@ def test_input_dict_with_history_key() -> None:
 
 async def test_input_dict_with_history_key_async() -> None:
     runnable = RunnableLambda(
-        lambda input: "you said: "
+        lambda params: "you said: "
         + "\n".join(
-            [str(m.content) for m in input["history"] if isinstance(m, HumanMessage)]
-            + [input["input"]]
+            [str(m.content) for m in params["history"] if isinstance(m, HumanMessage)]
+            + [params["input"]]
         )
     )
     get_session_history = _get_get_session_history()
@@ -197,15 +197,15 @@ async def test_input_dict_with_history_key_async() -> None:
 
 def test_output_message() -> None:
     runnable = RunnableLambda(
-        lambda input: AIMessage(
+        lambda params: AIMessage(
             content="you said: "
             + "\n".join(
                 [
                     str(m.content)
-                    for m in input["history"]
+                    for m in params["history"]
                     if isinstance(m, HumanMessage)
                 ]
-                + [input["input"]]
+                + [params["input"]]
             )
         )
     )
@@ -225,15 +225,15 @@ def test_output_message() -> None:
 
 async def test_output_message_async() -> None:
     runnable = RunnableLambda(
-        lambda input: AIMessage(
+        lambda params: AIMessage(
             content="you said: "
             + "\n".join(
                 [
                     str(m.content)
-                    for m in input["history"]
+                    for m in params["history"]
                     if isinstance(m, HumanMessage)
                 ]
-                + [input["input"]]
+                + [params["input"]]
             )
         )
     )
@@ -302,16 +302,16 @@ async def test_input_messages_output_message_async() -> None:
 
 def test_output_messages() -> None:
     runnable = RunnableLambda(
-        lambda input: [
+        lambda params: [
             AIMessage(
                 content="you said: "
                 + "\n".join(
                     [
                         str(m.content)
-                        for m in input["history"]
+                        for m in params["history"]
                         if isinstance(m, HumanMessage)
                     ]
-                    + [input["input"]]
+                    + [params["input"]]
                 )
             )
         ]
@@ -332,16 +332,16 @@ def test_output_messages() -> None:
 
 async def test_output_messages_async() -> None:
     runnable = RunnableLambda(
-        lambda input: [
+        lambda params: [
             AIMessage(
                 content="you said: "
                 + "\n".join(
                     [
                         str(m.content)
-                        for m in input["history"]
+                        for m in params["history"]
                         if isinstance(m, HumanMessage)
                     ]
-                    + [input["input"]]
+                    + [params["input"]]
                 )
             )
         ]
@@ -362,17 +362,17 @@ async def test_output_messages_async() -> None:
 
 def test_output_dict() -> None:
     runnable = RunnableLambda(
-        lambda input: {
+        lambda params: {
             "output": [
                 AIMessage(
                     content="you said: "
                     + "\n".join(
                         [
                             str(m.content)
-                            for m in input["history"]
+                            for m in params["history"]
                             if isinstance(m, HumanMessage)
                         ]
-                        + [input["input"]]
+                        + [params["input"]]
                     )
                 )
             ]
@@ -395,17 +395,17 @@ def test_output_dict() -> None:
 
 async def test_output_dict_async() -> None:
     runnable = RunnableLambda(
-        lambda input: {
+        lambda params: {
             "output": [
                 AIMessage(
                     content="you said: "
                     + "\n".join(
                         [
                             str(m.content)
-                            for m in input["history"]
+                            for m in params["history"]
                             if isinstance(m, HumanMessage)
                         ]
-                        + [input["input"]]
+                        + [params["input"]]
                     )
                 )
             ]
@@ -431,17 +431,17 @@ def test_get_input_schema_input_dict() -> None:
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
-        lambda input: {
+        lambda params: {
             "output": [
                 AIMessage(
                     content="you said: "
                     + "\n".join(
                         [
                             str(m.content)
-                            for m in input["history"]
+                            for m in params["history"]
                             if isinstance(m, HumanMessage)
                         ]
-                        + [input["input"]]
+                        + [params["input"]]
                     )
                 )
             ]
@@ -463,17 +463,17 @@ def test_get_input_schema_input_dict() -> None:
 def test_get_output_schema() -> None:
     """Test get output schema."""
     runnable = RunnableLambda(
-        lambda input: {
+        lambda params: {
             "output": [
                 AIMessage(
                     content="you said: "
                     + "\n".join(
                         [
                             str(m.content)
-                            for m in input["history"]
+                            for m in params["history"]
                             if isinstance(m, HumanMessage)
                         ]
-                        + [input["input"]]
+                        + [params["input"]]
                     )
                 )
             ]
@@ -531,8 +531,8 @@ def test_get_input_schema_input_messages() -> None:
 def test_using_custom_config_specs() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: dict[str, Any]) -> list[BaseMessage]:
-        messages = input["messages"]
+    def _fake_llm(params: dict[str, Any]) -> list[BaseMessage]:
+        messages = params["messages"]
         return [
             AIMessage(
                 content="you said: "
@@ -644,8 +644,8 @@ def test_using_custom_config_specs() -> None:
 async def test_using_custom_config_specs_async() -> None:
     """Test that we can configure which keys should be passed to the session factory."""
 
-    def _fake_llm(input: dict[str, Any]) -> list[BaseMessage]:
-        messages = input["messages"]
+    def _fake_llm(params: dict[str, Any]) -> list[BaseMessage]:
+        messages = params["messages"]
         return [
             AIMessage(
                 content="you said: "
@@ -757,12 +757,12 @@ async def test_using_custom_config_specs_async() -> None:
 def test_ignore_session_id() -> None:
     """Test without config."""
 
-    def _fake_llm(input: list[BaseMessage]) -> list[BaseMessage]:
+    def _fake_llm(messages: list[BaseMessage]) -> list[BaseMessage]:
         return [
             AIMessage(
                 content="you said: "
                 + "\n".join(
-                    str(m.content) for m in input if isinstance(m, HumanMessage)
+                    str(m.content) for m in messages if isinstance(m, HumanMessage)
                 )
             )
         ]
