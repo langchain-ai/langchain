@@ -418,7 +418,11 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         visitor = FunctionNonLocals()
         visitor.visit(tree)
         values: list[Any] = []
-        closure = inspect.getclosurevars(func)
+        closure = (
+            inspect.getclosurevars(func.__wrapped__)
+            if hasattr(func, "__wrapped__") and callable(func.__wrapped__)
+            else inspect.getclosurevars(func)
+        )
         candidates = {**closure.globals, **closure.nonlocals}
         for k, v in candidates.items():
             if k in visitor.nonlocals:
