@@ -148,6 +148,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         yield self.runnable
         yield from self.fallbacks
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -198,6 +199,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_manager.on_chain_error(first_error)
         raise first_error
 
+    @override
     async def ainvoke(
         self,
         input: Input,
@@ -262,7 +264,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         from langchain_core.callbacks.manager import CallbackManager
 
         if self.exception_key is not None and not all(
-            isinstance(input, dict) for input in inputs
+            isinstance(input_, dict) for input_ in inputs
         ):
             msg = (
                 "If 'exception_key' is specified then inputs must be dictionaries."
@@ -291,11 +293,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_managers = [
             cm.on_chain_start(
                 None,
-                input if isinstance(input, dict) else {"input": input},
+                input_ if isinstance(input_, dict) else {"input": input_},
                 name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
             )
-            for cm, input, config in zip(callback_managers, inputs, configs)
+            for cm, input_, config in zip(callback_managers, inputs, configs)
         ]
 
         to_return: dict[int, Any] = {}
@@ -304,7 +306,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         first_to_raise = None
         for runnable in self.runnables:
             outputs = runnable.batch(
-                [input for _, input in sorted(run_again.items())],
+                [input_ for _, input_ in sorted(run_again.items())],
                 [
                     # each step a child run of the corresponding root run
                     patch_config(configs[i], callbacks=run_managers[i].get_child())
@@ -313,7 +315,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return_exceptions=True,
                 **kwargs,
             )
-            for (i, input), output in zip(sorted(run_again.copy().items()), outputs):
+            for (i, input_), output in zip(sorted(run_again.copy().items()), outputs):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -324,7 +326,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input[self.exception_key] = output  # type: ignore
+                        input_[self.exception_key] = output  # type: ignore
                     handled_exceptions[i] = cast(BaseException, output)
                 else:
                     run_managers[i].on_chain_end(output)
@@ -355,7 +357,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
         if self.exception_key is not None and not all(
-            isinstance(input, dict) for input in inputs
+            isinstance(input_, dict) for input_ in inputs
         ):
             msg = (
                 "If 'exception_key' is specified then inputs must be dictionaries."
@@ -385,11 +387,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             *(
                 cm.on_chain_start(
                     None,
-                    input,
+                    input_,
                     name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
                 )
-                for cm, input, config in zip(callback_managers, inputs, configs)
+                for cm, input_, config in zip(callback_managers, inputs, configs)
             )
         )
 
@@ -399,7 +401,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         first_to_raise = None
         for runnable in self.runnables:
             outputs = await runnable.abatch(
-                [input for _, input in sorted(run_again.items())],
+                [input_ for _, input_ in sorted(run_again.items())],
                 [
                     # each step a child run of the corresponding root run
                     patch_config(configs[i], callbacks=run_managers[i].get_child())
@@ -409,7 +411,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
 
-            for (i, input), output in zip(sorted(run_again.copy().items()), outputs):
+            for (i, input_), output in zip(sorted(run_again.copy().items()), outputs):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -420,7 +422,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input[self.exception_key] = output  # type: ignore
+                        input_[self.exception_key] = output  # type: ignore
                     handled_exceptions[i] = cast(BaseException, output)
                 else:
                     to_return[i] = output
@@ -445,6 +447,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return.update(handled_exceptions)
         return [output for _, output in sorted(to_return.items())]  # type: ignore
 
+    @override
     def stream(
         self,
         input: Input,
@@ -510,6 +513,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(output)
 
+    @override
     async def astream(
         self,
         input: Input,

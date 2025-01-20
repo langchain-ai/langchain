@@ -16,6 +16,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import override
 
 from langchain_core.runnables.base import Input, Output, RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
@@ -157,7 +158,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     def _invoke(
         self,
-        input: Input,
+        value: Input,
         run_manager: "CallbackManagerForChainRun",
         config: RunnableConfig,
         **kwargs: Any,
@@ -165,7 +166,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         for attempt in self._sync_retrying(reraise=True):
             with attempt:
                 result = super().invoke(
-                    input,
+                    value,
                     self._patch_config(config, run_manager, attempt.retry_state),
                     **kwargs,
                 )
@@ -173,6 +174,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -180,7 +182,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     async def _ainvoke(
         self,
-        input: Input,
+        value: Input,
         run_manager: "AsyncCallbackManagerForChainRun",
         config: RunnableConfig,
         **kwargs: Any,
@@ -188,7 +190,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         async for attempt in self._async_retrying(reraise=True):
             with attempt:
                 result = await super().ainvoke(
-                    input,
+                    value,
                     self._patch_config(config, run_manager, attempt.retry_state),
                     **kwargs,
                 )
@@ -196,6 +198,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
