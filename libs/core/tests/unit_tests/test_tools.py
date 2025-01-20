@@ -2206,7 +2206,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
         )
 
     @tool(args_schema=Foo)
-    def foo(x):  # type: ignore[no-untyped-def]
+    def foo(x: list[int]) -> list[int]:
         """Foo."""
         return x
 
