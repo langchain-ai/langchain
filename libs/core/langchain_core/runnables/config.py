@@ -365,7 +365,7 @@ def call_func_with_variable_args(
         Callable[[Input, CallbackManagerForChainRun], Output],
         Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
     ],
-    input: Input,
+    input: Input,  # noqa: A002
     config: RunnableConfig,
     run_manager: Optional[CallbackManagerForChainRun] = None,
     **kwargs: Any,
@@ -406,7 +406,7 @@ def acall_func_with_variable_args(
             Awaitable[Output],
         ],
     ],
-    input: Input,
+    input: Input,  # noqa: A002
     config: RunnableConfig,
     run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     **kwargs: Any,
