@@ -349,4 +349,4 @@ packages:
 - name: langchain-pipeshift
   path: .
   repo: pipeshift-org/langchain-pipeshift
-  downloads: 107
+  downloads: 115
