@@ -151,10 +151,10 @@ Many vectorstores support [the `k`](/docs/integrations/vectorstores/pinecone/#qu
 ### Metadata filtering
 
 While vectorstore implement a search algorithm to efficiently search over *all* the embedded documents to find the most similar ones, many also support filtering on metadata.
-This allows structured filters to reduce the size of the similarity search space. These two concepts work well together:
+Metadata filtering helps narrow down the search by applying specific conditions such as retrieving documents from a particular source or date range. These two concepts work well together:
 
-1. **Semantic search**: Query the unstructured data directly, often using via embedding or keyword similarity.
-2. **Metadata search**: Apply structured query to the metadata, filering specific documents.
+1. **Semantic search**: Query the unstructured data directly, often via embedding or keyword similarity.
+2. **Metadata search**: Apply structured query to the metadata, filtering specific documents.
 
 Vector store support for metadata filtering is typically dependent on the underlying vector store implementation.
 

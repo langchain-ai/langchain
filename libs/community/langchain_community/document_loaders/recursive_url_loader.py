@@ -53,7 +53,8 @@ def _metadata_extractor(
 class RecursiveUrlLoader(BaseLoader):
     """Recursively load all child links from a root URL.
 
-    **Security Note**: This loader is a crawler that will start crawling
+    **Security Note**:
+        This loader is a crawler that will start crawling
         at a given URL and then expand to crawl child links recursively.
 
         Web crawlers should generally NOT be deployed with network access
@@ -154,36 +155,36 @@ class RecursiveUrlLoader(BaseLoader):
         content. To parse this HTML into a more human/LLM-friendly format you can pass
         in a custom ``extractor`` method:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                # This example uses `beautifulsoup4` and `lxml`
-                import re
-                from bs4 import BeautifulSoup
+            # This example uses `beautifulsoup4` and `lxml`
+            import re
+            from bs4 import BeautifulSoup
 
-                def bs4_extractor(html: str) -> str:
-                    soup = BeautifulSoup(html, "lxml")
-                    return re.sub(r"\n\n+", "\n\n", soup.text).strip()
+            def bs4_extractor(html: str) -> str:
+                soup = BeautifulSoup(html, "lxml")
+                return re.sub(r"\\n\\n+", "\\n\\n", soup.text).strip()
 
-                loader = RecursiveUrlLoader(
-                    "https://docs.python.org/3.9/",
-                    extractor=bs4_extractor,
-                )
-                print(loader.load()[0].page_content[:200])
+            loader = RecursiveUrlLoader(
+                "https://docs.python.org/3.9/",
+                extractor=bs4_extractor,
+            )
+            print(loader.load()[0].page_content[:200])
 
 
-            .. code-block:: python
+        .. code-block:: python
 
-                3.9.19 Documentation
+            3.9.19 Documentation
 
-                Download
-                Download these documents
-                Docs by version
+            Download
+            Download these documents
+            Docs by version
 
-                Python 3.13 (in development)
-                Python 3.12 (stable)
-                Python 3.11 (security-fixes)
-                Python 3.10 (security-fixes)
-                Python 3.9 (securit
+            Python 3.13 (in development)
+            Python 3.12 (stable)
+            Python 3.11 (security-fixes)
+            Python 3.10 (security-fixes)
+            Python 3.9 (securit
 
     Metadata extraction:
         Similarly to content extraction, you can specify a metadata extraction function
