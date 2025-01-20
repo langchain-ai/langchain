@@ -9,6 +9,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import override
+
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
 from langchain_core.outputs import (
@@ -28,7 +30,10 @@ if TYPE_CHECKING:
 class BaseTransformOutputParser(BaseOutputParser[T]):
     """Base class for an output parser that can handle streaming input."""
 
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[T]:
+    def _transform(
+        self,
+        input: Iterator[Union[str, BaseMessage]],  # noqa: A002
+    ) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
                 yield self.parse_result([ChatGeneration(message=chunk)])
@@ -36,7 +41,8 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
                 yield self.parse_result([Generation(text=chunk)])
 
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self,
+        input: AsyncIterator[Union[str, BaseMessage]],  # noqa: A002
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -48,6 +54,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
                     None, self.parse_result, [Generation(text=chunk)]
                 )
 
+    @override
     def transform(
         self,
         input: Iterator[Union[str, BaseMessage]],
@@ -68,6 +75,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
             input, self._transform, config, run_type="parser"
         )
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[Union[str, BaseMessage]],
@@ -98,7 +106,11 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     parsed output, or just the current parsed output.
     """
 
-    def _diff(self, prev: Optional[T], next: T) -> T:
+    def _diff(
+        self,
+        prev: Optional[T],
+        next: T,  # noqa: A002
+    ) -> T:
         """Convert parsed outputs into a diff format.
 
         The semantics of this are up to the output parser.
@@ -112,6 +124,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
         """
         raise NotImplementedError
 
+    @override
     def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
         prev_parsed = None
         acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
@@ -136,6 +149,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
                     yield parsed
                 prev_parsed = parsed
 
+    @override
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[T]:
