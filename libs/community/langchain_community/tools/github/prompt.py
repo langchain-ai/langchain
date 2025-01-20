@@ -98,3 +98,9 @@ This tool will create a new branch in the repository. **VERY IMPORTANT**: You mu
 
 GET_FILES_FROM_DIRECTORY_PROMPT = """
 This tool will fetch a list of all files in a specified directory. **VERY IMPORTANT**: You must specify the path of the directory as a string input parameter."""
+
+GET_LATEST_RELEASE_PROMPT = """
+This tool will fetch the latest release of the repository. No input parameters are required."""
+
+GET_RELEASES_PROMPT = """
+This tool will fetch the latest 5 releases of the repository. No input parameters are required."""

@@ -16,7 +16,9 @@ from langchain_community.tools.github.prompt import (
     GET_FILES_FROM_DIRECTORY_PROMPT,
     GET_ISSUE_PROMPT,
     GET_ISSUES_PROMPT,
+    GET_LATEST_RELEASE_PROMPT,
     GET_PR_PROMPT,
+    GET_RELEASES_PROMPT,
     LIST_BRANCHES_IN_REPO_PROMPT,
     LIST_PRS_PROMPT,
     LIST_PULL_REQUEST_FILES,
@@ -404,6 +406,18 @@ class GitHubToolkit(BaseToolkit):
                 "name": "Create review request",
                 "description": CREATE_REVIEW_REQUEST_PROMPT,
                 "args_schema": CreateReviewRequest,
+            },
+            {
+                "mode": "get_latest_release",
+                "name": "Get latest release",
+                "description": GET_LATEST_RELEASE_PROMPT,
+                "args_schema": NoInput,
+            },
+            {
+                "mode": "get_releases",
+                "name": "Get releases",
+                "description": GET_RELEASES_PROMPT,
+                "args_schema": NoInput,
             },
         ]
         tools = [
