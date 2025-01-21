@@ -12,7 +12,6 @@ from xml.etree.ElementTree import ParseError  # OK: trusted-source
 from langchain_core.documents import Document
 from pydantic import model_validator
 from pydantic.dataclasses import dataclass
-from pydantic_core import ArgsKwargs
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -53,13 +52,11 @@ class GoogleApiClient:
 
     @model_validator(mode="before")
     @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: ArgsKwargs) -> Any:
+    def validate_channel_or_videoIds_is_set(cls, values: Any) -> Any:
         """Validate that either folder_id or document_ids is set, but not both."""
 
-        if (
-            values is None
-            and not values.kwargs.get("credentials_path")
-            and not values.kwargs.get("service_account_path")
+        if not values.kwargs.get("credentials_path") and not values.kwargs.get(
+            "service_account_path"
         ):
             raise ValueError("Must specify either channel_name or video_ids")
         return values.kwargs
