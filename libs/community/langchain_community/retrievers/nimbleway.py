@@ -27,7 +27,7 @@ class ParsingType(str, Enum):
     SIMPLIFIED_HTML = "simplified_html"
 
 
-class NimbleRetriever(BaseRetriever):
+class NimbleSearchRetriever(BaseRetriever):
     """Nimbleway Search API retriever.
     Allows you to retrieve search results from Google, Bing, and Yandex.
     Visit https://www.nimbleway.com/ and sign up to receive an
