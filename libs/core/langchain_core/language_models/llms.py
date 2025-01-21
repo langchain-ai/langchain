@@ -91,7 +91,6 @@ def create_base_retry_decorator(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-
     _logging = before_sleep_log(logger, logging.WARNING)
 
     def _before_sleep(retry_state: RetryCallState) -> None:
@@ -278,7 +277,6 @@ async def aupdate_cache(
     Raises:
         ValueError: If the cache is not set and cache is True.
     """
-
     llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
@@ -292,7 +290,8 @@ async def aupdate_cache(
 class BaseLLM(BaseLanguageModel[str], ABC):
     """Base LLM abstract interface.
 
-    It should take in a prompt and return a string."""
+    It should take in a prompt and return a string.
+    """
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
@@ -346,7 +345,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
-
         # get default provider from class name
         default_provider = self.__class__.__name__
         if default_provider.endswith("LLM"):

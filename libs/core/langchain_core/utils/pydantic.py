@@ -172,7 +172,6 @@ def pre_init(func: Callable) -> Any:
     Returns:
         Any: The decorated function.
     """
-
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
 

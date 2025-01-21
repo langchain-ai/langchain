@@ -50,7 +50,7 @@ def beta(
     ``@beta`` would mess up ``__init__`` inheritance when installing its
     own (annotation-emitting) ``C.__init__``).
 
-    Arguments:
+    Args:
         message : str, optional
             Override the default beta message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
@@ -63,8 +63,7 @@ def beta(
         addendum : str, optional
             Additional text appended directly to the final message.
 
-    Examples
-    --------
+    Examples:
 
         .. code-block:: python
 

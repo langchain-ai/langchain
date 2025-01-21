@@ -44,8 +44,7 @@ class RouterInput(TypedDict):
 
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
-    """
-    Runnable that routes to a set of Runnables based on Input['key'].
+    """Runnable that routes to a set of Runnables based on Input['key'].
     Returns the output of the selected Runnable.
 
     Parameters:
