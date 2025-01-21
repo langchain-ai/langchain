@@ -25,12 +25,12 @@ path_to_layout_pdf_txt = (
 @pytest.mark.requires("pypdf")
 def test_pypdf_loader() -> None:
     """Test PyPDFLoader."""
-    loader = PyPDFLoader(str(path_to_simple_pdf))
+    loader = PyPDFLoader(path_to_simple_pdf)
     docs = loader.load()
 
     assert len(docs) == 1
 
-    loader = PyPDFLoader(str(path_to_layout_pdf))
+    loader = PyPDFLoader(path_to_layout_pdf)
 
     docs = loader.load()
     assert len(docs) == 16
@@ -48,7 +48,7 @@ def test_pypdf_loader() -> None:
 @pytest.mark.requires("pypdf")
 def test_pypdf_loader_with_layout() -> None:
     """Test PyPDFLoader with layout mode."""
-    loader = PyPDFLoader(str(path_to_layout_pdf), extraction_mode="layout")
+    loader = PyPDFLoader(path_to_layout_pdf, extraction_mode="layout")
 
     docs = loader.load()
     assert len(docs) == 16

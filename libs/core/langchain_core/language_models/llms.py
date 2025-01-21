@@ -565,7 +565,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    msg = "No generation chunks were returned"
+                    raise ValueError(msg)
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,
@@ -633,7 +635,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     generation = chunk
                 else:
                     generation += chunk
-            assert generation is not None
+            if generation is None:
+                msg = "No generation chunks were returned"
+                raise ValueError(msg)
         except BaseException as e:
             await run_manager.on_llm_error(
                 e,
@@ -875,16 +879,24 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         ):
             # We've received a list of callbacks args to apply to each input
-            assert len(callbacks) == len(prompts)
-            assert tags is None or (
+            if len(callbacks) != len(prompts):
+                msg = "callbacks must be the same length as prompts"
+                raise ValueError(msg)
+            if tags is not None and not (
                 isinstance(tags, list) and len(tags) == len(prompts)
-            )
-            assert metadata is None or (
+            ):
+                msg = "tags must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if metadata is not None and not (
                 isinstance(metadata, list) and len(metadata) == len(prompts)
-            )
-            assert run_name is None or (
+            ):
+                msg = "metadata must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if run_name is not None and not (
                 isinstance(run_name, list) and len(run_name) == len(prompts)
-            )
+            ):
+                msg = "run_name must be a list of the same length as prompts"
+                raise ValueError(msg)
             callbacks = cast(list[Callbacks], callbacks)
             tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
@@ -1109,16 +1121,24 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             or callbacks[0] is None
         ):
             # We've received a list of callbacks args to apply to each input
-            assert len(callbacks) == len(prompts)
-            assert tags is None or (
+            if len(callbacks) != len(prompts):
+                msg = "callbacks must be the same length as prompts"
+                raise ValueError(msg)
+            if tags is not None and not (
                 isinstance(tags, list) and len(tags) == len(prompts)
-            )
-            assert metadata is None or (
+            ):
+                msg = "tags must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if metadata is not None and not (
                 isinstance(metadata, list) and len(metadata) == len(prompts)
-            )
-            assert run_name is None or (
+            ):
+                msg = "metadata must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if run_name is not None and not (
                 isinstance(run_name, list) and len(run_name) == len(prompts)
-            )
+            ):
+                msg = "run_name must be a list of the same length as prompts"
+                raise ValueError(msg)
             callbacks = cast(list[Callbacks], callbacks)
             tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
