@@ -134,11 +134,11 @@ class EvaluatorCallbackHandler(BaseTracer):
                     run,
                     source_run_id=cb.latest_run.id if cb.latest_run else None,
                 )
-        except Exception as e:
-            logger.error(
-                f"Error evaluating run {run.id} with "
-                f"{evaluator.__class__.__name__}: {repr(e)}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error evaluating run %s with %s",
+                run.id,
+                evaluator.__class__.__name__,
             )
             raise
         example_id = str(run.reference_example_id)
@@ -202,7 +202,7 @@ class EvaluatorCallbackHandler(BaseTracer):
 
         """
         if self.skip_unfinished and not run.outputs:
-            logger.debug(f"Skipping unfinished run {run.id}")
+            logger.debug("Skipping unfinished run %s", run.id)
             return
         run_ = run.copy()
         run_.reference_example_id = self.example_id
