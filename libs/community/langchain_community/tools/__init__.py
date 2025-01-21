@@ -210,6 +210,9 @@ if TYPE_CHECKING:
     from langchain_community.tools.openapi.utils.api_models import (
         APIOperation,
     )
+    from langchain_community.tools.openai.text2speech import (
+        OpenAIText2SpeechTool,
+    )
     from langchain_community.tools.openapi.utils.openapi_utils import (
         OpenAPISpec,
     )
@@ -447,6 +450,7 @@ __all__ = [
     "O365SearchEvents",
     "O365SendEvent",
     "O365SendMessage",
+    "OpenAIText2SpeechTool",
     "OpenAPISpec",
     "OpenVINOText2SpeechTool",
     "OpenWeatherMapQueryRun",
@@ -602,6 +606,7 @@ _module_lookup = {
     "O365SearchEvents": "langchain_community.tools.office365.events_search",
     "O365SendEvent": "langchain_community.tools.office365.send_event",
     "O365SendMessage": "langchain_community.tools.office365.send_message",
+    "OpenAIText2SpeechTool": "langchain_community.tools.openai.text2speech",
     "OpenAPISpec": "langchain_community.tools.openapi.utils.openapi_utils",
     "OpenVINOText2SpeechTool": "langchain_community.tools.openvino.text2speech",
     "OpenWeatherMapQueryRun": "langchain_community.tools.openweathermap.tool",
