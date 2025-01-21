@@ -296,7 +296,8 @@ class GitHubToolkit(BaseToolkit):
 
         Args:
             github_api_wrapper: GitHubAPIWrapper. The GitHub API wrapper.
-            include_release_tools: bool. Whether to include release-related tools. Defaults to False.
+            include_release_tools: bool. Whether to include release-related tools.
+                Defaults to False.
 
         Returns:
             GitHubToolkit. The GitHub toolkit.
