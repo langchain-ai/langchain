@@ -345,4 +345,5 @@ packages:
 - name: tilores-langchain
   path: .
   repo: tilotech/tilores-langchain
+  provider_page: tilores
   downloads: 0
