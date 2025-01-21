@@ -145,7 +145,7 @@ if TYPE_CHECKING:
         ZillizRetriever,
     )
     from langchain_community.retrievers.nimbleway import(
-        NimblewayRetriever,
+        NimbleRetriever,
     )
 
 _module_lookup = {
@@ -195,7 +195,7 @@ _module_lookup = {
     "ZepCloudRetriever": "langchain_community.retrievers.zep_cloud",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
     "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
-    "NimblewayRetriever": "langchain_community.retrievers.nimbleway",
+    "NimbleRetriever": "langchain_community.retrievers.nimbleway",
 }
 
 
@@ -253,5 +253,5 @@ __all__ = [
     "ZepRetriever",
     "ZepCloudRetriever",
     "ZillizRetriever",
-    "NimblewayRetriever",
+    "NimbleRetriever",
 ]
