@@ -1,8 +1,8 @@
+import os
 from enum import Enum
 from typing import List, Any
-import requests
-import os
 
+import requests
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents.base import Document
 from langchain_core.retrievers import BaseRetriever
@@ -30,7 +30,8 @@ class ParsingType(str, Enum):
 class NimbleRetriever(BaseRetriever):
     """Nimbleway Search API retriever.
     Allows you to retrieve search results from Google, Bing, and Yandex.
-    Visit https://www.nimbleway.com/ and sign up to receive an API key and to see more info.
+    Visit https://www.nimbleway.com/ and sign up to receive an
+    API key and to see more info.
 
     Args:
         api_key: The API key for Nimbleway.
