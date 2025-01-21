@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
 
@@ -17,7 +17,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
@@ -28,6 +27,9 @@ from tests.unit_tests.fake.callbacks import (
     FakeCallbackHandler,
 )
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.outputs.llm_result import LLMResult
 
 
 @pytest.fixture

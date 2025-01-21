@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import textwrap
-from collections.abc import Awaitable
+from collections.abc import Awaitable  # noqa: TC003 # used in Pydantic model
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -14,11 +15,10 @@ from typing import (
 
 from pydantic import BaseModel, Field, SkipValidation
 
-from langchain_core.callbacks import (
+from langchain_core.callbacks import (  # noqa: TC001 # for StructuredTool._run reflection
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
@@ -26,7 +26,12 @@ from langchain_core.tools.base import (
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,  # noqa: TC001 # used in Pydantic model
+)
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class StructuredTool(BaseTool):

@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import warnings
 from typing import Any, Optional
-from uuid import UUID
+from uuid import UUID  # noqa: TC003 # used in Pydantic model
 
 from langsmith import RunTree
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep

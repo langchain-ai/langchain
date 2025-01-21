@@ -19,7 +19,6 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import beta, deprecated
@@ -28,6 +27,8 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
+    from pydantic import BaseModel
+
     from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)

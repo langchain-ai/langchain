@@ -4,7 +4,6 @@ import asyncio
 import inspect
 import json
 import typing
-import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -62,7 +61,9 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.rate_limiters import BaseRateLimiter
+from langchain_core.rate_limiters import (
+    BaseRateLimiter,  # noqa: TC001 # used in Pydantic model
+)
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
@@ -70,6 +71,8 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
+    import uuid
+
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool

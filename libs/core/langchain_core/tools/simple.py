@@ -1,27 +1,30 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable  # noqa: TC003 # used in Pydantic model
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
     Union,
 )
 
-from pydantic import BaseModel
-
-from langchain_core.callbacks import (
+from langchain_core.callbacks import (  # noqa: TC001 # for Tool._run reflection
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     BaseTool,
     ToolException,
     _get_runnable_config_param,
 )
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+    from langchain_core.messages import ToolCall
 
 
 class Tool(BaseTool):

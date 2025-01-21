@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Optional,
@@ -46,6 +45,10 @@ from langchain_core.prompts.string import (
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
