@@ -20,18 +20,21 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _droplastn(iterator: Iterator[T], n: int) -> Iterator[T]:
+def droplastn(
+    iter: Iterator[T],  # noqa: A002
+    n: int,
+) -> Iterator[T]:
     """Drop the last n elements of an iterator.
 
     Args:
-        iterator: The iterator to drop elements from.
+        iter: The iterator to drop elements from.
         n: The number of elements to drop.
 
     Yields:
         The elements of the iterator, except the last n elements.
     """
     buffer: deque[T] = deque()
-    for item in iterator:
+    for item in iter:
         buffer.append(item)
         if len(buffer) > n:
             yield buffer.popleft()
@@ -85,7 +88,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             try:
                 done_idx = 0
                 # yield only complete parts
-                for m in _droplastn(self.parse_iter(buffer), 1):
+                for m in droplastn(self.parse_iter(buffer), 1):
                     done_idx = m.end()
                     yield [m.group(1)]
                 buffer = buffer[done_idx:]
@@ -119,7 +122,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             try:
                 done_idx = 0
                 # yield only complete parts
-                for m in _droplastn(self.parse_iter(buffer), 1):
+                for m in droplastn(self.parse_iter(buffer), 1):
                     done_idx = m.end()
                     yield [m.group(1)]
                 buffer = buffer[done_idx:]
