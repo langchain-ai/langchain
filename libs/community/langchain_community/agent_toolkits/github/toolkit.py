@@ -229,9 +229,17 @@ class GitHubToolkit(BaseToolkit):
             Search issues and pull requests
             Search code
             Create review request
-            Get latest release
-            Get releases
-            Get release
+    Include release tools:
+        .. code-block:: none
+            By default, the toolkit does not include release-related tools. You can include them by setting `include_release_tools=True` when initializing the toolkit:
+        ... code-block:: python
+            toolkit = GitHubToolkit.from_github_api_wrapper(github, include_release_tools=True)
+        ... code-block:: none
+            Settings `include_release_tools=True` will include the following tools:
+
+            Get Latest Release
+            Get Releases
+            Get Release
     Use within an agent:
         .. code-block:: python
 
@@ -282,12 +290,13 @@ class GitHubToolkit(BaseToolkit):
 
     @classmethod
     def from_github_api_wrapper(
-        cls, github_api_wrapper: GitHubAPIWrapper
+        cls, github_api_wrapper: GitHubAPIWrapper, include_release_tools: bool = False
     ) -> "GitHubToolkit":
         """Create a GitHubToolkit from a GitHubAPIWrapper.
 
         Args:
             github_api_wrapper: GitHubAPIWrapper. The GitHub API wrapper.
+            include_release_tools: bool. Whether to include release-related tools. Defaults to False.
 
         Returns:
             GitHubToolkit. The GitHub toolkit.
@@ -419,6 +428,9 @@ class GitHubToolkit(BaseToolkit):
                 "description": CREATE_REVIEW_REQUEST_PROMPT,
                 "args_schema": CreateReviewRequest,
             },
+        ]
+
+        release_operations: List[Dict] = [
             {
                 "mode": "get_latest_release",
                 "name": "Get latest release",
@@ -438,6 +450,8 @@ class GitHubToolkit(BaseToolkit):
                 "args_schema": TagName,
             },
         ]
+
+        operations = operations + (release_operations if include_release_tools else [])
         tools = [
             GitHubAction(
                 name=action["name"],
