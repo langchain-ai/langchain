@@ -635,7 +635,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 raise ValueError(
                     "search text cannot be None for FULL_TEXT_RANK queries."
                 )
-            terms = [f"'{term.replace("'", "\\'")}'" for term in search_text.split()]
+
+            search_text = search_text.replace("'", "\\'")
+            terms = [f"'{term}'" for term in search_text.split()]
             query += f""" ORDER BY RANK FullTextScore(c.{self._text_key}, 
             [{", ".join(terms)}])"""
         elif query_type == CosmosDBQueryType.VECTOR:
@@ -643,7 +645,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         elif query_type == CosmosDBQueryType.HYBRID:
             if search_text is None:
                 raise ValueError("search text cannot be None for HYBRID queries.")
-            terms = [f"'{term.replace("'", "\\'")}'" for term in search_text.split()]
+            search_text = search_text.replace("'", "\\'")
+            terms = [f"'{term}'" for term in search_text.split()]
             query += f""" ORDER BY RANK RRF(FullTextScore(c.{self._text_key}, 
             [{", ".join(terms)}]), 
             VectorDistance(c.{self._embedding_key}, {embeddings}))"""
