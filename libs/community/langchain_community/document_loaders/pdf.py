@@ -615,7 +615,7 @@ class PyMuPDFLoader(BasePDFLoader):
         pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         extract_images: bool = False,
         images_parser: Optional[BaseImageBlobParser] = None,
-        images_inner_format: str = "text",
+        images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
         extract_tables: Union[Literal["csv", "markdown", "html"], None] = None,
         headers: Optional[dict] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,

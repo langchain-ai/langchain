@@ -17,7 +17,8 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Union, cast,
+    Union,
+    cast,
 )
 from urllib.parse import urlparse
 
@@ -439,7 +440,7 @@ class PyPDFParser(BaseBlobParser):
         xObject = page["/Resources"]["/XObject"].get_object()  # type: ignore[index]
         images = []
         for obj in xObject:
-            np_image = None
+            np_image: Any = None
             if xObject[obj]["/Subtype"] == "/Image":
                 if xObject[obj]["/Filter"][1:] in _PDF_FILTER_WITHOUT_LOSS:
                     height, width = xObject[obj]["/Height"], xObject[obj]["/Width"]
@@ -456,7 +457,7 @@ class PyPDFParser(BaseBlobParser):
                     image_bytes = io.BytesIO()
                     Image.fromarray(np_image).save(image_bytes, format="PNG")
                     blob = Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
-                    image_text=next(self.images_parser.lazy_parse(blob)).page_content
+                    image_text = next(self.images_parser.lazy_parse(blob)).page_content
                     images.append(
                         _format_inner_image(blob, image_text, self.images_inner_format)
                     )
