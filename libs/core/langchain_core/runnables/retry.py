@@ -43,7 +43,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     way to use it is through the `.with_retry()` method on all Runnables.
 
     Example:
-
     Here's an example that uses a RunnableLambda to raise an exception
 
         .. code-block:: python

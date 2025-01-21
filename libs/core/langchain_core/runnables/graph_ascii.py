@@ -1,5 +1,6 @@
 """Draws DAG in ASCII.
-Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
+Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py.
+"""
 
 import math
 import os
@@ -239,7 +240,6 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
              | 1 |
              +---+
     """
-
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
     xlist = []

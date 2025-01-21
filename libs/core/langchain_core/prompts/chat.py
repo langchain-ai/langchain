@@ -54,7 +54,8 @@ class BaseMessagePromptTemplate(Serializable, ABC):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable.
-        Returns: True"""
+        Returns: True.
+        """
         return True
 
     @classmethod
@@ -392,8 +393,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @property
     def input_variables(self) -> list[str]:
-        """
-        Input variables for this prompt template.
+        """Input variables for this prompt template.
 
         Returns:
             List of input variable names.
@@ -624,8 +624,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
     @property
     def input_variables(self) -> list[str]:
-        """
-        Input variables for this prompt template.
+        """Input variables for this prompt template.
 
         Returns:
             List of input variable names.
@@ -742,8 +741,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
     @property
     def lc_attributes(self) -> dict:
-        """
-        Return a list of attribute names that should be included in the
+        """Return a list of attribute names that should be included in the
         serialized kwargs. These attributes must be accepted by the
         constructor.
         """
@@ -980,7 +978,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             A chat prompt template.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python
@@ -1173,7 +1170,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Create a chat prompt template from a variety of message formats.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python

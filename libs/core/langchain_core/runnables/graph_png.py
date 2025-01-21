@@ -132,7 +132,6 @@ class PngDrawer:
         :param graph: The graph to draw
         :param output_path: The path to save the PNG. If None, PNG bytes are returned.
         """
-
         try:
             import pygraphviz as pgv  # type: ignore[import]
         except ImportError as exc:

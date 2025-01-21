@@ -1,4 +1,4 @@
-"""Test XMLOutputParser"""
+"""Test XMLOutputParser."""
 
 import importlib
 from collections.abc import AsyncIterator, Iterable
@@ -77,7 +77,7 @@ async def _as_iter(iterable: Iterable[str]) -> AsyncIterator[str]:
 
 
 async def test_root_only_xml_output_parser() -> None:
-    """Test XMLOutputParser when xml only contains the root level tag"""
+    """Test XMLOutputParser when xml only contains the root level tag."""
     xml_parser = XMLOutputParser(parser="xml")
     assert xml_parser.parse(ROOT_LEVEL_ONLY) == {"body": "Text of the body."}
     assert await xml_parser.aparse(ROOT_LEVEL_ONLY) == {"body": "Text of the body."}
@@ -125,7 +125,6 @@ async def test_xml_output_parser_defused(content: str) -> None:
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])
 def test_xml_output_parser_fail(result: str) -> None:
     """Test XMLOutputParser where complete output is not in XML format."""
-
     xml_parser = XMLOutputParser(parser="xml")
 
     with pytest.raises(OutputParserException) as e:

@@ -72,7 +72,6 @@ class StructuredPrompt(ChatPromptTemplate):
         """Create a chat prompt template from a variety of message formats.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python

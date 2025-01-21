@@ -220,7 +220,7 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
         generation = ChatGeneration(message=message_)
@@ -342,7 +342,7 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property

@@ -462,9 +462,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
 
 
 class AddableDict(dict[str, Any]):
-    """
-    Dictionary that can be added to another dictionary.
-    """
+    """Dictionary that can be added to another dictionary."""
 
     def __add__(self, other: AddableDict) -> AddableDict:
         chunk = AddableDict(self)
