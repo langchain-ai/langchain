@@ -1817,7 +1817,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.3.14"
+version = "0.3.15"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1827,7 +1827,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.29"
+langchain-core = "^0.3.31"
 langchain-text-splitters = "^0.3.3"
 langsmith = ">=0.1.17,<0.4"
 numpy = [
@@ -4731,4 +4731,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "eaa65b1c4bcd4422270ae4da27fa1726a39066f691aeb49c41576fc075ceadb3"
+content-hash = "81411c2177eec007fce10d2c1773247155a09ace08e361f72da23b9027e5afba"
