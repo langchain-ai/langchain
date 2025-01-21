@@ -1239,7 +1239,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
-        llm = self.bind_tools([schema], tool_choice="any")
+        llm = self.bind_tools([schema], tool_choice=kwargs.get("tool_choice", "any"))
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[cast(TypeBaseModel, schema)], first_tool_only=True
