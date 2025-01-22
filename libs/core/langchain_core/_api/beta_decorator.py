@@ -214,7 +214,7 @@ def beta(
         old_doc = inspect.cleandoc(old_doc or "").strip("\n") or ""
         components = [message, addendum]
         details = " ".join([component.strip() for component in components if component])
-        new_doc = f".. beta::\n" f"   {details}\n\n" f"{old_doc}\n"
+        new_doc = f".. beta::\n   {details}\n\n{old_doc}\n"
 
         if inspect.iscoroutinefunction(obj):
             finalized = finalize(awarning_emitting_wrapper, new_doc)

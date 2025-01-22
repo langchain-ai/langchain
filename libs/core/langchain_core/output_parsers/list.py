@@ -227,7 +227,7 @@ class MarkdownListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.

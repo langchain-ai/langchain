@@ -1571,7 +1571,12 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1614,7 +1619,12 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1654,7 +1664,12 @@ def test_tool_injected_arg() -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1715,7 +1730,12 @@ def test_tool_inherited_injected_arg() -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1987,6 +2007,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
 
         class ModelA(BaseModel1, Generic[A], extra="allow"):
             a: A
+
     else:
         from pydantic import BaseModel as BaseModel2
         from pydantic import ConfigDict
@@ -2272,7 +2293,12 @@ def test_tool_injected_tool_call_id() -> None:
         return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
 
     assert foo.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
 
     with pytest.raises(ValueError):
@@ -2284,7 +2310,12 @@ def test_tool_injected_tool_call_id() -> None:
         return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
 
     assert foo2.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
 
 
@@ -2321,7 +2352,12 @@ def test_tool_return_output_mixin() -> None:
         return Bar(x=x)
 
     assert foo.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
     ) == Bar(x=0)
 
 

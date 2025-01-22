@@ -248,7 +248,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 result = cast(list[Output], [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
@@ -314,7 +314,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 result = cast(list[Output], [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:

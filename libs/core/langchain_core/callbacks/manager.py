@@ -385,8 +385,7 @@ async def _ahandle_event_for_handler(
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback:"
-            f" {repr(e)}"
+            f"Error in {handler.__class__.__name__}.{event_name} callback: {repr(e)}"
         )
         if handler.raise_error:
             raise e
