@@ -69,17 +69,8 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-
-select = [
-    "D",
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
 select = ["D"]
 pydocstyle = { convention = "google" }
-
 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
@@ -95,5 +86,3 @@ pydocstyle = { convention = "google" }
 # Don't require them to change at once, though we should look into them eventually.
 "cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
 "docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
-
-"!libs/langchain/langchain/prompts/vectorstore.py" = ["D"]
