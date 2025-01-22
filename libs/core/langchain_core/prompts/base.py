@@ -98,13 +98,15 @@ class BasePromptTemplate(
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
-        Returns ["langchain", "schema", "prompt_template"]."""
+        Returns ["langchain", "schema", "prompt_template"].
+        """
         return ["langchain", "schema", "prompt_template"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable.
-        Returns True."""
+        Returns True.
+        """
         return True
 
     model_config = ConfigDict(

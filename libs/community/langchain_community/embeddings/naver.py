@@ -15,6 +15,7 @@ from pydantic import (
 from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.apigw.ntruss.com"
+_DEFAULT_BASE_URL_ON_NEW_API_KEY = "https://clovastudio.stream.ntruss.com"
 
 logger = logging.getLogger(__name__)
 
@@ -91,20 +92,28 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
-            "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
-        }
+        if not self._is_new_api_key():
+            return {
+                "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+            }
+        else:
+            return {
+                "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+                "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
+            }
 
     @property
     def _api_url(self) -> str:
         """GET embedding api url"""
         app_type = "serviceapp" if self.service_app else "testapp"
         model_name = self.model_name if self.model_name != "bge-m3" else "v2"
-        return (
-            f"{self.base_url}/{app_type}"
-            f"/v1/api-tools/embedding/{model_name}/{self.app_id}"
-        )
+        if self._is_new_api_key():
+            return f"{self.base_url}/{app_type}" f"/v1/api-tools/embedding/{model_name}"
+        else:
+            return (
+                f"{self.base_url}/{app_type}"
+                f"/v1/api-tools/embedding/{model_name}/{self.app_id}"
+            )
 
     @model_validator(mode="after")
     def validate_model_after(self) -> Self:
@@ -113,18 +122,13 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
                 get_from_env("ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
             )
 
-        if not self.ncp_apigw_api_key:
-            self.ncp_apigw_api_key = convert_to_secret_str(
-                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
-            )
+        if self._is_new_api_key():
+            self._init_fields_on_new_api_key()
+        else:
+            self._init_fields_on_old_api_key()
 
         if not self.base_url:
-            self.base_url = get_from_env(
-                "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
-            )
-
-        if not self.app_id:
-            self.app_id = get_from_env("app_id", "NCP_CLOVASTUDIO_APP_ID")
+            raise ValueError("base_url dose not exist.")
 
         if not self.client:
             self.client = httpx.Client(
@@ -133,7 +137,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
                 timeout=self.timeout,
             )
 
-        if not self.async_client:
+        if not self.async_client and self.base_url:
             self.async_client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers=self.default_headers(),
@@ -141,6 +145,32 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             )
 
         return self
+
+    def _is_new_api_key(self) -> bool:
+        if self.ncp_clovastudio_api_key:
+            return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+        else:
+            return False
+
+    def _init_fields_on_new_api_key(self) -> None:
+        if not self.base_url:
+            self.base_url = get_from_env(
+                "base_url",
+                "NCP_CLOVASTUDIO_API_BASE_URL",
+                _DEFAULT_BASE_URL_ON_NEW_API_KEY,
+            )
+
+    def _init_fields_on_old_api_key(self) -> None:
+        if not self.ncp_apigw_api_key:
+            self.ncp_apigw_api_key = convert_to_secret_str(
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
+            )
+        if not self.base_url:
+            self.base_url = get_from_env(
+                "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", _DEFAULT_BASE_URL
+            )
+        if not self.app_id:
+            self.app_id = get_from_env("app_id", "NCP_CLOVASTUDIO_APP_ID")
 
     def default_headers(self) -> Dict[str, Any]:
         headers = {
@@ -153,16 +183,22 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             if self.ncp_clovastudio_api_key
             else None
         )
-        if clovastudio_api_key:
-            headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
 
-        apigw_api_key = (
-            self.ncp_apigw_api_key.get_secret_value()
-            if self.ncp_apigw_api_key
-            else None
-        )
-        if apigw_api_key:
-            headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
+        if self._is_new_api_key():
+            ### headers on new api key
+            headers["Authorization"] = f"Bearer {clovastudio_api_key}"
+        else:
+            ### headers on old api key
+            if clovastudio_api_key:
+                headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
+
+            apigw_api_key = (
+                self.ncp_apigw_api_key.get_secret_value()
+                if self.ncp_apigw_api_key
+                else None
+            )
+            if apigw_api_key:
+                headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
 
         return headers
 
@@ -175,7 +211,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
 
     async def _aembed_text(self, text: str) -> List[float]:
         payload = {"text": text}
-        async_client = cast(httpx.AsyncClient, self.client)
+        async_client = cast(httpx.AsyncClient, self.async_client)
         response = await async_client.post(url=self._api_url, json=payload)
         await _araise_on_error(response)
         return response.json()["result"]["embedding"]

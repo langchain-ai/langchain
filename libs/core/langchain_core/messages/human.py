@@ -41,7 +41,8 @@ class HumanMessage(BaseMessage):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     def __init__(
@@ -72,5 +73,6 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
