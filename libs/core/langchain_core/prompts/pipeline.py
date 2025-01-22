@@ -23,8 +23,7 @@ def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
     ),
 )
 class PipelinePromptTemplate(BasePromptTemplate):
-    """
-    This has been deprecated in favor of chaining individual prompts together in your
+    """This has been deprecated in favor of chaining individual prompts together in your
     code. E.g. using a for loop, you could do:
 
     .. code-block:: python

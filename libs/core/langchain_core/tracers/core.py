@@ -40,8 +40,7 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 
 class _TracerCore(ABC):
-    """
-    Abstract base class for tracers.
+    """Abstract base class for tracers.
 
     This class provides common methods, and reusable methods for tracers.
     """
@@ -233,9 +232,7 @@ class _TracerCore(ABC):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        """Append token event to LLM run and return the run."""
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: dict[str, Any] = {"token": token}
         if chunk:

@@ -534,7 +534,7 @@ class BaseChatOpenAI(BaseChatModel):
     used, or it's a list of disabled values for the parameter.
     
     For example, older models may not support the 'parallel_tool_calls' parameter at 
-    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can ben passed 
     in.
     
     If a parameter is disabled then it will not be used by default in any methods, e.g.
@@ -2486,7 +2486,7 @@ def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            "field. Received message:\n\n{ai_msg}"
+            f"field. Received message:\n\n{ai_msg}"
         )
 
 

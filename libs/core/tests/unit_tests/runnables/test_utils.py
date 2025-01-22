@@ -23,7 +23,7 @@ from langchain_core.runnables.utils import (
     ],
 )
 def test_get_lambda_source(func: Callable, expected_source: str) -> None:
-    """Test get_lambda_source function"""
+    """Test get_lambda_source function."""
     source = get_lambda_source(func)
     assert source == expected_source
 
@@ -36,7 +36,7 @@ def test_get_lambda_source(func: Callable, expected_source: str) -> None:
     ],
 )
 def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) -> None:
-    """Test indent_lines_after_first function"""
+    """Test indent_lines_after_first function."""
     indented_text = indent_lines_after_first(text, prefix)
     assert indented_text == expected_output
 

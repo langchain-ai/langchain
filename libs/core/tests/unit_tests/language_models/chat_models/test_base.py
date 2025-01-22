@@ -136,7 +136,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
-            """Top Level call"""
+            """Top Level call."""
             message = AIMessage(content="hello")
             generation = ChatGeneration(message=message)
             return ChatResult(generations=[generation])
@@ -164,7 +164,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
-            """Top Level call"""
+            """Top Level call."""
             raise NotImplementedError
 
         def _stream(
@@ -209,7 +209,7 @@ async def test_astream_implementation_uses_astream() -> None:
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> ChatResult:
-            """Top Level call"""
+            """Top Level call."""
             raise NotImplementedError
 
         async def _astream(  # type: ignore
@@ -243,7 +243,6 @@ class FakeTracer(BaseTracer):
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
-
         self.traced_run_ids.append(run.id)
 
 
