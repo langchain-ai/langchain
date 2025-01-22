@@ -835,9 +835,7 @@ class GitHubAPIWrapper(BaseModel):
         results = [f"Top {max_results} results:"]
         for release in releases[:max_results]:
             results.append(
-                f"Title: {release.title}, "
-                f"Tag: {release.tag_name}, "
-                f"Body: {release.body}"
+                f"Title: {release.title}, Tag: {release.tag_name}, Body: {release.body}"
             )
 
         return "\n".join(results)
@@ -853,11 +851,7 @@ class GitHubAPIWrapper(BaseModel):
             str: The release
         """
         release = self.github_repo_instance.get_release(tag_name)
-        return (
-            f"Release: {release.title} "
-            f"tag: {release.tag_name} "
-            f"body: {release.body}"
-        )
+        return f"Release: {release.title} tag: {release.tag_name} body: {release.body}"
 
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issue":
