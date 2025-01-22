@@ -75,7 +75,8 @@ convention = "google"
 "tests/**" = ["D"]
 
 [tool.poetry.group.lint.dependencies]
-ruff = "~0.9.1"
+ruff = "^0.9.2"
+
 
 
 
@@ -87,8 +88,10 @@ tiktoken = "^0.8.0"
 
 
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
+
 
 
 
@@ -104,6 +107,7 @@ pytest-xdist = "^3.6.1"
 
 
 
+
 [tool.poetry.group.test_integration]
 optional = true
 
@@ -115,15 +119,18 @@ sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
 
 
 
+
 [tool.poetry.group.lint.dependencies.langchain-core]
 path = "../core"
 develop = true
 
 
 
+
 [tool.poetry.group.dev.dependencies.langchain-core]
 path = "../core"
 develop = true
+
 
 
 
