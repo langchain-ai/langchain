@@ -229,17 +229,26 @@ class GitHubToolkit(BaseToolkit):
             Search issues and pull requests
             Search code
             Create review request
-    Include release tools:
-        .. code-block:: none
-            By default, the toolkit does not include release-related tools. You can include them by setting `include_release_tools=True` when initializing the toolkit:
-        ... code-block:: python
-            toolkit = GitHubToolkit.from_github_api_wrapper(github, include_release_tools=True)
-        ... code-block:: none
-            Settings `include_release_tools=True` will include the following tools:
 
-            Get Latest Release
-            Get Releases
-            Get Release
+    Include release tools:
+        By default, the toolkit does not include release-related tools.
+        You can include them by setting ``include_release_tools=True`` when
+        initializing the toolkit:
+
+        .. code-block:: python
+
+            toolkit = GitHubToolkit.from_github_api_wrapper(
+                github, include_release_tools=True
+            )
+
+        Setting ``include_release_tools=True`` will include the following tools:
+
+        .. code-block:: none
+
+            Get latest release
+            Get releases
+            Get release
+
     Use within an agent:
         .. code-block:: python
 
