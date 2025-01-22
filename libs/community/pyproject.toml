@@ -120,7 +120,7 @@ pytest-vcr = "^1.0.2"
 vcrpy = "^6"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "~0.9.1"
+ruff = "^0.9.2"
 [[tool.poetry.group.lint.dependencies.cffi]]
 version = "<1.17.1"
 python = "<3.10"
