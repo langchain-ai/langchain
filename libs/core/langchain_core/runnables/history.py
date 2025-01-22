@@ -590,9 +590,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         if missing_keys and parameter_names:
             example_input = {self.input_messages_key: "foo"}
-            example_configurable = {
-                missing_key: "[your-value-here]" for missing_key in missing_keys
-            }
+            example_configurable = dict.fromkeys(missing_keys, "[your-value-here]")
             example_config = {"configurable": example_configurable}
             msg = (
                 f"Missing keys {sorted(missing_keys)} in config['configurable'] "

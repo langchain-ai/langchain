@@ -72,7 +72,7 @@ class SQLDatabase:
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=schema)
+            list(self._inspector.get_table_names(schema=schema))
             + (self._inspector.get_view_names(schema=schema) if view_support else [])
         )
 

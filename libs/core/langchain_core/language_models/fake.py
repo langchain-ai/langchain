@@ -42,7 +42,7 @@ class FakeListLLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Return next response"""
+        """Return next response."""
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -57,7 +57,7 @@ class FakeListLLM(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Return next response"""
+        """Return next response."""
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1

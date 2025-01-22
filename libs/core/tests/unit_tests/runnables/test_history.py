@@ -257,7 +257,7 @@ class LengthChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(
             generations=[ChatGeneration(message=AIMessage(content=str(len(messages))))]
         )

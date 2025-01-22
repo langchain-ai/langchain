@@ -265,7 +265,6 @@ class FewShotChatMessagePromptTemplate(
     to dynamically select examples based on the input.
 
     Examples:
-
         Prompt template with a fixed list of examples (matching the sample
         conversation above):
 

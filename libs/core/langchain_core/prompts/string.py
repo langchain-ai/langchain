@@ -64,8 +64,7 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
 
 
 def validate_jinja2(template: str, input_variables: list[str]) -> None:
-    """
-    Validate that the input variables are valid for the template.
+    """Validate that the input variables are valid for the template.
     Issues a warning if missing or extra variables are found.
 
     Args:

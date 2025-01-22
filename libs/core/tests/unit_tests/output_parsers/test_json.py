@@ -613,6 +613,6 @@ def test_unicode_handling() -> None:
 
     parser = SimpleJsonOutputParser(pydantic_object=Sample)
     format_instructions = parser.get_format_instructions()
-    assert (
-        "科学文章的标题" in format_instructions
-    ), "Unicode characters should not be escaped"
+    assert "科学文章的标题" in format_instructions, (
+        "Unicode characters should not be escaped"
+    )
