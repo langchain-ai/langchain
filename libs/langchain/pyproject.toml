@@ -57,7 +57,7 @@ pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D"]
-"!langchain/prompts/vectorstore.py" = ["D"]
+"!langchain/indexes/vectorstore.py" = ["D"]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

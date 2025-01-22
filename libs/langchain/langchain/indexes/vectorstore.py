@@ -1,3 +1,5 @@
+"""Vectorstore stubs for the indexing api."""
+
 from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.document_loaders import BaseLoader
