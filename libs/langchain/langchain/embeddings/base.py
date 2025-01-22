@@ -7,13 +7,13 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
 _SUPPORTED_PROVIDERS = {
-    "ollama": "langchain_ollama",
     "azure_openai": "langchain_openai",
     "bedrock": "langchain_aws",
     "cohere": "langchain_cohere",
     "google_vertexai": "langchain_google_vertexai",
     "huggingface": "langchain_huggingface",
     "mistralai": "langchain_mistralai",
+    "ollama": "langchain_ollama",
     "openai": "langchain_openai",
 }
 
@@ -175,19 +175,14 @@ def init_embeddings(
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
         raise ValueError(
-            "Must specify model name. "
-            f"Supported providers are: {', '.join(providers)}"
+            f"Must specify model name. Supported providers are: {', '.join(providers)}"
         )
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)
     pkg = _SUPPORTED_PROVIDERS[provider]
     _check_pkg(pkg)
 
-    if provider == "ollama":
-        from langchain_ollama import OllamaEmbeddings
-
-        return OllamaEmbeddings(model=model_name, **kwargs)
-    elif provider == "openai":
+    if provider == "openai":
         from langchain_openai import OpenAIEmbeddings
 
         return OpenAIEmbeddings(model=model_name, **kwargs)
@@ -215,6 +210,10 @@ def init_embeddings(
         from langchain_huggingface import HuggingFaceEmbeddings
 
         return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+    elif provider == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=model_name, **kwargs)
     else:
         raise ValueError(
             f"Provider '{provider}' is not supported.\n"
