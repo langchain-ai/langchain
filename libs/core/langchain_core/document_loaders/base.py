@@ -48,7 +48,6 @@ class BaseLoader(ABC):  # noqa: B024
         Returns:
             List of Documents.
         """
-
         if text_splitter is None:
             try:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter

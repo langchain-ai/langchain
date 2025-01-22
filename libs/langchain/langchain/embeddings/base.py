@@ -174,8 +174,7 @@ def init_embeddings(
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
         raise ValueError(
-            "Must specify model name. "
-            f"Supported providers are: {', '.join(providers)}"
+            f"Must specify model name. Supported providers are: {', '.join(providers)}"
         )
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)

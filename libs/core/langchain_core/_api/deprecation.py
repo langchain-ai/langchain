@@ -95,7 +95,7 @@ def deprecated(
     defaults to 'class' if decorating a class, 'attribute' if decorating a
     property, and 'function' otherwise.
 
-    Arguments:
+    Args:
         since : str
             The release at which this API became deprecated.
         message : str, optional
@@ -122,8 +122,7 @@ def deprecated(
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
 
-    Examples
-    --------
+    Examples:
 
         .. code-block:: python
 
@@ -183,7 +182,6 @@ def deprecated(
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
-
             nonlocal warned
             if not warned and not is_caller_internal():
                 warned = True
@@ -240,6 +238,7 @@ def deprecated(
                         exclude=obj.exclude,
                     ),
                 )
+
         elif isinstance(obj, FieldInfoV2):
             wrapped = None
             if not _obj_type:

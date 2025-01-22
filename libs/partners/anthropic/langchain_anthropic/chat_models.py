@@ -636,7 +636,7 @@ class ChatAnthropic(BaseChatModel):
     def _get_ls_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
-        """Get the parameters used to invoke the model."""
+        """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",

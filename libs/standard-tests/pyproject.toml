@@ -34,6 +34,9 @@ python = "<3.12"
 version = ">=1.26.2,<3"
 python = ">=3.12"
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
 
@@ -69,7 +72,7 @@ optional = true
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = ">=0.5"
+ruff = "^0.9.2"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1"

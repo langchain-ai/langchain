@@ -70,6 +70,7 @@ def extract_sub_links(
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
         continue_on_failure: If True, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
+
     Returns:
         List[str]: sub links.
     """

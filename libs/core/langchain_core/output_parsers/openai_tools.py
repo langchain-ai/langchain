@@ -168,7 +168,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."

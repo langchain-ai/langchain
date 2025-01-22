@@ -1,3 +1,4 @@
+import operator
 import uuid
 from collections.abc import Sequence
 from typing import Any, Optional, cast
@@ -80,5 +81,5 @@ class InMemoryDocumentIndex(DocumentIndex):
             count = document.page_content.count(query)
             counts_by_doc.append((document, count))
 
-        counts_by_doc.sort(key=lambda x: x[1], reverse=True)
+        counts_by_doc.sort(key=operator.itemgetter(1), reverse=True)
         return [doc.model_copy() for doc, count in counts_by_doc[: self.top_k]]

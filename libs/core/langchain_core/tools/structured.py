@@ -162,7 +162,6 @@ class StructuredTool(BaseTool):
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
         """
-
         if func is not None:
             source_function = func
         elif coroutine is not None:
