@@ -91,7 +91,6 @@ async def test_async_custom_event_implicit_config() -> None:
 
 async def test_async_callback_manager() -> None:
     """Test async callback manager."""
-
     callback = AsyncCustomCallbackHandler()
 
     run_id = uuid.UUID(int=7)

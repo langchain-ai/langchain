@@ -46,8 +46,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         Args:
             text: The output of an LLM call.
 
-            Returns:
-                A list of strings.
+        Returns:
+            A list of strings.
         """
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:
@@ -135,7 +135,9 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Check if the langchain object is serializable.
-        Returns True."""
+
+        Returns True.
+        """
         return True
 
     @classmethod

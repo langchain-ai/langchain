@@ -164,6 +164,7 @@ async def atrace_as_chain_group(
             Defaults to None.
         metadata (Dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
+
     Returns:
         AsyncCallbackManager: The async callback manager for the chain group.
 
@@ -216,8 +217,7 @@ Func = TypeVar("Func", bound=Callable)
 
 
 def shielded(func: Func) -> Func:
-    """
-    Makes so an awaitable method is always shielded from cancellation.
+    """Makes so an awaitable method is always shielded from cancellation.
 
     Args:
         func (Callable): The function to shield.
@@ -1310,7 +1310,6 @@ class CallbackManager(BaseCallbackManager):
             List[CallbackManagerForLLMRun]: A callback manager for each
                 list of messages as an LLM run.
         """
-
         managers = []
         for message_list in messages:
             if run_id is not None:
@@ -1729,7 +1728,6 @@ class AsyncCallbackManager(BaseCallbackManager):
                 callback managers, one for each LLM Run corresponding
                 to each prompt.
         """
-
         inline_tasks = []
         non_inline_tasks = []
         inline_handlers = [handler for handler in self.handlers if handler.run_inline]

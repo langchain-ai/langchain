@@ -557,6 +557,44 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
+    def test_double_messages_conversation(self, model: BaseChatModel) -> None:
+        """
+        Test to verify that the model can handle double-message conversations.
+
+        This should pass for all integrations. Tests the model's ability to process
+        a sequence of double-system, double-human, and double-ai messages as context
+        for generating the next response.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because this test also uses `model.invoke()`.
+
+            Second, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
+            because this test is the "basic case" without double messages.
+
+            If that test passes those but not this one, you should verify that:
+            1. Your model API can handle double messages, or the integration should
+               merge messages before sending them to the API.
+            2. The response is a valid :class:`~langchain_core.messages.AIMessage`
+        """
+        messages = [
+            SystemMessage("hello"),
+            SystemMessage("hello"),
+            HumanMessage("hello"),
+            HumanMessage("hello"),
+            AIMessage("hello"),
+            AIMessage("hello"),
+            HumanMessage("how are you"),
+        ]
+        result = model.invoke(messages)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0
+
     def test_usage_metadata(self, model: BaseChatModel) -> None:
         """Test to verify that the model returns correct usage metadata.
 

@@ -110,7 +110,6 @@ def test_create_chat_prompt_template_from_template_partial() -> None:
 
 def test_create_system_message_prompt_template_from_template_partial() -> None:
     """Create a system message prompt template with partials."""
-
     graph_creator_content = """
     Your instructions are:
     {instructions}

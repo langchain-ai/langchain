@@ -84,7 +84,6 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         if len(result) != 1:
             msg = f"Expected exactly one result, but got {len(result)}"
             raise OutputParserException(msg)
@@ -189,7 +188,6 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     the provided schema.
 
     Example:
-
         ... code-block:: python
 
             message = AIMessage(

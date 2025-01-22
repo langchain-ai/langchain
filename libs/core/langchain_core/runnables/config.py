@@ -116,7 +116,7 @@ var_child_runnable_config = ContextVar(
 
 
 def _set_config_context(config: RunnableConfig) -> None:
-    """Set the child Runnable config + tracing context
+    """Set the child Runnable config + tracing context.
 
     Args:
         config (RunnableConfig): The config to set.

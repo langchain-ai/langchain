@@ -1,17 +1,19 @@
 """Tests for the various PDF parsers."""
 
+import importlib
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 import pytest
 
+import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.pdf import (
     PDFMinerParser,
-    PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
+    _merge_text_and_extras,
 )
 
 _THIS_DIR = Path(__file__).parents[3]
@@ -23,7 +25,19 @@ HELLO_PDF = _EXAMPLES_DIR / "hello.pdf"
 LAYOUT_PARSER_PAPER_PDF = _EXAMPLES_DIR / "layout-parser-paper.pdf"
 
 
-def _assert_with_parser(parser: BaseBlobParser, splits_by_page: bool = True) -> None:
+def test_merge_text_and_extras() -> None:
+    assert "abc\n\n\n<image>\n\n<table>\n\n\ndef\n\n\nghi" == _merge_text_and_extras(
+        ["<image>", "<table>"], "abc\n\n\ndef\n\n\nghi"
+    )
+    assert "abc\n\n<image>\n\n<table>\n\ndef\n\nghi" == _merge_text_and_extras(
+        ["<image>", "<table>"], "abc\n\ndef\n\nghi"
+    )
+    assert "abc\ndef\n\n<image>\n\n<table>\n\nghi" == _merge_text_and_extras(
+        ["<image>", "<table>"], "abc\ndef\n\nghi"
+    )
+
+
+def _assert_with_parser(parser: BaseBlobParser, *, splits_by_page: bool = True) -> None:
     """Standard tests to verify that the given parser works.
 
     Args:
@@ -75,14 +89,29 @@ def test_pdfminer_parser() -> None:
     _assert_with_parser(PDFMinerParser(), splits_by_page=False)
 
 
-@pytest.mark.requires("fitz")  # package is PyMuPDF
-def test_pymupdf_loader() -> None:
-    """Test PyMuPDF loader."""
-    _assert_with_parser(PyMuPDFParser())
-
-
 @pytest.mark.requires("pypdfium2")
 def test_pypdfium2_parser() -> None:
     """Test PyPDFium2 parser."""
     # Does not follow defaults to split by page.
     _assert_with_parser(PyPDFium2Parser())
+
+
+@pytest.mark.parametrize(
+    "parser_factory,require,params",
+    [
+        ("PyMuPDFParser", "pymupdf", {}),
+    ],
+)
+def test_parsers(
+    parser_factory: str,
+    require: str,
+    params: dict[str, Any],
+) -> None:
+    try:
+        require = require.replace("-", "")
+        importlib.import_module(require, package=None)
+        parser_class = getattr(pdf_parsers, parser_factory)
+        parser = parser_class()
+        _assert_with_parser(parser, **params)
+    except ModuleNotFoundError:
+        pytest.skip(f"{parser_factory} skiped. Require '{require}'")

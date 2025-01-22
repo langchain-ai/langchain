@@ -483,7 +483,6 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A pydantic model that can be used to validate config.
         """
-
         include = include or []
         config_specs = self.config_specs
         configurable = (
@@ -817,8 +816,8 @@ class Runnable(Generic[Input, Output], ABC):
         **kwargs: Optional[Any],
     ) -> Iterator[tuple[int, Union[Output, Exception]]]:
         """Run invoke in parallel on a list of inputs,
-        yielding results as they complete."""
-
+        yielding results as they complete.
+        """
         if not inputs:
             return
 
@@ -949,7 +948,6 @@ class Runnable(Generic[Input, Output], ABC):
         Yields:
             A tuple of the index of the input and the output from the Runnable.
         """
-
         if not inputs:
             return
 
@@ -981,8 +979,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """
-        Default implementation of stream, which calls invoke.
+        """Default implementation of stream, which calls invoke.
         Subclasses should override this method if they support streaming output.
 
         Args:
@@ -1001,8 +998,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """
-        Default implementation of astream, which calls ainvoke.
+        """Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
 
         Args:
@@ -1064,8 +1060,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
-        """
-        Stream all output from a Runnable, as reported to the callback system.
+        """Stream all output from a Runnable, as reported to the callback system.
         This includes all inner runs of LLMs, Retrievers, Tools, etc.
 
         Output is streamed as Log objects, which include a list of
@@ -1392,8 +1387,8 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """
-        Default implementation of transform, which buffers input and then calls stream.
+        """Default implementation of transform, which buffers input and calls astream.
+
         Subclasses should override this method if they can start producing output while
         input is still being generated.
 
@@ -1434,8 +1429,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """
-        Default implementation of atransform, which buffers input and calls astream.
+        """Default implementation of atransform, which buffers input and calls astream.
         Subclasses should override this method if they can start producing output while
         input is still being generated.
 
@@ -1472,8 +1466,7 @@ class Runnable(Generic[Input, Output], ABC):
                 yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
-        """
-        Bind arguments to a Runnable, returning a new Runnable.
+        """Bind arguments to a Runnable, returning a new Runnable.
 
         Useful when a Runnable in a chain requires an argument that is not
         in the output of the previous Runnable or included in the user input.
@@ -1520,8 +1513,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Sadly Unpack is not well-supported by mypy so this will have to be untyped
         **kwargs: Any,
     ) -> Runnable[Input, Output]:
-        """
-        Bind config to a Runnable, returning a new Runnable.
+        """Bind config to a Runnable, returning a new Runnable.
 
         Args:
             config: The config to bind to the Runnable.
@@ -1552,8 +1544,7 @@ class Runnable(Generic[Input, Output], ABC):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
         on_start: Called before the Runnable starts running, with the Run object.
         on_end: Called after the Runnable finishes running, with the Run object.
@@ -1620,8 +1611,7 @@ class Runnable(Generic[Input, Output], ABC):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind asynchronous lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
 
         on_start: Asynchronously called before the Runnable starts running.
         on_end: Asynchronously called after the Runnable finishes running.
@@ -1711,8 +1701,7 @@ class Runnable(Generic[Input, Output], ABC):
         input_type: Optional[type[Input]] = None,
         output_type: Optional[type[Output]] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind input and output types to a Runnable, returning a new Runnable.
+        """Bind input and output types to a Runnable, returning a new Runnable.
 
         Args:
             input_type: The input type to bind to the Runnable. Defaults to None.
@@ -1799,8 +1788,7 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     def map(self) -> Runnable[list[Input], list[Output]]:
-        """
-        Return a new Runnable that maps a list of inputs to a list of outputs,
+        """Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
 
         Returns:
@@ -1906,7 +1894,8 @@ class Runnable(Generic[Input, Output], ABC):
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement invoke() in subclasses."""
+        with callbacks. Use this method to implement invoke() in subclasses.
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
@@ -1955,7 +1944,8 @@ class Runnable(Generic[Input, Output], ABC):
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement ainvoke() in subclasses."""
+        with callbacks. Use this method to implement ainvoke() in subclasses.
+        """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
@@ -2004,7 +1994,8 @@ class Runnable(Generic[Input, Output], ABC):
         **kwargs: Optional[Any],
     ) -> list[Output]:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement invoke() in subclasses."""
+        with callbacks. Use this method to implement invoke() in subclasses.
+        """
         if not input:
             return []
 
@@ -2076,7 +2067,8 @@ class Runnable(Generic[Input, Output], ABC):
         **kwargs: Optional[Any],
     ) -> list[Output]:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement invoke() in subclasses."""
+        with callbacks. Use this method to implement invoke() in subclasses.
+        """
         if not input:
             return []
 
@@ -2149,7 +2141,8 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Iterator[Output]:
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
-        Use this to implement `stream()` or `transform()` in Runnable subclasses."""
+        Use this to implement `stream()` or `transform()` in Runnable subclasses.
+        """
         # Mixin that is used by both astream log and astream events implementation
         from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
@@ -2249,7 +2242,8 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> AsyncIterator[Output]:
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
-        Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
+        Use this to implement `astream()` or `atransform()` in Runnable subclasses.
+        """
         # Mixin that is used by both astream log and astream events implementation
         from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
@@ -5601,7 +5595,6 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     - ``with_fallbacks``: Bind a fallback policy to the underlying Runnable.
 
     Example:
-
     `bind`: Bind kwargs to pass to the underlying Runnable when running it.
 
         .. code-block:: python
