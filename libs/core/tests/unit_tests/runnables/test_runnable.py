@@ -96,7 +96,8 @@ PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
-    It replaces run ids with deterministic UUIDs for snapshotting."""
+    It replaces run ids with deterministic UUIDs for snapshotting.
+    """
 
     def __init__(self) -> None:
         """Initialize the tracer."""
@@ -158,7 +159,6 @@ class FakeTracer(BaseTracer):
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
-
         self.runs.append(self._copy_run(run))
 
     def flattened_runs(self) -> list[Run]:
@@ -622,32 +622,29 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
             "byebye": input["yo"],
         }
 
-    assert (
-        _normalize_schema(
-            RunnableLambda(
-                aget_values_typed  # type: ignore[arg-type]
-            ).get_input_jsonschema()
-        )
-        == _normalize_schema(
-            {
-                "$defs": {
-                    "InputType": {
-                        "properties": {
-                            "variable_name": {
-                                "title": "Variable " "Name",
-                                "type": "string",
-                            },
-                            "yo": {"title": "Yo", "type": "integer"},
+    assert _normalize_schema(
+        RunnableLambda(
+            aget_values_typed  # type: ignore[arg-type]
+        ).get_input_jsonschema()
+    ) == _normalize_schema(
+        {
+            "$defs": {
+                "InputType": {
+                    "properties": {
+                        "variable_name": {
+                            "title": "Variable Name",
+                            "type": "string",
                         },
-                        "required": ["variable_name", "yo"],
-                        "title": "InputType",
-                        "type": "object",
-                    }
-                },
-                "allOf": [{"$ref": "#/$defs/InputType"}],
-                "title": "aget_values_typed_input",
-            }
-        )
+                        "yo": {"title": "Yo", "type": "integer"},
+                    },
+                    "required": ["variable_name", "yo"],
+                    "title": "InputType",
+                    "type": "object",
+                }
+            },
+            "allOf": [{"$ref": "#/$defs/InputType"}],
+            "title": "aget_values_typed_input",
+        }
     )
 
     if PYDANTIC_VERSION >= (2, 9):
@@ -657,7 +654,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
 
 def test_with_types_with_type_generics() -> None:
-    """Verify that with_types works if we use things like List[int]"""
+    """Verify that with_types works if we use things like List[int]."""
 
     def foo(x: int) -> None:
         """Add one to the input."""
@@ -2793,7 +2790,10 @@ async def test_router_runnable(
     assert result == "4"
 
     result2 = chain.batch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -2801,7 +2801,10 @@ async def test_router_runnable(
     assert result == "4"
 
     result2 = await chain.abatch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -2855,7 +2858,10 @@ async def test_higher_order_lambda_runnable(
     assert result == "4"
 
     result2 = chain.batch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -2863,7 +2869,10 @@ async def test_higher_order_lambda_runnable(
     assert result == "4"
 
     result2 = await chain.abatch(
-        [{"key": "math", "question": "2 + 2"}, {"key": "english", "question": "2 + 2"}]
+        [
+            {"key": "math", "question": "2 + 2"},
+            {"key": "english", "question": "2 + 2"},
+        ]
     )
     assert result2 == ["4", "2"]
 
@@ -3058,7 +3067,10 @@ def test_map_stream() -> None:
     assert len(streamed_chunks) == len(llm_res)
 
     chain_pick_two = chain.assign(hello=RunnablePick("llm").pipe(llm)).pick(
-        ["llm", "hello"]
+        [
+            "llm",
+            "hello",
+        ]
     )
 
     assert chain_pick_two.get_output_jsonschema() == {
@@ -3334,7 +3346,6 @@ def test_with_config_with_config() -> None:
 
 def test_metadata_is_merged() -> None:
     """Test metadata and tags defined in with_config and at are merged/concatend."""
-
     foo = RunnableLambda(lambda x: x).with_config({"metadata": {"my_key": "my_value"}})
     expected_metadata = {
         "my_key": "my_value",
@@ -3349,7 +3360,6 @@ def test_metadata_is_merged() -> None:
 
 def test_tags_are_appended() -> None:
     """Test tags from with_config are concatenated with those in invocation."""
-
     foo = RunnableLambda(lambda x: x).with_config({"tags": ["my_key"]})
     with collect_runs() as cb:
         foo.invoke("hi", {"tags": ["invoked_key"]})
@@ -4445,7 +4455,6 @@ async def test_runnable_branch_abatch() -> None:
 
 def test_runnable_branch_stream() -> None:
     """Verify that stream works for RunnableBranch."""
-
     llm_res = "i'm a textbot"
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
@@ -4503,7 +4512,6 @@ def test_runnable_branch_stream_with_callbacks() -> None:
 
 async def test_runnable_branch_astream() -> None:
     """Verify that astream works for RunnableBranch."""
-
     llm_res = "i'm a textbot"
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
@@ -4694,8 +4702,8 @@ async def test_runnable_gen() -> None:
 
 async def test_runnable_gen_context_config() -> None:
     """Test that a generator can call other runnables with config
-    propagated from the context."""
-
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     def gen(input: Iterator[Any]) -> Iterator[int]:
@@ -4829,8 +4837,8 @@ async def test_runnable_gen_context_config() -> None:
 
 async def test_runnable_iter_context_config() -> None:
     """Test that a generator can call other runnables with config
-    propagated from the context."""
-
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -4946,8 +4954,8 @@ async def test_runnable_iter_context_config() -> None:
 
 async def test_runnable_lambda_context_config() -> None:
     """Test that a function can call other runnables with config
-    propagated from the context."""
-
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5098,7 +5106,8 @@ def test_with_config_callbacks() -> None:
 
 async def test_ainvoke_on_returned_runnable() -> None:
     """Verify that a runnable returned by a sync runnable in the async path will
-    be runthroughaasync path (issue #13407)"""
+    be runthroughaasync path (issue #13407).
+    """
 
     def idchain_sync(__input: dict) -> bool:
         return False
@@ -5171,7 +5180,7 @@ async def test_astream_log_deep_copies() -> None:
     """
 
     def _get_run_log(run_log_patches: Sequence[RunLogPatch]) -> RunLog:
-        """Get run log"""
+        """Get run log."""
         run_log = RunLog(state=None)  # type: ignore
         for log_patch in run_log_patches:
             run_log = run_log + log_patch
@@ -5435,7 +5444,6 @@ def test_pydantic_protected_namespaces() -> None:
 
 def test_schema_for_prompt_and_chat_model() -> None:
     """Testing that schema is generated properly when using variable names
-
     that collide with pydantic attributes.
     """
     prompt = ChatPromptTemplate([("system", "{model_json_schema}, {_private}, {json}")])
@@ -5445,7 +5453,11 @@ def test_schema_for_prompt_and_chat_model() -> None:
     chain = prompt | chat
     assert (
         chain.invoke(
-            {"model_json_schema": "hello", "_private": "goodbye", "json": "json"}
+            {
+                "model_json_schema": "hello",
+                "_private": "goodbye",
+                "json": "json",
+            }
         ).content
         == chat_res
     )

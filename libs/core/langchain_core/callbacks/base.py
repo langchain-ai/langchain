@@ -131,7 +131,8 @@ class ChainManagerMixin:
             outputs (Dict[str, Any]): The outputs of the chain.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_chain_error(
         self,
@@ -147,7 +148,8 @@ class ChainManagerMixin:
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_agent_action(
         self,
@@ -163,7 +165,8 @@ class ChainManagerMixin:
             action (AgentAction): The agent action.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_agent_finish(
         self,
@@ -179,7 +182,8 @@ class ChainManagerMixin:
             finish (AgentFinish): The agent finish.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class ToolManagerMixin:
@@ -199,7 +203,8 @@ class ToolManagerMixin:
             output (Any): The output of the tool.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_tool_error(
         self,
@@ -215,7 +220,8 @@ class ToolManagerMixin:
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class CallbackManagerMixin:
@@ -824,7 +830,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             tags (Optional[List[str]]): The tags.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     async def on_retriever_error(
         self,

@@ -418,7 +418,11 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         visitor = FunctionNonLocals()
         visitor.visit(tree)
         values: list[Any] = []
-        closure = inspect.getclosurevars(func)
+        closure = (
+            inspect.getclosurevars(func.__wrapped__)
+            if hasattr(func, "__wrapped__") and callable(func.__wrapped__)
+            else inspect.getclosurevars(func)
+        )
         candidates = {**closure.globals, **closure.nonlocals}
         for k, v in candidates.items():
             if k in visitor.nonlocals:
@@ -458,9 +462,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
 
 
 class AddableDict(dict[str, Any]):
-    """
-    Dictionary that can be added to another dictionary.
-    """
+    """Dictionary that can be added to another dictionary."""
 
     def __add__(self, other: AddableDict) -> AddableDict:
         chunk = AddableDict(self)
