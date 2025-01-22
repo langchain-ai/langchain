@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-tests"
-version = "0.3.8"
+version = "0.3.9"
 description = "Standard tests for LangChain implementations"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -19,7 +19,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.22"
+langchain-core = "^0.3.31"
 pytest = ">=7,<9"
 pytest-asyncio = ">=0.20,<1"
 httpx = ">=0.25.0,<1"
