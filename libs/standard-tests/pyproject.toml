@@ -72,7 +72,7 @@ optional = true
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "~0.9.1"
+ruff = "^0.9.2"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1"
