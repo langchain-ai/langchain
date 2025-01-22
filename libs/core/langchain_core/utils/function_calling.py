@@ -1,4 +1,4 @@
-"""Methods for creating function specs in the style of OpenAI Functions"""
+"""Methods for creating function specs in the style of OpenAI Functions."""
 
 from __future__ import annotations
 
@@ -342,6 +342,7 @@ def convert_to_openai_function(
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
+
     Args:
         function:
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain

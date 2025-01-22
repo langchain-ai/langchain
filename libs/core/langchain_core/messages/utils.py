@@ -817,7 +817,6 @@ def trim_messages(
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
     """  # noqa: E501
-
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":

@@ -1,6 +1,5 @@
 """**Chat message history** stores a history of the message interactions in a chat.
 
-
 **Class hierarchy:**
 
 .. code-block::
@@ -187,10 +186,10 @@ class BaseChatMessageHistory(ABC):
 
     @abstractmethod
     def clear(self) -> None:
-        """Remove all messages from the store"""
+        """Remove all messages from the store."""
 
     async def aclear(self) -> None:
-        """Async remove all messages from the store"""
+        """Async remove all messages from the store."""
         from langchain_core.runnables.config import run_in_executor
 
         await run_in_executor(None, self.clear)

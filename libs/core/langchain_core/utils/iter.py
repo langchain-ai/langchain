@@ -83,8 +83,7 @@ def tee_peer(
 
 
 class Tee(Generic[T]):
-    """
-    Create ``n`` separate asynchronous iterators over ``iterable``
+    """Create ``n`` separate asynchronous iterators over ``iterable``.
 
     This splits a single ``iterable`` into multiple iterators, each providing
     the same items in the same order.
