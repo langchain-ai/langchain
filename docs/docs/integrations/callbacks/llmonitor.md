@@ -83,16 +83,25 @@ agent_executor.run("how many letters in the word educa?", callbacks=[handler])
 Another example:
 
 ```python
-from langchain.agents import load_tools, initialize_agent, AgentType
+from langchain.agents import load_tools
 from langchain_openai import OpenAI
 from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
+from langgraph.prebuilt import create_react_agent
 
 
 handler = LLMonitorCallbackHandler()
 
 llm = OpenAI(temperature=0)
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
-agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, metadata={ "agent_name": "GirlfriendAgeFinder" })  # <- recommended, assign a custom name
+system_prompt = "You are a helpful assistant named GirlfriendAgeFinder."
+
+agent = create_react_agent(
+    model=llm,
+    tools=tools,
+    # Add a system prompt (or other advanced instructions).
+    state_modifier=system_prompt,  
+    debug=False,
+)
 
 agent.run(
     "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
