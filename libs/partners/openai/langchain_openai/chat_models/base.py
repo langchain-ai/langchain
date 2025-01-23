@@ -1377,7 +1377,7 @@ class BaseChatOpenAI(BaseChatModel):
                     f"since it doesn't support OpenAI's Structured Output API. You can "
                     f"see supported models here: "
                     f"https://platform.openai.com/docs/guides/structured-outputs#supported-models. "  # noqa: E501
-                    "To fix this warning, set `method='function_calling'. '
+                    "To fix this warning, set `method='function_calling'. "
                     "Overriding to method='function_calling'."
                 )
                 method = "function_calling"
