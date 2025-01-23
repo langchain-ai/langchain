@@ -237,7 +237,7 @@ packages:
     js: "@langchain/azure-dynamic-sessions"
     downloads: 7285
     downloads_updated_at: "2024-12-23T20:10:11.816059+00:00"
-  - name: langchain-payman-tool
+  - name: langchain-payman
     path: .
     repo: paymanai/langchain-payman-tool
   - name: langchain-sqlserver
