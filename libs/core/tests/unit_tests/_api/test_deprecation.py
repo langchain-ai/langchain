@@ -13,7 +13,7 @@ from langchain_core._api.deprecation import (
 
 
 @pytest.mark.parametrize(
-    "kwargs, expected_message",
+    ("kwargs", "expected_message"),
     [
         (
             {
@@ -404,7 +404,9 @@ def test_deprecated_method_pydantic() -> None:
 def test_raise_error_for_bad_decorator() -> None:
     """Verify that errors raised on init rather than on use."""
     # Should not specify both `alternative` and `alternative_import`
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Cannot specify both alternative and alternative_import"
+    ):
 
         @deprecated(since="2.0.0", alternative="NewClass", alternative_import="hello")
         def deprecated_function() -> str:

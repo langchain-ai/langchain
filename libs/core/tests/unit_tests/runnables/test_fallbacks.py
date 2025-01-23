@@ -32,7 +32,7 @@ from langchain_core.runnables import (
 from langchain_core.tools import BaseTool
 
 
-@pytest.fixture()
+@pytest.fixture
 def llm() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
@@ -40,7 +40,7 @@ def llm() -> RunnableWithFallbacks:
     return error_llm.with_fallbacks([pass_llm])
 
 
-@pytest.fixture()
+@pytest.fixture
 def llm_multi() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     error_llm_2 = FakeListLLM(responses=["baz"], i=1)
@@ -49,7 +49,7 @@ def llm_multi() -> RunnableWithFallbacks:
     return error_llm.with_fallbacks([error_llm_2, pass_llm])
 
 
-@pytest.fixture()
+@pytest.fixture
 def chain() -> Runnable:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
@@ -70,7 +70,7 @@ def _dont_raise_error(inputs: dict) -> str:
     raise ValueError
 
 
-@pytest.fixture()
+@pytest.fixture
 def chain_pass_exceptions() -> Runnable:
     fallback = RunnableLambda(_dont_raise_error)
     return {"text": RunnablePassthrough()} | RunnableLambda(
@@ -107,7 +107,8 @@ def _runnable(inputs: dict) -> str:
     if inputs["text"] == "foo":
         return "first"
     if "exception" not in inputs:
-        raise ValueError
+        msg = "missing exception"
+        raise ValueError(msg)
     if inputs["text"] == "bar":
         return "second"
     if isinstance(inputs["exception"], ValueError):
@@ -128,7 +129,7 @@ def test_invoke_with_exception_key() -> None:
     runnable_with_single = runnable.with_fallbacks(
         [runnable], exception_key="exception"
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="missing exception"):
         runnable_with_single.invoke({"text": "baz"})
 
     actual = runnable_with_single.invoke({"text": "bar"})
@@ -149,7 +150,7 @@ async def test_ainvoke_with_exception_key() -> None:
     runnable_with_single = runnable.with_fallbacks(
         [runnable], exception_key="exception"
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="missing exception"):
         await runnable_with_single.ainvoke({"text": "baz"})
 
     actual = await runnable_with_single.ainvoke({"text": "bar"})
@@ -166,7 +167,7 @@ async def test_ainvoke_with_exception_key() -> None:
 
 def test_batch() -> None:
     runnable = RunnableLambda(_runnable)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="missing exception"):
         runnable.batch([{"text": "foo"}, {"text": "bar"}, {"text": "baz"}])
     actual = runnable.batch(
         [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
@@ -210,7 +211,7 @@ def test_batch() -> None:
 
 async def test_abatch() -> None:
     runnable = RunnableLambda(_runnable)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="missing exception"):
         await runnable.abatch([{"text": "foo"}, {"text": "bar"}, {"text": "baz"}])
     actual = await runnable.abatch(
         [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
@@ -263,13 +264,15 @@ def _generate(input: Iterator) -> Iterator[str]:
 
 
 def _generate_immediate_error(input: Iterator) -> Iterator[str]:
-    raise ValueError
+    msg = "immmediate error"
+    raise ValueError(msg)
     yield ""
 
 
 def _generate_delayed_error(input: Iterator) -> Iterator[str]:
     yield ""
-    raise ValueError
+    msg = "delayed error"
+    raise ValueError(msg)
 
 
 def test_fallbacks_stream() -> None:
@@ -278,10 +281,10 @@ def test_fallbacks_stream() -> None:
     )
     assert list(runnable.stream({})) == list("foo bar")
 
-    with pytest.raises(ValueError):
-        runnable = RunnableGenerator(_generate_delayed_error).with_fallbacks(
-            [RunnableGenerator(_generate)]
-        )
+    runnable = RunnableGenerator(_generate_delayed_error).with_fallbacks(
+        [RunnableGenerator(_generate)]
+    )
+    with pytest.raises(ValueError, match="delayed error"):
         list(runnable.stream({}))
 
 
@@ -291,13 +294,15 @@ async def _agenerate(input: AsyncIterator) -> AsyncIterator[str]:
 
 
 async def _agenerate_immediate_error(input: AsyncIterator) -> AsyncIterator[str]:
-    raise ValueError
+    msg = "immmediate error"
+    raise ValueError(msg)
     yield ""
 
 
 async def _agenerate_delayed_error(input: AsyncIterator) -> AsyncIterator[str]:
     yield ""
-    raise ValueError
+    msg = "delayed error"
+    raise ValueError(msg)
 
 
 async def test_fallbacks_astream() -> None:
@@ -308,12 +313,11 @@ async def test_fallbacks_astream() -> None:
     async for c in runnable.astream({}):
         assert c == next(expected)
 
-    with pytest.raises(ValueError):
-        runnable = RunnableGenerator(_agenerate_delayed_error).with_fallbacks(
-            [RunnableGenerator(_agenerate)]
-        )
-        async for _ in runnable.astream({}):
-            pass
+    runnable = RunnableGenerator(_agenerate_delayed_error).with_fallbacks(
+        [RunnableGenerator(_agenerate)]
+    )
+    with pytest.raises(ValueError, match="delayed error"):
+        _ = [_ async for _ in runnable.astream({})]
 
 
 class FakeStructuredOutputModel(BaseChatModel):
