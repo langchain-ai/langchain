@@ -313,8 +313,8 @@ class PyPDFParser(BaseBlobParser):
                     images.append(xObject[obj].get_data())
                 elif (
                         isinstance(xObject[obj]['/Filter'], list)
-                        and xObject[obj]['/Filter'] and
-                        xObject[obj]['/Filter'][0][1:] in _PDF_FILTER_WITH_LOSS
+                        and xObject[obj]['/Filter']
+                        and xObject[obj]['/Filter'][0][1:] in _PDF_FILTER_WITH_LOSS
                 ):
                     images.append(xObject[obj].get_data())
                 else:
