@@ -221,8 +221,8 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         str: ASCII representation
 
     Example:
-        >>> vertices = [1, 2, 3, 4]
-        >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
+        >>> vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+        >>> edges = [(1, 2, None, None), (2, 3, None, None), (2, 4, None, None), (1, 4, None, None)]
         >>> print(draw_ascii(vertices, edges))
         +---+     +---+
         | 3 |     | 4 |
