@@ -1,3 +1,4 @@
+import re
 import warnings
 from pathlib import Path
 from typing import Any, Union, cast
@@ -165,15 +166,14 @@ def test_create_system_message_prompt_list_template_partial_variables_not_null()
         {variables}
         """
 
-    try:
-        graph_analyst_template = SystemMessagePromptTemplate.from_template(
+    with pytest.raises(
+        ValueError, match="Partial variables are not supported for list of templates."
+    ):
+        _ = SystemMessagePromptTemplate.from_template(
             template=[graph_creator_content1, graph_creator_content2],
             input_variables=["variables"],
             partial_variables={"variables": "foo"},
         )
-        graph_analyst_template.format(variables="foo")
-    except ValueError as e:
-        assert str(e) == "Partial variables are not supported for list of templates."
 
 
 def test_message_prompt_template_from_template_file() -> None:
@@ -330,7 +330,7 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
 
 @pytest.mark.requires("jinja2")
 @pytest.mark.parametrize(
-    "template_format,image_type_placeholder,image_data_placeholder",
+    ("template_format", "image_type_placeholder", "image_data_placeholder"),
     [
         ("f-string", "{image_type}", "{image_data}"),
         ("mustache", "{{image_type}}", "{{image_data}}"),
@@ -393,7 +393,12 @@ def test_chat_prompt_template_with_messages(
 
 def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Got mismatched input_variables. Expected: set(). Got: ['foo']"
+        ),
+    ):
         ChatPromptTemplate(
             messages=messages,  # type: ignore[arg-type]
             input_variables=["foo"],
@@ -407,7 +412,10 @@ def test_chat_invalid_input_variables_extra() -> None:
 
 def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Got mismatched input_variables. Expected: {'foo'}. Got: []"),
+    ):
         ChatPromptTemplate(
             messages=messages,  # type: ignore[arg-type]
             input_variables=[],
@@ -481,7 +489,7 @@ async def test_chat_from_role_strings() -> None:
 
 
 @pytest.mark.parametrize(
-    "args,expected",
+    ("args", "expected"),
     [
         (
             ("human", "{question}"),
@@ -551,7 +559,7 @@ def test_chat_prompt_template_append_and_extend() -> None:
 
 def test_convert_to_message_is_strict() -> None:
     """Verify that _convert_to_message is strict."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unexpected message type: meow."):
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
@@ -762,14 +770,20 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
             ),
         ]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+    ):
         template.format_messages(
             name="R2D2",
             in_mem=in_mem,
             file_path="some/path",
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+    ):
         await template.aformat_messages(
             name="R2D2",
             in_mem=in_mem,
@@ -869,10 +883,10 @@ def test_chat_prompt_message_dict() -> None:
         HumanMessage(content="bar"),
     ]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid template: False"):
         ChatPromptTemplate([{"role": "system", "content": False}])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unexpected message type: foo."):
         ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 
