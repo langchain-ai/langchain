@@ -27,7 +27,6 @@ from langchain_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -658,7 +657,7 @@ def test_openai_structured_output(model: str) -> None:
     assert result.age == 27
 
 
-def test_structured_output_errors_with_legacy_models() -> None:
+def test_structured_output_works_with_legacy_models() -> None:
     class MyModel(BaseModel):
         """A Person"""
 
@@ -666,14 +665,9 @@ def test_structured_output_errors_with_legacy_models() -> None:
         age: int
 
     llm = ChatOpenAI(model="gpt-4").with_structured_output(MyModel)
-
-    with pytest.warns(UserWarning, match="with_structured_output"):
-        with pytest.raises(openai.BadRequestError):
-            _ = llm.invoke("I'm a 27 year old named Erick")
-
-    with pytest.warns(UserWarning, match="with_structured_output"):
-        with pytest.raises(openai.BadRequestError):
-            _ = list(llm.stream("I'm a 27 year old named Erick"))
+    output = llm.invoke("I'm a 27 year old named Erick")
+    assert output.name.lower() == "erick"
+    assert output.age == 27
 
 
 def test_openai_proxy() -> None:
@@ -1221,14 +1215,3 @@ def test_o1_doesnt_stream() -> None:
 def test_o1_stream_default_works() -> None:
     result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
     assert len(result) > 0
-
-
-def test_structured_output_old_model() -> None:
-    class Output(TypedDict):
-        """output."""
-
-        foo: str
-
-    llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
-    output = llm.invoke("bar")
-    assert "foo" in output
