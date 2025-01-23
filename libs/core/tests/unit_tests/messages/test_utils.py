@@ -663,7 +663,7 @@ def create_image_data() -> str:
 
 def create_base64_image(format: str = "jpeg") -> str:
     data = create_image_data()
-    return f"data:image/{format};base64,{data}"  # noqa: E501
+    return f"data:image/{format};base64,{data}"
 
 
 def test_convert_to_openai_messages_single_message() -> None:

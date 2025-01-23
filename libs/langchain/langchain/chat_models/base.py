@@ -590,7 +590,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
             queued_declarative_operations.append(
-                ("with_config", (), {"config": remaining_config})
+                (
+                    "with_config",
+                    (),
+                    {"config": remaining_config},
+                )
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},

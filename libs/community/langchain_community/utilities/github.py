@@ -813,6 +813,56 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return f"Failed to create a review request with error {e}"
 
+    def get_latest_release(self) -> str:
+        """
+        Fetches the latest release of the repository.
+
+        Returns:
+            str: The latest release
+        """
+        release = self.github_repo_instance.get_latest_release()
+        return (
+            f"Latest title: {release.title} "
+            f"tag: {release.tag_name} "
+            f"body: {release.body}"
+        )
+
+    def get_releases(self) -> str:
+        """
+        Fetches all releases of the repository.
+
+        Returns:
+            str: The releases
+        """
+        releases = self.github_repo_instance.get_releases()
+        max_results = min(5, releases.totalCount)
+        results = [f"Top {max_results} results:"]
+        for release in releases[:max_results]:
+            results.append(
+                f"Title: {release.title}, "
+                f"Tag: {release.tag_name}, "
+                f"Body: {release.body}"
+            )
+
+        return "\n".join(results)
+
+    def get_release(self, tag_name: str) -> str:
+        """
+        Fetches a specific release of the repository.
+
+        Parameters:
+            tag_name(str): The tag name of the release
+
+        Returns:
+            str: The release
+        """
+        release = self.github_repo_instance.get_release(tag_name)
+        return (
+            f"Release: {release.title} "
+            f"tag: {release.tag_name} "
+            f"body: {release.body}"
+        )
+
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issue":
             return json.dumps(self.get_issue(int(query)))
@@ -854,5 +904,11 @@ class GitHubAPIWrapper(BaseModel):
             return self.search_code(query)
         elif mode == "create_review_request":
             return self.create_review_request(query)
+        elif mode == "get_latest_release":
+            return self.get_latest_release()
+        elif mode == "get_releases":
+            return self.get_releases()
+        elif mode == "get_release":
+            return self.get_release(query)
         else:
             raise ValueError("Invalid mode" + mode)

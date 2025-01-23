@@ -117,7 +117,6 @@ def test_default_add_documents(vs_class: type[VectorStore]) -> None:
     """Test that we can implement the upsert method of the CustomVectorStore
     class without violating the Liskov Substitution Principle.
     """
-
     store = vs_class()
 
     # Check upsert with id

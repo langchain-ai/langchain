@@ -100,7 +100,10 @@ class ChatModelTests(BaseStandardTests):
     def model(self) -> BaseChatModel:
         """:private:"""
         return self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
+            **{
+                **self.standard_chat_model_params,
+                **self.chat_model_params,
+            }
         )
 
     @pytest.fixture
@@ -511,7 +514,10 @@ class ChatModelUnitTests(ChatModelTests):
             2. The model accommodates standard parameters: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
         """  # noqa: E501
         model = self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
+            **{
+                **self.standard_chat_model_params,
+                **self.chat_model_params,
+            }
         )
         assert model is not None
 
@@ -673,7 +679,7 @@ class ChatModelUnitTests(ChatModelTests):
         if not self.chat_model_class.is_lc_serializable():
             pytest.skip("Model is not serializable.")
         else:
-            env_params, model_params, expected_attrs = self.init_from_env_params
+            env_params, _model_params, _expected_attrs = self.init_from_env_params
             with mock.patch.dict(os.environ, env_params):
                 ser = dumpd(model)
                 assert ser == snapshot(name="serialized")

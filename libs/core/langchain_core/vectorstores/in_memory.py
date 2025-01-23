@@ -189,7 +189,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -221,7 +221,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -258,8 +258,7 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.add_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
@@ -268,7 +267,7 @@ class InMemoryVectorStore(VectorStore):
         vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
@@ -284,8 +283,7 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.aadd_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
@@ -298,7 +296,7 @@ class InMemoryVectorStore(VectorStore):
         )
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
