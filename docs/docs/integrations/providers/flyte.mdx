@@ -25,7 +25,8 @@ First, import the necessary dependencies to support your LangChain experiments.
 import os
 
 from flytekit import ImageSpec, task
-from langchain.agents import AgentType, initialize_agent, load_tools
+from langgraph.prebuilt import create_react_agent
+from langchain.agents import load_tools
 from langchain.callbacks import FlyteCallbackHandler
 from langchain.chains import LLMChain
 from langchain_openai import ChatOpenAI
@@ -124,12 +125,10 @@ def langchain_agent() -> str:
     tools = load_tools(
         ["serpapi", "llm-math"], llm=llm, callbacks=[FlyteCallbackHandler()]
     )
-    agent = initialize_agent(
-        tools,
-        llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        callbacks=[FlyteCallbackHandler()],
-        verbose=True,
+    agent = create_react_agent(
+        model=llm,
+        tools=tools,
+        debug=True,
     )
     return agent.run(
         "Who is Leonardo DiCaprio's girlfriend? Could you calculate her current age and raise it to the power of 0.43?"
