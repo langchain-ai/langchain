@@ -350,3 +350,8 @@ packages:
   path: .
   repo: pipeshift-org/langchain-pipeshift
   downloads: 115
+- name: langchain-payman-tool
+  path: .
+  repo: paymanai/langchain-payman-tool
+  downloads: 0
+  downloads_updated_at: "2025-01-22T00:00:00+00:00"
