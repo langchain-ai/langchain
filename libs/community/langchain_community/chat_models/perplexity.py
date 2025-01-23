@@ -13,9 +13,11 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Literal
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -35,15 +37,55 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     from_env,
     get_pydantic_field_names,
 )
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
+
+_BM = TypeVar("_BM", bound=BaseModel)
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
+_DictOrPydantic = Union[Dict, _BM]
 
 logger = logging.getLogger(__name__)
 
+def _convert_to_openai_response_format(
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
+) -> Union[Dict, TypeBaseModel]:
+    if isinstance(schema, type) and is_basemodel_subclass(schema):
+        return schema
+
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
+        response_format = schema
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
+        response_format = {"type": "json_schema", "json_schema": schema}
+    else:
+        if strict is None:
+            if isinstance(schema, dict) and isinstance(schema.get("strict"), bool):
+                strict = schema["strict"]
+            else:
+                strict = False
+        function = convert_to_openai_function(schema, strict=strict)
+        function["schema"] = function.pop("parameters")
+        response_format = {"type": "json_schema", "json_schema": function}
+
+    if strict is not None and strict is not response_format["json_schema"].get(
+        "strict"
+    ):
+        msg = (
+            f"Output schema already has 'strict' value set to "
+            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
+            f"with_structured_output as {strict}. Please make sure that "
+            f"'strict' is only specified in one place."
+        )
+        raise ValueError(msg)
+    return response_format
 
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
@@ -282,74 +324,21 @@ class ChatPerplexity(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "perplexitychat"
-    
+
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
+        method: Literal["json_schema"] = "json_schema",
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        """
-        """  # noqa: E501
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
-        if strict is not None and method == "json_mode":
-            raise ValueError(
-                "Argument `strict` is not supported with `method`='json_mode'"
-            )
-        is_pydantic_schema = _is_pydantic_class(schema)
-
-        # Check for Pydantic BaseModel V1
-        if (
-            method == "json_schema"
-            and is_pydantic_schema
-            and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
-        ):
-            warnings.warn(
-                "Received a Pydantic BaseModel V1 schema. This is not supported by "
-                'method="json_schema". Please use method="function_calling" '
-                "or specify schema via JSON Schema or Pydantic V2 BaseModel. "
-                'Overriding to method="function_calling".'
-            )
-            method = "function_calling"
-
-        if method == "function_calling":
+        """ """  # noqa: E501
+        if method == "json_schema":
             if schema is None:
                 raise ValueError(
-                    "schema must be specified when method is not 'json_mode'. "
-                    "Received None."
-                )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            bind_kwargs = self._filter_disabled_params(
-                tool_choice=tool_name, parallel_tool_calls=False, strict=strict
-            )
-
-            llm = self.bind_tools([schema], **bind_kwargs)
-            if is_pydantic_schema:
-                output_parser: Runnable = PydanticToolsParser(
-                    tools=[schema],  # type: ignore[list-item]
-                    first_tool_only=True,  # type: ignore[list-item]
-                )
-            else:
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=tool_name, first_tool_only=True
-                )
-        elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
-        elif method == "json_schema":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is not 'json_mode'. "
+                    "schema must be specified when method is not 'json_schema'. "
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
@@ -362,8 +351,7 @@ class ChatPerplexity(BaseChatModel):
                 output_parser = JsonOutputParser()
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                f"Unrecognized method argument. Expected 'json_schema' Received: '{method}'"
             )
 
         if include_raw:
