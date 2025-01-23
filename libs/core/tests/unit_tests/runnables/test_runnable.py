@@ -3475,9 +3475,7 @@ def test_deep_stream() -> None:
 
     stream = chain.stream({"question": "What up"})
 
-    chunks = []
-    for chunk in stream:
-        chunks.append(chunk)
+    chunks = list(stream)
 
     assert len(chunks) == len("foo-lish")
     assert "".join(chunks) == "foo-lish"
@@ -3501,9 +3499,7 @@ def test_deep_stream_assign() -> None:
 
     stream = chain.stream({"question": "What up"})
 
-    chunks = []
-    for chunk in stream:
-        chunks.append(chunk)
+    chunks = list(stream)
 
     assert len(chunks) == len("foo-lish")
     assert add(chunks) == {"str": "foo-lish"}
@@ -3601,9 +3597,7 @@ async def test_deep_astream() -> None:
 
     stream = chain.astream({"question": "What up"})
 
-    chunks = []
-    async for chunk in stream:
-        chunks.append(chunk)
+    chunks = [chunk async for chunk in stream]
 
     assert len(chunks) == len("foo-lish")
     assert "".join(chunks) == "foo-lish"
@@ -3627,9 +3621,7 @@ async def test_deep_astream_assign() -> None:
 
     stream = chain.astream({"question": "What up"})
 
-    chunks = []
-    async for chunk in stream:
-        chunks.append(chunk)
+    chunks = [chunk async for chunk in stream]
 
     assert len(chunks) == len("foo-lish")
     assert add(chunks) == {"str": "foo-lish"}
@@ -3725,9 +3717,7 @@ def test_runnable_sequence_transform() -> None:
 
     stream = chain.transform(llm.stream("Hi there!"))
 
-    chunks = []
-    for chunk in stream:
-        chunks.append(chunk)
+    chunks = list(stream)
 
     assert len(chunks) == len("foo-lish")
     assert "".join(chunks) == "foo-lish"
@@ -3740,9 +3730,7 @@ async def test_runnable_sequence_atransform() -> None:
 
     stream = chain.atransform(llm.astream("Hi there!"))
 
-    chunks = []
-    async for chunk in stream:
-        chunks.append(chunk)
+    chunks = [chunk async for chunk in stream]
 
     assert len(chunks) == len("foo-lish")
     assert "".join(chunks) == "foo-lish"
