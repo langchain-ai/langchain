@@ -1367,7 +1367,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 method = "function_calling"
             # Check for incompatible model
-            if (
+            if self.model_name and (
                 self.model_name.startswith("gpt-3")
                 or self.model_name.startswith("gpt-4-")
                 or self.model_name == "gpt-4"
