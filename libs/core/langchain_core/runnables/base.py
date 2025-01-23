@@ -4457,7 +4457,7 @@ class RunnableLambda(Runnable[Input, Output]):
             module_name=module,
         )
 
-    @property
+    @functools.cached_property
     def deps(self) -> list[Runnable]:
         """The dependencies of this Runnable.
 
