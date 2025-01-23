@@ -350,6 +350,7 @@ packages:
   path: .
   repo: tilotech/tilores-langchain
   provider_page: tilores
+  name_title: Tilores
   downloads: 0
 - name: langchain-pipeshift
   path: .
