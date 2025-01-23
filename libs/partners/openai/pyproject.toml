@@ -67,6 +67,7 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-cov = "^4.1.0"
 pytest-socket = "^0.6.0"
+pytest-xdist = "^3.6.1"
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
