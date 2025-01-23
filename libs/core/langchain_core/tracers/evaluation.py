@@ -139,7 +139,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 f"{evaluator.__class__.__name__}: {repr(e)}",
                 exc_info=True,
             )
-            raise e
+            raise
         example_id = str(run.reference_example_id)
         with self.lock:
             for res in eval_results:
