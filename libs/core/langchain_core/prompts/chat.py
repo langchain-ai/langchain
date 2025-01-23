@@ -1465,7 +1465,7 @@ def _convert_to_message(
         if isinstance(message, dict):
             if set(message.keys()) != {"content", "role"}:
                 msg = (
-                    "Expected dict to have keys 'role' and 'content'."
+                    "Expected dict to have exact keys 'role' and 'content'."
                     f" Got: {message}"
                 )
                 raise ValueError(msg)
