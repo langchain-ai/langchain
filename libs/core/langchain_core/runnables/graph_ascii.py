@@ -223,7 +223,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     Example:
         >>> vertices = [1, 2, 3, 4]
         >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
-        >>> print(draw(vertices, edges))
+        >>> print(draw_ascii(vertices, edges))
         +---+     +---+
         | 3 |     | 4 |
         +---+    *+---+
