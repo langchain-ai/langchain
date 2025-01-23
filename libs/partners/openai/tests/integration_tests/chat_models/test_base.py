@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
+from typing_extensions import TypedDict
 
 import httpx
 import openai
@@ -1220,3 +1221,12 @@ def test_o1_doesnt_stream() -> None:
 def test_o1_stream_default_works() -> None:
     result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
     assert len(result) > 0
+
+def test_structured_output_old_model() -> None:
+    class Output(TypedDict):
+        """output."""
+        foo: str
+
+    llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
+    output = llm.invoke("bar")
+    assert "foo" in output
