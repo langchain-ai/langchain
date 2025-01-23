@@ -84,7 +84,6 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     Returns:
         ChatResult: Chat result.
     """
-
     generation = next(stream, None)
     if generation:
         generation += list(stream)
@@ -112,7 +111,6 @@ async def agenerate_from_stream(
     Returns:
         ChatResult: Chat result.
     """
-
     chunks = [chunk async for chunk in stream]
     return await run_in_executor(None, generate_from_stream, iter(chunks))
 
@@ -521,7 +519,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
-
         # get default provider from class name
         default_provider = self.__class__.__name__
         if default_provider.startswith("Chat"):
@@ -955,7 +952,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
 
     async def _agenerate(
         self,
@@ -964,7 +961,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return await run_in_executor(
             None,
             self._generate,

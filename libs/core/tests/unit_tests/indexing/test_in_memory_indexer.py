@@ -1,4 +1,4 @@
-"""Test in memory indexer"""
+"""Test in memory indexer."""
 
 from collections.abc import AsyncGenerator, Generator
 

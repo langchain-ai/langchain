@@ -404,7 +404,8 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
         """Get a new RunnableConfigurableFields with the specified
-        configurable fields."""
+        configurable fields.
+        """
         return self.default.configurable_fields(**{**self.fields, **kwargs})
 
     def _prepare(

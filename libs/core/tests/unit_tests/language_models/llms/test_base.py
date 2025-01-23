@@ -160,7 +160,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
-            """Top Level call"""
+            """Top Level call."""
             raise NotImplementedError
 
         def _stream(
@@ -197,7 +197,7 @@ async def test_astream_implementation_uses_astream() -> None:
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
-            """Top Level call"""
+            """Top Level call."""
             raise NotImplementedError
 
         async def _astream(

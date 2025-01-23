@@ -54,9 +54,9 @@ async def test_same_event_loop() -> None:
         # To verify that the producer and consumer are running in parallel, we
         # expect the delta_time to be smaller than the sleep delay in the producer
         # * # of items = 30 ms
-        assert (
-            math.isclose(delta_time, 0, abs_tol=0.010) is True
-        ), f"delta_time: {delta_time}"
+        assert math.isclose(delta_time, 0, abs_tol=0.010) is True, (
+            f"delta_time: {delta_time}"
+        )
 
 
 async def test_queue_for_streaming_via_sync_call() -> None:
@@ -107,9 +107,9 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         # To verify that the producer and consumer are running in parallel, we
         # expect the delta_time to be smaller than the sleep delay in the producer
         # * # of items = 30 ms
-        assert (
-            math.isclose(delta_time, 0, abs_tol=0.010) is True
-        ), f"delta_time: {delta_time}"
+        assert math.isclose(delta_time, 0, abs_tol=0.010) is True, (
+            f"delta_time: {delta_time}"
+        )
 
 
 def test_send_to_closed_stream() -> None:

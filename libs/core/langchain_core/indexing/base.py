@@ -288,7 +288,6 @@ class InMemoryRecordManager(RecordManager):
                 ids.
             ValueError: If time_at_least is in the future.
         """
-
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
