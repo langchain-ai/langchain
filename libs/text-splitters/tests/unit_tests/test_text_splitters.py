@@ -1229,12 +1229,7 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
     """Test markdown splitter by header: Fenced code block."""
 
     markdown_document = (
-        "# This is a Header\n\n"
-        f"{fence}\n"
-        "foo()\n"
-        "# Not a header\n"
-        "bar()\n"
-        f"{fence}"
+        f"# This is a Header\n\n{fence}\nfoo()\n# Not a header\nbar()\n{fence}"
     )
 
     headers_to_split_on = [
@@ -1299,9 +1294,7 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
 def test_md_header_text_splitter_with_invisible_characters(characters: str) -> None:
     """Test markdown splitter by header: Fenced code block."""
 
-    markdown_document = (
-        f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
-    )
+    markdown_document = f"{characters}# Foo\n\nfoo()\n{characters}## Bar\n\nbar()"
 
     headers_to_split_on = [
         ("#", "Header 1"),
@@ -2041,9 +2034,9 @@ def test_haskell_code_splitter() -> None:
 
 @pytest.fixture
 @pytest.mark.requires("bs4")
-def html_header_splitter_splitter_factory() -> (
-    Callable[[List[Tuple[str, str]]], HTMLHeaderTextSplitter]
-):
+def html_header_splitter_splitter_factory() -> Callable[
+    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
+]:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.

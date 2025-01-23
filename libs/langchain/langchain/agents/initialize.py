@@ -84,8 +84,7 @@ def initialize_agent(
             pass
     else:
         raise ValueError(
-            "Somehow both `agent` and `agent_path` are None, "
-            "this should never happen."
+            "Somehow both `agent` and `agent_path` are None, this should never happen."
         )
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,
