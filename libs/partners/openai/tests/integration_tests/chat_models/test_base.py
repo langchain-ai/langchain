@@ -642,7 +642,7 @@ def test_disable_parallel_tool_calling() -> None:
     assert len(result.tool_calls) == 1
 
 
-@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1"])
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
@@ -655,19 +655,6 @@ def test_openai_structured_output(model: str) -> None:
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
-
-
-def test_structured_output_works_with_legacy_models() -> None:
-    class MyModel(BaseModel):
-        """A Person"""
-
-        name: str
-        age: int
-
-    llm = ChatOpenAI(model="gpt-4").with_structured_output(MyModel)
-    output = llm.invoke("I'm a 27 year old named Erick")
-    assert output.name.lower() == "erick"
-    assert output.age == 27
 
 
 def test_openai_proxy() -> None:
