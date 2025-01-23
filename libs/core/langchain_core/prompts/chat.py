@@ -1461,7 +1461,15 @@ def _convert_to_message(
         _message = _create_template_from_message_type(
             "human", message, template_format=template_format
         )
-    elif isinstance(message, tuple):
+    elif isinstance(message, (tuple, dict)):
+        if isinstance(message, dict):
+            if sorted(message.keys()) != ["content", "role"]:
+                msg = (
+                    "Expected dict to have keys 'role' and 'content'."
+                    f" Got: {message}"
+                )
+                raise ValueError(msg)
+            message = (message["role"], message["content"])
         if len(message) != 2:
             msg = f"Expected 2-tuple of (role, template), got {message}"
             raise ValueError(msg)
