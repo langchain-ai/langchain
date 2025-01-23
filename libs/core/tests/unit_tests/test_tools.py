@@ -772,8 +772,8 @@ def test_exception_handling_callable() -> None:
 
 
 def test_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError())
-    with pytest.raises(ValueError):
+    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    with pytest.raises(ValueError, match="some error"):
         _tool.run({})
 
 
@@ -803,8 +803,8 @@ async def test_async_exception_handling_callable() -> None:
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError())
-    with pytest.raises(ValueError):
+    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    with pytest.raises(ValueError, match="some error"):
         await _tool.arun({})
 
 
@@ -984,7 +984,7 @@ def test_optional_subset_model_rewrite() -> None:
 
 
 @pytest.mark.parametrize(
-    "inputs, expected",
+    ("inputs", "expected"),
     [
         # Check not required
         ({"bar": "bar"}, {"bar": "bar", "baz": 3, "buzz": "buzz"}),
@@ -1319,6 +1319,10 @@ def test_tool_invalid_docstrings() -> None:
         """
         return bar
 
+    for func in {foo3, foo4}:
+        with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
+            _ = tool(func, parse_docstring=True)
+
     def foo5(bar: str, baz: int) -> str:
         """The foo.
 
@@ -1328,9 +1332,10 @@ def test_tool_invalid_docstrings() -> None:
         """
         return bar
 
-    for func in [foo3, foo4, foo5]:
-        with pytest.raises(ValueError):
-            _ = tool(func, parse_docstring=True)
+    with pytest.raises(
+        ValueError, match="Arg banana in docstring not found in function signature."
+    ):
+        _ = tool(foo5, parse_docstring=True)
 
 
 def test_tool_annotated_descriptions() -> None:
@@ -2000,9 +2005,9 @@ def test__is_message_content_block(obj: Any, expected: bool) -> None:
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
-        ["foo", True],
-        [valid_tool_result_blocks, True],
-        [invalid_tool_result_blocks, False],
+        ("foo", True),
+        (valid_tool_result_blocks, True),
+        (invalid_tool_result_blocks, False),
     ],
 )
 def test__is_message_content_type(obj: Any, expected: bool) -> None:
@@ -2264,7 +2269,8 @@ def test_imports() -> None:
         "InjectedToolArg",
     ]
     for module_name in expected_all:
-        assert hasattr(tools, module_name) and getattr(tools, module_name) is not None
+        assert hasattr(tools, module_name)
+        assert getattr(tools, module_name) is not None
 
 
 def test_structured_tool_direct_init() -> None:
@@ -2313,7 +2319,11 @@ def test_tool_injected_tool_call_id() -> None:
         }
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="When tool includes an InjectedToolCallId argument, "
+        "tool must always be invoked with a full model ToolCall",
+    ):
         assert foo.invoke({"x": 0})
 
     @tool
@@ -2337,7 +2347,7 @@ def test_tool_uninjected_tool_call_id() -> None:
         """Foo."""
         return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="1 validation error for foo"):
         foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
 
     assert foo.invoke(

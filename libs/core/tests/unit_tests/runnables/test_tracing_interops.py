@@ -99,7 +99,8 @@ def test_config_traceable_handoff() -> None:
         rt = get_current_run_tree()
         assert rt
         assert rt.session_name == "another-flippin-project"
-        assert rt.parent_run and rt.parent_run.name == "my_parent_function"
+        assert rt.parent_run
+        assert rt.parent_run.name == "my_parent_function"
         return my_child_function(a)
 
     def my_parent_function(a: int) -> int:
@@ -420,7 +421,7 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
 
-@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+@pytest.mark.parametrize("parent_type", ["ls", "lc"])
 def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
