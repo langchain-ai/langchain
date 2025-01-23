@@ -1463,7 +1463,7 @@ def _convert_to_message(
         )
     elif isinstance(message, (tuple, dict)):
         if isinstance(message, dict):
-            if sorted(message.keys()) != ["content", "role"]:
+            if set(message.keys()) != {"content", "role"}:
                 msg = (
                     "Expected dict to have keys 'role' and 'content'."
                     f" Got: {message}"
