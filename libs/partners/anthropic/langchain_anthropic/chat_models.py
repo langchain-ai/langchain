@@ -767,7 +767,7 @@ class ChatAnthropic(BaseChatModel):
         if (
             len(content) == 1
             and content[0]["type"] == "text"
-            and "citations" not in content[0]
+            and not content[0].get("citations")
         ):
             msg = AIMessage(content=content[0]["text"])
         elif any(block["type"] == "tool_use" for block in content):
