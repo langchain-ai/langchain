@@ -4347,7 +4347,7 @@ class RunnableLambda(Runnable[Input, Output]):
         except AttributeError:
             pass
 
-        self._repr: str | None = None
+        self._repr: Optional[str] = None
 
     @property
     @override
