@@ -27,6 +27,7 @@ from langchain_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -1220,3 +1221,14 @@ def test_o1_doesnt_stream() -> None:
 def test_o1_stream_default_works() -> None:
     result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
     assert len(result) > 0
+
+
+def test_structured_output_old_model() -> None:
+    class Output(TypedDict):
+        """output."""
+
+        foo: str
+
+    llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
+    output = llm.invoke("bar")
+    assert "foo" in output
