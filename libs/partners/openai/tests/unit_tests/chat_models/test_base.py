@@ -891,10 +891,11 @@ def test_init_o1() -> None:
 def test_structured_output_old_model() -> None:
     class Output(TypedDict):
         """output."""
+
         foo: str
 
     with pytest.warns(match="Cannot use method='json_schema'"):
         llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
     # assert tool calling was used instead of json_schema
-    assert "tools" in llm.steps[0].kwargs
-    assert "response_format" not in llm.steps[0].kwargs
+    assert "tools" in llm.steps[0].kwargs  # type: ignore
+    assert "response_format" not in llm.steps[0].kwargs  # type: ignore

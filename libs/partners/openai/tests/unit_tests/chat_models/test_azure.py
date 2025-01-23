@@ -3,6 +3,9 @@
 import os
 from unittest import mock
 
+import pytest
+from typing_extensions import TypedDict
+
 from langchain_openai import AzureChatOpenAI
 
 
@@ -64,6 +67,7 @@ def test_initialize_azure_openai_with_openai_api_base_set() -> None:
 def test_structured_output_old_model() -> None:
     class Output(TypedDict):
         """output."""
+
         foo: str
 
     with pytest.warns(match="Cannot use method='json_schema'"):
@@ -75,5 +79,5 @@ def test_structured_output_old_model() -> None:
         ).with_structured_output(Output)
 
     # assert tool calling was used instead of json_schema
-    assert "tools" in llm.steps[0].kwargs
-    assert "response_format" not in llm.steps[0].kwargs
+    assert "tools" in llm.steps[0].kwargs  # type: ignore
+    assert "response_format" not in llm.steps[0].kwargs  # type: ignore
