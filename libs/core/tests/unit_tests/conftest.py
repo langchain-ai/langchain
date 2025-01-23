@@ -6,7 +6,6 @@ from uuid import UUID
 
 import pytest
 from blockbuster import BlockBuster, blockbuster_ctx
-from pytest import Config, Function, Parser
 from pytest_mock import MockerFixture
 
 
@@ -36,7 +35,7 @@ def blockbuster() -> Iterator[BlockBuster]:
         yield bb
 
 
-def pytest_addoption(parser: Parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add custom command line options to pytest."""
     parser.addoption(
         "--only-extended",
@@ -50,7 +49,9 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Sequence[pytest.Function]
+) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.
@@ -118,7 +119,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
     side_effect = (
         UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)

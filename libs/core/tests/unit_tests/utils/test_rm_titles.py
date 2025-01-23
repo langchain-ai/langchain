@@ -220,7 +220,7 @@ output5 = {
 
 
 @pytest.mark.parametrize(
-    "schema, output",
+    ("schema", "output"),
     [
         (schema1, output1),
         (schema2, output2),
