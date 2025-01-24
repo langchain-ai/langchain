@@ -20,7 +20,7 @@ Install the integration package:
 pip install langchain-groq
 ```
 
-Request an [API key](https://wow.groq.com) and set it as an environment variable
+Request an [API key](https://console.groq.com/login?utm_source=langchain&utm_content=package_readme) and set it as an environment variable
 
 ```bash
 export GROQ_API_KEY=gsk_...
