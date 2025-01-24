@@ -16,7 +16,10 @@ from langchain_community.tools.github.prompt import (
     GET_FILES_FROM_DIRECTORY_PROMPT,
     GET_ISSUE_PROMPT,
     GET_ISSUES_PROMPT,
+    GET_LATEST_RELEASE_PROMPT,
     GET_PR_PROMPT,
+    GET_RELEASE_PROMPT,
+    GET_RELEASES_PROMPT,
     LIST_BRANCHES_IN_REPO_PROMPT,
     LIST_PRS_PROMPT,
     LIST_PULL_REQUEST_FILES,
@@ -152,6 +155,15 @@ class SearchIssuesAndPRs(BaseModel):
     )
 
 
+class TagName(BaseModel):
+    """Schema for operations that require a tag name as input."""
+
+    tag_name: str = Field(
+        ...,
+        description="The tag name of the release, e.g. `v1.0.0`.",
+    )
+
+
 class GitHubToolkit(BaseToolkit):
     """GitHub Toolkit.
 
@@ -218,6 +230,25 @@ class GitHubToolkit(BaseToolkit):
             Search code
             Create review request
 
+    Include release tools:
+        By default, the toolkit does not include release-related tools.
+        You can include them by setting ``include_release_tools=True`` when
+        initializing the toolkit:
+
+        .. code-block:: python
+
+            toolkit = GitHubToolkit.from_github_api_wrapper(
+                github, include_release_tools=True
+            )
+
+        Setting ``include_release_tools=True`` will include the following tools:
+
+        .. code-block:: none
+
+            Get latest release
+            Get releases
+            Get release
+
     Use within an agent:
         .. code-block:: python
 
@@ -268,12 +299,14 @@ class GitHubToolkit(BaseToolkit):
 
     @classmethod
     def from_github_api_wrapper(
-        cls, github_api_wrapper: GitHubAPIWrapper
+        cls, github_api_wrapper: GitHubAPIWrapper, include_release_tools: bool = False
     ) -> "GitHubToolkit":
         """Create a GitHubToolkit from a GitHubAPIWrapper.
 
         Args:
             github_api_wrapper: GitHubAPIWrapper. The GitHub API wrapper.
+            include_release_tools: bool. Whether to include release-related tools.
+                Defaults to False.
 
         Returns:
             GitHubToolkit. The GitHub toolkit.
@@ -406,6 +439,29 @@ class GitHubToolkit(BaseToolkit):
                 "args_schema": CreateReviewRequest,
             },
         ]
+
+        release_operations: List[Dict] = [
+            {
+                "mode": "get_latest_release",
+                "name": "Get latest release",
+                "description": GET_LATEST_RELEASE_PROMPT,
+                "args_schema": NoInput,
+            },
+            {
+                "mode": "get_releases",
+                "name": "Get releases",
+                "description": GET_RELEASES_PROMPT,
+                "args_schema": NoInput,
+            },
+            {
+                "mode": "get_release",
+                "name": "Get release",
+                "description": GET_RELEASE_PROMPT,
+                "args_schema": TagName,
+            },
+        ]
+
+        operations = operations + (release_operations if include_release_tools else [])
         tools = [
             GitHubAction(
                 name=action["name"],

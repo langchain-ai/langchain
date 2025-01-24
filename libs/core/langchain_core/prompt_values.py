@@ -129,7 +129,8 @@ class ImagePromptValue(PromptValue):
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
-    For use in external schemas."""
+    For use in external schemas.
+    """
 
     messages: Sequence[AnyMessage]
     """Sequence of messages."""

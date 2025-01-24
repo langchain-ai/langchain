@@ -80,15 +80,15 @@ def _assert_events_equal_allow_superset_metadata(events: list, expected: list) -
 
 
 async def test_event_stream_with_simple_function_tool() -> None:
-    """Test the event stream with a function and tool"""
+    """Test the event stream with a function and tool."""
 
     def foo(x: int) -> dict:
-        """Foo"""
+        """Foo."""
         return {"x": 5}
 
     @tool
     def get_docs(x: int) -> list[Document]:
-        """Hello Doc"""
+        """Hello Doc."""
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -345,7 +345,7 @@ async def test_event_stream_with_triple_lambda() -> None:
 
 
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
-    """Test filtering based on tags / names"""
+    """Test filtering based on tags / names."""
 
     def reverse(s: str) -> str:
         """Reverse a string."""
@@ -795,7 +795,10 @@ async def test_astream_events_from_model() -> None:
 async def test_event_stream_with_simple_chain() -> None:
     """Test as event stream."""
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
     infinite_cycle = cycle(
@@ -1597,7 +1600,7 @@ async def test_event_stream_with_retry() -> None:
     def fail(inputs: str) -> None:
         """Simple func."""
         msg = "fail"
-        raise Exception(msg)
+        raise ValueError(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1681,7 +1684,10 @@ async def test_event_stream_with_retry() -> None:
 async def test_with_llm() -> None:
     """Test with regular llm."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
     llm = FakeStreamingListLLM(responses=["abc"])
 
@@ -1730,7 +1736,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     }
                 },
                 "event": "on_llm_start",
@@ -1743,7 +1749,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     },
                     "output": {
                         "generations": [
@@ -1822,7 +1828,7 @@ async def test_runnable_each() -> None:
 
 
 async def test_events_astream_config() -> None:
-    """Test that astream events support accepting config"""
+    """Test that astream events support accepting config."""
     infinite_cycle = cycle([AIMessage(content="hello world!", id="ai1")])
     good_world_on_repeat = cycle([AIMessage(content="Goodbye world", id="ai2")])
     model = GenericFakeChatModel(messages=infinite_cycle).configurable_fields(
@@ -1912,13 +1918,16 @@ async def test_runnable_with_message_history() -> None:
     store: dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
-        """Get a chat message history"""
+        """Get a chat message history."""
         if session_id not in store:
             store[session_id] = []
         return InMemoryHistory(messages=store[session_id])
 
     infinite_cycle = cycle(
-        [AIMessage(content="hello", id="ai3"), AIMessage(content="world", id="ai4")]
+        [
+            AIMessage(content="hello", id="ai3"),
+            AIMessage(content="world", id="ai4"),
+        ]
     )
 
     prompt = ChatPromptTemplate.from_messages(

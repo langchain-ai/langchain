@@ -253,9 +253,7 @@ class LangChainTracer(BaseTracer):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        """Append token event to LLM run and return the run."""
         return super()._llm_run_with_token_event(
             # Drop the chunk; we don't need to save it
             token,

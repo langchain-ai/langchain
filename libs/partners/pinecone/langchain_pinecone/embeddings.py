@@ -106,7 +106,6 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         self._client = client
 
         # Ensure async_client is lazily initialized
-        _ = self.async_client
         return self
 
     def _get_batch_iterator(self, texts: List[str]) -> Iterable:

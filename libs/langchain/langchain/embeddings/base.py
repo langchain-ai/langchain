@@ -13,6 +13,7 @@ _SUPPORTED_PROVIDERS = {
     "google_vertexai": "langchain_google_vertexai",
     "huggingface": "langchain_huggingface",
     "mistralai": "langchain_mistralai",
+    "ollama": "langchain_ollama",
     "openai": "langchain_openai",
 }
 
@@ -174,8 +175,7 @@ def init_embeddings(
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
         raise ValueError(
-            "Must specify model name. "
-            f"Supported providers are: {', '.join(providers)}"
+            f"Must specify model name. Supported providers are: {', '.join(providers)}"
         )
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)
@@ -210,6 +210,10 @@ def init_embeddings(
         from langchain_huggingface import HuggingFaceEmbeddings
 
         return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+    elif provider == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=model_name, **kwargs)
     else:
         raise ValueError(
             f"Provider '{provider}' is not supported.\n"
