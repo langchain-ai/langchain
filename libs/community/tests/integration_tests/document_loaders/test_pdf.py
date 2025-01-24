@@ -234,8 +234,6 @@ def test_standard_parameters(
         images_parser=None,
         images_inner_format="text",
         password=None,
-        extract_tables=None,
-        extract_tables_settings=None,
     )
     docs = loader.load()
     assert len(docs) == 16

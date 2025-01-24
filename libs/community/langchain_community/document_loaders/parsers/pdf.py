@@ -18,6 +18,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    cast,
 )
 from urllib.parse import urlparse
 
