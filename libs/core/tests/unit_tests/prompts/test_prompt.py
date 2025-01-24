@@ -348,7 +348,8 @@ def test_prompt_from_file() -> None:
 
 def test_prompt_from_file_with_partial_variables() -> None:
     """Test prompt can be successfully constructed from a file
-    with partial variables."""
+    with partial variables.
+    """
     # given
     template = "This is a {foo} test {bar}."
     partial_variables = {"bar": "baz"}

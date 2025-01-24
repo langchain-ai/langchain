@@ -630,7 +630,19 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
-@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1"])
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
@@ -643,24 +655,6 @@ def test_openai_structured_output(model: str) -> None:
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
-
-
-def test_structured_output_errors_with_legacy_models() -> None:
-    class MyModel(BaseModel):
-        """A Person"""
-
-        name: str
-        age: int
-
-    llm = ChatOpenAI(model="gpt-4").with_structured_output(MyModel)
-
-    with pytest.warns(UserWarning, match="with_structured_output"):
-        with pytest.raises(openai.BadRequestError):
-            _ = llm.invoke("I'm a 27 year old named Erick")
-
-    with pytest.warns(UserWarning, match="with_structured_output"):
-        with pytest.raises(openai.BadRequestError):
-            _ = list(llm.stream("I'm a 27 year old named Erick"))
 
 
 def test_openai_proxy() -> None:

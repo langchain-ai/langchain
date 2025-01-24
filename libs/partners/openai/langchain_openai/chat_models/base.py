@@ -1354,19 +1354,33 @@ class BaseChatOpenAI(BaseChatModel):
             )
         is_pydantic_schema = _is_pydantic_class(schema)
 
-        # Check for Pydantic BaseModel V1
-        if (
-            method == "json_schema"
-            and is_pydantic_schema
-            and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
-        ):
-            warnings.warn(
-                "Received a Pydantic BaseModel V1 schema. This is not supported by "
-                'method="json_schema". Please use method="function_calling" '
-                "or specify schema via JSON Schema or Pydantic V2 BaseModel. "
-                'Overriding to method="function_calling".'
-            )
-            method = "function_calling"
+        if method == "json_schema":
+            # Check for Pydantic BaseModel V1
+            if (
+                is_pydantic_schema and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
+            ):
+                warnings.warn(
+                    "Received a Pydantic BaseModel V1 schema. This is not supported by "
+                    'method="json_schema". Please use method="function_calling" '
+                    "or specify schema via JSON Schema or Pydantic V2 BaseModel. "
+                    'Overriding to method="function_calling".'
+                )
+                method = "function_calling"
+            # Check for incompatible model
+            if self.model_name and (
+                self.model_name.startswith("gpt-3")
+                or self.model_name.startswith("gpt-4-")
+                or self.model_name == "gpt-4"
+            ):
+                warnings.warn(
+                    f"Cannot use method='json_schema' with model {self.model_name} "
+                    f"since it doesn't support OpenAI's Structured Output API. You can "
+                    f"see supported models here: "
+                    f"https://platform.openai.com/docs/guides/structured-outputs#supported-models. "  # noqa: E501
+                    "To fix this warning, set `method='function_calling'. "
+                    "Overriding to method='function_calling'."
+                )
+                method = "function_calling"
 
         if method == "function_calling":
             if schema is None:
@@ -2486,7 +2500,7 @@ def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            "field. Received message:\n\n{ai_msg}"
+            f"field. Received message:\n\n{ai_msg}"
         )
 
 

@@ -444,6 +444,25 @@ def test_tool_use() -> None:
     assert len(chunks) > 1
 
 
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
 def test_anthropic_with_empty_text_block() -> None:
     """Anthropic SDK can return an empty text block."""
 
@@ -603,3 +622,30 @@ def test_pdf_document_input() -> None:
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
     assert len(result.content) > 0
+
+
+def test_citations() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "content",
+                        "content": [
+                            {"type": "text", "text": "The grass is green"},
+                            {"type": "text", "text": "The sky is blue"},
+                        ],
+                    },
+                    "citations": {"enabled": True},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ],
+        }
+    ]
+    response = llm.invoke(messages)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+    assert any("citations" in block for block in response.content)

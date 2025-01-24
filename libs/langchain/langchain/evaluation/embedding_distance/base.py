@@ -310,7 +310,10 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             Dict[str, Any]: The computed score.
         """
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["reference"]]
+            [
+                inputs["prediction"],
+                inputs["reference"],
+            ]
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)
@@ -427,7 +430,10 @@ class PairwiseEmbeddingDistanceEvalChain(
         """
         vectors = np.array(
             self.embeddings.embed_documents(
-                [inputs["prediction"], inputs["prediction_b"]]
+                [
+                    inputs["prediction"],
+                    inputs["prediction_b"],
+                ]
             )
         )
         score = self._compute_score(vectors)
@@ -449,7 +455,10 @@ class PairwiseEmbeddingDistanceEvalChain(
             Dict[str, Any]: The computed score.
         """
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["prediction_b"]]
+            [
+                inputs["prediction"],
+                inputs["prediction_b"],
+            ]
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)

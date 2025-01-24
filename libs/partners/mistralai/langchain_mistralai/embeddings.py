@@ -32,7 +32,8 @@ documents/chunks)"""
 class DummyTokenizer:
     """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
 
-    def encode_batch(self, texts: List[str]) -> List[List[str]]:
+    @staticmethod
+    def encode_batch(texts: List[str]) -> List[List[str]]:
         return [list(text) for text in texts]
 
 

@@ -899,7 +899,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
 
         custom_model = self.chat_model_class(
-            **{**self.chat_model_params, "stop": ["you"]}
+            **{
+                **self.chat_model_params,
+                "stop": ["you"],
+            }
         )
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
