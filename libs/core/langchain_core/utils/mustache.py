@@ -53,12 +53,13 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         # Look for the next tag and move the template to it
         literal, template = template.split(l_del, 1)
         _CURRENT_LINE += literal.count("\n")
-        return (literal, template)
 
     # There are no more tags in the template?
     except ValueError:
         # Then the rest of the template is a literal
         return (template, "")
+
+    return (literal, template)
 
 
 def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
