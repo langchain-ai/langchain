@@ -221,24 +221,37 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         str: ASCII representation
 
     Example:
-        >>> vertices = [1, 2, 3, 4]
-        >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
-        >>> print(draw(vertices, edges))
-        +---+     +---+
-        | 3 |     | 4 |
-        +---+    *+---+
-          *    **   *
-          *  **     *
-          * *       *
-        +---+       *
-        | 2 |      *
-        +---+     *
-             *    *
-              *  *
-               **
-             +---+
-             | 1 |
-             +---+
+
+        .. code-block:: python
+
+            from langchain_core.runnables.graph_ascii import draw_ascii
+
+            vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+            edges = [
+                (source, target, None, None)
+                for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
+            ]
+
+
+            print(draw_ascii(vertices, edges))
+
+        .. code-block:: none
+
+                 +---+
+                 | 1 |
+                 +---+
+                 *    *
+                *     *
+               *       *
+            +---+       *
+            | 2 |       *
+            +---+**     *
+              *    **   *
+              *      ** *
+              *        **
+            +---+     +---+
+            | 3 |     | 4 |
+            +---+     +---+
     """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
