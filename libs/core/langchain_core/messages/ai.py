@@ -363,6 +363,17 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             return self
         tool_calls = []
         invalid_tool_calls = []
+
+        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
+            invalid_tool_calls.append(
+                create_invalid_tool_call(
+                    name=chunk["name"],
+                    args=chunk["args"],
+                    id=chunk["id"],
+                    error=None,
+                )
+            )
+
         for chunk in self.tool_call_chunks:
             try:
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
@@ -375,17 +386,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         )
                     )
                 else:
-                    msg = "Malformed args."
-                    raise ValueError(msg)
+                    add_chunk_to_invalid_tool_calls(chunk)
             except Exception:
-                invalid_tool_calls.append(
-                    create_invalid_tool_call(
-                        name=chunk["name"],
-                        args=chunk["args"],
-                        id=chunk["id"],
-                        error=None,
-                    )
-                )
+                add_chunk_to_invalid_tool_calls(chunk)
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
         return self
