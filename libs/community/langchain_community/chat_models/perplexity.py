@@ -43,6 +43,12 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
 from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import (
+    PydanticBaseModel,
+    TypeBaseModel,
+    is_basemodel_subclass,
+)
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
@@ -51,12 +57,6 @@ _DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
 _DictOrPydantic = Union[Dict, _BM]
 
 logger = logging.getLogger(__name__)
-from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_core.utils.pydantic import (
-    PydanticBaseModel,
-    TypeBaseModel,
-    is_basemodel_subclass,
-)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -376,7 +376,8 @@ class ChatPerplexity(BaseChatModel):
                 output_parser = JsonOutputParser()
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected 'json_schema' Received: '{method}'"
+                f"Unrecognized method argument. Expected 'json_schema' Received:\
+                    '{method}'"
             )
 
         if include_raw:
