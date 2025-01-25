@@ -154,7 +154,10 @@ class LangChainTracer(BaseTracer):
         """
         start_time = datetime.now(timezone.utc)
         if metadata:
-            kwargs.update({"metadata": metadata})
+            if isinstance(kwargs.get("metadata"), dict):
+                kwargs["metadata"].update(metadata)
+            else:
+                kwargs.update({"metadata": metadata})
         chat_model_run = Run(
             id=run_id,
             parent_run_id=parent_run_id,

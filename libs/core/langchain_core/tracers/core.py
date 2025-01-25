@@ -178,7 +178,10 @@ class _TracerCore(ABC):
             raise NotImplementedError(msg)
         start_time = datetime.now(timezone.utc)
         if metadata:
-            kwargs.update({"metadata": metadata})
+            if isinstance(kwargs.get("metadata"), dict):
+                kwargs["metadata"].update(metadata)
+            else:
+                kwargs.update({"metadata": metadata})
         return Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -209,7 +212,10 @@ class _TracerCore(ABC):
         """Create a llm run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
-            kwargs.update({"metadata": metadata})
+            if isinstance(kwargs.get("metadata"), dict):
+                kwargs["metadata"].update(metadata)
+            else:
+                kwargs.update({"metadata": metadata})
         return Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -314,7 +320,10 @@ class _TracerCore(ABC):
         """Create a chain Run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
-            kwargs.update({"metadata": metadata})
+            if isinstance(kwargs.get("metadata"), dict):
+                kwargs["metadata"].update(metadata)
+            else:
+                kwargs.update({"metadata": metadata})
         return Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -399,7 +408,10 @@ class _TracerCore(ABC):
         """Create a tool run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
-            kwargs.update({"metadata": metadata})
+            if isinstance(kwargs.get("metadata"), dict):
+                kwargs["metadata"].update(metadata)
+            else:
+                kwargs.update({"metadata": metadata})
 
         if self._schema_format in ("original", "original+chat"):
             inputs = {"input": input_str}
@@ -464,7 +476,10 @@ class _TracerCore(ABC):
         """Create a retrieval run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
-            kwargs.update({"metadata": metadata})
+            if isinstance(kwargs.get("metadata"), dict):
+                kwargs["metadata"].update(metadata)
+            else:
+                kwargs.update({"metadata": metadata})
         return Run(
             id=run_id,
             name=name or "Retriever",
