@@ -49,7 +49,6 @@ class LangSmithParams(TypedDict, total=False):
     """Max tokens for generation."""
     ls_stop: Optional[list[str]]
     """Stop words for generation."""
-    structured_output_format: Optional[dict]
 
 
 @cache  # Cache the tokenizer

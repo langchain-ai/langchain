@@ -553,9 +553,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
             ls_params["ls_max_tokens"] = self.max_tokens
 
-        if "structured_output_format" in kwargs:
-            ls_params["structured_output_format"] = kwargs["structured_output_format"]
-
         return ls_params
 
     def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
@@ -609,11 +606,25 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        structured_output_format = kwargs.pop("structured_output_format", None)
+        if False and structured_output_format:
+            structured_output_format_dict = {
+                "structured_output_format": {
+                    "method": structured_output_format["method"],
+                    "schema": convert_to_openai_tool(
+                        structured_output_format["schema"]
+                    ),
+                }
+            }
+        else:
+            structured_output_format_dict = {}
+
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
+            **structured_output_format_dict,
         }
 
         callback_manager = CallbackManager.configure(

@@ -1423,9 +1423,10 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
+            print("HERE")
             llm = self.bind(
                 response_format=response_format,
-                structured_output_format={"method": method, "schema": schema},
+                # structured_output_format={"method": method, "schema": convert_to_openai_tool(schema)},
             )
             if is_pydantic_schema:
                 output_parser = _oai_structured_outputs_parser.with_types(
