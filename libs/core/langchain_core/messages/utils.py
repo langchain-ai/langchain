@@ -50,14 +50,13 @@ def _get_type(v: Any) -> str:
     """Get the type associated with the object for serialization purposes."""
     if isinstance(v, dict) and "type" in v:
         return v["type"]
-    elif hasattr(v, "type"):
+    if hasattr(v, "type"):
         return v.type
-    else:
-        msg = (
-            f"Expected either a dictionary with a 'type' key or an object "
-            f"with a 'type' attribute. Instead got type {type(v)}."
-        )
-        raise TypeError(msg)
+    msg = (
+        f"Expected either a dictionary with a 'type' key or an object "
+        f"with a 'type' attribute. Instead got type {type(v)}."
+    )
+    raise TypeError(msg)
 
 
 AnyMessage = Annotated[
@@ -137,33 +136,32 @@ def _message_from_dict(message: dict) -> BaseMessage:
     _type = message["type"]
     if _type == "human":
         return HumanMessage(**message["data"])
-    elif _type == "ai":
+    if _type == "ai":
         return AIMessage(**message["data"])
-    elif _type == "system":
+    if _type == "system":
         return SystemMessage(**message["data"])
-    elif _type == "chat":
+    if _type == "chat":
         return ChatMessage(**message["data"])
-    elif _type == "function":
+    if _type == "function":
         return FunctionMessage(**message["data"])
-    elif _type == "tool":
+    if _type == "tool":
         return ToolMessage(**message["data"])
-    elif _type == "remove":
+    if _type == "remove":
         return RemoveMessage(**message["data"])
-    elif _type == "AIMessageChunk":
+    if _type == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
-    elif _type == "HumanMessageChunk":
+    if _type == "HumanMessageChunk":
         return HumanMessageChunk(**message["data"])
-    elif _type == "FunctionMessageChunk":
+    if _type == "FunctionMessageChunk":
         return FunctionMessageChunk(**message["data"])
-    elif _type == "ToolMessageChunk":
+    if _type == "ToolMessageChunk":
         return ToolMessageChunk(**message["data"])
-    elif _type == "SystemMessageChunk":
+    if _type == "SystemMessageChunk":
         return SystemMessageChunk(**message["data"])
-    elif _type == "ChatMessageChunk":
+    if _type == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
-    else:
-        msg = f"Got unexpected message type: {_type}"
-        raise ValueError(msg)
+    msg = f"Got unexpected message type: {_type}"
+    raise ValueError(msg)
 
 
 def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
@@ -386,8 +384,7 @@ def _runnable_support(func: Callable) -> Callable:
 
         if messages is not None:
             return func(messages, **kwargs)
-        else:
-            return RunnableLambda(partial(func, **kwargs), name=func.__name__)
+        return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
     wrapped.__doc__ = func.__doc__
     return wrapped
@@ -463,8 +460,6 @@ def filter_messages(
             or (exclude_ids and msg.id in exclude_ids)
         ):
             continue
-        else:
-            pass
 
         # default to inclusion when no inclusion criteria given.
         if (
@@ -870,7 +865,7 @@ def trim_messages(
             partial_strategy="first" if allow_partial else None,
             end_on=end_on,
         )
-    elif strategy == "last":
+    if strategy == "last":
         return _last_max_tokens(
             messages,
             max_tokens=max_tokens,
@@ -881,9 +876,8 @@ def trim_messages(
             end_on=end_on,
             text_splitter=text_splitter_fn,
         )
-    else:
-        msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
-        raise ValueError(msg)
+    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+    raise ValueError(msg)
 
 
 def convert_to_openai_messages(
@@ -1211,8 +1205,7 @@ def convert_to_openai_messages(
 
     if is_single:
         return oai_messages[0]
-    else:
-        return oai_messages
+    return oai_messages
 
 
 def _first_max_tokens(
@@ -1324,8 +1317,7 @@ def _last_max_tokens(
     )
     if swapped_system:
         return reversed_[:1] + reversed_[1:][::-1]
-    else:
-        return reversed_[::-1]
+    return reversed_[::-1]
 
 
 _MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
@@ -1395,19 +1387,18 @@ def _bytes_to_b64_str(bytes_: bytes) -> str:
 def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, AIMessage):
         return "assistant"
-    elif isinstance(message, HumanMessage):
+    if isinstance(message, HumanMessage):
         return "user"
-    elif isinstance(message, ToolMessage):
+    if isinstance(message, ToolMessage):
         return "tool"
-    elif isinstance(message, SystemMessage):
+    if isinstance(message, SystemMessage):
         return message.additional_kwargs.get("__openai_role__", "system")
-    elif isinstance(message, FunctionMessage):
+    if isinstance(message, FunctionMessage):
         return "function"
-    elif isinstance(message, ChatMessage):
+    if isinstance(message, ChatMessage):
         return message.role
-    else:
-        msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)  # noqa: TRY004
+    msg = f"Unknown BaseMessage type {message.__class__}."
+    raise ValueError(msg)  # noqa: TRY004
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:

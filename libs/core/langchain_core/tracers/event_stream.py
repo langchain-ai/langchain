@@ -78,7 +78,7 @@ def _assign_name(name: Optional[str], serialized: Optional[dict[str, Any]]) -> s
     if serialized is not None:
         if "name" in serialized:
             return serialized["name"]
-        elif "id" in serialized:
+        if "id" in serialized:
             return serialized["id"][-1]
     return "Unnamed"
 
