@@ -84,7 +84,12 @@ class NoLock:
     async def __aenter__(self) -> None:
         pass
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         return False
 
 
@@ -220,7 +225,12 @@ class Tee(Generic[T]):
     async def __aenter__(self) -> "Tee[T]":
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         await self.aclose()
         return False
 
