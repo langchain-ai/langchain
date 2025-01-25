@@ -30,7 +30,7 @@ from pydantic import (
 from pydantic import (
     create_model as _create_model_base,
 )
-from pydantic.fields import FieldInfo as FieldInfoV2  # noqa: TC002
+from pydantic.fields import FieldInfo as FieldInfoV2
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -72,9 +72,7 @@ if PYDANTIC_MAJOR_VERSION == 1:
     PydanticBaseModel = pydantic.BaseModel
     TypeBaseModel = type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
-    from pydantic.v1.fields import (  # type: ignore[assignment]
-        FieldInfo as FieldInfoV1,  # noqa: TC002
-    )
+    from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]

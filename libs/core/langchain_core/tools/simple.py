@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable  # noqa: TC003 # used in Pydantic model
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -10,7 +10,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.callbacks import (  # noqa: TC001 # for Tool._run reflection
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )

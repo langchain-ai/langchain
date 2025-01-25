@@ -25,7 +25,7 @@ The schemas for the agents themselves are defined in langchain.agents.agent.
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence  # noqa: TC003 # used in Pydantic
+from collections.abc import Sequence
 from typing import Any, Literal, Union
 
 from langchain_core.load.serializable import Serializable

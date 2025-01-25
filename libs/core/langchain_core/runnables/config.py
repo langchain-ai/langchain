@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import uuid  # noqa: TC003 # used in Pydantic model
+import uuid
 import warnings
 from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor

@@ -7,7 +7,7 @@ They can be used to represent text, images, or chat message pieces.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence  # noqa: TC003 # used in Pydantic
+from collections.abc import Sequence
 from typing import Literal, cast
 
 from typing_extensions import TypedDict

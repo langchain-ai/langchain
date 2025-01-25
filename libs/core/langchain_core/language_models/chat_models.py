@@ -61,9 +61,7 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.rate_limiters import (
-    BaseRateLimiter,  # noqa: TC001 # used in Pydantic model
-)
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler

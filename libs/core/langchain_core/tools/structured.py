@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from collections.abc import Awaitable  # noqa: TC003 # used in Pydantic model
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -15,7 +15,7 @@ from typing import (
 
 from pydantic import BaseModel, Field, SkipValidation
 
-from langchain_core.callbacks import (  # noqa: TC001 # for StructuredTool._run reflection
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
@@ -26,9 +26,7 @@ from langchain_core.tools.base import (
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import (
-    TypeBaseModel,  # noqa: TC001 # used in Pydantic model
-)
+from langchain_core.utils.pydantic import TypeBaseModel
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
