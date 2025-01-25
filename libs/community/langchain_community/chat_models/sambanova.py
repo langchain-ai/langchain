@@ -111,7 +111,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 @deprecated(
     since="0.3.16",
     removal="1.0",
-    alternative_import="langchain_sambanova.ChatSambaNovaCloud"
+    alternative_import="langchain_sambanova.ChatSambaNovaCloud",
 )
 class ChatSambaNovaCloud(BaseChatModel):
     """
@@ -961,7 +961,7 @@ class ChatSambaNovaCloud(BaseChatModel):
 @deprecated(
     since="0.3.16",
     removal="1.0",
-    alternative_import="langchain_sambanova.ChatSambaStudio"
+    alternative_import="langchain_sambanova.ChatSambaStudio",
 )
 class ChatSambaStudio(BaseChatModel):
     """
