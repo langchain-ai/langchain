@@ -78,7 +78,7 @@ def _load_examples(config: dict) -> dict:
         config["examples"] = examples
     else:
         msg = "Invalid examples format. Only list or string are supported."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa:TRY004
     return config
 
 

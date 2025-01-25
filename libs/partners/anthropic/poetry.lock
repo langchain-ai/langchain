@@ -453,7 +453,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.30"
+version = "0.3.31"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -462,7 +462,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = ">=0.1.125,<0.3"
+langsmith = ">=0.1.125,<0.4"
 packaging = ">=23.2,<25"
 pydantic = [
     {version = ">=2.5.2,<3.0.0", markers = "python_full_version < \"3.12.4\""},
@@ -478,7 +478,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.8"
+version = "0.3.9"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -487,7 +487,7 @@ develop = true
 
 [package.dependencies]
 httpx = ">=0.25.0,<1"
-langchain-core = "^0.3.22"
+langchain-core = "^0.3.31"
 numpy = [
     {version = ">=1.24.0,<2.0.0", markers = "python_version < \"3.12\""},
     {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
@@ -1357,4 +1357,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "882c131a2202eb925560eaf821003a5c0b007131ceb3954bbbf6b1722f756e97"
+content-hash = "48de1bbc2c2a7ac34e395e3fdea1e3c49c2066df7cbfd8636aedf17ad17164fe"
