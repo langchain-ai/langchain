@@ -21,7 +21,7 @@ test tests:
 	TIKTOKEN_CACHE_DIR=tiktoken_cache poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	poetry run pytest $(TEST_FILE)
+	poetry run pytest -n auto $(TEST_FILE)
 
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)

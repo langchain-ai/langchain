@@ -284,7 +284,6 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt template loaded from the template.
         """
-
         input_variables = get_template_variables(template, template_format)
         _partial_variables = partial_variables or {}
 

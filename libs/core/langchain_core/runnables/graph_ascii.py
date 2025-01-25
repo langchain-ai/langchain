@@ -1,5 +1,6 @@
 """Draws DAG in ASCII.
-Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
+Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py.
+"""
 
 import math
 import os
@@ -220,39 +221,54 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         str: ASCII representation
 
     Example:
-        >>> vertices = [1, 2, 3, 4]
-        >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
-        >>> print(draw(vertices, edges))
-        +---+     +---+
-        | 3 |     | 4 |
-        +---+    *+---+
-          *    **   *
-          *  **     *
-          * *       *
-        +---+       *
-        | 2 |      *
-        +---+     *
-             *    *
-              *  *
-               **
-             +---+
-             | 1 |
-             +---+
-    """
 
+        .. code-block:: python
+
+            from langchain_core.runnables.graph_ascii import draw_ascii
+
+            vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+            edges = [
+                (source, target, None, None)
+                for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
+            ]
+
+
+            print(draw_ascii(vertices, edges))
+
+        .. code-block:: none
+
+                 +---+
+                 | 1 |
+                 +---+
+                 *    *
+                *     *
+               *       *
+            +---+       *
+            | 2 |       *
+            +---+**     *
+              *    **   *
+              *      ** *
+              *        **
+            +---+     +---+
+            | 3 |     | 4 |
+            +---+     +---+
+    """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    xlist = []
-    ylist = []
+    xlist: list[float] = []
+    ylist: list[float] = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left
-        xlist.append(vertex.view.xy[0] - vertex.view.w / 2.0)
-        xlist.append(vertex.view.xy[0] + vertex.view.w / 2.0)
-        ylist.append(vertex.view.xy[1])
-        ylist.append(vertex.view.xy[1] + vertex.view.h)
+        xlist.extend(
+            (
+                vertex.view.xy[0] - vertex.view.w / 2.0,
+                vertex.view.xy[0] + vertex.view.w / 2.0,
+            )
+        )
+        ylist.extend((vertex.view.xy[1], vertex.view.xy[1] + vertex.view.h))
 
     for edge in sug.g.sE:
         for x, y in edge.view._pts:

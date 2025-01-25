@@ -103,7 +103,7 @@ def _runnable(inputs: dict) -> str:
     if inputs["text"] == "bar":
         return "second"
     if isinstance(inputs["exception"], ValueError):
-        raise RuntimeError
+        raise RuntimeError  # noqa: TRY004
     return "third"
 
 
@@ -215,7 +215,11 @@ async def test_abatch() -> None:
     )
     with pytest.raises(RuntimeError):
         await runnable_with_single.abatch(
-            [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}]
+            [
+                {"text": "foo"},
+                {"text": "bar"},
+                {"text": "baz"},
+            ]
         )
     actual = await runnable_with_single.abatch(
         [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
@@ -314,7 +318,7 @@ class FakeStructuredOutputModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(generations=[])
 
     def bind_tools(
@@ -344,7 +348,7 @@ class FakeModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(generations=[])
 
     def bind_tools(
