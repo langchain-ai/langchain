@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import logging
+from operator import itemgetter
 from typing import (
     Any,
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
-    Literal
+    cast,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -36,12 +39,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
-)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
+from langchain_core.utils import from_env, get_pydantic_field_names
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
@@ -50,6 +51,17 @@ _DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
 _DictOrPydantic = Union[Dict, _BM]
 
 logger = logging.getLogger(__name__)
+from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import (
+    PydanticBaseModel,
+    TypeBaseModel,
+    is_basemodel_subclass,
+)
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
+
 
 def _convert_to_openai_response_format(
     schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
@@ -86,6 +98,18 @@ def _convert_to_openai_response_format(
         )
         raise ValueError(msg)
     return response_format
+
+
+@chain
+def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
+    if ai_msg.additional_kwargs.get("parsed"):
+        return ai_msg.additional_kwargs["parsed"]
+    else:
+        raise ValueError(
+            "Structured Output response does not have a 'parsed' field nor a 'refusal' "
+            f"field. Received message:\n\n{ai_msg}"
+        )
+
 
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
@@ -343,6 +367,7 @@ class ChatPerplexity(BaseChatModel):
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(response_format=response_format)
+            is_pydantic_schema = _is_pydantic_class(schema)
             if is_pydantic_schema:
                 output_parser = _oai_structured_outputs_parser.with_types(
                     output_type=cast(type, schema)
