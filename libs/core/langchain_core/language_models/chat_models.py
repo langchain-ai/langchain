@@ -607,7 +607,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         structured_output_format = kwargs.pop("structured_output_format", None)
-        if False and structured_output_format:
+        if structured_output_format:
             structured_output_format_dict = {
                 "structured_output_format": {
                     "method": structured_output_format["method"],
