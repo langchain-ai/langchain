@@ -49,6 +49,7 @@ class LangSmithParams(TypedDict, total=False):
     """Max tokens for generation."""
     ls_stop: Optional[list[str]]
     """Stop words for generation."""
+    structured_output_format: Optional[dict]
 
 
 @cache  # Cache the tokenizer
@@ -233,7 +234,13 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: Union[dict, type], **kwargs: Any
+        self,
+        schema: Union[dict, type],
+        *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to

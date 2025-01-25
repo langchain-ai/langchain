@@ -553,6 +553,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
             ls_params["ls_max_tokens"] = self.max_tokens
 
+        if "structured_output_format" in kwargs:
+            ls_params["structured_output_format"] = kwargs["structured_output_format"]
+
         return ls_params
 
     def _get_llm_string(self, stop: Optional[list[str]] = None, **kwargs: Any) -> str:
@@ -1123,6 +1126,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         self,
         schema: Union[typing.Dict, type],  # noqa: UP006
         *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
@@ -1240,7 +1246,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
-        llm = self.bind_tools([schema], tool_choice="any")
+
+        # default implementation only supports function_calling as method
+        if method != "function_calling":
+            msg = "Only method='function_calling' is supported by this model."
+            raise ValueError(msg)
+
+        llm = self.bind_tools(
+            [schema],
+            tool_choice="any",
+            structured_output_format={"method": method, "schema": schema},
+        )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[cast(TypeBaseModel, schema)], first_tool_only=True
