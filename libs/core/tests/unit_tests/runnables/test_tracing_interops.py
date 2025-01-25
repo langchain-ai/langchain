@@ -334,23 +334,22 @@ class TestRunnableSequenceParallelTraceNesting:
                     parent_id_map[n] = matching_post.get("parent_run_id")
                 i += len(name)
                 continue
-            else:
-                assert posts[i]["name"] == name
-                dotted_order = posts[i]["dotted_order"]
-                if prev_dotted_order is not None and not str(
-                    expected_parents[name]
-                ).startswith("RunnableParallel"):
-                    assert dotted_order > prev_dotted_order, (
-                        f"{name} not after {name_order[i - 1]}"
-                    )
-                prev_dotted_order = dotted_order
-                if name in dotted_order_map:
-                    msg = f"Duplicate name {name}"
-                    raise ValueError(msg)
-                dotted_order_map[name] = dotted_order
-                id_map[name] = posts[i]["id"]
-                parent_id_map[name] = posts[i].get("parent_run_id")
-                i += 1
+            assert posts[i]["name"] == name
+            dotted_order = posts[i]["dotted_order"]
+            if prev_dotted_order is not None and not str(
+                expected_parents[name]
+            ).startswith("RunnableParallel"):
+                assert dotted_order > prev_dotted_order, (
+                    f"{name} not after {name_order[i - 1]}"
+                )
+            prev_dotted_order = dotted_order
+            if name in dotted_order_map:
+                msg = f"Duplicate name {name}"
+                raise ValueError(msg)
+            dotted_order_map[name] = dotted_order
+            id_map[name] = posts[i]["id"]
+            parent_id_map[name] = posts[i].get("parent_run_id")
+            i += 1
 
         # Now check the dotted orders
         for name, parent_ in expected_parents.items():

@@ -58,11 +58,9 @@ class ChatGeneration(Generation):
                     if isinstance(block, str):
                         text = block
                         break
-                    elif isinstance(block, dict) and "text" in block:
+                    if isinstance(block, dict) and "text" in block:
                         text = block["text"]
                         break
-                    else:
-                        pass
             else:
                 pass
             self.text = text
@@ -105,7 +103,7 @@ class ChatGenerationChunk(ChatGeneration):
                 message=self.message + other.message,
                 generation_info=generation_info or None,
             )
-        elif isinstance(other, list) and all(
+        if isinstance(other, list) and all(
             isinstance(x, ChatGenerationChunk) for x in other
         ):
             generation_info = merge_dicts(
@@ -116,8 +114,5 @@ class ChatGenerationChunk(ChatGeneration):
                 message=self.message + [chunk.message for chunk in other],
                 generation_info=generation_info or None,
             )
-        else:
-            msg = (
-                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-            )
-            raise TypeError(msg)
+        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        raise TypeError(msg)

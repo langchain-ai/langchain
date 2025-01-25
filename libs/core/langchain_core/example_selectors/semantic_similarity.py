@@ -54,8 +54,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     ) -> str:
         if input_keys:
             return " ".join(sorted_values({key: example[key] for key in input_keys}))
-        else:
-            return " ".join(sorted_values(example))
+        return " ".join(sorted_values(example))
 
     def _documents_to_examples(self, documents: list[Document]) -> list[dict]:
         # Get the examples from the metadata.
