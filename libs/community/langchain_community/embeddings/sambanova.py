@@ -9,7 +9,9 @@ from pydantic import BaseModel, ConfigDict
 
 
 @deprecated(
-    since="0.3.16", removal="1.0", alternative_import="langchain_sambanova.SambaStudioEmbeddings"
+    since="0.3.16", 
+    removal="1.0", 
+    alternative_import="langchain_sambanova.SambaStudioEmbeddings"
 )
 class SambaStudioEmbeddings(BaseModel, Embeddings):
     """SambaNova embedding models.
