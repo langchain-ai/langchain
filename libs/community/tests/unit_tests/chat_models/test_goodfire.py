@@ -3,9 +3,7 @@
 import os
 from typing import List
 
-import goodfire
 import pytest
-from goodfire.variants.variants import SUPPORTED_MODELS
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 from langchain_community.chat_models import Goodfire
@@ -16,11 +14,18 @@ from langchain_community.chat_models.goodfire import (
 
 os.environ["GOODFIRE_API_KEY"] = "test_key"
 
-VALID_MODEL: SUPPORTED_MODELS = "meta-llama/Llama-3.3-70B-Instruct"
+VALID_MODEL: str = "meta-llama/Llama-3.3-70B-Instruct"
 
 
 @pytest.mark.requires("goodfire")
 def test_goodfire_model_param() -> None:
+    try:
+        import goodfire
+    except ImportError as e:
+        raise ImportError(
+            "Could not import goodfire python package. "
+            "Please install it with `pip install goodfire`."
+        ) from e
     llm = Goodfire(model=VALID_MODEL)
     assert isinstance(llm.variant, goodfire.Variant)
     assert llm.variant.base_model == VALID_MODEL
@@ -29,6 +34,13 @@ def test_goodfire_model_param() -> None:
 @pytest.mark.requires("goodfire")
 def test_goodfire_initialization() -> None:
     """Test goodfire initialization with API key."""
+    try:
+        import goodfire
+    except ImportError as e:
+        raise ImportError(
+            "Could not import goodfire python package. "
+            "Please install it with `pip install goodfire`."
+        ) from e
     llm = Goodfire(model=VALID_MODEL, goodfire_api_key="test_key")
     assert llm.goodfire_api_key.get_secret_value() == "test_key"
     assert isinstance(llm.sync_client, goodfire.Client)

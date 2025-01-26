@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-import goodfire
-from goodfire.variants.variants import SUPPORTED_MODELS
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -45,13 +43,9 @@ class Goodfire(BaseChatModel):
     """Goodfire chat model."""
 
     goodfire_api_key: SecretStr = Field(default=SecretStr(""))
-    sync_client: goodfire.Client = Field(
-        default_factory=lambda: goodfire.Client(api_key="")
-    )
-    async_client: goodfire.AsyncClient = Field(
-        default_factory=lambda: goodfire.AsyncClient(api_key="")
-    )
-    variant: goodfire.Variant  # Removed default - this must be set
+    sync_client: Any = Field(default=None)
+    async_client: Any = Field(default=None)
+    variant: Any  # Changed type hint since we can't import goodfire at module level
 
     @property
     def _llm_type(self) -> str:
@@ -63,9 +57,9 @@ class Goodfire(BaseChatModel):
 
     def __init__(
         self,
-        model: SUPPORTED_MODELS,
+        model: str,  # Changed from SUPPORTED_MODELS since we can't import it
         goodfire_api_key: Optional[str] = None,
-        variant: Optional[goodfire.Variant] = None,
+        variant: Optional[Any] = None,
         **kwargs: Any,
     ):
         """Initialize the Goodfire chat model.
@@ -77,6 +71,14 @@ class Goodfire(BaseChatModel):
             variant: Optional variant to use. If not provided, will be created
                 from the model parameter.
         """
+        try:
+            import goodfire
+        except ImportError as e:
+            raise ImportError(
+                "Could not import goodfire python package. "
+                "Please install it with `pip install goodfire`."
+            ) from e
+
         # Create variant first
         variant_instance = variant or goodfire.Variant(model)
 
@@ -96,6 +98,14 @@ class Goodfire(BaseChatModel):
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
+        try:
+            import goodfire
+        except ImportError as e:
+            raise ImportError(
+                "Could not import goodfire python package. "
+                "Please install it with `pip install goodfire`."
+            ) from e
+
         values["goodfire_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
