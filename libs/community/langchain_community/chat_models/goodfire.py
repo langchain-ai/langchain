@@ -45,7 +45,7 @@ class ChatGoodfire(BaseChatModel):
     goodfire_api_key: SecretStr = Field(default=SecretStr(""))
     sync_client: Any = Field(default=None)
     async_client: Any = Field(default=None)
-    variant: Any  # Changed type hint since we can't import goodfire at module level
+    model: Any  # Changed type hint since we can't import goodfire at module level
 
     @property
     def _llm_type(self) -> str:
@@ -57,19 +57,16 @@ class ChatGoodfire(BaseChatModel):
 
     def __init__(
         self,
-        model: str,  # Changed from SUPPORTED_MODELS since we can't import it
+        model: Any,
         goodfire_api_key: Optional[str] = None,
-        variant: Optional[Any] = None,
         **kwargs: Any,
     ):
         """Initialize the Goodfire chat model.
 
         Args:
-            model: The model to use, must be one of the supported models.
+            model: The Goodfire variant to use.
             goodfire_api_key: The API key to use. If None, will look for
                 GOODFIRE_API_KEY env var.
-            variant: Optional variant to use. If not provided, will be created
-                from the model parameter.
         """
         try:
             import goodfire
@@ -79,11 +76,11 @@ class ChatGoodfire(BaseChatModel):
                 "Please install it with `pip install goodfire`."
             ) from e
 
-        # Create variant first
-        variant_instance = variant or goodfire.Variant(model)
+        if not isinstance(model, goodfire.Variant):
+            raise ValueError(f"model must be a Goodfire variant, got {type(model)}")
 
-        # Include variant in kwargs for parent initialization
-        kwargs["variant"] = variant_instance
+        # Include model in kwargs for parent initialization
+        kwargs["model"] = model
 
         # Initialize parent class
         super().__init__(**kwargs)
@@ -136,7 +133,7 @@ class ChatGoodfire(BaseChatModel):
         if "model" in kwargs:
             model = kwargs.pop("model")
         else:
-            model = self.variant
+            model = self.model
 
         goodfire_response = self.sync_client.chat.completions.create(
             messages=format_for_goodfire(messages),
@@ -167,7 +164,7 @@ class ChatGoodfire(BaseChatModel):
         if "model" in kwargs:
             model = kwargs.pop("model")
         else:
-            model = self.variant
+            model = self.model
 
         goodfire_response = await self.async_client.chat.completions.create(
             messages=format_for_goodfire(messages),

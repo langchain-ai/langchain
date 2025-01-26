@@ -1,7 +1,7 @@
 """Test Goodfire Chat API wrapper."""
 
 import os
-from typing import List
+from typing import Any, List
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -14,7 +14,16 @@ from langchain_community.chat_models.goodfire import (
 
 os.environ["GOODFIRE_API_KEY"] = "test_key"
 
-VALID_MODEL: str = "meta-llama/Llama-3.3-70B-Instruct"
+
+def get_valid_variant() -> Any:
+    try:
+        import goodfire
+    except ImportError as e:
+        raise ImportError(
+            "Could not import goodfire python package. "
+            "Please install it with `pip install goodfire`."
+        ) from e
+    return goodfire.Variant("meta-llama/Llama-3.3-70B-Instruct")
 
 
 @pytest.mark.requires("goodfire")
@@ -26,9 +35,10 @@ def test_goodfire_model_param() -> None:
             "Could not import goodfire python package. "
             "Please install it with `pip install goodfire`."
         ) from e
-    llm = ChatGoodfire(model=VALID_MODEL)
-    assert isinstance(llm.variant, goodfire.Variant)
-    assert llm.variant.base_model == VALID_MODEL
+    base_variant = get_valid_variant()
+    llm = ChatGoodfire(model=base_variant)
+    assert isinstance(llm.model, goodfire.Variant)
+    assert llm.model.base_model == base_variant.base_model
 
 
 @pytest.mark.requires("goodfire")
@@ -41,7 +51,7 @@ def test_goodfire_initialization() -> None:
             "Could not import goodfire python package. "
             "Please install it with `pip install goodfire`."
         ) from e
-    llm = ChatGoodfire(model=VALID_MODEL, goodfire_api_key="test_key")
+    llm = ChatGoodfire(model=get_valid_variant(), goodfire_api_key="test_key")
     assert llm.goodfire_api_key.get_secret_value() == "test_key"
     assert isinstance(llm.sync_client, goodfire.Client)
     assert isinstance(llm.async_client, goodfire.AsyncClient)
