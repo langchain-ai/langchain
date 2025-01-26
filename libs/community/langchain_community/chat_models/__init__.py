@@ -71,7 +71,7 @@ if TYPE_CHECKING:
         GigaChat,
     )
     from langchain_community.chat_models.goodfire import (
-        Goodfire,
+        ChatGoodfire,
     )
     from langchain_community.chat_models.google_palm import (
         ChatGooglePalm,
@@ -213,6 +213,7 @@ __all__ = [
     "ChatEverlyAI",
     "ChatFireworks",
     "ChatFriendli",
+    "ChatGoodfire",
     "ChatGooglePalm",
     "ChatHuggingFace",
     "ChatHunyuan",
@@ -248,9 +249,8 @@ __all__ = [
     "ChatLlamaCpp",
     "ErnieBotChat",
     "FakeListChatModel",
-    "GigaChat",
-    "Goodfire",
     "GPTRouter",
+    "GigaChat",
     "HumanInputChatModel",
     "JinaChat",
     "LlamaEdgeChatService",
@@ -280,6 +280,7 @@ _module_lookup = {
     "ChatEdenAI": "langchain_community.chat_models.edenai",
     "ChatFireworks": "langchain_community.chat_models.fireworks",
     "ChatFriendli": "langchain_community.chat_models.friendli",
+    "ChatGoodfire": "langchain_community.chat_models.goodfire",
     "ChatGooglePalm": "langchain_community.chat_models.google_palm",
     "ChatHuggingFace": "langchain_community.chat_models.huggingface",
     "ChatHunyuan": "langchain_community.chat_models.hunyuan",
@@ -314,9 +315,8 @@ _module_lookup = {
     "ChatZhipuAI": "langchain_community.chat_models.zhipuai",
     "ErnieBotChat": "langchain_community.chat_models.ernie",
     "FakeListChatModel": "langchain_community.chat_models.fake",
-    "GigaChat": "langchain_community.chat_models.gigachat",
-    "Goodfire": "langchain_community.chat_models.goodfire",
     "GPTRouter": "langchain_community.chat_models.gpt_router",
+    "GigaChat": "langchain_community.chat_models.gigachat",
     "HumanInputChatModel": "langchain_community.chat_models.human",
     "JinaChat": "langchain_community.chat_models.jinachat",
     "LlamaEdgeChatService": "langchain_community.chat_models.llama_edge",

@@ -39,7 +39,7 @@ def format_for_langchain(message: dict) -> BaseMessage:
     return AIMessage(content=message["content"])
 
 
-class Goodfire(BaseChatModel):
+class ChatGoodfire(BaseChatModel):
     """Goodfire chat model."""
 
     goodfire_api_key: SecretStr = Field(default=SecretStr(""))

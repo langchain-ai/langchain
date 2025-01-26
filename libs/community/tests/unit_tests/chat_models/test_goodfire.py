@@ -6,7 +6,7 @@ from typing import List
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from langchain_community.chat_models import Goodfire
+from langchain_community.chat_models import ChatGoodfire
 from langchain_community.chat_models.goodfire import (
     format_for_goodfire,
     format_for_langchain,
@@ -26,7 +26,7 @@ def test_goodfire_model_param() -> None:
             "Could not import goodfire python package. "
             "Please install it with `pip install goodfire`."
         ) from e
-    llm = Goodfire(model=VALID_MODEL)
+    llm = ChatGoodfire(model=VALID_MODEL)
     assert isinstance(llm.variant, goodfire.Variant)
     assert llm.variant.base_model == VALID_MODEL
 
@@ -41,7 +41,7 @@ def test_goodfire_initialization() -> None:
             "Could not import goodfire python package. "
             "Please install it with `pip install goodfire`."
         ) from e
-    llm = Goodfire(model=VALID_MODEL, goodfire_api_key="test_key")
+    llm = ChatGoodfire(model=VALID_MODEL, goodfire_api_key="test_key")
     assert llm.goodfire_api_key.get_secret_value() == "test_key"
     assert isinstance(llm.sync_client, goodfire.Client)
     assert isinstance(llm.async_client, goodfire.AsyncClient)
