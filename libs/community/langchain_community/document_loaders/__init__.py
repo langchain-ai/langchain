@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.acreom import (
         AcreomLoader,
     )
+    from langchain_community.document_loaders.agentql import (
+        AgentQLLoader,
+    )
     from langchain_community.document_loaders.airbyte import (
         AirbyteCDKLoader,
         AirbyteGongLoader,
@@ -537,6 +540,7 @@ if TYPE_CHECKING:
 _module_lookup = {
     "AZLyricsLoader": "langchain_community.document_loaders.azlyrics",
     "AcreomLoader": "langchain_community.document_loaders.acreom",
+    "AgentQLLoader": "langchain_community.document_loaders.agentql",
     "AirbyteCDKLoader": "langchain_community.document_loaders.airbyte",
     "AirbyteGongLoader": "langchain_community.document_loaders.airbyte",
     "AirbyteHubspotLoader": "langchain_community.document_loaders.airbyte",
@@ -745,6 +749,7 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "AZLyricsLoader",
     "AcreomLoader",
+    "AgentQLLoader",
     "AirbyteCDKLoader",
     "AirbyteGongLoader",
     "AirbyteHubspotLoader",
