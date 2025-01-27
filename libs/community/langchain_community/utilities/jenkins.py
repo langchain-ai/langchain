@@ -1,4 +1,5 @@
 """Wrapper for the Jenkins API"""
+
 import time
 from typing import Any, Dict, Optional
 
@@ -10,9 +11,8 @@ class JenkinsAPIWrapper(BaseModel):
     """Wrapper for Jenkins API
 
     To use, set the environment variables ``JENKINS_SERVER``,
-    ``USERNAME`` and ``PASSWORD``. OR those input can supplay by
-    API parameter. 
-    """
+    ``USERNAME`` and ``PASSWORD``. OR those input can supplay by API parameter."""
+
     jenkins_client: Any
 
     jenkins_server: Optional[str]
@@ -28,14 +28,10 @@ class JenkinsAPIWrapper(BaseModel):
         )
         values["jenkins_server"] = jenkins_server
 
-        username = get_from_dict_or_env(
-            values, "username", "USERNAME"
-        )
+        username = get_from_dict_or_env(values, "username", "USERNAME")
         values["username"] = username
 
-        password = get_from_dict_or_env(
-            values, "password", "PASSWORD"
-        )
+        password = get_from_dict_or_env(values, "password", "PASSWORD")
         values["password"] = password
 
         try:
@@ -46,47 +42,29 @@ class JenkinsAPIWrapper(BaseModel):
                 please install it with pip install python-jenkins"""
             )
 
-        jenkins_client = Jenkins(jenkins_server,
-                                         username=username,
-                                         password=password)
+        jenkins_client = Jenkins(jenkins_server, username=username, password=password)
         values["jenkins_client"] = jenkins_client
 
         return values
 
-    def delete_job(
-            self,
-            job: str
-    ) -> None:
+    def delete_job(self, job: str) -> Any:
         try:
-            self.jenkins_client.delete_job(job)
+            return self.jenkins_client.delete_job(job)
         except Exception:
             pass
 
-    def create_job(
-        self,
-        job: str,
-        config_xml: str
-    ) -> None:
-        self.jenkins_client.create_job(
-                job, config_xml)
+    def create_job(self, job: str, config_xml: str) -> Any:
+        return self.jenkins_client.create_job(job, config_xml)
 
-    def run_job(
-        self,
-        job: str,
-        parameters: dict[str]
-    ) -> int:
-        next_build_number = self.jenkins_client.get_job_info(job)['nextBuildNumber']
+    def run_job(self, job: str, parameters: dict) -> int:
+        next_build_number = self.jenkins_client.get_job_info(job)["nextBuildNumber"]
         self.jenkins_client.build_job(job, parameters=parameters)
         return next_build_number
 
-    def status_job(
-        self,
-        job: str,
-        number: int
-    ) -> int:
+    def status_job(self, job: str, number: int) -> Any:
         from jenkins import JenkinsException, NotFoundException
+
         try:
-            return  self.jenkins_client.get_build_info(job, number)
+            return self.jenkins_client.get_build_info(job, number)
         except (NotFoundException, JenkinsException):
             time.sleep(5)
-        return "Not Started.."
