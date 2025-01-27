@@ -118,6 +118,25 @@ class BaseMessage(Serializable):
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
+    def __getitem__(self, item: str) -> Any:
+        """Get a field value using dict-like access.
+
+        This allows accessing attributes of the message as if it were a dictionary.
+        For example, `message["content"]` will return the `content` field.
+
+        Args:
+            item: The name of the field to access.
+
+        Returns:
+            The value of the specified field.
+
+        Raises:
+            KeyError: If the field does not exist in the message.
+        """
+        if hasattr(self, item) and item in self.model_fields:
+            return getattr(self, item)
+        raise KeyError(item)
+
 
 def merge_content(
     first_content: Union[str, list[Union[str, dict]]],

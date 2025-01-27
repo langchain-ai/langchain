@@ -177,6 +177,19 @@ def test_message_chunks() -> None:
     assert right + AIMessageChunk(content="") == right
 
 
+def test_message_getitem() -> None:
+    msg = BaseMessage(content="foo", role="bar", id=1, type="baz")
+
+    # Test accessing valid fields
+    for k in msg.model_fields:
+        assert msg[k] == getattr(msg, k)
+
+    # Test KeyError for invalid field
+    invalid_key = "non_existent_field"
+    with pytest.raises(KeyError):
+        _ = msg[invalid_key]
+
+
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."
