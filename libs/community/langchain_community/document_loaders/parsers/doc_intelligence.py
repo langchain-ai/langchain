@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+
+if TYPE_CHECKING:
+    from azure.core.credentials import TokenCredential
 
 logger = logging.getLogger(__name__)
 
@@ -16,17 +21,27 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
     def __init__(
         self,
         api_endpoint: str,
-        api_key: str,
+        api_key: Optional[str] = None,
         api_version: Optional[str] = None,
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
         analysis_features: Optional[List[str]] = None,
+        azure_credential: Optional["TokenCredential"] = None,
     ):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
         from azure.ai.documentintelligence.models import DocumentAnalysisFeature
         from azure.core.credentials import AzureKeyCredential
 
         kwargs = {}
+
+        if api_key is None and azure_credential is None:
+            raise ValueError("Either api_key or azure_credential must be provided.")
+
+        if api_key and azure_credential:
+            raise ValueError(
+                "Only one of api_key or azure_credential should be provided."
+            )
+
         if api_version is not None:
             kwargs["api_version"] = api_version
 
@@ -49,7 +64,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         self.client = DocumentIntelligenceClient(
             endpoint=api_endpoint,
-            credential=AzureKeyCredential(api_key),
+            credential=azure_credential or AzureKeyCredential(api_key),
             headers={"x-ms-useragent": "langchain-parser/1.0.0"},
             features=analysis_features,
             **kwargs,
