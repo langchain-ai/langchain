@@ -683,7 +683,7 @@ class AzureSearch(VectorStore):
         self, query: str, *, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance."""
-        # Extract search_type from kwargs, defaulting to self.search_type if not provided
+        # Extract search_type from kwargs, defaulting to self.search_type
         search_type = kwargs.pop("search_type", self.search_type)
         if search_type == "similarity":
             return self.vector_search_with_score(query, k=k, **kwargs)
