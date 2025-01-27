@@ -361,3 +361,7 @@ packages:
   repo: paymanai/langchain-payman-tool
   downloads: 0
   downloads_updated_at: "2025-01-22T00:00:00+00:00"
+- name: langchain-sambanova
+  repo: sambanova/langchain-sambanova
+  path: .
+  downloads: 0
