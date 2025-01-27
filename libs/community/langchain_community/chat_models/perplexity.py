@@ -365,15 +365,13 @@ class ChatPerplexity(BaseChatModel):
                     "schema must be specified when method is not 'json_schema'. "
                     "Received None."
                 )
-            response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(response_format=response_format)
             is_pydantic_schema = _is_pydantic_class(schema)
             if is_pydantic_schema:
-                output_parser = _oai_structured_outputs_parser.with_types(
-                    output_type=cast(type, schema)
-                )
+                response_format = schema.model_json_schema()
             else:
-                output_parser = JsonOutputParser()
+                response_format = _convert_to_openai_response_format(schema, strict=strict)
+            llm = self.bind(response_format=response_format)
+            output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected 'json_schema' Received:\
