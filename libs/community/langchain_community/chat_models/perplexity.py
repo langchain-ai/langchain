@@ -16,7 +16,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -369,7 +368,9 @@ class ChatPerplexity(BaseChatModel):
             if is_pydantic_schema:
                 response_format = schema.model_json_schema()
             else:
-                response_format = _convert_to_openai_response_format(schema, strict=strict)
+                response_format = _convert_to_openai_response_format(
+                    schema, strict=strict
+                )
             llm = self.bind(response_format=response_format)
             output_parser = JsonOutputParser()
         else:
