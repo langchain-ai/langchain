@@ -1,6 +1,7 @@
 from langchain_community.document_loaders import __all__, _module_lookup
 
 EXPECTED_ALL = [
+    "AgentQLLoader",
     "AcreomLoader",
     "AsyncHtmlLoader",
     "AsyncChromiumLoader",

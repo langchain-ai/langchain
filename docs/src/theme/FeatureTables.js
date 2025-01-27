@@ -822,6 +822,13 @@ const FEATURE_TABLES = {
                 source: "Platform for running and scaling headless browsers, can be used to scrape/crawl any site",
                 api: "API",
                 apiLink: "https://python.langchain.com/docs/integrations/document_loaders/hyperbrowser/"
+            },
+            {
+                name: "AgentQL",
+                link: "agentql",
+                source: "AgentQL extract structured data from any website",
+                api: "API",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/agentql/"
             }
         ]
     },
