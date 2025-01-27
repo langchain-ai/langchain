@@ -36,16 +36,13 @@ class ElementType(TypedDict):
 class HTMLHeaderTextSplitter:
     """Split HTML content into structured Documents based on specified headers.
 
-    Splits HTML content by detecting specified
-    header tags (e.g., <h1>, <h2>) and
+    Splits HTML content by detecting specified header tags (e.g., <h1>, <h2>) and
     creating hierarchical Document objects that reflect the semantic structure
-    of
-    the original content. For each identified section, the splitter associates
+    of the original content. For each identified section, the splitter associates
     the extracted text with metadata corresponding to the encountered headers.
 
-    If no specified headers are found,
-    the entire content is returned as a single Document.
-    This allows for flexible handling of HTML input, ensuring that
+    If no specified headers are found, the entire content is returned as a single
+    Document. This allows for flexible handling of HTML input, ensuring that
     information is organized according to its semantic headers.
 
     The splitter provides the option to return each HTML element as a separate
@@ -127,8 +124,9 @@ class HTMLHeaderTextSplitter:
             return_each_element: Whether to return each HTML
                 element as a separate Document. Defaults to False.
         """
+        # Sort headers by their numeric level so that h1 < h2 < h3...
         self.headers_to_split_on = sorted(
-            headers_to_split_on, key=lambda x: int(x[0][1])
+            headers_to_split_on, key=lambda x: int(x[0][1:])
         )
         self.header_mapping = dict(self.headers_to_split_on)
         self.header_tags = [tag for tag, _ in self.headers_to_split_on]
@@ -166,49 +164,6 @@ class HTMLHeaderTextSplitter:
         response.raise_for_status()
         return self.split_text(response.text)
 
-    def _header_level(self, tag_name: str) -> int:
-        """Determine the heading level of a tag."""
-        if tag_name.lower() in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-            return int(tag_name[1])
-        # Returns high level if it isn't a header
-        return 9999
-
-    def _dom_depth(self, element: Any) -> int:
-        """Determine the DOM depth of an element by counting its parents."""
-        depth = 0
-        for _ in element.parents:
-            depth += 1
-        return depth
-
-    def _get_elements(self, html_content: str) -> List[Any]:
-        """Parse HTML content and return a list of BeautifulSoup elements.
-
-        This helper function takes HTML content as input,
-        parses it using BeautifulSoup4, and returns all HTML elements
-        found in the document body. If no body tag exists,
-        it returns all elements in the full document.
-
-        Args:
-            html_content: Raw HTML content to be parsed.
-
-        Returns:
-            List[Any]: A list of BeautifulSoup elements found in the HTML document.
-
-        Raises:
-            ImportError: If the BeautifulSoup4 package is not installed.
-        """
-        try:
-            from bs4 import BeautifulSoup  # type: ignore[import-untyped]
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import BeautifulSoup/PageElement, \
-                    please install with `pip install \
-                    bs4`."
-            ) from e
-        soup = BeautifulSoup(html_content, "html.parser")
-        body = soup.body if soup.body else soup
-        return body.find_all()
-
     def split_text_from_file(self, file: Any) -> List[Document]:
         """Split HTML content from a file into a list of Document objects.
 
@@ -223,109 +178,135 @@ class HTMLHeaderTextSplitter:
                 html_content = f.read()
         else:
             html_content = file.read()
-        elements = self._get_elements(html_content)
-        documents: List[Document] = []
+        return list(self._generate_documents(html_content))
+
+    def _generate_documents(self, html_content: str) -> Any:
+        """
+        Private method that performs a DFS traversal over the DOM and yields
+        Document objects on-the-fly. This approach maintains the same splitting
+        logic (headers vs. non-headers, chunking, etc.) while walking the DOM
+        explicitly in code.
+
+        Args:
+            html_content: The raw HTML content.
+
+        Yields:
+            Document objects as they are created.
+        """
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import BeautifulSoup. Please install via `pip install bs4`."
+            ) from e
+
+        soup = BeautifulSoup(html_content, "html.parser")
+        body = soup.body if soup.body else soup
+
+        # Dictionary of active headers:
+        #   key = user-defined header name (e.g. "Header 1")
+        #   value = (header_text, level, dom_depth)
         active_headers: Dict[str, Tuple[str, int, int]] = {}
         current_chunk: List[str] = []
-        chunk_dom_depth = 0
 
-        def finalize_chunk() -> None:
-            if current_chunk:
-                final_meta = {
-                    key: content
-                    for key, (
-                        content,
-                        level,
-                        dom_depth,
-                    ) in active_headers.items()
-                    if chunk_dom_depth >= dom_depth
-                }
-                combined_text = "  \n".join(
-                    line for line in current_chunk if line.strip()
-                )
-                if combined_text.strip():
-                    documents.append(
-                        Document(page_content=combined_text, metadata=final_meta)
-                    )
-                current_chunk.clear()
+        def finalize_chunk() -> Document:
+            """Finalize the current accumulated chunk into a single Document."""
+            if not current_chunk:
+                return None
+            # We rely on active_headers to be in the correct scope
+            # (irrelevant headers removed at each step)
+            final_text = "  \n".join(
+                line for line in current_chunk if line.strip()
+            )
+            current_chunk.clear()
+            if not final_text.strip():
+                return None
+            # Prepare metadata: just map user-defined header name -> text
+            # from active_headers
+            final_meta = {k: v[0] for k, v in active_headers.items()}
+            return Document(page_content=final_text, metadata=final_meta)
 
-        for element in elements:
-            tag = element.name
+        # We'll use a stack for DFS traversal
+        stack = [body]
+        while stack:
+            node = stack.pop()
+            # Push children in reverse so that we process them in correct order
+            children = list(node.children)
+            for child in reversed(children):
+                if getattr(child, "name", None):
+                    stack.append(child)
+
+            tag = getattr(node, "name", None)
             if not tag:
                 continue
-            text = " ".join(
+
+            # Gather text directly from this node (exclude children)
+            node_text = " ".join(
                 t
-                for t in element.find_all(string=True, recursive=False)
-                if isinstance(t, str)
+                for t in node.find_all(string=True, recursive=False)
+                if t.strip()
             ).strip()
-            if not text:
+            if not node_text:
                 continue
 
-            level = self._header_level(tag)
-            dom_depth = self._dom_depth(element)
+            # Compute DOM depth for scope checks
+            dom_depth = len(list(node.parents))
 
+            # If this node is one of our headers
             if tag in self.header_tags:
+                # If we're aggregating, finalize whatever chunk we had
                 if not self.return_each_element:
-                    finalize_chunk()
+                    doc = finalize_chunk()
+                    if doc:
+                        yield doc
 
-                # Remove headers at same or deeper level
+                # Determine numeric level (h1->1, h2->2, etc.)
+                try:
+                    level = int(tag[1:])
+                except ValueError:
+                    level = 9999
+
+                # Remove any active headers that are at or deeper than this new level
                 headers_to_remove = [
-                    key for key, (_, lvl, _) in active_headers.items() if lvl >= level
+                    k
+                    for k, (_, lvl, d) in active_headers.items()
+                    if lvl >= level
                 ]
                 for key in headers_to_remove:
                     del active_headers[key]
 
-                header_key = self.header_mapping[tag]
-                active_headers[header_key] = (text, level, dom_depth)
+                # Add/Update the active header
+                header_name = self.header_mapping[tag]
+                active_headers[header_name] = (node_text, level, dom_depth)
 
-                # Produce a document for the header itself
-                header_meta = {
-                    key: content
-                    for key, (content, lvl, dd) in active_headers.items()
-                    if dom_depth >= dd
-                }
-                documents.append(Document(page_content=text, metadata=header_meta))
-                # After encountering a header,
-                # no immediate content goes to current_chunk
-                # (if return_each_element is False, we wait for next content)
-                # (if return_each_element is True, we create docs per element anyway)
+                # Always yield a Document for the header
+                header_meta = {k: v[0] for k, v in active_headers.items()}
+                yield Document(page_content=node_text, metadata=header_meta)
+
             else:
-                # Non-header element logic
-                # Remove headers that don't apply if dom_depth < their dom_depth
-                headers_to_remove = [
-                    key for key, (_, _, dd) in active_headers.items() if dom_depth < dd
+                # For non-header nodes, we first remove any headers that are out of scope
+                # (if we've left their DOM depth)
+                headers_out_of_scope = [
+                    k
+                    for k, (_, _, d) in active_headers.items()
+                    if dom_depth < d
                 ]
-                for key in headers_to_remove:
+                for key in headers_out_of_scope:
                     del active_headers[key]
 
                 if self.return_each_element:
-                    # Produce a doc for this element immediately
-                    element_meta = {
-                        key: content
-                        for key, (content, lvl, dd) in active_headers.items()
-                        if dom_depth >= dd
-                    }
-                    if text.strip():
-                        documents.append(
-                            Document(page_content=text, metadata=element_meta)
-                        )
+                    # Yield each element's text as its own Document
+                    meta = {k: v[0] for k, v in active_headers.items()}
+                    yield Document(page_content=node_text, metadata=meta)
                 else:
-                    # Accumulate content in current_chunk
-                    if text.strip():
-                        current_chunk.append(text)
-                        chunk_dom_depth = max(chunk_dom_depth, dom_depth)
+                    # Accumulate text in our chunk
+                    current_chunk.append(node_text)
 
+        # If we're aggregating and have leftover chunk, yield it
         if not self.return_each_element:
-            # finalize any remaining chunk
-            finalize_chunk()
-
-        # If no headers were found at all and return_each_element=False, behavior is:
-        # The entire content should be in one document.
-        # The logic above naturally handles it:
-        # If no recognized headers, we never split; we ended up just accumulating text
-        # in current_chunk and finalizing once at the end.
-
-        return documents
+            doc = finalize_chunk()
+            if doc:
+                yield doc
 
 
 class HTMLSectionSplitter:
@@ -396,11 +377,15 @@ class HTMLSectionSplitter:
                     if chunk.metadata[key] == "#TITLE#":
                         chunk.metadata[key] = metadata["Title"]
                 metadata = {**metadata, **chunk.metadata}
-                new_doc = Document(page_content=chunk.page_content, metadata=metadata)
+                new_doc = Document(
+                    page_content=chunk.page_content, metadata=metadata
+                )
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
+    def split_html_by_headers(
+        self, html_doc: str
+    ) -> List[Dict[str, Optional[str]]]:
         """Split an HTML document into sections based on specified header tags.
 
         This method uses BeautifulSoup to parse the HTML content and divides it into
@@ -645,7 +630,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self._preserve_parent_metadata = preserve_parent_metadata
         if allowlist_tags:
             self._allowlist_tags = list(
-                set(allowlist_tags + [header[0] for header in headers_to_split_on])
+                set(
+                    allowlist_tags
+                    + [header[0] for header in headers_to_split_on]
+                )
             )
         self._denylist_tags = denylist_tags
         if denylist_tags:
@@ -850,7 +838,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             current_content: List[str],
             preserved_elements: Dict[str, str],
             placeholder_count: int,
-        ) -> Tuple[List[Document], Dict[str, str], List[str], Dict[str, str], int]:
+        ) -> Tuple[
+            List[Document], Dict[str, str], List[str], Dict[str, str], int
+        ]:
             for elem in element:
                 if elem.name.lower() in ["html", "body", "div", "main"]:
                     children = elem.find_all(recursive=False)
@@ -955,7 +945,9 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             )
             return [Document(page_content=page_content, metadata=metadata)]
         else:
-            return self._further_split_chunk(content, metadata, preserved_elements)
+            return self._further_split_chunk(
+                content, metadata, preserved_elements
+            )
 
     def _further_split_chunk(
         self, content: str, metadata: dict, preserved_elements: dict
