@@ -24,6 +24,7 @@ EXPECTED_ALL = [
     "GoogleTrendsAPIWrapper",
     "GraphQLAPIWrapper",
     "InfobipAPIWrapper",
+    "JenkinsAPIWrapper",
     "JiraAPIWrapper",
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
