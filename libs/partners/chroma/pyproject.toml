@@ -45,7 +45,7 @@ markers = [
 asyncio_mode = "auto"
 
 [tool.poetry.dependencies.chromadb]
-version = ">=0.4.0,<0.6.0,!=0.5.4,!=0.5.5,!=0.5.7,!=0.5.9,!=0.5.10,!=0.5.11,!=0.5.12"
+version = ">=0.4.0,<0.7.0,!=0.5.4,!=0.5.5,!=0.5.7,!=0.5.9,!=0.5.10,!=0.5.11,!=0.5.12"
 
 [tool.poetry.dependencies.fastapi]
 version = ">=0.95.2,<1"

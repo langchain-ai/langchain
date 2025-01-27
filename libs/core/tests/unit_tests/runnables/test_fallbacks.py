@@ -103,7 +103,7 @@ def _runnable(inputs: dict) -> str:
     if inputs["text"] == "bar":
         return "second"
     if isinstance(inputs["exception"], ValueError):
-        raise RuntimeError
+        raise RuntimeError  # noqa: TRY004
     return "third"
 
 
