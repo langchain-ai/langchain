@@ -1556,7 +1556,7 @@ async def test_event_stream_with_retry() -> None:
     def fail(inputs: str) -> None:
         """Simple func."""
         msg = "fail"
-        raise Exception(msg)
+        raise ValueError(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1906,7 +1906,7 @@ async def test_runnable_with_message_history() -> None:
                 return fn(*args, **kwargs)
             except Exception as e:
                 raised_errors.append(e)
-                raise e
+                raise
 
         return _get_output_messages
 
@@ -2097,7 +2097,7 @@ class StreamingRunnable(Runnable[Input, Output]):
             final_output = None
             for element in self.iterable:
                 if isinstance(element, BaseException):
-                    raise element
+                    raise element  # noqa: TRY301
                 yield element
 
                 if final_output is None:
@@ -2409,10 +2409,10 @@ async def test_break_astream_events() -> None:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
-                return input
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
+            return input
 
         def reset(self) -> None:
             self.started = False
@@ -2474,10 +2474,10 @@ async def test_cancel_astream_events() -> None:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
-                return input
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
+            return input
 
         def reset(self) -> None:
             self.started = False

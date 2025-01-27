@@ -268,7 +268,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 f"Invalid input type {type(input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     def invoke(
         self,
@@ -407,9 +407,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         generation = chunk
                     else:
                         generation += chunk
-                if generation is None:
-                    msg = "No generation chunks were returned"
-                    raise ValueError(msg)
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,
@@ -417,9 +414,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         generations=[[generation]] if generation else []
                     ),
                 )
-                raise e
-            else:
-                run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+                raise
+
+            if generation is None:
+                err = ValueError("No generation chunks were returned")
+                run_manager.on_llm_error(err, response=LLMResult(generations=[]))
+                raise err
+
+            run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     async def astream(
         self,
@@ -485,19 +487,21 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     generation = chunk
                 else:
                     generation += chunk
-            if generation is None:
-                msg = "No generation chunks were returned"
-                raise ValueError(msg)
         except BaseException as e:
             await run_manager.on_llm_error(
                 e,
                 response=LLMResult(generations=[[generation]] if generation else []),
             )
-            raise e
-        else:
-            await run_manager.on_llm_end(
-                LLMResult(generations=[[generation]]),
-            )
+            raise
+
+        if generation is None:
+            err = ValueError("No generation chunks were returned")
+            await run_manager.on_llm_error(err, response=LLMResult(generations=[]))
+            raise err
+
+        await run_manager.on_llm_end(
+            LLMResult(generations=[[generation]]),
+        )
 
     # --- Custom methods ---
 
@@ -641,7 +645,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             except BaseException as e:
                 if run_managers:
                     run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
-                raise e
+                raise
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
             for res in results
@@ -1022,7 +1026,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return generation.message
         else:
             msg = "Unexpected generation type"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     async def _call_async(
         self,
@@ -1039,7 +1043,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return generation.message
         else:
             msg = "Unexpected generation type"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1057,7 +1061,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return result.content
         else:
             msg = "Cannot use predict when output is not a string."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict_messages(
@@ -1082,7 +1086,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return result.content
         else:
             msg = "Cannot use predict when output is not a string."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict_messages(
