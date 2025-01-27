@@ -29,7 +29,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         mode: str = "markdown",
         *,
         analysis_features: Optional[List[str]] = None,
-        azure_credentials: Optional["TokenCredential"] = None,
+        azure_credential: Optional["TokenCredential"] = None,
     ) -> None:
         """
         Initialize the object for file processing with Azure Document Intelligence
@@ -69,7 +69,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             List of optional analysis features, each feature should be passed
             as a str that conforms to the enum `DocumentAnalysisFeature` in
             `azure-ai-documentintelligence` package. Default value is None.
-        azure_credentials: Optional[TokenCredential]
+        azure_credential: Optional[TokenCredential]
             The credentials to use for DocumentIntelligenceClient construction, when
             using credentials other than api_key (like AD).
 
@@ -90,12 +90,12 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         ), "file_path, url_path or bytes_source must be provided"
 
         assert (
-            api_key is not None or azure_credentials is not None
-        ), "Either api_key or azure_credentials must be provided."
+            api_key is not None or azure_credential is not None
+        ), "Either api_key or azure_credential must be provided."
 
         assert (
-            api_key is None or azure_credentials is None
-        ), "Only one of api_key or azure_credentials should be provided."
+            api_key is None or azure_credential is None
+        ), "Only one of api_key or azure_credential should be provided."
 
         self.file_path = file_path
         self.url_path = url_path
@@ -108,7 +108,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             api_model=api_model,
             mode=mode,
             analysis_features=analysis_features,
-            azure_credentials=azure_credentials,
+            azure_credential=azure_credential,
         )
 
     def lazy_load(

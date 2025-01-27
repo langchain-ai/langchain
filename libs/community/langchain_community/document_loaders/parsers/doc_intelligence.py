@@ -26,7 +26,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
         analysis_features: Optional[List[str]] = None,
-        azure_credentials: Optional["TokenCredential"] = None,
+        azure_credential: Optional["TokenCredential"] = None,
     ):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
         from azure.ai.documentintelligence.models import DocumentAnalysisFeature
@@ -34,12 +34,12 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         kwargs = {}
 
-        if api_key is None and azure_credentials is None:
-            raise ValueError("Either api_key or azure_credentials must be provided.")
+        if api_key is None and azure_credential is None:
+            raise ValueError("Either api_key or azure_credential must be provided.")
 
-        if api_key and azure_credentials:
+        if api_key and azure_credential:
             raise ValueError(
-                "Only one of api_key or azure_credentials should be provided."
+                "Only one of api_key or azure_credential should be provided."
             )
 
         if api_version is not None:
@@ -64,7 +64,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         self.client = DocumentIntelligenceClient(
             endpoint=api_endpoint,
-            credential=azure_credentials or AzureKeyCredential(api_key),
+            credential=azure_credential or AzureKeyCredential(api_key),
             headers={"x-ms-useragent": "langchain-parser/1.0.0"},
             features=analysis_features,
             **kwargs,
