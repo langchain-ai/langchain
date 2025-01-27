@@ -48,7 +48,14 @@ class AgentQLLoader(BaseLoader):
             query (Optional[str]): AgentQL query used to specify the scraped data.
             api_key (str): AgentQL API key. You can create one at https://dev.agentql.com.
             params (Optional[dict]): Additional parameters to pass to the AgentQL API.
-            Visit https://docs.agentql.com/rest-api/api-reference for details.
+
+            The following parameters are supported:
+            wait_for (number): Wait time in seconds for page load (max 10 seconds). Defaults to 0.
+            is_scroll_to_bottom_enabled (boolean): Enable/disable scrolling to bottom before snapshot. Defaults to false.
+            mode (str): Specifies the extraction mode: standard for complex or high-volume data, or fast for typical use cases. 
+            Defaults to fast. You can read more about the mode options in [Guide](https://docs.agentql.com/speed/fast-mode).
+
+            Visit https://docs.agentql.com/rest-api/api-reference for more details.
         """
         self.url = url
         self.query = query
