@@ -1,12 +1,12 @@
 from typing import Iterator, Optional
 
 import httpx
-
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 
 QUERY_DATA_ENDPOINT = "https://api.agentql.com/v1/query-data"
 API_TIMEOUT_SECONDS = 900
+
 
 class AgentQLLoader(BaseLoader):
     """
@@ -47,7 +47,8 @@ class AgentQLLoader(BaseLoader):
             url (str): URL to scrape or crawl.
             query (Optional[str]): AgentQL query used to specify the scraped data.
             api_key (str): AgentQL API key. You can create one at https://dev.agentql.com.
-            params (Optional[dict]): Additional parameters to pass to the AgentQL API. Visit https://docs.agentql.com/rest-api/api-reference for details.
+            params (Optional[dict]): Additional parameters to pass to the AgentQL API.
+            Visit https://docs.agentql.com/rest-api/api-reference for details.
         """
         self.url = url
         self.query = query
