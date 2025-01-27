@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-chroma"
-version = "0.2.0"
+version = "0.2.1"
 description = "An integration package connecting Chroma and LangChain"
 authors = []
 readme = "README.md"
