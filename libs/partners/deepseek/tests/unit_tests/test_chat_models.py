@@ -13,10 +13,22 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
         return ChatDeepSeek
 
     @property
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+        return (
+            {
+                "DEEPSEEK_API_KEY": "api_key",
+            },
+            {
+                "model": "deepseek-chat",
+            },
+            {
+                "api_key": "api_key",
+            },
+        )
+
+    @property
     def chat_model_params(self) -> dict:
         # These should be parameters used to initialize your integration for testing
         return {
-            "model": "bird-brain-001",
-            "temperature": 0,
-            "parrot_buffer_length": 50,
+            "model": "deepseek-chat",
         }

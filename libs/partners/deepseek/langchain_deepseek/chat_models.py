@@ -1,13 +1,13 @@
 """DeepSeek chat models."""
 
 from typing import Dict, Optional, Union
-from typing_extensions import Self
 
 import openai
 from langchain_core.outputs import ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 
 class ChatDeepSeek(BaseChatOpenAI):
