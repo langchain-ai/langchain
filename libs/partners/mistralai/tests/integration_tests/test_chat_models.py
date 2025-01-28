@@ -183,16 +183,45 @@ def test_structured_output_json_schema() -> None:
 
     llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(Book, method="json_schema")
-    result = structured_llm.invoke(
-        [
-            {"role": "system", "content": "Extract the book's information."},
-            {
-                "role": "user",
-                "content": "I recently read 'To Kill a Mockingbird' by Harper Lee.",
-            },
-        ]
-    )
+
+    messages = [
+        {"role": "system", "content": "Extract the book's information."},
+        {
+            "role": "user",
+            "content": "I recently read 'To Kill a Mockingbird' by Harper Lee.",
+        },
+    ]
+    # Test invoke
+    result = structured_llm.invoke(messages)
     assert isinstance(result, Book)
+
+    # Test stream
+    for chunk in structured_llm.stream(messages):
+        assert isinstance(chunk, Book)
+
+
+async def test_structured_output_json_schema_async() -> None:
+    class Book(BaseModel):
+        name: str
+        authors: list[str]
+
+    llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
+    structured_llm = llm.with_structured_output(Book, method="json_schema")
+
+    messages = [
+        {"role": "system", "content": "Extract the book's information."},
+        {
+            "role": "user",
+            "content": "I recently read 'To Kill a Mockingbird' by Harper Lee.",
+        },
+    ]
+    # Test invoke
+    result = await structured_llm.ainvoke(messages)
+    assert isinstance(result, Book)
+
+    # Test stream
+    async for chunk in structured_llm.astream(messages):
+        assert isinstance(chunk, Book)
 
 
 def test_tool_call() -> None:
