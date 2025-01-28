@@ -414,11 +414,39 @@ class FAISS(VectorStore):
         vector = np.array([embedding], dtype=np.float32)
         if self._normalize_L2:
             faiss.normalize_L2(vector)
-        scores, indices = self.index.search(vector, k if filter is None else fetch_k)
-        docs = []
 
+        # If there's a filter, first get matching doc IDs
         if filter is not None:
             filter_func = self._create_filter_func(filter)
+            # Get all doc IDs that match filter
+            matching_ids = []
+            for doc_id in self.index_to_docstore_id.values():
+                doc = self.docstore.search(doc_id)
+                if filter_func(doc.metadata):
+                    matching_ids.append(doc_id)
+
+            if not matching_ids:
+                return []
+
+            # Create temporary index with only matching docs
+            temp_index = faiss.IndexFlatL2(self.dimension)  # or whatever index type you use
+            matching_vectors = []
+            id_mapping = {}  # Map new indices to original doc IDs
+
+            for new_idx, doc_id in enumerate(matching_ids):
+                orig_idx = self.docstore_id_to_index[doc_id]
+                vector = self.index.reconstruct(orig_idx)
+                matching_vectors.append(vector)
+                id_mapping[new_idx] = doc_id
+
+            temp_index.add(np.array(matching_vectors))
+            scores, indices = temp_index.search(vector, min(k, len(matching_vectors)))
+        else:
+            # No filter - search entire index
+            scores, indices = self.index.search(vector, k)
+            id_mapping = self.index_to_docstore_id
+
+        docs = []
 
         for j, i in enumerate(indices[0]):
             if i == -1:
@@ -428,11 +456,7 @@ class FAISS(VectorStore):
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            if filter is not None:
-                if filter_func(doc.metadata):
-                    docs.append((doc, scores[0][j]))
-            else:
-                docs.append((doc, scores[0][j]))
+            docs.append((doc, scores[0][j]))
 
         score_threshold = kwargs.get("score_threshold")
         if score_threshold is not None:
