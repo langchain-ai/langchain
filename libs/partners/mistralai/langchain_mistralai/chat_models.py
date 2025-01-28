@@ -80,6 +80,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_mistralai.utils import rec_strict_json_schema
+
 logger = logging.getLogger(__name__)
 
 # Mistral enforces a specific pattern for tool call IDs
@@ -686,7 +688,9 @@ class ChatMistralAI(BaseChatModel):
         self,
         schema: Optional[Union[Dict, Type]] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
@@ -931,6 +935,25 @@ class ChatMistralAI(BaseChatModel):
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'json_schema'. "
+                    "Received None."
+                )
+            schema_dict = rec_strict_json_schema(
+                convert_to_openai_tool(schema)["function"]
+            )
+            schema_dict["strict"] = True
+            schema_dict["schema"] = schema_dict.pop("parameters")
+            response_format = {"type": "json_schema", "json_schema": schema_dict}
+            llm = self.bind(response_format=response_format)
+
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

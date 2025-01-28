@@ -176,6 +176,25 @@ def test_streaming_structured_output() -> None:
         chunk_num += 1
 
 
+def test_structured_output_json_schema() -> None:
+    class Book(BaseModel):
+        name: str
+        authors: list[str]
+
+    llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
+    structured_llm = llm.with_structured_output(Book, method="json_schema")
+    result = structured_llm.invoke(
+        [
+            {"role": "system", "content": "Extract the book's information."},
+            {
+                "role": "user",
+                "content": "I recently read 'To Kill a Mockingbird' by Harper Lee.",
+            },
+        ]
+    )
+    assert isinstance(result, Book)
+
+
 def test_tool_call() -> None:
     llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
 
