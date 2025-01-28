@@ -18,6 +18,7 @@ class RetrievalConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
 
     vectorSearchConfiguration: VectorSearchConfig
 
+
 @deprecated(
     since="0.3.16",
     removal="1.0",

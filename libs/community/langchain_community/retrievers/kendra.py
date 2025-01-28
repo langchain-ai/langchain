@@ -323,6 +323,7 @@ KENDRA_CONFIDENCE_MAPPING = {
     "VERY_HIGH": 1.0,
 }
 
+
 @deprecated(
     since="0.3.16",
     removal="1.0",

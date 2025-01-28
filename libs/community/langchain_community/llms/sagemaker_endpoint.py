@@ -124,6 +124,7 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
 class LLMContentHandler(ContentHandlerBase[str, str]):
     """Content handler for LLM class."""
 
+
 @deprecated(
     since="0.3.16",
     removal="1.0",
