@@ -17,12 +17,14 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
         return (
             {
                 "DEEPSEEK_API_KEY": "api_key",
+                "DEEPSEEK_API_BASE": "api_base",
             },
             {
                 "model": "deepseek-chat",
             },
             {
                 "api_key": "api_key",
+                "api_base": "api_base",
             },
         )
 
