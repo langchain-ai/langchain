@@ -370,3 +370,4 @@ packages:
   path: libs/partners/deepseek
   downloads: 0
   js: '@langchain/deepseek'
+  provider_page: deepseek
