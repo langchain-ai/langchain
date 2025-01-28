@@ -9,6 +9,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
 class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
@@ -154,7 +155,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek API key"""
     api_base: str = Field(
         default_factory=from_env(
-            "DEEPSEEK_API_BASE", default="https://api.deepseek.com/v1"
+            "DEEPSEEK_API_BASE", default=DEFAULT_API_BASE
         )
     )
     """DeepSeek API base URL"""
@@ -173,6 +174,10 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
+        if self.api_base == DEFAULT_API_BASE and not (self.api_key and self.api_key.get_secret_value()):
+            raise ValueError(
+                "If using default api base, DEEPSEEK_API_KEY must be set."
+            )
         client_params: dict = {
             k: v
             for k, v in {
@@ -185,6 +190,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             }.items()
             if v is not None
         }
+        print(client_params)
 
         if not (self.client or None):
             sync_specific: dict = {"http_client": self.http_client}

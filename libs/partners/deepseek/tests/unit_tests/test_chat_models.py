@@ -33,4 +33,5 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
         # These should be parameters used to initialize your integration for testing
         return {
             "model": "deepseek-chat",
+            "api_key": "api_key",
         }
