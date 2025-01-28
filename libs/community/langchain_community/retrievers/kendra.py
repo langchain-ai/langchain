@@ -326,7 +326,7 @@ KENDRA_CONFIDENCE_MAPPING = {
 @deprecated(
     since="0.3.16",
     removal="1.0",
-    alternative_import="langchain_aws.AmazonKendraRetriever"
+    alternative_import="langchain_aws.AmazonKendraRetriever",
 )
 class AmazonKendraRetriever(BaseRetriever):
     """`Amazon Kendra Index` retriever.

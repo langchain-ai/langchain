@@ -127,7 +127,7 @@ class LLMContentHandler(ContentHandlerBase[str, str]):
 @deprecated(
     since="0.3.16",
     removal="1.0",
-    alternative_import="langchain_aws.llms.SagemakerEndpoint"
+    alternative_import="langchain_aws.llms.SagemakerEndpoint",
 )
 class SagemakerEndpoint(LLM):
     """Sagemaker Inference Endpoint models.

@@ -21,7 +21,7 @@ class RetrievalConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
 @deprecated(
     since="0.3.16",
     removal="1.0",
-    alternative_import="langchain_aws.AmazonKnowledgeBasesRetriever"
+    alternative_import="langchain_aws.AmazonKnowledgeBasesRetriever",
 )
 class AmazonKnowledgeBasesRetriever(BaseRetriever):
     """Amazon Bedrock Knowledge Bases retriever.
