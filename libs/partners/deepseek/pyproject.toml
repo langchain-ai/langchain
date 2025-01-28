@@ -3,7 +3,8 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "langchain-deepseek"
+name = "langchain-deepseek-official"
+packages = [{ include = "langchain_deepseek" }]
 version = "0.1.0"
 description = "An integration package connecting DeepSeek and LangChain"
 authors = []
@@ -59,7 +60,7 @@ pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 pytest-watcher = "^0.3.4"
 langchain-tests = "^0.3.5"
-langchain-openai = {path = "../openai"}
+langchain-openai = { path = "../openai" }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.6"

@@ -10,16 +10,14 @@ from pydantic import ConfigDict, Field, SecretStr, model_validator
 
 
 class ChatDeepSeek(BaseChatOpenAI):
-    # TODO: Replace all TODOs in docstring. See example docstring:
-    # https://github.com/langchain-ai/langchain/blob/7ff05357bac6eaedf5058a2af88f23a1817d40fe/libs/partners/openai/langchain_openai/chat_models/base.py#L1120
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
     Setup:
-        Install ``langchain-deepseek`` and set environment variable ``DEEPSEEK_API_KEY``.
+        Install ``langchain-deepseek-official`` and set environment variable ``DEEPSEEK_API_KEY``.
 
         .. code-block:: bash
 
-            pip install -U langchain-deepseek
+            pip install -U langchain-deepseek-official
             export DEEPSEEK_API_KEY="your-api-key"
 
     Key init args — completion params:
