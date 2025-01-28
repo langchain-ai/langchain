@@ -942,9 +942,7 @@ class ChatMistralAI(BaseChatModel):
                     "schema must be specified when method is 'json_schema'. "
                     "Received None."
                 )
-            schema_dict = convert_to_openai_tool(schema, strict=True)["function"]
-            schema_dict["schema"] = schema_dict.pop("parameters")
-            response_format = {"type": "json_schema", "json_schema": schema_dict}
+            response_format = _convert_to_openai_response_format(schema, strict=True)
             llm = self.bind(response_format=response_format)
 
             output_parser = (
@@ -987,3 +985,38 @@ class ChatMistralAI(BaseChatModel):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "mistralai"]
+
+
+def _convert_to_openai_response_format(
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
+) -> Dict:
+    """Same as in ChatOpenAI, but don't pass through Pydantic BaseModels."""
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
+        response_format = schema
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
+        response_format = {"type": "json_schema", "json_schema": schema}
+    else:
+        if strict is None:
+            if isinstance(schema, dict) and isinstance(schema.get("strict"), bool):
+                strict = schema["strict"]
+            else:
+                strict = False
+        function = convert_to_openai_tool(schema, strict=strict)["function"]
+        function["schema"] = function.pop("parameters")
+        response_format = {"type": "json_schema", "json_schema": function}
+
+    if strict is not None and strict is not response_format["json_schema"].get(
+        "strict"
+    ):
+        msg = (
+            f"Output schema already has 'strict' value set to "
+            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
+            f"with_structured_output as {strict}. Please make sure that "
+            f"'strict' is only specified in one place."
+        )
+        raise ValueError(msg)
+    return response_format

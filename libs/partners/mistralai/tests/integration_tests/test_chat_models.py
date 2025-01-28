@@ -3,6 +3,7 @@
 import json
 from typing import Any, Optional
 
+import pytest
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -10,6 +11,7 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 from langchain_mistralai.chat_models import ChatMistralAI
 
@@ -176,13 +178,27 @@ def test_streaming_structured_output() -> None:
         chunk_num += 1
 
 
-def test_structured_output_json_schema() -> None:
-    class Book(BaseModel):
-        name: str
-        authors: list[str]
+class Book(BaseModel):
+    name: str
+    authors: list[str]
 
+
+class BookDict(TypedDict):
+    name: str
+    authors: list[str]
+
+
+def _check_parsed_result(result: Any, schema: Any) -> None:
+    if schema == Book:
+        assert isinstance(result, Book)
+    elif schema == BookDict:
+        assert all(key in ["name", "authors"] for key in result.keys())
+
+
+@pytest.mark.parametrize("schema", [Book, BookDict])
+def test_structured_output_json_schema(schema: Any) -> None:
     llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
-    structured_llm = llm.with_structured_output(Book, method="json_schema")
+    structured_llm = llm.with_structured_output(schema, method="json_schema")
 
     messages = [
         {"role": "system", "content": "Extract the book's information."},
@@ -193,20 +209,17 @@ def test_structured_output_json_schema() -> None:
     ]
     # Test invoke
     result = structured_llm.invoke(messages)
-    assert isinstance(result, Book)
+    _check_parsed_result(result, schema)
 
     # Test stream
     for chunk in structured_llm.stream(messages):
-        assert isinstance(chunk, Book)
+        _check_parsed_result(chunk, schema)
 
 
-async def test_structured_output_json_schema_async() -> None:
-    class Book(BaseModel):
-        name: str
-        authors: list[str]
-
+@pytest.mark.parametrize("schema", [Book, BookDict])
+async def test_structured_output_json_schema_async(schema: Any) -> None:
     llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
-    structured_llm = llm.with_structured_output(Book, method="json_schema")
+    structured_llm = llm.with_structured_output(schema, method="json_schema")
 
     messages = [
         {"role": "system", "content": "Extract the book's information."},
@@ -217,11 +230,11 @@ async def test_structured_output_json_schema_async() -> None:
     ]
     # Test invoke
     result = await structured_llm.ainvoke(messages)
-    assert isinstance(result, Book)
+    _check_parsed_result(result, schema)
 
     # Test stream
     async for chunk in structured_llm.astream(messages):
-        assert isinstance(chunk, Book)
+        _check_parsed_result(chunk, schema)
 
 
 def test_tool_call() -> None:
