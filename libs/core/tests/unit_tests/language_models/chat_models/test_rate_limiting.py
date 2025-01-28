@@ -8,7 +8,6 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 
 def test_rate_limit_invoke() -> None:
     """Add rate limiter."""
-
     model = GenericFakeChatModel(
         messages=iter(["hello", "world"]),
         rate_limiter=InMemoryRateLimiter(
@@ -35,7 +34,6 @@ def test_rate_limit_invoke() -> None:
 
 async def test_rate_limit_ainvoke() -> None:
     """Add rate limiter."""
-
     model = GenericFakeChatModel(
         messages=iter(["hello", "world", "!"]),
         rate_limiter=InMemoryRateLimiter(

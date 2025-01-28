@@ -531,8 +531,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         """Persist a run."""
 
     async def _start_trace(self, run: Run) -> None:
-        """
-        Start a trace for a run.
+        """Start a trace for a run.
 
         Starting a trace will run concurrently with each _on_[run_type]_start method.
         No _on_[run_type]_start callback should depend on operations in _start_trace.
@@ -541,8 +540,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         await self._on_run_create(run)
 
     async def _end_trace(self, run: Run) -> None:
-        """
-        End a trace for a run.
+        """End a trace for a run.
 
         Ending a trace will run concurrently with each _on_[run_type]_end method.
         No _on_[run_type]_end callback should depend on operations in _end_trace.

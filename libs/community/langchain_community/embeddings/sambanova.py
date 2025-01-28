@@ -2,11 +2,17 @@ import json
 from typing import Dict, Generator, List, Optional
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from pydantic import BaseModel, ConfigDict
 
 
+@deprecated(
+    since="0.3.16",
+    removal="1.0",
+    alternative_import="langchain_sambanova.SambaStudioEmbeddings",
+)
 class SambaStudioEmbeddings(BaseModel, Embeddings):
     """SambaNova embedding models.
 

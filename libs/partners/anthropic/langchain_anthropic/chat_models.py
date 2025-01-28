@@ -636,7 +636,7 @@ class ChatAnthropic(BaseChatModel):
     def _get_ls_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
-        """Get the parameters used to invoke the model."""
+        """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
@@ -764,7 +764,11 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
-        if len(content) == 1 and content[0]["type"] == "text":
+        if (
+            len(content) == 1
+            and content[0]["type"] == "text"
+            and not content[0].get("citations")
+        ):
             msg = AIMessage(content=content[0]["text"])
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
@@ -819,6 +823,7 @@ class ChatAnthropic(BaseChatModel):
         tool_choice: Optional[
             Union[Dict[str, str], Literal["any", "auto"], str]
         ] = None,
+        parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         r"""Bind tool-like objects to this chat model.
@@ -832,6 +837,10 @@ class ChatAnthropic(BaseChatModel):
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
                 - ``"auto"``, ``{"type: "auto"}``, or None: automatically selects a tool (including no tool);
                 - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
+            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
+                Defaults to ``None`` (no specification, which allows parallel tool use).
+
+                .. versionadded:: 0.3.2
             kwargs: Any additional parameters are passed directly to
                 :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
@@ -968,6 +977,19 @@ class ChatAnthropic(BaseChatModel):
                 f"Unrecognized 'tool_choice' type {tool_choice=}. Expected dict, "
                 f"str, or None."
             )
+
+        if parallel_tool_calls is not None:
+            disable_parallel_tool_use = not parallel_tool_calls
+            if "tool_choice" in kwargs:
+                kwargs["tool_choice"]["disable_parallel_tool_use"] = (
+                    disable_parallel_tool_use
+                )
+            else:
+                kwargs["tool_choice"] = {
+                    "type": "auto",
+                    "disable_parallel_tool_use": disable_parallel_tool_use,
+                }
+
         return self.bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(

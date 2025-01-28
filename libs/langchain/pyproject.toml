@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain"
-version = "0.3.14"
+version = "0.3.16"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,6 +12,7 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.ruff]
+target-version = "py39"
 exclude = [ "tests/integration_tests/examples/non-utf8-encoding.py",]
 
 [tool.mypy]
@@ -33,9 +34,9 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.29"
+langchain-core = "^0.3.32"
 langchain-text-splitters = "^0.3.3"
-langsmith = ">=0.1.17,<0.3"
+langsmith = ">=0.1.17,<0.4"
 pydantic = "^2.7.4"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -51,7 +52,12 @@ version = ">=1.26.2,<3"
 python = ">=3.12"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = [ "E", "F", "I", "T201", "D",]
+pydocstyle = { convention = "google" }
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+"!langchain/indexes/vectorstore.py" = ["D"]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -119,7 +125,7 @@ cassio = "^0.1.0"
 langchainhub = "^0.1.16"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.9.2"
 [[tool.poetry.group.lint.dependencies.cffi]]
 version = "<1.17.1"
 python = "<3.10"
