@@ -97,8 +97,7 @@ def extract_sub_links(
             if continue_on_failure:
                 logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
                 continue
-            else:
-                raise e
+            raise
 
     results = []
     for path in absolute_paths:

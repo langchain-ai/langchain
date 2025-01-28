@@ -399,7 +399,7 @@ def test_tool_calling_no_arguments() -> None:
     # that as of 2024-08-19 fails with "Failed to call a function. Please
     # adjust your prompt." when `tool_choice="any"` is specified, but
     # passes when `tool_choice` is not specified.
-    model = ChatGroq(model="llama-3.1-70b-versatile", temperature=0)  # type: ignore[call-arg]
+    model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)  # type: ignore[call-arg]
 
     @tool
     def magic_function_no_args() -> int:
