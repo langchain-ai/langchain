@@ -1,6 +1,7 @@
 """DeepSeek chat models."""
 
-from typing import Dict, Optional, Self, Union
+from typing import Dict, Optional, Union
+from typing_extensions import Self
 
 import openai
 from langchain_core.outputs import ChatResult
