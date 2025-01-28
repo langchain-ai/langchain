@@ -10,30 +10,32 @@ from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.namespaces.migrate import main as migrate_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
+TEMPLATE_CMD = "template"
+APP_CMD = "app"
+INTEGRATION_CMD = "integration"
+
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
-    template_namespace.package_cli, name="template", help=template_namespace.__doc__
+    template_namespace.package_cli, name=TEMPLATE_CMD, help=template_namespace.__doc__
 )
-app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
+app.add_typer(app_namespace.app_cli, name=APP_CMD, help=app_namespace.__doc__)
 app.add_typer(
     integration_namespace.integration_cli,
-    name="integration",
+    name=INTEGRATION_CMD,
     help=integration_namespace.__doc__,
 )
 
 app.command(
     name="migrate",
     context_settings={
-        # Let Grit handle the arguments
         "allow_extra_args": True,
         "ignore_unknown_options": True,
     },
-)(
-    migrate_namespace.migrate,
-)
+)(migrate_namespace.migrate)
 
 
 def version_callback(show_version: bool) -> None:
+    """Displays the CLI version and exits."""
     if show_version:
         typer.echo(f"langchain-cli {__version__}")
         raise typer.Exit()
@@ -49,7 +51,8 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
-):
+) -> None:
+    """CLI entry point."""
     pass
 
 
@@ -57,26 +60,32 @@ def main(
 def serve(
     *,
     port: Annotated[
-        Optional[int], typer.Option(help="The port to run the server on")
+        Optional[int],
+        typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str], typer.Option(help="The host to run the server on")
+        Optional[str],
+        typer.Option(help="The host to run the server on"),
     ] = None,
 ) -> None:
-    """
-    Start the LangServe app, whether it's a template or an app.
-    """
-
-    # see if is a template
+    """Start the LangServe app, either as a template or an app."""
     try:
         project_dir = get_package_root()
         pyproject = project_dir / "pyproject.toml"
         get_langserve_export(pyproject)
-    except KeyError:
-        # not a template
+    except KeyError as e:
+        typer.secho(
+            f"Error: {e}. This project does not seem to be a template.",
+            fg=typer.colors.RED,
+        )
         app_namespace.serve(port=port, host=host)
+    except FileNotFoundError:
+        typer.secho(
+            "Error: `pyproject.toml` not found. "
+            "Ensure you are in a valid project directory.",
+            fg=typer.colors.RED,
+        )
     else:
-        # is a template
         template_namespace.serve(port=port, host=host)
 
 
