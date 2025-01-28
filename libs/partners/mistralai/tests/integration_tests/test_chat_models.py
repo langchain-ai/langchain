@@ -191,7 +191,7 @@ class BookDict(TypedDict):
 def _check_parsed_result(result: Any, schema: Any) -> None:
     if schema == Book:
         assert isinstance(result, Book)
-    elif schema == BookDict:
+    else:
         assert all(key in ["name", "authors"] for key in result.keys())
 
 
