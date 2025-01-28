@@ -195,7 +195,7 @@ def _check_parsed_result(result: Any, schema: Any) -> None:
         assert all(key in ["name", "authors"] for key in result.keys())
 
 
-@pytest.mark.parametrize("schema", [Book, BookDict])
+@pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
 def test_structured_output_json_schema(schema: Any) -> None:
     llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(schema, method="json_schema")
@@ -216,7 +216,7 @@ def test_structured_output_json_schema(schema: Any) -> None:
         _check_parsed_result(chunk, schema)
 
 
-@pytest.mark.parametrize("schema", [Book, BookDict])
+@pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
 async def test_structured_output_json_schema_async(schema: Any) -> None:
     llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(schema, method="json_schema")
