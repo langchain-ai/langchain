@@ -4,7 +4,6 @@ try:
         AutoModelForSeq2SeqLM,
         AutoTokenizer,
     )
-    from transformers import pipeline as hf_pipeline  # type: ignore[import]
 
 except ImportError:
     raise ValueError(
@@ -26,8 +25,10 @@ def get_gaudi_auto_model_for_causal_lm(model_id: str) -> AutoModelForCausalLM:
     from habana_frameworks.torch.hpu import wrap_in_hpu_graph
     import torch
 
+    # Tweak generation so that it runs faster on Gaudi
     adapt_transformers_to_gaudi()
     set_seed(27)
+
     model_dtype = torch.bfloat16
 
     model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=model_dtype)
@@ -44,8 +45,10 @@ def get_gaudi_auto_model_for_seq2seq_lm(model_id: str) -> AutoModelForSeq2SeqLM:
     from habana_frameworks.torch.hpu import wrap_in_hpu_graph
     import torch
 
+    # Tweak generation so that it runs faster on Gaudi
     adapt_transformers_to_gaudi()
     set_seed(27)
+
     model_dtype = torch.bfloat16
 
     model = AutoModelForSeq2SeqLM.from_pretrained(model_id, torch_dtype=model_dtype)
