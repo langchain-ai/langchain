@@ -1074,6 +1074,20 @@ files = [
 pytest = ">=6.2.5"
 
 [[package]]
+name = "pytest-timeout"
+version = "2.3.1"
+description = "pytest plugin to abort hanging tests"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytest-timeout-2.3.1.tar.gz", hash = "sha256:12397729125c6ecbdaca01035b9e5239d4db97352320af155b3f5de1ba5165d9"},
+    {file = "pytest_timeout-2.3.1-py3-none-any.whl", hash = "sha256:68188cb703edfc6a18fad98dc25a3c61e9f24d644b0b70f33af545219fc7813e"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0"
+
+[[package]]
 name = "pytest-watcher"
 version = "0.3.5"
 description = "Automatically rerun your tests on file modifications"
@@ -1649,4 +1663,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "7c03a9a824974f7e2cd363082dc2f1163488749db15f73e7b6326508c07633ae"
+content-hash = "9c889754b3cb5e1044c6f7eeab3a5e4857179762c18a6d378fbb1ba72ab5b08b"

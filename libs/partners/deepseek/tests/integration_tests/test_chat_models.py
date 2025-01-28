@@ -2,6 +2,7 @@
 
 from typing import Type
 
+import pytest
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_deepseek.chat_models import ChatDeepSeek
@@ -21,6 +22,7 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
         }
 
 
+@pytest.mark.xfail(reason="Reasoning API is down")
 def test_reasoning_content() -> None:
     """Test reasoning content."""
     chat_model = ChatDeepSeek(model="deepseek-reasoner")
