@@ -486,12 +486,11 @@ def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
     return model, model_provider
 
 
-def _check_pkg(pkg: str, *, pkg_kebab: Optional[str]=None) -> None:
+def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
         raise ImportError(
-            f"Unable to import {pkg_kebab}. Please install with "
-            f"`pip install -U {pkg_kebab}`"
+            f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
 
 
