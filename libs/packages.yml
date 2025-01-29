@@ -361,3 +361,13 @@ packages:
   repo: paymanai/langchain-payman-tool
   downloads: 0
   downloads_updated_at: "2025-01-22T00:00:00+00:00"
+- name: langchain-sambanova
+  repo: sambanova/langchain-sambanova
+  path: .
+  downloads: 0
+- name: langchain-deepseek-official
+  repo: langchain-ai/langchain
+  path: libs/partners/deepseek
+  downloads: 0
+  js: '@langchain/deepseek'
+  provider_page: deepseek
