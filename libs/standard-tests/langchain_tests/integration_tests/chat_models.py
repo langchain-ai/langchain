@@ -1,9 +1,11 @@
 import base64
 import json
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -1184,11 +1186,98 @@ class ChatModelIntegrationTests(ChatModelTests):
         Joke = _get_joke_class()
         # Pydantic class
         chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
-        result = chat.invoke("Tell me a joke about cats.")
+        mock_callback = MagicMock()
+        mock_callback.on_chat_model_start = MagicMock()
+
+        class TestCallbackHandler(BaseCallbackHandler):
+            metadatas: list[dict | None]
+
+            def __init__(self):
+                super().__init__()
+                self.metadatas = []
+
+            def on_chat_model_start(
+                self,
+                serialized: Any,
+                messages: Any,
+                *,
+                metadata: dict[str, Any] | None = None,
+                **kwargs: Any,
+            ) -> None:
+                self.metadatas.append(metadata)
+
+        invoke_callback = TestCallbackHandler()
+
+        result = chat.invoke(
+            "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
+        )
+
+        assert (
+            len(invoke_callback.metadatas) == 1
+        ), "Expected on_chat_model_start to be called once"
+        assert isinstance(invoke_callback.metadatas[0], dict)
+        assert isinstance(
+            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert invoke_callback.metadatas[0]["structured_output_format"]["schema"] == {
+            "type": "function",
+            "function": {
+                "name": "Joke",
+                "description": "Joke to tell user.",
+                "parameters": {
+                    "properties": {
+                        "setup": {
+                            "description": "question to set up a joke",
+                            "type": "string",
+                        },
+                        "punchline": {
+                            "description": "answer to resolve the joke",
+                            "type": "string",
+                        },
+                    },
+                    "required": ["setup", "punchline"],
+                    "type": "object",
+                },
+            },
+        }
+
         assert isinstance(result, Joke)
 
-        for chunk in chat.stream("Tell me a joke about cats."):
+        stream_callback = TestCallbackHandler()
+
+        for chunk in chat.stream(
+            "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
+        ):
             assert isinstance(chunk, Joke)
+
+        assert (
+            len(stream_callback.metadatas) == 1
+        ), "Expected on_chat_model_start to be called once"
+        assert isinstance(stream_callback.metadatas[0], dict)
+        assert isinstance(
+            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert stream_callback.metadatas[0]["structured_output_format"]["schema"] == {
+            "type": "function",
+            "function": {
+                "name": "Joke",
+                "description": "Joke to tell user.",
+                "parameters": {
+                    "properties": {
+                        "setup": {
+                            "description": "question to set up a joke",
+                            "type": "string",
+                        },
+                        "punchline": {
+                            "description": "answer to resolve the joke",
+                            "type": "string",
+                        },
+                    },
+                    "required": ["setup", "punchline"],
+                    "type": "object",
+                },
+            },
+        }
 
         # Schema
         chat = model.with_structured_output(
