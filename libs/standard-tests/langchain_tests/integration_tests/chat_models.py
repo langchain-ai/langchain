@@ -1213,9 +1213,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
         )
 
-        assert (
-            len(invoke_callback.metadatas) == 1
-        ), "Expected on_chat_model_start to be called once"
+        assert len(invoke_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
         assert isinstance(invoke_callback.metadatas[0], dict)
         assert isinstance(
             invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
@@ -1251,9 +1251,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         ):
             assert isinstance(chunk, Joke)
 
-        assert (
-            len(stream_callback.metadatas) == 1
-        ), "Expected on_chat_model_start to be called once"
+        assert len(stream_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
         assert isinstance(stream_callback.metadatas[0], dict)
         assert isinstance(
             stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
@@ -1334,9 +1334,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert isinstance(result, Joke)
 
-        assert (
-            len(ainvoke_callback.metadatas) == 1
-        ), "Expected on_chat_model_start to be called once"
+        assert len(ainvoke_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
         assert isinstance(ainvoke_callback.metadatas[0], dict)
         assert isinstance(
             ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
@@ -1370,9 +1370,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         ):
             assert isinstance(chunk, Joke)
 
-        assert (
-            len(astream_callback.metadatas) == 1
-        ), "Expected on_chat_model_start to be called once"
+        assert len(astream_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
 
         assert isinstance(astream_callback.metadatas[0], dict)
         assert isinstance(
