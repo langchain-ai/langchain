@@ -666,6 +666,12 @@ def create_base64_image(format: str = "jpeg") -> str:
     return f"data:image/{format};base64,{data}"
 
 
+def test_convert_to_openai_messages_string() -> None:
+    message = "Hello"
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "user", "content": "Hello"}
+
+
 def test_convert_to_openai_messages_single_message() -> None:
     message = HumanMessage(content="Hello")
     result = convert_to_openai_messages(message)
