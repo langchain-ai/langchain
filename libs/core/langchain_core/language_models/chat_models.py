@@ -365,11 +365,25 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
+            structured_output_format = kwargs.pop("structured_output_format", None)
+            if structured_output_format:
+                structured_output_format_dict = {
+                    "structured_output_format": {
+                        "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
+                    }
+                }
+            else:
+                structured_output_format_dict = {}
+
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
+                **structured_output_format_dict,
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -441,11 +455,26 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
+
+        structured_output_format = kwargs.pop("structured_output_format", None)
+        if structured_output_format:
+            structured_output_format_dict = {
+                "structured_output_format": {
+                    "kwargs": structured_output_format.get("kwargs", {}),
+                    "schema": convert_to_openai_tool(
+                        structured_output_format["schema"]
+                    ),
+                }
+            }
+        else:
+            structured_output_format_dict = {}
+
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params(stop=stop, **kwargs),
+            **structured_output_format_dict,
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -610,7 +639,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if structured_output_format:
             structured_output_format_dict = {
                 "structured_output_format": {
-                    "kwargs": {"method": structured_output_format["method"]},
+                    "kwargs": structured_output_format.get("kwargs", {}),
                     "schema": convert_to_openai_tool(
                         structured_output_format["schema"]
                     ),
@@ -711,11 +740,25 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        structured_output_format = kwargs.pop("structured_output_format", None)
+        if structured_output_format:
+            structured_output_format_dict = {
+                "structured_output_format": {
+                    "kwargs": structured_output_format.get("kwargs", {}),
+                    "schema": convert_to_openai_tool(
+                        structured_output_format["schema"]
+                    ),
+                }
+            }
+        else:
+            structured_output_format_dict = {}
+
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
+            **structured_output_format_dict,
         }
 
         callback_manager = AsyncCallbackManager.configure(
