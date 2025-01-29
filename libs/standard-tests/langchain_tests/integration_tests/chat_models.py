@@ -46,7 +46,7 @@ def _get_joke_class() -> type[BaseModel]:
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    metadatas: list[dict | None]
+    metadatas: list[Optional[dict]]
 
     def __init__(self) -> None:
         super().__init__()
@@ -57,7 +57,7 @@ class _TestCallbackHandler(BaseCallbackHandler):
         serialized: Any,
         messages: Any,
         *,
-        metadata: dict[str, Any] | None = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         self.metadatas.append(metadata)
