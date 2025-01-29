@@ -226,6 +226,22 @@ class SupabaseVectorStore(VectorStore):
         postgrest_filter: Optional[str] = None,
         score_threshold: Optional[float] = None,
     ) -> List[Tuple[Document, float]]:
+        # Convert MongoDB-style filter to PostgreSQL syntax if needed
+        if filter:
+            for key, value in filter.items():
+                if isinstance(value, dict) and "$in" in value:
+                    # Extract the list of values for the $in operator
+                    in_values = value["$in"]
+                    # Create a PostgreSQL IN clause
+                    values_str = ",".join(f"'{str(v)}'" for v in in_values)
+                    new_filter = f"metadata->>{key} IN ({values_str})"
+
+                    # Combine with existing postgrest_filter if present
+                    if postgrest_filter:
+                        postgrest_filter = f"({postgrest_filter}) and ({new_filter})"
+                    else:
+                        postgrest_filter = new_filter
+
         match_documents_params = self.match_args(query, filter)
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 

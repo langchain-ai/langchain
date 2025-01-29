@@ -88,7 +88,8 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         .. code-block:: python
 
-            from langchain_core import Document, BaseRetriever
+            from langchain_core.documents import Document
+            from langchain_core.retrievers import BaseRetriever
             from typing import List
 
             class SimpleRetriever(BaseRetriever):
@@ -262,7 +263,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 result = self._get_relevant_documents(input, **_kwargs)
         except Exception as e:
             run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             run_manager.on_retriever_end(
                 result,
@@ -325,7 +326,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 result = await self._aget_relevant_documents(input, **_kwargs)
         except Exception as e:
             await run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             await run_manager.on_retriever_end(
                 result,
