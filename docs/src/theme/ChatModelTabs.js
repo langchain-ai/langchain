@@ -180,7 +180,7 @@ export default function ChatModelTabs(props) {
       text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
       apiKeyName: "GROQ_API_KEY",
       packageName: "langchain-groq",
-      default: false,
+      default: true,
       shouldHide: hideGroq,
     },
     {
@@ -189,7 +189,7 @@ export default function ChatModelTabs(props) {
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${openAIParamsOrDefault})`,
       apiKeyName: "OPENAI_API_KEY",
       packageName: "langchain-openai",
-      default: true,
+      default: false,
       shouldHide: hideOpenai,
     },
     {
