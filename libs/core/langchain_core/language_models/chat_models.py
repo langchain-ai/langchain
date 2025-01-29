@@ -367,14 +367,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             messages = self._convert_input(input).to_messages()
             structured_output_format = kwargs.pop("structured_output_format", None)
             if structured_output_format:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
-                        ),
+                try:
+                    structured_output_format_dict = {
+                        "structured_output_format": {
+                            "kwargs": structured_output_format.get("kwargs", {}),
+                            "schema": convert_to_openai_tool(
+                                structured_output_format["schema"]
+                            ),
+                        }
                     }
-                }
+                except ValueError:
+                    structured_output_format_dict = {}
             else:
                 structured_output_format_dict = {}
 
@@ -640,14 +643,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """
         structured_output_format = kwargs.pop("structured_output_format", None)
         if structured_output_format:
-            structured_output_format_dict = {
-                "structured_output_format": {
-                    "kwargs": structured_output_format.get("kwargs", {}),
-                    "schema": convert_to_openai_tool(
-                        structured_output_format["schema"]
-                    ),
+            try:
+                structured_output_format_dict = {
+                    "structured_output_format": {
+                        "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
+                    }
                 }
-            }
+            except ValueError:
+                structured_output_format_dict = {}
         else:
             structured_output_format_dict = {}
 
@@ -745,14 +751,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """
         structured_output_format = kwargs.pop("structured_output_format", None)
         if structured_output_format:
-            structured_output_format_dict = {
-                "structured_output_format": {
-                    "kwargs": structured_output_format.get("kwargs", {}),
-                    "schema": convert_to_openai_tool(
-                        structured_output_format["schema"]
-                    ),
+            try:
+                structured_output_format_dict = {
+                    "structured_output_format": {
+                        "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
+                    }
                 }
-            }
+            except ValueError:
+                structured_output_format_dict = {}
         else:
             structured_output_format_dict = {}
 
