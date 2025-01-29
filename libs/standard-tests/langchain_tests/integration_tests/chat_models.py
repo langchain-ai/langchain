@@ -48,7 +48,7 @@ def _get_joke_class() -> type[BaseModel]:
 class _TestCallbackHandler(BaseCallbackHandler):
     metadatas: list[dict | None]
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.metadatas = []
 
