@@ -1111,9 +1111,13 @@ class ChatAnthropic(BaseChatModel):
                 Added support for TypedDict class as `schema`.
 
         """  # noqa: E501
-
-        tool_name = convert_to_anthropic_tool(schema)["name"]
-        llm = self.bind_tools([schema], tool_choice=tool_name)
+        formatted_tool = convert_to_anthropic_tool(schema)
+        tool_name = formatted_tool["name"]
+        llm = self.bind_tools(
+            [schema],
+            tool_choice=tool_name,
+            structured_output_format={"kwargs": {}, "schema": formatted_tool},
+        )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
