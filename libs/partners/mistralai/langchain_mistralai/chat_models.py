@@ -931,7 +931,14 @@ class ChatMistralAI(BaseChatModel):
                 )
             # TODO: Update to pass in tool name as tool_choice if/when Mistral supports
             # specifying a tool.
-            llm = self.bind_tools([schema], tool_choice="any")
+            llm = self.bind_tools(
+                [schema],
+                tool_choice="any",
+                structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": schema,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -943,7 +950,16 @@ class ChatMistralAI(BaseChatModel):
                     key_name=key_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                structured_output_format={
+                    "kwargs": {
+                        # this is correct - name difference with mistral api
+                        "method": "json_mode"
+                    },
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
@@ -956,7 +972,13 @@ class ChatMistralAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=True)
-            llm = self.bind(response_format=response_format)
+            llm = self.bind(
+                response_format=response_format,
+                structured_output_format={
+                    "kwargs": {"method": "json_schema"},
+                    "schema": schema,
+                },
+            )
 
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
