@@ -954,8 +954,9 @@ class ChatMistralAI(BaseChatModel):
                 response_format={"type": "json_object"},
                 structured_output_format={
                     "kwargs": {
+                        # this is correct - name difference with mistral api
                         "method": "json_mode"
-                    },  # this is correct - name difference between interface and mistral
+                    },
                     "schema": schema,
                 },
             )
