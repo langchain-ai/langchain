@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.3.32"
+version = "0.3.33"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -87,6 +87,7 @@ ruff = "^0.9.2"
 
 
 
+
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
@@ -96,10 +97,12 @@ types-jinja2 = "^2.11.9"
 
 
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
+
 
 
 
@@ -126,7 +129,9 @@ python = ">=3.12"
 
 
 
+
 [tool.poetry.group.test_integration.dependencies]
+
 
 
 
@@ -134,6 +139,7 @@ python = ">=3.12"
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
 develop = true
+
 
 
 
