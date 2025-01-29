@@ -1,7 +1,11 @@
 import base64
 import json
+<<<<<<< HEAD
 from typing import Any, List, Optional, cast
 from unittest.mock import MagicMock
+=======
+from typing import Any, List, Literal, Optional, cast
+>>>>>>> master
 
 import httpx
 import pytest
@@ -31,7 +35,9 @@ from langchain_tests.unit_tests.chat_models import (
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-def _get_joke_class() -> type[BaseModel]:
+def _get_joke_class(
+    schema_type: Literal["pydantic", "typeddict", "json_schema"],
+) -> Any:
     """
     :private:
     """
@@ -42,7 +48,28 @@ def _get_joke_class() -> type[BaseModel]:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    return Joke
+    def validate_joke(result: Any) -> bool:
+        return isinstance(result, Joke)
+
+    class JokeDict(TypedDict):
+        """Joke to tell user."""
+
+        setup: Annotated[str, ..., "question to set up a joke"]
+        punchline: Annotated[str, ..., "answer to resolve the joke"]
+
+    def validate_joke_dict(result: Any) -> bool:
+        return all(key in ["setup", "punchline"] for key in result.keys())
+
+    if schema_type == "pydantic":
+        return Joke, validate_joke
+
+    elif schema_type == "typeddict":
+        return JokeDict, validate_joke_dict
+
+    elif schema_type == "json_schema":
+        return Joke.model_json_schema(), validate_joke_dict
+    else:
+        raise ValueError("Invalid schema type")
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
@@ -1171,7 +1198,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["args"].get("answer_style")
         assert tool_call["type"] == "tool_call"
 
-    def test_structured_output(self, model: BaseChatModel) -> None:
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
@@ -1201,9 +1229,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        Joke = _get_joke_class()
-        # Pydantic class
-        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
+        schema, validation_function = _get_joke_class(schema_type) # type: ignore[arg-type]
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         mock_callback = MagicMock()
         mock_callback.on_chat_model_start = MagicMock()
 
@@ -1212,6 +1239,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = chat.invoke(
             "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
         )
+        validation_function(result)
 
         assert len(invoke_callback.metadatas) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -1242,14 +1270,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             },
         }
 
-        assert isinstance(result, Joke)
-
         stream_callback = _TestCallbackHandler()
 
         for chunk in chat.stream(
             "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
         ):
-            assert isinstance(chunk, Joke)
+            validation_function(chunk)
+        assert chunk
 
         assert len(stream_callback.metadatas) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -1280,20 +1307,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             },
         }
 
-        # Schema
-        chat = model.with_structured_output(
-            Joke.model_json_schema(), **self.structured_output_kwargs
-        )
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
-
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
-
-    async def test_structured_output_async(self, model: BaseChatModel) -> None:
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+    async def test_structured_output_async(self, model: BaseChatModel, schema_type: str) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
@@ -1323,16 +1338,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        Joke = _get_joke_class()
+        schema, validation_function = _get_joke_class(schema_type) # type: ignore[arg-type]
 
         # Pydantic class
-        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         ainvoke_callback = _TestCallbackHandler()
 
         result = await chat.ainvoke(
             "Tell me a joke about cats.", config={"callbacks": [ainvoke_callback]}
         )
-        assert isinstance(result, Joke)
+        validation_function(result)
 
         assert len(ainvoke_callback.metadatas) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -1368,7 +1383,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         async for chunk in chat.astream(
             "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
         ):
-            assert isinstance(chunk, Joke)
+            validation_function(chunk)
+        assert chunk
 
         assert len(astream_callback.metadatas) == 1, (
             "Expected on_chat_model_start to be called once"
@@ -1399,19 +1415,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
             },
         }
-
-        # Schema
-        chat = model.with_structured_output(
-            Joke.model_json_schema(), **self.structured_output_kwargs
-        )
-        result = await chat.ainvoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
-
-        async for chunk in chat.astream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
