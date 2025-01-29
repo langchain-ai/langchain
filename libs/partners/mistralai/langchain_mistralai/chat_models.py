@@ -976,7 +976,7 @@ class ChatMistralAI(BaseChatModel):
                 response_format=response_format,
                 structured_output_format={
                     "kwargs": {"method": "json_schema"},
-                    "schema": response_format,
+                    "schema": schema,
                 },
             )
 
