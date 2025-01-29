@@ -175,6 +175,15 @@ export default function ChatModelTabs(props) {
 
   const tabItems = [
     {
+      value: "Groq",
+      label: "Groq",
+      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
+      apiKeyName: "GROQ_API_KEY",
+      packageName: "langchain-groq",
+      default: false,
+      shouldHide: hideGroq,
+    },
+    {
       value: "OpenAI",
       label: "OpenAI",
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${openAIParamsOrDefault})`,
@@ -245,15 +254,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-fireworks",
       default: false,
       shouldHide: hideFireworks,
-    },
-    {
-      value: "Groq",
-      label: "Groq",
-      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
-      apiKeyName: "GROQ_API_KEY",
-      packageName: "langchain-groq",
-      default: false,
-      shouldHide: hideGroq,
     },
     {
       value: "MistralAI",
