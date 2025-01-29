@@ -235,7 +235,7 @@ class SupabaseVectorStore(VectorStore):
                     # Create a PostgreSQL IN clause
                     values_str = ",".join(f"'{str(v)}'" for v in in_values)
                     new_filter = f"metadata->>{key} IN ({values_str})"
-                    
+
                     # Combine with existing postgrest_filter if present
                     if postgrest_filter:
                         postgrest_filter = f"({postgrest_filter}) and ({new_filter})"
