@@ -1,11 +1,7 @@
 import base64
 import json
-<<<<<<< HEAD
-from typing import Any, List, Optional, cast
-from unittest.mock import MagicMock
-=======
 from typing import Any, List, Literal, Optional, cast
->>>>>>> master
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
@@ -1229,7 +1225,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        schema, validation_function = _get_joke_class(schema_type) # type: ignore[arg-type]
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         mock_callback = MagicMock()
         mock_callback.on_chat_model_start = MagicMock()
@@ -1308,7 +1304,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
-    async def test_structured_output_async(self, model: BaseChatModel, schema_type: str) -> None:
+    async def test_structured_output_async(
+        self, model: BaseChatModel, schema_type: str
+    ) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
@@ -1338,9 +1336,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        schema, validation_function = _get_joke_class(schema_type) # type: ignore[arg-type]
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
 
-        # Pydantic class
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         ainvoke_callback = _TestCallbackHandler()
 
