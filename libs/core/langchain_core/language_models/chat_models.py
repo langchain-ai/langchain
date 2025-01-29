@@ -610,7 +610,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if structured_output_format:
             structured_output_format_dict = {
                 "structured_output_format": {
-                    "method": structured_output_format["method"],
+                    "kwargs": {"method": structured_output_format["method"]},
                     "schema": convert_to_openai_tool(
                         structured_output_format["schema"]
                     ),
@@ -1137,9 +1137,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         self,
         schema: Union[typing.Dict, type],  # noqa: UP006
         *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
@@ -1258,15 +1255,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 
-        # default implementation only supports function_calling as method
-        if method != "function_calling":
-            msg = "Only method='function_calling' is supported by this model."
-            raise ValueError(msg)
-
         llm = self.bind_tools(
             [schema],
             tool_choice="any",
-            structured_output_format={"method": method, "schema": schema},
+            structured_output_format={"kwargs": {}, "schema": schema},
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
