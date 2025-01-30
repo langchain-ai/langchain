@@ -82,7 +82,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     offset = index + previous_chunk_len - self._chunk_overlap
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
-                    previous_chunk_len = len(chunk)
+                    previous_chunk_len = self.length_function(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents
