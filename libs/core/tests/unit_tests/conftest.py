@@ -12,7 +12,7 @@ from pytest_mock import MockerFixture
 
 @pytest.fixture(autouse=True)
 def blockbuster() -> Iterator[BlockBuster]:
-    with blockbuster_ctx() as bb:
+    with blockbuster_ctx("langchain_core") as bb:
         for func in ["os.stat", "os.path.abspath"]:
             (
                 bb.functions[func]
