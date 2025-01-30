@@ -76,33 +76,33 @@ class TestAGEGraph(unittest.TestCase):
         ]
 
         expected = [
-                # Expected output for the first positive case
-                """
+            # Expected output for the first positive case
+            """
                 SELECT * FROM ag_catalog.cypher('test', $$
                 MATCH (keanu:Person {name:'Keanu Reeves'})
                 RETURN keanu.name AS name, keanu.born AS born
                 $$) AS (name agtype, born agtype);
                 """,
-                # Second test case (no RETURN clause)
-                """
+            # Second test case (no RETURN clause)
+            """
                 SELECT * FROM ag_catalog.cypher('test', $$
                 MERGE (n:a {id: 1})
                 $$) AS (a agtype);
                 """,
-                # Expected output for the negative cases (no RETURN clause)
-                """
+            # Expected output for the negative cases (no RETURN clause)
+            """
                 SELECT * FROM ag_catalog.cypher('test', $$
                 MATCH (n {description: "This will return a value"})
                 MERGE (n)-[:RELATED]->(m)
                 $$) AS (a agtype);
                 """,
-                """
+            """
                 SELECT * FROM ag_catalog.cypher('test', $$
                 MATCH (n {returnValue: "some value"})
                 MERGE (n)-[:RELATED]->(m)
                 $$) AS (a agtype);
-                """
-            ]
+                """,
+        ]
 
         for idx, value in enumerate(inputs):
             result = AGEGraph._wrap_query(value, "test")
@@ -110,36 +110,41 @@ class TestAGEGraph(unittest.TestCase):
             self.assertEqual(
                 re.sub(r"\s", "", result),
                 re.sub(r"\s", "", expected_result),
-                f"Failed on test case {idx + 1}\nInput:\n{value}\nExpected:\n{expected_result}\nGot:\n{result}"
+                (
+                    f"Failed on test case {idx + 1}\n"
+                    f"Input:\n{value}\n"
+                    f"Expected:\n{expected_result}\n"
+                    f"Got:\n{result}"
+                ),
             )
 
     def test_wrap_query_union_except(self) -> None:
         """Test query wrapping with UNION and EXCEPT operators."""
         inputs = [
-                 # UNION case
-                """
+            # UNION case
+            """
                 MATCH (n:Person)
                 RETURN n.name AS name, n.age AS age
                 UNION
                 MATCH (n:Employee)
                 RETURN n.name AS name, n.salary AS salary
                 """,
-                """
+            """
                 MATCH (a:Employee {name: "Alice"})
                 RETURN a.name AS name
                 UNION
                 MATCH (b:Manager {name: "Bob"})
                 RETURN b.name AS name
                 """,
-                # Complex UNION case
-                """
+            # Complex UNION case
+            """
                 MATCH (n)-[r]->(m)
                 RETURN n.name AS source, type(r) AS relationship, m.name AS target
                 UNION
                 MATCH (m)-[r]->(n)
                 RETURN m.name AS source, type(r) AS relationship, n.name AS target
                 """,
-                """
+            """
                 MATCH (a:Person)-[:FRIEND]->(b:Person)
                 WHERE a.age > 30
                 RETURN a.name AS name
@@ -148,22 +153,22 @@ class TestAGEGraph(unittest.TestCase):
                 WHERE c.age < 25
                 RETURN c.name AS name
                 """,
-                # EXCEPT case
-                """
+            # EXCEPT case
+            """
                 MATCH (n:Person)
                 RETURN n.name AS name
                 EXCEPT
                 MATCH (n:Employee)
                 RETURN n.name AS name
                 """,
-                """
+            """
                 MATCH (a:Person)
                 RETURN a.name AS name, a.age AS age
                 EXCEPT
                 MATCH (b:Person {name: "Alice", age: 30})
                 RETURN b.name AS name, b.age AS age   
                 """,
-            ]
+        ]
 
         expected = [
             """
@@ -230,7 +235,12 @@ class TestAGEGraph(unittest.TestCase):
             self.assertEqual(
                 re.sub(r"\s", "", result),
                 re.sub(r"\s", "", expected_result),
-                f"Failed on test case {idx + 1}\nInput:\n{value}\nExpected:\n{expected_result}\nGot:\n{result}"
+                (
+                    f"Failed on test case {idx + 1}\n"
+                    f"Input:\n{value}\n"
+                    f"Expected:\n{expected_result}\n"
+                    f"Got:\n{result}"
+                ),
             )
 
     def test_wrap_query_errors(self) -> None:
@@ -250,13 +260,12 @@ class TestAGEGraph(unittest.TestCase):
             UNION
             MATCH ()
             RETURN *
-            """
+            """,
         ]
 
         for query in error_cases:
             with self.assertRaises(ValueError):
                 AGEGraph._wrap_query(query, "test")
-            
 
     def test_format_properties(self) -> None:
         inputs: List[Dict[str, Any]] = [{}, {"a": "b"}, {"a": "b", "c": 1, "d": True}]
