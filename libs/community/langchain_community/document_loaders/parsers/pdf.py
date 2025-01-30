@@ -416,8 +416,6 @@ class PyPDFParser(BaseBlobParser):
                     page_content=self.pages_delimiter.join(single_texts),
                     metadata=_validate_metadata(doc_metadata),
                 )
-            else:
-                raise NotImplementedError(f'Mode {self.mode} is not supported')
 
     def extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
         """Extract images from a PDF page and get the text using images_to_text.
