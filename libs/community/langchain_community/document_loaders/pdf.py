@@ -241,7 +241,7 @@ class PyPDFLoader(BasePDFLoader):
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[dict] = None,
         extract_images: bool = False,
-        *,  # Move after the file_path ?
+        *,
         mode: Literal["single", "page"] = "page",
         images_parser: Optional[BaseImageBlobParser] = None,
         images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
@@ -268,8 +268,9 @@ class PyPDFLoader(BasePDFLoader):
                 pointing to (`![body)(#)`]
                 - "html-img" = wrap the content as the `alt` text of an tag and link to
                 (`<img alt="{body}" src="#"/>`)
-            extraction_mode: “plain” for legacy functionality, “layout” for experimental
-                layout mode functionality
+            extraction_mode: “plain” for legacy functionality, “layout” extract text
+                in a fixed width format that closely adheres to the rendered layout in
+                the source pdf
             extraction_kwargs: Optional additional parameters for the extraction
                 process.
 

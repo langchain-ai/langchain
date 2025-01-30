@@ -294,7 +294,7 @@ class PyPDFParser(BaseBlobParser):
         self,
         password: Optional[Union[str, bytes]] = None,
         extract_images: bool = False,
-        *,  # Move on top ?
+        *,
         mode: Literal["single", "page"] = "page",
         pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         images_parser: Optional[BaseImageBlobParser] = None,
@@ -306,11 +306,11 @@ class PyPDFParser(BaseBlobParser):
 
         Args:
             password: Optional password for opening encrypted PDFs.
+            extract_images: Whether to extract images from the PDF.
             mode: The extraction mode, either "single" for the entire document or "page"
                 for page-wise extraction.
             pages_delimiter: A string delimiter to separate pages in single-mode
                 extraction.
-            extract_images: Whether to extract images from the PDF.
             images_parser: Optional image blob parser.
             images_inner_format: The format for the parsed output.
                 - "text" = return the content as is
@@ -322,10 +322,6 @@ class PyPDFParser(BaseBlobParser):
                 layout mode functionality
             extraction_kwargs: Optional additional parameters for the extraction
                 process.
-
-        Returns:
-            This method does not directly return data. Use the `parse` or `lazy_parse`
-            methods to retrieve parsed documents with content and metadata.
 
         Raises:
             ValueError: If the `mode` is not "single" or "page".
@@ -420,6 +416,8 @@ class PyPDFParser(BaseBlobParser):
                     page_content=self.pages_delimiter.join(single_texts),
                     metadata=_validate_metadata(doc_metadata),
                 )
+            else:
+                raise NotImplementedError(f'Mode {self.mode} is not supported')
 
     def extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
         """Extract images from a PDF page and get the text using images_to_text.
