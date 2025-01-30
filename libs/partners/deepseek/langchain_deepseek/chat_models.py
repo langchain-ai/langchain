@@ -218,3 +218,76 @@ class ChatDeepSeek(BaseChatOpenAI):
             )
 
         return rtn
+    
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal[
+            "function_calling", "json_object"
+        ] = "function_calling",
+        include_raw: bool = False,
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        if strict is not None and method == "json_mode":
+            raise ValueError(
+                "Argument `strict` is not supported with `method`='json_mode'"
+            )
+        is_pydantic_schema = _is_pydantic_class(schema)
+
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            bind_kwargs = self._filter_disabled_params(
+                tool_choice=tool_name,
+                parallel_tool_calls=False,
+                strict=strict,
+                structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": schema,
+                },
+            )
+
+            llm = self.bind_tools([schema], **bind_kwargs)
+            if is_pydantic_schema:
+                output_parser: Runnable = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_object":
+            llm = self.bind(
+                response_format={"type": "json_object"}
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
