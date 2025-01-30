@@ -1,9 +1,11 @@
 import base64
 import json
 from typing import Any, List, Literal, Optional, cast
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -17,7 +19,10 @@ from langchain_core.messages import (
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
-from langchain_core.utils.function_calling import tool_example_to_messages
+from langchain_core.utils.function_calling import (
+    convert_to_openai_tool,
+    tool_example_to_messages,
+)
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
@@ -64,6 +69,24 @@ def _get_joke_class(
         return Joke.model_json_schema(), validate_joke_dict
     else:
         raise ValueError("Invalid schema type")
+
+
+class _TestCallbackHandler(BaseCallbackHandler):
+    metadatas: list[Optional[dict]]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.metadatas = []
+
+    def on_chat_model_start(
+        self,
+        serialized: Any,
+        messages: Any,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.metadatas.append(metadata)
 
 
 class _MagicFunctionSchema(BaseModel):
@@ -1207,12 +1230,45 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
-        result = chat.invoke("Tell me a joke about cats.")
+        mock_callback = MagicMock()
+        mock_callback.on_chat_model_start = MagicMock()
+
+        invoke_callback = _TestCallbackHandler()
+
+        result = chat.invoke(
+            "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
+        )
         validation_function(result)
 
-        for chunk in chat.stream("Tell me a joke about cats."):
+        assert len(invoke_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(invoke_callback.metadatas[0], dict)
+        assert isinstance(
+            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert invoke_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
+
+        stream_callback = _TestCallbackHandler()
+
+        for chunk in chat.stream(
+            "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
+        ):
             validation_function(chunk)
         assert chunk
+
+        assert len(stream_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(stream_callback.metadatas[0], dict)
+        assert isinstance(
+            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert stream_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
@@ -1248,13 +1304,45 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
+
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
-        result = await chat.ainvoke("Tell me a joke about cats.")
+        ainvoke_callback = _TestCallbackHandler()
+
+        result = await chat.ainvoke(
+            "Tell me a joke about cats.", config={"callbacks": [ainvoke_callback]}
+        )
         validation_function(result)
 
-        async for chunk in chat.astream("Tell me a joke about cats."):
+        assert len(ainvoke_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(ainvoke_callback.metadatas[0], dict)
+        assert isinstance(
+            ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert ainvoke_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
+
+        astream_callback = _TestCallbackHandler()
+
+        async for chunk in chat.astream(
+            "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
+        ):
             validation_function(chunk)
         assert chunk
+
+        assert len(astream_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+
+        assert isinstance(astream_callback.metadatas[0], dict)
+        assert isinstance(
+            astream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert astream_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
