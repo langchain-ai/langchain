@@ -3031,7 +3031,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         from langchain_core.beta.runnables.context import aconfig_with_context
 
         # setup callbacks and context
-        config = await aconfig_with_context(ensure_config(config), self.steps)
+        config = aconfig_with_context(ensure_config(config), self.steps)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -3209,7 +3209,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         # setup callbacks and context
         configs = [
-            await aconfig_with_context(c, self.steps)
+            aconfig_with_context(c, self.steps)
             for c in get_config_list(config, len(inputs))
         ]
         callback_managers = [
@@ -3360,7 +3360,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         from langchain_core.beta.runnables.context import aconfig_with_context
 
         steps = [self.first] + self.middle + [self.last]
-        config = await aconfig_with_context(config, self.steps)
+        config = aconfig_with_context(config, self.steps)
 
         # stream the last steps
         # transform the input stream of each step with the next

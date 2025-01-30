@@ -65,11 +65,20 @@ def _key_from_id(id_: str) -> str:
 
 def _config_with_context(
     config: RunnableConfig,
-    context_specs: list[tuple[ConfigurableFieldSpec, int]],
+    steps: list[Runnable],
     setter: Callable,
     getter: Callable,
     event_cls: Union[type[threading.Event], type[asyncio.Event]],
 ) -> RunnableConfig:
+    if any(k.startswith(CONTEXT_CONFIG_PREFIX) for k in config.get("configurable", {})):
+        return config
+
+    context_specs = [
+        (spec, i)
+        for i, step in enumerate(steps)
+        for spec in step.config_specs
+        if spec.id.startswith(CONTEXT_CONFIG_PREFIX)
+    ]
     grouped_by_key = {
         key: list(group)
         for key, group in groupby(
@@ -112,7 +121,7 @@ def _config_with_context(
     return patch_config(config, configurable=context_funcs)
 
 
-async def aconfig_with_context(
+def aconfig_with_context(
     config: RunnableConfig,
     steps: list[Runnable],
 ) -> RunnableConfig:
@@ -125,18 +134,7 @@ async def aconfig_with_context(
     Returns:
         The patched runnable config.
     """
-    if any(k.startswith(CONTEXT_CONFIG_PREFIX) for k in config.get("configurable", {})):
-        return config
-
-    context_specs = [
-        (spec, i)
-        for i, step in enumerate(steps)
-        for spec in await asyncio.to_thread(getattr, step, "config_specs")
-        if spec.id.startswith(CONTEXT_CONFIG_PREFIX)
-    ]
-    return _config_with_context(
-        config, context_specs, _asetter, _agetter, asyncio.Event
-    )
+    return _config_with_context(config, steps, _asetter, _agetter, asyncio.Event)
 
 
 def config_with_context(
@@ -152,18 +150,7 @@ def config_with_context(
     Returns:
         The patched runnable config.
     """
-    if any(k.startswith(CONTEXT_CONFIG_PREFIX) for k in config.get("configurable", {})):
-        return config
-
-    context_specs = [
-        (spec, i)
-        for i, step in enumerate(steps)
-        for spec in step.config_specs
-        if spec.id.startswith(CONTEXT_CONFIG_PREFIX)
-    ]
-    return _config_with_context(
-        config, context_specs, _setter, _getter, threading.Event
-    )
+    return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
 @beta()
