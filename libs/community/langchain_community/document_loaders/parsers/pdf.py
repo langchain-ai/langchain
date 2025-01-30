@@ -318,8 +318,9 @@ class PyPDFParser(BaseBlobParser):
                 pointing to (`![body)(#)`]
                 - "html-img" = wrap the content as the `alt` text of an tag and link to
                 (`<img alt="{body}" src="#"/>`)
-            extraction_mode: “plain” for legacy functionality, “layout” for experimental
-                layout mode functionality
+            extraction_mode: “plain” for legacy functionality, “layout” extract text
+                in a fixed width format that closely adheres to the rendered layout in
+                the source pdf.
             extraction_kwargs: Optional additional parameters for the extraction
                 process.
 
