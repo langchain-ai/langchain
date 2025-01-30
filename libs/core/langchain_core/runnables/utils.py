@@ -397,9 +397,9 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else name
     except (SyntaxError, TypeError, OSError, SystemError):
         return name
+    return visitor.source if visitor.count == 1 else name
 
 
 @lru_cache(maxsize=256)
@@ -440,9 +440,10 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                                 break
                     else:
                         values.append(vv)
-        return values
     except (SyntaxError, TypeError, OSError, SystemError):
         return []
+
+    return values
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:

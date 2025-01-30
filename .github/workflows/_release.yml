@@ -217,7 +217,8 @@ jobs:
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
-          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
+          # also remove _official suffix
+          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g | sed s/_official//g)"
 
           poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 

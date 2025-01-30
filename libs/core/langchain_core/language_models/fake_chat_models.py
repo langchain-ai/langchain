@@ -242,7 +242,7 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         message = chat_result.generations[0].message
 
@@ -251,7 +251,7 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected invoke to return an AIMessage, "
                 f"but got {type(message)} instead."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         content = message.content
 
