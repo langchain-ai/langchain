@@ -36,7 +36,16 @@ class YahooFinanceNewsTool(BaseTool):  # type: ignore[override, override]
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Use the Yahoo Finance News tool."""
+        """
+            Use the Yahoo Finance News tool.
+
+            Args:
+                query: Company ticker symbol (e.g., 'AAPL' for Apple).
+                run_manager: Optional callback manager.
+
+            Returns:
+                str: Formatted news results or error message.
+        """
         try:
             import yfinance
         except ImportError:
@@ -53,8 +62,8 @@ class YahooFinanceNewsTool(BaseTool):  # type: ignore[override, override]
 
         links = []
         try:
-            links = [n["link"] for n in company.news if n["type"] == "STORY"]
-        except (HTTPError, ReadTimeout, ConnectionError):
+            links = [n['content']['canonicalUrl']['url'] for n in company.news if n['content']['contentType'] == 'STORY']
+        except (HTTPError, ReadTimeout, ConnectionError, KeyError, AttributeError):
             if not links:
                 return f"No news found for company that searched with {query} ticker."
         if not links:
