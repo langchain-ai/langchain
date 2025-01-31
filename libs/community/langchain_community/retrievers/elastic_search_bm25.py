@@ -43,7 +43,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
     @classmethod
     def create(
-        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75
+        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75, es_params: dict = {}
     ) -> ElasticSearchBM25Retriever:
         """
         Create a ElasticSearchBM25Retriever from a list of texts.
@@ -60,7 +60,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         from elasticsearch import Elasticsearch
 
         # Create an Elasticsearch client instance
-        es = Elasticsearch(elasticsearch_url)
+        es = Elasticsearch(elasticsearch_url, **es_params)
 
         # Define the index settings and mappings
         settings = {
@@ -89,6 +89,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     def add_texts(
         self,
         texts: Iterable[str],
+        metadata: List[dict],
         refresh_indices: bool = True,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the retriever.
@@ -109,6 +110,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             )
         requests = []
         ids = []
+        metadata = metadata or [{}] * len(texts)
         for i, text in enumerate(texts):
             _id = str(uuid.uuid4())
             request = {
@@ -116,6 +118,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
                 "_index": self.index_name,
                 "content": text,
                 "_id": _id,
+                "metadata":metadata[i]
             }
             ids.append(_id)
             requests.append(request)
@@ -124,6 +127,17 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         if refresh_indices:
             self.client.indices.refresh(index=self.index_name)
         return ids
+    
+    def add_documents(
+            self, 
+            documents: List[Document],
+            refresh_indices:bool = True,
+    ) -> List[str]:
+        
+        texts = [doc.page_content for doc in documents]
+        metadata = [doc.metadata for doc in documents]
+        
+        return self.add_texts(texts, metadata)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
