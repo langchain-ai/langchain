@@ -43,7 +43,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
     @classmethod
     def create(
-        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75, es_params: dict = {}
+        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75, analyzer_type: str = "standard", es_params: dict = {}
     ) -> ElasticSearchBM25Retriever:
         """
         Create a ElasticSearchBM25Retriever from a list of texts.
@@ -64,7 +64,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
         # Define the index settings and mappings
         settings = {
-            "analysis": {"analyzer": {"default": {"type": "standard"}}},
+            "analysis": {"analyzer": {"default": {"type": f"{analyzer_type}"}}},
             "similarity": {
                 "custom_bm25": {
                     "type": "BM25",
