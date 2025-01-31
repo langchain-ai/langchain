@@ -248,6 +248,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         *,
         method: Literal["function_calling", "json_object"] = "function_calling",
         include_raw: bool = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         if kwargs:
