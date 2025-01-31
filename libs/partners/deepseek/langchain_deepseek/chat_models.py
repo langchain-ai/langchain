@@ -246,7 +246,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_object"] = "function_calling",
+        method: Literal['function_calling', 'json_mode', 'json_schema'] = 'function_calling',
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
@@ -257,7 +257,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
-                    "schema must be specified when method is not 'json_object'. "
+                    "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
@@ -271,7 +271,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=tool_name, first_tool_only=True
                 )
-        elif method == "json_object":
+        elif method in ["json_mode", "json_schema"]:
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = JsonOutputParser()
         else:
