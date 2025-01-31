@@ -82,8 +82,9 @@ class YahooFinanceNewsTool(BaseTool):  # type: ignore[override, override]
     @staticmethod
     def _format_results(docs: Iterable[Document], query: str) -> str:
         doc_strings = [
-            "\n".join([doc.metadata["title"], doc.metadata["description"]])
+            "\n".join([doc.metadata["title"], doc.metadata.get("description", "")])
             for doc in docs
-            if query in doc.metadata["description"] or query in doc.metadata["title"]
+            if query in doc.metadata.get("description", "")
+            or query in doc.metadata["title"]
         ]
         return "\n\n".join(doc_strings)
