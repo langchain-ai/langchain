@@ -212,6 +212,7 @@ def test_amazontextract_loader_failures() -> None:
     "parser_factory,params",
     [
         ("PyMuPDFLoader", {}),
+        ("PyPDFLoader", {}),
     ],
 )
 def test_standard_parameters(
@@ -229,12 +230,10 @@ def test_standard_parameters(
     loader = loader_class(
         file_path,
         mode="page",
-        page_delimiter="---",
+        pages_delimiter="---",
         images_parser=None,
         images_inner_format="text",
         password=None,
-        extract_tables=None,
-        extract_tables_settings=None,
     )
     docs = loader.load()
     assert len(docs) == 16

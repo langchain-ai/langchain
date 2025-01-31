@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import json
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Generator
-from typing import Any
+from collections.abc import AsyncGenerator, Coroutine, Generator
+from inspect import isasyncgenfunction
+from typing import Any, Callable, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,6 +15,7 @@ from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
 from typing_extensions import Literal
 
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
 
@@ -35,6 +39,17 @@ def _get_posts(client: Client) -> list:
     return posts
 
 
+def _create_tracer_with_mocked_client(
+    project_name: Optional[str] = None,
+    tags: Optional[list[str]] = None,
+) -> LangChainTracer:
+    mock_session = MagicMock()
+    mock_client_ = Client(
+        session=mock_session, api_key="test", auto_batch_tracing=False
+    )
+    return LangChainTracer(client=mock_client_, project_name=project_name, tags=tags)
+
+
 def test_tracing_context() -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -56,12 +71,8 @@ def test_tracing_context() -> None:
 
 def test_config_traceable_handoff() -> None:
     get_env_var.cache_clear()
-    mock_session = MagicMock()
-    mock_client_ = Client(
-        session=mock_session, api_key="test", auto_batch_tracing=False
-    )
-    tracer = LangChainTracer(
-        client=mock_client_, project_name="another-flippin-project", tags=["such-a-tag"]
+    tracer = _create_tracer_with_mocked_client(
+        project_name="another-flippin-project", tags=["such-a-tag"]
     )
 
     @traceable
@@ -100,7 +111,7 @@ def test_config_traceable_handoff() -> None:
     my_parent_runnable = RunnableLambda(my_parent_function)
 
     assert my_parent_runnable.invoke(1, {"callbacks": [tracer]}) == 6
-    posts = _get_posts(mock_client_)
+    posts = _get_posts(tracer.client)
     assert all(post["session_name"] == "another-flippin-project" for post in posts)
     # There should have been 6 runs created,
     # one for each function invocation
@@ -143,11 +154,7 @@ def test_config_traceable_handoff() -> None:
     sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+"
 )
 async def test_config_traceable_async_handoff() -> None:
-    mock_session = MagicMock()
-    mock_client_ = Client(
-        session=mock_session, api_key="test", auto_batch_tracing=False
-    )
-    tracer = LangChainTracer(client=mock_client_)
+    tracer = _create_tracer_with_mocked_client()
 
     @traceable
     def my_great_great_grandchild_function(a: int) -> int:
@@ -175,7 +182,7 @@ async def test_config_traceable_async_handoff() -> None:
     my_parent_runnable = RunnableLambda(my_parent_function)  # type: ignore
     result = await my_parent_runnable.ainvoke(1, {"callbacks": [tracer]})
     assert result == 6
-    posts = _get_posts(mock_client_)
+    posts = _get_posts(tracer.client)
     # There should have been 6 runs created,
     # one for each function invocation
     assert len(posts) == 6
@@ -245,144 +252,172 @@ def test_tracing_enable_disable(
         assert not mock_posts
 
 
-@pytest.mark.parametrize(
-    "method", ["invoke", "stream", "batch", "ainvoke", "astream", "abatch"]
-)
-async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
-    if method.startswith("a") and sys.version_info < (3, 11):
-        pytest.skip("Asyncio context vars require Python 3.11+")
-    mock_session = MagicMock()
-    mock_client_ = Client(
-        session=mock_session, api_key="test", auto_batch_tracing=False
+class TestRunnableSequenceParallelTraceNesting:
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.tracer = _create_tracer_with_mocked_client()
+
+    @staticmethod
+    def _create_parent(
+        other_thing: Callable[
+            [int], Generator[int, None, None] | AsyncGenerator[int, None]
+        ],
+    ) -> RunnableLambda:
+        @RunnableLambda
+        def my_child_function(a: int) -> int:
+            return a + 2
+
+        parallel = RunnableParallel(
+            chain_result=my_child_function.with_config(tags=["atag"]),
+            other_thing=other_thing,
+        )
+
+        def before(x: int) -> int:
+            return x
+
+        def after(x: dict) -> int:
+            return x["chain_result"]
+
+        sequence = before | parallel | after
+        if isasyncgenfunction(other_thing):
+
+            @RunnableLambda  # type: ignore
+            async def parent(a: int) -> int:
+                return await sequence.ainvoke(a)
+
+        else:
+
+            @RunnableLambda
+            def parent(a: int) -> int:
+                return sequence.invoke(a)
+
+        return parent
+
+    def _check_posts(self) -> None:
+        posts = _get_posts(self.tracer.client)
+        name_order = [
+            "parent",
+            "RunnableSequence",
+            "before",
+            "RunnableParallel<chain_result,other_thing>",
+            ["my_child_function", "other_thing"],
+            "after",
+        ]
+        expected_parents = {
+            "parent": None,
+            "RunnableSequence": "parent",
+            "before": "RunnableSequence",
+            "RunnableParallel<chain_result,other_thing>": "RunnableSequence",
+            "my_child_function": "RunnableParallel<chain_result,other_thing>",
+            "other_thing": "RunnableParallel<chain_result,other_thing>",
+            "after": "RunnableSequence",
+        }
+        assert len(posts) == sum(
+            1 if isinstance(n, str) else len(n) for n in name_order
+        )
+        prev_dotted_order = None
+        dotted_order_map = {}
+        id_map = {}
+        parent_id_map = {}
+        i = 0
+        for name in name_order:
+            if isinstance(name, list):
+                for n in name:
+                    matching_post = next(
+                        p for p in posts[i : i + len(name)] if p["name"] == n
+                    )
+                    assert matching_post
+                    dotted_order = matching_post["dotted_order"]
+                    if prev_dotted_order is not None:
+                        assert dotted_order > prev_dotted_order
+                    dotted_order_map[n] = dotted_order
+                    id_map[n] = matching_post["id"]
+                    parent_id_map[n] = matching_post.get("parent_run_id")
+                i += len(name)
+                continue
+            else:
+                assert posts[i]["name"] == name
+                dotted_order = posts[i]["dotted_order"]
+                if prev_dotted_order is not None and not str(
+                    expected_parents[name]
+                ).startswith("RunnableParallel"):
+                    assert dotted_order > prev_dotted_order, (
+                        f"{name} not after {name_order[i - 1]}"
+                    )
+                prev_dotted_order = dotted_order
+                if name in dotted_order_map:
+                    msg = f"Duplicate name {name}"
+                    raise ValueError(msg)
+                dotted_order_map[name] = dotted_order
+                id_map[name] = posts[i]["id"]
+                parent_id_map[name] = posts[i].get("parent_run_id")
+                i += 1
+
+        # Now check the dotted orders
+        for name, parent_ in expected_parents.items():
+            dotted_order = dotted_order_map[name]
+            if parent_ is not None:
+                parent_dotted_order = dotted_order_map[parent_]
+                assert dotted_order.startswith(parent_dotted_order), (
+                    f"{name}, {parent_dotted_order} not in {dotted_order}"
+                )
+                assert str(parent_id_map[name]) == str(id_map[parent_])
+            else:
+                assert dotted_order.split(".")[0] == dotted_order
+
+    @pytest.mark.parametrize(
+        "method",
+        [
+            lambda parent, cb: parent.invoke(1, {"callbacks": cb}),
+            lambda parent, cb: list(parent.stream(1, {"callbacks": cb}))[-1],
+            lambda parent, cb: parent.batch([1], {"callbacks": cb})[0],
+        ],
+        ids=["invoke", "stream", "batch"],
     )
-    tracer = LangChainTracer(client=mock_client_)
-
-    @RunnableLambda
-    def my_child_function(a: int) -> int:
-        return a + 2
-
-    if method.startswith("a"):
-
-        async def other_thing(a: int) -> AsyncGenerator[int, None]:
-            yield 1
-
-    else:
-
+    def test_sync(
+        self, method: Callable[[RunnableLambda, list[BaseCallbackHandler]], int]
+    ) -> None:
         def other_thing(a: int) -> Generator[int, None, None]:  # type: ignore
             yield 1
 
-    parallel = RunnableParallel(
-        chain_result=my_child_function.with_config(tags=["atag"]),
-        other_thing=other_thing,
+        parent = self._create_parent(other_thing)
+
+        # Now run the chain and check the resulting posts
+        assert method(parent, [self.tracer]) == 3
+
+        self._check_posts()
+
+    @staticmethod
+    async def ainvoke(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+        return await parent.ainvoke(1, {"callbacks": cb})
+
+    @staticmethod
+    async def astream(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+        return [res async for res in parent.astream(1, {"callbacks": cb})][-1]
+
+    @staticmethod
+    async def abatch(parent: RunnableLambda, cb: list[BaseCallbackHandler]) -> int:
+        return (await parent.abatch([1], {"callbacks": cb}))[0]
+
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+"
     )
+    @pytest.mark.parametrize("method", [ainvoke, astream, abatch])
+    async def test_async(
+        self,
+        method: Callable[
+            [RunnableLambda, list[BaseCallbackHandler]], Coroutine[Any, Any, int]
+        ],
+    ) -> None:
+        async def other_thing(a: int) -> AsyncGenerator[int, None]:
+            yield 1
 
-    def before(x: int) -> int:
-        return x
+        parent = self._create_parent(other_thing)
 
-    def after(x: dict) -> int:
-        return x["chain_result"]
+        # Now run the chain and check the resulting posts
+        assert await method(parent, [self.tracer]) == 3
 
-    sequence = before | parallel | after
-    if method.startswith("a"):
-
-        @RunnableLambda  # type: ignore
-        async def parent(a: int) -> int:
-            return await sequence.ainvoke(a)
-
-    else:
-
-        @RunnableLambda
-        def parent(a: int) -> int:
-            return sequence.invoke(a)
-
-    # Now run the chain and check the resulting posts
-    cb = [tracer]
-    if method == "invoke":
-        res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
-    elif method == "ainvoke":
-        res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
-    elif method == "stream":
-        results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
-        res = results[-1]
-    elif method == "astream":
-        results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
-        res = results[-1]
-    elif method == "batch":
-        res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
-    elif method == "abatch":
-        res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
-    else:
-        msg = f"Unknown method {method}"
-        raise ValueError(msg)
-    assert res == 3
-    posts = _get_posts(mock_client_)
-    name_order = [
-        "parent",
-        "RunnableSequence",
-        "before",
-        "RunnableParallel<chain_result,other_thing>",
-        ["my_child_function", "other_thing"],
-        "after",
-    ]
-    expected_parents = {
-        "parent": None,
-        "RunnableSequence": "parent",
-        "before": "RunnableSequence",
-        "RunnableParallel<chain_result,other_thing>": "RunnableSequence",
-        "my_child_function": "RunnableParallel<chain_result,other_thing>",
-        "other_thing": "RunnableParallel<chain_result,other_thing>",
-        "after": "RunnableSequence",
-    }
-    assert len(posts) == sum(1 if isinstance(n, str) else len(n) for n in name_order)
-    prev_dotted_order = None
-    dotted_order_map = {}
-    id_map = {}
-    parent_id_map = {}
-    i = 0
-    for name in name_order:
-        if isinstance(name, list):
-            for n in name:
-                matching_post = next(
-                    p for p in posts[i : i + len(name)] if p["name"] == n
-                )
-                assert matching_post
-                dotted_order = matching_post["dotted_order"]
-                if prev_dotted_order is not None:
-                    assert dotted_order > prev_dotted_order
-                dotted_order_map[n] = dotted_order
-                id_map[n] = matching_post["id"]
-                parent_id_map[n] = matching_post.get("parent_run_id")
-            i += len(name)
-            continue
-        else:
-            assert posts[i]["name"] == name
-            dotted_order = posts[i]["dotted_order"]
-            if prev_dotted_order is not None and not str(
-                expected_parents[name]
-            ).startswith("RunnableParallel"):
-                assert dotted_order > prev_dotted_order, (
-                    f"{name} not after {name_order[i - 1]}"
-                )
-            prev_dotted_order = dotted_order
-            if name in dotted_order_map:
-                msg = f"Duplicate name {name}"
-                raise ValueError(msg)
-            dotted_order_map[name] = dotted_order
-            id_map[name] = posts[i]["id"]
-            parent_id_map[name] = posts[i].get("parent_run_id")
-            i += 1
-
-    # Now check the dotted orders
-    for name, parent_ in expected_parents.items():
-        dotted_order = dotted_order_map[name]
-        if parent_ is not None:
-            parent_dotted_order = dotted_order_map[parent_]
-            assert dotted_order.startswith(parent_dotted_order), (
-                f"{name}, {parent_dotted_order} not in {dotted_order}"
-            )
-            assert str(parent_id_map[name]) == str(id_map[parent_])
-        else:
-            assert dotted_order.split(".")[0] == dotted_order
+        self._check_posts()
 
 
 @pytest.mark.parametrize("parent_type", ("ls", "lc"))

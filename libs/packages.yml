@@ -371,3 +371,7 @@ packages:
   downloads: 0
   js: '@langchain/deepseek'
   provider_page: deepseek
+- name: langchain-jenkins
+  path: .
+  repo: Amitgb14/langchain_jenkins
+  downloads: 0
