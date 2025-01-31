@@ -254,6 +254,11 @@ class ChatDeepSeek(BaseChatOpenAI):
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_object'. "
+                    "Received None."
+                )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools([schema])
             if is_pydantic_schema:
