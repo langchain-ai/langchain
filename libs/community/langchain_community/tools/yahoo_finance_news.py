@@ -67,7 +67,7 @@ class YahooFinanceNewsTool(BaseTool):  # type: ignore[override, override]
                 for n in company.news
                 if n["content"]["contentType"] == "STORY"
             ]
-        except (HTTPError, ReadTimeout, ConnectionError, KeyError, AttributeError):
+        except (HTTPError, ReadTimeout, ConnectionError):
             if not links:
                 return f"No news found for company that searched with {query} ticker."
         if not links:
