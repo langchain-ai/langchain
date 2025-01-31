@@ -1,13 +1,36 @@
 """DeepSeek chat models."""
 
-from typing import Dict, Optional, Union
+from operator import itemgetter
+from typing import Dict, Literal, Optional, Type, TypeVar, Union
 
 import openai
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.output_parsers import (
+    JsonOutputKeyToolsParser,
+    JsonOutputParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import ChatResult
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import from_env, secret_from_env
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import (
+    BaseModel,
+    is_basemodel_subclass,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
+from typing_extensions import Any, Self
+
+_BM = TypeVar("_BM", bound=BaseModel)
+
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
+_DictOrPydantic = Union[Dict, _BM]
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
+
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
@@ -218,44 +241,21 @@ class ChatDeepSeek(BaseChatOpenAI):
             )
 
         return rtn
-    
+
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal[
-            "function_calling", "json_object"
-        ] = "function_calling",
+        method: Literal["function_calling", "json_object"] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        if strict is not None and method == "json_mode":
-            raise ValueError(
-                "Argument `strict` is not supported with `method`='json_mode'"
-            )
         is_pydantic_schema = _is_pydantic_class(schema)
-
         if method == "function_calling":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is not 'json_mode'. "
-                    "Received None."
-                )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            bind_kwargs = self._filter_disabled_params(
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
-                structured_output_format={
-                    "kwargs": {"method": method},
-                    "schema": schema,
-                },
-            )
-
-            llm = self.bind_tools([schema], **bind_kwargs)
+            llm = self.bind_tools([schema])
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -266,18 +266,12 @@ class ChatDeepSeek(BaseChatOpenAI):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_object":
-            llm = self.bind(
-                response_format={"type": "json_object"}
-            )
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                f"'json_object'. Received: '{method}'"
             )
 
         if include_raw:
