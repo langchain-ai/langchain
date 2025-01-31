@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, NamedTuple, Union
 
 import pytest
@@ -330,19 +331,26 @@ test_cases = [
 
 
 @pytest.mark.parametrize("runnable, cases", test_cases)
-async def test_context_runnables(
+def test_context_runnables(
     runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
 ) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert runnable.invoke(cases[0].input) == cases[0].output
-    assert await runnable.ainvoke(cases[1].input) == cases[1].output
     assert runnable.batch([case.input for case in cases]) == [
         case.output for case in cases
     ]
+    assert add(runnable.stream(cases[0].input)) == cases[0].output
+
+
+@pytest.mark.parametrize("runnable, cases", test_cases)
+async def test_context_runnables_async(
+    runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
+) -> None:
+    runnable = runnable if isinstance(runnable, Runnable) else runnable()
+    assert await runnable.ainvoke(cases[1].input) == cases[1].output
     assert await runnable.abatch([case.input for case in cases]) == [
         case.output for case in cases
     ]
-    assert add(runnable.stream(cases[0].input)) == cases[0].output
     assert await aadd(runnable.astream(cases[1].input)) == cases[1].output
 
 
@@ -390,8 +398,7 @@ async def test_runnable_seq_streaming_chunks() -> None:
             "prompt": Context.getter("prompt"),
         }
     )
-
-    chunks = list(chain.stream({"foo": "foo", "bar": "bar"}))
+    chunks = await asyncio.to_thread(list, chain.stream({"foo": "foo", "bar": "bar"}))
     achunks = [c async for c in chain.astream({"foo": "foo", "bar": "bar"})]
     for c in chunks:
         assert c in achunks

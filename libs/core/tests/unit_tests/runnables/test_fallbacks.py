@@ -82,17 +82,25 @@ def chain_pass_exceptions() -> Runnable:
     "runnable",
     ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
 )
-async def test_fallbacks(
+def test_fallbacks(
     runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
     runnable = request.getfixturevalue(runnable)
     assert runnable.invoke("hello") == "bar"
     assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(runnable.stream("hello")) == ["bar"]
+    assert dumps(runnable, pretty=True) == snapshot
+
+
+@pytest.mark.parametrize(
+    "runnable",
+    ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
+)
+async def test_fallbacks_async(runnable: RunnableWithFallbacks, request: Any) -> None:
+    runnable = request.getfixturevalue(runnable)
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
-    assert dumps(runnable, pretty=True) == snapshot
 
 
 def _runnable(inputs: dict) -> str:
