@@ -246,7 +246,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal['function_calling', 'json_mode', 'json_schema'] = 'function_calling',
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
