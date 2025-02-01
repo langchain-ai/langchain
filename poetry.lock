@@ -3160,7 +3160,7 @@ six = "*"
 
 [[package]]
 name = "langgraph"
-version = "0.2.52"
+version = "0.2.68"
 description = "Building stateful, multi-actor applications with LLMs"
 optional = false
 python-versions = ">=3.9.0,<4.0"
@@ -3168,26 +3168,26 @@ files = []
 develop = false
 
 [package.dependencies]
-langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14"
-langgraph-checkpoint = "^2.0.4"
-langgraph-sdk = "^0.1.32"
+langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,!=0.3.15,!=0.3.16,!=0.3.17,!=0.3.18,!=0.3.19,!=0.3.20,!=0.3.21,!=0.3.22"
+langgraph-checkpoint = "^2.0.10"
+langgraph-sdk = "^0.1.42"
 
 [package.source]
 type = "git"
 url = "https://github.com/langchain-ai/langgraph.git"
 reference = "HEAD"
-resolved_reference = "7090d7e9a89f62be7c4bc188667436f3baa3ed3b"
+resolved_reference = "7e267897c93894809380e4af8b89aded6197aa09"
 subdirectory = "libs/langgraph"
 
 [[package]]
 name = "langgraph-checkpoint"
-version = "2.0.5"
+version = "2.0.10"
 description = "Library with base interfaces for LangGraph checkpoint savers."
 optional = false
 python-versions = "<4.0.0,>=3.9.0"
 files = [
-    {file = "langgraph_checkpoint-2.0.5-py3-none-any.whl", hash = "sha256:0e7e730ea9358577bdcdeb6a17d8f340bad59770e2895a8a7fc853a76e08400b"},
-    {file = "langgraph_checkpoint-2.0.5.tar.gz", hash = "sha256:48612cdaf98c40a998079d222abb196a61e504d04dea65c7820d738d42150cac"},
+    {file = "langgraph_checkpoint-2.0.10-py3-none-any.whl", hash = "sha256:0d592cfda2df93844c6ea44d142170a8f7e5ba5320274e0e5e60e27f2749392c"},
+    {file = "langgraph_checkpoint-2.0.10.tar.gz", hash = "sha256:2dcc04e09091d588bb6209e49d83ff5406d7231c2590d6ff18fb29ab8b140129"},
 ]
 
 [package.dependencies]
@@ -3196,18 +3196,17 @@ msgpack = ">=1.1.0,<2.0.0"
 
 [[package]]
 name = "langgraph-sdk"
-version = "0.1.34"
+version = "0.1.51"
 description = "SDK for interacting with LangGraph API"
 optional = false
 python-versions = "<4.0.0,>=3.9.0"
 files = [
-    {file = "langgraph_sdk-0.1.34-py3-none-any.whl", hash = "sha256:3c44967382e073055c1731d9dde004a49ca04a063183747031b8a8286bad0b19"},
-    {file = "langgraph_sdk-0.1.34.tar.gz", hash = "sha256:ee76507018414a08bcf63e0de916e956340ee2e9b5c60d5252d1b2b1fe47c5f3"},
+    {file = "langgraph_sdk-0.1.51-py3-none-any.whl", hash = "sha256:ce2b58466d1700d06149782ed113157a8694a6d7932c801f316cd13fab315fe4"},
+    {file = "langgraph_sdk-0.1.51.tar.gz", hash = "sha256:dea1363e72562cb1e82a2d156be8d5b1a69ff3fe8815eee0e1e7a2f423242ec1"},
 ]
 
 [package.dependencies]
 httpx = ">=0.25.2"
-httpx-sse = ">=0.4.0"
 orjson = ">=3.10.1"
 
 [[package]]

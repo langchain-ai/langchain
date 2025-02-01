@@ -88,7 +88,8 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         .. code-block:: python
 
-            from langchain_core import Document, BaseRetriever
+            from langchain_core.documents import Document
+            from langchain_core.retrievers import BaseRetriever
             from typing import List
 
             class SimpleRetriever(BaseRetriever):
