@@ -3,6 +3,8 @@
 from typing import Type
 
 import pytest
+from langchain_core.language_models import BaseChatModel
+from langchain_core.tools import BaseTool
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_deepseek.chat_models import ChatDeepSeek
@@ -21,8 +23,14 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
             "temperature": 0,
         }
 
+    @pytest.mark.xfail(reason="Not yet supported.")
+    def test_tool_message_histories_list_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_histories_list_content(model, my_adder_tool)
 
-@pytest.mark.xfail(reason="Reasoning API is down")
+
+@pytest.mark.xfail(reason="Takes > 30s to run.")
 def test_reasoning_content() -> None:
     """Test reasoning content."""
     chat_model = ChatDeepSeek(model="deepseek-reasoner")
