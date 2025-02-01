@@ -636,7 +636,7 @@ class ChatAnthropic(BaseChatModel):
     def _get_ls_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
-        """Get the parameters used to invoke the model."""
+        """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
@@ -764,7 +764,11 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
-        if len(content) == 1 and content[0]["type"] == "text":
+        if (
+            len(content) == 1
+            and content[0]["type"] == "text"
+            and not content[0].get("citations")
+        ):
             msg = AIMessage(content=content[0]["text"])
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
@@ -1107,9 +1111,13 @@ class ChatAnthropic(BaseChatModel):
                 Added support for TypedDict class as `schema`.
 
         """  # noqa: E501
-
-        tool_name = convert_to_anthropic_tool(schema)["name"]
-        llm = self.bind_tools([schema], tool_choice=tool_name)
+        formatted_tool = convert_to_anthropic_tool(schema)
+        tool_name = formatted_tool["name"]
+        llm = self.bind_tools(
+            [schema],
+            tool_choice=tool_name,
+            structured_output_format={"kwargs": {}, "schema": formatted_tool},
+        )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True

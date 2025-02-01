@@ -370,6 +370,7 @@ try:
         @property
         def _chain_type(self) -> str:
             return "api_chain"
+
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]

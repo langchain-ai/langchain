@@ -166,7 +166,6 @@ def test_pydantic_output_functions_parser() -> None:
 
 def test_pydantic_output_functions_parser_multiple_schemas() -> None:
     """Test that the parser works if providing multiple pydantic schemas."""
-
     message = AIMessage(
         content="This is a test message",
         additional_kwargs={

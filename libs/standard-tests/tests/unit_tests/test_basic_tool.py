@@ -9,8 +9,7 @@ from langchain_tests.unit_tests import ToolsUnitTests
 class ParrotMultiplyTool(BaseTool):  # type: ignore
     name: str = "ParrotMultiplyTool"
     description: str = (
-        "Multiply two numbers like a parrot. Parrots always add "
-        "eighty for their matey."
+        "Multiply two numbers like a parrot. Parrots always add eighty for their matey."
     )
 
     def _run(self, a: int, b: int) -> int:

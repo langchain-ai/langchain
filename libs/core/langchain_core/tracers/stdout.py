@@ -160,7 +160,7 @@ class FunctionCallbackHandler(BaseTracer):
     def _on_tool_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         self.function_callback(
-            f'{get_colored_text("[tool/start]", color="green")} '
+            f"{get_colored_text('[tool/start]', color='green')} "
             + get_bolded_text(f"[{crumbs}] Entering Tool run with input:\n")
             + f'"{run.inputs["input"].strip()}"'
         )
@@ -169,7 +169,7 @@ class FunctionCallbackHandler(BaseTracer):
         crumbs = self.get_breadcrumbs(run)
         if run.outputs:
             self.function_callback(
-                f'{get_colored_text("[tool/end]", color="blue")} '
+                f"{get_colored_text('[tool/end]', color='blue')} "
                 + get_bolded_text(
                     f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
                 )
