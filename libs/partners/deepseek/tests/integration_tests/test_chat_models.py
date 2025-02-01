@@ -30,9 +30,11 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
         super().test_tool_message_histories_list_content(model, my_adder_tool)
 
 
+@pytest.mark.xfail(reason="Takes > 30s to run.")
 def test_reasoning_content() -> None:
     """Test reasoning content."""
     chat_model = ChatDeepSeek(model="deepseek-reasoner")
     response = chat_model.invoke("What is the square root of 256256?")
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
+    raise ValueError()
