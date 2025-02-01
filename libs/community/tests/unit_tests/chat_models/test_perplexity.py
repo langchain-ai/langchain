@@ -15,6 +15,7 @@ from langchain_community.chat_models import ChatPerplexity
 os.environ["PPLX_API_KEY"] = "foo"
 
 
+@pytest.mark.requires("openai")
 class TestPerplexityStandard(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
