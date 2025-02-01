@@ -44,7 +44,7 @@ class GitbookLoader(WebBaseLoader):
             self.base_url = self.base_url[:-1]
         if load_all_paths:
             # set web_path to the sitemap if we want to crawl all paths
-            web_page = f"{self.base_url}/sitemap.xml"
+            web_page = f"{self.base_url}/sitemap-pages.xml"
         super().__init__(
             web_paths=(web_page,),
             continue_on_failure=continue_on_failure,
