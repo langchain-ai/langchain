@@ -365,14 +365,23 @@ class ChatOpenAI(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """
+        Get the default parameters for calling OpenAI API.
+        
+        Reasoning models (o3-mini, o1, o1-mini, o1-preview) does not support adjusting the 
+        temperature parameter.
+        
+        
+        """
         params = {
             "model": self.model_name,
             "stream": self.streaming,
             "n": self.n,
-            "temperature": self.temperature,
             **self.model_kwargs,
         }
+        o1_reasoning_model = ["o3-mini", "o1", "o1-mini","o1-preview"]             
+        if self.model_name not in o1_reasoning_model and self.temperature is not None:
+            params["temperature"] = self.temperature
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         if self.request_timeout is not None and not is_openai_v1():
