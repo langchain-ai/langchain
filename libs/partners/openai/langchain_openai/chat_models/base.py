@@ -287,6 +287,9 @@ def _convert_delta_to_message_chunk(
         except KeyError:
             pass
 
+    if _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = _dict["reasoning_content"]
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     elif role == "assistant" or default_class == AIMessageChunk:
