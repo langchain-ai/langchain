@@ -62,54 +62,6 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
-def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
-) -> Union[Dict, TypeBaseModel]:
-    if isinstance(schema, type) and is_basemodel_subclass(schema):
-        return schema
-
-    if (
-        isinstance(schema, dict)
-        and "json_schema" in schema
-        and schema.get("type") == "json_schema"
-    ):
-        response_format = schema
-    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
-        response_format = {"type": "json_schema", "json_schema": schema}
-    else:
-        if strict is None:
-            if isinstance(schema, dict) and isinstance(schema.get("strict"), bool):
-                strict = schema["strict"]
-            else:
-                strict = False
-        function = convert_to_openai_function(schema, strict=strict)
-        function["schema"] = function.pop("parameters")
-        response_format = {"type": "json_schema", "json_schema": function}
-
-    if strict is not None and strict is not response_format["json_schema"].get(
-        "strict"
-    ):
-        msg = (
-            f"Output schema already has 'strict' value set to "
-            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
-            f"with_structured_output as {strict}. Please make sure that "
-            f"'strict' is only specified in one place."
-        )
-        raise ValueError(msg)
-    return response_format
-
-
-@chain
-def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
-    if ai_msg.additional_kwargs.get("parsed"):
-        return ai_msg.additional_kwargs["parsed"]
-    else:
-        raise ValueError(
-            "Structured Output response does not have a 'parsed' field nor a 'refusal' "
-            f"field. Received message:\n\n{ai_msg}"
-        )
-
-
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
@@ -357,7 +309,45 @@ class ChatPerplexity(BaseChatModel):
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        """ """  # noqa: E501
+        """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
+        Currently, Preplexity only supports "json_schema" method as per their official documentation:
+        https://docs.perplexity.ai/guides/structured-outputs
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+
+                - a JSON Schema,
+                - a TypedDict class,
+                - or a Pydantic class
+
+            method: The method for steering model generation, currently only support:
+
+                - "json_schema": Use the JSON Schema to parse the model output
+
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+            kwargs: Additional keyword args aren't supported.
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
+
+        """  # noqa: E501
         if method == "json_schema":
             if schema is None:
                 raise ValueError(
@@ -365,12 +355,12 @@ class ChatPerplexity(BaseChatModel):
                     "Received None."
                 )
             is_pydantic_schema = _is_pydantic_class(schema)
-            if is_pydantic_schema:
+            if is_pydantic_schema and hasattr(
+                schema, "model_json_schema"
+            ):  # accounting for pydantic v1 and v2
                 response_format = schema.model_json_schema()  # type: ignore[union-attr]
             else:
-                response_format = _convert_to_openai_response_format(
-                    schema, strict=strict
-                )
+                response_format = schema.schema()  # type: ignore[union-attr]
             llm = self.bind(response_format=response_format)
             output_parser = JsonOutputParser()
         else:
