@@ -106,4 +106,9 @@ You can bind a PaymanAI tool to a LangChain agent or chain that supports tool-ca
    pip install paymanai langchain-payman-tool
    ```
 3. **Export** environment variables:
+   ```bash
+   export PAYMAN_API_SECRET="YOUR_SECRET_KEY"
+   export PAYMAN_ENVIRONMENT="sandbox"
    ```
+4. **Instantiate** a PaymanAI tool, passing your desired name/description.
+5. **Call** the tool with `.invoke(...)` or integrate it into a chain or agent.
