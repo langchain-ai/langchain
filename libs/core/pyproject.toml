@@ -98,39 +98,3 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 "tests/**" = [ "S",]
 "scripts/**" = [ "S",]
-
-
-[tool.pdm.dev-dependencies]
-lint = [
-    "ruff<1.0.0,>=0.9.2",
-]
-typing = [
-    "mypy<1.11,>=1.10",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
-    "types-requests<3.0.0.0,>=2.28.11.5",
-    "types-jinja2<3.0.0,>=2.11.9",
-]
-dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "setuptools<68.0.0,>=67.6.1",
-    "grandalf<1.0,>=0.8",
-]
-test = [
-    "pytest<9,>=8",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "grandalf<1.0,>=0.8",
-    "responses<1.0.0,>=0.25.0",
-    "pytest-socket<1.0.0,>=0.7.0",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "blockbuster~=1.5.11",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.0; python_version >= \"3.12\"",
-]
-test_integration = []
-
-[tool.pdm.build]
-includes = []

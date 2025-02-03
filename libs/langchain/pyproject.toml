@@ -2,102 +2,6 @@
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-[tool.ruff]
-target-version = "py39"
-exclude = [ "tests/integration_tests/examples/non-utf8-encoding.py",]
-
-[tool.mypy]
-ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = [ "notebooks", "examples", "example_data",]
-
-[tool.codespell]
-skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
-ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
-ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
-
-[tool.ruff.lint]
-select = [ "E", "F", "I", "T201", "D",]
-pydocstyle = { convention = "google" }
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]
-"!langchain/indexes/vectorstore.py" = ["D"]
-
-[tool.coverage.run]
-omit = [ "tests/*",]
-
-[tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
-asyncio_mode = "auto"
-filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning", "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests", "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",]
-
-
-[tool.pdm.dev-dependencies]
-test = [
-    "pytest<9,>=8",
-    "pytest-cov<5.0.0,>=4.0.0",
-    "pytest-dotenv<1.0.0,>=0.5.2",
-    "duckdb-engine<1.0.0,>=0.9.2",
-    "pytest-watcher<1.0.0,>=0.2.6",
-    "freezegun<2.0.0,>=1.2.2",
-    "responses<1.0.0,>=0.22.0",
-    "pytest-asyncio<1.0.0,>=0.23.2",
-    "lark<2.0.0,>=1.1.5",
-    "pandas<3.0.0,>=2.0.0",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-socket<1.0.0,>=0.6.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "requests-mock<2.0.0,>=1.11.0",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-    "langchain-openai @ file:///${PROJECT_ROOT}/../partners/openai",
-]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
-test_integration = [
-    "pytest-vcr<2.0.0,>=1.0.2",
-    "wrapt<2.0.0,>=1.15.0",
-    "python-dotenv<2.0.0,>=1.0.0",
-    "cassio<1.0.0,>=0.1.0",
-    "langchainhub<1.0.0,>=0.1.16",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-]
-lint = [
-    "ruff<1.0.0,>=0.9.2",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
-]
-typing = [
-    "mypy<2.0,>=1.10",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
-    "types-requests<3.0.0.0,>=2.28.11.5",
-    "types-toml<1.0.0.0,>=0.10.8.1",
-    "types-redis<5.0.0.0,>=4.3.21.6",
-    "types-pytz<2024.0.0.0,>=2023.3.0.0",
-    "types-chardet<6.0.0.0,>=5.0.4.6",
-    "mypy-protobuf<4.0.0,>=3.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-]
-dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "playwright<2.0.0,>=1.28.0",
-    "setuptools<68.0.0,>=67.6.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-]
-
-[tool.pdm.build]
-includes = []
-
 [project]
 authors = []
 license = {text = "MIT"}
@@ -192,3 +96,35 @@ dev = [
     "langchain-core @ file:///${PROJECT_ROOT}/../core",
     "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
 ]
+
+
+[tool.ruff]
+target-version = "py39"
+exclude = [ "tests/integration_tests/examples/non-utf8-encoding.py",]
+
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+exclude = [ "notebooks", "examples", "example_data",]
+
+[tool.codespell]
+skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
+ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
+ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "T201", "D",]
+pydocstyle = { convention = "google" }
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+"!langchain/indexes/vectorstore.py" = ["D"]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning", "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests", "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",]
