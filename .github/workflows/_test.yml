@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - name: Install dependencies
         shell: bash
-        run: uv sync --all-extras --dev
+        run: uv sync --group test --dev
 
       - name: Run core tests
         shell: bash
