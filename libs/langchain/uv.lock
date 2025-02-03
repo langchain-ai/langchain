@@ -2211,7 +2211,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.17"
+version = "0.3.18rc1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },

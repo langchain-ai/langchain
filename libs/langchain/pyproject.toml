@@ -21,7 +21,7 @@ dependencies = [
     "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
 ]
 name = "langchain"
-version = "0.3.17"
+version = "0.3.18rc1"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
