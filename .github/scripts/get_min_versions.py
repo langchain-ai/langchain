@@ -126,10 +126,10 @@ def get_min_version_from_toml(
                 continue
             requirement = dependencies[lib]
             # TODO: fix this
-            if requirement.marker and not requirement.marker.evaluate(
-                {"python_version": python_version}
-            ):
-                continue
+            # if requirement.marker and not requirement.marker.evaluate(
+            #     {"python_version": python_version}
+            # ):
+            #     continue
             # Get the version string
             version_string = str(requirement.specifier)
 
