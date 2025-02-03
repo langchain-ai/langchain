@@ -1193,6 +1193,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         schema: Union[typing.Dict, type],  # noqa: UP006
         *,
         include_raw: bool = False,
+        tool_choice: Optional[str] = "any",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1312,7 +1313,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         llm = self.bind_tools(
             [schema],
-            tool_choice="any",
+            tool_choice=tool_choice,
             structured_output_format={"kwargs": {}, "schema": schema},
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
