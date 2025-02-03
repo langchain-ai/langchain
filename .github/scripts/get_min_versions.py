@@ -105,8 +105,7 @@ def get_min_version_from_toml(
     with open(toml_path, "rb") as file:
         toml_data = tomllib.load(file)
 
-    # Get the dependencies from tool.poetry.dependencies
-    dependencies = toml_data["tool"]["poetry"]["dependencies"]
+    dependencies = toml_data["project"]["dependencies"]
 
     # Initialize a dictionary to store the minimum versions
     min_versions = {}
