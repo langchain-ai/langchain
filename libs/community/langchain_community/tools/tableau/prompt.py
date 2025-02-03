@@ -464,6 +464,33 @@ vds_fewshot = [
         }
     },
     {
+        "example": "a query with sorting applied to a field",
+        "query": {
+            "fields": [
+                {
+                "fieldCaption": "Region"
+                },
+                {
+                "fieldCaption": "Discount",
+                "function": "AVG",
+                "maxDecimalPlaces": 2
+                },
+                {
+                "fieldCaption": "Sales",
+                "function": "SUM",
+                "maxDecimalPlaces": 2
+                },
+                {
+                "fieldCaption": "Profit",
+                "function": "SUM",
+                "maxDecimalPlaces": 2,
+                "sortPriority": 1,
+                "sortDirection": "DESC"
+                }
+            ]
+        }
+    },
+    {
        "example": "a simple Tableau calculation",
        "query": {
             "fields": [
@@ -855,7 +882,8 @@ Sorting:
 Sort fields as often as possible to highlight data of interest in the query even if not explicitly stated by the user. That
 means that if they asked about a field in particular, find a way to sort it that makes sense. Sorting is composed of two
 properties applied to `vds_schema.Field`: "sortDirection" described by `vds_schema.SortDirection` and "SortPriority" which
-is sets the sort order for fields in the query. "SortPriority" is only needed for fields you wish to sort
+is sets the sort order for fields in the query. "SortPriority" is only needed for fields you wish to sort. Neither "SortDirection"
+or "SortPriority" are to be applied as properties of query. Rather they target "Field" only.
 
 Filtering:
 Add filters to narrow down the data set according to user specifications and to avoid unnecessary large volumes of data.

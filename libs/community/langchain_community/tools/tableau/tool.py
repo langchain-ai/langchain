@@ -187,7 +187,7 @@ def initialize_datasource_qa(
             except Exception as e:
                 query_error_message = f"""
                 Tableau's VizQL Data Service return an error for the generated query:
-                {str(vds_query)}
+                {str(vds_query.content)}
 
                 The user_input used to write this query was:
                 {str(user_input)}
