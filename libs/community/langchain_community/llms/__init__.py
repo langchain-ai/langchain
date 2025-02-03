@@ -29,6 +29,11 @@ def _import_ai21() -> Type[BaseLLM]:
 
     return AI21
 
+def _import_aibrary() -> Type[BaseLLM]:
+    from langchain_community.llms.aibrary import AiBrary
+
+    return AiBrary
+
 
 def _import_aleph_alpha() -> Type[BaseLLM]:
     from langchain_community.llms.aleph_alpha import AlephAlpha
@@ -681,6 +686,8 @@ def _import_yi() -> Type[BaseLLM]:
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
+    elif name == "AiBrary":
+        return _import_aibrary()
     elif name == "AlephAlpha":
         return _import_aleph_alpha()
     elif name == "AmazonAPIGateway":
@@ -897,6 +904,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AI21",
+    "AiBrary",
     "AlephAlpha",
     "AmazonAPIGateway",
     "Anthropic",
@@ -1004,6 +1012,7 @@ __all__ = [
 def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
     return {
         "ai21": _import_ai21,
+        "aibrary": _import_aibrary,
         "aleph_alpha": _import_aleph_alpha,
         "amazon_api_gateway": _import_amazon_api_gateway,
         "amazon_bedrock": _import_bedrock,
