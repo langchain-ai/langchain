@@ -21,6 +21,11 @@ from typing import (
     cast,
 )
 from urllib.parse import urlparse
+from enum import Enum
+from dataclasses import dataclass
+from abc import ABC
+from typing import Protocol
+from io import StringIO
 
 import numpy
 import numpy as np
@@ -239,6 +244,76 @@ def _merge_text_and_extras(extras: list[str], text_from_page: str) -> str:
 
     return all_text
 
+
+class PDFEncoding(str, Enum):
+    """PDF document encoding options."""
+    
+    UTF8 = 'utf-8'
+    SHIFT_JIS = 'shift_jis'
+    EUC_JP = 'euc_jp'
+    ISO2022_JP = 'iso2022_jp'
+    UTF16 = 'utf-16'
+    
+    @classmethod
+    def get_default(cls) -> 'PDFEncoding':
+        """Get default encoding."""
+        return cls.UTF8
+
+@dataclass
+class PDFEncodingConfig:
+    """Configuration for PDF encoding handling."""
+    
+    encoding: PDFEncoding = PDFEncoding.get_default()
+    fallback_encodings: list[PDFEncoding] = None
+    error_handler: Literal['strict', 'ignore', 'replace'] = 'replace'
+    
+    def __post_init__(self):
+        if isinstance(self.encoding, str):
+            self.encoding = PDFEncoding(self.encoding)
+        if self.fallback_encodings is None:
+            self.fallback_encodings = []
+        self.fallback_encodings = [
+            PDFEncoding(enc) if isinstance(enc, str) else enc
+            for enc in self.fallback_encodings
+        ]
+
+class PDFTextProcessor(Protocol):
+    """Protocol for PDF text processing."""
+    
+    def process_text(self, text: str, encoding_config: PDFEncodingConfig) -> str:
+        """Process extracted text with encoding configuration."""
+        ...
+
+class DefaultPDFTextProcessor:
+    """Default implementation of PDFTextProcessor."""
+    
+    def process_text(self, text: str, encoding_config: PDFEncodingConfig) -> str:
+        """Process text with fallback encodings."""
+        if not text:
+            return text
+            
+        try:
+            # Try primary encoding
+            return text.encode(
+                encoding_config.encoding,
+                errors=encoding_config.error_handler
+            ).decode(encoding_config.encoding)
+        except UnicodeError:
+            # Try fallback encodings
+            for fallback in encoding_config.fallback_encodings:
+                try:
+                    return text.encode(
+                        fallback,
+                        errors=encoding_config.error_handler
+                    ).decode(fallback)
+                except UnicodeError:
+                    continue
+            
+            # If all fallbacks fail, use original encoding with error handler
+            return text.encode(
+                encoding_config.encoding,
+                errors=encoding_config.error_handler
+            ).decode(encoding_config.encoding)
 
 class PyPDFParser(BaseBlobParser):
     """Parse a blob from a PDF using `pypdf` library.
@@ -559,7 +634,29 @@ class PDFMinerParser(BaseBlobParser):
                     ret_str.close()
                     device.close()
         else:
-            # ... existing image extraction code ...
+            try:
+                import pdfminer
+                import textractor.entities.document as textractor
+                from pdfminer.high_level import extract_text_to_fp
+                from pdfminer.layout import LAParams
+            except ImportError:
+                raise ImportError(
+                    "Could not import pdfminer python package. "
+                    "Please install it with `pip install pdfminer.six`"
+                )
+            output_string = StringIO()
+            with blob.as_bytes_io() as pdf_file_obj:
+                extract_text_to_fp(
+                    pdf_file_obj,
+                    output_string,
+                    laparams=LAParams(),
+                    output_type="text",
+                    codec=str(self._encoding_config.encoding),
+                )
+            text = output_string.getvalue()
+            text = self._process_text(text)
+            metadata = {"source": blob.source}
+            yield Document(page_content=text, metadata=metadata)
 
 
 class PyMuPDFParser(BaseBlobParser):
@@ -1046,16 +1143,19 @@ class PDFPlumberParser(BaseBlobParser):
                             Image.frombytes(
                                 "1",
                                 (img["stream"]["Width"], img["stream"]["Height"]),
-                                img["stream"].get_data(),
+                                img["stream"].get_data()
                             ).convert("L")
                         )
-                    )
                 else:
                     images.append(
-                        np.frombuffer(img["stream"].get_data(), dtype=np.uint8).reshape(
-                            img["stream"]["Height"], img["stream"]["Width"], -1
+                        np.frombuffer(
+                            img["stream"].get_data(), 
+                            dtype=np.uint8
+                        ).reshape(
+                            img["stream"]["Height"], 
+                            img["stream"]["Width"], 
+                            -1
                         )
-                    )
             elif img["stream"]["Filter"].name in _PDF_FILTER_WITH_LOSS:
                 images.append(img["stream"].get_data())
             else:

@@ -197,7 +197,8 @@ class BasePDFLoader(BaseLoader, ABC):
         self._encoding_config = config
 
     def process_text(self, text: str) -> str:
-        """Process text using the configured text processor and encoding configuration."""
+        """Process text using the configured text processor and encoding
+        configuration."""
         return self._text_processor.process_text(text, self._encoding_config)
 
     def with_encoding(
