@@ -45,7 +45,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
     @classmethod
     def create(
-        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75, analyzer_type: str = "standard", es_params: dict = {}
+        cls, elasticsearch_url: str, index_name: str, delete_if_exists:bool=False, k1: float = 2.0, b: float = 0.75, analyzer_type: str = "standard", es_params: dict = {}
     ) -> ElasticSearchBM25Retriever:
         """
         Create a ElasticSearchBM25Retriever from a list of texts.
@@ -87,6 +87,8 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         }
 
         # Create the index with the specified settings and mappings
+        if delete_if_exists:
+            es.indices.delete(index=index_name)
         es.indices.create(index=index_name, mappings=mappings, settings=settings)
         return cls(client=es, index_name=index_name)
 
