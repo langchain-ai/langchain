@@ -5,6 +5,8 @@ import re
 import tempfile
 import time
 from abc import ABC
+from dataclasses import dataclass
+from enum import Enum
 from io import StringIO
 from pathlib import Path, PurePath
 from typing import (
@@ -15,6 +17,7 @@ from typing import (
     Literal,
     Mapping,
     Optional,
+    Protocol,
     Sequence,
     Union,
     cast,
@@ -102,17 +105,27 @@ class BasePDFLoader(BaseLoader, ABC):
     """
 
     def __init__(
-        self, file_path: Union[str, PurePath], *, headers: Optional[dict] = None
+        self,
+        file_path: Union[str, PurePath],
+        *,
+        headers: Optional[dict] = None,
+        encoding_config: Optional[PDFEncodingConfig] = None,
+        text_processor: Optional[PDFTextProcessor] = None,
     ):
         """Initialize with a file path.
 
         Args:
             file_path: Either a local, S3 or web path to a PDF file.
             headers: Headers to use for GET request to download a file from a web path.
+            encoding_config: Configuration for text encoding handling.
+            text_processor: Custom text processor for encoding handling.
         """
         self.file_path = str(file_path)
         self.web_path = None
         self.headers = headers
+        self._encoding_config = encoding_config or PDFEncodingConfig()
+        self._text_processor = text_processor or DefaultPDFTextProcessor()
+        
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -172,6 +185,52 @@ class BasePDFLoader(BaseLoader, ABC):
     @property
     def source(self) -> str:
         return self.web_path if self.web_path is not None else self.file_path
+
+    @property
+    def encoding_config(self) -> PDFEncodingConfig:
+        """Get the current encoding configuration."""
+        return self._encoding_config
+
+    @encoding_config.setter
+    def encoding_config(self, config: PDFEncodingConfig) -> None:
+        """Set the encoding configuration."""
+        self._encoding_config = config
+
+    def process_text(self, text: str) -> str:
+        """Process text using the configured text processor and encoding configuration."""
+        return self._text_processor.process_text(text, self._encoding_config)
+
+    def with_encoding(
+        self,
+        encoding: Union[str, PDFEncoding],
+        fallback_encodings: Optional[list[Union[str, PDFEncoding]]] = None,
+        error_handler: Literal['strict', 'ignore', 'replace'] = 'replace'
+    ) -> 'BasePDFLoader':
+        """Create a new instance with specified encoding configuration.
+
+        Args:
+            encoding: Primary encoding to use.
+            fallback_encodings: List of fallback encodings to try if primary fails.
+            error_handler: How to handle encoding errors.
+
+        Returns:
+            A new instance with the specified encoding configuration.
+        """
+        if isinstance(encoding, str):
+            encoding = PDFEncoding(encoding)
+        
+        if fallback_encodings:
+            fallback_encodings = [
+                PDFEncoding(enc) if isinstance(enc, str) else enc
+                for enc in fallback_encodings
+            ]
+        
+        self._encoding_config = PDFEncodingConfig(
+            encoding=encoding,
+            fallback_encodings=fallback_encodings or [],
+            error_handler=error_handler
+        )
+        return self
 
 
 class OnlinePDFLoader(BasePDFLoader):
@@ -268,7 +327,7 @@ class PyPDFLoader(BasePDFLoader):
                 pointing to (`![body)(#)`]
                 - "html-img" = wrap the content as the `alt` text of an tag and link to
                 (`<img alt="{body}" src="#"/>`)
-            extraction_mode: “plain” for legacy functionality, “layout” extract text
+            extraction_mode: "plain" for legacy functionality, "layout" extract text
                 in a fixed width format that closely adheres to the rendered layout in
                 the source pdf
             extraction_kwargs: Optional additional parameters for the extraction
@@ -416,7 +475,7 @@ class PyPDFDirectoryLoader(BaseLoader):
             images_parser: Optional image blob parser..
             headers: Optional headers to use for GET request to download a file from a
               web path.
-            extraction_mode: “plain” for legacy functionality, “layout” for
+            extraction_mode: "plain" for legacy functionality, "layout" for
               experimental layout mode functionality
             extraction_kwargs: Optional additional parameters for the extraction
               process.
@@ -482,6 +541,7 @@ class PDFMinerLoader(BasePDFLoader):
         headers: Optional[dict] = None,
         extract_images: bool = False,
         concatenate_pages: bool = True,
+        encoding: str = 'utf-8',
     ) -> None:
         """Initialize with file path.
 
@@ -489,6 +549,7 @@ class PDFMinerLoader(BasePDFLoader):
             extract_images: Whether to extract images from PDF.
             concatenate_pages: If True, concatenate all PDF pages into one a single
                                document. Otherwise, return one document per page.
+            encoding: The encoding to use for text extraction. Defaults to 'utf-8'.
         """
         try:
             from pdfminer.high_level import extract_text  # noqa:F401
@@ -500,7 +561,9 @@ class PDFMinerLoader(BasePDFLoader):
 
         super().__init__(file_path, headers=headers)
         self.parser = PDFMinerParser(
-            extract_images=extract_images, concatenate_pages=concatenate_pages
+            extract_images=extract_images,
+            concatenate_pages=concatenate_pages,
+            encoding=encoding,
         )
 
     def lazy_load(
@@ -1255,3 +1318,73 @@ class ZeroxPDFLoader(BasePDFLoader):
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
+
+class PDFEncoding(str, Enum):
+    """PDF document encoding options."""
+    
+    UTF8 = 'utf-8'
+    SHIFT_JIS = 'shift_jis'
+    EUC_JP = 'euc_jp'
+    ISO2022_JP = 'iso2022_jp'
+    UTF16 = 'utf-16'
+    
+    @classmethod
+    def get_default(cls) -> 'PDFEncoding':
+        """Get default encoding."""
+        return cls.UTF8
+
+@dataclass
+class PDFEncodingConfig:
+    """Configuration for PDF encoding handling."""
+    
+    encoding: PDFEncoding = PDFEncoding.get_default()
+    fallback_encodings: list[PDFEncoding] = None
+    error_handler: Literal['strict', 'ignore', 'replace'] = 'replace'
+    
+    def __post_init__(self):
+        if isinstance(self.encoding, str):
+            self.encoding = PDFEncoding(self.encoding)
+        if self.fallback_encodings is None:
+            self.fallback_encodings = []
+        self.fallback_encodings = [
+            PDFEncoding(enc) if isinstance(enc, str) else enc
+            for enc in self.fallback_encodings
+        ]
+
+class PDFTextProcessor(Protocol):
+    """Protocol for PDF text processing."""
+    
+    def process_text(self, text: str, encoding_config: PDFEncodingConfig) -> str:
+        """Process extracted text with encoding configuration."""
+        ...
+
+class DefaultPDFTextProcessor:
+    """Default implementation of PDFTextProcessor."""
+    
+    def process_text(self, text: str, encoding_config: PDFEncodingConfig) -> str:
+        """Process text with fallback encodings."""
+        if not text:
+            return text
+            
+        try:
+            # Try primary encoding
+            return text.encode(
+                encoding_config.encoding,
+                errors=encoding_config.error_handler
+            ).decode(encoding_config.encoding)
+        except UnicodeError:
+            # Try fallback encodings
+            for fallback in encoding_config.fallback_encodings:
+                try:
+                    return text.encode(
+                        fallback,
+                        errors=encoding_config.error_handler
+                    ).decode(fallback)
+                except UnicodeError:
+                    continue
+            
+            # If all fallbacks fail, use original encoding with error handler
+            return text.encode(
+                encoding_config.encoding,
+                errors=encoding_config.error_handler
+            ).decode(encoding_config.encoding)
