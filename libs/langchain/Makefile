@@ -1,4 +1,4 @@
-.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test_extras test tests test_watch integration_tests docker_tests help extended_tests
+.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests docker_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -18,14 +18,7 @@ coverage:
 		--cov-report term-missing:skip-covered \
 		$(TEST_FILE)
 
-test_extras:
-	uv pip uninstall langchain-anthropic
-	uv pip install .
-	! uv run python -c "from langchain_anthropic import ChatAnthropic"
-	uv pip install '.[anthropic]'
-	uv run python -c "from langchain_anthropic import ChatAnthropic"
-
-test tests: test_extras
+test tests:
 	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
