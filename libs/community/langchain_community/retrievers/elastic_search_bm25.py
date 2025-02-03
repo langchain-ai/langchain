@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, List, Dict
+from typing import Any, Iterable, List, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -95,7 +95,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadata: List[dict],
+        metadata: Optional[List[dict]] = None,
         refresh_indices: bool = True,
     ) -> List[str]:
         """Add texts to the index.
