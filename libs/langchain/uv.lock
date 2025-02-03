@@ -1871,7 +1871,39 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", specifier = ">=0.3.29,<0.4.0" }]
+requires-dist = [{ name = "langchain-core", specifier = ">=0.3.29,<1.0.0" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
+    { name = "langchain-core", directory = "../core" },
+]
+lint = [
+    { name = "langchain-core", directory = "../core" },
+    { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
+]
+test = [
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain-core", directory = "../core" },
+    { name = "pytest", specifier = ">=8,<9" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+]
+test-integration = [
+    { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
+    { name = "sentence-transformers", marker = "python_full_version < '3.13'", specifier = ">=2.6.0" },
+    { name = "spacy", marker = "python_full_version < '3.13'" },
+    { name = "transformers", specifier = ">=4.47.0,<5.0.0" },
+]
+typing = [
+    { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
+    { name = "mypy", specifier = ">=1.10,<2.0" },
+    { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
+    { name = "types-requests", specifier = ">=2.31.0.20240218,<3.0.0.0" },
+]
 
 [[package]]
 name = "langchainhub"
