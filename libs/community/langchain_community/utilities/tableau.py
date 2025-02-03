@@ -157,7 +157,31 @@ def augment_datasource_metadata(
     datasource_luid: str,
     prompt: Dict[str, str],
     previous_errors: Optional[str] = None,
+    previous_error_query: Optional[str] = None
 ):
+    """
+    Augment datasource metadata with additional information and format as JSON.
+
+    This function retrieves the data dictionary and sample field values for a given
+    datasource, adds them to the provided prompt dictionary, and includes any previous
+    errors or queries for debugging purposes.
+
+    Args:
+        api_key (str): The API key for authentication.
+        url (str): The base URL for the API endpoints.
+        datasource_luid (str): The unique identifier of the datasource.
+        prompt (Dict[str, str]): Initial prompt dictionary to be augmented.
+        previous_errors (Optional[str]): Any errors from previous function calls. Defaults to None.
+        previous_error_query (Optional[str]): The query that caused errors in previous calls. Defaults to None.
+
+    Returns:
+        str: A JSON string containing the augmented prompt dictionary with datasource metadata.
+
+    Note:
+        This function relies on external functions `get_data_dictionary` and `query_vds_metadata`
+        to retrieve the necessary datasource information.
+    """
+    #  get sample values for fields from VDS metadata endpoint
     datasource_metadata = query_vds_metadata(
         api_key=api_key,
         url=url,
@@ -168,10 +192,13 @@ def augment_datasource_metadata(
         del field['fieldName']
         del field['logicalTableId']
 
-    prompt['data_model'] = datasource_metadata
+    prompt['data_model'] = datasource_metadata['data']
 
+    # include previous error and query to debug in current run
     if previous_errors:
         prompt['previous_call_error'] = previous_errors
+    if previous_error_query:
+        prompt['previous_error_query'] = previous_error_query
 
     return json.dumps(prompt)
 
