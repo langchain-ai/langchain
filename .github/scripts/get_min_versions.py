@@ -7,6 +7,7 @@ else:
     # for python 3.10 and below, which doesnt have stdlib tomllib
     import tomli as tomllib
 
+from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
@@ -105,7 +106,10 @@ def get_min_version_from_toml(
     with open(toml_path, "rb") as file:
         toml_data = tomllib.load(file)
 
-    dependencies = toml_data["project"]["dependencies"]
+    dependencies = {}
+    for dep in toml_data["project"]["dependencies"]:
+        requirement = Requirement(dep)
+        dependencies[requirement.name] = requirement
 
     # Initialize a dictionary to store the minimum versions
     min_versions = {}
@@ -120,17 +124,14 @@ def get_min_version_from_toml(
         if lib in dependencies:
             if include and lib not in include:
                 continue
+            requirement = dependencies[lib]
+            # TODO: fix this
+            if requirement.marker and not requirement.marker.evaluate(
+                {"python_version": python_version}
+            ):
+                continue
             # Get the version string
-            version_string = dependencies[lib]
-
-            if isinstance(version_string, dict):
-                version_string = version_string["version"]
-            if isinstance(version_string, list):
-                version_string = [
-                    vs
-                    for vs in version_string
-                    if check_python_version(python_version, vs["python"])
-                ][0]["version"]
+            version_string = str(requirement.specifier)
 
             # Use parse_version to get the minimum supported version from version_string
             min_version = get_minimum_version(lib, version_string)

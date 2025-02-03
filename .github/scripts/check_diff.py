@@ -7,6 +7,8 @@ from typing import Dict, List, Set
 from pathlib import Path
 import tomllib
 
+from packaging.requirements import Requirement
+
 from get_min_versions import get_min_version_from_toml
 
 
@@ -55,7 +57,9 @@ def dependents_graph() -> dict:
     """
     dependents = defaultdict(set)
 
-    for path in glob.glob("./libs/**/pyproject.toml", recursive=True):
+    # for path in glob.glob("./libs/**/pyproject.toml", recursive=True):
+    # TODO: fix this
+    for path in ["./libs/langchain/pyproject.toml", "./libs/core/pyproject.toml"]:
         if "template" in path:
             continue
 
@@ -65,11 +69,13 @@ def dependents_graph() -> dict:
 
         pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
         for dep in [
-            *pyproject["project"]["dependencies"].keys(),
-            *pyproject["dependency-groups"]["test"].keys(),
+            *pyproject["project"]["dependencies"],
+            *pyproject["dependency-groups"]["test"],
         ]:
+            requirement = Requirement(dep)
+            package_name = requirement.name
             if "langchain" in dep:
-                dependents[dep].add(pkg_dir)
+                dependents[package_name].add(pkg_dir)
                 continue
 
         # load extended deps from extended_testing_deps.txt
