@@ -332,8 +332,8 @@ class BaseOpenAI(BaseLLM):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        o1_reasoning_model = ["o3-mini", "o1", "o1-mini", "o1-preview"]
         normal_params: Dict[str, Any] = {
-            "temperature": self.temperature,
             "top_p": self.top_p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
@@ -350,6 +350,8 @@ class BaseOpenAI(BaseLLM):
         # don't specify best_of if it is 1
         if self.best_of > 1:
             normal_params["best_of"] = self.best_of
+        if self.model_name not in o1_reasoning_model:
+            normal_params["temperature"] = self.temperature
 
         return {**normal_params, **self.model_kwargs}
 
