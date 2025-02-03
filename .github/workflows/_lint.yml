@@ -29,7 +29,7 @@ jobs:
       - name: Set up Python ${{ inputs.python-version }} + uv
         uses: "./.github/actions/uv_setup"
         with:
-          python-version: ${{ inputs.python-version }}=
+          python-version: ${{ inputs.python-version }}
 
       - name: Install dependencies
         # Also installs dev/lint/test/typing dependencies, to ensure we have

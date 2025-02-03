@@ -16,13 +16,8 @@ runs:
   steps:
     - uses: actions/checkout@v4
 
-    - name: Install uv
+    - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v5
       with:
         version: ${{ env.UV_VERSION }}
-
-    - uses: actions/setup-python@v5
-      name: Setup python ${{ inputs.python-version }}
-      id: setup-python
-      with:
         python-version: ${{ inputs.python-version }}
