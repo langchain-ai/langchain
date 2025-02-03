@@ -17,9 +17,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  POETRY_VERSION: "1.8.4"
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -127,21 +124,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.job-configs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python ${{ matrix.job-configs.python-version }} + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.job-configs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ matrix.job-configs.working-directory }}
-          cache-key: extended
 
       - name: Install dependencies
         shell: bash
         run: |
-          echo "Running extended tests, installing dependencies with poetry..."
-          poetry install --with test
-          poetry run pip install uv
-          poetry run uv pip install -r extended_testing_deps.txt
+          echo "Running extended tests, installing dependencies with uv..."
+          uv sync --group test
+          uv pip install -r extended_testing_deps.txt
 
       - name: Run extended tests
         run: make extended_tests
