@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, Dict
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -40,6 +40,8 @@ class ElasticSearchBM25Retriever(BaseRetriever):
     """Elasticsearch client."""
     index_name: str
     """Name of the index to use in Elasticsearch."""
+    k: str = 4
+    """Number of documents to return."""
 
     @classmethod
     def create(
@@ -53,6 +55,8 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             index_name: Name of the index to use in Elasticsearch.
             k1: BM25 parameter k1.
             b: BM25 parameter b.
+            analyzer_type: Index analyzer (default is standard).
+            es_params: Parameters to pass to the Elasticsearch client.
 
         Returns:
 
@@ -92,7 +96,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         metadata: List[dict],
         refresh_indices: bool = True,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the retriever.
+        """Add texts to the index.
 
         Args:
             texts: Iterable of strings to add to the retriever.
@@ -133,19 +137,33 @@ class ElasticSearchBM25Retriever(BaseRetriever):
             documents: List[Document],
             refresh_indices:bool = True,
     ) -> List[str]:
+        """Add documents to the index.
+
+        Args:
+            texts: Iterable of Document to add to the retriever.
+            refresh_indices: bool to refresh ElasticSearch indices
+
+        Returns:
+            List of ids from adding the texts into the retriever.
+        """
         
         texts = [doc.page_content for doc in documents]
         metadata = [doc.metadata for doc in documents]
         
         return self.add_texts(texts, metadata)
 
+    def build_query_body(self, query:str) -> Dict:
+        """Build query body for the search API"""
+
+        return {"query": {"match": {"content": query}}}
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        query_dict = {"query": {"match": {"content": query}}}
-        res = self.client.search(index=self.index_name, body=query_dict)
+        query_dict = self.build_query_body(query)
+        res = self.client.search(index=self.index_name, body=query_dict, source=["content", "metadata"])
 
         docs = []
         for r in res["hits"]["hits"]:
-            docs.append(Document(page_content=r["_source"]["content"]))
-        return docs
+            docs.append(Document(metadata=r["_source"]["metadata"], page_content=r["_source"]["content"]))
+        return docs[:self.k]
