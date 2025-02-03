@@ -14,7 +14,7 @@ on:
         description: "Release from a non-master branch (danger!)"
 
 env:
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.11"
 
 jobs:
   build:
