@@ -139,7 +139,8 @@ const config = {
       },
       announcementBar: {
         content:
-          'Join us at <a href="https://interrupt.langchain.com/" target="_blank" rel="noopener noreferrer"> Interrupt: The Agent AI Conference by LangChain</a> on May 13 & 14 in San Francisco!',
+          '<strong>Join us at <a href="https://interrupt.langchain.com/" target="_blank" rel="noopener noreferrer"> Interrupt: The Agent AI Conference by LangChain</a> on May 13 & 14 in San Francisco!</strong>',
+          backgroundColor: '#d0c9fe'
       },
       prism: {
         theme: {
