@@ -160,6 +160,7 @@ codespell = [
 ]
 test_integration = [
     "pytest-vcr<2.0.0,>=1.0.2",
+    "urllib3<2; python_version < \"3.10\"",
     "wrapt<2.0.0,>=1.15.0",
     "python-dotenv<2.0.0,>=1.0.0",
     "cassio<1.0.0,>=0.1.0",
