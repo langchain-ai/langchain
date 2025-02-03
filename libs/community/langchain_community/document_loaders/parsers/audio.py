@@ -143,6 +143,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
 
         self.deployment_name = deployment_name
         self.max_retries = max_retries
+        self.user_agent = "langchain-comm-python-azure-openai"
 
         try:
             import openai
@@ -177,6 +178,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
             "prompt": self.prompt,
             "response_format": self.response_format,
             "temperature": self.temperature,
+            "user_agent": self.user_agent
         }
         return {k: v for k, v in params.items() if v is not None}
 
@@ -260,6 +262,7 @@ class OpenAIWhisperParser(BaseBlobParser):
         self.prompt = prompt
         self.response_format = response_format
         self.temperature = temperature
+        self.user_agent = "langchain-comm-python-azure-openai"
 
     @property
     def _create_params(self) -> Dict[str, Any]:
@@ -268,6 +271,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             "prompt": self.prompt,
             "response_format": self.response_format,
             "temperature": self.temperature,
+            "user_agent": self.user_agent
         }
         return {k: v for k, v in params.items() if v is not None}
 

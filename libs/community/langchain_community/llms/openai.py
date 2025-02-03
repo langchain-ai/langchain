@@ -870,6 +870,7 @@ class AzureOpenAI(BaseOpenAI):
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
+        values["user_agent"]="langchain-comm-python-azure-openai"
         try:
             import openai
         except ImportError:
@@ -927,6 +928,7 @@ class AzureOpenAI(BaseOpenAI):
                 "default_headers": values["default_headers"],
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
+                "user_agent": values["user_agent"],
             }
             values["client"] = openai.AzureOpenAI(**client_params).completions
 
