@@ -152,6 +152,8 @@ test = [
     "langchain-core @ file:///${PROJECT_ROOT}/../core",
     "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
     "langchain-openai @ file:///${PROJECT_ROOT}/../partners/openai",
+    "toml>=0.10.2",
+    "packaging>=24.2",
 ]
 codespell = [
     "codespell<3.0.0,>=2.2.0",
