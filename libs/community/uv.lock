@@ -1643,7 +1643,6 @@ test-integration = [
     { name = "vcrpy" },
 ]
 typing = [
-    { name = "beautifulsoup4" },
     { name = "langchain" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
@@ -1713,7 +1712,6 @@ test-integration = [
     { name = "vcrpy", specifier = ">=6,<7" },
 ]
 typing = [
-    { name = "beautifulsoup4", specifier = ">=4.0.0,<4.13.0" },
     { name = "langchain", directory = "../langchain" },
     { name = "langchain-core", directory = "../core" },
     { name = "langchain-text-splitters", directory = "../text-splitters" },
