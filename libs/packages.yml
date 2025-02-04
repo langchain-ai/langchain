@@ -365,7 +365,7 @@ packages:
   repo: sambanova/langchain-sambanova
   path: .
   downloads: 0
-- name: langchain-deepseek-official
+- name: langchain-deepseek
   repo: langchain-ai/langchain
   path: libs/partners/deepseek
   downloads: 0
