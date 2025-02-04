@@ -80,6 +80,7 @@ typing = [
     "types-chardet<6.0.0.0,>=5.0.4.6",
     "types-redis<5.0.0.0,>=4.3.21.6",
     "mypy-protobuf<4.0.0,>=3.0.0",
+    "beautifulsoup4<4.13.0,>=4.0.0",  # issues with type hints
     "langchain-core @ file:///${PROJECT_ROOT}/../core",
     "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
     "langchain @ file:///${PROJECT_ROOT}/../langchain",

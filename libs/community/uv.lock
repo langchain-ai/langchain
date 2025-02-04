@@ -257,15 +257,14 @@ wheels = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.1"
+version = "4.12.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "soupsieve" },
-    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/f3/d90227cc52f7b8fcd0f2af804f56e55edf8dd07036b681a2809e3245318b/beautifulsoup4-4.13.1.tar.gz", hash = "sha256:741c8b6903a1e4ae8ba32b9c9ae7510dab7a197fdbadcf9fcdeb0891ef5ec66a", size = 618295 }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/ca/824b1195773ce6166d388573fc106ce56d4a805bd7427b624e063596ec58/beautifulsoup4-4.12.3.tar.gz", hash = "sha256:74e3d1928edc070d21748185c46e3fb33490f22f52a3addee9aee0f4f7781051", size = 581181 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/75/899bf9b6270b2ce5e8f01b8da121b29e4b88256feb2cf6c6418d4cc42130/beautifulsoup4-4.13.1-py3-none-any.whl", hash = "sha256:72465267014897bb10ca749bb632bde6c2d20f3254afd5458544bd74e6c2e6d8", size = 185056 },
+    { url = "https://files.pythonhosted.org/packages/b1/fe/e8c672695b37eecc5cbf43e1d0638d88d66ba3a44c4d321c796f4e59167f/beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed", size = 147925 },
 ]
 
 [[package]]
@@ -1644,6 +1643,7 @@ test-integration = [
     { name = "vcrpy" },
 ]
 typing = [
+    { name = "beautifulsoup4" },
     { name = "langchain" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
@@ -1713,6 +1713,7 @@ test-integration = [
     { name = "vcrpy", specifier = ">=6,<7" },
 ]
 typing = [
+    { name = "beautifulsoup4", specifier = ">=4.0.0,<4.13.0" },
     { name = "langchain", directory = "../langchain" },
     { name = "langchain-core", directory = "../core" },
     { name = "langchain-text-splitters", directory = "../text-splitters" },
