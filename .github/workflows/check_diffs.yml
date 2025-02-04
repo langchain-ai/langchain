@@ -138,7 +138,7 @@ jobs:
           echo "Running extended tests, installing dependencies with uv..."
           uv venv
           uv sync --group test
-          uv pip install -r extended_testing_deps.txt
+          uv run pip install -r extended_testing_deps.txt
 
       - name: Run extended tests
         run: make extended_tests
