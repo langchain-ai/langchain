@@ -153,9 +153,8 @@ class AzureOpenAI(BaseOpenAI):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
-            "default_query": self.default_query,
-            "user_agent": "langchain-partner-python-azure-openai",
+            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"} or self.default_headers,
+            "default_query": self.default_query
         }
         if not self.client:
             sync_specific = {"http_client": self.http_client}

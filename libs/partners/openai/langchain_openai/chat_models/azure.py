@@ -643,9 +643,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": self.default_headers,
-            "default_query": self.default_query,
-            "user_agent": "langchain-partner-python-azure-openai",
+            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"} or self.default_headers,
+            "default_query": self.default_query
         }
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
