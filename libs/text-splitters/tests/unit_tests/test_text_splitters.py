@@ -2519,8 +2519,8 @@ def test_split_text_on_tokens() -> None:
     assert output == expected_output
 
 
-@pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:
     # arrange
     html_string = """<!DOCTYPE html>
@@ -2573,8 +2573,8 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
-@pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_happy_path_splitting_based_on_header_with_font_size() -> None:
     # arrange
     html_string = """<!DOCTYPE html>
@@ -2624,8 +2624,8 @@ def test_happy_path_splitting_based_on_header_with_font_size() -> None:
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
-@pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
     # arrange
     html_string = """<!DOCTYPE html>
@@ -2675,8 +2675,8 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
-@pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_section_splitter_accepts_a_relative_path() -> None:
     html_string = """<html><body><p>Foo</p></body></html>"""
     test_file = Path("tests/test_data/test_splitter.xslt")
@@ -2690,8 +2690,8 @@ def test_section_splitter_accepts_a_relative_path() -> None:
     sec_splitter.split_text(html_string)
 
 
-@pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_section_splitter_accepts_an_absolute_path() -> None:
     html_string = """<html><body><p>Foo</p></body></html>"""
     test_file = Path("tests/test_data/test_splitter.xslt").absolute()
@@ -2706,8 +2706,8 @@ def test_section_splitter_accepts_an_absolute_path() -> None:
     sec_splitter.split_text(html_string)
 
 
-@pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_happy_path_splitting_with_duplicate_header_tag() -> None:
     # arrange
     html_string = """<!DOCTYPE html>
