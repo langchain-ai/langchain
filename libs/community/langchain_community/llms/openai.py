@@ -927,7 +927,7 @@ class AzureOpenAI(BaseOpenAI):
                 "max_retries": values["max_retries"],
                 "default_headers": values["default_headers"],
                 "default_query": values["default_query"],
-                "http_client": values["http_client"]
+                "http_client": values["http_client"],
             }
             values["client"] = openai.AzureOpenAI(**client_params).completions
 

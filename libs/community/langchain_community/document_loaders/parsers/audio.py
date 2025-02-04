@@ -160,7 +160,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
                 api_version=self.api_version,
                 max_retries=self.max_retries,
                 azure_ad_token_provider=self.azure_ad_token_provider,
-                default_headers=self.user_agent
+                default_headers=self.user_agent,
             )
         else:
             if self.api_key:
@@ -178,7 +178,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
             "language": self.language,
             "prompt": self.prompt,
             "response_format": self.response_format,
-            "temperature": self.temperature
+            "temperature": self.temperature,
         }
         return {k: v for k, v in params.items() if v is not None}
 
@@ -269,7 +269,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             "language": self.language,
             "prompt": self.prompt,
             "response_format": self.response_format,
-            "temperature": self.temperature
+            "temperature": self.temperature,
         }
         return {k: v for k, v in params.items() if v is not None}
 
