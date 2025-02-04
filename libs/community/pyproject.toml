@@ -62,7 +62,7 @@ test_integration = [
     "vcrpy<7,>=6",
 ]
 lint = [
-    "ruff<1.0,>=0.5",
+    "ruff<0.6,>=0.5",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
