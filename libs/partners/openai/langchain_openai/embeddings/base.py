@@ -312,7 +312,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
             "default_headers": self.default_headers,
-            "default_query": self.default_query
+            "default_query": self.default_query,
         }
 
         if self.openai_proxy and (self.http_client or self.http_async_client):

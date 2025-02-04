@@ -643,8 +643,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"} or self.default_headers,
-            "default_query": self.default_query
+            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"}
+            or self.default_headers,
+            "default_query": self.default_query,
         }
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
@@ -657,9 +658,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
             async_specific = {"http_client": self.http_async_client}
 
             if self.azure_ad_async_token_provider:
-                client_params["azure_ad_token_provider"] = (
-                    self.azure_ad_async_token_provider
-                )
+                client_params[
+                    "azure_ad_token_provider"
+                ] = self.azure_ad_async_token_provider
 
             self.root_async_client = openai.AsyncAzureOpenAI(
                 **client_params,
