@@ -166,7 +166,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
                 "default_headers": self.default_headers,
                 "default_query": self.default_query,
                 "http_client": self.http_client,
-                "user_agent": "langchain-comm-python-azure-openai"
+                "user_agent": "langchain-comm-python-azure-openai",
             }
             self.client = openai.AzureOpenAI(**client_params).embeddings  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
 

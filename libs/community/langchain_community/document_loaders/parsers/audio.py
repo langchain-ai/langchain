@@ -178,7 +178,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
             "prompt": self.prompt,
             "response_format": self.response_format,
             "temperature": self.temperature,
-            "user_agent": self.user_agent
+            "user_agent": self.user_agent,
         }
         return {k: v for k, v in params.items() if v is not None}
 
@@ -271,7 +271,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             "prompt": self.prompt,
             "response_format": self.response_format,
             "temperature": self.temperature,
-            "user_agent": self.user_agent
+            "user_agent": self.user_agent,
         }
         return {k: v for k, v in params.items() if v is not None}
 
