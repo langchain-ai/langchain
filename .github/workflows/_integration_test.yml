@@ -36,7 +36,7 @@ jobs:
       - name: Install deps outside pyproject
         if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
         shell: bash
-        run: uv pip install "boto3<2" "google-cloud-aiplatform<2"
+        run: VIRTUAL_ENV=.venv uv pip install "boto3<2" "google-cloud-aiplatform<2"
 
       - name: Run integration tests
         shell: bash

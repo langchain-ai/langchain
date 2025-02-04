@@ -216,7 +216,7 @@ jobs:
         #   sometimes a delay in availability on test pypi
         run: |
           uv venv
-          uv run pip install dist/*.whl
+          VIRTUAL_ENV=.venv uv pip install dist/*.whl
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
@@ -237,7 +237,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          uv run pip install dist/*.whl
+          VIRTUAL_ENV=.venv uv pip install dist/*.whl
 
       - name: Run unit tests
         run: make tests
@@ -252,7 +252,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         run: |
-          uv run pip install packaging requests
+          VIRTUAL_ENV=.venv uv pip install packaging requests
           python_version="$(uv run python --version | awk '{print $2}')"
           min_versions="$(uv run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml release $python_version)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
@@ -263,7 +263,7 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          uv run pip install --force-reinstall $MIN_VERSIONS --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS --editable .
           make tests
         working-directory: ${{ inputs.working-directory }}
 

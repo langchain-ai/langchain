@@ -45,7 +45,7 @@ jobs:
         id: min-version
         shell: bash
         run: |
-          uv run pip install packaging tomli requests
+          VIRTUAL_ENV=.venv uv pip install packaging tomli requests
           python_version="$(uv run python --version | awk '{print $2}')"
           min_versions="$(uv run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
@@ -56,7 +56,7 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          uv run pip install $MIN_VERSIONS
+          VIRTUAL_ENV=.venv uv pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 

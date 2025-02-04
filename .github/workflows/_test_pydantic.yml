@@ -42,7 +42,7 @@ jobs:
 
       - name: Overwrite pydantic version
         shell: bash
-        run: uv pip install pydantic~=${{ inputs.pydantic-version }}
+        run: VIRTUAL_ENV=.venv uv pip install pydantic~=${{ inputs.pydantic-version }}
 
       - name: Run core tests
         shell: bash
