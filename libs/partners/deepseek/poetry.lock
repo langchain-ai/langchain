@@ -35,13 +35,13 @@ trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "certifi"
-version = "2024.12.14"
+version = "2025.1.31"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2024.12.14-py3-none-any.whl", hash = "sha256:1275f7a45be9464efc1173084eaa30f866fe2e47d389406136d332ed4967ec56"},
-    {file = "certifi-2024.12.14.tar.gz", hash = "sha256:b650d30f370c2b724812bee08008be0c4163b163ddaec3f2546c1caf65f191db"},
+    {file = "certifi-2025.1.31-py3-none-any.whl", hash = "sha256:ca78db4565a652026a4db2bcdf68f2fb589ea80d0be70e03929ed730746b84fe"},
+    {file = "certifi-2025.1.31.tar.gz", hash = "sha256:3d5da6925056f6f18f119200434a4780a94263f10d1c21d032a6f6b2baa20651"},
 ]
 
 [[package]]
@@ -226,13 +226,13 @@ files = [
 
 [[package]]
 name = "codespell"
-version = "2.4.0"
+version = "2.4.1"
 description = "Fix common misspellings in text files"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "codespell-2.4.0-py3-none-any.whl", hash = "sha256:b4c5b779f747dd481587aeecb5773301183f52b94b96ed51a28126d0482eec1d"},
-    {file = "codespell-2.4.0.tar.gz", hash = "sha256:587d45b14707fb8ce51339ba4cce50ae0e98ce228ef61f3c5e160e34f681be58"},
+    {file = "codespell-2.4.1-py3-none-any.whl", hash = "sha256:3dadafa67df7e4a3dbf51e0d7315061b80d265f9552ebd699b3dd6834b47e425"},
+    {file = "codespell-2.4.1.tar.gz", hash = "sha256:299fcdcb09d23e81e35a671bbe746d5ad7e8385972e65dbb833a2eaac33c01e5"},
 ]
 
 [package.extras]
@@ -511,18 +511,18 @@ url = "../openai"
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.9"
+version = "0.3.10"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "langchain_tests-0.3.9-py3-none-any.whl", hash = "sha256:a667266819484723215bcdad682327ebea93d9ff30ac4c26b869b30a9cf78ea8"},
-    {file = "langchain_tests-0.3.9.tar.gz", hash = "sha256:bfff9704adeea927150e3015fe0c103dff49de17f3a77163ab48f0717a29ebed"},
+    {file = "langchain_tests-0.3.10-py3-none-any.whl", hash = "sha256:393e15990b9d1d12b52ee832257e874beb4299891d98ec7682b7fba12c0f8fe1"},
+    {file = "langchain_tests-0.3.10.tar.gz", hash = "sha256:ba0ce038cb633e906961efc85591dd86b28d5c84a7880e7e0cd4dcb833d604a8"},
 ]
 
 [package.dependencies]
 httpx = ">=0.25.0,<1"
-langchain-core = ">=0.3.31,<0.4.0"
+langchain-core = ">=0.3.33,<0.4.0"
 numpy = [
     {version = ">=1.24.0,<2.0.0", markers = "python_version < \"3.12\""},
     {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
@@ -534,13 +534,13 @@ syrupy = ">=4,<5"
 
 [[package]]
 name = "langsmith"
-version = "0.3.2"
+version = "0.3.4"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "langsmith-0.3.2-py3-none-any.whl", hash = "sha256:48ff6bc5eda62f4729596bb68d4f96166d2654728ac32970b69b1be874c61925"},
-    {file = "langsmith-0.3.2.tar.gz", hash = "sha256:7724668e9705734ab25a7977fc34a9ee15a40ba4108987926c69293a05d40229"},
+    {file = "langsmith-0.3.4-py3-none-any.whl", hash = "sha256:f3b818ce31dc3bdf1f797e75bf32a8a7b062a411f146bd4ffdfc2be0b4b03233"},
+    {file = "langsmith-0.3.4.tar.gz", hash = "sha256:79fd516e68bbc30f408ab0b30a92175e5be0f5c21002e30a7804c59cb72cfe1a"},
 ]
 
 [package.dependencies]
@@ -739,13 +739,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.60.2"
+version = "1.61.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.60.2-py3-none-any.whl", hash = "sha256:993bd11b96900b9098179c728026f016b4982ded7ee30dfcf4555eab1171fff9"},
-    {file = "openai-1.60.2.tar.gz", hash = "sha256:a8f843e10f2855713007f491d96afb2694b11b5e02cb97c7d01a0be60bc5bb51"},
+    {file = "openai-1.61.0-py3-none-any.whl", hash = "sha256:e8c512c0743accbdbe77f3429a1490d862f8352045de8dc81969301eb4a4f666"},
+    {file = "openai-1.61.0.tar.gz", hash = "sha256:216f325a24ed8578e929b0f1b3fb2052165f3b04b0461818adaa51aa29c71f8a"},
 ]
 
 [package.dependencies]

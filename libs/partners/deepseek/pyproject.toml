@@ -3,8 +3,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "langchain-deepseek-official"
-packages = [{ include = "langchain_deepseek" }]
+name = "langchain-deepseek"
 version = "0.1.0"
 description = "An integration package connecting DeepSeek and LangChain"
 authors = []
