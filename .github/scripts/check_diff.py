@@ -57,9 +57,7 @@ def dependents_graph() -> dict:
     """
     dependents = defaultdict(set)
 
-    # for path in glob.glob("./libs/**/pyproject.toml", recursive=True):
-    # TODO: fix this
-    for path in ["./libs/langchain/pyproject.toml", "./libs/core/pyproject.toml"]:
+    for path in glob.glob("./libs/**/pyproject.toml", recursive=True):
         if "template" in path:
             continue
 
