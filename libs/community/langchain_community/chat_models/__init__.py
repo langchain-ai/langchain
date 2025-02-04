@@ -27,6 +27,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.anyscale import (
         ChatAnyscale,
     )
+    from langchain_community.chat_models.aibrary import (
+        ChatAiBrary,
+    )
     from langchain_community.chat_models.azure_openai import (
         AzureChatOpenAI,
     )
@@ -199,6 +202,7 @@ __all__ = [
     "BedrockChat",
     "ChatAnthropic",
     "ChatAnyscale",
+    "ChatAiBrary",
     "ChatBaichuan",
     "ChatClovaX",
     "ChatCohere",
@@ -265,6 +269,7 @@ _module_lookup = {
     "AzureChatOpenAI": "langchain_community.chat_models.azure_openai",
     "BedrockChat": "langchain_community.chat_models.bedrock",
     "ChatAnthropic": "langchain_community.chat_models.anthropic",
+    "ChatAiBrary": "langchain_community.chat_models.aibrary",
     "ChatAnyscale": "langchain_community.chat_models.anyscale",
     "ChatBaichuan": "langchain_community.chat_models.baichuan",
     "ChatClovaX": "langchain_community.chat_models.naver",

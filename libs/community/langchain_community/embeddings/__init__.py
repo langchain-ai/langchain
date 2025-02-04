@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.anyscale import (
         AnyscaleEmbeddings,
     )
+    from langchain_community.embeddings.aibrary import (
+        AiBraryEmbeddings,
+    )
     from langchain_community.embeddings.ascend import (
         AscendEmbeddings,
     )
@@ -251,6 +254,7 @@ __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "AnyscaleEmbeddings",
+    "AiBraryEmbeddings",
     "AscendEmbeddings",
     "AwaEmbeddings",
     "AzureOpenAIEmbeddings",
@@ -337,6 +341,7 @@ _module_lookup = {
     "AlephAlphaAsymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AlephAlphaSymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AnyscaleEmbeddings": "langchain_community.embeddings.anyscale",
+    "AiBraryEmbeddings": "langchain_community.embeddings.aibrary",
     "AwaEmbeddings": "langchain_community.embeddings.awa",
     "AzureOpenAIEmbeddings": "langchain_community.embeddings.azure_openai",
     "BaichuanTextEmbeddings": "langchain_community.embeddings.baichuan",
