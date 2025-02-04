@@ -19,6 +19,7 @@ concurrency:
 
 env:
   UV_FROZEN: "true"
+  UV_PROJECT_ENVIRONMENT: ${{ env.VIRTUAL_ENV }}
 
 jobs:
   build:
