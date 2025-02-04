@@ -2,106 +2,13 @@
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-[tool.ruff]
-exclude = [
-    "tests/examples/non-utf8-encoding.py",
-    "tests/integration_tests/examples/non-utf8-encoding.py",
-]
-
-[tool.mypy]
-ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
-
-[tool.codespell]
-skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
-ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
-ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
-
-[tool.coverage.run]
-omit = ["tests/*"]
-
-[tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-markers = [
-    "requires: mark tests as requiring a specific library",
-    "scheduled: mark tests to run in scheduled testing",
-    "compile: mark placeholder test used to compile integration tests without running them",
-]
-asyncio_mode = "auto"
-filterwarnings = [
-    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
-    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:test",
-    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:test",
-]
-
-[tool.pdm.dev-dependencies]
-test = [
-    "pytest<8.0.0,>=7.4.4",
-    "pytest-cov<5.0.0,>=4.1.0",
-    "pytest-dotenv<1.0.0,>=0.5.2",
-    "duckdb-engine<1.0.0,>=0.13.6",
-    "pytest-watcher<1.0.0,>=0.2.6",
-    "freezegun<2.0.0,>=1.2.2",
-    "responses<1.0.0,>=0.22.0",
-    "pytest-asyncio<1.0.0,>=0.20.3",
-    "lark<2.0.0,>=1.1.5",
-    "pandas<3.0.0,>=2.0.0",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-socket<1.0.0,>=0.6.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "requests-mock<2.0.0,>=1.11.0",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain @ file:///${PROJECT_ROOT}/../langchain",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
-]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
-test_integration = [
-    "pytest-vcr<2.0.0,>=1.0.2",
-    "vcrpy<7,>=6",
-]
-lint = [
-    "ruff<1.0,>=0.5",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
-]
-dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "setuptools<68.0.0,>=67.6.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-]
-typing = [
-    "mypy<2.0,>=1.12",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
-    "types-requests<3.0.0.0,>=2.28.11.5",
-    "types-toml<1.0.0.0,>=0.10.8.1",
-    "types-pytz<2024.0.0.0,>=2023.3.0.0",
-    "types-chardet<6.0.0.0,>=5.0.4.6",
-    "types-redis<5.0.0.0,>=4.3.21.6",
-    "mypy-protobuf<4.0.0,>=3.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-    "langchain @ file:///${PROJECT_ROOT}/../langchain",
-]
-
-[tool.pdm.build]
-includes = []
-
 [project]
 authors = []
 license = {text = "MIT"}
 requires-python = "<4.0,>=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.32",
-    "langchain<1.0.0,>=0.3.16",
+    "langchain-core<1.0.0,>=0.3.34rc1",
+    "langchain<1.0.0,>=0.3.18rc1",
     "SQLAlchemy<3,>=1.4",
     "requests<3,>=2",
     "PyYAML>=5.3",
@@ -115,7 +22,7 @@ dependencies = [
     "numpy<3,>=1.26.2; python_version >= \"3.12\"",
 ]
 name = "langchain-community"
-version = "0.3.16"
+version = "0.3.17rc1"
 description = "Community contributed LangChain integrations."
 readme = "README.md"
 
@@ -176,4 +83,41 @@ typing = [
     "langchain-core @ file:///${PROJECT_ROOT}/../core",
     "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
     "langchain @ file:///${PROJECT_ROOT}/../langchain",
+]
+
+
+[tool.ruff]
+exclude = [
+    "tests/examples/non-utf8-encoding.py",
+    "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+exclude = ["notebooks", "examples", "example_data"]
+
+[tool.codespell]
+skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
+ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
+ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "T201"]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:test",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:test",
 ]
