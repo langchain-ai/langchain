@@ -2,7 +2,7 @@
 
 import json
 from base64 import b64encode
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import pytest
 import requests
@@ -649,3 +649,23 @@ def test_citations() -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     assert any("citations" in block for block in response.content)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(messages):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    assert any("citations" in block for block in full.content)
+    for block in full.content:
+        assert "citation" not in block
+
+    streamed_citations = [
+        cast(dict, block)["citations"] for block in full.content if "citations" in block
+    ]
+    invoked_citations = [
+        cast(dict, block)["citations"]
+        for block in response.content
+        if "citations" in block
+    ]
+    assert streamed_citations == invoked_citations
