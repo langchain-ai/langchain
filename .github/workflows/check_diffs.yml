@@ -136,6 +136,7 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with uv..."
+          uv venv
           uv sync --group test
           uv pip install -r extended_testing_deps.txt
 
