@@ -43,6 +43,7 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "langchain-core @ file:///${PROJECT_ROOT}/../core",
+    "lxml>=5.3.0",
 ]
 test_integration = [
     "spacy; python_version < \"3.13\"",
