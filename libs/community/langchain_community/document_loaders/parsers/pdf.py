@@ -836,9 +836,9 @@ class PyMuPDFParser(BaseBlobParser):
         Returns:
             dict: The extracted metadata.
         """
-        return _purge_metadata(
-            dict(
-                {
+        metadata = _purge_metadata(
+            {
+                **{
                     "producer": "PyMuPDF",
                     "creator": "PyMuPDF",
                     "creationdate": "",
@@ -851,8 +851,12 @@ class PyMuPDFParser(BaseBlobParser):
                     for k in doc.metadata
                     if isinstance(doc.metadata[k], (str, int))
                 },
-            )
+            }
         )
+        for k in ("modDate", "creationDate"):
+            if k in doc.metadata:
+                metadata[k] = doc.metadata[k]
+        return metadata
 
     def _extract_images_from_page(
         self, doc: pymupdf.Document, page: pymupdf.Page
