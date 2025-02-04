@@ -648,7 +648,7 @@ name = "importlib-metadata"
 version = "8.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp", marker = "python_full_version < '3.12.4'" },
+    { name = "zipp", marker = "python_full_version < '3.10'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/08/c1395a292bb23fd03bdf572a1357c5a733d3eecbab877641ceacab23db6e/importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580", size = 55767 }
 wheels = [
@@ -1079,7 +1079,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.33"
+version = "0.3.34rc1"
 source = { directory = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1137,7 +1137,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.5"
+version = "0.3.6rc1"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1176,7 +1176,7 @@ typing = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", specifier = ">=0.3.29,<1.0.0" }]
+requires-dist = [{ name = "langchain-core", specifier = ">=0.3.34rc1,<1.0.0" }]
 
 [package.metadata.requires-dev]
 dev = [
