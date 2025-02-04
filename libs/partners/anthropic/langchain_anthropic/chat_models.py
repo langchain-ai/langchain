@@ -601,6 +601,11 @@ class ChatAnthropic(BaseChatModel):
     """
 
     @property
+    def model_name(self) -> str:
+        """Alias for model"""
+        return self.model
+
+    @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "anthropic-chat"
