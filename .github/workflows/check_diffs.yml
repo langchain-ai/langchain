@@ -19,7 +19,6 @@ concurrency:
 
 env:
   UV_FROZEN: "true"
-  UV_PROJECT_ENVIRONMENT: ${{ env.VIRTUAL_ENV }}
 
 jobs:
   build:
@@ -137,10 +136,9 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with uv..."
-          uv sync --group test
           uv venv
+          uv sync --group test
           uv pip install -r extended_testing_deps.txt
-          uv run pip install -r extended_testing_deps.txt
           make extended_tests
 
       - name: Ensure the tests did not create any additional files
