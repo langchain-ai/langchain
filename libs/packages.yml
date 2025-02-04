@@ -383,3 +383,4 @@ packages:
 - name: langchain-nimble
   repo: Nimbleway/langchain-nimble
   path: .
+  downloads: 0
