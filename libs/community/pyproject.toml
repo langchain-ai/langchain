@@ -53,6 +53,7 @@ test = [
     "langchain-core @ file:///${PROJECT_ROOT}/../core",
     "langchain @ file:///${PROJECT_ROOT}/../langchain",
     "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
+    "toml>=0.10.2",
 ]
 codespell = [
     "codespell<3.0.0,>=2.2.0",
