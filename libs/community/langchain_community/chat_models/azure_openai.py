@@ -153,7 +153,7 @@ class AzureChatOpenAI(ChatOpenAI):
         values["openai_proxy"] = get_from_dict_or_env(
             values, "openai_proxy", "OPENAI_PROXY", default=""
         )
-        values["user_agent"] = "langchain-comm-python-azure-openai"
+        values["default_headers"] = {"User-Agent": "langchain-comm-python-azure-openai"} or values["default_headers"]
         try:
             import openai
 
@@ -211,8 +211,7 @@ class AzureChatOpenAI(ChatOpenAI):
                 "max_retries": values["max_retries"],
                 "default_headers": values["default_headers"],
                 "default_query": values["default_query"],
-                "http_client": values["http_client"],
-                "user_agent": values["user_agent"],
+                "http_client": values["http_client"]
             }
             values["client"] = openai.AzureOpenAI(**client_params).chat.completions
 
