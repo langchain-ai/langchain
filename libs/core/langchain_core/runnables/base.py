@@ -5832,6 +5832,10 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
         return RunnableLambda(cast(Callable[[Input], Output], thing))
     elif isinstance(thing, dict):
         return cast(Runnable[Input, Output], RunnableParallel(thing))
+    elif thing is Ellipsis:
+        from langchain_core.runnables.passthrough import RunnablePassthrough
+
+        return RunnablePassthrough()
     else:
         msg = (
             f"Expected a Runnable, callable or dict."
