@@ -22,7 +22,6 @@ on:
 env:
   PYTHON_VERSION: "3.11"
   UV_FROZEN: "true"
-  VIRTUAL_ENV: ".venv"
 
 jobs:
   build:
