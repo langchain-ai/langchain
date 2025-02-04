@@ -14,7 +14,7 @@ if __name__ == "__main__":
     releasing_rc = "rc" in version or "dev" in version
 
     # if not, iterate through dependencies and make sure none allow prereleases
-    if True:#not releasing_rc:
+    if not releasing_rc:
         dependencies = toml_data["project"]["dependencies"]
         for dep_version in dependencies:
             dep_version_string = (
