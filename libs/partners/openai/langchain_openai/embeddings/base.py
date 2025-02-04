@@ -313,7 +313,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "max_retries": self.max_retries,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
-            "user_agent": "langchain-partner-python-azure-openai"
+            "user_agent": "langchain-partner-python-azure-openai",
         }
 
         if self.openai_proxy and (self.http_client or self.http_async_client):
