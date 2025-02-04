@@ -132,16 +132,15 @@ jobs:
         with:
           python-version: ${{ matrix.job-configs.python-version }}
 
-      - name: Install dependencies
+      - name: Install dependencies and run extended tests
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with uv..."
-          uv venv
           uv sync --group test
+          uv venv
+          uv pip install -r extended_testing_deps.txt
           uv run pip install -r extended_testing_deps.txt
-
-      - name: Run extended tests
-        run: make extended_tests
+          make extended_tests
 
       - name: Ensure the tests did not create any additional files
         shell: bash
