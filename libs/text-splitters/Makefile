@@ -25,7 +25,7 @@ check_imports: $(shell find langchain_text_splitters -name '*.py')
 	uv run --group test python ./scripts/check_imports.py $^
 
 extended_tests:
-	uv run --group test --with-requirements extended_testing_deps.txt pytest --disable-socket --allow-unix-socket --only-extended $(TEST_FILE)
+	uv run --group test pytest --disable-socket --allow-unix-socket --only-extended $(TEST_FILE)
 
 
 ######################

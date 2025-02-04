@@ -31,7 +31,7 @@ check_imports: $(shell find langchain_community -name '*.py')
 	uv run --group test python ./scripts/check_imports.py $^
 
 extended_tests:
-	uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
+	uv run --no-sync --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 
 ######################
