@@ -13,7 +13,7 @@ test tests:
 	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests: 
-	uv run --group test pytest tests/integration_tests/
+	uv run --group test --group test_integration pytest tests/integration_tests/
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv -x tests/unit_tests

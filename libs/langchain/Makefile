@@ -34,7 +34,7 @@ test_watch_extended:
 	uv run --group test ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 integration_tests:
-	uv run --group test_integration pytest tests/integration_tests
+	uv run --group test --group test_integration pytest tests/integration_tests
 
 docker_tests:
 	docker build -t my-langchain-image:test .
