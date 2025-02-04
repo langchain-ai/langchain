@@ -417,7 +417,7 @@ def _init_chat_model_helper(
 
         return ChatAnthropicVertex(model=model, **kwargs)
     elif model_provider == "deepseek":
-        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek-official")
+        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
