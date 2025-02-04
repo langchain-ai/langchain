@@ -19,6 +19,7 @@ on:
 
 env:
   UV_FROZEN: "true"
+  VIRTUAL_ENV: ".venv"
 
 jobs:
   build:
