@@ -133,7 +133,7 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with uv..."
-          uv sync --group test
+          uv sync --group test --frozen
           uv pip install -r extended_testing_deps.txt
 
       - name: Run extended tests

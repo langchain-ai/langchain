@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: uv sync --group test --group test_integration
+        run: uv sync --group test --group test_integration --frozen
 
       - name: Install deps outside pyproject
         if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}

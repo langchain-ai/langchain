@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: uv sync --group test
+        run: uv sync --group test --frozen
 
       - name: Overwrite pydantic version
         shell: bash

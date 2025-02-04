@@ -30,7 +30,7 @@ jobs:
 
       - name: Install integration dependencies
         shell: bash
-        run: uv sync --group test --group test_integration
+        run: uv sync --group test --group test_integration --frozen
 
       - name: Check integration tests compile
         shell: bash
