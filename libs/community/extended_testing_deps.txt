@@ -104,3 +104,4 @@ mlflow[genai]>=2.14.0
 databricks-sdk>=0.30.0
 websocket>=0.2.1,<1
 writer-sdk>=1.2.0
+yandexcloud==0.144.0
