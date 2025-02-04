@@ -30,6 +30,9 @@ IGNORED_PARTNERS = [
     # specifically in huggingface jobs
     # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
+    # prompty exhibiting issues with numpy for Python 3.13
+    # https://github.com/langchain-ai/langchain/actions/runs/12651104685/job/35251034969?pr=29065
+    "prompty",
 ]
 
 PY_312_MAX_PACKAGES = [
@@ -301,9 +304,8 @@ if __name__ == "__main__":
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif any(file.startswith(p) for p in ["docs/", "cookbook/"]):
-            if file.startswith("docs/"):
-                docs_edited = True
+        elif file.startswith("docs/") or file in ["pyproject.toml", "poetry.lock"]: # docs or root poetry files
+            docs_edited = True
             dirs_to_run["lint"].add(".")
 
     dependents = dependents_graph()

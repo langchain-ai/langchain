@@ -25,51 +25,9 @@ This highlights functionality that is core to using LangChain.
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: debug your LLM apps](/docs/how_to/debugging/)
 
-## LangChain Expression Language (LCEL)
-
-[LangChain Expression Language](/docs/concepts/lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
-
-[**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
-
-[**Migration guide**](/docs/versions/migrating_chains): For migrating legacy chain abstractions to LCEL.
-
-- [How to: chain runnables](/docs/how_to/sequence)
-- [How to: stream runnables](/docs/how_to/streaming)
-- [How to: invoke runnables in parallel](/docs/how_to/parallel/)
-- [How to: add default invocation args to runnables](/docs/how_to/binding/)
-- [How to: turn any function into a runnable](/docs/how_to/functions)
-- [How to: pass through inputs from one chain step to the next](/docs/how_to/passthrough)
-- [How to: configure runnable behavior at runtime](/docs/how_to/configure)
-- [How to: add message history (memory) to a chain](/docs/how_to/message_history)
-- [How to: route between sub-chains](/docs/how_to/routing)
-- [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
-- [How to: inspect runnables](/docs/how_to/inspect)
-- [How to: add fallbacks to a runnable](/docs/how_to/fallbacks)
-- [How to: pass runtime secrets to a runnable](/docs/how_to/runnable_runtime_secrets)
-
 ## Components
 
 These are the core building blocks you can use when building applications.
-
-### Prompt templates
-
-[Prompt Templates](/docs/concepts/prompt_templates) are responsible for formatting user input into a format that can be passed to a language model.
-
-- [How to: use few shot examples](/docs/how_to/few_shot_examples)
-- [How to: use few shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
-- [How to: partially format prompt templates](/docs/how_to/prompts_partial)
-- [How to: compose prompts together](/docs/how_to/prompts_composition)
-
-### Example selectors
-
-[Example Selectors](/docs/concepts/example_selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
-
-- [How to: use example selectors](/docs/how_to/example_selectors)
-- [How to: select examples by length](/docs/how_to/example_selectors_length_based)
-- [How to: select examples by semantic similarity](/docs/how_to/example_selectors_similarity)
-- [How to: select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram)
-- [How to: select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
-- [How to: select examples from LangSmith few-shot datasets](/docs/how_to/example_selectors_langsmith/)
 
 ### Chat models
 
@@ -100,6 +58,26 @@ See [supported integrations](/docs/integrations/chat/) for details on getting st
 - [How to: trim messages](/docs/how_to/trim_messages/)
 - [How to: filter messages](/docs/how_to/filter_messages/)
 - [How to: merge consecutive messages of the same type](/docs/how_to/merge_message_runs/)
+
+### Prompt templates
+
+[Prompt Templates](/docs/concepts/prompt_templates) are responsible for formatting user input into a format that can be passed to a language model.
+
+- [How to: use few shot examples](/docs/how_to/few_shot_examples)
+- [How to: use few shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
+- [How to: partially format prompt templates](/docs/how_to/prompts_partial)
+- [How to: compose prompts together](/docs/how_to/prompts_composition)
+
+### Example selectors
+
+[Example Selectors](/docs/concepts/example_selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
+
+- [How to: use example selectors](/docs/how_to/example_selectors)
+- [How to: select examples by length](/docs/how_to/example_selectors_length_based)
+- [How to: select examples by semantic similarity](/docs/how_to/example_selectors_similarity)
+- [How to: select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram)
+- [How to: select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
+- [How to: select examples from LangSmith few-shot datasets](/docs/how_to/example_selectors_langsmith/)
 
 ### LLMs
 
@@ -328,6 +306,36 @@ large volumes of text. For a high-level tutorial, check out [this guide](/docs/t
 - [How to: summarize text in a single LLM call](/docs/how_to/summarize_stuff)
 - [How to: summarize text through parallelization](/docs/how_to/summarize_map_reduce)
 - [How to: summarize text through iterative refinement](/docs/how_to/summarize_refine)
+
+## LangChain Expression Language (LCEL)
+
+:::note Should I use LCEL?
+
+LCEL is an orchestration solution. See our
+[concepts page](/docs/concepts/lcel/#should-i-use-lcel) for recommendations on when to
+use LCEL.
+
+:::
+
+[LangChain Expression Language](/docs/concepts/lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
+
+[**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
+
+[**Migration guide**](/docs/versions/migrating_chains): For migrating legacy chain abstractions to LCEL.
+
+- [How to: chain runnables](/docs/how_to/sequence)
+- [How to: stream runnables](/docs/how_to/streaming)
+- [How to: invoke runnables in parallel](/docs/how_to/parallel/)
+- [How to: add default invocation args to runnables](/docs/how_to/binding/)
+- [How to: turn any function into a runnable](/docs/how_to/functions)
+- [How to: pass through inputs from one chain step to the next](/docs/how_to/passthrough)
+- [How to: configure runnable behavior at runtime](/docs/how_to/configure)
+- [How to: add message history (memory) to a chain](/docs/how_to/message_history)
+- [How to: route between sub-chains](/docs/how_to/routing)
+- [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
+- [How to: inspect runnables](/docs/how_to/inspect)
+- [How to: add fallbacks to a runnable](/docs/how_to/fallbacks)
+- [How to: pass runtime secrets to a runnable](/docs/how_to/runnable_runtime_secrets)
 
 ## [LangGraph](https://langchain-ai.github.io/langgraph)
 

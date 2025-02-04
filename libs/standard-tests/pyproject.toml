@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-tests"
-version = "0.3.7"
+version = "0.3.10"
 description = "Standard tests for LangChain implementations"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -19,7 +19,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.22"
+langchain-core = "^0.3.33"
 pytest = ">=7,<9"
 pytest-asyncio = ">=0.20,<1"
 httpx = ">=0.25.0,<1"
@@ -33,6 +33,9 @@ python = "<3.12"
 [[tool.poetry.dependencies.numpy]]
 version = ">=1.26.2,<3"
 python = ">=3.12"
+
+[tool.ruff]
+target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201"]
@@ -69,7 +72,7 @@ optional = true
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = ">=0.5"
+ruff = "^0.9.2"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1"

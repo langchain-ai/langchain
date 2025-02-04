@@ -128,7 +128,7 @@ class UsageMetadata(TypedDict):
     """Total token count. Sum of input_tokens + output_tokens."""
     input_token_details: NotRequired[InputTokenDetails]
     """Breakdown of input token counts.
- 
+
     Does *not* need to sum to full input token count. Does *not* need to have all keys.
     """
     output_token_details: NotRequired[OutputTokenDetails]
@@ -363,6 +363,17 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             return self
         tool_calls = []
         invalid_tool_calls = []
+
+        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
+            invalid_tool_calls.append(
+                create_invalid_tool_call(
+                    name=chunk["name"],
+                    args=chunk["args"],
+                    id=chunk["id"],
+                    error=None,
+                )
+            )
+
         for chunk in self.tool_call_chunks:
             try:
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
@@ -375,17 +386,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         )
                     )
                 else:
-                    msg = "Malformed args."
-                    raise ValueError(msg)
+                    add_chunk_to_invalid_tool_calls(chunk)
             except Exception:
-                invalid_tool_calls.append(
-                    create_invalid_tool_call(
-                        name=chunk["name"],
-                        args=chunk["args"],
-                        id=chunk["id"],
-                        error=None,
-                    )
-                )
+                add_chunk_to_invalid_tool_calls(chunk)
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
         return self

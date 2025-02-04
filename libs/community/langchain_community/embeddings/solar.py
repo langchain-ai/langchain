@@ -70,7 +70,7 @@ class SolarEmbeddings(BaseModel, Embeddings):
 
     endpoint_url: str = "https://api.upstage.ai/v1/solar/embeddings"
     """Endpoint URL to use."""
-    model: str = "solar-1-mini-embedding-query"
+    model: str = "embedding-query"
     """Embeddings model name to use."""
     solar_api_key: Optional[SecretStr] = None
     """API Key for Solar API."""
