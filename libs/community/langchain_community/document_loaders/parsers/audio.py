@@ -143,7 +143,6 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
 
         self.deployment_name = deployment_name
         self.max_retries = max_retries
-        self.user_agent = {"User-Agent": "langchain-comm-python-azure-openai"}
 
         try:
             import openai
@@ -160,7 +159,7 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
                 api_version=self.api_version,
                 max_retries=self.max_retries,
                 azure_ad_token_provider=self.azure_ad_token_provider,
-                default_headers=self.user_agent,
+                default_headers={"User-Agent": "langchain-comm-python-azure-openai"},
             )
         else:
             if self.api_key:

@@ -214,7 +214,9 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             if self.azure_ad_async_token_provider:
                 client_params[
                     "azure_ad_token_provider"
-                ] = self.azure_ad_async_token_provider
+                ] = (
+                    self.azure_ad_async_token_provider
+                )
 
             self.async_client = openai.AsyncAzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
