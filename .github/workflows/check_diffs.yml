@@ -17,6 +17,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  UV_FROZEN: "true"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -133,7 +136,7 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with uv..."
-          uv sync --group test --frozen
+          uv sync --group test
           uv pip install -r extended_testing_deps.txt
 
       - name: Run extended tests

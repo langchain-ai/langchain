@@ -11,6 +11,9 @@ on:
         type: string
         description: "Python version to use"
 
+env:
+  UV_FROZEN: "true"
+
 jobs:
   build:
     defaults:
@@ -28,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: uv sync --group test --group test_integration --frozen
+        run: uv sync --group test --group test_integration
 
       - name: Install deps outside pyproject
         if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}

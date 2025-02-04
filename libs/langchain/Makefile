@@ -10,6 +10,9 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
+.EXPORT_ALL_VARIABLES:
+UV_FROZEN = true
+
 # Run unit tests and generate a coverage report.
 coverage:
 	uv run --group test pytest --cov \

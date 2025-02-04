@@ -12,6 +12,9 @@ on:
         type: string
         description: "Python version to use"
 
+env:
+  UV_FROZEN: "true"
+
 jobs:
   build:
     defaults:
@@ -30,7 +33,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - name: Install dependencies
         shell: bash
-        run: uv sync --group test --dev --frozen
+        run: uv sync --group test --dev
 
       - name: Run core tests
         shell: bash

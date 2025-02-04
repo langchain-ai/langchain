@@ -18,6 +18,8 @@ env:
   # This env var allows us to get inline annotations when ruff has complaints.
   RUFF_OUTPUT_FORMAT: github
 
+  UV_FROZEN: "true"
+
 jobs:
   build:
     name: "make lint #${{ inputs.python-version }}"

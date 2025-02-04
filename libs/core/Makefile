@@ -6,6 +6,9 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
+.EXPORT_ALL_VARIABLES:
+UV_FROZEN = true
+
 test tests:
 	env \
 	-u LANGCHAIN_TRACING_V2 \
