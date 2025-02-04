@@ -1261,8 +1261,10 @@ def _tools_in_params(params: dict) -> bool:
 def _documents_in_params(params: dict) -> bool:
     for message in params.get("messages", []):
         for block in message.get("content", []):
-            if block.get("type") == "document" and block.get("citations", {}).get(
-                "enabled"
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "document"
+                and block.get("citations", {}).get("enabled")
             ):
                 return True
     return False
@@ -1310,7 +1312,11 @@ def _make_message_chunk_from_anthropic_event(
             content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
         )
-    elif event.type == "content_block_start" and event.content_block is not None:
+    elif (
+        event.type == "content_block_start"
+        and event.content_block is not None
+        and event.content_block.type in ("tool_use", "document")
+    ):
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.")
         content_block = event.content_block.model_dump()
