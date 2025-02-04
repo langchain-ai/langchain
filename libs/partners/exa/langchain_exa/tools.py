@@ -16,7 +16,7 @@ from pydantic import Field, SecretStr, model_validator
 from langchain_exa._utilities import initialize_client
 
 
-class ExaSearchResults(BaseTool):
+class ExaSearchResults(BaseTool):  # type: ignore[override]
     """Exa Search tool.
 
     Setup:
@@ -105,7 +105,7 @@ class ExaSearchResults(BaseTool):
             return repr(e)
 
 
-class ExaFindSimilarResults(BaseTool):
+class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
     """Tool that queries the Metaphor Search API and gets back json."""
 
     name: str = "exa_find_similar_results_json"
