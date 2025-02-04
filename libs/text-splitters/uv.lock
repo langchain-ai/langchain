@@ -1166,7 +1166,8 @@ test = [
 test-integration = [
     { name = "nltk" },
     { name = "sentence-transformers", marker = "python_full_version < '3.13'" },
-    { name = "spacy", marker = "python_full_version < '3.13'" },
+    { name = "spacy", version = "3.8.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "spacy", version = "3.8.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' and python_full_version < '3.13'" },
     { name = "transformers" },
 ]
 typing = [
@@ -1202,7 +1203,8 @@ test = [
 test-integration = [
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
     { name = "sentence-transformers", marker = "python_full_version < '3.13'", specifier = ">=2.6.0" },
-    { name = "spacy", marker = "python_full_version < '3.13'" },
+    { name = "spacy", marker = "python_full_version < '3.10'", specifier = ">=3.0.0,<3.8.4" },
+    { name = "spacy", marker = "python_full_version < '3.13'", specifier = ">=3.0.0,<4.0.0" },
     { name = "transformers", specifier = ">=4.47.0,<5.0.0" },
 ]
 typing = [
@@ -3280,29 +3282,85 @@ wheels = [
 
 [[package]]
 name = "spacy"
+version = "3.8.3"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.10'",
+]
+dependencies = [
+    { name = "catalogue", marker = "python_full_version < '3.10'" },
+    { name = "cymem", marker = "python_full_version < '3.10'" },
+    { name = "jinja2", marker = "python_full_version < '3.10'" },
+    { name = "langcodes", marker = "python_full_version < '3.10'" },
+    { name = "murmurhash", marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "packaging", marker = "python_full_version < '3.10'" },
+    { name = "preshed", marker = "python_full_version < '3.10'" },
+    { name = "pydantic", marker = "python_full_version < '3.10'" },
+    { name = "requests", marker = "python_full_version < '3.10'" },
+    { name = "setuptools", marker = "python_full_version < '3.10'" },
+    { name = "spacy-legacy", marker = "python_full_version < '3.10'" },
+    { name = "spacy-loggers", marker = "python_full_version < '3.10'" },
+    { name = "srsly", marker = "python_full_version < '3.10'" },
+    { name = "thinc", marker = "python_full_version < '3.10'" },
+    { name = "tqdm", marker = "python_full_version < '3.10'" },
+    { name = "typer", marker = "python_full_version < '3.10'" },
+    { name = "wasabi", marker = "python_full_version < '3.10'" },
+    { name = "weasel", marker = "python_full_version < '3.10'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/48/4f87b2551768c9725510c9629d34acca9b6e84d897207c8ac35b69df2484/spacy-3.8.3.tar.gz", hash = "sha256:81a967dc3d6a5a0a9ab250559483fe2092306582a9192f98be7a63bdce2797f7", size = 1288834 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/ce/2e32bbb30d84f250313e1ec351d6d5cd0067e5cdcc27404db56bfc9b11cc/spacy-3.8.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b530a5cbb077601d03bdd71bf1ded4de4b7fb0362b5443c5183c628cfa81ffdc", size = 6608713 },
+    { url = "https://files.pythonhosted.org/packages/55/ca/d843c414b08979e0390ed263ac46e427e0dc53b676d8c0259f00bf01d7f9/spacy-3.8.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b28a5f7b77400ebf7e23aa24a82a2d35f97071cd5ef1ad0f859aa9b323fff59a", size = 6303723 },
+    { url = "https://files.pythonhosted.org/packages/a6/76/216e55d51b37037760682efdff8b34765b2b879cfcc63c06872072c36db7/spacy-3.8.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bbcfd24a00da30ca53570f5b1c3535c1fa95b633f2a12b3d08395c9552ffb53c", size = 29148902 },
+    { url = "https://files.pythonhosted.org/packages/9c/6e/664282fd00857ae15719f6eb936fd52f34c8a2560f26801ecc4b44d53483/spacy-3.8.3-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:e3630ea33608a6db8045fad7e0ba22f864c61ea351445488a89af1734e434a37", size = 29910563 },
+    { url = "https://files.pythonhosted.org/packages/5c/a0/0c8887990b25d01d2cf5ff766140eff962396340e067a8a381812532407c/spacy-3.8.3-cp310-cp310-win_amd64.whl", hash = "sha256:20839fa04cc2156ab613e40db54c25031304fdc1dd369930bc01c366586d0079", size = 12203633 },
+    { url = "https://files.pythonhosted.org/packages/0e/7e/145e5ab4abf478123a36e19e97cb17fa48818a8944c4a9027c3da50f69b3/spacy-3.8.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:b16b8f9c544cdccd1bd23fc6bf6e2f1d667a1ee285a9b31bdb4a89e2d61345b4", size = 6571829 },
+    { url = "https://files.pythonhosted.org/packages/61/5a/6506a36428a07f9abdebd8b18a3c815a097a201586bd37fafbfc0677f571/spacy-3.8.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f62e45a2259acc51cd8eb185f978848928f2f698ba174b283253485fb7691b04", size = 6262459 },
+    { url = "https://files.pythonhosted.org/packages/09/47/0d8db9ecaf35661560c6379cdcfc64fd2ef3f9b850f421a0c661682e7fc2/spacy-3.8.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:57a267ea25dd8b7ec3e55accd1592d2d0847f0c6277a55145af5bb08e318bab4", size = 30567199 },
+    { url = "https://files.pythonhosted.org/packages/30/18/5a08482e17b34ed0d3a549b6c95d85cb7d9d1d286e67788ac92783ebeed4/spacy-3.8.3-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:45bc5fc8d399089607e3e759aee98362ffb007e39386531f195f42dcddcc94dc", size = 31109211 },
+    { url = "https://files.pythonhosted.org/packages/e5/bf/b76b519640b7805e5ee36ee76d394ae1599cd66210c24b3e692224f45342/spacy-3.8.3-cp311-cp311-win_amd64.whl", hash = "sha256:9e348359d54418a5752305975f1268013135255bd656a783aa3397b3bd4dd5e9", size = 12199018 },
+    { url = "https://files.pythonhosted.org/packages/4d/fc/f3c10df61bec8a329bcff014c3cce136408b42db590e17b04338069bd942/spacy-3.8.3-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:b01e50086515fa6d43275be11a762a3a3285d9aabbe27b4f3b98a08083f1d2a1", size = 6290689 },
+    { url = "https://files.pythonhosted.org/packages/4e/48/5528a3427fd29cb3deb7a16c49ef0c5eccd6a69eb8d8ecfbdf29711aadf5/spacy-3.8.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:187f9732362d0dc52b16c80e67decf58ff91605e34b251c50c7dc5212082fcb4", size = 5975670 },
+    { url = "https://files.pythonhosted.org/packages/e3/78/94a4c1349814a6e8c9a88480f595c59e5c017ce4258a17004b6264873c3f/spacy-3.8.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d7517bc969bca924cbdba4e14e0ce16e66d32967468ad27490e95c9b4d8d8aa8", size = 31812372 },
+    { url = "https://files.pythonhosted.org/packages/77/ff/01c5108134a613601061c14a4510fe76a61d36f5c4f2df893d03c7968c96/spacy-3.8.3-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:460948437c5571367105554b1e67549f957ba8dd6ee7e1594e719f9a88c398bb", size = 32103894 },
+    { url = "https://files.pythonhosted.org/packages/81/35/6efa37d608b299270bf1e04f0d686f485a7ebf86f38b6c1f6bca0f9f3eac/spacy-3.8.3-cp312-cp312-win_amd64.whl", hash = "sha256:1f14d4e2b1e6ab144ee546236f2c32b255f91f24939e62436c3a9c2ee200c6d1", size = 11784945 },
+    { url = "https://files.pythonhosted.org/packages/2a/b8/3963d2a7b5ca4e09486286007236e3661122903e293bd9d47a88f39f35e6/spacy-3.8.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:6f6020603633ec47374af71e936671d5992d68e592661dffac940f5596d77696", size = 6544791 },
+    { url = "https://files.pythonhosted.org/packages/3d/0b/5d26c2156f2f8ed4e45f3de65cab6f4a4707bf5c7ab5fd6cb4e0388696e3/spacy-3.8.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:72b492651534460bf4fe842f7efa462887f9e215de86146b862df6238b952650", size = 6257546 },
+    { url = "https://files.pythonhosted.org/packages/c0/23/c3a7c0a49343495ad15adbacc140e379116dbec1b7d7cbc1b1d90ac67d61/spacy-3.8.3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6a630119aaa7a6180635eb8f21b27509654882847480c8423a657582b4a9bdd3", size = 29354630 },
+    { url = "https://files.pythonhosted.org/packages/a4/38/128d09f6a26b9c8b87fb63b29f5a30ca7d2db401f51f115315c90db3f47c/spacy-3.8.3-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:8563ba9cbb71a629c7dc8c2db98f0348416dc0f0927de0e9ed8b448f707b5248", size = 30033353 },
+    { url = "https://files.pythonhosted.org/packages/3c/5c/0260c2f4b15b0150f5fb00b3ab945d4b92f16e4c4ad322373c1d24ce0ae3/spacy-3.8.3-cp39-cp39-win_amd64.whl", hash = "sha256:608beca075f7611083e93c91625d7e6c5885e2672cb5ec1b9f274cab6c82c816", size = 12301204 },
+]
+
+[[package]]
+name = "spacy"
 version = "3.8.4"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.12.4'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4'",
+    "python_full_version >= '3.10' and python_full_version < '3.12'",
+]
 dependencies = [
-    { name = "catalogue" },
-    { name = "cymem" },
-    { name = "jinja2" },
-    { name = "langcodes" },
-    { name = "murmurhash" },
-    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "catalogue", marker = "python_full_version >= '3.10'" },
+    { name = "cymem", marker = "python_full_version >= '3.10'" },
+    { name = "jinja2", marker = "python_full_version >= '3.10'" },
+    { name = "langcodes", marker = "python_full_version >= '3.10'" },
+    { name = "murmurhash", marker = "python_full_version >= '3.10'" },
     { name = "numpy", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "packaging" },
-    { name = "preshed" },
-    { name = "pydantic" },
-    { name = "requests" },
-    { name = "setuptools" },
-    { name = "spacy-legacy" },
-    { name = "spacy-loggers" },
-    { name = "srsly" },
-    { name = "thinc" },
-    { name = "tqdm" },
-    { name = "typer" },
-    { name = "wasabi" },
-    { name = "weasel" },
+    { name = "packaging", marker = "python_full_version >= '3.10'" },
+    { name = "preshed", marker = "python_full_version >= '3.10'" },
+    { name = "pydantic", marker = "python_full_version >= '3.10'" },
+    { name = "requests", marker = "python_full_version >= '3.10'" },
+    { name = "setuptools", marker = "python_full_version >= '3.10'" },
+    { name = "spacy-legacy", marker = "python_full_version >= '3.10'" },
+    { name = "spacy-loggers", marker = "python_full_version >= '3.10'" },
+    { name = "srsly", marker = "python_full_version >= '3.10'" },
+    { name = "thinc", marker = "python_full_version >= '3.10'" },
+    { name = "tqdm", marker = "python_full_version >= '3.10'" },
+    { name = "typer", marker = "python_full_version >= '3.10'" },
+    { name = "wasabi", marker = "python_full_version >= '3.10'" },
+    { name = "weasel", marker = "python_full_version >= '3.10'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e8/51/c0862063e8338a2cc769e787f0448c92a87ac87abfe2987ecc84d8246f51/spacy-3.8.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bbe074f58ac21156dab821b5a145f72c2a50933098bc371ab5a63f47e8ac5fc6", size = 6611302 },
