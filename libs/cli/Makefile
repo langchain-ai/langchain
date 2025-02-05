@@ -36,11 +36,10 @@ _e2e_test:
 	cd .integration_test && \
 		python3 -m venv .venv && \
 		pip install --upgrade poetry && \
-		VIRTUAL_ENV=.venv $(PYTHON) -m pip install --upgrade poetry && \
-		VIRTUAL_ENV=.venv $(PYTHON) -m pip install -e .. && \
-		VIRTUAL_ENV=.venv $(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
-		VIRTUAL_ENV=.venv $(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLinkB --src=integration_template/chat_models.py --dst=langchain-parrot-link/langchain_parrot_link/chat_models_b.py && \
-		VIRTUAL_ENV=.venv $(PYTHON) -m langchain_cli.cli integration create-doc --name parrot-link --name-class ParrotLinkB --component-type ChatModel --destination-dir langchain-parrot-link/docs && \
+		$(PYTHON) -m pip install -e .. && \
+		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
+		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLinkB --src=integration_template/chat_models.py --dst=langchain-parrot-link/langchain_parrot_link/chat_models_b.py && \
+		$(PYTHON) -m langchain_cli.cli integration create-doc --name parrot-link --name-class ParrotLinkB --component-type ChatModel --destination-dir langchain-parrot-link/docs && \
 		cd langchain-parrot-link && \
 			poetry install --with lint,typing,test && \
 			poetry run pip install -e ../../../standard-tests && \
