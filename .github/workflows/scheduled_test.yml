@@ -92,8 +92,7 @@ jobs:
 
       - name: Set up Python ${{ matrix.python-version }} + uv
         if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
-        uses: "./langchain/.github/actions/uv_setup"
-        working-directory: langchain
+        uses: "${{ github.workspace }}/langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -121,7 +120,7 @@ jobs:
         if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
-          cd langchain/${{ matrix.working-directory }}
+          cd ${{ matrix.working-directory }}
           uv sync --group test --group test_integration
 
       - name: Run integration tests
@@ -146,7 +145,11 @@ jobs:
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
         run: |
-          cd langchain/${{ matrix.working-directory }}
+          if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
+            cd langchain/${{ matrix.working-directory }}
+          else
+            cd ${{ matrix.working-directory }}
+          fi
           make integration_tests
 
       - name: Remove external libraries
@@ -157,8 +160,12 @@ jobs:
             langchain/libs/partners/aws
 
       - name: Ensure the tests did not create any additional files
-        working-directory: langchain
         run: |
+          if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
+            cd langchain/${{ matrix.working-directory }}
+          else
+            cd ${{ matrix.working-directory }}
+          fi
           set -eu
 
           STATUS="$(git status)"
