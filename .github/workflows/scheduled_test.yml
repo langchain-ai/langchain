@@ -151,7 +151,7 @@ jobs:
           else
             cd ${{ matrix.working-directory }}
             make integration_tests
-            cd ../../../
+            cd ../../../../
           fi
 
       - name: Remove external libraries
