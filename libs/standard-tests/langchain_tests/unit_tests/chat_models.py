@@ -534,6 +534,22 @@ class ChatModelUnitTests(ChatModelTests):
             If this test fails, ensure that the model can be initialized with a
             ``model`` parameter, and that the model parameter can be accessed as
             ``.model``.
+
+            If not, the easiest way to configure this is likely to add
+            ``from pydantic import ConfigDict`` at the top of your file, and add a
+            ``model_config`` class attribute to your model class:
+
+            .. code-block:: python
+            
+                class MyChatModel(BaseChatModel):
+                    model: str = Field(alias="model_name")
+                    model_config = ConfigDict(populate_by_name=True)
+
+                    # optional property for backwards-compatibility
+                    # for folks accessing chat_model.model_name
+                    @property
+                    def model_name(self) -> str:
+                        return self.model
         """
         params = {
             **self.standard_chat_model_params,

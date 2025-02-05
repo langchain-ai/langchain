@@ -440,7 +440,7 @@ class BaseChatOpenAI(BaseChatModel):
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     root_client: Any = Field(default=None, exclude=True)  #: :meta private:
     root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
+    model: str = Field(default="gpt-3.5-turbo", alias="model_name")
     """Model name to use."""
     temperature: Optional[float] = None
     """What sampling temperature to use."""
@@ -544,6 +544,10 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def model_name(self) -> str:
+        return self.model
 
     @model_validator(mode="before")
     @classmethod
