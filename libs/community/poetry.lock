@@ -356,6 +356,20 @@ webencodings = "*"
 css = ["tinycss2 (>=1.1.0,<1.5)"]
 
 [[package]]
+name = "blockbuster"
+version = "1.5.14"
+description = "Utility to detect blocking calls in the async event loop"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "blockbuster-1.5.14-py3-none-any.whl", hash = "sha256:5b5e46ac4b5f5d2a7a599944d83bee0c9eb46509868acb6d8fbc7c8058769aaf"},
+    {file = "blockbuster-1.5.14.tar.gz", hash = "sha256:d77ed3b931b058b4e746f65e32ea21e8ed21a4ef0ca88b7bb046bdb057e1adb0"},
+]
+
+[package.dependencies]
+forbiddenfruit = ">=0.1.4"
+
+[[package]]
 name = "certifi"
 version = "2024.12.14"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -1000,6 +1014,16 @@ files = [
 
 [package.extras]
 devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benchmark", "pytest-cache", "validictory"]
+
+[[package]]
+name = "forbiddenfruit"
+version = "0.1.4"
+description = "Patch python built-in objects"
+optional = false
+python-versions = "*"
+files = [
+    {file = "forbiddenfruit-0.1.4.tar.gz", hash = "sha256:e3f7e66561a29ae129aac139a85d610dbf3dd896128187ed5454b6421f624253"},
+]
 
 [[package]]
 name = "fqdn"
@@ -1817,7 +1841,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.3.16"
+version = "0.3.17"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1827,7 +1851,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.3.32"
+langchain-core = "^0.3.33"
 langchain-text-splitters = "^0.3.3"
 langsmith = ">=0.1.17,<0.4"
 numpy = [
@@ -1846,7 +1870,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.3.32"
+version = "0.3.33"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1871,7 +1895,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.9"
+version = "0.3.10"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -1880,7 +1904,7 @@ develop = true
 
 [package.dependencies]
 httpx = ">=0.25.0,<1"
-langchain-core = "^0.3.31"
+langchain-core = "^0.3.33"
 numpy = [
     {version = ">=1.24.0,<2.0.0", markers = "python_version < \"3.12\""},
     {version = ">=1.26.2,<3", markers = "python_version >= \"3.12\""},
@@ -4844,4 +4868,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "52abddd1a257e384ea9ea24d7dff56c0d03009dd7b94a53e4cd6a925e5df3890"
+content-hash = "b2a0d068de8b5644536b9c2ecfece66e5edbe44d3a0cb37a58539b25ce6fca18"
