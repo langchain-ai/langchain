@@ -828,6 +828,7 @@ MessageLikeRepresentation = Union[
         Union[str, list[dict], list[object]],
     ],
     str,
+    dict,
 ]
 
 
