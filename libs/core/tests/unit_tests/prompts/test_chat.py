@@ -824,6 +824,41 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
         assert optional_prompt.format_messages() == []
 
 
+def test_chat_prompt_message_placeholder_dict() -> None:
+    prompt = ChatPromptTemplate([{"role": "placeholder", "content": "{convo}"}])
+    assert prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+
+    assert prompt.format_messages() == []
+
+    # Is optional = True
+    optional_prompt = ChatPromptTemplate(
+        [{"role": "placeholder", "content": ["{convo}", False]}]
+    )
+    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []
+
+
+def test_chat_prompt_message_dict() -> None:
+    prompt = ChatPromptTemplate(
+        [{"role": "system", "content": "foo"}, {"role": "user", "content": "bar"}]
+    )
+    assert prompt.format_messages() == [
+        SystemMessage(content="foo"),
+        HumanMessage(content="bar"),
+    ]
+
+    with pytest.raises(ValueError):
+        ChatPromptTemplate([{"role": "system", "content": False}])
+
+    with pytest.raises(ValueError):
+        ChatPromptTemplate([{"role": "foo", "content": "foo"}])
+
+
 async def test_messages_prompt_accepts_list() -> None:
     prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
     value = prompt.invoke([("user", "Hi there")])  # type: ignore
