@@ -21,7 +21,7 @@ plugins = ['pydantic.mypy']
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-anthropic = ">=0.41.0,<1"
+anthropic = ">=0.45.0,<1"
 langchain-core = "^0.3.33"
 pydantic = "^2.7.4"
 
