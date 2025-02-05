@@ -92,9 +92,6 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
                 and prev_key == "properties"
                 and len(UNSUPPORTED_OPENAI_KEYWORDS & v.keys()) > 0
             ):
-                 new_kv[k] = _rm_titles(v, k)
-             else:
-                 continue
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
