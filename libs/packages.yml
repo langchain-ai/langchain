@@ -380,3 +380,7 @@ packages:
   repo: keenanpepper/langchain-goodfire
   downloads: 51
   downloads_updated_at: '2025-01-30T00:00:00+00:00'
+- name: langchain-nimble
+  repo: Nimbleway/langchain-nimble
+  path: .
+  downloads: 0
