@@ -160,6 +160,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     validate_base_url: bool = True
     chunk_size: int = 2048
     """Maximum number of texts to embed in each batch"""
+    default_headers: Optional[str] = "langchain-partner-python-azure-openai"
+    """default headers to send to AzureOpenAI"""
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -198,7 +200,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"},
+            "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
         if not self.client:

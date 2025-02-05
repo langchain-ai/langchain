@@ -89,6 +89,8 @@ class AzureOpenAI(BaseOpenAI):
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
+    default_headers: Optional[str] = "langchain-partner-python-azure-openai"
+    """default headers to send to AzureOpenAI"""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -153,7 +155,7 @@ class AzureOpenAI(BaseOpenAI):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"},
+            "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
         if not self.client:

@@ -569,6 +569,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
     'parallel_tools_calls' will be disabled.
     """
 
+    default_headers: Optional[str] = "langchain-partner-python-azure-openai"
+    """default headers to send to AzureOpenAI"""
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
@@ -643,7 +646,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"},
+            "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
