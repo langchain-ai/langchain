@@ -106,6 +106,7 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 pytest-xdist = "^3.6.1"
+blockbuster = "~1.5.14"
 [[tool.poetry.group.test.dependencies.cffi]]
 version = "<1.17.1"
 python = "<3.10"
