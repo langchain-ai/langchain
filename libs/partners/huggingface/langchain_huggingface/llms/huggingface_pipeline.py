@@ -202,7 +202,16 @@ class HuggingFacePipeline(BaseLLM):
         model = model_cls.from_pretrained(model_id, **_model_kwargs)
 
         if tokenizer.pad_token is None:
-            tokenizer.pad_token_id = model.config.eos_token_id
+            if model.config.pad_token_id is not None:
+                tokenizer.pad_token_id = model.config.pad_token_id
+            elif model.config.eos_token_id is not None and isinstance(
+                model.config.eos_token_id, int
+            ):
+                tokenizer.pad_token_id = model.config.eos_token_id
+            elif tokenizer.eos_token_id is not None:
+                tokenizer.pad_token_id = tokenizer.eos_token_id
+            else:
+                tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
         if (
             (

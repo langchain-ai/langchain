@@ -17,6 +17,8 @@ class GitLabAPIWrapper(BaseModel):
 
     gitlab: Any = None  #: :meta private:
     gitlab_repo_instance: Any = None  #: :meta private:
+    gitlab_url: Optional[str] = None
+    """The url of the GitLab instance."""
     gitlab_repository: Optional[str] = None
     """The name of the GitLab repository, in the form {username}/{repo-name}."""
     gitlab_personal_access_token: Optional[str] = None
@@ -76,6 +78,7 @@ class GitLabAPIWrapper(BaseModel):
 
         values["gitlab"] = g
         values["gitlab_repo_instance"] = g.projects.get(gitlab_repository)
+        values["gitlab_url"] = gitlab_url
         values["gitlab_repository"] = gitlab_repository
         values["gitlab_personal_access_token"] = gitlab_personal_access_token
         values["gitlab_branch"] = gitlab_branch

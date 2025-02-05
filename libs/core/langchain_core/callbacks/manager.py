@@ -127,7 +127,7 @@ def trace_as_chain_group(
     except Exception as e:
         if not group_cm.ended:
             run_manager.on_chain_error(e)
-        raise e
+        raise
     else:
         if not group_cm.ended:
             run_manager.on_chain_end({})
@@ -207,7 +207,7 @@ async def atrace_as_chain_group(
     except Exception as e:
         if not group_cm.ended:
             await run_manager.on_chain_error(e)
-        raise e
+        raise
     else:
         if not group_cm.ended:
             await run_manager.on_chain_end({})
@@ -289,7 +289,7 @@ def handle_event(
                     f" {repr(e)}"
                 )
                 if handler.raise_error:
-                    raise e
+                    raise
     finally:
         if coros:
             try:
@@ -388,7 +388,7 @@ async def _ahandle_event_for_handler(
             f"Error in {handler.__class__.__name__}.{event_name} callback: {repr(e)}"
         )
         if handler.raise_error:
-            raise e
+            raise
 
 
 async def ahandle_event(
