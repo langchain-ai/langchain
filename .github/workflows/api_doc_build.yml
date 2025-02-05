@@ -54,7 +54,7 @@ jobs:
         working-directory: langchain
         run: |
           uv venv
-          VIRTUAL_ENV=.venv uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
+          VIRTUAL_ENV=.venv uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
           
       - name: Move libs with script
         run: uv run python langchain/.github/scripts/prep_api_docs_build.py
