@@ -234,8 +234,7 @@ def _get_configs_for_multi_dirs(
 
 
 if __name__ == "__main__":
-    # files = sys.argv[1:]
-    files = ["libs/cli/pyproject.toml"]
+    files = sys.argv[1:]
 
     dirs_to_run: Dict[str, set] = {
         "lint": set(),
