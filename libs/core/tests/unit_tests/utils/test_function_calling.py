@@ -792,8 +792,6 @@ def test__convert_typed_dict_to_openai_function(
                         "type": "object",
                         "additionalProperties": {
                             "type": "array",
-                            "minItems": 2,
-                            "maxItems": 2,
                             "items": [
                                 {"type": "array", "items": {}},
                                 {
@@ -829,8 +827,6 @@ def test__convert_typed_dict_to_openai_function(
                 },
                 "arg8": {
                     "type": "array",
-                    "minItems": 1,
-                    "maxItems": 1,
                     "items": [
                         {
                             "title": "SubTool",
