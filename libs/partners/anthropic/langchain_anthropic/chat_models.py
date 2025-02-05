@@ -1266,13 +1266,14 @@ def _tools_in_params(params: dict) -> bool:
 
 def _documents_in_params(params: dict) -> bool:
     for message in params.get("messages", []):
-        for block in message.get("content", []):
-            if (
-                isinstance(block, dict)
-                and block.get("type") == "document"
-                and block.get("citations", {}).get("enabled")
-            ):
-                return True
+        if isinstance(message.get("content"), list):
+            for block in message["content"]:
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "document"
+                    and block.get("citations", {}).get("enabled")
+                ):
+                    return True
     return False
 
 
