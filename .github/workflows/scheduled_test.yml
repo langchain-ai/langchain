@@ -160,8 +160,12 @@ jobs:
             langchain/libs/partners/aws
 
       - name: Ensure the tests did not create any additional files
-        working-directory: langchain
         run: |
+          if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
+            cd langchain/${{ matrix.working-directory }}
+          else
+            cd ${{ matrix.working-directory }}
+          fi
           set -eu
 
           STATUS="$(git status)"
