@@ -40,10 +40,26 @@ PYTHON_TO_JSON_TYPES = {
 }
 
 UNSUPPORTED_OPENAI_KEYWORDS = {
-    "title", "minLength", "maxLength", "pattern", "format", "minimum", "maximum",
-    "multipleOf", "patternProperties", "unevaluatedProperties", "propertyNames",
-    "minProperties", "maxProperties", "unevaluatedItems", "contains", "minContains",
-    "maxContains", "minItems", "maxItems", "uniqueItems"
+    "title",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "format",
+    "minimum",
+    "maximum",
+    "multipleOf",
+    "patternProperties",
+    "unevaluatedProperties",
+    "propertyNames",
+    "minProperties",
+    "maxProperties",
+    "unevaluatedItems",
+    "contains",
+    "minContains",
+    "maxContains",
+    "minItems",
+    "maxItems",
+    "uniqueItems",
 }
 
 class FunctionDescription(TypedDict):
