@@ -49,7 +49,7 @@ For these applications, LangChain simplifies the entire application lifecycle:
 ### Open-source libraries
 
 - **`langchain-core`**: Base abstractions.
-- **Integration packages** (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
+- **Integration packages** (e.g. **`langchain-openai`**, **`langchain-anthropic`**, **`langchain-xai`**, etc.): Important integrations have been split into lightweight packages that are co-maintained by the LangChain team and the integration developers.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 - **`langchain-community`**: Third-party integrations that are community maintained.
 - **[LangGraph](https://langchain-ai.github.io/langgraph)**: LangGraph powers production-grade agents, trusted by Linkedin, Uber, Klarna, GitLab, and many more. Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it. To learn more about LangGraph, check out our first LangChain Academy course, *Introduction to LangGraph*, available [here](https://academy.langchain.com/courses/intro-to-langgraph).

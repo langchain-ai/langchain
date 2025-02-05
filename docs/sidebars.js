@@ -160,6 +160,10 @@ module.exports = {
           id: "integrations/providers/openai",
         },
         {
+          type: "doc",
+          id: "integrations/providers/xai",
+        },
+        {
           type: "category",
           label: "More",
           collapsible: false,
