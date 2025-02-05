@@ -53,11 +53,10 @@ jobs:
       - name: Install initial py deps
         working-directory: langchain
         run: |
-          python -m pip install -U uv
-          python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
+          uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
           
       - name: Move libs with script
-        run: python langchain/.github/scripts/prep_api_docs_build.py
+        run: uv run python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -68,9 +67,9 @@ jobs:
       - name: Install dependencies
         working-directory: langchain
         run: |
-          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
-          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
-          python -m uv pip install -r docs/api_reference/requirements.txt
+          uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
+          uv pip install -r docs/api_reference/requirements.txt
 
       - name: Set Git config
         working-directory: langchain
@@ -81,9 +80,9 @@ jobs:
       - name: Build docs
         working-directory: langchain
         run: |
-          python docs/api_reference/create_api_rst.py
-          python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
-          python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
+          uv run python docs/api_reference/create_api_rst.py
+          uv run python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
+          uv run python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
           # Default index page is blank so we copy in the actual home page.
           cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
           rm -rf ../langchain-api-docs-html/_build/
