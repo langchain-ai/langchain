@@ -145,7 +145,11 @@ jobs:
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
         run: |
-          cd langchain/${{ matrix.working-directory }}
+          if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
+            cd langchain/${{ matrix.working-directory }}
+          else
+            cd ${{ matrix.working-directory }}
+          fi
           make integration_tests
 
       - name: Remove external libraries
