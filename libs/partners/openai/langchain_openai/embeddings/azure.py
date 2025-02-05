@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Union
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
@@ -160,7 +160,9 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     validate_base_url: bool = True
     chunk_size: int = 2048
     """Maximum number of texts to embed in each batch"""
-    default_headers: Optional[Dict[str, Any]] = {"User-Agent": "langchain-partner-python-azure-openai"}
+    default_headers: Optional[Dict[str, Any]] = {
+        "User-Agent": "langchain-partner-python-azure-openai"
+    }
     """default headers to send to AzureOpenAI"""
 
     @model_validator(mode="after")
