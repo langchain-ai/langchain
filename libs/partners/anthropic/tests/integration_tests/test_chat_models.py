@@ -649,3 +649,12 @@ def test_citations() -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     assert any("citations" in block for block in response.content)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(messages):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    assert any("citations" in block for block in full.content)
+    assert not any("citation" in block for block in full.content)
