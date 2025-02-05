@@ -121,7 +121,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
-  const [selectedModel, setSelectedModel] = useState("OpenAI");
+  const [selectedModel, setSelectedModel] = useState("Groq");
   const {
     openaiParams,
     anthropicParams,
@@ -175,12 +175,19 @@ export default function ChatModelTabs(props) {
 
   const tabItems = [
     {
+      value: "Groq",
+      label: "Groq",
+      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
+      apiKeyName: "GROQ_API_KEY",
+      packageName: "langchain-groq",
+      shouldHide: hideGroq,
+    },
+    {
       value: "OpenAI",
       label: "OpenAI",
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${openAIParamsOrDefault})`,
       apiKeyName: "OPENAI_API_KEY",
       packageName: "langchain-openai",
-      default: true,
       shouldHide: hideOpenai,
     },
     {
@@ -189,7 +196,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_anthropic import ChatAnthropic\n\n${llmVarName} = ChatAnthropic(${anthropicParamsOrDefault})`,
       apiKeyName: "ANTHROPIC_API_KEY",
       packageName: "langchain-anthropic",
-      default: false,
       shouldHide: hideAnthropic,
     },
     {
@@ -198,7 +204,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_openai import AzureChatOpenAI\n\n${llmVarName} = AzureChatOpenAI(${azureParamsOrDefault})`,
       apiKeyName: "AZURE_OPENAI_API_KEY",
       packageName: "langchain-openai",
-      default: false,
       shouldHide: hideAzure,
     },
     {
@@ -207,7 +212,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
       apiKeyText: "# Ensure your VertexAI credentials are configured",
       packageName: "langchain-google-vertexai",
-      default: false,
       shouldHide: hideGoogle,
     },
     {
@@ -216,7 +220,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_aws import ChatBedrock\n\n${llmVarName} = ChatBedrock(${awsBedrockParamsOrDefault})`,
       apiKeyText: "# Ensure your AWS credentials are configured",
       packageName: "langchain-aws",
-      default: false,
       shouldHide: hideAWS,
     },
     {
@@ -225,7 +228,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_cohere import ChatCohere\n\n${llmVarName} = ChatCohere(${cohereParamsOrDefault})`,
       apiKeyName: "COHERE_API_KEY",
       packageName: "langchain-cohere",
-      default: false,
       shouldHide: hideCohere,
     },
     {
@@ -234,7 +236,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_nvidia_ai_endpoints import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
       apiKeyName: "NVIDIA_API_KEY",
       packageName: "langchain-nvidia-ai-endpoints",
-      default: false,
       shouldHide: hideNvidia,
     },
     {
@@ -243,17 +244,7 @@ export default function ChatModelTabs(props) {
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
       apiKeyName: "FIREWORKS_API_KEY",
       packageName: "langchain-fireworks",
-      default: false,
       shouldHide: hideFireworks,
-    },
-    {
-      value: "Groq",
-      label: "Groq",
-      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
-      apiKeyName: "GROQ_API_KEY",
-      packageName: "langchain-groq",
-      default: false,
-      shouldHide: hideGroq,
     },
     {
       value: "MistralAI",
@@ -261,7 +252,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_mistralai import ChatMistralAI\n\n${llmVarName} = ChatMistralAI(${mistralParamsOrDefault})`,
       apiKeyName: "MISTRAL_API_KEY",
       packageName: "langchain-mistralai",
-      default: false,
       shouldHide: hideMistral,
     },
     {
@@ -270,7 +260,6 @@ export default function ChatModelTabs(props) {
       text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
       packageName: "langchain-openai",
-      default: false,
       shouldHide: hideTogether,
     },
     {
@@ -279,7 +268,6 @@ export default function ChatModelTabs(props) {
       text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(${databricksParamsOrDefault})`,
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
-      default: false,
       shouldHide: hideDatabricks,
     },
   ];

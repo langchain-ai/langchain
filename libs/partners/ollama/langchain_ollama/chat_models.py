@@ -1085,8 +1085,16 @@ class ChatOllama(BaseChatModel):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools([schema], tool_choice=tool_name)
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": formatted_tool,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1097,7 +1105,13 @@ class ChatOllama(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(format="json")
+            llm = self.bind(
+                format="json",
+                structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
@@ -1111,7 +1125,13 @@ class ChatOllama(BaseChatModel):
                 )
             if is_pydantic_schema:
                 schema = cast(TypeBaseModel, schema)
-                llm = self.bind(format=schema.model_json_schema())
+                llm = self.bind(
+                    format=schema.model_json_schema(),
+                    structured_output_format={
+                        "kwargs": {"method": method},
+                        "schema": schema,
+                    },
+                )
                 output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 if is_typeddict(schema):
@@ -1126,7 +1146,13 @@ class ChatOllama(BaseChatModel):
                 else:
                     # is JSON schema
                     response_format = schema
-                llm = self.bind(format=response_format)
+                llm = self.bind(
+                    format=response_format,
+                    structured_output_format={
+                        "kwargs": {"method": method},
+                        "schema": response_format,
+                    },
+                )
                 output_parser = JsonOutputParser()
         else:
             raise ValueError(
