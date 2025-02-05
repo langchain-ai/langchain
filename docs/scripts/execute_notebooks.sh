@@ -13,7 +13,7 @@ execute_notebook() {
     total="$3"
     echo "Starting execution of $file ($index/$total)"
     start_time=$(date +%s)
-    if ! output=$(time uv run jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=python3 $file 2>&1); then
+    if ! output=$(time uv run --group dev --group test jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=python3 $file 2>&1); then
         end_time=$(date +%s)
         execution_time=$((end_time - start_time))
         echo "Error in $file. Execution time: $execution_time seconds"
