@@ -358,7 +358,12 @@ class ChatPerplexity(BaseChatModel):
                 response_format = schema.model_json_schema()  # type: ignore[union-attr]
             else:
                 response_format = schema.schema()  # type: ignore[union-attr]
-            llm = self.bind(response_format=response_format)
+            llm = self.bind(
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {"schema": response_format},
+                }
+            )
             output_parser = JsonOutputParser()
         else:
             raise ValueError(
