@@ -165,8 +165,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
                 "max_retries": self.max_retries,
                 "default_headers": {
                     **(self.default_headers or {}),
-                    "User-Agent": "langchain-comm-python-azure-openai"
-                    },
+                    "User-Agent": "langchain-comm-python-azure-openai",
+                },
                 "default_query": self.default_query,
                 "http_client": self.http_client,
             }
