@@ -406,6 +406,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.rtf import (
         UnstructuredRTFLoader,
     )
+    from langchain_community.document_loaders.video import (
+        VideoChunkLoader,
+    )
     from langchain_community.document_loaders.s3_directory import (
         S3DirectoryLoader,
     )
@@ -721,6 +724,7 @@ _module_lookup = {
     "UnstructuredURLLoader": "langchain_community.document_loaders.url",
     "UnstructuredWordDocumentLoader": "langchain_community.document_loaders.word_document",  # noqa: E501
     "UnstructuredXMLLoader": "langchain_community.document_loaders.xml",
+    "VideoChunkLoader": "langchain_community.document_loaders.video",
     "VsdxLoader": "langchain_community.document_loaders.vsdx",
     "WeatherDataLoader": "langchain_community.document_loaders.weather",
     "WebBaseLoader": "langchain_community.document_loaders.web_base",
@@ -928,6 +932,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VideoChunkLoader",
     "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
