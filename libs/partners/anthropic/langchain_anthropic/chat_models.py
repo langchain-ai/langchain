@@ -768,7 +768,11 @@ class ChatAnthropic(BaseChatModel):
 
         # Remove citations if they are None - introduced in anthropic sdk 0.45
         for block in content:
-            if "citations" in block and block["citations"] is None:
+            if (
+                isinstance(block, dict)
+                and "citations" in block
+                and block["citations"] is None
+            ):
                 block.pop("citations")
 
         llm_output = {
