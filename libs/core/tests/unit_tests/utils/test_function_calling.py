@@ -884,7 +884,6 @@ def test__convert_typed_dict_to_openai_function(
                             }
                         },
                     },
-                    "uniqueItems": True,
                 },
                 "arg12": {
                     "type": "object",
