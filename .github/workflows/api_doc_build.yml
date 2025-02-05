@@ -5,7 +5,6 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 env:
-  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -46,13 +45,10 @@ jobs:
             fi
           done
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./langchain/.github/actions/poetry_setup"
+      - name: Set up Python ${{ env.PYTHON_VERSION }} + uv
+        uses: "./langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          cache-key: api-docs
-          working-directory: langchain
 
       - name: Install initial py deps
         working-directory: langchain
