@@ -253,9 +253,9 @@ packages:
   repo: langchain-ai/langchain-snowflake
   downloads: 2374
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
-- name: langchain-databricks
-  path: libs/databricks
-  repo: langchain-ai/langchain-databricks
+- name: databricks-langchain
+  path: integrations/langchain
+  repo: databricks/databricks-ai-bridge
   downloads: 35495
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-couchbase
