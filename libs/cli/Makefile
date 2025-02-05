@@ -35,6 +35,7 @@ _e2e_test:
 	mkdir .integration_test
 	cd .integration_test && \
 		python3 -m venv .venv && \
+		pip install --upgrade poetry && \
 		VIRTUAL_ENV=.venv $(PYTHON) -m pip install --upgrade poetry && \
 		VIRTUAL_ENV=.venv $(PYTHON) -m pip install -e .. && \
 		VIRTUAL_ENV=.venv $(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
