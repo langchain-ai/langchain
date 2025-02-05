@@ -62,6 +62,7 @@ UNSUPPORTED_OPENAI_KEYWORDS = {
     "uniqueItems",
 }
 
+
 class FunctionDescription(TypedDict):
     """Representation of a callable function to send to an LLM."""
 
@@ -86,8 +87,14 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k in UNSUPPORTED_OPENAI_KEYWORDS:
-            if (isinstance(v, dict) and prev_key == "properties"
-            and len(UNSUPPORTED_OPENAI_KEYWORDS & v.keys()) > 0):
+            if (
+                isinstance(v, dict)
+                and prev_key == "properties"
+                and len(UNSUPPORTED_OPENAI_KEYWORDS & v.keys()) > 0
+            ):
+                 new_kv[k] = _rm_titles(v, k)
+             else:
+                 continue
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
