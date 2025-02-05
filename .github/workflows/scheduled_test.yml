@@ -95,6 +95,7 @@ jobs:
         uses: "./langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
+          working-directory: ${{ github.workspace }}
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
