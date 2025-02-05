@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, List, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.outputs import ChatResult
@@ -106,10 +106,6 @@ class AzureChatOpenAI(ChatOpenAI):
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
-    default_headers: Optional[Dict[str, Any]] = {
-        "User-Agent": "langchain-comm-python-azure-openai"
-    }
-    """default headers to send to AzureOpenAI"""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -157,7 +153,7 @@ class AzureChatOpenAI(ChatOpenAI):
         values["openai_proxy"] = get_from_dict_or_env(
             values, "openai_proxy", "OPENAI_PROXY", default=""
         )
-        values["default_headers"] = values["default_headers"] or cls.default_headers
+
         try:
             import openai
 
@@ -213,7 +209,10 @@ class AzureChatOpenAI(ChatOpenAI):
                 "base_url": values["openai_api_base"],
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
-                "default_headers": values["default_headers"],
+                "default_headers": {
+                    **(cls.default_headers or values["default_headers"] or {}),
+                    "User-Agent": "langchain-comm-python-azure-openai"
+                    },
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }

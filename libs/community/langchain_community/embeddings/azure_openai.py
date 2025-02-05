@@ -60,10 +60,6 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     validate_base_url: bool = True
-    default_headers: Optional[Dict[str, Any]] = {
-        "User-Agent": "langchain-comm-python-azure-openai"
-    }
-    """default headers to send to AzureOpenAI"""
 
     @model_validator(mode="before")
     @classmethod
@@ -167,7 +163,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
                 "base_url": self.openai_api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
-                "default_headers": self.default_headers,
+                "default_headers": {
+                    **(self.default_headers or {}),
+                    "User-Agent": "langchain-comm-python-azure-openai"
+                    },
                 "default_query": self.default_query,
                 "http_client": self.http_client,
             }
