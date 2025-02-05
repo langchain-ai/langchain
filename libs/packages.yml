@@ -256,6 +256,8 @@ packages:
 - name: databricks-langchain
   path: integrations/langchain
   repo: databricks/databricks-ai-bridge
+  provider_page: databricks
+  name_title: Databricks
   downloads: 35495
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-couchbase
