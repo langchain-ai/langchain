@@ -81,6 +81,9 @@ jobs:
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-aws/libs/aws langchain/libs/partners/aws
 
+      - name: Show current directory
+        run: pwd && ls -al
+
       - name: Set up Python ${{ matrix.python-version }} with poetry
         if: contains(env.POETRY_LIBS, matrix.working-directory)
         uses: "./langchain/.github/actions/poetry_setup"
@@ -95,7 +98,9 @@ jobs:
         uses: "./langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
-          working-directory: ${{ github.workspace }}
+
+      - name: Show current directory
+        run: pwd && ls -al
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
@@ -113,16 +118,20 @@ jobs:
       - name: Install dependencies (poetry)
         if: contains(env.POETRY_LIBS, matrix.working-directory)
         run: |
+          pwd && ls -al
           echo "Running scheduled tests, installing dependencies with poetry..."
           cd langchain/${{ matrix.working-directory }}
           poetry install --with=test_integration,test
+          pwd && ls -al
 
       - name: Install dependencies (uv)
         if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
         run: |
+          pwd && ls -al
           echo "Running scheduled tests, installing dependencies with uv..."
           cd ${{ matrix.working-directory }}
           uv sync --group test --group test_integration
+          pwd && ls -al
 
       - name: Run integration tests
         env:
@@ -146,12 +155,14 @@ jobs:
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
         run: |
+          pwd && ls -al
           if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
             cd langchain/${{ matrix.working-directory }}
           else
             cd ${{ matrix.working-directory }}
           fi
           make integration_tests
+          pwd && ls -al
 
       - name: Remove external libraries
         run: | 
@@ -162,6 +173,7 @@ jobs:
 
       - name: Ensure the tests did not create any additional files
         run: |
+          pwd && ls -al
           if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
             cd langchain/${{ matrix.working-directory }}
           else
@@ -175,9 +187,11 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+          pwd && ls -al
 
           if [[ "${{ contains(env.POETRY_LIBS, matrix.working-directory) }}" == "true" ]]; then
             :
           else
             cd ../../../../
           fi
+          pwd && ls -al
