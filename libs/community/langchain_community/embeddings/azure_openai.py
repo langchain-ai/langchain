@@ -182,3 +182,4 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     @property
     def _llm_type(self) -> str:
         return "azure-openai-chat"
+        
