@@ -13,7 +13,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 
 class Chat__ModuleName__(BaseChatModel):
@@ -266,7 +266,7 @@ class Chat__ModuleName__(BaseChatModel):
 
     """  # noqa: E501
 
-    model_name: str = Field(alias="model")
+    model: str = Field(alias="model_name")
     """The name of the model"""
     parrot_buffer_length: int
     """The number of characters from the last message of the prompt to be echoed."""
@@ -275,6 +275,10 @@ class Chat__ModuleName__(BaseChatModel):
     timeout: Optional[int] = None
     stop: Optional[List[str]] = None
     max_retries: int = 2
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -293,7 +297,7 @@ class Chat__ModuleName__(BaseChatModel):
             # rules in LLM monitoring applications (e.g., in LangSmith users
             # can provide per token pricing for their model and monitor
             # costs for the given LLM.)
-            "model_name": self.model_name,
+            "model": self.model,
         }
 
     def _generate(
