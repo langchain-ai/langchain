@@ -253,9 +253,11 @@ packages:
   repo: langchain-ai/langchain-snowflake
   downloads: 2374
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
-- name: langchain-databricks
-  path: libs/databricks
-  repo: langchain-ai/langchain-databricks
+- name: databricks-langchain
+  path: integrations/langchain
+  repo: databricks/databricks-ai-bridge
+  provider_page: databricks
+  name_title: Databricks
   downloads: 35495
   downloads_updated_at: '2024-12-23T20:10:11.816059+00:00'
 - name: langchain-couchbase
@@ -365,7 +367,7 @@ packages:
   repo: sambanova/langchain-sambanova
   path: .
   downloads: 0
-- name: langchain-deepseek-official
+- name: langchain-deepseek
   repo: langchain-ai/langchain
   path: libs/partners/deepseek
   downloads: 0
@@ -380,6 +382,10 @@ packages:
   repo: keenanpepper/langchain-goodfire
   downloads: 51
   downloads_updated_at: '2025-01-30T00:00:00+00:00'
+- name: langchain-nimble
+  repo: Nimbleway/langchain-nimble
+  path: .
+  downloads: 0
 - name: langchain-apify
   path: .
   repo: apify/langchain-apify
