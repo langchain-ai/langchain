@@ -92,7 +92,7 @@ jobs:
 
       - name: Set up Python ${{ matrix.python-version }} + uv
         if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
-        uses: "./.github/actions/uv_setup"
+        uses: "./langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
 
