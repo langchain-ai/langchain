@@ -765,6 +765,12 @@ class ChatAnthropic(BaseChatModel):
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
         data_dict = data.model_dump()
         content = data_dict["content"]
+
+        # Remove citations if they are None - introduced in anthropic sdk 0.45
+        for block in content:
+            if "citations" in block and block["citations"] is None:
+                block.pop("citations")
+
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
