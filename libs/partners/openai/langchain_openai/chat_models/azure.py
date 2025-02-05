@@ -569,7 +569,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     'parallel_tools_calls' will be disabled.
     """
 
-    default_headers: Optional[str] = "langchain-partner-python-azure-openai"
+    default_headers: Optional[Dict[str, Any]] = {"User-Agent": "langchain-partner-python-azure-openai"}
     """default headers to send to AzureOpenAI"""
 
     @classmethod

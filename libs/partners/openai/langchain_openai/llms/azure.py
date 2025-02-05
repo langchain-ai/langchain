@@ -89,7 +89,7 @@ class AzureOpenAI(BaseOpenAI):
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
-    default_headers: Optional[str] = "langchain-partner-python-azure-openai"
+    default_headers: Optional[Dict[str, Any]] = {"User-Agent": "langchain-partner-python-azure-openai"}
     """default headers to send to AzureOpenAI"""
 
     @classmethod
