@@ -1,17 +1,24 @@
 import json
-from typing import List
+from typing import Any, Dict, List
 
 import requests
 from langchain_core.documents import Document
-from pydantic import BaseModel
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr
 from yarl import URL
 
 
 class JinaSearchAPIWrapper(BaseModel):
     """Wrapper around the Jina search engine."""
 
+    jina_api_key: SecretStr
+
     base_url: str = "https://s.jina.ai/"
     """The base URL for the Jina search engine."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @model_validator(mode="before")
     @classmethod
