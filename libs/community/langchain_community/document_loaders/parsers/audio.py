@@ -159,7 +159,6 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
                 api_version=self.api_version,
                 max_retries=self.max_retries,
                 azure_ad_token_provider=self.azure_ad_token_provider,
-                default_headers={"User-Agent": "langchain-comm-python-azure-openai"},
             )
         else:
             if self.api_key:
