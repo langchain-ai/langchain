@@ -40,10 +40,10 @@ PYTHON_TO_JSON_TYPES = {
 }
 
 UNSUPPORTED_OPENAI_KEYWORDS = {
-    'title', 'minLength', 'maxLength', 'pattern', 'format', 'minimum', 'maximum',
-    'multipleOf', 'patternProperties', 'unevaluatedProperties', 'propertyNames',
-    'minProperties', 'maxProperties', 'unevaluatedItems', 'contains', 'minContains',
-    'maxContains', 'minItems', 'maxItems', 'uniqueItems'
+    "title", "minLength", "maxLength", "pattern", "format", "minimum", "maximum",
+    "multipleOf", "patternProperties", "unevaluatedProperties", "propertyNames",
+    "minProperties", "maxProperties", "unevaluatedItems", "contains", "minContains",
+    "maxContains", "minItems", "maxItems", "uniqueItems"
 }
 
 class FunctionDescription(TypedDict):
@@ -70,7 +70,8 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k in UNSUPPORTED_OPENAI_KEYWORDS:
-            if isinstance(v, dict) and prev_key == "properties" and len(UNSUPPORTED_OPENAI_KEYWORDS & v.keys()) > 0:
+            if (isinstance(v, dict) and prev_key == "properties"
+            and len(UNSUPPORTED_OPENAI_KEYWORDS & v.keys()) > 0):
                 new_kv[k] = _rm_titles(v, k)
             else:
                 continue
