@@ -198,8 +198,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"}
-            or self.default_headers,
+            "default_headers": {"User-Agent": "langchain-partner-python-azure-openai"},
             "default_query": self.default_query,
         }
         if not self.client:
@@ -212,9 +211,9 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             async_specific: dict = {"http_client": self.http_async_client}
 
             if self.azure_ad_async_token_provider:
-                client_params[
-                    "azure_ad_token_provider"
-                ] = self.azure_ad_async_token_provider
+                client_params["azure_ad_token_provider"] = (
+                    self.azure_ad_async_token_provider
+                )
 
             self.async_client = openai.AsyncAzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
