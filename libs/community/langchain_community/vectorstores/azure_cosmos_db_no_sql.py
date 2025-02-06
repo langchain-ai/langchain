@@ -795,7 +795,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                     value = "NULL"
                 else:
                     raise ValueError(f"Unsupported value type: {type(condition.value)}")
-            
+
                 clauses.append(f"c.{condition.property} {sql_operator} {value}")
         return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
 
