@@ -65,6 +65,13 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to `None`.
     """
 
+    gpu: bool = False
+    """Enable the use of GPU through CUDA. This requires to install `fastembed-gpu`
+    instead of `fastembed`. See https://qdrant.github.io/fastembed/examples/FastEmbed_GPU
+    for more details.
+    Defaults to False.
+    """
+
     model: Any = None  # : :meta private:
 
     model_config = ConfigDict(extra="allow", protected_namespaces=())
@@ -76,19 +83,22 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         max_length = values.get("max_length")
         cache_dir = values.get("cache_dir")
         threads = values.get("threads")
+        gpu = values.get("gpu")
+        pkg_to_import = "fastembed-gpu" if gpu else "fastembed"
 
         try:
-            fastembed = importlib.import_module("fastembed")
+            fastembed = importlib.import_module(pkg_to_import)
 
         except ModuleNotFoundError:
             raise ImportError(
-                "Could not import 'fastembed' Python package. "
-                "Please install it with `pip install fastembed`."
+                f"Could not import '{pkg_to_import}' Python package. "
+                f"Please install it with `pip install {pkg_to_import}`."
             )
 
-        if importlib.metadata.version("fastembed") < MIN_VERSION:
+        if importlib.metadata.version(pkg_to_import) < MIN_VERSION:
             raise ImportError(
-                'FastEmbedEmbeddings requires `pip install -U "fastembed>=0.2.0"`.'
+                f"FastEmbedEmbeddings requires "
+                f'`pip install -U "{pkg_to_import}>={MIN_VERSION}"`.'
             )
 
         values["model"] = fastembed.TextEmbedding(
@@ -96,6 +106,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             max_length=max_length,
             cache_dir=cache_dir,
             threads=threads,
+            providers=["CUDAExecutionProvider"] if gpu else None,
         )
         return values
 
