@@ -124,7 +124,7 @@ def get_buffer_string(
             role = m.role
         else:
             msg = f"Got unsupported message type: {m}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = f"{role}: {m.content}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
@@ -221,14 +221,14 @@ def _create_message_from_message_type(
         tool_call_id: (str) the tool call id. Default is None.
         tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
         id: (str) the id of the message. Default is None.
-        **additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        additional_kwargs: (dict[str, Any]) additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
 
     Raises:
         ValueError: if the message type is not one of "human", "user", "ai",
-            "assistant", "system", "function", or "tool".
+            "assistant", "function", "tool", "system", or "developer".
     """
     kwargs: dict[str, Any] = {}
     if name is not None:
@@ -261,7 +261,10 @@ def _create_message_from_message_type(
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
         message = AIMessage(content=content, **kwargs)
-    elif message_type == "system":
+    elif message_type in ("system", "developer"):
+        if message_type == "developer":
+            kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
+            kwargs["additional_kwargs"]["__openai_role__"] = "developer"
         message = SystemMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
@@ -273,7 +276,7 @@ def _create_message_from_message_type(
     else:
         msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
         )
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
@@ -556,6 +559,8 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
+            if curr_chunk.response_metadata:
+                curr_chunk.response_metadata.clear()
             if (
                 isinstance(last_chunk.content, str)
                 and isinstance(curr_chunk.content, str)
@@ -812,7 +817,6 @@ def trim_messages(
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
     """  # noqa: E501
-
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":
@@ -944,8 +948,9 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
+
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
@@ -1004,7 +1009,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(err)
                         content.append(
-                            {"type": "image_url", "image_url": block["image_url"]}
+                            {
+                                "type": "image_url",
+                                "image_url": block["image_url"],
+                            }
                         )
                     # Anthropic and Bedrock converse format
                     elif (block.get("type") == "image") or "image" in block:
@@ -1123,7 +1131,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(msg)
                         content.append(
-                            {"type": "text", "text": json.dumps(block["json"])}
+                            {
+                                "type": "text",
+                                "text": json.dumps(block["json"]),
+                            }
                         )
                     elif (
                         block.get("type") == "guard_content"
@@ -1383,14 +1394,14 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     elif isinstance(message, ToolMessage):
         return "tool"
     elif isinstance(message, SystemMessage):
-        return "system"
+        return message.additional_kwargs.get("__openai_role__", "system")
     elif isinstance(message, FunctionMessage):
         return "function"
     elif isinstance(message, ChatMessage):
         return message.role
     else:
         msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:

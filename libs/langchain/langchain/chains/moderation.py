@@ -38,7 +38,7 @@ class OpenAIModerationChain(Chain):
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
-    openai_pre_1_0: bool = Field(default=None)
+    openai_pre_1_0: bool = Field(default=False)
 
     @model_validator(mode="before")
     @classmethod
@@ -67,8 +67,8 @@ class OpenAIModerationChain(Chain):
             if values["openai_pre_1_0"]:
                 values["client"] = openai.Moderation
             else:
-                values["client"] = openai.OpenAI()
-                values["async_client"] = openai.AsyncOpenAI()
+                values["client"] = openai.OpenAI(api_key=openai_api_key)
+                values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
 
         except ImportError:
             raise ImportError(

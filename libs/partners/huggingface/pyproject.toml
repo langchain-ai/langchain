@@ -59,6 +59,7 @@ optional = true
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
 pytest-watcher = "^0.3.4"
+pytest-socket = "^0.7.0"
 
 [[tool.poetry.group.test.dependencies.scipy]]
 version = "^1"
@@ -94,7 +95,7 @@ mypy = "^1.10"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../../standard-tests"
 develop = true
 

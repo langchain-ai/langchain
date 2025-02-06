@@ -142,6 +142,20 @@ class XMLOutputParser(BaseTransformOutputParser):
     """Parse an output using xml format."""
 
     tags: Optional[list[str]] = None
+    """Tags to tell the LLM to expect in the XML output.
+
+    Note this may not be perfect depending on the LLM implementation.
+
+    For example, with tags=["foo", "bar", "baz"]:
+            1. A well-formatted XML instance:
+                "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"
+
+            2. A badly-formatted XML instance (missing closing tag for 'bar'):
+                "<foo>\n   <bar>\n   </foo>"
+
+            3. A badly-formatted XML instance (unexpected 'tag' element):
+                "<foo>\n   <tag>\n   </tag>\n</foo>"
+    """
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )

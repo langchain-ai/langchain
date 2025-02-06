@@ -39,7 +39,7 @@ In some cases, you may need to stream **custom data** that goes beyond the infor
 
 ## Streaming APIs
 
-LangChain two main APIs for streaming output in real-time. These APIs are supported by any component that implements the [Runnable Interface](/docs/concepts/runnables), including [LLMs](/docs/concepts/chat_models), [compiled LangGraph graphs](https://langchain-ai.github.io/langgraph/concepts/low_level/), and any Runnable generated with [LCEL](/docs/concepts/lcel).
+LangChain has two main APIs for streaming output in real-time. These APIs are supported by any component that implements the [Runnable Interface](/docs/concepts/runnables), including [LLMs](/docs/concepts/chat_models), [compiled LangGraph graphs](https://langchain-ai.github.io/langgraph/concepts/low_level/), and any Runnable generated with [LCEL](/docs/concepts/lcel).
 
 1. sync [stream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.stream) and async [astream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream): Use to stream outputs from individual Runnables (e.g., a chat model) as they are generated or stream any workflow created with LangGraph.
 2. The async only [astream_events](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream_events): Use this API to get access to custom events and intermediate outputs from LLM  applications built entirely with [LCEL](/docs/concepts/lcel). Note that this API is available, but not needed when working with LangGraph.
@@ -77,13 +77,13 @@ When using `stream()` or `astream()` with chat models, the output is streamed as
 
 [LangGraph](/docs/concepts/architecture#langgraph) compiled graphs are [Runnables](/docs/concepts/runnables) and support the standard streaming APIs.
 
-When using the *stream* and *astream* methods with LangGraph, you can **one or more** [streaming mode](https://langchain-ai.github.io/langgraph/reference/types/#langgraph.types.StreamMode) which allow you to control the type of output that is streamed. The available streaming modes are:
+When using the *stream* and *astream* methods with LangGraph, you can choose **one or more** [streaming mode](https://langchain-ai.github.io/langgraph/reference/types/#langgraph.types.StreamMode) which allow you to control the type of output that is streamed. The available streaming modes are:
 
 - **"values"**: Emit all values of the [state](https://langchain-ai.github.io/langgraph/concepts/low_level/) for each step.
 - **"updates"**: Emit only the node name(s) and updates that were returned by the node(s) after each step.
 - **"debug"**: Emit debug events for each step.
 - **"messages"**: Emit LLM [messages](/docs/concepts/messages) [token-by-token](/docs/concepts/tokens).
-- **"custom"**: Emit custom output witten using [LangGraph's StreamWriter](https://langchain-ai.github.io/langgraph/reference/types/#langgraph.types.StreamWriter).
+- **"custom"**: Emit custom output written using [LangGraph's StreamWriter](https://langchain-ai.github.io/langgraph/reference/types/#langgraph.types.StreamWriter).
 
 For more information, please see:
 * [LangGraph streaming conceptual guide](https://langchain-ai.github.io/langgraph/concepts/streaming/) for more information on how to stream when working with LangGraph.

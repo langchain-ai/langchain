@@ -302,6 +302,7 @@ if TYPE_CHECKING:
         ListSQLDatabaseTool,
         QuerySQLCheckerTool,
         QuerySQLDataBaseTool,
+        QuerySQLDatabaseTool,
     )
     from langchain_community.tools.stackexchange.tool import (
         StackExchangeTool,
@@ -453,7 +454,8 @@ __all__ = [
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
-    "QuerySQLDataBaseTool",
+    "QuerySQLDatabaseTool",
+    "QuerySQLDataBaseTool",  # Legacy, kept for backwards compatibility.
     "QuerySparkSQLTool",
     "ReadFileTool",
     "RedditSearchRun",
@@ -606,6 +608,8 @@ _module_lookup = {
     "QueryCheckerTool": "langchain_community.tools.spark_sql.tool",
     "QueryPowerBITool": "langchain_community.tools.powerbi.tool",
     "QuerySQLCheckerTool": "langchain_community.tools.sql_database.tool",
+    "QuerySQLDatabaseTool": "langchain_community.tools.sql_database.tool",
+    # Legacy, kept for backwards compatibility.
     "QuerySQLDataBaseTool": "langchain_community.tools.sql_database.tool",
     "QuerySparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "ReadFileTool": "langchain_community.tools.file_management",

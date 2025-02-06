@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -68,17 +67,19 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
-def _run_to_dict(run: Run) -> dict:
+def _run_to_dict(run: Run, exclude_inputs: bool = False) -> dict:
     # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
     # run.model_dump
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
 
-        return {
+        res = {
             **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-            "inputs": run.inputs.copy() if run.inputs is not None else None,
-            "outputs": run.outputs.copy() if run.outputs is not None else None,
+            "outputs": run.outputs,
         }
+        if not exclude_inputs:
+            res["inputs"] = run.inputs
+    return res
 
 
 class LangChainTracer(BaseTracer):
@@ -172,13 +173,7 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
-        # run.model_copy
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            run_ = copy.copy(run)
-        run_.reference_example_id = self.example_id
-        self.latest_run = run_
+        self.latest_run = run
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.
@@ -216,12 +211,14 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        run_dict = _run_to_dict(run)
-        run_dict["tags"] = self._get_tags(run)
-        extra = run_dict.get("extra", {})
-        extra["runtime"] = get_runtime_environment()
-        run_dict["extra"] = extra
         try:
+            run_dict = _run_to_dict(run)
+            run_dict["tags"] = self._get_tags(run)
+            extra = run_dict.get("extra", {})
+            extra["runtime"] = get_runtime_environment()
+            run_dict["extra"] = extra
+            inputs_is_truthy = bool(run_dict.get("inputs"))
+            run.extra["inputs_is_truthy"] = inputs_is_truthy
             self.client.create_run(**run_dict, project_name=self.project_name)
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
@@ -231,7 +228,8 @@ class LangChainTracer(BaseTracer):
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
         try:
-            run_dict = _run_to_dict(run)
+            exclude_inputs = run.extra.get("inputs_is_truthy", False)
+            run_dict = _run_to_dict(run, exclude_inputs=exclude_inputs)
             run_dict["tags"] = self._get_tags(run)
             self.client.update_run(run.id, **run_dict)
         except Exception as e:
@@ -253,9 +251,7 @@ class LangChainTracer(BaseTracer):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        """Append token event to LLM run and return the run."""
         return super()._llm_run_with_token_event(
             # Drop the chunk; we don't need to save it
             token,

@@ -1,9 +1,11 @@
 """Test ChatAnthropic chat model."""
 
 import json
+from base64 import b64encode
 from typing import List, Optional
 
 import pytest
+import requests
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
@@ -22,7 +24,7 @@ from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-sonnet-20240229"
+MODEL_NAME = "claude-3-5-sonnet-20240620"
 
 
 def test_stream() -> None:
@@ -151,7 +153,7 @@ async def test_abatch_tags() -> None:
 
 
 async def test_async_tool_use() -> None:
-    llm = ChatAnthropic(  # type: ignore[call-arg]
+    llm = ChatAnthropic(
         model=MODEL_NAME,
     )
 
@@ -247,7 +249,7 @@ def test_system_invoke() -> None:
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
@@ -256,7 +258,7 @@ def test_anthropic_call() -> None:
 
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -272,7 +274,7 @@ def test_anthropic_generate() -> None:
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)
     message = HumanMessage(content="Hello")
     response = chat.stream([message])
     for token in response:
@@ -284,7 +286,7 @@ def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(  # type: ignore[call-arg]
+    chat = ChatAnthropic(
         model=MODEL_NAME,
         callback_manager=callback_manager,
         verbose=True,
@@ -300,7 +302,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(  # type: ignore[call-arg]
+    chat = ChatAnthropic(
         model=MODEL_NAME,
         callback_manager=callback_manager,
         verbose=True,
@@ -316,8 +318,8 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
-    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    messages = [
+    chat = ChatAnthropic(model=MODEL_NAME)
+    messages: list[BaseMessage] = [
         HumanMessage(
             content=[
                 {
@@ -334,6 +336,8 @@ def test_anthropic_multimodal() -> None:
     response = chat.invoke(messages)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    num_tokens = chat.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
 
 
 def test_streaming() -> None:
@@ -365,7 +369,7 @@ async def test_astreaming() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME)
     llm_with_tools = llm.bind_tools(
         [
             {
@@ -440,6 +444,25 @@ def test_tool_use() -> None:
     assert len(chunks) > 1
 
 
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
 def test_anthropic_with_empty_text_block() -> None:
     """Anthropic SDK can return an empty text block."""
 
@@ -448,7 +471,7 @@ def test_anthropic_with_empty_text_block() -> None:
         """Type the given letter."""
         return "OK"
 
-    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(  # type: ignore[call-arg]
+    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
         [type_letter]
     )
 
@@ -486,7 +509,7 @@ def test_anthropic_with_empty_text_block() -> None:
 
 
 def test_with_structured_output() -> None:
-    llm = ChatAnthropic(  # type: ignore[call-arg]
+    llm = ChatAnthropic(
         model="claude-3-opus-20240229",
     )
 
@@ -505,6 +528,60 @@ def test_with_structured_output() -> None:
     assert response["location"]
 
 
+def test_get_num_tokens_from_messages() -> None:
+    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+    # Test simple case
+    messages = [
+        SystemMessage(content="You are a scientist"),
+        HumanMessage(content="Hello, Claude"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages)
+    assert num_tokens > 0
+
+    # Test tool use
+    @tool(parse_docstring=True)
+    def get_weather(location: str) -> str:
+        """Get the current weather in a given location
+
+        Args:
+            location: The city and state, e.g. San Francisco, CA
+        """
+        return "Sunny"
+
+    messages = [
+        HumanMessage(content="What's the weather like in San Francisco?"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert num_tokens > 0
+
+    messages = [
+        HumanMessage(content="What's the weather like in San Francisco?"),
+        AIMessage(
+            content=[
+                {"text": "Let's see.", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"location": "SF"},
+                    "name": "get_weather",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "SF"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage(content="Sunny", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"),
+    ]
+    num_tokens = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert num_tokens > 0
+
+
 class GetWeather(BaseModel):
     """Get the current weather in a given location"""
 
@@ -513,9 +590,71 @@ class GetWeather(BaseModel):
 
 @pytest.mark.parametrize("tool_choice", ["GetWeather", "auto", "any"])
 def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
-    chat_model = ChatAnthropic(  # type: ignore[call-arg]
+    chat_model = ChatAnthropic(
         model=MODEL_NAME,
     )
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
     response = chat_model_with_tools.invoke("what's the weather in ny and la")
     assert isinstance(response, AIMessage)
+
+
+def test_pdf_document_input() -> None:
+    url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    data = b64encode(requests.get(url).content).decode()
+
+    result = ChatAnthropic(model=MODEL_NAME).invoke(
+        [
+            HumanMessage(
+                [
+                    "summarize this document",
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "data": data,
+                            "media_type": "application/pdf",
+                        },
+                    },
+                ]
+            )
+        ]
+    )
+    assert isinstance(result, AIMessage)
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+
+
+def test_citations() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "content",
+                        "content": [
+                            {"type": "text", "text": "The grass is green"},
+                            {"type": "text", "text": "The sky is blue"},
+                        ],
+                    },
+                    "citations": {"enabled": True},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ],
+        }
+    ]
+    response = llm.invoke(messages)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+    assert any("citations" in block for block in response.content)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(messages):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    assert any("citations" in block for block in full.content)
+    assert not any("citation" in block for block in full.content)

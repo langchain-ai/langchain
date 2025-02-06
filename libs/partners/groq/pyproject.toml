@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-groq"
-version = "0.2.1"
+version = "0.2.4"
 description = "An integration package connecting Groq and LangChain"
 authors = []
 readme = "README.md"
@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain-core = "^0.3.15"
+langchain-core = "^0.3.33"
 groq = ">=0.4.1,<1"
 
 [tool.ruff.lint]
@@ -71,7 +71,7 @@ mypy = "^1.10"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
+[tool.poetry.group.test.dependencies.langchain-tests]
 path = "../../standard-tests"
 develop = true
 

@@ -29,6 +29,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service. If a specific config profile is used,
     you must pass the name of the profile (~/.oci/config) through auth_profile.
+    If a specific config file location is used, you must pass
+    the file location where profile name configs present
+    through auth_file_location
 
     To use, you must provide the compartment id
     along with the endpoint url, and model id
@@ -64,6 +67,11 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     auth_profile: Optional[str] = "DEFAULT"
     """The name of the profile in ~/.oci/config
     If not specified , DEFAULT will be used 
+    """
+
+    auth_file_location: Optional[str] = "~/.oci/config"
+    """Path to the config file.
+    If not specified, ~/.oci/config will be used
     """
 
     model_id: Optional[str] = None
@@ -108,7 +116,8 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
 
             if values["auth_type"] == OCIAuthType(1).name:
                 client_kwargs["config"] = oci.config.from_file(
-                    profile_name=values["auth_profile"]
+                    file_location=values["auth_file_location"],
+                    profile_name=values["auth_profile"],
                 )
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
@@ -124,7 +133,8 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                     return oci.auth.signers.SecurityTokenSigner(st_string, pk)
 
                 client_kwargs["config"] = oci.config.from_file(
-                    profile_name=values["auth_profile"]
+                    file_location=values["auth_file_location"],
+                    profile_name=values["auth_profile"],
                 )
                 client_kwargs["signer"] = make_security_token_signer(
                     oci_config=client_kwargs["config"]
@@ -151,11 +161,11 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             ) from ex
         except Exception as e:
             raise ValueError(
-                "Could not authenticate with OCI client. "
-                "Please check if ~/.oci/config exists. "
-                "If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, "
-                "Please check the specified "
-                "auth_profile and auth_type are valid."
+                """Could not authenticate with OCI client.
+                If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used,
+                please check the specified
+                auth_profile, auth_file_location and auth_type are valid.""",
+                e,
             ) from e
 
         return values

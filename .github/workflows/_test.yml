@@ -13,7 +13,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "1.8.4"
 
 jobs:
   build:
@@ -21,6 +21,7 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     name: "make test #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +59,8 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          poetry run pip install $MIN_VERSIONS
+          poetry run pip install uv
+          poetry run uv pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
