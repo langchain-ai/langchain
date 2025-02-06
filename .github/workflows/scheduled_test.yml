@@ -14,7 +14,9 @@ on:
 
 env:
   POETRY_VERSION: "1.8.4"
+  UV_FROZEN: "true"
   DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/deepseek", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
+  POETRY_LIBS: ("libs/partners/google-vertexai" "libs/partners/google-genai" "libs/partners/aws")
 
 jobs:
   compute-matrix:
@@ -79,13 +81,20 @@ jobs:
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-aws/libs/aws langchain/libs/partners/aws
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }} with poetry
+        if: contains(env.POETRY_LIBS, matrix.working-directory)
         uses: "./langchain/.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: langchain/${{ matrix.working-directory }}
           cache-key: scheduled
+
+      - name: Set up Python ${{ matrix.python-version }} + uv
+        if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
+        uses: "./langchain/.github/actions/uv_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
@@ -100,11 +109,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install dependencies
+      - name: Install dependencies (poetry)
+        if: contains(env.POETRY_LIBS, matrix.working-directory)
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           cd langchain/${{ matrix.working-directory }}
           poetry install --with=test_integration,test
+
+      - name: Install dependencies (uv)
+        if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
+        run: |
+          echo "Running scheduled tests, installing dependencies with uv..."
+          cd langchain/${{ matrix.working-directory }}
+          uv sync --group test --group test_integration
 
       - name: Run integration tests
         env:

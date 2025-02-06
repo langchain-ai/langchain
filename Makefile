@@ -25,20 +25,20 @@ docs_clean:
 
 ## docs_linkcheck: Run linkchecker on the documentation.
 docs_linkcheck:
-	poetry run linkchecker _dist/docs/ --ignore-url node_modules
+	uv run --no-group test linkchecker _dist/docs/ --ignore-url node_modules
 
 ## api_docs_build: Build the API Reference documentation.
 api_docs_build:
-	poetry run python docs/api_reference/create_api_rst.py
-	cd docs/api_reference && poetry run make html
-	poetry run python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
+	uv run --no-group test python docs/api_reference/create_api_rst.py
+	cd docs/api_reference && uv run --no-group test make html
+	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
 
 API_PKG ?= text-splitters
 
 api_docs_quick_preview:
-	poetry run python docs/api_reference/create_api_rst.py $(API_PKG)
-	cd docs/api_reference && poetry run make html
-	poetry run python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
+	uv run --no-group test python docs/api_reference/create_api_rst.py $(API_PKG)
+	cd docs/api_reference && uv run make html
+	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
 	open docs/api_reference/_build/html/reference.html
 
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
@@ -50,15 +50,15 @@ api_docs_clean:
 
 ## api_docs_linkcheck: Run linkchecker on the API Reference documentation.
 api_docs_linkcheck:
-	poetry run linkchecker docs/api_reference/_build/html/index.html
+	uv run --no-group test linkchecker docs/api_reference/_build/html/index.html
 
 ## spell_check: Run codespell on the project.
 spell_check:
-	poetry run codespell --toml pyproject.toml
+	uv run --no-group test codespell --toml pyproject.toml
 
 ## spell_fix: Run codespell on the project and fix the errors.
 spell_fix:
-	poetry run codespell --toml pyproject.toml -w
+	uv run --no-group test codespell --toml pyproject.toml -w
 
 ######################
 # LINTING AND FORMATTING
@@ -66,9 +66,9 @@ spell_fix:
 
 ## lint: Run linting on the project.
 lint lint_package lint_tests:
-	poetry run ruff check docs cookbook
-	poetry run ruff format docs cookbook cookbook --diff
-	poetry run ruff check --select I docs cookbook
+	uv run --group lint ruff check docs cookbook
+	uv run --group lint ruff format docs cookbook cookbook --diff
+	uv run --group lint ruff check --select I docs cookbook
 	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && echo "Error: no importing langchain from root in docs, except for hub" && exit 1 || exit 0
 	
 	git --no-pager grep 'api.python.langchain.com' -- docs/docs ':!docs/docs/additional_resources/arxiv_references.mdx' ':!docs/docs/integrations/document_loaders/sitemap.ipynb' || exit 0 && \
@@ -77,5 +77,5 @@ lint lint_package lint_tests:
 
 ## format: Format the project files.
 format format_diff:
-	poetry run ruff format docs cookbook
-	poetry run ruff check --select I --fix docs cookbook
+	uv run --group lint ruff format docs cookbook
+	uv run --group lint ruff check --select I --fix docs cookbook
