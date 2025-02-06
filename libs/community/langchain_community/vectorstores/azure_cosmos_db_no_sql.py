@@ -42,15 +42,6 @@ class PreFilter(BaseModel):
     logical_operator: Optional[str] = None
 
 
-class CosmosDBQueryType(str, Enum):
-    """CosmosDB Query Type"""
-
-    VECTOR = "vector"
-    FULL_TEXT_SEARCH = "full_text_search"
-    FULL_TEXT_RANK = "full_text_rank"
-    HYBRID = "hybrid"
-
-
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     """`Azure Cosmos DB for NoSQL` vector store.
 
@@ -477,7 +468,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        search_type: CosmosDBQueryType = "vector",
+        search_type: str = "vector",
         pre_filter: Optional[PreFilter] = None,
         with_embedding: bool = False,
         **kwargs: Any,
@@ -510,7 +501,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        search_type: CosmosDBQueryType = "vector",
+        search_type: str = "vector",
         pre_filter: Optional[PreFilter] = None,
         with_embedding: bool = False,
         **kwargs: Any,
@@ -592,7 +583,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         *,
         projection_mapping: Optional[Dict[str, Any]] = None,
         full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
-    ):
+    ) -> List[Tuple[Document, float]]:
         query, parameters = self._construct_query(
             k=k,
             search_type=search_type,
