@@ -490,7 +490,7 @@ class BaseChatOpenAI(BaseChatModel):
     reasoning_effort: Optional[str] = None
     """Constrains effort on reasoning for reasoning models. 
     
-    o1 models only.
+    o series models only.
 
     Currently supported values are low, medium, and high. Reducing reasoning effort 
     can result in faster responses and fewer tokens used on reasoning in a response.
@@ -556,19 +556,19 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: Dict[str, Any]) -> Any:
-        """Currently o1 models only allow temperature=1."""
+        """Ensure temperature is set for o series models."""
         model = values.get("model_name") or values.get("model") or ""
-        if model.startswith("o1") and "temperature" not in values:
-            values["temperature"] = 1
+        if model.startswith("o") and "temperature" not in values:
+            values["temperature"] = 1  # Apply to all "o" series models
         return values
 
     @model_validator(mode="before")
     @classmethod
     def validate_disable_streaming(cls, values: Dict[str, Any]) -> Any:
-        """Disable streaming if n > 1."""
+        """Disable streaming if n > 1 for o series models."""
         model = values.get("model_name") or values.get("model") or ""
-        if model == "o1" and values.get("disable_streaming") is None:
-            values["disable_streaming"] = True
+        if model.startswith("o") and values.get("disable_streaming") is None:
+            values["disable_streaming"] = True  # Apply to all "o" series models
         return values
 
     @model_validator(mode="after")
