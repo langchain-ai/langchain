@@ -1137,7 +1137,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.5"
+version = "0.3.6"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1177,7 +1177,7 @@ typing = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", specifier = ">=0.3.33,<1.0.0" }]
+requires-dist = [{ name = "langchain-core", specifier = ">=0.3.34,<1.0.0" }]
 
 [package.metadata.requires-dev]
 dev = [
