@@ -113,6 +113,8 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_policy=get_full_text_policy(),
+            full_text_search_enabled=True,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -145,12 +147,13 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_policy=get_full_text_policy(),
+            full_text_search_enabled=True,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
         projection_mapping = {
             "text": "text",
-            "metadata": "metadata",
         }
         output = store.similarity_search(
             "Which dog breed is considered a herder?",
@@ -185,6 +188,8 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_policy=get_full_text_policy(),
+            full_text_search_enabled=True,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -355,7 +360,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
 
         assert output
         assert len(output) == 5
-        assert "Standard Poodles" in output[0].page_content
+        assert "Border Collies" in output[0].page_content
 
         # Full text search BM25 ranking with filtering
         pre_filter = PreFilter(
@@ -460,7 +465,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
 
         assert output
         assert len(output) == 2
-        assert "Standard Poodles" in output[0].page_content
+        assert "Australian Shepherds" in output[0].page_content
 
     def _get_documents(self) -> List[Document]:
         return [
