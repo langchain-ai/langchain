@@ -948,7 +948,7 @@ class AzureCosmosDBNoSqlVectorStoreRetriever(VectorStoreRetriever):
     search_type: str = "vector"
     """Type of search to perform. Options are "vector", 
     "hybrid", "full_text_ranking", "full_text_search"."""
-    k: int = Field(default=4)
+    k: int = 4
     """Number of documents to return."""
     search_kwargs: dict = {}
     """Search params.

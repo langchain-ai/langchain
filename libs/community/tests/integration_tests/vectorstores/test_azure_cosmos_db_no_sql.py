@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
-from langchain_openai import AzureOpenAIEmbeddings
+from langchain_community.embeddings import AzureOpenAIEmbeddings
 
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
@@ -49,7 +49,6 @@ def azure_openai_embeddings() -> AzureOpenAIEmbeddings:
     return AzureOpenAIEmbeddings(
         model="text-embedding-3-small",
         azure_endpoint="",
-        dimensions=1536,
     )
 
 
