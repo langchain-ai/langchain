@@ -72,7 +72,6 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to False.
     """
 
-
     model: Any = None  # : :meta private:
 
     model_config = ConfigDict(extra="allow", protected_namespaces=())
@@ -98,7 +97,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
 
         if importlib.metadata.version(pkg_to_import) < MIN_VERSION:
             raise ImportError(
-                f'FastEmbedEmbeddings requires '
+                f"FastEmbedEmbeddings requires "
                 f'`pip install -U "{pkg_to_import}>={MIN_VERSION}"`.'
             )
 
