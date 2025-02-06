@@ -419,6 +419,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
+    def test_invoke_messages_with_names(self, model: BaseChatModel) -> None:
+        result = model.invoke([HumanMessage("Hello", name="Bob"), AIMessage("How are you?", name="Alice"), HumanMessage("I'm fine, thank you! Tell me a joke.", name="Bob")])
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0
+
     async def test_ainvoke(self, model: BaseChatModel) -> None:
         """Test to verify that `await model.ainvoke(simple_message)` works.
 
