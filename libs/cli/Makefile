@@ -3,6 +3,9 @@
 # LINTING AND FORMATTING
 ######################
 
+.EXPORT_ALL_VARIABLES:
+UV_FROZEN = true
+
 # Define a variable for Python and notebook files.
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache

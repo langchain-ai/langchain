@@ -1,5 +1,8 @@
 .PHONY: all clean help docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck spell_check spell_fix lint lint_package lint_tests format format_diff
 
+.EXPORT_ALL_VARIABLES:
+UV_FROZEN = true
+
 ## help: Show this help info.
 help: Makefile
 	@printf "\n\033[1mUsage: make <TARGETS> ...\033[0m\n\n\033[1mTargets:\033[0m\n\n"
