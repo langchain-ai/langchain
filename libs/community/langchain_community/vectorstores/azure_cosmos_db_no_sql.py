@@ -611,7 +611,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         k: int,
         query_type: CosmosDBQueryType,
-        embeddings: List[float] = None,
+        embeddings: Optional[List[float]] = None,
         full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
         pre_filter: Optional[PreFilter] = None,
         offset_limit: Optional[str] = None,
@@ -700,7 +700,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         projection_mapping: Optional[Dict[str, Any]],
         query_type: CosmosDBQueryType,
-        embeddings: List[float],
+        embeddings: Optional[List[float]] = None,
         full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
         with_embedding: bool = False,
     ) -> str:
