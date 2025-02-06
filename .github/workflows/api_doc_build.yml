@@ -50,19 +50,31 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Show current directory
+        run: pwd && ls -al
+
       - name: Install initial py deps
         working-directory: langchain
         run: |
           uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
-          
+
+      - name: Show current directory
+        run: pwd && ls -al
+
       - name: Move libs with script
         run: uv run python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Show current directory
+        run: pwd && ls -al
+
       - name: Rm old html
         run:
           rm -rf langchain-api-docs-html/api_reference_build/html
+
+      - name: Show current directory
+        run: pwd && ls -al
 
       - name: Install dependencies
         working-directory: langchain
@@ -71,11 +83,17 @@ jobs:
           VIRTUAL_ENV=.venv uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
           VIRTUAL_ENV=.venv uv pip install -r docs/api_reference/requirements.txt
 
+      - name: Show current directory
+        run: pwd && ls -al
+
       - name: Set Git config
         working-directory: langchain
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
+
+      - name: Show current directory
+        run: pwd && ls -al
 
       - name: Build docs
         working-directory: langchain
