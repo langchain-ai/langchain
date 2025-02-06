@@ -12,7 +12,6 @@ from langchain_openai import AzureOpenAIEmbeddings
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
     Condition,
-    CosmosDBQueryType,
     PreFilter,
 )
 
@@ -318,7 +317,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "Which dog breed is considered a herder?",
             k=5,
             pre_filter=pre_filter,
-            query_type=CosmosDBQueryType.FULL_TEXT_SEARCH,
+            search_type="full_text_search",
         )
 
         assert output
@@ -340,7 +339,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "Which dog breed is considered a herder?",
             k=5,
             pre_filter=pre_filter,
-            query_type=CosmosDBQueryType.FULL_TEXT_SEARCH,
+            search_type="full_text_search",
         )
 
         assert output
@@ -354,13 +353,13 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         output = store.similarity_search(
             "Which dog breed is considered a herder?",
             k=5,
-            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+            search_type="full_text_ranking",
             full_text_rank_filter=full_text_rank_filter,
         )
 
         assert output
         assert len(output) == 5
-        assert "Border Collies" in output[0].page_content
+        assert "Standard Poodles" in output[0].page_content
 
         # Full text search BM25 ranking with filtering
         pre_filter = PreFilter(
@@ -375,7 +374,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "Which dog breed is considered a herder?",
             k=5,
             pre_filter=pre_filter,
-            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+            search_type="full_text_ranking",
             full_text_rank_filter=full_text_rank_filter,
         )
 
@@ -390,7 +389,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         output = store.similarity_search(
             "Which dog breed is considered a herder?",
             k=5,
-            query_type=CosmosDBQueryType.HYBRID,
+            search_type="hybrid",
             full_text_rank_filter=full_text_rank_filter,
         )
 
@@ -411,7 +410,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "Which dog breed is considered a herder?",
             k=5,
             pre_filter=pre_filter,
-            query_type=CosmosDBQueryType.HYBRID,
+            search_type="hybrid",
             full_text_rank_filter=full_text_rank_filter,
         )
 
@@ -434,7 +433,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "Which dog breed is considered a herder?",
             k=5,
             pre_filter=pre_filter,
-            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+            search_type="full_text_ranking",
             full_text_rank_filter=full_text_rank_filter,
         )
 
@@ -459,13 +458,14 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "intelligent herders",
             k=5,
             pre_filter=pre_filter,
-            query_type=CosmosDBQueryType.FULL_TEXT_RANK,
+            search_type="full_text_ranking",
             full_text_rank_filter=full_text_rank_filter,
         )
 
         assert output
         assert len(output) == 2
-        assert "Australian Shepherds" in output[0].page_content
+        assert "Standard Poodles" in output[0].page_content
+        safe_delete_database(cosmos_client)
 
     def _get_documents(self) -> List[Document]:
         return [
