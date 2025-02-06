@@ -45,46 +45,33 @@ jobs:
             fi
           done
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} + uv
-        uses: "./langchain/.github/actions/uv_setup"
+      - name: Setup python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Show current directory
-        run: pwd && ls -al
 
       - name: Install initial py deps
         working-directory: langchain
         run: |
-          uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
-
-      - name: Show current directory
-        run: pwd && ls -al
+          python -m pip install -U uv
+          python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
 
       - name: Move libs with script
-        run: uv run python langchain/.github/scripts/prep_api_docs_build.py
+        run: python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Show current directory
-        run: pwd && ls -al
 
       - name: Rm old html
         run:
           rm -rf langchain-api-docs-html/api_reference_build/html
 
-      - name: Show current directory
-        run: pwd && ls -al
-
       - name: Install dependencies
         working-directory: langchain
         run: |
-          VIRTUAL_ENV=.venv uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
-          VIRTUAL_ENV=.venv uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
-          VIRTUAL_ENV=.venv uv pip install -r docs/api_reference/requirements.txt
-
-      - name: Show current directory
-        run: pwd && ls -al
+          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
+          python -m uv pip install -r docs/api_reference/requirements.txt
 
       - name: Set Git config
         working-directory: langchain
@@ -92,15 +79,12 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
 
-      - name: Show current directory
-        run: pwd && ls -al
-
       - name: Build docs
         working-directory: langchain
         run: |
-          VIRTUAL_ENV=.venv uv run python docs/api_reference/create_api_rst.py
-          VIRTUAL_ENV=.venv uv run python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
-          VIRTUAL_ENV=.venv uv run python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
+          python docs/api_reference/create_api_rst.py
+          python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
+          python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
           # Default index page is blank so we copy in the actual home page.
           cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
           rm -rf ../langchain-api-docs-html/_build/
