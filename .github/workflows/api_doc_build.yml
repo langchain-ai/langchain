@@ -53,10 +53,11 @@ jobs:
       - name: Install initial py deps
         working-directory: langchain
         run: |
-          uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
+          uv venv
+          VIRTUAL_ENV=.venv uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
           
       - name: Move libs with script
-        run: uv run python langchain/.github/scripts/prep_api_docs_build.py
+        run: VIRTUAL_ENV=.venv uv run python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,9 +81,9 @@ jobs:
       - name: Build docs
         working-directory: langchain
         run: |
-          uv run python docs/api_reference/create_api_rst.py
-          uv run python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
-          uv run python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
+          VIRTUAL_ENV=.venv uv run python docs/api_reference/create_api_rst.py
+          VIRTUAL_ENV=.venv uv run python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
+          VIRTUAL_ENV=.venv uv run python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
           # Default index page is blank so we copy in the actual home page.
           cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
           rm -rf ../langchain-api-docs-html/_build/
