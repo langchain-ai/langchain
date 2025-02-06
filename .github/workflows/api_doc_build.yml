@@ -53,11 +53,10 @@ jobs:
       - name: Install initial py deps
         working-directory: langchain
         run: |
-          uv venv
-          VIRTUAL_ENV=.venv uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
+          uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
           
       - name: Move libs with script
-        run: VIRTUAL_ENV=.venv uv run python langchain/.github/scripts/prep_api_docs_build.py
+        run: uv run python langchain/.github/scripts/prep_api_docs_build.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
