@@ -8,7 +8,6 @@ import langchain_community.document_loaders as pdf_loaders
 from langchain_community.document_loaders import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
-    PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
     PyPDFium2Loader,
     UnstructuredPDFLoader,
@@ -40,34 +39,6 @@ def test_unstructured_pdf_loader_default_mode() -> None:
     docs = loader.load()
 
     assert len(docs) == 1
-
-
-def test_pdfminer_loader() -> None:
-    """Test PDFMiner loader."""
-    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = PDFMinerLoader(file_path)
-    docs = loader.load()
-
-    assert len(docs) == 1
-
-    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
-    loader = PDFMinerLoader(file_path)
-
-    docs = loader.load()
-    assert len(docs) == 1
-
-    # Verify that concatenating pages parameter works
-    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = PDFMinerLoader(file_path, concatenate_pages=True)
-    docs = loader.load()
-
-    assert len(docs) == 1
-
-    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
-    loader = PDFMinerLoader(file_path, concatenate_pages=False)
-
-    docs = loader.load()
-    assert len(docs) == 16
 
 
 def test_pdfminer_pdf_as_html_loader() -> None:
@@ -211,6 +182,7 @@ def test_amazontextract_loader_failures() -> None:
 @pytest.mark.parametrize(
     "parser_factory,params",
     [
+        ("PDFMinerLoader", {}),
         ("PyMuPDFLoader", {}),
         ("PyPDFLoader", {}),
     ],
@@ -234,6 +206,8 @@ def test_standard_parameters(
         images_parser=None,
         images_inner_format="text",
         password=None,
+        extract_tables=None,
+        extract_tables_settings=None,
     )
     docs = loader.load()
     assert len(docs) == 16
