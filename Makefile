@@ -30,7 +30,7 @@ docs_linkcheck:
 ## api_docs_build: Build the API Reference documentation.
 api_docs_build:
 	uv run --no-group test python docs/api_reference/create_api_rst.py
-	cd docs/api_reference && poetry run make html
+	cd docs/api_reference && uv run --no-group test make html
 	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
 
 API_PKG ?= text-splitters
