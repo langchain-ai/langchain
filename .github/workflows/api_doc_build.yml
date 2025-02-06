@@ -67,9 +67,9 @@ jobs:
       - name: Install dependencies
         working-directory: langchain
         run: |
-          uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
-          uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
-          uv pip install -r docs/api_reference/requirements.txt
+          VIRTUAL_ENV=.venv uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          VIRTUAL_ENV=.venv uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
+          VIRTUAL_ENV=.venv uv pip install -r docs/api_reference/requirements.txt
 
       - name: Set Git config
         working-directory: langchain
