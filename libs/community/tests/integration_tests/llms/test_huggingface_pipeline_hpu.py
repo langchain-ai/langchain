@@ -42,10 +42,8 @@ def test_huggingface_pipeline_invalid_hpu_and_openvino_backend() -> None:
             model_kwargs={"device": "hpu", "backend": "openvino"},
         )
     except ValueError as e:
-        assert (
-            "Cannot specify `model_kwargs{'device': 'hpu'}` and `backend=openvino` at the same time."
-            in str(e)
-        )
+        assert """Cannot specify `model_kwargs{'device': 'hpu'}`
+            and `backend=openvino` at the same time.""" in str(e)
 
 
 @pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
