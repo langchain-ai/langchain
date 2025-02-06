@@ -2341,22 +2341,22 @@ typing = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.3,<4.0.0" },
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
-    { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
-    { name = "langchain-aws", marker = "extra == 'aws'" },
-    { name = "langchain-cohere", marker = "extra == 'cohere'" },
-    { name = "langchain-community", marker = "extra == 'community'" },
+    { name = "langchain-anthropic", marker = "extra == 'anthropic'", specifier = ">=0.3.7" },
+    { name = "langchain-aws", marker = "extra == 'aws'", specifier = ">=0.2.12" },
+    { name = "langchain-cohere", marker = "extra == 'cohere'", specifier = ">=0.4.2" },
+    { name = "langchain-community", marker = "extra == 'community'", specifier = ">=0.3.16" },
     { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
-    { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
-    { name = "langchain-fireworks", marker = "extra == 'fireworks'" },
-    { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
-    { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
-    { name = "langchain-groq", marker = "extra == 'groq'" },
-    { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
-    { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
-    { name = "langchain-ollama", marker = "extra == 'ollama'" },
-    { name = "langchain-openai", marker = "extra == 'openai'" },
+    { name = "langchain-deepseek", marker = "extra == 'deepseek'", specifier = ">=0.1.1" },
+    { name = "langchain-fireworks", marker = "extra == 'fireworks'", specifier = ">=0.2.7" },
+    { name = "langchain-google-genai", marker = "extra == 'google-genai'", specifier = ">=2.0.9" },
+    { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'", specifier = ">=2.0.13" },
+    { name = "langchain-groq", marker = "extra == 'groq'", specifier = ">=0.2.4" },
+    { name = "langchain-huggingface", marker = "extra == 'huggingface'", specifier = ">=0.1.2" },
+    { name = "langchain-mistralai", marker = "extra == 'mistralai'", specifier = ">=0.2.6" },
+    { name = "langchain-ollama", marker = "extra == 'ollama'", specifier = ">=0.2.3" },
+    { name = "langchain-openai", marker = "extra == 'openai'", specifier = ">=0.3.4" },
     { name = "langchain-text-splitters", specifier = ">=0.3.6,<1.0.0" },
-    { name = "langchain-together", marker = "extra == 'together'" },
+    { name = "langchain-together", marker = "extra == 'together'", specifier = ">=0.3.0" },
     { name = "langsmith", specifier = ">=0.1.17,<0.4" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
@@ -2559,14 +2559,15 @@ typing = [
 
 [[package]]
 name = "langchain-deepseek"
-version = "0.0.1"
+version = "0.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "langchain" },
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/64/b7c24cd64f1d12c4e55b70ed98fe492586734b3a466c25fdb594b09f69dc/langchain_deepseek-0.0.1.tar.gz", hash = "sha256:16390eb9c6762e39ce18107f3d71db33dff0414fd3c3e8ee2cc2708abe61a58f", size = 4854 }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/b8/e1fe19a6bb0e2a8e715bda6b0ac719f7e5b8137bb094fd591b9f62f237a3/langchain_deepseek-0.1.1.tar.gz", hash = "sha256:51bfd441d35029451921d9aebc9e66609d7cbbf5c9012c50391f78e1d74b6e97", size = 4550 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/5f/7c2803998b780e78d4f54c5bf4d0d3ada60c0391af92cda1e452a8b3530c/langchain_deepseek-0.0.1-py3-none-any.whl", hash = "sha256:af082f27eb9106c545470a56688a7683f6736daa26f34441238d6d995284877f", size = 6437 },
+    { url = "https://files.pythonhosted.org/packages/fe/c9/5e2aae41ed670b13115b2a47a04c7b652c54664bf3e5677f5c6d81ef52f2/langchain_deepseek-0.1.1-py3-none-any.whl", hash = "sha256:6443bbb0e0789bd9ec5120aef05a0e579fe35f385b58f26e6d35507a67b7d519", size = 5234 },
 ]
 
 [[package]]
@@ -2602,7 +2603,7 @@ wheels = [
 
 [[package]]
 name = "langchain-google-vertexai"
-version = "2.0.12"
+version = "2.0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-cloud-aiplatform" },
@@ -2612,9 +2613,9 @@ dependencies = [
     { name = "langchain-core" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9e/af/1485a8e1d9d78e9aa8137a53b9373dd1e641a5f201aa228eacd398858017/langchain_google_vertexai-2.0.12.tar.gz", hash = "sha256:daae4d3d975919b9b03295e91b487d92cbe1873beddfe1cadb0f8ad0dcb1e4ef", size = 78037 }
+sdist = { url = "https://files.pythonhosted.org/packages/24/e5/6e7d9d257863e9d7293f69d3f58f056736833e6a70ed6e88db121125c1df/langchain_google_vertexai-2.0.13.tar.gz", hash = "sha256:7edc4de0ef7e8caf6cf075f31ebe29f17d99c6c739ac43ed5b9df4f8c1c4c1fb", size = 78204 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/8d/fe4f616c3f9a772562d52943383162245ebd5a8c91b2a2630d1935c89b46/langchain_google_vertexai-2.0.12-py3-none-any.whl", hash = "sha256:f7a0e5b057ec54bb106e26c7277dc38c92365a59a144c47e3da513688577358a", size = 93158 },
+    { url = "https://files.pythonhosted.org/packages/e7/8b/9729e14d03c1e01779187f488d2950cc9a8ce29f0366d106b8d444f0b46b/langchain_google_vertexai-2.0.13-py3-none-any.whl", hash = "sha256:eba80d6a2e2e1cbc1973843822df584e5d39a007851d5d5aebd28093a4ea7bdc", size = 93318 },
 ]
 
 [[package]]
