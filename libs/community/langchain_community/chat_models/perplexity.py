@@ -148,7 +148,6 @@ class ChatPerplexity(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling PerplexityChat API."""
         return {
-            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "temperature": self.temperature,
@@ -218,21 +217,27 @@ class ChatPerplexity(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
-
+        params.pop("stream", None)
         if stop:
             params["stop_sequences"] = stop
         stream_resp = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts, stream=True
+            messages=message_dicts, stream=True, **params
         )
+        first_chunk = True
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            citations = chunk.get("citations", [])
+
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
+            if first_chunk:
+                chunk.additional_kwargs |= {"citations": citations}
+                first_chunk = False
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
@@ -258,18 +263,17 @@ class ChatPerplexity(BaseChatModel):
                 return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts
+        response = self.client.chat.completions.create(messages=message_dicts, **params)
+        message = AIMessage(
+            content=response.choices[0].message.content,
+            additional_kwargs={"citations": response.citations},
         )
-        message = AIMessage(content=response.choices[0].message.content)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         pplx_creds: Dict[str, Any] = {
-            "api_key": self.pplx_api_key,
-            "api_base": "https://api.perplexity.ai",
             "model": self.model,
         }
         return {**pplx_creds, **self._default_params}

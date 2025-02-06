@@ -45,7 +45,7 @@ from langchain_core.callbacks import (
     CallbackManager,
     Callbacks,
 )
-from langchain_core.messages.tool import ToolCall, ToolMessage
+from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
@@ -494,7 +494,9 @@ class ChildTool(BaseTool):
 
     # --- Tool ---
 
-    def _parse_input(self, tool_input: Union[str, dict]) -> Union[str, dict[str, Any]]:
+    def _parse_input(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> Union[str, dict[str, Any]]:
         """Convert tool input to a pydantic model.
 
         Args:
@@ -512,9 +514,39 @@ class ChildTool(BaseTool):
         else:
             if input_args is not None:
                 if issubclass(input_args, BaseModel):
+                    for k, v in get_all_basemodel_annotations(input_args).items():
+                        if (
+                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                            and k not in tool_input
+                        ):
+                            if tool_call_id is None:
+                                msg = (
+                                    "When tool includes an InjectedToolCallId "
+                                    "argument, tool must always be invoked with a full "
+                                    "model ToolCall of the form: {'args': {...}, "
+                                    "'name': '...', 'type': 'tool_call', "
+                                    "'tool_call_id': '...'}"
+                                )
+                                raise ValueError(msg)
+                            tool_input[k] = tool_call_id
                     result = input_args.model_validate(tool_input)
                     result_dict = result.model_dump()
                 elif issubclass(input_args, BaseModelV1):
+                    for k, v in get_all_basemodel_annotations(input_args).items():
+                        if (
+                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                            and k not in tool_input
+                        ):
+                            if tool_call_id is None:
+                                msg = (
+                                    "When tool includes an InjectedToolCallId "
+                                    "argument, tool must always be invoked with a full "
+                                    "model ToolCall of the form: {'args': {...}, "
+                                    "'name': '...', 'type': 'tool_call', "
+                                    "'tool_call_id': '...'}"
+                                )
+                                raise ValueError(msg)
+                            tool_input[k] = tool_call_id
                     result = input_args.parse_obj(tool_input)
                     result_dict = result.dict()
                 else:
@@ -570,8 +602,13 @@ class ChildTool(BaseTool):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
-        tool_input = self._parse_input(tool_input)
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> tuple[tuple, dict]:
+        if self.args_schema is not None and not get_fields(self.args_schema):
+            # StructuredTool with no args
+            return (), {}
+        tool_input = self._parse_input(tool_input, tool_call_id)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
         if isinstance(tool_input, str):
@@ -609,7 +646,7 @@ class ChildTool(BaseTool):
             run_id: The id of the run. Defaults to None.
             config: The configuration for the tool. Defaults to None.
             tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Additional arguments to pass to the tool
+            kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
             The output of the tool.
@@ -643,17 +680,17 @@ class ChildTool(BaseTool):
 
         content = None
         artifact = None
+        status = "success"
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
-
+                tool_kwargs = tool_kwargs | {"run_manager": run_manager}
             if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs[config_param] = config
+                tool_kwargs = tool_kwargs | {config_param: config}
             response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
@@ -663,26 +700,25 @@ class ChildTool(BaseTool):
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                    raise ValueError(msg)
-                content, artifact = response
+                    error_to_raise = ValueError(msg)
+                else:
+                    content, artifact = response
             else:
                 content = response
-            status = "success"
         except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
+                status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
+                status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
-            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
@@ -721,7 +757,7 @@ class ChildTool(BaseTool):
             run_id: The id of the run. Defaults to None.
             config: The configuration for the tool. Defaults to None.
             tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Additional arguments to pass to the tool
+            kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
             The output of the tool.
@@ -753,9 +789,10 @@ class ChildTool(BaseTool):
         )
         content = None
         artifact = None
+        status = "success"
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
@@ -780,26 +817,25 @@ class ChildTool(BaseTool):
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                    raise ValueError(msg)
-                content, artifact = response
+                    error_to_raise = ValueError(msg)
+                else:
+                    content, artifact = response
             else:
                 content = response
-            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
+                status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
+                status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
-            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
@@ -837,7 +873,7 @@ def _handle_validation_error(
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 
@@ -857,7 +893,7 @@ def _handle_tool_error(
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 
@@ -889,20 +925,23 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
-) -> Union[ToolMessage, Any]:
-    if tool_call_id:
-        if not _is_message_content_type(content):
-            content = _stringify(content)
-        return ToolMessage(
-            content,
-            artifact=artifact,
-            tool_call_id=tool_call_id,
-            name=name,
-            status=status,
-        )
-    else:
+    content: Any,
+    artifact: Any,
+    tool_call_id: Optional[str],
+    name: str,
+    status: str,
+) -> Union[ToolOutputMixin, Any]:
+    if isinstance(content, ToolOutputMixin) or not tool_call_id:
         return content
+    if not _is_message_content_type(content):
+        content = _stringify(content)
+    return ToolMessage(
+        content,
+        artifact=artifact,
+        tool_call_id=tool_call_id,
+        name=name,
+        status=status,
+    )
 
 
 def _is_message_content_type(obj: Any) -> bool:
@@ -954,10 +993,31 @@ class InjectedToolArg:
     """Annotation for a Tool arg that is **not** meant to be generated by a model."""
 
 
-def _is_injected_arg_type(type_: type) -> bool:
+class InjectedToolCallId(InjectedToolArg):
+    r'''Annotation for injecting the tool_call_id.
+
+    Example:
+        ..code-block:: python
+
+            from typing_extensions import Annotated
+
+            from langchain_core.messages import ToolMessage
+            from langchain_core.tools import tool, InjectedToolCallID
+
+            @tool
+            def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallID]) -> ToolMessage:
+                """Return x."""
+                return ToolMessage(str(x), artifact=x, name="foo", tool_call_id=tool_call_id)
+    '''  # noqa: E501
+
+
+def _is_injected_arg_type(
+    type_: type, injected_type: Optional[type[InjectedToolArg]] = None
+) -> bool:
+    injected_type = injected_type or InjectedToolArg
     return any(
-        isinstance(arg, InjectedToolArg)
-        or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
+        isinstance(arg, injected_type)
+        or (isinstance(arg, type) and issubclass(arg, injected_type))
         for arg in get_args(type_)[1:]
     )
 

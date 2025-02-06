@@ -13,6 +13,7 @@ from langchain_core.prompts.chat import (
 from langchain_core.tools import BaseTool
 from pydantic import Field
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import (
@@ -25,7 +26,11 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains.llm import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="1.0")
+@deprecated(
+    "0.1.0",
+    message=AGENT_DEPRECATION_WARNING,
+    removal="1.0",
+)
 class ChatAgent(Agent):
     """Chat Agent."""
 

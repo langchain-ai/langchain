@@ -1,6 +1,6 @@
 # Runnable interface
 
-The Runnable interface is foundational for working with LangChain components, and it's implemented across many of them, such as [language models](/docs/concepts/chat_models), [output parsers](/docs/concepts/output_parsers), [retrievers](/docs/concepts/retrievers), [compiled LangGraph graphs](
+The Runnable interface is the foundation for working with LangChain components, and it's implemented across many of them, such as [language models](/docs/concepts/chat_models), [output parsers](/docs/concepts/output_parsers), [retrievers](/docs/concepts/retrievers), [compiled LangGraph graphs](
 https://langchain-ai.github.io/langgraph/concepts/low_level/#compiling-your-graph) and more.
 
 This guide covers the main concepts and methods of the Runnable interface, which allows developers to interact with various LangChain components in a consistent and predictable manner.
@@ -42,7 +42,7 @@ Some Runnables may provide their own implementations of `batch` and `batch_as_co
 rely on a `batch` API provided by a model provider).
 
 :::note
-The async versions of `abatch` and `abatch_as_completed` these rely on asyncio's [gather](https://docs.python.org/3/library/asyncio-task.html#asyncio.gather) and [as_completed](https://docs.python.org/3/library/asyncio-task.html#asyncio.as_completed) functions to run the `ainvoke` method in parallel.
+The async versions of `abatch` and `abatch_as_completed` relies on asyncio's [gather](https://docs.python.org/3/library/asyncio-task.html#asyncio.gather) and [as_completed](https://docs.python.org/3/library/asyncio-task.html#asyncio.as_completed) functions to run the `ainvoke` method in parallel.
 :::
 
 :::tip
@@ -58,7 +58,7 @@ Runnables expose an asynchronous API, allowing them to be called using the `awai
 
 Please refer to the [Async Programming with LangChain](/docs/concepts/async) guide for more details.
 
-## Streaming apis
+## Streaming APIs
 <span data-heading-keywords="streaming-api"></span>
 
 Streaming is critical in making applications based on LLMs feel responsive to end-users.
@@ -101,7 +101,7 @@ This is an advanced feature that is unnecessary for most users. You should proba
 skip this section unless you have a specific need to inspect the schema of a Runnable.
 :::
 
-In some advanced uses, you may want to programmatically **inspect** the Runnable and determine what input and output types the Runnable expects and produces.
+In more advanced use cases, you may want to programmatically **inspect** the Runnable and determine what input and output types the Runnable expects and produces.
 
 The Runnable interface provides methods to get the [JSON Schema](https://json-schema.org/) of the input and output types of a Runnable, as well as [Pydantic schemas](https://docs.pydantic.dev/latest/) for the input and output types.
 
@@ -114,7 +114,7 @@ Please see the [Configurable Runnables](#configurable-runnables) section for mor
 | Method                  | Description                                                      |
 |-------------------------|------------------------------------------------------------------|
 | `get_input_schema`      | Gives the Pydantic Schema of the input schema for the Runnable.  |
-| `get_output_chema`      | Gives the Pydantic Schema of the output schema for the Runnable. |
+| `get_output_schema`      | Gives the Pydantic Schema of the output schema for the Runnable. |
 | `config_schema`         | Gives the Pydantic Schema of the config schema for the Runnable. |
 | `get_input_jsonschema`  | Gives the JSONSchema of the input schema for the Runnable.       |
 | `get_output_jsonschema` | Gives the JSONSchema of the output schema for the Runnable.      |
@@ -125,7 +125,7 @@ Please see the [Configurable Runnables](#configurable-runnables) section for mor
 
 LangChain will automatically try to infer the input and output types of a Runnable based on available information.
 
-Currently, this inference does not work well for more complex Runnables that are built using [LCEL](/docs/concepts/lcel) composition, and the inferred input and / or output types may be incorrect. In these cases, we recommend that users override the inferred input and output types using the `with_types` method ([API Reference](https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.with_types
+Currently, this inference does not work well for more complex Runnables that are built using [LCEL](/docs/concepts/lcel) composition, and the inferred input and / or output types may be incorrect. In these cases, we recommend that users override the inferred input and output types using the `with_types` method ([API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.with_types
 ).
 
 ## RunnableConfig
@@ -315,7 +315,7 @@ the `RunnableConfig` manually to sub-calls in some cases. Please see the
 [Propagating RunnableConfig](#propagation-of-runnableconfig) section for more information.
 :::
 
-## Creating a runnable from a function
+## Creating a runnable from a function {#custom-runnables}
 
 You may need to create a custom Runnable that runs arbitrary logic. This is especially
 useful if using [LangChain Expression Language (LCEL)](/docs/concepts/lcel) to compose
@@ -323,7 +323,7 @@ multiple Runnables and you need to add custom processing logic in one of the ste
 
 There are two ways to create a custom Runnable from a function:
 
-* `RunnableLambda`: Use this simple transformations where streaming is not required.
+* `RunnableLambda`: Use this for simple transformations where streaming is not required.
 * `RunnableGenerator`: use this for more complex transformations when streaming is needed.
 
 See the [How to run custom functions](/docs/how_to/functions) guide for more information on how to use `RunnableLambda` and `RunnableGenerator`.
@@ -347,6 +347,6 @@ Sometimes you may want to experiment with, or even expose to the end user, multi
 To simplify this process, the Runnable interface provides two methods for creating configurable Runnables at runtime:
 
 * `configurable_fields`: This method allows you to configure specific **attributes** in a Runnable. For example, the `temperature` attribute of a chat model.
-* `configurable_alternatives`: This method enables you to specify **alternative** Runnables that can be run during run time. For example, you could specify a list of different chat models that can be used.
+* `configurable_alternatives`: This method enables you to specify **alternative** Runnables that can be run during runtime. For example, you could specify a list of different chat models that can be used.
 
 See the [How to configure runtime chain internals](/docs/how_to/configure) guide for more information on how to configure runtime chain internals.

@@ -32,7 +32,7 @@ def test_azure_openai_whisper(mock_client: Mock) -> None:
         azure_endpoint=endpoint,
         api_version=version,
         max_retries=3,
-        azure_ad_token=None,
+        azure_ad_token_provider=None,
     )
     assert parser._client == mock_client()
 

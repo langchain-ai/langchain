@@ -12,6 +12,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable, RunnableConfig
 from langchain_core.runnables.graph import Edge, Graph, Node
 from langchain_core.runnables.graph_mermaid import _escape_node_label
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -66,6 +67,26 @@ def test_trim(snapshot: SnapshotAssertion) -> None:
     assert graph.first_node() is start
     graph.trim_last_node()
     assert graph.last_node() is end
+
+
+def test_trim_multi_edge() -> None:
+    class Scheme(BaseModel):
+        a: str
+
+    graph = Graph()
+    start = graph.add_node(Scheme, id="__start__")
+    a = graph.add_node(Scheme, id="a")
+    last = graph.add_node(Scheme, id="__end__")
+
+    graph.add_edge(start, a)
+    graph.add_edge(a, last)
+    graph.add_edge(start, last)
+
+    graph.trim_first_node()  # should not remove __start__ since it has 2 outgoing edges
+    assert graph.first_node() is start
+
+    graph.trim_last_node()  # should not remove the __end__ node since it has 2 incoming edges
+    assert graph.last_node() is last
 
 
 def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
@@ -210,10 +231,15 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
         }
     )
     graph = sequence.get_graph()
-    assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(
-        name="graph_with_schema"
-    )
-    assert _normalize_schema(graph.to_json()) == snapshot(name="graph_no_schemas")
+
+    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+        assert _normalize_schema(graph.to_json(with_schemas=True)) == snapshot(
+            name="graph_with_schema"
+        )
+
+    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+        assert _normalize_schema(graph.to_json()) == snapshot(name="graph_no_schemas")
+
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
     assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid-simple")
@@ -400,7 +426,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
 
 
 def test_graph_mermaid_escape_node_label() -> None:
-    """Test that node labels are correctly preprocessed for draw_mermaid"""
+    """Test that node labels are correctly preprocessed for draw_mermaid."""
     assert _escape_node_label("foo") == "foo"
     assert _escape_node_label("foo-bar") == "foo-bar"
     assert _escape_node_label("foo_1") == "foo_1"

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
@@ -44,6 +45,11 @@ very concise style in interpreting results!
 """
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.chains.graph_qa.cypher.extract_cypher",
+)
 def extract_cypher(text: str) -> str:
     """Extract Cypher code from a text.
 
@@ -62,6 +68,11 @@ def extract_cypher(text: str) -> str:
     return matches[0] if matches else text
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.chains.graph_qa.cypher.construct_schema",
+)
 def construct_schema(
     structured_schema: Dict[str, Any],
     include_types: List[str],
@@ -124,6 +135,11 @@ def construct_schema(
     )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.chains.graph_qa.cypher.get_function_response",
+)
 def get_function_response(
     question: str, context: List[Dict[str, Any]]
 ) -> List[BaseMessage]:
@@ -149,6 +165,11 @@ def get_function_response(
     return messages
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.GraphCypherQAChain",
+)
 class GraphCypherQAChain(Chain):
     """Chain for question-answering against a graph by generating Cypher statements.
 

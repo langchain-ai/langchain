@@ -110,13 +110,13 @@ COPIABLE_KEYS = [
 DEFAULT_RECURSION_LIMIT = 25
 
 
-var_child_runnable_config = ContextVar(
-    "child_runnable_config", default=RunnableConfig()
+var_child_runnable_config: ContextVar[RunnableConfig | None] = ContextVar(
+    "child_runnable_config", default=None
 )
 
 
 def _set_config_context(config: RunnableConfig) -> None:
-    """Set the child Runnable config + tracing context
+    """Set the child Runnable config + tracing context.
 
     Args:
         config (RunnableConfig): The config to set.

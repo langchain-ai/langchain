@@ -4,7 +4,7 @@ import random
 import re
 import string
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Callable, List, Tuple
 
 import pytest
 from langchain_core.documents import Document
@@ -17,7 +17,11 @@ from langchain_text_splitters import (
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
-from langchain_text_splitters.html import HTMLHeaderTextSplitter, HTMLSectionSplitter
+from langchain_text_splitters.html import (
+    HTMLHeaderTextSplitter,
+    HTMLSectionSplitter,
+    HTMLSemanticPreservingSplitter,
+)
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
@@ -1225,12 +1229,7 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
     """Test markdown splitter by header: Fenced code block."""
 
     markdown_document = (
-        "# This is a Header\n\n"
-        f"{fence}\n"
-        "foo()\n"
-        "# Not a header\n"
-        "bar()\n"
-        f"{fence}"
+        f"# This is a Header\n\n{fence}\nfoo()\n# Not a header\nbar()\n{fence}"
     )
 
     headers_to_split_on = [
@@ -1295,9 +1294,7 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
 def test_md_header_text_splitter_with_invisible_characters(characters: str) -> None:
     """Test markdown splitter by header: Fenced code block."""
 
-    markdown_document = (
-        f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
-    )
+    markdown_document = f"{characters}# Foo\n\nfoo()\n{characters}## Bar\n\nbar()"
 
     headers_to_split_on = [
         ("#", "Header 1"),
@@ -1527,6 +1524,407 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
     assert output == expected_output
 
 
+EXPERIMENTAL_MARKDOWN_DOCUMENTS = [
+    (
+        "# My Header 1 From Document 1\n"
+        "Content for header 1 from Document 1\n"
+        "## Header 2 From Document 1\n"
+        "Content for header 2 from Document 1\n"
+        "```python\n"
+        "def func_definition():\n"
+        "   print('Keep the whitespace consistent')\n"
+        "```\n"
+        "# Header 1 again From Document 1\n"
+        "We should also split on the horizontal line\n"
+        "----\n"
+        "This will be a new doc but with the same header metadata\n\n"
+        "And it includes a new paragraph"
+    ),
+    (
+        "# My Header 1 From Document 2\n"
+        "Content for header 1 from Document 2\n"
+        "## Header 2 From Document 2\n"
+        "Content for header 2 from Document 2\n"
+        "```python\n"
+        "def func_definition():\n"
+        "   print('Keep the whitespace consistent')\n"
+        "```\n"
+        "# Header 1 again From Document 2\n"
+        "We should also split on the horizontal line\n"
+        "----\n"
+        "This will be a new doc but with the same header metadata\n\n"
+        "And it includes a new paragraph"
+    ),
+]
+
+
+def test_experimental_markdown_syntax_text_splitter_on_multi_files() -> None:
+    """Test experimental markdown syntax splitter split
+    on default called consecutively on two files."""
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    output = []
+    for experimental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
+        output += markdown_splitter.split_text(experimental_markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1 from Document 1\n",
+            metadata={"Header 1": "My Header 1 From Document 1"},
+        ),
+        Document(
+            page_content="Content for header 2 from Document 1\n",
+            metadata={
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="Content for header 1 from Document 2\n",
+            metadata={"Header 1": "My Header 1 From Document 2"},
+        ),
+        Document(
+            page_content="Content for header 2 from Document 2\n",
+            metadata={
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_split_lines_on_multi_files() -> (
+    None
+):
+    """Test experimental markdown syntax splitter split
+    on each line called consecutively on two files."""
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(return_each_line=True)
+    output = []
+    for experimental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
+        output += markdown_splitter.split_text(experimental_markdown_document)
+    expected_output = [
+        Document(
+            page_content="Content for header 1 from Document 1",
+            metadata={"Header 1": "My Header 1 From Document 1"},
+        ),
+        Document(
+            page_content="Content for header 2 from Document 1",
+            metadata={
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="```python",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="def func_definition():",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="   print('Keep the whitespace consistent')",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="```",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line",
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="This will be a new doc but with the same header metadata",
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="And it includes a new paragraph",
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="Content for header 1 from Document 2",
+            metadata={"Header 1": "My Header 1 From Document 2"},
+        ),
+        Document(
+            page_content="Content for header 2 from Document 2",
+            metadata={
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="```python",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="def func_definition():",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="   print('Keep the whitespace consistent')",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="```",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line",
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+        Document(
+            page_content="This will be a new doc but with the same header metadata",
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+        Document(
+            page_content="And it includes a new paragraph",
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_with_header_on_multi_files() -> (
+    None
+):
+    """Test experimental markdown splitter
+    by header called consecutively on two files"""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(strip_headers=False)
+    output = []
+    for experimental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
+        output += markdown_splitter.split_text(experimental_markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="# My Header 1 From Document 1\n"
+            "Content for header 1 from Document 1\n",
+            metadata={"Header 1": "My Header 1 From Document 1"},
+        ),
+        Document(
+            page_content="## Header 2 From Document 1\n"
+            "Content for header 2 from Document 1\n",
+            metadata={
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 1",
+                "Header 2": "Header 2 From Document 1",
+            },
+        ),
+        Document(
+            page_content="# Header 1 again From Document 1\n"
+            "We should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="# My Header 1 From Document 2\n"
+            "Content for header 1 from Document 2\n",
+            metadata={"Header 1": "My Header 1 From Document 2"},
+        ),
+        Document(
+            page_content="## Header 2 From Document 2\n"
+            "Content for header 2 from Document 2\n",
+            metadata={
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1 From Document 2",
+                "Header 2": "Header 2 From Document 2",
+            },
+        ),
+        Document(
+            page_content="# Header 1 again From Document 2\n"
+            "We should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again From Document 2"},
+        ),
+    ]
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_header_config_on_multi_files() -> (
+    None
+):
+    """Test experimental markdown splitter
+    by header configuration called consecutively on two files"""
+
+    headers_to_split_on = [("#", "Encabezamiento 1")]
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    output = []
+    for experimental_markdown_document in EXPERIMENTAL_MARKDOWN_DOCUMENTS:
+        output += markdown_splitter.split_text(experimental_markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1 from Document 1\n"
+            "## Header 2 From Document 1\n"
+            "Content for header 2 from Document 1\n",
+            metadata={"Encabezamiento 1": "My Header 1 From Document 1"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Encabezamiento 1": "My Header 1 From Document 1",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Encabezamiento 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Encabezamiento 1": "Header 1 again From Document 1"},
+        ),
+        Document(
+            page_content="Content for header 1 from Document 2\n"
+            "## Header 2 From Document 2\n"
+            "Content for header 2 from Document 2\n",
+            metadata={"Encabezamiento 1": "My Header 1 From Document 2"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Encabezamiento 1": "My Header 1 From Document 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Encabezamiento 1": "Header 1 again From Document 2"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Encabezamiento 1": "Header 1 again From Document 2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
@@ -1634,49 +2032,476 @@ def test_haskell_code_splitter() -> None:
     assert chunks == expected_chunks
 
 
-@pytest.mark.requires("lxml")
-def test_html_header_text_splitter(tmp_path: Path) -> None:
-    splitter = HTMLHeaderTextSplitter(
-        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
-    )
-
-    content = """
-<h1>Sample Document</h1>
-    <h2>Section</h2>
-        <p id="1234">Reference content.</p>
-
-    <h2>Lists</h2>
-        <ul>
-            <li>Item 1</li>
-            <li>Item 2</li>
-            <li>Item 3</li>
-        </ul>
-
-        <h3>A block</h3>
-            <div class="amazing">
-                <p>Some text</p>
-                <p>Some more text</p>
-            </div>
+@pytest.fixture
+@pytest.mark.requires("bs4")
+def html_header_splitter_splitter_factory() -> Callable[
+    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
+]:
+    """
+    Fixture to create an HTMLHeaderTextSplitter instance with given headers.
+    This factory allows dynamic creation of splitters with different headers.
     """
 
-    docs = splitter.split_text(content)
-    expected = [
-        Document(
-            page_content="Reference content.",
-            metadata={"Header 1": "Sample Document", "Header 2": "Section"},
-        ),
-        Document(
-            page_content="Item 1 Item 2 Item 3  \nSome text  \nSome more text",
-            metadata={"Header 1": "Sample Document", "Header 2": "Lists"},
-        ),
-    ]
-    assert docs == expected
+    def _create_splitter(
+        headers_to_split_on: List[Tuple[str, str]],
+    ) -> HTMLHeaderTextSplitter:
+        return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
-    with open(tmp_path / "doc.html", "w") as tmp:
-        tmp.write(content)
-    docs_from_file = splitter.split_text_from_file(tmp_path / "doc.html")
+    return _create_splitter
 
-    assert docs_from_file == expected
+
+@pytest.mark.parametrize(
+    "headers_to_split_on, html_input, expected_documents, test_case",
+    [
+        (
+            # Test Case 1: Split on h1 and h2
+            [("h1", "Header 1"), ("h2", "Header 2")],
+            """
+            <html>
+                <body>
+                    <h1>Introduction</h1>
+                    <p>This is the introduction.</p>
+                    <h2>Background</h2>
+                    <p>Background information.</p>
+                    <h1>Conclusion</h1>
+                    <p>Final thoughts.</p>
+                </body>
+            </html>
+            """,
+            [
+                Document(
+                    page_content="Introduction", metadata={"Header 1": "Introduction"}
+                ),
+                Document(
+                    page_content="This is the introduction.",
+                    metadata={"Header 1": "Introduction"},
+                ),
+                Document(
+                    page_content="Background",
+                    metadata={"Header 1": "Introduction", "Header 2": "Background"},
+                ),
+                Document(
+                    page_content="Background information.",
+                    metadata={"Header 1": "Introduction", "Header 2": "Background"},
+                ),
+                Document(
+                    page_content="Conclusion", metadata={"Header 1": "Conclusion"}
+                ),
+                Document(
+                    page_content="Final thoughts.", metadata={"Header 1": "Conclusion"}
+                ),
+            ],
+            "Simple headers and paragraphs",
+        ),
+        (
+            # Test Case 2: Nested headers with h1, h2, and h3
+            [("h1", "Header 1"), ("h2", "Header 2"), ("h3", "Header 3")],
+            """
+            <html>
+                <body>
+                    <div>
+                        <h1>Main Title</h1>
+                        <div>
+                            <h2>Subsection</h2>
+                            <p>Details of subsection.</p>
+                            <div>
+                                <h3>Sub-subsection</h3>
+                                <p>More details.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <h1>Another Main Title</h1>
+                    <p>Content under another main title.</p>
+                </body>
+            </html>
+            """,
+            [
+                Document(
+                    page_content="Main Title", metadata={"Header 1": "Main Title"}
+                ),
+                Document(
+                    page_content="Subsection",
+                    metadata={"Header 1": "Main Title", "Header 2": "Subsection"},
+                ),
+                Document(
+                    page_content="Details of subsection.",
+                    metadata={"Header 1": "Main Title", "Header 2": "Subsection"},
+                ),
+                Document(
+                    page_content="Sub-subsection",
+                    metadata={
+                        "Header 1": "Main Title",
+                        "Header 2": "Subsection",
+                        "Header 3": "Sub-subsection",
+                    },
+                ),
+                Document(
+                    page_content="More details.",
+                    metadata={
+                        "Header 1": "Main Title",
+                        "Header 2": "Subsection",
+                        "Header 3": "Sub-subsection",
+                    },
+                ),
+                Document(
+                    page_content="Another Main Title",
+                    metadata={"Header 1": "Another Main Title"},
+                ),
+                Document(
+                    page_content="Content under another main title.",
+                    metadata={"Header 1": "Another Main Title"},
+                ),
+            ],
+            "Nested headers with h1, h2, and h3",
+        ),
+        (
+            # Test Case 3: No headers
+            [("h1", "Header 1")],
+            """
+            <html>
+                <body>
+                    <p>Paragraph one.</p>
+                    <p>Paragraph two.</p>
+                    <div>
+                        <p>Paragraph three.</p>
+                    </div>
+                </body>
+            </html>
+            """,
+            [
+                Document(
+                    page_content="Paragraph one.  \nParagraph two.  \nParagraph three.",
+                    metadata={},
+                )
+            ],
+            "No headers present",
+        ),
+        (
+            # Test Case 4: Multiple headers of the same level
+            [("h1", "Header 1")],
+            """
+            <html>
+                <body>
+                    <h1>Chapter 1</h1>
+                    <p>Content of chapter 1.</p>
+                    <h1>Chapter 2</h1>
+                    <p>Content of chapter 2.</p>
+                    <h1>Chapter 3</h1>
+                    <p>Content of chapter 3.</p>
+                </body>
+            </html>
+            """,
+            [
+                Document(page_content="Chapter 1", metadata={"Header 1": "Chapter 1"}),
+                Document(
+                    page_content="Content of chapter 1.",
+                    metadata={"Header 1": "Chapter 1"},
+                ),
+                Document(page_content="Chapter 2", metadata={"Header 1": "Chapter 2"}),
+                Document(
+                    page_content="Content of chapter 2.",
+                    metadata={"Header 1": "Chapter 2"},
+                ),
+                Document(page_content="Chapter 3", metadata={"Header 1": "Chapter 3"}),
+                Document(
+                    page_content="Content of chapter 3.",
+                    metadata={"Header 1": "Chapter 3"},
+                ),
+            ],
+            "Multiple headers of the same level",
+        ),
+        (
+            # Test Case 5: Headers with no content
+            [("h1", "Header 1"), ("h2", "Header 2")],
+            """
+            <html>
+                <body>
+                    <h1>Header 1</h1>
+                    <h2>Header 2</h2>
+                    <h1>Header 3</h1>
+                </body>
+            </html>
+            """,
+            [
+                Document(page_content="Header 1", metadata={"Header 1": "Header 1"}),
+                Document(
+                    page_content="Header 2",
+                    metadata={"Header 1": "Header 1", "Header 2": "Header 2"},
+                ),
+                Document(page_content="Header 3", metadata={"Header 1": "Header 3"}),
+            ],
+            "Headers with no associated content",
+        ),
+    ],
+)
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter(
+    html_header_splitter_splitter_factory: Any,
+    headers_to_split_on: List[Tuple[str, str]],
+    html_input: str,
+    expected_documents: List[Document],
+    test_case: str,
+) -> None:
+    """
+    Test the HTML header text splitter.
+
+    Args:
+        html_header_splitter_splitter_factory (Any): Factory function to create
+            the HTML header splitter.
+        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
+        html_input (str): The HTML input string to be split.
+        expected_documents (List[Document]): List of expected Document objects.
+        test_case (str): Description of the test case.
+
+    Raises:
+        AssertionError: If the number of documents or their content/metadata
+            does not match the expected values.
+    """
+
+    splitter = html_header_splitter_splitter_factory(
+        headers_to_split_on=headers_to_split_on
+    )
+    docs = splitter.split_text(html_input)
+
+    assert len(docs) == len(expected_documents), (
+        f"Test Case '{test_case}' Failed: Number of documents mismatch. "
+        f"Expected {len(expected_documents)}, got {len(docs)}."
+    )
+    for idx, (doc, expected) in enumerate(zip(docs, expected_documents), start=1):
+        assert doc.page_content == expected.page_content, (
+            f"Test Case '{test_case}' Failed at Document {idx}: "
+            f"Content mismatch.\nExpected: {expected.page_content}"
+            "\nGot: {doc.page_content}"
+        )
+        assert doc.metadata == expected.metadata, (
+            f"Test Case '{test_case}' Failed at Document {idx}: "
+            f"Metadata mismatch.\nExpected: {expected.metadata}\nGot: {doc.metadata}"
+        )
+
+
+@pytest.mark.parametrize(
+    "headers_to_split_on, html_content, expected_output, test_case",
+    [
+        (
+            # Test Case A: Split on h1 and h2 with h3 in content
+            [("h1", "Header 1"), ("h2", "Header 2"), ("h3", "Header 3")],
+            """
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <div>
+                    <h1>Foo</h1>
+                    <p>Some intro text about Foo.</p>
+                    <div>
+                        <h2>Bar main section</h2>
+                        <p>Some intro text about Bar.</p>
+                        <h3>Bar subsection 1</h3>
+                        <p>Some text about the first subtopic of Bar.</p>
+                        <h3>Bar subsection 2</h3>
+                        <p>Some text about the second subtopic of Bar.</p>
+                    </div>
+                    <div>
+                        <h2>Baz</h2>
+                        <p>Some text about Baz</p>
+                    </div>
+                    <br>
+                    <p>Some concluding text about Foo</p>
+                </div>
+            </body>
+            </html>
+            """,
+            [
+                Document(metadata={"Header 1": "Foo"}, page_content="Foo"),
+                Document(
+                    metadata={"Header 1": "Foo"},
+                    page_content="Some intro text about Foo.",
+                ),
+                Document(
+                    metadata={"Header 1": "Foo", "Header 2": "Bar main section"},
+                    page_content="Bar main section",
+                ),
+                Document(
+                    metadata={"Header 1": "Foo", "Header 2": "Bar main section"},
+                    page_content="Some intro text about Bar.",
+                ),
+                Document(
+                    metadata={
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 1",
+                    },
+                    page_content="Bar subsection 1",
+                ),
+                Document(
+                    metadata={
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 1",
+                    },
+                    page_content="Some text about the first subtopic of Bar.",
+                ),
+                Document(
+                    metadata={
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 2",
+                    },
+                    page_content="Bar subsection 2",
+                ),
+                Document(
+                    metadata={
+                        "Header 1": "Foo",
+                        "Header 2": "Bar main section",
+                        "Header 3": "Bar subsection 2",
+                    },
+                    page_content="Some text about the second subtopic of Bar.",
+                ),
+                Document(
+                    metadata={"Header 1": "Foo", "Header 2": "Baz"}, page_content="Baz"
+                ),
+                Document(
+                    metadata={"Header 1": "Foo"},
+                    page_content=(
+                        "Some text about Baz  \nSome concluding text about Foo"
+                    ),
+                ),
+            ],
+            "Test Case A: Split on h1, h2, and h3 with nested headers",
+        ),
+        (
+            # Test Case B: Split on h1 only without any headers
+            [("h1", "Header 1")],
+            """
+            <html>
+                <body>
+                    <p>Paragraph one.</p>
+                    <p>Paragraph two.</p>
+                    <p>Paragraph three.</p>
+                </body>
+            </html>
+            """,
+            [
+                Document(
+                    metadata={},
+                    page_content="Paragraph one.  \nParagraph two.  \nParagraph three.",
+                )
+            ],
+            "Test Case B: Split on h1 only without any headers",
+        ),
+    ],
+)
+@pytest.mark.requires("bs4")
+def test_additional_html_header_text_splitter(
+    html_header_splitter_splitter_factory: Any,
+    headers_to_split_on: List[Tuple[str, str]],
+    html_content: str,
+    expected_output: List[Document],
+    test_case: str,
+) -> None:
+    """
+    Test the HTML header text splitter.
+
+    Args:
+        html_header_splitter_splitter_factory (Any): Factory function to create
+            the HTML header splitter.
+        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
+        html_content (str): HTML content to be split.
+        expected_output (List[Document]): Expected list of Document objects.
+        test_case (str): Description of the test case.
+
+    Raises:
+        AssertionError: If the number of documents or their content/metadata
+            does not match the expected output.
+    """
+    splitter = html_header_splitter_splitter_factory(
+        headers_to_split_on=headers_to_split_on
+    )
+    docs = splitter.split_text(html_content)
+
+    assert len(docs) == len(expected_output), (
+        f"{test_case} Failed: Number of documents mismatch. "
+        f"Expected {len(expected_output)}, got {len(docs)}."
+    )
+    for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
+        assert doc.page_content == expected.page_content, (
+            f"{test_case} Failed at Document {idx}: "
+            f"Content mismatch.\nExpected: {expected.page_content}\n"
+            "Got: {doc.page_content}"
+        )
+        assert doc.metadata == expected.metadata, (
+            f"{test_case} Failed at Document {idx}: "
+            f"Metadata mismatch.\nExpected: {expected.metadata}\nGot: {doc.metadata}"
+        )
+
+
+@pytest.mark.parametrize(
+    "headers_to_split_on, html_content, expected_output, test_case",
+    [
+        (
+            # Test Case C: Split on h1, h2, and h3 with no headers present
+            [("h1", "Header 1"), ("h2", "Header 2"), ("h3", "Header 3")],
+            """
+            <html>
+                <body>
+                    <p>Just some random text without headers.</p>
+                    <div>
+                        <span>More text here.</span>
+                    </div>
+                </body>
+            </html>
+            """,
+            [
+                Document(
+                    page_content="Just some random text without headers."
+                    "  \nMore text here.",
+                    metadata={},
+                )
+            ],
+            "Test Case C: Split on h1, h2, and h3 without any headers",
+        )
+    ],
+)
+@pytest.mark.requires("bs4")
+def test_html_no_headers_with_multiple_splitters(
+    html_header_splitter_splitter_factory: Any,
+    headers_to_split_on: List[Tuple[str, str]],
+    html_content: str,
+    expected_output: List[Document],
+    test_case: str,
+) -> None:
+    """
+    Test HTML content splitting without headers using multiple splitters.
+    Args:
+        html_header_splitter_splitter_factory (Any): Factory to create the
+            HTML header splitter.
+        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
+        html_content (str): HTML content to be split.
+        expected_output (List[Document]): Expected list of Document objects
+            after splitting.
+        test_case (str): Description of the test case.
+    Raises:
+        AssertionError: If the number of documents or their content/metadata
+            does not match the expected output.
+    """
+    splitter = html_header_splitter_splitter_factory(
+        headers_to_split_on=headers_to_split_on
+    )
+    docs = splitter.split_text(html_content)
+
+    assert len(docs) == len(expected_output), (
+        f"{test_case} Failed: Number of documents mismatch. "
+        f"Expected {len(expected_output)}, got {len(docs)}."
+    )
+    for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
+        assert doc.page_content == expected.page_content, (
+            f"{test_case} Failed at Document {idx}: "
+            f"Content mismatch.\nExpected: {expected.page_content}\n"
+            "Got: {doc.page_content}"
+        )
+        assert doc.metadata == expected.metadata, (
+            f"{test_case} Failed at Document {idx}: "
+            f"Metadata mismatch.\nExpected: {expected.metadata}\nGot: {doc.metadata}"
+        )
 
 
 def test_split_text_on_tokens() -> None:
@@ -2051,3 +2876,361 @@ $csvContent | ForEach-Object {
         "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
         "# End of script",
     ]
+
+
+def custom_iframe_extractor(iframe_tag: Any) -> str:
+    iframe_src = iframe_tag.get("src", "")
+    return f"[iframe:{iframe_src}]({iframe_src})"
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_custom_extractor() -> None:
+    """Test HTML splitting with a custom extractor."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is an iframe:</p>
+    <iframe src="http://example.com"></iframe>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        custom_handlers={"iframe": custom_iframe_extractor},
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is an iframe: "
+            "[iframe:http://example.com](http://example.com)",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_href_links() -> None:
+    """Test HTML splitting with href links."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is a link to <a href="http://example.com">example.com</a></p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        preserve_links=True,
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is a link to [example.com](http://example.com)",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_nested_elements() -> None:
+    """Test HTML splitting with nested elements."""
+    html_content = """
+    <h1>Main Section</h1>
+    <div>
+        <p>Some text here.</p>
+        <div>
+            <p>Nested content.</p>
+        </div>
+    </div>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=1000
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Some text here. Nested content.",
+            metadata={"Header 1": "Main Section"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_preserved_elements() -> None:
+    """Test HTML splitting with preserved elements like <table>, <ul> with low chunk
+    size."""
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr><td>Row 1</td></tr>
+        <tr><td>Row 2</td></tr>
+    </table>
+    <ul>
+        <li>Item 1</li>
+        <li>Item 2</li>
+    </ul>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        elements_to_preserve=["table", "ul"],
+        max_chunk_size=50,  # Deliberately low to test preservation
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Row 1 Row 2 Item 1 Item 2",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected  # Shouldn't split the table or ul
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_no_further_splits() -> None:
+    """Test HTML splitting that requires no further splits beyond sections."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>Some content here.</p>
+    <h1>Section 2</h1>
+    <p>More content here.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=1000
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(page_content="Some content here.", metadata={"Header 1": "Section 1"}),
+        Document(page_content="More content here.", metadata={"Header 1": "Section 2"}),
+    ]
+
+    assert documents == expected  # No further splits, just sections
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_small_chunk_size() -> None:
+    """Test HTML splitting with a very small chunk size to validate chunking."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some long text that should be split into multiple chunks due to the
+    small chunk size.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=20, chunk_overlap=5
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(page_content="This is some long", metadata={"Header 1": "Section 1"}),
+        Document(page_content="long text that", metadata={"Header 1": "Section 1"}),
+        Document(page_content="that should be", metadata={"Header 1": "Section 1"}),
+        Document(page_content="be split into", metadata={"Header 1": "Section 1"}),
+        Document(page_content="into multiple", metadata={"Header 1": "Section 1"}),
+        Document(page_content="chunks due to the", metadata={"Header 1": "Section 1"}),
+        Document(page_content="the small chunk", metadata={"Header 1": "Section 1"}),
+        Document(page_content="size.", metadata={"Header 1": "Section 1"}),
+    ]
+
+    assert documents == expected  # Should split into multiple chunks
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_denylist_tags() -> None:
+    """Test HTML splitting with denylist tag filtering."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This paragraph should be kept.</p>
+    <span>This span should be removed.</span>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        denylist_tags=["span"],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This paragraph should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_external_metadata() -> None:
+    """Test HTML splitting with external metadata integration."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some content.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        external_metadata={"source": "example.com"},
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some content.",
+            metadata={"Header 1": "Section 1", "source": "example.com"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_text_normalization() -> None:
+    """Test HTML splitting with text normalization."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some TEXT that should be normalized!</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        normalize_text=True,
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="this is some text that should be normalized",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_tags() -> None:
+    """Test HTML splitting with allowlist tag filtering."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This paragraph should be kept.</p>
+    <span>This span should be kept.</span>
+    <div>This div should be removed.</div>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        allowlist_tags=["p", "span"],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This paragraph should be kept. This span should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_mixed_preserve_and_filter() -> None:
+    """Test HTML splitting with both preserved elements and denylist tags."""
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr>
+            <td>Keep this table</td>
+            <td>Cell contents kept, span removed
+                <span>This span should be removed.</span>
+            </td>
+        </tr>
+    </table>
+    <p>This paragraph should be kept.</p>
+    <span>This span should be removed.</span>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        elements_to_preserve=["table"],
+        denylist_tags=["span"],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Keep this table Cell contents kept, span removed"
+            " This paragraph should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_no_headers() -> None:
+    """Test HTML splitting when there are no headers to split on."""
+    html_content = """
+    <p>This is content without any headers.</p>
+    <p>It should still produce a valid document.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is content without any headers. It should still produce"
+            " a valid document.",
+            metadata={},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_media_preservation() -> None:
+    """Test HTML splitting with media elements preserved and converted to Markdown-like
+    links."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is an image:</p>
+    <img src="http://example.com/image.png" />
+    <p>This is a video:</p>
+    <video src="http://example.com/video.mp4"></video>
+    <p>This is audio:</p>
+    <audio src="http://example.com/audio.mp3"></audio>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        preserve_images=True,
+        preserve_videos=True,
+        preserve_audio=True,
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is an image: ![image:http://example.com/image.png]"
+            "(http://example.com/image.png) "
+            "This is a video: ![video:http://example.com/video.mp4]"
+            "(http://example.com/video.mp4) "
+            "This is audio: ![audio:http://example.com/audio.mp3]"
+            "(http://example.com/audio.mp3)",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
