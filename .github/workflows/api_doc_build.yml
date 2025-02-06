@@ -53,8 +53,7 @@ jobs:
       - name: Install initial py deps
         working-directory: langchain
         run: |
-          uv venv
-          VIRTUAL_ENV=.venv uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
+          uv pip install --upgrade --no-cache-dir pip setuptools pyyaml toml
           
       - name: Move libs with script
         run: uv run python langchain/.github/scripts/prep_api_docs_build.py
@@ -68,9 +67,9 @@ jobs:
       - name: Install dependencies
         working-directory: langchain
         run: |
-          VIRTUAL_ENV=.venv uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
-          VIRTUAL_ENV=.venv uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
-          VIRTUAL_ENV=.venv uv pip install -r docs/api_reference/requirements.txt
+          uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
+          uv pip install -r docs/api_reference/requirements.txt
 
       - name: Set Git config
         working-directory: langchain
