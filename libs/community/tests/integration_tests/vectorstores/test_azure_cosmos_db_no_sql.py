@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Tuple
 import pytest
 from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
-from pydantic import SecretStr
 
 from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
     AzureCosmosDBNoSqlVectorSearch,
@@ -25,8 +24,8 @@ model_deployment = os.getenv(
 model_name = os.getenv("OPENAI_EMBEDDINGS_MODEL_NAME", "text-embedding-ada-002")
 
 # Host and Key for CosmosDB No SQl
-HOST = os.environ.get("HOST")
-KEY = os.environ.get("KEY")
+HOST = os.environ.get("HOST", "default_host")
+KEY = os.environ.get("KEY", "default_key")
 
 database_name = "langchain_python_db"
 container_name = "langchain_python_container"
@@ -49,11 +48,8 @@ def partition_key() -> Any:
 @pytest.fixture()
 def azure_openai_embeddings() -> AzureOpenAIEmbeddings:
     return AzureOpenAIEmbeddings(
-        deployment="text-embedding-3-small",
         model="text-embedding-3-small",
         azure_endpoint="",
-        openai_api_key=SecretStr(""),
-        openai_api_version="2024-07-01-preview",
         dimensions=1536,
     )
 
