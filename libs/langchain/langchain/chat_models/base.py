@@ -421,6 +421,16 @@ def _init_chat_model_helper(
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
+    elif model_provider == "nvidia":
+        _check_pkg("langchain_nvidia_ai_endpoints")
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+        return ChatNVIDIA(model=model, **kwargs)
+    elif model_provider == "databricks":
+        _check_pkg("databricks_langchain")
+        from databricks_langchain import ChatDatabricks
+
+        return ChatDatabricks(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
