@@ -1,14 +1,17 @@
 """Test self-hosted embeddings."""
+
 import os
+from typing import Any
+
 import pytest
+
 from langchain_community.embeddings import (
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
-from typing import Any
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def get_remote_instance() -> Any:
     """Get remote instance for testing using HPU."""
     import runhouse as rh
@@ -19,7 +22,7 @@ def get_remote_instance() -> Any:
     return hpu
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def test_self_hosted_huggingface_embedding_documents_hpu() -> None:
     """Test self-hosted huggingface embeddings using HPU."""
     documents = ["foo bar"]
@@ -30,7 +33,7 @@ def test_self_hosted_huggingface_embedding_documents_hpu() -> None:
     assert len(output[0]) == 768
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def test_self_hosted_huggingface_embedding_query_hpu() -> None:
     """Test self-hosted huggingface embeddings using HPU."""
     document = "foo bar"
@@ -40,7 +43,7 @@ def test_self_hosted_huggingface_embedding_query_hpu() -> None:
     assert len(output) == 768
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def test_self_hosted_huggingface_instructor_embedding_documents_hpu() -> None:
     """Test self-hosted huggingface instruct embeddings using HPU."""
     documents = ["foo bar"]
@@ -51,7 +54,7 @@ def test_self_hosted_huggingface_instructor_embedding_documents_hpu() -> None:
     assert len(output[0]) == 768
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def test_self_hosted_huggingface_instructor_embedding_query_hpu() -> None:
     """Test self-hosted huggingface instruct embeddings using HPU."""
     query = "foo bar"

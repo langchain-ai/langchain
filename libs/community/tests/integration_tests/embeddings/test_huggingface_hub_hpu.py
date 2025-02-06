@@ -1,10 +1,13 @@
 """Test HuggingFaceHub embeddings."""
+
 import os
+
 import pytest
+
 from langchain_community.embeddings import HuggingFaceHubEmbeddings
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def test_huggingfacehub_embedding_documents_on_hpu() -> None:
     """Test huggingfacehub embeddings."""
     documents = ["foo bar"]
@@ -14,7 +17,7 @@ def test_huggingfacehub_embedding_documents_on_hpu() -> None:
     assert len(output[0]) == 768
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 async def test_huggingfacehub_embedding_async_documents_on_hpu() -> None:
     """Test huggingfacehub embeddings."""
     documents = ["foo bar"]
@@ -24,7 +27,7 @@ async def test_huggingfacehub_embedding_async_documents_on_hpu() -> None:
     assert len(output[0]) == 768
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 def test_huggingfacehub_embedding_query_on_hpu() -> None:
     """Test huggingfacehub embeddings."""
     document = "foo bar"
@@ -33,7 +36,7 @@ def test_huggingfacehub_embedding_query_on_hpu() -> None:
     assert len(output) == 768
 
 
-@pytest.mark.skipif(not os.getenv('RUN_HPU_TEST'), reason="RUN_HPU_TEST is not set")
+@pytest.mark.skipif(not os.getenv("RUN_HPU_TEST"), reason="RUN_HPU_TEST is not set")
 async def test_huggingfacehub_embedding_async_query_on_hpu() -> None:
     """Test huggingfacehub embeddings."""
     document = "foo bar"
