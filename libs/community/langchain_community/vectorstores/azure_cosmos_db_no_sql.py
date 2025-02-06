@@ -744,7 +744,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
             if query_type == CosmosDBQueryType.VECTOR:
                 if with_embedding:
-                    projection += ", c[@embeddingKey] as embedding, "
+                    projection += ", c[@embeddingKey] as embedding"
                 projection += (
                     ", VectorDistance(c[@embeddingKey], "
                     "@embeddings) as SimilarityScore"

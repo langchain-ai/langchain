@@ -250,7 +250,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "Which dog breed is considered a herder?",
             k=4,
             pre_filter=pre_filter,
-            with_embedding=True,
         )
 
         assert len(output) == 3
