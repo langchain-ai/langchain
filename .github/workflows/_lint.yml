@@ -13,11 +13,12 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.8.4"
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
   # This env var allows us to get inline annotations when ruff has complaints.
   RUFF_OUTPUT_FORMAT: github
+
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -27,25 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python ${{ inputs.python-version }} + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: lint-with-extras
-
-      - name: Check Poetry File
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          poetry check
-
-      - name: Check lock file
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          poetry lock --check
 
       - name: Install dependencies
         # Also installs dev/lint/test/typing dependencies, to ensure we have
@@ -58,17 +44,7 @@ jobs:
         # It doesn't matter how you change it, any change will cause a cache-bust.
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install --with lint,typing
-
-      - name: Get .mypy_cache to speed up mypy
-        uses: actions/cache@v4
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
-        with:
-          path: |
-            ${{ env.WORKDIR }}/.mypy_cache
-          key: mypy-lint-${{ runner.os }}-${{ runner.arch }}-py${{ inputs.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
-
+          uv sync --group lint --group typing
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
@@ -87,21 +63,12 @@ jobs:
         if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install --with test
+          uv sync --group test
       - name: Install unit+integration test dependencies
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         working-directory: ${{ inputs.working-directory }}
         run: |
-          poetry install --with test,test_integration
-
-      - name: Get .mypy_cache_test to speed up mypy
-        uses: actions/cache@v4
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MIN: "2"
-        with:
-          path: |
-            ${{ env.WORKDIR }}/.mypy_cache_test
-          key: mypy-test-${{ runner.os }}-${{ runner.arch }}-py${{ inputs.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
+          uv sync --group test --group test_integration
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}

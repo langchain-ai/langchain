@@ -1,15 +1,57 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry]
-name = "langchain-text-splitters"
-version = "0.3.5"
-description = "LangChain text splitting utilities"
+[project]
 authors = []
-license = "MIT"
+license = {text = "MIT"}
+requires-python = "<4.0,>=3.9"
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.34rc2",
+]
+name = "langchain-text-splitters"
+version = "0.3.6rc2"
+description = "LangChain text splitting utilities"
 readme = "README.md"
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
+
+[dependency-groups]
+lint = [
+    "ruff<1.0.0,>=0.9.2",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+]
+typing = [
+    "mypy<2.0,>=1.10",
+    "lxml-stubs<1.0.0,>=0.5.1",
+    "types-requests<3.0.0.0,>=2.31.0.20240218",
+    "tiktoken<1.0.0,>=0.8.0",
+]
+dev = [
+    "jupyter<2.0.0,>=1.0.0",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+]
+test = [
+    "pytest<9,>=8",
+    "freezegun<2.0.0,>=1.2.2",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+]
+test_integration = [
+    "spacy<3.8.4,>=3.0.0; python_version < \"3.10.0\"",
+    "spacy<4.0.0,>=3.0.0; python_version < \"3.13.0\"",
+    "nltk<4.0.0,>=3.9.1",
+    "transformers<5.0.0,>=4.47.0",
+    "sentence-transformers>=2.6.0; python_version < \"3.13\"",
+]
+
 
 [tool.mypy]
 disallow_untyped_defs = "True"
@@ -30,14 +72,6 @@ module = [
 ]
 ignore_missing_imports = "True"
 
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3.29"
-
 [tool.ruff]
 target-version = "py39"
 
@@ -56,84 +90,8 @@ markers = [
 ]
 asyncio_mode = "auto"
 
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.typing]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.test]
-optional = true
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.9.2"
-
-
-
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
-lxml-stubs = "^0.5.1"
-types-requests = "^2.31.0.20240218"
-tiktoken = "^0.8.0"
-
-
-
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-
-
-
-
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8"
-freezegun = "^1.2.2"
-pytest-mock = "^3.10.0"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-pytest-socket = "^0.7.0"
-pytest-xdist = "^3.6.1"
-
-
-
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-spacy = { version = "*", python = "<3.13" }
-nltk = "^3.9.1"
-transformers = "^4.47.0"
-sentence-transformers = { version = ">=2.6.0", python = "<3.13" }
-
-
-
-
-[tool.poetry.group.lint.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-
-
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-
-
-
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../core"
-develop = true
