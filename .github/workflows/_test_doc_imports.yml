@@ -9,7 +9,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.8.4"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -19,25 +19,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python ${{ inputs.python-version }} + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          cache-key: core
 
       - name: Install dependencies
         shell: bash
-        run: poetry install --with test
+        run: uv sync --group test
 
       - name: Install langchain editable
         run: |
-          poetry run pip install langchain-experimental -e libs/core libs/langchain libs/community
+          VIRTUAL_ENV=.venv uv pip install langchain-experimental -e libs/core libs/langchain libs/community
 
       - name: Check doc imports
         shell: bash
         run: |
-          poetry run python docs/scripts/check_imports.py
+          uv run python docs/scripts/check_imports.py
 
       - name: Ensure the test did not create any additional files
         shell: bash

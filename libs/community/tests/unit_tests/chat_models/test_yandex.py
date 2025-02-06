@@ -50,6 +50,7 @@ def test_yandexgpt_invalid_model_params() -> None:
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
+@pytest.mark.requires("yandexcloud")  # TODO: remove this
 def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
     absent_yandex_module_stub = MagicMock()
     grpc_mock = MagicMock()

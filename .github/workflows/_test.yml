@@ -13,7 +13,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.8.4"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -26,17 +26,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python ${{ inputs.python-version }} + uv
+        uses: "./.github/actions/uv_setup"
         id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: core
       - name: Install dependencies
         shell: bash
-        run: poetry install --with test
+        run: uv sync --group test --dev
 
       - name: Run core tests
         shell: bash
@@ -48,9 +45,9 @@ jobs:
         id: min-version
         shell: bash
         run: |
-          poetry run pip install packaging tomli requests
-          python_version="$(poetry run python --version | awk '{print $2}')"
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
+          VIRTUAL_ENV=.venv uv pip install packaging tomli requests
+          python_version="$(uv run python --version | awk '{print $2}')"
+          min_versions="$(uv run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
@@ -59,8 +56,7 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          poetry run pip install uv
-          poetry run uv pip install $MIN_VERSIONS
+          VIRTUAL_ENV=.venv uv pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 

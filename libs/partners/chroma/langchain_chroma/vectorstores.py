@@ -970,7 +970,7 @@ class Chroma(VectorStore):
         """
         if self._embedding_function is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function on creation."
             )
 
         embedding = self._embedding_function.embed_query(query)

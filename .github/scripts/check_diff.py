@@ -7,6 +7,8 @@ from typing import Dict, List, Set
 from pathlib import Path
 import tomllib
 
+from packaging.requirements import Requirement
+
 from get_min_versions import get_min_version_from_toml
 
 
@@ -37,6 +39,8 @@ IGNORED_PARTNERS = [
 
 PY_312_MAX_PACKAGES = [
     "libs/partners/huggingface",  # https://github.com/pytorch/pytorch/issues/130249
+    "libs/partners/pinecone",
+    "libs/partners/voyageai",
 ]
 
 
@@ -61,15 +65,17 @@ def dependents_graph() -> dict:
 
         # load regular and test deps from pyproject.toml
         with open(path, "rb") as f:
-            pyproject = tomllib.load(f)["tool"]["poetry"]
+            pyproject = tomllib.load(f)
 
         pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
         for dep in [
-            *pyproject["dependencies"].keys(),
-            *pyproject["group"]["test"]["dependencies"].keys(),
+            *pyproject["project"]["dependencies"],
+            *pyproject["dependency-groups"]["test"],
         ]:
+            requirement = Requirement(dep)
+            package_name = requirement.name
             if "langchain" in dep:
-                dependents[dep].add(pkg_dir)
+                dependents[package_name].add(pkg_dir)
                 continue
 
         # load extended deps from extended_testing_deps.txt
@@ -120,8 +126,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
-        # milvus poetry doesn't allow 3.12 because they
-        # declare deps in funny way
+        # milvus doesn't allow 3.12 because they declare deps in funny way
         py_versions = ["3.9", "3.11"]
 
     elif dir_ in PY_312_MAX_PACKAGES:
@@ -148,17 +153,17 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.11"
 ) -> List[Dict[str, str]]:
-    with open("./libs/core/poetry.lock", "rb") as f:
-        core_poetry_lock_data = tomllib.load(f)
-    for package in core_poetry_lock_data["package"]:
+    with open("./libs/core/uv.lock", "rb") as f:
+        core_uv_lock_data = tomllib.load(f)
+    for package in core_uv_lock_data["package"]:
         if package["name"] == "pydantic":
             core_max_pydantic_minor = package["version"].split(".")[1]
             break
 
-    with open(f"./{dir_}/poetry.lock", "rb") as f:
-        dir_poetry_lock_data = tomllib.load(f)
+    with open(f"./{dir_}/uv.lock", "rb") as f:
+        dir_uv_lock_data = tomllib.load(f)
 
-    for package in dir_poetry_lock_data["package"]:
+    for package in dir_uv_lock_data["package"]:
         if package["name"] == "pydantic":
             dir_max_pydantic_minor = package["version"].split(".")[1]
             break
@@ -304,7 +309,7 @@ if __name__ == "__main__":
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif file.startswith("docs/") or file in ["pyproject.toml", "poetry.lock"]: # docs or root poetry files
+        elif file.startswith("docs/") or file in ["pyproject.toml", "uv.lock"]: # docs or root uv files
             docs_edited = True
             dirs_to_run["lint"].add(".")
 
