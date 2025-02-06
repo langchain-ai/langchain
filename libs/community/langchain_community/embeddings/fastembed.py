@@ -84,21 +84,21 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         cache_dir = values.get("cache_dir")
         threads = values.get("threads")
         gpu = values.get("gpu")
-        pkg_to_import = "fastembed-gpu" if gpu else "fastembed"
+        pkg_to_install = "fastembed-gpu" if gpu else "fastembed"
 
         try:
-            fastembed = importlib.import_module(pkg_to_import)
+            fastembed = importlib.import_module("fastembed")
 
         except ModuleNotFoundError:
             raise ImportError(
-                f"Could not import '{pkg_to_import}' Python package. "
-                f"Please install it with `pip install {pkg_to_import}`."
+                "Could not import 'fastembed' Python package. "
+                f"Please install it with `pip install {pkg_to_install}`."
             )
 
-        if importlib.metadata.version(pkg_to_import) < MIN_VERSION:
+        if importlib.metadata.version(pkg_to_install) < MIN_VERSION:
             raise ImportError(
                 f"FastEmbedEmbeddings requires "
-                f'`pip install -U "{pkg_to_import}>={MIN_VERSION}"`.'
+                f'`pip install -U "{pkg_to_install}>={MIN_VERSION}"`.'
             )
 
         values["model"] = fastembed.TextEmbedding(
