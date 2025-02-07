@@ -1229,7 +1229,9 @@ def test_structured_output_and_tools() -> None:
 
     # Test streaming tool calls
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream("Generate a user name for Alice, black hair."):
+    for chunk in llm.stream(
+        "Generate a user name for Alice, black hair. Use the tool."
+    ):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
