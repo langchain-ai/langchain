@@ -1483,6 +1483,9 @@ class BaseChatOpenAI(BaseChatModel):
         chat_message = chat_result.generations[0].message
         if isinstance(chat_message, AIMessage):
             usage_metadata = chat_message.usage_metadata
+            # Skip tool_calls, already sent as chunks
+            if "tool_calls" in chat_message.additional_kwargs:
+                chat_message.additional_kwargs.pop("tool_calls")
         else:
             usage_metadata = None
         message = AIMessageChunk(
