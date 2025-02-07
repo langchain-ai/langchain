@@ -2,6 +2,7 @@
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
+UV_NO_SYNC = true
 
 ## help: Show this help info.
 help: Makefile
