@@ -38,7 +38,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import from_env, get_pydantic_field_names
@@ -364,7 +364,11 @@ class ChatPerplexity(BaseChatModel):
                     "json_schema": {"schema": response_format},
                 }
             )
-            output_parser = JsonOutputParser()
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected 'json_schema' Received:\
