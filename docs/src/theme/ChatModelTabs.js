@@ -145,15 +145,14 @@ ${llmVarName} = AzureChatOpenAI(
     {
       value: "google_vertexai",
       label: "Google Vertex",
-      model: "gemini-2.0-flash",
+      model: "gemini-2.0-flash-001",
       apiKeyText: "# Ensure your VertexAI credentials are configured",
       packageName: "langchain[google-vertexai]",
     },
     {
-      value: "aws",
+      value: "bedrock_converse",
       label: "AWS",
       model: "anthropic.claude-3-5-sonnet-20240620-v1:0",
-      kwargs: "beta_use_converse_api=True",
       apiKeyText: "# Ensure your AWS credentials are configured",
       packageName: "langchain[aws]",
     },
