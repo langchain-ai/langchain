@@ -645,8 +645,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "timeout": self.request_timeout,
             "default_headers": {
                 **(self.default_headers or {}),
-                "User-Agent": "langchain-partner-python-azure-openai"
-                },
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
