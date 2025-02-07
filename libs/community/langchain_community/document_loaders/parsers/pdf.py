@@ -1213,11 +1213,6 @@ class PyPDFium2Parser(BaseBlobParser):
     # PyPDFium2 is not thread safe.
     # See https://pypdfium2.readthedocs.io/en/stable/python_api.html#thread-incompatibility
     _lock = threading.Lock()
-    warnings.filterwarnings(
-        "ignore",
-        module=r"^pypdfium2._helpers.textpage$",
-        message="get_text_range\\(\\) call with default params will be .*",
-    )
 
     def __init__(
         self,
