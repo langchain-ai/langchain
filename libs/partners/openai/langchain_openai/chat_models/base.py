@@ -324,11 +324,17 @@ def _convert_chunk_to_generation_chunk(
 ) -> Optional[ChatGenerationChunk]:
     if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
         return None
-    if chunk.get("type") == "content.done" and hasattr(chunk_object, "parsed"):
+    if (
+        chunk.get("type") == "content.done"
+        and hasattr(chunk_object, "parsed")
+        or hasattr(chunk_object, "refusal")
+    ):
+        additional_kwargs = {
+            "parsed": getattr(chunk_object, "parsed", None),
+            "refusal": getattr(chunk_object, "refusal", None),
+        }
         return ChatGenerationChunk(
-            message=default_chunk_class(
-                content="", additional_kwargs={"parsed": chunk_object.parsed}
-            )
+            message=default_chunk_class(content="", additional_kwargs=additional_kwargs)
         )
 
     token_usage = chunk.get("usage") or chunk.get("chunk", {}).get("usage")
