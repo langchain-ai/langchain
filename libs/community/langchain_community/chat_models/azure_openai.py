@@ -210,7 +210,7 @@ class AzureChatOpenAI(ChatOpenAI):
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
                 "default_headers": {
-                    **(cls.default_headers or values["default_headers"] or {}),
+                    **(values["default_headers"] or {}),
                     "User-Agent": "langchain-comm-python-azure-openai",
                 },
                 "default_query": values["default_query"],
