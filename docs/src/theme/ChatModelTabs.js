@@ -239,7 +239,7 @@ ${llmVarName} = init_chat_model("${selectedTabItem.model}", model_provider="${se
       />
 
       <CodeBlock language="bash">
-        {`pip install -qU ${selectedTabItem.packageName}`}
+        {`pip install -qU "${selectedTabItem.packageName}"`}
       </CodeBlock>
       <CodeBlock language="python">
         {apiKeyText ? apiKeyText + "\n\n" + initModelText : initModelText}
