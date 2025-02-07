@@ -386,3 +386,7 @@ packages:
   repo: Nimbleway/langchain-nimble
   path: .
   downloads: 0
+- name: langfair
+  repo: cvs-health/langfair
+  path: .
+  downloads: 0

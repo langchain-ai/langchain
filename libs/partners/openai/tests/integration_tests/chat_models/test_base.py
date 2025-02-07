@@ -1213,3 +1213,28 @@ def test_multi_party_conversation() -> None:
     ]
     response = llm.invoke(messages)
     assert "Bob" in response.content
+
+
+def test_structured_output_and_tools() -> None:
+    class ResponseFormat(BaseModel):
+        response: str
+        explanation: str
+
+    llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(
+        [GenerateUsername], strict=True, response_format=ResponseFormat
+    )
+
+    response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
+    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+
+    # Test streaming tool calls
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Generate a user name for Alice, black hair. Use the tool."
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
+    tool_call = full.tool_calls[0]
+    assert tool_call["name"] == "GenerateUsername"

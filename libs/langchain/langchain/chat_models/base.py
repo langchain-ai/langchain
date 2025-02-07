@@ -117,6 +117,8 @@ def init_chat_model(
             - 'groq'                -> langchain-groq
             - 'ollama'              -> langchain-ollama
             - 'google_anthropic_vertex'    -> langchain-google-vertexai
+            - 'deepseek'            -> langchain-deepseek
+            - 'nvidia'              -> langchain-nvidia-ai-endpoints
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -421,6 +423,11 @@ def _init_chat_model_helper(
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
+    elif model_provider == "nvidia":
+        _check_pkg("langchain_nvidia_ai_endpoints")
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+        return ChatNVIDIA(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
