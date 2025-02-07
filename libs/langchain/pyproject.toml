@@ -1,15 +1,118 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry]
-name = "langchain"
-version = "0.3.17"
-description = "Building applications with LLMs through composability"
+[project]
 authors = []
-license = "MIT"
+license = {text = "MIT"}
+requires-python = "<4.0,>=3.9"
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.34rc2",
+    "langchain-text-splitters<1.0.0,>=0.3.6rc2",
+    "langsmith<0.4,>=0.1.17",
+    "pydantic<3.0.0,>=2.7.4",
+    "SQLAlchemy<3,>=1.4",
+    "requests<3,>=2",
+    "PyYAML>=5.3",
+    "aiohttp<4.0.0,>=3.8.3",
+    "tenacity!=8.4.0,<10,>=8.1.0",
+    "numpy<2,>=1.26.4; python_version < \"3.12\"",
+    "numpy<3,>=1.26.2; python_version >= \"3.12\"",
+    "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
+]
+name = "langchain"
+version = "0.3.18rc2"
+description = "Building applications with LLMs through composability"
 readme = "README.md"
+
+[project.optional-dependencies]
+community = ["langchain-community"]
+anthropic = ["langchain-anthropic>=0.3.7rc1"]
+openai = ["langchain-openai>=0.3.4rc1"]
+cohere = ["langchain-cohere"]
+google-vertexai = ["langchain-google-vertexai"]
+google-genai = ["langchain-google-genai"]
+fireworks = ["langchain-fireworks"]
+ollama = ["langchain-ollama"]
+together = ["langchain-together"]
+mistralai = ["langchain-mistralai"]
+huggingface = ["langchain-huggingface"]
+groq = ["langchain-groq"]
+aws = ["langchain-aws"]
+deepseek = ["langchain-deepseek"]
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
+
+[project.scripts]
+langchain-server = "langchain.server:main"
+
+[dependency-groups]
+test = [
+    "pytest<9,>=8",
+    "pytest-cov<5.0.0,>=4.0.0",
+    "pytest-dotenv<1.0.0,>=0.5.2",
+    "duckdb-engine<1.0.0,>=0.9.2",
+    "pytest-watcher<1.0.0,>=0.2.6",
+    "freezegun<2.0.0,>=1.2.2",
+    "responses<1.0.0,>=0.22.0",
+    "pytest-asyncio<1.0.0,>=0.23.2",
+    "lark<2.0.0,>=1.1.5",
+    "pandas<3.0.0,>=2.0.0",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "pytest-socket<1.0.0,>=0.6.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "requests-mock<2.0.0,>=1.11.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "cffi<1.17.1; python_version < \"3.10\"",
+    "cffi; python_version >= \"3.10\"",
+    "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-openai @ file:///${PROJECT_ROOT}/../partners/openai",
+    "toml>=0.10.2",
+    "packaging>=24.2",
+]
+codespell = [
+    "codespell<3.0.0,>=2.2.0",
+]
+test_integration = [
+    "pytest-vcr<2.0.0,>=1.0.2",
+    "urllib3<2; python_version < \"3.10\"",
+    "wrapt<2.0.0,>=1.15.0",
+    "python-dotenv<2.0.0,>=1.0.0",
+    "cassio<1.0.0,>=0.1.0",
+    "langchainhub<1.0.0,>=0.1.16",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+]
+lint = [
+    "ruff<1.0.0,>=0.9.2",
+    "cffi<1.17.1; python_version < \"3.10\"",
+    "cffi; python_version >= \"3.10\"",
+]
+typing = [
+    "mypy<2.0,>=1.10",
+    "types-pyyaml<7.0.0.0,>=6.0.12.2",
+    "types-requests<3.0.0.0,>=2.28.11.5",
+    "types-toml<1.0.0.0,>=0.10.8.1",
+    "types-redis<5.0.0.0,>=4.3.21.6",
+    "types-pytz<2024.0.0.0,>=2023.3.0.0",
+    "types-chardet<6.0.0.0,>=5.0.4.6",
+    "mypy-protobuf<4.0.0,>=3.0.0",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+]
+dev = [
+    "jupyter<2.0.0,>=1.0.0",
+    "playwright<2.0.0,>=1.28.0",
+    "setuptools<68.0.0,>=67.6.1",
+    "langchain-core @ file:///${PROJECT_ROOT}/../core",
+    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+]
+
 
 [tool.ruff]
 target-version = "py39"
@@ -24,32 +127,6 @@ exclude = [ "notebooks", "examples", "example_data",]
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
-
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
-
-[tool.poetry.scripts]
-langchain-server = "langchain.server:main"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3.33"
-langchain-text-splitters = "^0.3.3"
-langsmith = ">=0.1.17,<0.4"
-pydantic = "^2.7.4"
-SQLAlchemy = ">=1.4,<3"
-requests = "^2"
-PyYAML = ">=5.3"
-aiohttp = "^3.8.3"
-tenacity = ">=8.1.0,!=8.4.0,<10"
-[[tool.poetry.dependencies.numpy]]
-version = ">=1.22.4,<2"
-python = "<3.12"
-
-[[tool.poetry.dependencies.numpy]]
-version = ">=1.26.2,<3"
-python = ">=3.12"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201", "D",]
@@ -67,125 +144,3 @@ addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused
 markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning", "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests", "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",]
-
-[tool.poetry.dependencies.async-timeout]
-version = "^4.0.0"
-python = "<3.11"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.typing]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8"
-pytest-cov = "^4.0.0"
-pytest-dotenv = "^0.5.2"
-duckdb-engine = "^0.9.2"
-pytest-watcher = "^0.2.6"
-freezegun = "^1.2.2"
-responses = "^0.22.0"
-pytest-asyncio = "^0.23.2"
-lark = "^1.1.5"
-pandas = "^2.0.0"
-pytest-mock = "^3.10.0"
-pytest-socket = "^0.6.0"
-syrupy = "^4.0.2"
-requests-mock = "^1.11.0"
-pytest-xdist = "^3.6.1"
-[[tool.poetry.group.test.dependencies.cffi]]
-version = "<1.17.1"
-python = "<3.10"
-
-[[tool.poetry.group.test.dependencies.cffi]]
-version = "*"
-python = ">=3.10"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration.dependencies]
-pytest-vcr = "^1.0.2"
-wrapt = "^1.15.0"
-python-dotenv = "^1.0.0"
-cassio = "^0.1.0"
-langchainhub = "^0.1.16"
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.9.2"
-[[tool.poetry.group.lint.dependencies.cffi]]
-version = "<1.17.1"
-python = "<3.10"
-
-[[tool.poetry.group.lint.dependencies.cffi]]
-version = "*"
-python = ">=3.10"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
-types-pyyaml = "^6.0.12.2"
-types-requests = "^2.28.11.5"
-types-toml = "^0.10.8.1"
-types-redis = "^4.3.21.6"
-types-pytz = "^2023.3.0.0"
-types-chardet = "^5.0.4.6"
-mypy-protobuf = "^3.0.0"
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-playwright = "^1.28.0"
-setuptools = "^67.6.1"
-
-[tool.poetry.group.test.dependencies.langchain-tests]
-path = "../standard-tests"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-text-splitters]
-path = "../text-splitters"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-openai]
-path = "../partners/openai"
-optional = true
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain-text-splitters]
-path = "../text-splitters"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-text-splitters]
-path = "../text-splitters"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-text-splitters]
-path = "../text-splitters"
-develop = true

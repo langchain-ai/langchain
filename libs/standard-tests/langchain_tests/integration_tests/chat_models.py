@@ -1202,19 +1202,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1225,8 +1228,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
         schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
@@ -1277,19 +1280,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1300,8 +1306,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
         schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
 
@@ -1352,19 +1358,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         pydantic.v1.BaseModel is available in the pydantic 2 package.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1375,8 +1384,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
         class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
@@ -1410,19 +1419,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         parameters.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1433,8 +1445,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
         # Pydantic
         class Joke(BaseModel):

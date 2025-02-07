@@ -1202,3 +1202,14 @@ def test_o1_doesnt_stream() -> None:
 def test_o1_stream_default_works() -> None:
     result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
     assert len(result) > 0
+
+
+def test_multi_party_conversation() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    messages = [
+        HumanMessage("Hi, I have black hair.", name="Alice"),
+        HumanMessage("Hi, I have brown hair.", name="Bob"),
+        HumanMessage("Who just spoke?", name="Charlie"),
+    ]
+    response = llm.invoke(messages)
+    assert "Bob" in response.content
