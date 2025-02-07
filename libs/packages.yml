@@ -389,3 +389,4 @@ packages:
 - name: langchain-apify
   path: .
   repo: apify/langchain-apify
+  downloads: 204
