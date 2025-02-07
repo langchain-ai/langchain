@@ -12,7 +12,7 @@ on:
         description: "Python version to use"
 
 env:
-  POETRY_VERSION: "1.8.4"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -24,22 +24,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python ${{ inputs.python-version }} + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: core
 
       - name: Install dependencies
         shell: bash
-        run: poetry install --with test,test_integration
+        run: uv sync --group test --group test_integration
 
       - name: Install deps outside pyproject
         if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
         shell: bash
-        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
+        run: VIRTUAL_ENV=.venv uv pip install "boto3<2" "google-cloud-aiplatform<2"
 
       - name: Run integration tests
         shell: bash

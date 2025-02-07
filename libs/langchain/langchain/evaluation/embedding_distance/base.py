@@ -30,7 +30,9 @@ def _embedding_factory() -> Embeddings:
         from langchain_openai import OpenAIEmbeddings
     except ImportError:
         try:
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
+                OpenAIEmbeddings,
+            )
         except ImportError:
             raise ImportError(
                 "Could not import OpenAIEmbeddings. Please install the "
@@ -89,7 +91,9 @@ class _EmbeddingDistanceChainMixin(Chain):
             pass
 
         try:
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
+                OpenAIEmbeddings,
+            )
 
             types_.append(OpenAIEmbeddings)
         except ImportError:
