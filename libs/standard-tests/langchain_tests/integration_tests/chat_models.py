@@ -1,9 +1,11 @@
 import base64
 import json
-from typing import List, Optional, cast
+from typing import Any, List, Literal, Optional, cast
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -17,10 +19,14 @@ from langchain_core.messages import (
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
-from langchain_core.utils.function_calling import tool_example_to_messages
+from langchain_core.utils.function_calling import (
+    convert_to_openai_tool,
+    tool_example_to_messages,
+)
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
+from typing_extensions import Annotated, TypedDict
 
 from langchain_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -28,7 +34,9 @@ from langchain_tests.unit_tests.chat_models import (
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-def _get_joke_class() -> type[BaseModel]:
+def _get_joke_class(
+    schema_type: Literal["pydantic", "typeddict", "json_schema"],
+) -> Any:
     """
     :private:
     """
@@ -39,7 +47,46 @@ def _get_joke_class() -> type[BaseModel]:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    return Joke
+    def validate_joke(result: Any) -> bool:
+        return isinstance(result, Joke)
+
+    class JokeDict(TypedDict):
+        """Joke to tell user."""
+
+        setup: Annotated[str, ..., "question to set up a joke"]
+        punchline: Annotated[str, ..., "answer to resolve the joke"]
+
+    def validate_joke_dict(result: Any) -> bool:
+        return all(key in ["setup", "punchline"] for key in result.keys())
+
+    if schema_type == "pydantic":
+        return Joke, validate_joke
+
+    elif schema_type == "typeddict":
+        return JokeDict, validate_joke_dict
+
+    elif schema_type == "json_schema":
+        return Joke.model_json_schema(), validate_joke_dict
+    else:
+        raise ValueError("Invalid schema type")
+
+
+class _TestCallbackHandler(BaseCallbackHandler):
+    metadatas: list[Optional[dict]]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.metadatas = []
+
+    def on_chat_model_start(
+        self,
+        serialized: Any,
+        messages: Any,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.metadatas.append(metadata)
 
 
 class _MagicFunctionSchema(BaseModel):
@@ -190,6 +237,19 @@ class ChatModelIntegrationTests(ChatModelTests):
             @property
             def has_structured_output(self) -> bool:
                 return True
+
+    .. dropdown:: structured_output_kwargs
+
+        Dict property that can be used to specify additional kwargs for
+        ``with_structured_output``. Useful for testing different models.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def structured_output_kwargs(self) -> dict:
+                return {"method": "function_calling"}
 
     .. dropdown:: supports_json_mode
 
@@ -543,6 +603,44 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
+    def test_double_messages_conversation(self, model: BaseChatModel) -> None:
+        """
+        Test to verify that the model can handle double-message conversations.
+
+        This should pass for all integrations. Tests the model's ability to process
+        a sequence of double-system, double-human, and double-ai messages as context
+        for generating the next response.
+
+        .. dropdown:: Troubleshooting
+
+            First, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because this test also uses `model.invoke()`.
+
+            Second, debug
+            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
+            because this test is the "basic case" without double messages.
+
+            If that test passes those but not this one, you should verify that:
+            1. Your model API can handle double messages, or the integration should
+               merge messages before sending them to the API.
+            2. The response is a valid :class:`~langchain_core.messages.AIMessage`
+        """
+        messages = [
+            SystemMessage("hello"),
+            SystemMessage("hello"),
+            HumanMessage("hello"),
+            HumanMessage("hello"),
+            AIMessage("hello"),
+            AIMessage("hello"),
+            HumanMessage("how are you"),
+        ]
+        result = model.invoke(messages)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0
+
     def test_usage_metadata(self, model: BaseChatModel) -> None:
         """Test to verify that the model returns correct usage metadata.
 
@@ -847,7 +945,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
 
         custom_model = self.chat_model_class(
-            **{**self.chat_model_params, "stop": ["you"]}
+            **{
+                **self.chat_model_params,
+                "stop": ["you"],
+            }
         )
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
@@ -1096,23 +1197,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["args"].get("answer_style")
         assert tool_call["type"] == "tool_call"
 
-    def test_structured_output(self, model: BaseChatModel) -> None:
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1123,49 +1228,74 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
-        Joke = _get_joke_class()
-        # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
+        mock_callback = MagicMock()
+        mock_callback.on_chat_model_start = MagicMock()
 
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, Joke)
+        invoke_callback = _TestCallbackHandler()
 
-        # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
-        result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
+        result = chat.invoke(
+            "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
+        )
+        validation_function(result)
 
-        for chunk in chat.stream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
+        assert len(invoke_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(invoke_callback.metadatas[0], dict)
+        assert isinstance(
+            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert invoke_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
-    async def test_structured_output_async(self, model: BaseChatModel) -> None:
+        stream_callback = _TestCallbackHandler()
+
+        for chunk in chat.stream(
+            "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
+        ):
+            validation_function(chunk)
+        assert chunk
+
+        assert len(stream_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(stream_callback.metadatas[0], dict)
+        assert isinstance(
+            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert stream_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
+
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+    async def test_structured_output_async(
+        self, model: BaseChatModel, schema_type: str
+    ) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1176,32 +1306,49 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """  # noqa: E501
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
-        Joke = _get_joke_class()
+        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
 
-        # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
-        result = await chat.ainvoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
+        ainvoke_callback = _TestCallbackHandler()
 
-        async for chunk in chat.astream("Tell me a joke about cats."):
-            assert isinstance(chunk, Joke)
+        result = await chat.ainvoke(
+            "Tell me a joke about cats.", config={"callbacks": [ainvoke_callback]}
+        )
+        validation_function(result)
 
-        # Schema
-        chat = model.with_structured_output(Joke.model_json_schema())
-        result = await chat.ainvoke("Tell me a joke about cats.")
-        assert isinstance(result, dict)
-        assert set(result.keys()) == {"setup", "punchline"}
+        assert len(ainvoke_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+        assert isinstance(ainvoke_callback.metadatas[0], dict)
+        assert isinstance(
+            ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert ainvoke_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
-        async for chunk in chat.astream("Tell me a joke about cats."):
-            assert isinstance(chunk, dict)
-        assert isinstance(chunk, dict)  # for mypy
-        assert set(chunk.keys()) == {"setup", "punchline"}
+        astream_callback = _TestCallbackHandler()
+
+        async for chunk in chat.astream(
+            "Tell me a joke about cats.", config={"callbacks": [astream_callback]}
+        ):
+            validation_function(chunk)
+        assert chunk
+
+        assert len(astream_callback.metadatas) == 1, (
+            "Expected on_chat_model_start to be called once"
+        )
+
+        assert isinstance(astream_callback.metadatas[0], dict)
+        assert isinstance(
+            astream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert astream_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
@@ -1211,19 +1358,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         pydantic.v1.BaseModel is available in the pydantic 2 package.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1234,8 +1384,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
         class Joke(BaseModelV1):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
@@ -1244,7 +1394,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
-        chat = model.with_structured_output(Joke)
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
@@ -1252,7 +1402,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
+        chat = model.with_structured_output(
+            Joke.schema(), **self.structured_output_kwargs
+        )
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -1267,19 +1419,22 @@ class ChatModelIntegrationTests(ChatModelTests):
         parameters.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        structured output (see Configuration below).
 
         .. dropdown:: Configuration
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
-            test class:
+            To disable structured output tests, set ``has_structured_output`` to False
+            in your test class:
 
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def has_tool_calling(self) -> bool:
+                    def has_structured_output(self) -> bool:
                         return False
+
+            By default, ``has_structured_output`` is True if a model overrides the
+            ``with_structured_output`` or ``bind_tools`` methods.
 
         .. dropdown:: Troubleshooting
 
@@ -1290,9 +1445,10 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
         """
-        if not self.has_tool_calling:
-            pytest.skip("Test requires tool calling.")
+        if not self.has_structured_output:
+            pytest.skip("Test requires structured output.")
 
+        # Pydantic
         class Joke(BaseModel):
             """Joke to tell user."""
 
@@ -1301,7 +1457,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 default=None, description="answer to resolve the joke"
             )
 
-        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         setup_result = chat.invoke(
             "Give me the setup to a joke about cats, no punchline."
         )
@@ -1309,6 +1465,24 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         joke_result = chat.invoke("Give me a joke about cats, include the punchline.")
         assert isinstance(joke_result, Joke)
+
+        # Schema
+        chat = model.with_structured_output(
+            Joke.model_json_schema(), **self.structured_output_kwargs
+        )
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+
+        # TypedDict
+        class JokeDict(TypedDict):
+            """Joke to tell user."""
+
+            setup: Annotated[str, ..., "question to set up a joke"]
+            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+
+        chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
         """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_

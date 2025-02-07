@@ -124,7 +124,7 @@ def get_buffer_string(
             role = m.role
         else:
             msg = f"Got unsupported message type: {m}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = f"{role}: {m.content}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
@@ -817,7 +817,6 @@ def trim_messages(
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
     """  # noqa: E501
-
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":
@@ -949,8 +948,9 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
+
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
@@ -1009,7 +1009,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(err)
                         content.append(
-                            {"type": "image_url", "image_url": block["image_url"]}
+                            {
+                                "type": "image_url",
+                                "image_url": block["image_url"],
+                            }
                         )
                     # Anthropic and Bedrock converse format
                     elif (block.get("type") == "image") or "image" in block:
@@ -1128,7 +1131,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(msg)
                         content.append(
-                            {"type": "text", "text": json.dumps(block["json"])}
+                            {
+                                "type": "text",
+                                "text": json.dumps(block["json"]),
+                            }
                         )
                     elif (
                         block.get("type") == "guard_content"
@@ -1395,7 +1401,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
         return message.role
     else:
         msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:

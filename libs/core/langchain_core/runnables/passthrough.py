@@ -472,9 +472,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+        if not isinstance(input, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
             **input,
@@ -500,9 +500,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+        if not isinstance(input, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
             **input,
@@ -553,9 +553,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             )
             # consume passthrough stream
             for chunk in for_passthrough:
-                assert isinstance(
-                    chunk, dict
-                ), "The input to RunnablePassthrough.assign() must be a dict."
+                if not isinstance(chunk, dict):
+                    msg = "The input to RunnablePassthrough.assign() must be a dict."
+                    raise ValueError(msg)  # noqa: TRY004
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
                     {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -603,9 +603,10 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
-            assert isinstance(
-                chunk, dict
-            ), "The input to RunnablePassthrough.assign() must be a dict."
+            if not isinstance(chunk, dict):
+                msg = "The input to RunnablePassthrough.assign() must be a dict."
+                raise ValueError(msg)  # noqa: TRY004
+
             # remove mapper keys from passthrough chunk, to be overwritten by map output
             filtered = AddableDict(
                 {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -705,9 +706,9 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     def _pick(self, input: dict[str, Any]) -> Any:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+        if not isinstance(input, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
             return input.get(self.keys)

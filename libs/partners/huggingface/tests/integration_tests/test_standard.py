@@ -67,12 +67,14 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_bind_runnables_as_tools(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_output(self, model: BaseChatModel) -> None:
-        super().test_structured_output(model)
+    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
+        super().test_structured_output(model, schema_type)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_output_async(self, model: BaseChatModel) -> None:  # type: ignore[override]
-        super().test_structured_output(model)
+    async def test_structured_output_async(
+        self, model: BaseChatModel, schema_type: str
+    ) -> None:  # type: ignore[override]
+        super().test_structured_output(model, schema_type)
 
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:

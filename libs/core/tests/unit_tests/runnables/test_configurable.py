@@ -67,7 +67,7 @@ class MyOtherRunnable(RunnableSerializable[str, str]):
 
 
 def test_doubly_set_configurable() -> None:
-    """Test that setting a configurable field with a default value works"""
+    """Test that setting a configurable field with a default value works."""
     runnable = MyRunnable(my_property="a")  # type: ignore
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(

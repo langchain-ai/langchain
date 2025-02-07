@@ -5,7 +5,7 @@ from typing import Any, List, Union
 
 from langchain_community.document_loaders.unstructured import (
     UnstructuredFileLoader,
-    satisfies_min_unstructured_version,
+    validate_unstructured_version,
 )
 
 
@@ -49,13 +49,8 @@ class UnstructuredRTFLoader(UnstructuredFileLoader):
             **unstructured_kwargs: Additional keyword arguments to pass
                 to unstructured.
         """
-        min_unstructured_version = "0.5.12"
-        if not satisfies_min_unstructured_version(min_unstructured_version):
-            raise ValueError(
-                "Partitioning rtf files is only supported in "
-                f"unstructured>={min_unstructured_version}."
-            )
-
+        file_path = str(file_path)
+        validate_unstructured_version("0.5.12")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
