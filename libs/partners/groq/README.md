@@ -36,13 +36,13 @@ To develop the `langchain-groq` package, you'll need to follow these instruction
 ### Install dev dependencies
 
 ```bash
-poetry install --with test,test_integration,lint,codespell
+uv sync --group lint --group test
 ```
 
 ### Build the package
 
 ```bash
-poetry build
+uv build
 ```
 
 ### Run unit tests
