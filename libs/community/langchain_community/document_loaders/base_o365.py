@@ -60,7 +60,7 @@ def fetch_mime_types(file_types: Sequence[str]) -> Dict[str, str]:
         if mime_type:
             mime_types_mapping[ext] = mime_type
         else:
-            raise ValueError(f"Unknown mimetype of extention {ext}")
+            raise ValueError(f"Unknown mimetype of extension {ext}")
     return mime_types_mapping
 
 
