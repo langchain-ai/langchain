@@ -406,7 +406,7 @@ wheels = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.7rc1"
+version = "0.3.7"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -450,7 +450,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", specifier = ">=0.45.0,<1" },
-    { name = "langchain-core", specifier = ">=0.3.34rc2,<1.0.0" },
+    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 
@@ -483,7 +483,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34rc2"
+version = "0.3.34"
 source = { directory = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -541,7 +541,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.10"
+version = "0.3.11"
 source = { directory = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -557,7 +557,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pytest", specifier = ">=7,<9" },

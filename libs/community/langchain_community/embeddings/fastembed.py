@@ -1,6 +1,6 @@
 import importlib
 import importlib.metadata
-from typing import Any, Dict, List, Literal, Optional, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, cast
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
@@ -65,11 +65,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to `None`.
     """
 
-    gpu: bool = False
-    """Enable the use of GPU through CUDA. This requires to install `fastembed-gpu`
+    providers: Optional[Sequence[Any]] = None
+    """List of ONNX execution providers. Use `["CUDAExecutionProvider"]` to enable the
+    use of GPU when generating embeddings. This requires to install `fastembed-gpu`
     instead of `fastembed`. See https://qdrant.github.io/fastembed/examples/FastEmbed_GPU
     for more details.
-    Defaults to False.
+    Defaults to `None`.
     """
 
     model: Any = None  # : :meta private:
@@ -83,8 +84,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         max_length = values.get("max_length")
         cache_dir = values.get("cache_dir")
         threads = values.get("threads")
-        gpu = values.get("gpu")
-        pkg_to_install = "fastembed-gpu" if gpu else "fastembed"
+        providers = values.get("providers")
+        pkg_to_install = (
+            "fastembed-gpu"
+            if providers and "CUDAExecutionProvider" in providers
+            else "fastembed"
+        )
 
         try:
             fastembed = importlib.import_module("fastembed")
@@ -106,7 +111,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             max_length=max_length,
             cache_dir=cache_dir,
             threads=threads,
-            providers=["CUDAExecutionProvider"] if gpu else None,
+            providers=providers,
         )
         return values
 
