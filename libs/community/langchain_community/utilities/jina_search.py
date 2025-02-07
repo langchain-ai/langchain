@@ -11,7 +11,7 @@ from yarl import URL
 class JinaSearchAPIWrapper(BaseModel):
     """Wrapper around the Jina search engine."""
 
-    jina_api_key: SecretStr
+    api_key: SecretStr
 
     base_url: str = "https://s.jina.ai/"
     """The base URL for the Jina search engine."""
@@ -24,8 +24,8 @@ class JinaSearchAPIWrapper(BaseModel):
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and endpoint exists in environment."""
-        jina_api_key = get_from_dict_or_env(values, "jina_api_key", "JINA_API_KEY")
-        values["jina_api_key"] = jina_api_key
+        api_key = get_from_dict_or_env(values, "api_key", "JINA_API_KEY")
+        values["api_key"] = api_key
 
         return values
 
@@ -75,7 +75,7 @@ class JinaSearchAPIWrapper(BaseModel):
     def _search_request(self, query: str) -> List[dict]:
         headers = {
             "Accept": "application/json",
-            "Authorization": self.jina_api_key.get_secret_value(),
+            "Authorization": f"Bearer {self.api_key.get_secret_value()}",
         }
         url = str(URL(self.base_url + query))
         response = requests.get(url, headers=headers)
