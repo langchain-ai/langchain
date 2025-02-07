@@ -16,7 +16,7 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 @deprecated(
     since="0.3.3",
     removal="1.0",
-    alternative_import="langchain_databricks.DatabricksEmbeddings",
+    alternative_import="databricks_langchain.DatabricksEmbeddings",
 )
 class DatabricksEmbeddings(MlflowEmbeddings):
     """Databricks embeddings.

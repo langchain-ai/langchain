@@ -11,7 +11,6 @@ from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
     BaseImageBlobParser,
-    PDFMinerParser,
     PDFPlumberParser,
     PyPDFium2Parser,
 )
@@ -97,12 +96,6 @@ def _assert_with_duplicate_parser(parser: BaseBlobParser, dedupe: bool = False) 
         assert "11000000 SSeerriieess" == docs[0].page_content.split("\n")[0]
 
 
-def test_pdfminer_parser() -> None:
-    """Test PDFMiner parser."""
-    # Does not follow defaults to split by page.
-    _assert_with_parser(PDFMinerParser(), splits_by_page=False)
-
-
 def test_pypdfium2_parser() -> None:
     """Test PyPDFium2 parser."""
     # Does not follow defaults to split by page.
@@ -114,11 +107,6 @@ def test_pdfplumber_parser() -> None:
     _assert_with_parser(PDFPlumberParser())
     _assert_with_duplicate_parser(PDFPlumberParser())
     _assert_with_duplicate_parser(PDFPlumberParser(dedupe=True), dedupe=True)
-
-
-def test_extract_images_text_from_pdf_pdfminerparser() -> None:
-    """Test extract image from pdf and recognize text with rapid ocr - PDFMinerParser"""
-    _assert_with_parser(PDFMinerParser(extract_images=True))
 
 
 def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
@@ -138,6 +126,7 @@ class EmptyImageBlobParser(BaseImageBlobParser):
 @pytest.mark.parametrize(
     "parser_factory,params",
     [
+        ("PDFMinerParser", {}),
         ("PyMuPDFParser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
         ("PyPDFParser", {"extraction_mode": "layout"}),
@@ -166,6 +155,7 @@ def test_mode_and_extract_images_variations(
 @pytest.mark.parametrize(
     "parser_factory,params",
     [
+        ("PDFMinerParser", {}),
         ("PyMuPDFParser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
         ("PyPDFParser", {"extraction_mode": "layout"}),
