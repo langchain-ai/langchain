@@ -19,6 +19,7 @@ on:
 
 env:
   UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
 
 jobs:
   build:
