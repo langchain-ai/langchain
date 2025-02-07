@@ -33,44 +33,8 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
-        # Also installs dev/lint/test/typing dependencies, to ensure we have
-        # type hints for as many of our libraries as possible.
-        # This helps catch errors that require dependencies to be spotted, for example:
-        # https://github.com/langchain-ai/langchain/pull/10249/files#diff-935185cd488d015f026dcd9e19616ff62863e8cde8c0bee70318d3ccbca98341
-        #
-        # If you change this configuration, make sure to change the `cache-key`
-        # in the `poetry_setup` action above to stop using the old cache.
-        # It doesn't matter how you change it, any change will cause a cache-bust.
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          uv sync --group lint --group typing
-
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
         run: |
-          make lint_package
+          make lint
 
-      - name: Install unit test dependencies
-        # Also installs dev/lint/test/typing dependencies, to ensure we have
-        # type hints for as many of our libraries as possible.
-        # This helps catch errors that require dependencies to be spotted, for example:
-        # https://github.com/langchain-ai/langchain/pull/10249/files#diff-935185cd488d015f026dcd9e19616ff62863e8cde8c0bee70318d3ccbca98341
-        #
-        # If you change this configuration, make sure to change the `cache-key`
-        # in the `poetry_setup` action above to stop using the old cache.
-        # It doesn't matter how you change it, any change will cause a cache-bust.
-        if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          uv sync --group test
-      - name: Install unit+integration test dependencies
-        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          uv sync --group test --group test_integration
-
-      - name: Analysing the code with our lint
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          make lint_tests
