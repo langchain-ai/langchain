@@ -113,21 +113,21 @@ export default function ChatModelTabs(props) {
       label: "Groq",
       model: "llama3-8b-8192",
       apiKeyName: "GROQ_API_KEY",
-      packageName: "langchain-groq",
+      packageName: "langchain[groq]",
     },
     {
       value: "openai",
       label: "OpenAI",
       model: "gpt-4o-mini",
       apiKeyName: "OPENAI_API_KEY",
-      packageName: "langchain-openai",
+      packageName: "langchain[openai]",
     },
     {
       value: "anthropic",
       label: "Anthropic",
       model: "claude-3-5-sonnet-latest",
       apiKeyName: "ANTHROPIC_API_KEY",
-      packageName: "langchain-anthropic",
+      packageName: "langchain[anthropic]",
     },
     {
       value: "azure",
@@ -140,29 +140,28 @@ ${llmVarName} = AzureChatOpenAI(
     openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
 )`,
       apiKeyName: "AZURE_OPENAI_API_KEY",
-      packageName: "langchain-openai",
+      packageName: "langchain[openai]",
     },
     {
       value: "google_vertexai",
       label: "Google Vertex",
-      model: "gemini-2.0-flash",
+      model: "gemini-2.0-flash-001",
       apiKeyText: "# Ensure your VertexAI credentials are configured",
-      packageName: "langchain-google-vertexai",
+      packageName: "langchain[google-vertexai]",
     },
     {
-      value: "aws",
+      value: "bedrock_converse",
       label: "AWS",
       model: "anthropic.claude-3-5-sonnet-20240620-v1:0",
-      kwargs: "beta_use_converse_api=True",
       apiKeyText: "# Ensure your AWS credentials are configured",
-      packageName: "langchain-aws",
+      packageName: "langchain[aws]",
     },
     {
       value: "cohere",
       label: "Cohere",
       model: "command-r-plus",
       apiKeyName: "COHERE_API_KEY",
-      packageName: "langchain-cohere",
+      packageName: "langchain[cohere]",
     },
     {
       value: "nvidia",
@@ -176,21 +175,21 @@ ${llmVarName} = AzureChatOpenAI(
       label: "Fireworks AI",
       model: "accounts/fireworks/models/llama-v3p1-70b-instruct",
       apiKeyName: "FIREWORKS_API_KEY",
-      packageName: "langchain-fireworks",
+      packageName: "langchain[fireworks]",
     },
     {
       value: "mistralai",
       label: "Mistral AI",
       model: "mistral-large-latest",
       apiKeyName: "MISTRAL_API_KEY",
-      packageName: "langchain-mistralai",
+      packageName: "langchain[mistralai]",
     },
     {
       value: "together",
       label: "Together AI",
       model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
       apiKeyName: "TOGETHER_API_KEY",
-      packageName: "langchain-together",
+      packageName: "langchain[together]",
     },
     {
       value: "databricks",
@@ -227,7 +226,7 @@ if not os.environ.get("${selectedTabItem.apiKeyName}"):
 
   const initModelText = selectedTabItem?.text || `from langchain.chat_models import init_chat_model
 
-${llmVarName} = init_chat_model("${selectedTabItem.model}", *, model_provider="${selectedTabItem.value}"${selectedTabItem?.kwargs ? `, ${selectedTabItem.kwargs}` : ""})`;
+${llmVarName} = init_chat_model("${selectedTabItem.model}", model_provider="${selectedTabItem.value}"${selectedTabItem?.kwargs ? `, ${selectedTabItem.kwargs}` : ""})`;
 
   return (
     <div>
@@ -239,7 +238,7 @@ ${llmVarName} = init_chat_model("${selectedTabItem.model}", *, model_provider="$
       />
 
       <CodeBlock language="bash">
-        {`pip install -qU langchain ${selectedTabItem.packageName}`}
+        {`pip install -qU "${selectedTabItem.packageName}"`}
       </CodeBlock>
       <CodeBlock language="python">
         {apiKeyText ? apiKeyText + "\n\n" + initModelText : initModelText}
