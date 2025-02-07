@@ -113,8 +113,29 @@ class OpenVINOText2SpeechTool(BaseTool):  # type: ignore[override]
     def play(self, speech_file: str) -> None:
         """Play the text as speech."""
 
-        import IPython.display as ipd
-        ipd.Audio(speech_file)
+        import sounddevice as sd
+        import soundfile as sf
+        import numpy as np
+
+        _, r = sf.read(speech_file, dtype='float32')
+
+        try:
+            from transformers.pipelines.audio_utils import ffmpeg_read
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import ffmpeg-python python package. "
+                "Please install it with `pip install ffmpeg-python`."
+            ) from exc
+
+        audio_decoded = None
+        with open(speech_file, "rb") as f:
+            content = f.read()
+            audio_decoded = ffmpeg_read(content, r)
+        d = np.frombuffer(audio_decoded, dtype=np.float32)
+
+        sd.play(d,r)
+        sd.wait()
+
 
     def stream_speech(self, query: str) -> None:
         """Stream the text as speech as it is generated.
