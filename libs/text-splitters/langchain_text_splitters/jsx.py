@@ -55,22 +55,14 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             List of text chunks split on component and JS boundaries
         """
         # Extract unique opening component tags using regex
-        component_tags = list(
-            set(
-                tag.split(" ")[0].strip("<>\n")
-                for tag in re.findall(r"<[^/\s][^>]*>", text)  # Match opening tags
-                if tag.strip()
-            )
-        )
-        # Create separators list with extracted tags and default separators
+        # Regex to match opening tags, excluding self-closing tags
+        opening_tags = re.findall(r"<\s*([a-zA-Z0-9]+)[^>]*>", text)
+        
+        component_tags = []
+        for tag in opening_tags:
+            if tag not in component_tags:
+                component_tags.append(tag)
         component_separators = [f"<{tag}" for tag in component_tags]
-        component_separators = sorted(
-            component_separators,
-            key=lambda x: abs(
-                len(component_separators) // 2 - component_separators.index(x)
-            ),
-        )
-        component_separators = list(set(component_separators))
 
         js_separators = [
             "\nexport ",
