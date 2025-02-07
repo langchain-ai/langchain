@@ -1,6 +1,5 @@
-"""
-Adapted from https://github.com/noahmorrison/chevron
-MIT License
+"""Adapted from https://github.com/noahmorrison/chevron
+MIT License.
 """
 
 from __future__ import annotations
@@ -48,19 +47,19 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     Returns:
         Tuple[str, str]: The literal and the template.
     """
-
     global _CURRENT_LINE
 
     try:
         # Look for the next tag and move the template to it
         literal, template = template.split(l_del, 1)
         _CURRENT_LINE += literal.count("\n")
-        return (literal, template)
 
     # There are no more tags in the template?
     except ValueError:
         # Then the rest of the template is a literal
         return (template, "")
+
+    return (literal, template)
 
 
 def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
@@ -74,7 +73,6 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
     Returns:
         bool: Whether the tag could be a standalone.
     """
-
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
         padding = literal.split("\n")[-1]
@@ -98,7 +96,6 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
     Returns:
         bool: Whether the tag could be a standalone.
     """
-
     # Check right side if we might be a standalone
     if is_standalone and tag_type not in ["variable", "no escape"]:
         on_newline = template.split("\n", 1)
@@ -126,8 +123,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         ChevronError: If the tag is unclosed.
         ChevronError: If the set delimiter tag is unclosed.
     """
-    global _CURRENT_LINE
-    global _LAST_TAG_LINE
+    global _CURRENT_LINE, _LAST_TAG_LINE
 
     tag_types = {
         "!": "comment",
@@ -144,7 +140,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     try:
         tag, template = template.split(r_del, 1)
     except ValueError as e:
-        msg = "unclosed tag " f"at line {_CURRENT_LINE}"
+        msg = f"unclosed tag at line {_CURRENT_LINE}"
         raise ChevronError(msg) from e
 
     # Find the type meaning of the first character
@@ -165,7 +161,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
 
         # Otherwise we should complain
         else:
-            msg = "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
+            msg = f"unclosed set delimiter tag\nat line {_CURRENT_LINE}"
             raise ChevronError(msg)
 
     elif (
@@ -199,36 +195,25 @@ def tokenize(
     using file-like objects. It also accepts a string containing
     the template.
 
-
-    Arguments:
-
-    template -- a file-like object, or a string of a mustache template
-
-    def_ldel -- The default left delimiter
-                ("{{" by default, as in spec compliant mustache)
-
-    def_rdel -- The default right delimiter
-                ("}}" by default, as in spec compliant mustache)
-
+    Args:
+        template: a file-like object, or a string of a mustache template
+        def_ldel: The default left delimiter
+            ("{{" by default, as in spec compliant mustache)
+        def_rdel: The default right delimiter
+            ("}}" by default, as in spec compliant mustache)
 
     Returns:
-
-    A generator of mustache tags in the form of a tuple
-
-    -- (tag_type, tag_key)
-
-    Where tag_type is one of:
-     * literal
-     * section
-     * inverted section
-     * end
-     * partial
-     * no escape
-
-    And tag_key is either the key or in the case of a literal tag,
-    the literal itself.
+        A generator of mustache tags in the form of a tuple (tag_type, tag_key)
+            Where tag_type is one of:
+             * literal
+             * section
+             * inverted section
+             * end
+             * partial
+             * no escape
+            And tag_key is either the key or in the case of a literal tag,
+            the literal itself.
     """
-
     global _CURRENT_LINE, _LAST_TAG_LINE
     _CURRENT_LINE = 1
     _LAST_TAG_LINE = None
@@ -329,8 +314,7 @@ def tokenize(
 
 
 def _html_escape(string: str) -> str:
-    """HTML escape all of these " & < >"""
-
+    """HTML escape all of these " & < >."""
     html_codes = {
         '"': "&quot;",
         "<": "&lt;",
@@ -352,8 +336,7 @@ def _get_key(
     def_ldel: str,
     def_rdel: str,
 ) -> Any:
-    """Get a key from the current scope"""
-
+    """Get a key from the current scope."""
     # If the key is a dot
     if key == ".":
         # Then just return the current scope
@@ -410,7 +393,7 @@ def _get_key(
 
 
 def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
-    """Load a partial"""
+    """Load a partial."""
     try:
         # Maybe the partial is in the dictionary
         return partials_dict[name]
@@ -441,45 +424,31 @@ def render(
 
     Renders a mustache template with a data scope and inline partial capability.
 
-    Arguments:
-
-    template      -- A file-like object or a string containing the template.
-
-    data          -- A python dictionary with your data scope.
-
-    partials_path -- The path to where your partials are stored.
-                     If set to None, then partials won't be loaded from the file system
-                     (defaults to '.').
-
-    partials_ext  -- The extension that you want the parser to look for
-                     (defaults to 'mustache').
-
-    partials_dict -- A python dictionary which will be search for partials
-                     before the filesystem is. {'include': 'foo'} is the same
-                     as a file called include.mustache
-                     (defaults to {}).
-
-    padding       -- This is for padding partials, and shouldn't be used
-                     (but can be if you really want to).
-
-    def_ldel      -- The default left delimiter
-                     ("{{" by default, as in spec compliant mustache).
-
-    def_rdel      -- The default right delimiter
-                     ("}}" by default, as in spec compliant mustache).
-
-    scopes        -- The list of scopes that get_key will look through.
-
-    warn          -- Log a warning when a template substitution isn't found in the data
-
-    keep          -- Keep unreplaced tags when a substitution isn't found in the data.
-
+    Args:
+        template: A file-like object or a string containing the template.
+        data: A python dictionary with your data scope.
+        partials_path: The path to where your partials are stored.
+             If set to None, then partials won't be loaded from the file system
+             (defaults to '.').
+        partials_ext: The extension that you want the parser to look for
+            (defaults to 'mustache').
+        partials_dict: A python dictionary which will be search for partials
+             before the filesystem is. {'include': 'foo'} is the same
+             as a file called include.mustache
+             (defaults to {}).
+        padding: This is for padding partials, and shouldn't be used
+            (but can be if you really want to).
+        def_ldel: The default left delimiter
+             ("{{" by default, as in spec compliant mustache).
+        def_rdel: The default right delimiter
+             ("}}" by default, as in spec compliant mustache).
+        scopes: The list of scopes that get_key will look through.
+        warn: Log a warning when a template substitution isn't found in the data
+        keep: Keep unreplaced tags when a substitution isn't found in the data.
 
     Returns:
-
-    A string containing the rendered template.
+        A string containing the rendered template.
     """
-
     # If the template is a sequence but not derived from a string
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it

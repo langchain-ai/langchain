@@ -481,7 +481,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
                 f"Got {input_val}."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
@@ -517,7 +517,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
                 f"Got {output_val}."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
@@ -590,9 +590,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         if missing_keys and parameter_names:
             example_input = {self.input_messages_key: "foo"}
-            example_configurable = {
-                missing_key: "[your-value-here]" for missing_key in missing_keys
-            }
+            example_configurable = dict.fromkeys(missing_keys, "[your-value-here]")
             example_config = {"configurable": example_configurable}
             msg = (
                 f"Missing keys {sorted(missing_keys)} in config['configurable'] "

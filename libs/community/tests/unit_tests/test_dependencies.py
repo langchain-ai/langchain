@@ -5,6 +5,7 @@ from typing import Any, Dict, Mapping
 
 import pytest
 import toml
+from packaging.requirements import Requirement
 
 HERE = Path(__file__).parent
 
@@ -12,30 +13,21 @@ PYPROJECT_TOML = HERE / "../../pyproject.toml"
 
 
 @pytest.fixture()
-def poetry_conf() -> Dict[str, Any]:
+def uv_conf() -> Dict[str, Any]:
     """Load the pyproject.toml file."""
     with open(PYPROJECT_TOML) as f:
-        return toml.load(f)["tool"]["poetry"]
+        return toml.load(f)
 
 
-def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
+def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
     """A test that checks if a new non-optional dependency is being introduced.
 
     If this test is triggered, it means that a contributor is trying to introduce a new
     required dependency. This should be avoided in most situations.
     """
     # Get the dependencies from the [tool.poetry.dependencies] section
-    dependencies = poetry_conf["dependencies"]
-
-    is_required = {
-        package_name: isinstance(requirements, str)
-        or isinstance(requirements, list)
-        or not requirements.get("optional", False)
-        for package_name, requirements in dependencies.items()
-    }
-    required_dependencies = [
-        package_name for package_name, required in is_required.items() if required
-    ]
+    dependencies = uv_conf["project"]["dependencies"]
+    required_dependencies = set(Requirement(dep).name for dep in dependencies)
 
     assert sorted(required_dependencies) == sorted(
         [
@@ -47,7 +39,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "langchain-core",
             "langsmith",
             "numpy",
-            "python",
             "requests",
             "pydantic-settings",
             "tenacity",
@@ -55,16 +46,8 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
         ]
     )
 
-    unrequired_dependencies = [
-        package_name for package_name, required in is_required.items() if not required
-    ]
-    in_extras = [
-        dep for group in poetry_conf.get("extras", {}).values() for dep in group
-    ]
-    assert set(unrequired_dependencies) == set(in_extras)
 
-
-def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
+def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
     """Check if someone is attempting to add additional test dependencies.
 
     Only dependencies associated with test running infrastructure should be added
@@ -73,9 +56,10 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     Examples of dependencies that should NOT be included: boto3, azure, postgres, etc.
     """
 
-    test_group_deps = sorted(poetry_conf["group"]["test"]["dependencies"])
+    dependencies = uv_conf["dependency-groups"]["test"]
+    test_group_deps = set(Requirement(dep).name for dep in dependencies)
 
-    assert test_group_deps == sorted(
+    assert sorted(test_group_deps) == sorted(
         [
             "duckdb-engine",
             "freezegun",
@@ -94,6 +78,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "pytest-xdist",
             "responses",
             "syrupy",
+            "toml",
             "requests-mock",
             # TODO: Hack to get around cffi 1.17.1 not working with py3.9, remove when
             # fix is released.

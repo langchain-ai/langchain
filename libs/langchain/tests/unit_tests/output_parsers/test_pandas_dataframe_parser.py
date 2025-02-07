@@ -8,7 +8,11 @@ from langchain_core.exceptions import OutputParserException
 from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
 
 df = pd.DataFrame(
-    {"chicken": [1, 2, 3, 4], "veggies": [5, 4, 3, 2], "steak": [9, 8, 7, 6]}
+    {
+        "chicken": [1, 2, 3, 4],
+        "veggies": [5, 4, 3, 2],
+        "steak": [9, 8, 7, 6],
+    }
 )
 
 parser = PandasDataFrameOutputParser(dataframe=df)

@@ -356,7 +356,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             raise ValueError("No document ids provided to delete.")
 
         for document_id in ids:
-            self._container.delete_item(document_id)
+            self.delete_document_by_id(document_id)
         return True
 
     def delete_document_by_id(self, document_id: Optional[str] = None) -> None:
@@ -789,6 +789,13 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 elif isinstance(condition.value, list):
                     # e.g., for IN clauses
                     value = f"({', '.join(map(str, condition.value))})"
+                elif isinstance(condition.value, (int, float, bool)):
+                    value = str(condition.value)
+                elif condition.value is None:
+                    value = "NULL"
+                else:
+                    raise ValueError(f"Unsupported value type: {type(condition.value)}")
+
                 clauses.append(f"c.{condition.property} {sql_operator} {value}")
         return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
 

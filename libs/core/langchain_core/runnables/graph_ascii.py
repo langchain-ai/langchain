@@ -1,5 +1,6 @@
 """Draws DAG in ASCII.
-Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
+Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py.
+"""
 
 import math
 import os
@@ -46,8 +47,9 @@ class AsciiCanvas:
     TIMEOUT = 10
 
     def __init__(self, cols: int, lines: int) -> None:
-        assert cols > 1
-        assert lines > 1
+        if cols <= 1 or lines <= 1:
+            msg = "Canvas dimensions should be > 1"
+            raise ValueError(msg)
 
         self.cols = cols
         self.lines = lines
@@ -70,11 +72,15 @@ class AsciiCanvas:
             char (str): character to place in the specified point on the
                 canvas.
         """
-        assert len(char) == 1
-        assert x >= 0
-        assert x < self.cols
-        assert y >= 0
-        assert y < self.lines
+        if len(char) != 1:
+            msg = "char should be a single character"
+            raise ValueError(msg)
+        if x >= self.cols or x < 0:
+            msg = "x should be >= 0 and < number of columns"
+            raise ValueError(msg)
+        if y >= self.lines or y < 0:
+            msg = "y should be >= 0 and < number of lines"
+            raise ValueError(msg)
 
         self.canvas[y][x] = char
 
@@ -130,8 +136,9 @@ class AsciiCanvas:
             width (int): box width.
             height (int): box height.
         """
-        assert width > 1
-        assert height > 1
+        if width <= 1 or height <= 1:
+            msg = "Box dimensions should be > 1"
+            raise ValueError(msg)
 
         width -= 1
         height -= 1
@@ -214,39 +221,54 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         str: ASCII representation
 
     Example:
-        >>> vertices = [1, 2, 3, 4]
-        >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
-        >>> print(draw(vertices, edges))
-        +---+     +---+
-        | 3 |     | 4 |
-        +---+    *+---+
-          *    **   *
-          *  **     *
-          * *       *
-        +---+       *
-        | 2 |      *
-        +---+     *
-             *    *
-              *  *
-               **
-             +---+
-             | 1 |
-             +---+
-    """
 
+        .. code-block:: python
+
+            from langchain_core.runnables.graph_ascii import draw_ascii
+
+            vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+            edges = [
+                (source, target, None, None)
+                for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
+            ]
+
+
+            print(draw_ascii(vertices, edges))
+
+        .. code-block:: none
+
+                 +---+
+                 | 1 |
+                 +---+
+                 *    *
+                *     *
+               *       *
+            +---+       *
+            | 2 |       *
+            +---+**     *
+              *    **   *
+              *      ** *
+              *        **
+            +---+     +---+
+            | 3 |     | 4 |
+            +---+     +---+
+    """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    xlist = []
-    ylist = []
+    xlist: list[float] = []
+    ylist: list[float] = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left
-        xlist.append(vertex.view.xy[0] - vertex.view.w / 2.0)
-        xlist.append(vertex.view.xy[0] + vertex.view.w / 2.0)
-        ylist.append(vertex.view.xy[1])
-        ylist.append(vertex.view.xy[1] + vertex.view.h)
+        xlist.extend(
+            (
+                vertex.view.xy[0] - vertex.view.w / 2.0,
+                vertex.view.xy[0] + vertex.view.w / 2.0,
+            )
+        )
+        ylist.extend((vertex.view.xy[1], vertex.view.xy[1] + vertex.view.h))
 
     for edge in sug.g.sE:
         for x, y in edge.view._pts:
@@ -265,7 +287,9 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
     # NOTE: first draw edges so that node boxes could overwrite them
     for edge in sug.g.sE:
-        assert len(edge.view._pts) > 1
+        if len(edge.view._pts) <= 1:
+            msg = "Not enough points to draw an edge"
+            raise ValueError(msg)
         for index in range(1, len(edge.view._pts)):
             start = edge.view._pts[index - 1]
             end = edge.view._pts[index]
@@ -275,10 +299,15 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
             end_x = int(round(end[0] - minx))
             end_y = int(round(end[1] - miny))
 
-            assert start_x >= 0
-            assert start_y >= 0
-            assert end_x >= 0
-            assert end_y >= 0
+            if start_x < 0 or start_y < 0 or end_x < 0 or end_y < 0:
+                msg = (
+                    "Invalid edge coordinates: "
+                    f"start_x={start_x}, "
+                    f"start_y={start_y}, "
+                    f"end_x={end_x}, "
+                    f"end_y={end_y}"
+                )
+                raise ValueError(msg)
 
             canvas.line(start_x, start_y, end_x, end_y, "." if edge.data else "*")
 

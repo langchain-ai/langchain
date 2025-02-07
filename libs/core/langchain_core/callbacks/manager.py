@@ -127,7 +127,7 @@ def trace_as_chain_group(
     except Exception as e:
         if not group_cm.ended:
             run_manager.on_chain_error(e)
-        raise e
+        raise
     else:
         if not group_cm.ended:
             run_manager.on_chain_end({})
@@ -164,6 +164,7 @@ async def atrace_as_chain_group(
             Defaults to None.
         metadata (Dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
+
     Returns:
         AsyncCallbackManager: The async callback manager for the chain group.
 
@@ -206,7 +207,7 @@ async def atrace_as_chain_group(
     except Exception as e:
         if not group_cm.ended:
             await run_manager.on_chain_error(e)
-        raise e
+        raise
     else:
         if not group_cm.ended:
             await run_manager.on_chain_end({})
@@ -216,8 +217,7 @@ Func = TypeVar("Func", bound=Callable)
 
 
 def shielded(func: Func) -> Func:
-    """
-    Makes so an awaitable method is always shielded from cancellation.
+    """Makes so an awaitable method is always shielded from cancellation.
 
     Args:
         func (Callable): The function to shield.
@@ -289,7 +289,7 @@ def handle_event(
                     f" {repr(e)}"
                 )
                 if handler.raise_error:
-                    raise e
+                    raise
     finally:
         if coros:
             try:
@@ -385,11 +385,10 @@ async def _ahandle_event_for_handler(
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback:"
-            f" {repr(e)}"
+            f"Error in {handler.__class__.__name__}.{event_name} callback: {repr(e)}"
         )
         if handler.raise_error:
-            raise e
+            raise
 
 
 async def ahandle_event(
@@ -1310,7 +1309,6 @@ class CallbackManager(BaseCallbackManager):
             List[CallbackManagerForLLMRun]: A callback manager for each
                 list of messages as an LLM run.
         """
-
         managers = []
         for message_list in messages:
             if run_id is not None:
@@ -1729,7 +1727,6 @@ class AsyncCallbackManager(BaseCallbackManager):
                 callback managers, one for each LLM Run corresponding
                 to each prompt.
         """
-
         inline_tasks = []
         non_inline_tasks = []
         inline_handlers = [handler for handler in self.handlers if handler.run_inline]

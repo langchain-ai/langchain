@@ -1,3 +1,4 @@
+from collections import defaultdict
 import sys
 from typing import Optional
 
@@ -7,6 +8,7 @@ else:
     # for python 3.10 and below, which doesnt have stdlib tomllib
     import tomli as tomllib
 
+from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
@@ -94,6 +96,23 @@ def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
     return str(min(valid_versions)) if valid_versions else None
 
 
+def _check_python_version_from_requirement(
+    requirement: Requirement, python_version: str
+) -> bool:
+    if not requirement.marker:
+        return True
+    else:
+        marker_str = str(requirement.marker)
+        if "python_version" or "python_full_version" in marker_str:
+            python_version_str = "".join(
+                char
+                for char in marker_str
+                if char.isdigit() or char in (".", "<", ">", "=", ",")
+            )
+            return check_python_version(python_version, python_version_str)
+        return True
+
+
 def get_min_version_from_toml(
     toml_path: str,
     versions_for: str,
@@ -105,8 +124,10 @@ def get_min_version_from_toml(
     with open(toml_path, "rb") as file:
         toml_data = tomllib.load(file)
 
-    # Get the dependencies from tool.poetry.dependencies
-    dependencies = toml_data["tool"]["poetry"]["dependencies"]
+    dependencies = defaultdict(list)
+    for dep in toml_data["project"]["dependencies"]:
+        requirement = Requirement(dep)
+        dependencies[requirement.name].append(requirement)
 
     # Initialize a dictionary to store the minimum versions
     min_versions = {}
@@ -121,17 +142,11 @@ def get_min_version_from_toml(
         if lib in dependencies:
             if include and lib not in include:
                 continue
-            # Get the version string
-            version_string = dependencies[lib]
-
-            if isinstance(version_string, dict):
-                version_string = version_string["version"]
-            if isinstance(version_string, list):
-                version_string = [
-                    vs
-                    for vs in version_string
-                    if check_python_version(python_version, vs["python"])
-                ][0]["version"]
+            requirements = dependencies[lib]
+            for requirement in requirements:
+                if _check_python_version_from_requirement(requirement, python_version):
+                    version_string = str(requirement.specifier)
+                    break
 
             # Use parse_version to get the minimum supported version from version_string
             min_version = get_minimum_version(lib, version_string)

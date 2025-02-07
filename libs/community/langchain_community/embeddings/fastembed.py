@@ -1,6 +1,6 @@
 import importlib
 import importlib.metadata
-from typing import Any, Dict, List, Literal, Optional, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, cast
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
@@ -65,6 +65,14 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Defaults to `None`.
     """
 
+    providers: Optional[Sequence[Any]] = None
+    """List of ONNX execution providers. Use `["CUDAExecutionProvider"]` to enable the
+    use of GPU when generating embeddings. This requires to install `fastembed-gpu`
+    instead of `fastembed`. See https://qdrant.github.io/fastembed/examples/FastEmbed_GPU
+    for more details.
+    Defaults to `None`.
+    """
+
     model: Any = None  # : :meta private:
 
     model_config = ConfigDict(extra="allow", protected_namespaces=())
@@ -76,6 +84,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         max_length = values.get("max_length")
         cache_dir = values.get("cache_dir")
         threads = values.get("threads")
+        providers = values.get("providers")
+        pkg_to_install = (
+            "fastembed-gpu"
+            if providers and "CUDAExecutionProvider" in providers
+            else "fastembed"
+        )
 
         try:
             fastembed = importlib.import_module("fastembed")
@@ -83,12 +97,13 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
         except ModuleNotFoundError:
             raise ImportError(
                 "Could not import 'fastembed' Python package. "
-                "Please install it with `pip install fastembed`."
+                f"Please install it with `pip install {pkg_to_install}`."
             )
 
-        if importlib.metadata.version("fastembed") < MIN_VERSION:
+        if importlib.metadata.version(pkg_to_install) < MIN_VERSION:
             raise ImportError(
-                'FastEmbedEmbeddings requires `pip install -U "fastembed>=0.2.0"`.'
+                f"FastEmbedEmbeddings requires "
+                f'`pip install -U "{pkg_to_install}>={MIN_VERSION}"`.'
             )
 
         values["model"] = fastembed.TextEmbedding(
@@ -96,6 +111,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
             max_length=max_length,
             cache_dir=cache_dir,
             threads=threads,
+            providers=providers,
         )
         return values
 

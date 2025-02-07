@@ -82,17 +82,25 @@ def chain_pass_exceptions() -> Runnable:
     "runnable",
     ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
 )
-async def test_fallbacks(
+def test_fallbacks(
     runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
     runnable = request.getfixturevalue(runnable)
     assert runnable.invoke("hello") == "bar"
     assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(runnable.stream("hello")) == ["bar"]
+    assert dumps(runnable, pretty=True) == snapshot
+
+
+@pytest.mark.parametrize(
+    "runnable",
+    ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
+)
+async def test_fallbacks_async(runnable: RunnableWithFallbacks, request: Any) -> None:
+    runnable = request.getfixturevalue(runnable)
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
-    assert dumps(runnable, pretty=True) == snapshot
 
 
 def _runnable(inputs: dict) -> str:
@@ -103,7 +111,7 @@ def _runnable(inputs: dict) -> str:
     if inputs["text"] == "bar":
         return "second"
     if isinstance(inputs["exception"], ValueError):
-        raise RuntimeError
+        raise RuntimeError  # noqa: TRY004
     return "third"
 
 
@@ -215,7 +223,11 @@ async def test_abatch() -> None:
     )
     with pytest.raises(RuntimeError):
         await runnable_with_single.abatch(
-            [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}]
+            [
+                {"text": "foo"},
+                {"text": "bar"},
+                {"text": "baz"},
+            ]
         )
     actual = await runnable_with_single.abatch(
         [{"text": "foo"}, {"text": "bar"}, {"text": "baz"}], return_exceptions=True
@@ -314,7 +326,7 @@ class FakeStructuredOutputModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(generations=[])
 
     def bind_tools(
@@ -344,7 +356,7 @@ class FakeModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(generations=[])
 
     def bind_tools(
