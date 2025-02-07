@@ -22,6 +22,11 @@ dev = [
     "langchain @ file:///${PROJECT_ROOT}/libs/langchain",
     "langchain-openai @ file:///${PROJECT_ROOT}/libs/partners/openai",
     "ipykernel<7.0.0,>=6.29.2",
+    "toml>=0.10.2",
+]
+docs = [
+    "sphinx<5.0.0,>=4.0.0",
+    "sphinx-rtd-theme<2.0.0,>=1.0.0",
 ]
 codespell = [
     "codespell<3.0.0,>=2.2.0",
