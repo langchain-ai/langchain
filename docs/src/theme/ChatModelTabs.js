@@ -227,7 +227,7 @@ if not os.environ.get("${selectedTabItem.apiKeyName}"):
 
   const initModelText = selectedTabItem?.text || `from langchain.chat_models import init_chat_model
 
-${llmVarName} = init_chat_model("${selectedTabItem.model}", *, model_provider="${selectedTabItem.value}"${selectedTabItem?.kwargs ? `, ${selectedTabItem.kwargs}` : ""})`;
+${llmVarName} = init_chat_model("${selectedTabItem.model}", model_provider="${selectedTabItem.value}"${selectedTabItem?.kwargs ? `, ${selectedTabItem.kwargs}` : ""})`;
 
   return (
     <div>
