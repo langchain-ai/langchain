@@ -133,7 +133,7 @@ class ChatModelTests(BaseStandardTests):
         return (
             self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
-        )
+        ) or self.has_tool_calling
 
     @property
     def structured_output_kwargs(self) -> dict:
@@ -293,9 +293,9 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports structured
         output.
 
-        By default, this is determined by whether the chat model's
-        ``with_structured_output`` method is overridden. If the base implementation is
-        intended to be used, this method should be overridden.
+        By default, this is determined by whether the chat model overrides the
+        ``with_structured_output`` or ``bind_tools`` methods. If the base
+        implementations are intended to be used, this method should be overridden.
 
         See: https://python.langchain.com/docs/concepts/structured_outputs/
 

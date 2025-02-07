@@ -539,6 +539,8 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             The authentication type to use, e.g., API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL.
         auth_profile: Optional[str]
             The name of the profile in ~/.oci/config, if not specified , DEFAULT will be used.
+        auth_file_location: Optional[str]
+            Path to the config file, If not specified, ~/.oci/config will be used.
         provider: str
             Provider name of the model. Default to None, will try to be derived from the model_id otherwise, requires user input.
     See full list of supported init args and their descriptions in the params section.

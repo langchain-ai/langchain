@@ -10,9 +10,7 @@ import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.pdf import (
-    PDFMinerParser,
     PyPDFium2Parser,
-    PyPDFParser,
     _merge_text_and_extras,
 )
 
@@ -76,19 +74,6 @@ def _assert_with_parser(parser: BaseBlobParser, *, splits_by_page: bool = True) 
         assert int(metadata["page"]) == 0
 
 
-@pytest.mark.requires("pypdf")
-def test_pypdf_parser() -> None:
-    """Test PyPDF parser."""
-    _assert_with_parser(PyPDFParser())
-
-
-@pytest.mark.requires("pdfminer")
-def test_pdfminer_parser() -> None:
-    """Test PDFMiner parser."""
-    # Does not follow defaults to split by page.
-    _assert_with_parser(PDFMinerParser(), splits_by_page=False)
-
-
 @pytest.mark.requires("pypdfium2")
 def test_pypdfium2_parser() -> None:
     """Test PyPDFium2 parser."""
@@ -99,7 +84,9 @@ def test_pypdfium2_parser() -> None:
 @pytest.mark.parametrize(
     "parser_factory,require,params",
     [
+        ("PDFMinerParser", "pdfminer", {"splits_by_page": False}),
         ("PyMuPDFParser", "pymupdf", {}),
+        ("PyPDFParser", "pypdf", {}),
     ],
 )
 def test_parsers(

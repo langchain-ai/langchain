@@ -1,11 +1,11 @@
-# langchain-deepseek-official
+# langchain-deepseek
 
 This package contains the LangChain integration with the DeepSeek API
 
 ## Installation
 
 ```bash
-pip install -U langchain-deepseek-official
+pip install -U langchain-deepseek
 ```
 
 And you should configure credentials by setting the following environment variables:

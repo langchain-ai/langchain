@@ -1,5 +1,6 @@
 """Module that contains tests for runnable.astream_events API."""
 
+import asyncio
 import sys
 from collections.abc import AsyncIterator, Sequence
 from itertools import cycle
@@ -1957,9 +1958,12 @@ async def test_runnable_with_message_history() -> None:
         ]
     }
 
-    with_message_history.with_config(
-        {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "meow"})
+    await asyncio.to_thread(
+        with_message_history.with_config(
+            {"configurable": {"session_id": "session-123"}}
+        ).invoke,
+        {"question": "meow"},
+    )
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),

@@ -15,7 +15,7 @@ on:
     - cron: '0 13 * * *'
 
 env:
-  POETRY_VERSION: "1.8.4"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -25,13 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ github.event.inputs.python_version || '3.11' }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: run-notebooks
 
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
@@ -48,17 +45,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --with dev,test
+          uv sync --group dev --group test
 
       - name: Pre-download files
         run: |
-          poetry run python docs/scripts/cache_data.py
+          uv run python docs/scripts/cache_data.py
           curl -s https://raw.githubusercontent.com/lerocha/chinook-database/master/ChinookDatabase/DataSources/Chinook_Sqlite.sql | sqlite3 docs/docs/how_to/Chinook.db
           cp docs/docs/how_to/Chinook.db docs/docs/tutorials/Chinook.db
 
       - name: Prepare notebooks
         run: |
-          poetry run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory ${{ github.event.inputs.working-directory || 'all' }}
+          uv run python docs/scripts/prepare_notebooks_for_ci.py --comment-install-cells --working-directory ${{ github.event.inputs.working-directory || 'all' }}
 
       - name: Run notebooks
         env:
