@@ -62,20 +62,31 @@ def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, Non
         raise ValueError("Cache not set. This should never happen.")
 
 
-async def test_llm_caching() -> None:
+def test_llm_caching() -> None:
     prompt = "How are you?"
     response = "Test response"
     cached_response = "Cached test response"
     llm = FakeListLLM(responses=[response])
     if llm_cache := get_llm_cache():
-        # sync test
         llm_cache.update(
             prompt=prompt,
             llm_string=create_llm_string(llm),
             return_val=[Generation(text=cached_response)],
         )
         assert llm.invoke(prompt) == cached_response
-        # async test
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
+
+
+async def test_llm_caching_async() -> None:
+    prompt = "How are you?"
+    response = "Test response"
+    cached_response = "Cached test response"
+    llm = FakeListLLM(responses=[response])
+    if llm_cache := get_llm_cache():
         await llm_cache.aupdate(
             prompt=prompt,
             llm_string=create_llm_string(llm),
@@ -110,14 +121,13 @@ def test_old_sqlite_llm_caching() -> None:
         assert llm.invoke(prompt) == cached_response
 
 
-async def test_chat_model_caching() -> None:
+def test_chat_model_caching() -> None:
     prompt: List[BaseMessage] = [HumanMessage(content="How are you?")]
     response = "Test response"
     cached_response = "Cached test response"
     cached_message = AIMessage(content=cached_response)
     llm = FakeListChatModel(responses=[response])
     if llm_cache := get_llm_cache():
-        # sync test
         llm_cache.update(
             prompt=dumps(prompt),
             llm_string=llm._get_llm_string(),
@@ -126,8 +136,20 @@ async def test_chat_model_caching() -> None:
         result = llm.invoke(prompt)
         assert isinstance(result, AIMessage)
         assert result.content == cached_response
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
 
-        # async test
+
+async def test_chat_model_caching_async() -> None:
+    prompt: List[BaseMessage] = [HumanMessage(content="How are you?")]
+    response = "Test response"
+    cached_response = "Cached test response"
+    cached_message = AIMessage(content=cached_response)
+    llm = FakeListChatModel(responses=[response])
+    if llm_cache := get_llm_cache():
         await llm_cache.aupdate(
             prompt=dumps(prompt),
             llm_string=llm._get_llm_string(),
@@ -143,14 +165,13 @@ async def test_chat_model_caching() -> None:
         )
 
 
-async def test_chat_model_caching_params() -> None:
+def test_chat_model_caching_params() -> None:
     prompt: List[BaseMessage] = [HumanMessage(content="How are you?")]
     response = "Test response"
     cached_response = "Cached test response"
     cached_message = AIMessage(content=cached_response)
     llm = FakeListChatModel(responses=[response])
     if llm_cache := get_llm_cache():
-        # sync test
         llm_cache.update(
             prompt=dumps(prompt),
             llm_string=llm._get_llm_string(functions=[]),
@@ -162,8 +183,20 @@ async def test_chat_model_caching_params() -> None:
         assert result.content == cached_response
         assert isinstance(result_no_params, AIMessage)
         assert result_no_params.content == response
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
 
-        # async test
+
+async def test_chat_model_caching_params_async() -> None:
+    prompt: List[BaseMessage] = [HumanMessage(content="How are you?")]
+    response = "Test response"
+    cached_response = "Cached test response"
+    cached_message = AIMessage(content=cached_response)
+    llm = FakeListChatModel(responses=[response])
+    if llm_cache := get_llm_cache():
         await llm_cache.aupdate(
             prompt=dumps(prompt),
             llm_string=llm._get_llm_string(functions=[]),
@@ -182,13 +215,12 @@ async def test_chat_model_caching_params() -> None:
         )
 
 
-async def test_llm_cache_clear() -> None:
+def test_llm_cache_clear() -> None:
     prompt = "How are you?"
     expected_response = "Test response"
     cached_response = "Cached test response"
     llm = FakeListLLM(responses=[expected_response])
     if llm_cache := get_llm_cache():
-        # sync test
         llm_cache.update(
             prompt=prompt,
             llm_string=create_llm_string(llm),
@@ -197,8 +229,19 @@ async def test_llm_cache_clear() -> None:
         llm_cache.clear()
         response = llm.invoke(prompt)
         assert response == expected_response
+    else:
+        raise ValueError(
+            "The cache not set. This should never happen, as the pytest fixture "
+            "`set_cache_and_teardown` always sets the cache."
+        )
 
-        # async test
+
+async def test_llm_cache_clear_async() -> None:
+    prompt = "How are you?"
+    expected_response = "Test response"
+    cached_response = "Cached test response"
+    llm = FakeListLLM(responses=[expected_response])
+    if llm_cache := get_llm_cache():
         await llm_cache.aupdate(
             prompt=prompt,
             llm_string=create_llm_string(llm),

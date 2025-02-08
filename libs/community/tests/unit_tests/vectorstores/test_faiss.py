@@ -1589,10 +1589,10 @@ def test_faiss_local_save_load() -> None:
 
 
 @pytest.mark.requires("faiss")
-async def test_faiss_async_local_save_load() -> None:
+def test_faiss_async_local_save_load() -> None:
     """Test end to end serialization."""
     texts = ["foo", "bar", "baz"]
-    docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings())
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
