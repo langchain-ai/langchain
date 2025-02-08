@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 @deprecated(
     since="0.3.3",
     removal="1.0",
-    alternative_import="langchain_databricks.DatabricksVectorSearch",
+    alternative_import="databricks_langchain.DatabricksVectorSearch",
 )
 class DatabricksVectorSearch(VectorStore):
     """`Databricks Vector Search` vector store.
