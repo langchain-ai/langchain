@@ -427,10 +427,10 @@ class HTMLSectionSplitter:
         headers = list(self.headers_to_split_on.keys())
         sections: list[dict[str, str | None]] = []
 
-        headers = soup.find_all(["body"] + headers)
+        headers = soup.find_all(["body"] + headers)  # type: ignore[assignment]
 
         for i, header in enumerate(headers):
-            header_element: PageElement = header
+            header_element = cast(PageElement, header)
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"

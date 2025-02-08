@@ -79,6 +79,11 @@ class OCIGenAIBase(BaseModel, ABC):
     If not specified , DEFAULT will be used 
     """
 
+    auth_file_location: Optional[str] = "~/.oci/config"
+    """Path to the config file.
+    If not specified, ~/.oci/config will be used
+    """
+
     model_id: Optional[str] = None
     """Id of the model to call, e.g., cohere.command"""
 
@@ -125,7 +130,8 @@ class OCIGenAIBase(BaseModel, ABC):
 
             if values["auth_type"] == OCIAuthType(1).name:
                 client_kwargs["config"] = oci.config.from_file(
-                    profile_name=values["auth_profile"]
+                    file_location=values["auth_file_location"],
+                    profile_name=values["auth_profile"],
                 )
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
@@ -141,7 +147,8 @@ class OCIGenAIBase(BaseModel, ABC):
                     return oci.auth.signers.SecurityTokenSigner(st_string, pk)
 
                 client_kwargs["config"] = oci.config.from_file(
-                    profile_name=values["auth_profile"]
+                    file_location=values["auth_file_location"],
+                    profile_name=values["auth_profile"],
                 )
                 client_kwargs["signer"] = make_security_token_signer(
                     oci_config=client_kwargs["config"]
@@ -171,11 +178,10 @@ class OCIGenAIBase(BaseModel, ABC):
             ) from ex
         except Exception as e:
             raise ValueError(
-                """Could not authenticate with OCI client. 
-                Please check if ~/.oci/config exists.
+                """Could not authenticate with OCI client.
                 If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, 
                 please check the specified
-                auth_profile and auth_type are valid.""",
+                auth_profile, auth_file_location and auth_type are valid.""",
                 e,
             ) from e
 
@@ -223,6 +229,9 @@ class OCIGenAI(LLM, OCIGenAIBase):
     access the OCI Generative AI service.
     If a specific config profile is used, you must pass
     the name of the profile (from ~/.oci/config) through auth_profile.
+    If a specific config file location is used, you must pass
+    the file location where profile name configs present
+    through auth_file_location
 
     To use, you must provide the compartment id
     along with the endpoint url, and model id

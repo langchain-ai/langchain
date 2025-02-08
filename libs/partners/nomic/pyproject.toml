@@ -1,68 +1,53 @@
-[tool.poetry]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+authors = []
+license = {text = "MIT"}
+requires-python = "<4.0,>=3.9"
+dependencies = [
+    "langchain-core!=0.3.0,!=0.3.1,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,<0.4.0,>=0.2.43",
+    "nomic<4.0.0,>=3.1.2",
+    "pillow<11.0.0,>=10.3.0",
+]
 name = "langchain-nomic"
 version = "0.1.4"
 description = "An integration package connecting Nomic and LangChain"
-authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
 
-[tool.poetry.urls]
+[project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/nomic"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-nomic%3D%3D0%22&expanded=true"
+repository = "https://github.com/langchain-ai/langchain"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = ">=0.2.43,<0.4.0,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14"
-nomic = "^3.1.2"
-pillow = "^10.3.0"
+[dependency-groups]
+test = [
+    "pytest<8.0.0,>=7.3.0",
+    "freezegun<2.0.0,>=1.2.2",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
+    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
+]
+codespell = [
+    "codespell<3.0.0,>=2.2.0",
+]
+test_integration = []
+lint = [
+    "ruff<1.0.0,>=0.1.5",
+]
+typing = [
+    "mypy<1.0,>=0.991",
+    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+]
+dev = [
+    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+]
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
-freezegun = "^1.2.2"
-pytest-mock = "^3.10.0"
-syrupy = "^4.0.2"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
-
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.24.0"
-python = "<3.12"
-
-[[tool.poetry.group.test.dependencies.numpy]]
-version = "^1.26.0"
-python = ">=3.12"
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
-langchain-core = { path = "../../core", develop = true }
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
 
 [tool.ruff.lint]
 select = [
@@ -77,10 +62,6 @@ disallow_untyped_defs = "True"
 
 [tool.coverage.run]
 omit = ["tests/*"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 # --strict-markers will raise errors on unknown marks.

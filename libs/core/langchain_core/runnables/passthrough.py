@@ -474,7 +474,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     ) -> dict[str, Any]:
         if not isinstance(input, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
             **input,
@@ -502,7 +502,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     ) -> dict[str, Any]:
         if not isinstance(input, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
             **input,
@@ -555,7 +555,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             for chunk in for_passthrough:
                 if not isinstance(chunk, dict):
                     msg = "The input to RunnablePassthrough.assign() must be a dict."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY004
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
                     {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -605,7 +605,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         async for chunk in for_passthrough:
             if not isinstance(chunk, dict):
                 msg = "The input to RunnablePassthrough.assign() must be a dict."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY004
 
             # remove mapper keys from passthrough chunk, to be overwritten by map output
             filtered = AddableDict(
@@ -708,7 +708,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def _pick(self, input: dict[str, Any]) -> Any:
         if not isinstance(input, dict):
             msg = "The input to RunnablePassthrough.assign() must be a dict."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
             return input.get(self.keys)

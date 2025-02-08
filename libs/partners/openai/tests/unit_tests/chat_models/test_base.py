@@ -746,7 +746,7 @@ class Foo(BaseModel):
 def test_schema_from_with_structured_output(schema: Type) -> None:
     """Test schema from with_structured_output."""
 
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-4o")
 
     structured_llm = llm.with_structured_output(
         schema, method="json_schema", strict=True
@@ -886,3 +886,16 @@ def test_init_o1() -> None:
     with pytest.warns(None) as record:  # type: ignore[call-overload]
         ChatOpenAI(model="o1", reasoning_effort="medium")
     assert len(record) == 0
+
+
+def test_structured_output_old_model() -> None:
+    class Output(TypedDict):
+        """output."""
+
+        foo: str
+
+    with pytest.warns(match="Cannot use method='json_schema'"):
+        llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
+    # assert tool calling was used instead of json_schema
+    assert "tools" in llm.steps[0].kwargs  # type: ignore
+    assert "response_format" not in llm.steps[0].kwargs  # type: ignore

@@ -5,7 +5,6 @@ on:
   schedule:
     - cron:  '0 13 * * *'
 env:
-  POETRY_VERSION: "1.8.4"
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -46,20 +45,18 @@ jobs:
             fi
           done
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./langchain/.github/actions/poetry_setup"
+      - name: Setup python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          cache-key: api-docs
-          working-directory: langchain
 
       - name: Install initial py deps
         working-directory: langchain
         run: |
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
-          
+
       - name: Move libs with script
         run: python langchain/.github/scripts/prep_api_docs_build.py
         env:

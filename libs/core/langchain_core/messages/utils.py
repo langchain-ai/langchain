@@ -124,7 +124,7 @@ def get_buffer_string(
             role = m.role
         else:
             msg = f"Got unsupported message type: {m}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = f"{role}: {m.content}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
@@ -948,8 +948,9 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
+
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
@@ -1400,7 +1401,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
         return message.role
     else:
         msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:

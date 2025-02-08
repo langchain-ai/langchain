@@ -13,6 +13,7 @@ from typing import (
 )
 
 import pytest
+from blockbuster import BlockBuster
 from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
@@ -38,7 +39,9 @@ from langchain_core.runnables import (
     chain,
     ensure_config,
 )
-from langchain_core.runnables.config import get_callback_manager_for_config
+from langchain_core.runnables.config import (
+    get_async_callback_manager_for_config,
+)
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
@@ -1556,7 +1559,7 @@ async def test_event_stream_with_retry() -> None:
     def fail(inputs: str) -> None:
         """Simple func."""
         msg = "fail"
-        raise Exception(msg)
+        raise ValueError(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1906,7 +1909,7 @@ async def test_runnable_with_message_history() -> None:
                 return fn(*args, **kwargs)
             except Exception as e:
                 raised_errors.append(e)
-                raise e
+                raise
 
         return _get_output_messages
 
@@ -1923,9 +1926,12 @@ async def test_runnable_with_message_history() -> None:
         ]
     }
 
-    with_message_history.with_config(
-        {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "meow"})
+    await asyncio.to_thread(
+        with_message_history.with_config(
+            {"configurable": {"session_id": "session-123"}}
+        ).invoke,
+        {"question": "meow"},
+    )
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
@@ -1995,8 +2001,9 @@ EXPECTED_EVENTS = [
 ]
 
 
-async def test_sync_in_async_stream_lambdas() -> None:
+async def test_sync_in_async_stream_lambdas(blockbuster: BlockBuster) -> None:
     """Test invoking nested runnable lambda."""
+    blockbuster.deactivate()
 
     def add_one(x: int) -> int:
         return x + 1
@@ -2085,8 +2092,8 @@ class StreamingRunnable(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         config = ensure_config(config)
-        callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
+        callback_manager = get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
             None,
             input,
             name=config.get("run_name", self.get_name()),
@@ -2097,7 +2104,7 @@ class StreamingRunnable(Runnable[Input, Output]):
             final_output = None
             for element in self.iterable:
                 if isinstance(element, BaseException):
-                    raise element
+                    raise element  # noqa: TRY301
                 yield element
 
                 if final_output is None:
@@ -2109,9 +2116,9 @@ class StreamingRunnable(Runnable[Input, Output]):
                         final_output = element
 
             # set final channel values as run output
-            run_manager.on_chain_end(final_output)
+            await run_manager.on_chain_end(final_output)
         except BaseException as e:
-            run_manager.on_chain_error(e)
+            await run_manager.on_chain_error(e)
             raise
 
 
@@ -2409,10 +2416,10 @@ async def test_break_astream_events() -> None:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
-                return input
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
+            return input
 
         def reset(self) -> None:
             self.started = False
@@ -2474,10 +2481,10 @@ async def test_cancel_astream_events() -> None:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
-                return input
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
+            return input
 
         def reset(self) -> None:
             self.started = False

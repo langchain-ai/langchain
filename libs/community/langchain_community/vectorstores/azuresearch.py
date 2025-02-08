@@ -94,7 +94,7 @@ def _get_search_client(
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
-    user_agent: Optional[str] = "langchain",
+    user_agent: Optional[str] = "langchain-comm-python-azure-search",
     cors_options: Optional[CorsOptions] = None,
     async_: bool = False,
     additional_search_client_options: Optional[Dict[str, Any]] = None,
@@ -683,7 +683,8 @@ class AzureSearch(VectorStore):
         self, query: str, *, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance."""
-        search_type = kwargs.get("search_type", self.search_type)
+        # Extract search_type from kwargs, defaulting to self.search_type
+        search_type = kwargs.pop("search_type", self.search_type)
         if search_type == "similarity":
             return self.vector_search_with_score(query, k=k, **kwargs)
         elif search_type == "hybrid":

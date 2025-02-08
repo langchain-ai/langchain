@@ -1,57 +1,63 @@
-[tool.poetry]
+[project]
+authors = []
+license = {text = "MIT"}
+requires-python = "<4.0,>=3.9"
+dependencies = []
 name = "langchain-monorepo"
 version = "0.0.1"
 description = "LangChain mono-repo"
-authors = []
-license = "MIT"
 readme = "README.md"
+
+[project.urls]
 repository = "https://www.github.com/langchain-ai/langchain"
 
+[dependency-groups]
+lint = [
+    "ruff<1.0.0,>=0.5.0",
+]
+dev = [
+    "langchain-core @ file:///${PROJECT_ROOT}/libs/core",
+    "langchain-text-splitters @ file:///${PROJECT_ROOT}/libs/text-splitters",
+    "langchain-community @ file:///${PROJECT_ROOT}/libs/community",
+    "langchain @ file:///${PROJECT_ROOT}/libs/langchain",
+    "langchain-openai @ file:///${PROJECT_ROOT}/libs/partners/openai",
+    "ipykernel<7.0.0,>=6.29.2",
+]
+codespell = [
+    "codespell<3.0.0,>=2.2.0",
+]
+typing = []
+test = [
+    "langchain-experimental @ git+https://github.com/langchain-ai/langchain-experimental.git#subdirectory=libs/experimental",
+    "langchain-anthropic @ file:///${PROJECT_ROOT}/libs/partners/anthropic",
+    "langchain-aws @ git+https://github.com/langchain-ai/langchain-aws.git#subdirectory=libs/aws",
+    "langchain-chroma @ file:///${PROJECT_ROOT}/libs/partners/chroma",
+    "langchain-fireworks @ file:///${PROJECT_ROOT}/libs/partners/fireworks",
+    "langchain-google-vertexai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/vertexai",
+    "langchain-groq @ file:///${PROJECT_ROOT}/libs/partners/groq",
+    "langchain-mistralai @ file:///${PROJECT_ROOT}/libs/partners/mistralai",
+    "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
+    "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
+    "langgraph @ git+https://github.com/langchain-ai/langgraph.git#subdirectory=libs/langgraph",
+    "jupyter<2.0.0,>=1.1.1",
+    "click<9.0.0,>=8.1.7",
+    "aiofiles<25.0.0,>=24.1.0",
+    "faiss-cpu<2.0.0,>=1.7.4",
+    "grandalf<1.0,>=0.8",
+    "lark<2.0.0,>=1.1.9",
+    "pandas<3,>=2",
+    "rank-bm25<1.0.0,>=0.2.2",
+    "tabulate<1.0.0,>=0.9.0",
+    "unstructured[md]<1.0.0,>=0.16.11; python_version < \"3.13\"",
+    "wikipedia<2.0.0,>=1.4.0",
+    "pypdf<6.0.0,>=5.0.0",
+    "vcrpy<7.0.0,>=6.0.1",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5.0"
-
-[tool.poetry.group.dev.dependencies]
-langchain-core = { path = "libs/core/", develop = true }
-langchain-text-splitters = { path = "libs/text-splitters", develop = true }
-langchain-community = { path = "libs/community/", develop = true }
-langchain = { path = "libs/langchain/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
-ipykernel = "^6.29.2"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.typing.dependencies]
-
-[tool.poetry.group.test.dependencies]
-langchain-experimental = { git = "https://github.com/langchain-ai/langchain-experimental.git", subdirectory = "libs/experimental" }
-langchain-anthropic = { path = "libs/partners/anthropic", develop = true }
-langchain-aws = { git = "https://github.com/langchain-ai/langchain-aws.git", subdirectory = "libs/aws" }
-langchain-chroma = { path = "libs/partners/chroma", develop = true }
-langchain-fireworks = { path = "libs/partners/fireworks", develop = true }
-langchain-google-vertexai = { git = "https://github.com/langchain-ai/langchain-google.git", subdirectory = "libs/vertexai" }
-langchain-groq = { path = "libs/partners/groq", develop = true }
-langchain-mistralai = { path = "libs/partners/mistralai", develop = true }
-langchain-together = { git = "https://github.com/langchain-ai/langchain-together.git", subdirectory = "libs/together" }
-langchain-unstructured = { git = "https://github.com/langchain-ai/langchain-unstructured.git", subdirectory = "libs/unstructured" }
-langgraph = { git = "https://github.com/langchain-ai/langgraph.git", subdirectory = "libs/langgraph" }
-jupyter = "^1.1.1"
-click = "^8.1.7"
-aiofiles = "^24.1.0"
-faiss-cpu = "^1.7.4"
-grandalf = "^0.8"
-lark = "^1.1.9"
-pandas = "^2"
-rank-bm25 = "^0.2.2"
-tabulate = "^0.9.0"
-unstructured = { version = "^0.16.11", extras = ["md"], python = "<3.13" }
-wikipedia = "^1.4.0"
-pypdf = "^5.0.0"
-vcrpy = "^6.0.1"
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'

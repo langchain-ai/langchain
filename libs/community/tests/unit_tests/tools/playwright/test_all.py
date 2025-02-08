@@ -7,8 +7,8 @@ import pytest
 from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
 
 
-@pytest.mark.requires("playwright")
 @pytest.mark.requires("bs4")
+@pytest.mark.requires("playwright")
 def test_playwright_tools_schemas() -> None:
     """Test calling 'tool_call_schema' for every tool to check to init issues."""
 

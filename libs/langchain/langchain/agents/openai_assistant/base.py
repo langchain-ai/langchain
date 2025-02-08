@@ -28,7 +28,7 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
-    from openai.types.beta.threads import ThreadMessage
+    from openai.types.beta.threads import ThreadMessage  # type: ignore[attr-defined]
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -590,7 +590,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
                     if version_gte_1_14
                     else isinstance(
-                        content, openai.types.beta.threads.MessageContentText
+                        content,
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
                     )
                 )
                 for content in answer
@@ -743,7 +744,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
                     if version_gte_1_14
                     else isinstance(
-                        content, openai.types.beta.threads.MessageContentText
+                        content,
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
                     )
                 )
                 for content in answer
