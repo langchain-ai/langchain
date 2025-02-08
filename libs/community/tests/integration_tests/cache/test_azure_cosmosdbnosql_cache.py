@@ -64,6 +64,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat(
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_search_fields=["text"],
         )
     )
 
@@ -94,6 +95,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_disk_ann(
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_search_fields=["text"],
         )
     )
 
@@ -124,6 +126,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat(
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_search_fields=["text"],
         )
     )
 
@@ -156,6 +159,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_disk_ann(
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_search_fields=["text"],
         )
     )
 
@@ -188,6 +192,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat(
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_search_fields=["text"],
         )
     )
 
@@ -218,6 +223,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_disk_ann(
             cosmos_container_properties={"partition_key": partition_key},
             cosmos_database_properties={},
             vector_search_fields={"text_field": "text", "embedding_field": "embedding"},
+            full_text_search_fields=["text"],
         )
     )
 

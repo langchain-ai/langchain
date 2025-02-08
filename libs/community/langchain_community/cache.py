@@ -2294,6 +2294,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
         vector_search_fields: Dict[str, Any],
+        full_text_search_fields: Optional[List[str]] = None,
         search_type: str = "vector",
         create_container: bool = True,
     ):
@@ -2309,6 +2310,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
             cosmos_container_properties: CosmosDB container properties
             cosmos_database_properties: CosmosDB database properties
             vector_search_fields: Vector Search Fields for the container.
+            full_text_search_fields: Full Text Search Fields for the container.
             create_container: Create the container if it doesn't exist.
         """
         self.cosmos_client = cosmos_client
@@ -2320,6 +2322,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         self.cosmos_container_properties = cosmos_container_properties
         self.cosmos_database_properties = cosmos_database_properties
         self.vector_search_fields = vector_search_fields
+        self.full_text_search_fields = full_text_search_fields
         self.search_type = search_type
         self.create_container = create_container
         self._cache_dict: Dict[str, AzureCosmosDBNoSqlVectorSearch] = {}
@@ -2348,6 +2351,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
                 container_name=self.container_name,
                 search_type=self.search_type,
                 vector_search_fields=self.vector_search_fields,
+                full_text_search_fields=self.full_text_search_fields,
                 create_container=self.create_container,
             )
 
