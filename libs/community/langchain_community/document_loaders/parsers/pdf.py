@@ -117,9 +117,7 @@ def _format_inner_image(blob: Blob, content: str, format: str) -> str:
             content = content.replace("]", r"\\]")
             content = f"![{content}]({source})"
         elif format == "html-img":
-            content = (
-                f'<img alt="{html.escape(content, quote=True)} ' f'src="{source}" />'
-            )
+            content = f'<img alt="{html.escape(content, quote=True)} src="{source}" />'
     return content
 
 

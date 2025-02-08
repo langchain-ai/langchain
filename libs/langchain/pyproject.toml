@@ -52,7 +52,12 @@ version = ">=1.26.2,<3"
 python = ">=3.12"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = [ "E", "F", "I", "T201", "D",]
+pydocstyle = { convention = "google" }
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+"!langchain/indexes/vectorstore.py" = ["D"]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
