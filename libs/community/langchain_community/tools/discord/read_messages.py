@@ -27,7 +27,8 @@ class DiscordReadMessages(BaseTool):
     name: str = "discord_message_reader"
     description: str = (
         "Reads messages from a specified Discord channel using the Discord REST API. "
-        "Channel IDs must be numeric strings. Returns the messages as a JSON-formatted string."
+        "Channel IDs must be numeric strings. Returns the messages as a JSON-formatted "
+        "string."
     )
     args_schema: Type[DiscordReadMessagesSchema] = DiscordReadMessagesSchema
     client: DiscordClientWrapper = Field(default_factory=login)

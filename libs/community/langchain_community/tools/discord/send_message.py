@@ -16,7 +16,8 @@ class DiscordSendMessageSchema(BaseModel):
 
     message: str = Field(
         ...,
-        description="Content of the message to send; supports basic Markdown formatting."
+        description="Content of the message to send; supports basic Markdown "
+                    "formatting."
     )
     channel_id: str = Field(
         ...,
