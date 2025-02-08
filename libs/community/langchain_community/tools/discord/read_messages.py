@@ -3,10 +3,9 @@ import logging
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field
 
-from .base import DiscordClientWrapper, login
+from .base import DiscordBaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class DiscordReadMessagesSchema(BaseModel):
     )
 
 
-class DiscordReadMessages(BaseTool):
+class DiscordReadMessages(DiscordBaseTool):
     """Tool for reading messages from a Discord channel via the Discord API."""
 
     name: str = "discord_message_reader"
@@ -32,7 +31,6 @@ class DiscordReadMessages(BaseTool):
         "string."
     )
     args_schema: Type[DiscordReadMessagesSchema] = DiscordReadMessagesSchema
-    _client: DiscordClientWrapper = PrivateAttr(default_factory=login)
 
     def _validate_inputs(self, channel_id: str, limit: int) -> Optional[str]:
         if not channel_id.isdigit():
@@ -52,7 +50,7 @@ class DiscordReadMessages(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = asyncio.run(self._client.read_messages(int(channel_id), limit))
+            result = asyncio.run(self.client.read_messages(int(channel_id), limit))
             return "Read messages result: " + result
         except Exception as e:
             logger.error(f"Error in discord read messages: {str(e)}")
@@ -69,7 +67,7 @@ class DiscordReadMessages(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = await self._client.read_messages(int(channel_id), limit)
+            result = await self.client.read_messages(int(channel_id), limit)
             return "Read messages result: " + result
         except Exception as e:
             logger.error(f"Error in discord read messages: {str(e)}")

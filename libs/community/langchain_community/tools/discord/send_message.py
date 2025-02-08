@@ -3,10 +3,9 @@ import logging
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field
 
-from .base import DiscordClientWrapper, login
+from .base import DiscordBaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ class DiscordSendMessageSchema(BaseModel):
     )
 
 
-class DiscordSendMessage(BaseTool):
+class DiscordSendMessage(DiscordBaseTool):
     """Tool for sending messages to Discord channels via the Discord API."""
 
     name: str = "discord_message_sender"
@@ -34,7 +33,6 @@ class DiscordSendMessage(BaseTool):
         "Supports basic text formatting with Markdown."
     )
     args_schema: Type[DiscordSendMessageSchema] = DiscordSendMessageSchema
-    _client: DiscordClientWrapper = PrivateAttr(default_factory=login)
 
     def _validate_inputs(self, message: str, channel_id: str) -> Optional[str]:
         """Common validation logic for both sync and async paths."""
@@ -55,7 +53,7 @@ class DiscordSendMessage(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = asyncio.run(self._client.send_message(int(channel_id), message))
+            result = asyncio.run(self.client.send_message(int(channel_id), message))
             return "Message result: " + result
         except Exception as e:
             logger.error(f"Error in sync send: {str(e)}")
@@ -72,7 +70,7 @@ class DiscordSendMessage(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = await self._client.send_message(int(channel_id), message)
+            result = await self.client.send_message(int(channel_id), message)
             return "Message result: " + result
         except Exception as e:
             logger.error(f"Error in async send: {str(e)}")

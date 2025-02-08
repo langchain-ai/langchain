@@ -4,6 +4,8 @@ import os
 from typing import Optional
 
 import aiohttp
+from langchain_core.tools import BaseTool
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +96,10 @@ def login() -> DiscordClientWrapper:
     if not token:
         raise ValueError("DISCORD_BOT_TOKEN environment variable not set")
     return DiscordClientWrapper(token)
+
+
+class DiscordBaseTool(BaseTool):  # type: ignore[override]
+    """Base class for Discord tools."""
+
+    client: DiscordClientWrapper = Field(default_factory=login)
+    """The Discord client wrapper."""
