@@ -1,16 +1,33 @@
 """Test Perplexity Chat API wrapper."""
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Type
 from unittest.mock import MagicMock
 
 import pytest
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_tests.unit_tests import ChatModelUnitTests
 from pytest_mock import MockerFixture
 
 from langchain_community.chat_models import ChatPerplexity
 
 os.environ["PPLX_API_KEY"] = "foo"
+
+
+@pytest.mark.requires("openai")
+class TestPerplexityStandard(ChatModelUnitTests):
+    @property
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return ChatPerplexity
+
+    @property
+    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+        return (
+            {"PPLX_API_KEY": "api_key"},
+            {},
+            {"pplx_api_key": "api_key"},
+        )
 
 
 @pytest.mark.requires("openai")

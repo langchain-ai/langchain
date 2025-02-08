@@ -168,7 +168,7 @@ class DeepLake(VectorStore):
         if _DEEPLAKE_INSTALLED is False:
             raise ImportError(
                 "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake[enterprise]`."
+                "Please install it with `pip install deeplake[enterprise]<4.0.0`."
             )
 
         if (
