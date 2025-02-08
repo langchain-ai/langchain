@@ -467,7 +467,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                         logger.warning(f"Pebblo Server: Error {response.status}")
                     elif response.status >= HTTPStatus.BAD_REQUEST:
                         logger.warning(
-                            f"Pebblo received an invalid payload: " f"{response.text}"
+                            f"Pebblo received an invalid payload: {response.text}"
                         )
                     elif response.status != HTTPStatus.OK:
                         logger.warning(

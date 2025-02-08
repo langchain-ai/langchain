@@ -80,9 +80,9 @@ def test_chat_outlines_regex(chat_model: ChatOutlines) -> None:
     output = chat_model.invoke(messages)
 
     assert isinstance(output, AIMessage)
-    assert re.match(
-        ip_regex, str(output.content)
-    ), f"Generated output '{output.content}' is not a valid IP address"
+    assert re.match(ip_regex, str(output.content)), (
+        f"Generated output '{output.content}' is not a valid IP address"
+    )
 
 
 def test_chat_outlines_type_constraints(chat_model: ChatOutlines) -> None:
@@ -129,14 +129,14 @@ def test_chat_outlines_grammar(chat_model: ChatOutlines) -> None:
     output = chat_model.invoke(messages)
 
     # Validate the output is a non-empty string
-    assert (
-        isinstance(output.content, str) and output.content.strip()
-    ), "Output should be a non-empty string"
+    assert isinstance(output.content, str) and output.content.strip(), (
+        "Output should be a non-empty string"
+    )
 
     # Use a simple regex to check if the output contains basic arithmetic operations and numbers
-    assert re.search(
-        r"[\d\+\-\*/\(\)]+", output.content
-    ), f"Generated output '{output.content}' does not appear to be a valid arithmetic expression"
+    assert re.search(r"[\d\+\-\*/\(\)]+", output.content), (
+        f"Generated output '{output.content}' does not appear to be a valid arithmetic expression"
+    )
 
 
 def test_chat_outlines_with_structured_output(chat_model: ChatOutlines) -> None:

@@ -135,7 +135,10 @@ class BaseOCIModelDeployment(Serializable):
 
             if self.streaming:
                 headers.update(
-                    {"enable-streaming": "true", "Accept": "text/event-stream"}
+                    {
+                        "enable-streaming": "true",
+                        "Accept": "text/event-stream",
+                    }
                 )
             return headers
 

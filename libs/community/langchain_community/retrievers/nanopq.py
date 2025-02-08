@@ -86,7 +86,7 @@ class NanoPQRetriever(BaseRetriever):
             from nanopq import PQ
         except ImportError:
             raise ImportError(
-                "Could not import nanopq, please install with `pip install " "nanopq`."
+                "Could not import nanopq, please install with `pip install nanopq`."
             )
 
         query_embeds = np.array(self.embeddings.embed_query(query))
