@@ -89,13 +89,13 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             file_path is not None or url_path is not None or bytes_source is not None
         ), "file_path, url_path or bytes_source must be provided"
 
-        assert (
-            api_key is not None or azure_credential is not None
-        ), "Either api_key or azure_credential must be provided."
+        assert api_key is not None or azure_credential is not None, (
+            "Either api_key or azure_credential must be provided."
+        )
 
-        assert (
-            api_key is None or azure_credential is None
-        ), "Only one of api_key or azure_credential should be provided."
+        assert api_key is None or azure_credential is None, (
+            "Only one of api_key or azure_credential should be provided."
+        )
 
         self.file_path = file_path
         self.url_path = url_path

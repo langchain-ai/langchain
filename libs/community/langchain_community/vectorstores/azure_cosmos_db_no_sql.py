@@ -617,7 +617,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         ):
             query = f"SELECT {'TOP ' + str(k) + ' ' if not offset_limit else ''}"
         else:
-            query = f"""SELECT {'TOP @limit ' if not offset_limit else ''}"""
+            query = f"""SELECT {"TOP @limit " if not offset_limit else ""}"""
         query += self._generate_projection_fields(
             projection_mapping, query_type, embeddings
         )
@@ -797,7 +797,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                     raise ValueError(f"Unsupported value type: {type(condition.value)}")
 
                 clauses.append(f"c.{condition.property} {sql_operator} {value}")
-        return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
+        return f""" WHERE {" {} ".format(sql_logical_operator).join(clauses)}""".strip()
 
     def _execute_query(
         self,
@@ -834,7 +834,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 if with_embedding:
                     metadata[self._embedding_key] = item[self._embedding_key]
             docs_and_scores.append(
-                (Document(page_content=text, metadata=metadata), score)
+                (
+                    Document(page_content=text, metadata=metadata),
+                    score,
+                )
             )
         return docs_and_scores
 

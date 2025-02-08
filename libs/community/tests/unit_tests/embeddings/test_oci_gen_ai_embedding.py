@@ -40,7 +40,10 @@ def test_embedding_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
             embeddings.append(v)
 
         return MockResponseDict(
-            {"status": 200, "data": MockResponseDict({"embeddings": embeddings})}
+            {
+                "status": 200,
+                "data": MockResponseDict({"embeddings": embeddings}),
+            }
         )
 
     monkeypatch.setattr(embeddings.client, "embed_text", mocked_response)

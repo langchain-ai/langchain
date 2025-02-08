@@ -84,7 +84,7 @@ class MerriamWebsterAPIWrapper(BaseModel):
             formatted_definitions.extend(self._format_definition(definition))
 
         if len(formatted_definitions) == 1:
-            return f"Definition of '{query}':\n" f"{formatted_definitions[0]}"
+            return f"Definition of '{query}':\n{formatted_definitions[0]}"
 
         result = f"Definitions of '{query}':\n\n"
         for i, formatted_definition in enumerate(formatted_definitions, 1):

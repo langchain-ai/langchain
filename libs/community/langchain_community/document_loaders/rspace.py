@@ -58,7 +58,7 @@ class RSpaceLoader(BaseLoader):
             from rspace_client.eln import eln, field_content
 
         except ImportError:
-            raise ImportError("You must run " "`pip install rspace_client`")
+            raise ImportError("You must run `pip install rspace_client`")
 
         try:
             eln = eln.ELNClient(self.url, self.api_key)
@@ -66,8 +66,7 @@ class RSpaceLoader(BaseLoader):
 
         except Exception:
             raise Exception(
-                f"Unable to initialize client - is url {self.url} or "
-                f"api key  correct?"
+                f"Unable to initialize client - is url {self.url} or api key  correct?"
             )
 
         return eln, field_content.FieldContent

@@ -196,7 +196,10 @@ def _messages_to_prompt_dict(
         elif isinstance(input_msg, HumanMessage):
             if template_id is None:
                 examples_and_messages.append(
-                    {"role": "user", "content": str(input_msg.content)}
+                    {
+                        "role": "user",
+                        "content": str(input_msg.content),
+                    }
                 )
             else:
                 params: Dict[str, str] = {}
@@ -206,12 +209,19 @@ def _messages_to_prompt_dict(
                 )
                 params[str(input_msg.id)] = str(input_msg.content)
                 examples_and_messages.append(
-                    {"role": "user", "template_id": template_id, "params": params}
+                    {
+                        "role": "user",
+                        "template_id": template_id,
+                        "params": params,
+                    }
                 )
         elif isinstance(input_msg, AIMessage):
             if input_msg.tool_calls is None or len(input_msg.tool_calls) == 0:
                 examples_and_messages.append(
-                    {"role": "assistant", "content": str(input_msg.content)}
+                    {
+                        "role": "assistant",
+                        "content": str(input_msg.content),
+                    }
                 )
             else:
                 ai_msg_to_json = {

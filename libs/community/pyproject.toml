@@ -59,7 +59,7 @@ test = [
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = ["pytest-vcr<2.0.0,>=1.0.2", "vcrpy<7,>=6"]
 lint = [
-    "ruff<0.6,>=0.5",
+    "ruff<0.10,>=0.9",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
@@ -84,6 +84,7 @@ typing = [
 
 
 [tool.ruff]
+target-version = "py39"
 exclude = [
     "tests/examples/non-utf8-encoding.py",
     "tests/integration_tests/examples/non-utf8-encoding.py",
