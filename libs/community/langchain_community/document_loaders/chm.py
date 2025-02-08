@@ -117,6 +117,10 @@ class CHMParser(object):
         for item in index:
             content = self.load(item["local"])
             res.append(
-                {"name": item["name"], "local": item["local"], "content": content}
+                {
+                    "name": item["name"],
+                    "local": item["local"],
+                    "content": content,
+                }
             )
         return res

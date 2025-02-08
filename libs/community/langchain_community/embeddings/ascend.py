@@ -89,7 +89,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
         last_hidden_state = self.model(
             inputs.input_ids.npu(), inputs.attention_mask.npu(), return_dict=True
@@ -103,7 +103,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
         if self.pooling_method == "cls":
             return last_hidden_state[:, 0]

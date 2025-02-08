@@ -63,12 +63,12 @@ jobs:
         if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
         working-directory: ${{ inputs.working-directory }}
         run: |
-          uv sync --group test
+          uv sync --inexact --group test
       - name: Install unit+integration test dependencies
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         working-directory: ${{ inputs.working-directory }}
         run: |
-          uv sync --group test --group test_integration
+          uv sync --inexact --group test --group test_integration
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}

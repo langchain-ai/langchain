@@ -45,7 +45,10 @@ def test_move_file() -> None:
         destination_file = Path(temp_dir) / "destination.txt"
         source_file.write_text("Hello, world!")
         tool.run(
-            {"source_path": str(source_file), "destination_path": str(destination_file)}
+            {
+                "source_path": str(source_file),
+                "destination_path": str(destination_file),
+            }
         )
         assert not source_file.exists()
         assert destination_file.exists()

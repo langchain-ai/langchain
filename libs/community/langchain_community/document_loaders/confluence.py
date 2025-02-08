@@ -652,7 +652,7 @@ class ConfluenceLoader(BaseLoader):
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`Pillow` package not found, " "please run `pip install Pillow`"
+                "`Pillow` package not found, please run `pip install Pillow`"
             )
 
         # depending on setup you may also need to set the correct path for

@@ -283,8 +283,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
 
         if self.model_id is None:
             raise ValueError(
-                "model_id is required to call the model, "
-                "please provide the model_id."
+                "model_id is required to call the model, please provide the model_id."
             )
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):

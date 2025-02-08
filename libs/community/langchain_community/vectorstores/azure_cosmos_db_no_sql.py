@@ -653,7 +653,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if search_type == "full_text_ranking" or search_type == "hybrid":
             query = f"SELECT {'TOP ' + str(k) + ' ' if not offset_limit else ''}"
         else:
-            query = f"""SELECT {'TOP @limit ' if not offset_limit else ''}"""
+            query = f"""SELECT {"TOP @limit " if not offset_limit else ""}"""
         query += self._generate_projection_fields(
             projection_mapping,
             search_type,
@@ -829,7 +829,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 else:
                     value = str(condition.value)
                 clauses.append(f"c.{condition.property} {sql_operator} {value}")
-        return f""" WHERE {' {} '.format(sql_logical_operator).join(clauses)}""".strip()
+        return f""" WHERE {" {} ".format(sql_logical_operator).join(clauses)}""".strip()
 
     def _execute_query(
         self,
@@ -865,7 +865,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                         self._vector_search_fields["embedding_field"]
                     ]
             docs_and_scores.append(
-                (Document(page_content=text, metadata=metadata), score)
+                (
+                    Document(page_content=text, metadata=metadata),
+                    score,
+                )
             )
         return docs_and_scores
 
