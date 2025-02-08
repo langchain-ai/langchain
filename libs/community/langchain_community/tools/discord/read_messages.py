@@ -30,7 +30,7 @@ class DiscordReadMessages(DiscordBaseTool):
         "Channel IDs must be numeric strings. Returns the messages as a JSON-formatted "
         "string."
     )
-    args_schema: Type[DiscordReadMessagesSchema] = DiscordReadMessagesSchema
+    args_schema: Type[BaseModel] = DiscordReadMessagesSchema
 
     def _validate_inputs(self, channel_id: str, limit: int) -> Optional[str]:
         if not channel_id.isdigit():

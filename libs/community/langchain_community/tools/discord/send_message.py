@@ -32,7 +32,7 @@ class DiscordSendMessage(DiscordBaseTool):
         "Channel IDs must be numeric strings. "
         "Supports basic text formatting with Markdown."
     )
-    args_schema: Type[DiscordSendMessageSchema] = DiscordSendMessageSchema
+    args_schema: Type[BaseModel] = DiscordSendMessageSchema
 
     def _validate_inputs(self, message: str, channel_id: str) -> Optional[str]:
         """Common validation logic for both sync and async paths."""
