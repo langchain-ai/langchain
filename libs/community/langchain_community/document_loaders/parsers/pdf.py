@@ -1158,50 +1158,216 @@ class PyMuPDFParser(BaseBlobParser):
 
 
 class PyPDFium2Parser(BaseBlobParser):
-    """Parse `PDF` with `PyPDFium2`."""
+    """Parse a blob from a PDF using `PyPDFium2` library.
 
-    def __init__(self, extract_images: bool = False) -> None:
-        """Initialize the parser."""
+    This class provides methods to parse a blob from a PDF document, supporting various
+    configurations such as handling password-protected PDFs, extracting images, and
+    defining extraction mode.
+    It integrates the 'PyPDFium2' library for PDF processing and offers synchronous
+    blob parsing.
+
+    Examples:
+        Setup:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community pypdfium2
+
+        Load a blob from a PDF file:
+
+        .. code-block:: python
+
+            from langchain_core.documents.base import Blob
+
+            blob = Blob.from_path("./example_data/layout-parser-paper.pdf")
+
+        Instantiate the parser:
+
+        .. code-block:: python
+
+            from langchain_community.document_loaders.parsers import PyPDFium2Parser
+
+            parser = PyPDFium2Parser(
+                # password=None,
+                mode="page",
+                pages_delimiter="\n\f",
+                # extract_images = True,
+                # images_to_text = convert_images_to_text_with_tesseract(),
+            )
+
+        Lazily parse the blob:
+
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = parser.lazy_parse(blob)
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    """
+
+    # PyPDFium2 is not thread safe.
+    # See https://pypdfium2.readthedocs.io/en/stable/python_api.html#thread-incompatibility
+    _lock = threading.Lock()
+
+    def __init__(
+        self,
+        extract_images: bool = False,
+        *,
+        password: Optional[str] = None,
+        mode: Literal["single", "page"] = "page",
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
+        images_parser: Optional[BaseImageBlobParser] = None,
+        images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
+    ) -> None:
+        """Initialize a parser based on PyPDFium2.
+
+        Args:
+            password: Optional password for opening encrypted PDFs.
+            mode: The extraction mode, either "single" for the entire document or "page"
+                for page-wise extraction.
+            pages_delimiter: A string delimiter to separate pages in single-mode
+                extraction.
+            extract_images: Whether to extract images from the PDF.
+            images_parser: Optional image blob parser.
+            images_inner_format: The format for the parsed output.
+                - "text" = return the content as is
+                - "markdown-img" = wrap the content into an image markdown link, w/ link
+                pointing to (`![body)(#)`]
+                - "html-img" = wrap the content as the `alt` text of an tag and link to
+                (`<img alt="{body}" src="#"/>`)
+            extraction_mode: “plain” for legacy functionality, “layout” for experimental
+                layout mode functionality
+            extraction_kwargs: Optional additional parameters for the extraction
+                process.
+
+        Returns:
+            This method does not directly return data. Use the `parse` or `lazy_parse`
+            methods to retrieve parsed documents with content and metadata.
+
+        Raises:
+            ValueError: If the mode is not "single" or "page".
+        """
+        super().__init__()
+        if mode not in ["single", "page"]:
+            raise ValueError("mode must be single or page")
+        self.extract_images = extract_images
+        if extract_images and not images_parser:
+            images_parser = RapidOCRBlobParser()
+        self.images_parser = images_parser
+        self.images_inner_format = images_inner_format
+        self.password = password
+        self.mode = mode
+        self.pages_delimiter = pages_delimiter
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        """
+        Lazily parse the blob.
+        Insert image, if possible, between two paragraphs.
+        In this way, a paragraph can be continued on the next page.
+
+        Args:
+            blob: The blob to parse.
+
+        Raises:
+            ImportError: If the `pypdf` package is not found.
+
+        Yield:
+            An iterator over the parsed documents.
+        """
         try:
-            import pypdfium2  # noqa:F401
+            import pypdfium2
         except ImportError:
             raise ImportError(
                 "pypdfium2 package not found, please install it with"
                 " `pip install pypdfium2`"
             )
-        self.extract_images = extract_images
-
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
-        """Lazily parse the blob."""
-        import pypdfium2
 
         # pypdfium2 is really finicky with respect to closing things,
         # if done incorrectly creates seg faults.
-        with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
-            pdf_reader = pypdfium2.PdfDocument(file_path, autoclose=True)
-            try:
-                for page_number, page in enumerate(pdf_reader):
-                    text_page = page.get_textpage()
-                    content = text_page.get_text_range()
-                    text_page.close()
-                    content += "\n" + self._extract_images_from_page(page)
-                    page.close()
-                    metadata = {"source": blob.source, "page": page_number}  # type: ignore[attr-defined]
-                    yield Document(page_content=content, metadata=metadata)
-            finally:
-                pdf_reader.close()
+        with PyPDFium2Parser._lock:
+            with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
+                pdf_reader = None
+                try:
+                    pdf_reader = pypdfium2.PdfDocument(
+                        file_path, password=self.password, autoclose=True
+                    )
+                    full_content = []
+
+                    doc_metadata = _purge_metadata(pdf_reader.get_metadata_dict())
+                    doc_metadata["source"] = blob.source
+                    doc_metadata["total_pages"] = len(pdf_reader)
+
+                    for page_number, page in enumerate(pdf_reader):
+                        text_page = page.get_textpage()
+                        text_from_page = "\n".join(
+                            text_page.get_text_range().splitlines()
+                        )  # Replace \r\n
+                        text_page.close()
+                        image_from_page = self._extract_images_from_page(page)
+                        all_text = _merge_text_and_extras(
+                            [image_from_page], text_from_page
+                        ).strip()
+                        page.close()
+
+                        if self.mode == "page":
+                            # For legacy compatibility, add the last '\n'
+                            if not all_text.endswith("\n"):
+                                all_text += "\n"
+                            yield Document(
+                                page_content=all_text,
+                                metadata=_validate_metadata(
+                                    {
+                                        **doc_metadata,
+                                        "page": page_number,
+                                    }
+                                ),
+                            )
+                        else:
+                            full_content.append(all_text)
+
+                    if self.mode == "single":
+                        yield Document(
+                            page_content=self.pages_delimiter.join(full_content),
+                            metadata=_validate_metadata(doc_metadata),
+                        )
+                finally:
+                    if pdf_reader:
+                        pdf_reader.close()
 
     def _extract_images_from_page(self, page: pypdfium2._helpers.page.PdfPage) -> str:
-        """Extract images from page and get the text with RapidOCR."""
-        if not self.extract_images:
+        """Extract images from a PDF page and get the text using images_to_text.
+
+        Args:
+            page: The page object from which to extract images.
+
+        Returns:
+            str: The extracted text from the images on the page.
+        """
+        if not self.images_parser:
             return ""
 
         import pypdfium2.raw as pdfium_c
 
         images = list(page.get_objects(filter=(pdfium_c.FPDF_PAGEOBJ_IMAGE,)))
-
-        images = list(map(lambda x: x.get_bitmap().to_numpy(), images))
-        return extract_from_images_with_rapidocr(images)
+        if not images:
+            return ""
+        str_images = []
+        for image in images:
+            image_bytes = io.BytesIO()
+            np_image = image.get_bitmap().to_numpy()
+            if np_image.size < 3:
+                continue
+            numpy.save(image_bytes, image.get_bitmap().to_numpy())
+            blob = Blob.from_data(image_bytes.getvalue(), mime_type="application/x-npy")
+            text_from_image = next(self.images_parser.lazy_parse(blob)).page_content
+            str_images.append(
+                _format_inner_image(blob, text_from_image, self.images_inner_format)
+            )
+            image.close()
+        return _FORMAT_IMAGE_STR.format(image_text=_JOIN_IMAGES.join(str_images))
 
 
 class PDFPlumberParser(BaseBlobParser):
