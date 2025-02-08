@@ -1202,3 +1202,39 @@ def test_o1_doesnt_stream() -> None:
 def test_o1_stream_default_works() -> None:
     result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
     assert len(result) > 0
+
+
+def test_multi_party_conversation() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    messages = [
+        HumanMessage("Hi, I have black hair.", name="Alice"),
+        HumanMessage("Hi, I have brown hair.", name="Bob"),
+        HumanMessage("Who just spoke?", name="Charlie"),
+    ]
+    response = llm.invoke(messages)
+    assert "Bob" in response.content
+
+
+def test_structured_output_and_tools() -> None:
+    class ResponseFormat(BaseModel):
+        response: str
+        explanation: str
+
+    llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(
+        [GenerateUsername], strict=True, response_format=ResponseFormat
+    )
+
+    response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
+    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+
+    # Test streaming tool calls
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Generate a user name for Alice, black hair. Use the tool."
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
+    tool_call = full.tool_calls[0]
+    assert tool_call["name"] == "GenerateUsername"

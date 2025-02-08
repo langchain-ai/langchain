@@ -1183,6 +1183,7 @@ class BaseChatOpenAI(BaseChatModel):
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
         strict: Optional[bool] = None,
+        parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -1208,6 +1209,8 @@ class BaseChatOpenAI(BaseChatModel):
                 If False, input schema will not be validated and model output will not
                 be validated.
                 If None, ``strict`` argument will not be passed to the model.
+            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
+                Defaults to ``None`` (no specification, which allows parallel tool use).
             kwargs: Any additional parameters are passed directly to
                 :meth:`~langchain_openai.chat_models.base.ChatOpenAI.bind`.
 
@@ -1217,6 +1220,8 @@ class BaseChatOpenAI(BaseChatModel):
 
         """  # noqa: E501
 
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -1483,6 +1488,9 @@ class BaseChatOpenAI(BaseChatModel):
         chat_message = chat_result.generations[0].message
         if isinstance(chat_message, AIMessage):
             usage_metadata = chat_message.usage_metadata
+            # Skip tool_calls, already sent as chunks
+            if "tool_calls" in chat_message.additional_kwargs:
+                chat_message.additional_kwargs.pop("tool_calls")
         else:
             usage_metadata = None
         message = AIMessageChunk(

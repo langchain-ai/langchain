@@ -8,9 +8,12 @@ import logging
 import threading
 import warnings
 from datetime import datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
+    BinaryIO,
     Iterable,
     Iterator,
     Literal,
@@ -34,7 +37,6 @@ from langchain_community.document_loaders.parsers.images import (
 )
 
 if TYPE_CHECKING:
-    import pdfminer
     import pdfplumber
     import pymupdf
     import pypdf
@@ -273,7 +275,6 @@ class PyPDFParser(BaseBlobParser):
                 # password = None,
                 mode = "single",
                 pages_delimiter = "\n\f",
-                # extract_images = True,
                 # images_parser = TesseractBlobParser(),
             )
 
@@ -464,120 +465,335 @@ class PyPDFParser(BaseBlobParser):
 
 
 class PDFMinerParser(BaseBlobParser):
-    """Parse `PDF` using `PDFMiner`."""
+    """Parse a blob from a PDF using `pdfminer.six` library.
 
-    def __init__(self, extract_images: bool = False, *, concatenate_pages: bool = True):
+    This class provides methods to parse a blob from a PDF document, supporting various
+    configurations such as handling password-protected PDFs, extracting images, and
+    defining extraction mode.
+    It integrates the 'pdfminer.six' library for PDF processing and offers synchronous
+    blob parsing.
+
+    Examples:
+        Setup:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community pdfminer.six pillow
+
+        Load a blob from a PDF file:
+
+        .. code-block:: python
+
+            from langchain_core.documents.base import Blob
+
+            blob = Blob.from_path("./example_data/layout-parser-paper.pdf")
+
+        Instantiate the parser:
+
+        .. code-block:: python
+
+            from langchain_community.document_loaders.parsers import PDFMinerParser
+
+            parser = PDFMinerParser(
+                # password = None,
+                mode = "single",
+                pages_delimiter = "\n\f",
+                # extract_images = True,
+                # images_to_text = convert_images_to_text_with_tesseract(),
+            )
+
+        Lazily parse the blob:
+
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = parser.lazy_parse(blob)
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    """
+
+    _warn_concatenate_pages = False
+
+    def __init__(
+        self,
+        extract_images: bool = False,
+        *,
+        password: Optional[str] = None,
+        mode: Literal["single", "page"] = "single",
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
+        images_parser: Optional[BaseImageBlobParser] = None,
+        images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
+        concatenate_pages: Optional[bool] = None,
+    ):
         """Initialize a parser based on PDFMiner.
 
         Args:
+            password: Optional password for opening encrypted PDFs.
+            mode: Extraction mode to use. Either "single" or "page" for page-wise
+                extraction.
+            pages_delimiter: A string delimiter to separate pages in single-mode
+                extraction.
             extract_images: Whether to extract images from PDF.
-            concatenate_pages: If True, concatenate all PDF pages into one a single
-                               document. Otherwise, return one document per page.
+            images_inner_format: The format for the parsed output.
+                - "text" = return the content as is
+                - "markdown-img" = wrap the content into an image markdown link, w/ link
+                pointing to (`![body)(#)`]
+                - "html-img" = wrap the content as the `alt` text of an tag and link to
+                (`<img alt="{body}" src="#"/>`)
+            concatenate_pages: Deprecated. If True, concatenate all PDF pages
+                into one a single document. Otherwise, return one document per page.
+
+        Returns:
+            This method does not directly return data. Use the `parse` or `lazy_parse`
+            methods to retrieve parsed documents with content and metadata.
+
+        Raises:
+            ValueError: If the `mode` is not "single" or "page".
+
+        Warnings:
+            `concatenate_pages` parameter is deprecated. Use `mode='single' or 'page'
+            instead.
         """
+        super().__init__()
+        if mode not in ["single", "page"]:
+            raise ValueError("mode must be single or page")
+        if extract_images and not images_parser:
+            images_parser = RapidOCRBlobParser()
         self.extract_images = extract_images
-        self.concatenate_pages = concatenate_pages
+        self.images_parser = images_parser
+        self.images_inner_format = images_inner_format
+        self.password = password
+        self.mode = mode
+        self.pages_delimiter = pages_delimiter
+        if concatenate_pages is not None:
+            if not PDFMinerParser._warn_concatenate_pages:
+                PDFMinerParser._warn_concatenate_pages = True
+                logger.warning(
+                    "`concatenate_pages` parameter is deprecated. "
+                    "Use `mode='single' or 'page'` instead."
+                )
+            self.mode = "single" if concatenate_pages else "page"
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
-        """Lazily parse the blob."""
+    @staticmethod
+    def decode_text(s: Union[bytes, str]) -> str:
+        """
+        Decodes a PDFDocEncoding string to Unicode.
+        Adds py3 compatibility to pdfminer's version.
 
-        if not self.extract_images:
+        Args:
+            s: The string to decode.
+
+        Returns:
+            str: The decoded Unicode string.
+        """
+        from pdfminer.utils import PDFDocEncoding
+
+        if isinstance(s, bytes) and s.startswith(b"\xfe\xff"):
+            return str(s[2:], "utf-16be", "ignore")
+        try:
+            ords = (ord(c) if isinstance(c, str) else c for c in s)
+            return "".join(PDFDocEncoding[o] for o in ords)
+        except IndexError:
+            return str(s)
+
+    @staticmethod
+    def resolve_and_decode(obj: Any) -> Any:
+        """
+        Recursively resolve the metadata values.
+
+        Args:
+            obj: The object to resolve and decode. It can be of any type.
+
+        Returns:
+            The resolved and decoded object.
+        """
+        from pdfminer.psparser import PSLiteral
+
+        if hasattr(obj, "resolve"):
+            obj = obj.resolve()
+        if isinstance(obj, list):
+            return list(map(PDFMinerParser.resolve_and_decode, obj))
+        elif isinstance(obj, PSLiteral):
+            return PDFMinerParser.decode_text(obj.name)
+        elif isinstance(obj, (str, bytes)):
+            return PDFMinerParser.decode_text(obj)
+        elif isinstance(obj, dict):
+            for k, v in obj.items():
+                obj[k] = PDFMinerParser.resolve_and_decode(v)
+            return obj
+
+        return obj
+
+    def _get_metadata(
+        self,
+        fp: BinaryIO,
+        password: str = "",
+        caching: bool = True,
+    ) -> dict[str, Any]:
+        """
+        Extract metadata from a PDF file.
+
+        Args:
+            fp: The file pointer to the PDF file.
+            password: The password for the PDF file, if encrypted. Defaults to an empty
+                string.
+            caching: Whether to cache the PDF structure. Defaults to True.
+
+        Returns:
+            Metadata of the PDF file.
+        """
+        from pdfminer.pdfpage import PDFDocument, PDFPage, PDFParser
+
+        # Create a PDF parser object associated with the file object.
+        parser = PDFParser(fp)
+        # Create a PDF document object that stores the document structure.
+        doc = PDFDocument(parser, password=password, caching=caching)
+        metadata = {}
+
+        for info in doc.info:
+            metadata.update(info)
+        for k, v in metadata.items():
             try:
-                from pdfminer.high_level import extract_text
-            except ImportError:
-                raise ImportError(
-                    "`pdfminer` package not found, please install it with "
-                    "`pip install pdfminer.six`"
+                metadata[k] = PDFMinerParser.resolve_and_decode(v)
+            except Exception as e:  # pragma: nocover
+                # This metadata value could not be parsed. Instead of failing the PDF
+                # read, treat it as a warning only if `strict_metadata=False`.
+                logger.warning(
+                    '[WARNING] Metadata key "%s" could not be parsed due to '
+                    "exception: %s",
+                    k,
+                    str(e),
                 )
 
-            with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
-                if self.concatenate_pages:
-                    text = extract_text(pdf_file_obj)
-                    metadata = {"source": blob.source}  # type: ignore[attr-defined]
-                    yield Document(page_content=text, metadata=metadata)
-                else:
-                    from pdfminer.pdfpage import PDFPage
+        # Count number of pages.
+        metadata["total_pages"] = len(list(PDFPage.create_pages(doc)))
 
-                    pages = PDFPage.get_pages(pdf_file_obj)
-                    for i, _ in enumerate(pages):
-                        text = extract_text(pdf_file_obj, page_numbers=[i])
-                        metadata = {"source": blob.source, "page": str(i)}  # type: ignore[attr-defined]
-                        yield Document(page_content=text, metadata=metadata)
-        else:
-            import io
+        return metadata
 
-            from pdfminer.converter import PDFPageAggregator, TextConverter
-            from pdfminer.layout import LAParams
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        """
+        Lazily parse the blob.
+        Insert image, if possible, between two paragraphs.
+        In this way, a paragraph can be continued on the next page.
+
+        Args:
+            blob: The blob to parse.
+
+        Raises:
+            ImportError: If the `pdfminer.six` or `pillow` package is not found.
+
+        Yield:
+            An iterator over the parsed documents.
+        """
+        try:
+            import pdfminer
+            from pdfminer.converter import PDFLayoutAnalyzer
+            from pdfminer.layout import (
+                LAParams,
+                LTContainer,
+                LTImage,
+                LTItem,
+                LTPage,
+                LTText,
+                LTTextBox,
+            )
             from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
             from pdfminer.pdfpage import PDFPage
 
+            if int(pdfminer.__version__) < 20201018:
+                raise ImportError(
+                    "This parser is tested with pdfminer.six version 20201018 or "
+                    "later. Remove pdfminer, and install pdfminer.six with "
+                    "`pip uninstall pdfminer && pip install pdfminer.six`."
+                )
+        except ImportError:
+            raise ImportError(
+                "pdfminer package not found, please install it "
+                "with `pip install pdfminer.six`"
+            )
+
+        with blob.as_bytes_io() as pdf_file_obj, TemporaryDirectory() as tempdir:
+            pages = PDFPage.get_pages(pdf_file_obj, password=self.password or "")
+            rsrcmgr = PDFResourceManager()
+            doc_metadata = _purge_metadata(
+                self._get_metadata(pdf_file_obj, password=self.password or "")
+            )
+            doc_metadata["source"] = blob.source
+
+            class Visitor(PDFLayoutAnalyzer):
+                def __init__(
+                    self,
+                    rsrcmgr: PDFResourceManager,
+                    pageno: int = 1,
+                    laparams: Optional[LAParams] = None,
+                ) -> None:
+                    super().__init__(rsrcmgr, pageno=pageno, laparams=laparams)
+
+                def receive_layout(me, ltpage: LTPage) -> None:
+                    def render(item: LTItem) -> None:
+                        if isinstance(item, LTContainer):
+                            for child in item:
+                                render(child)
+                        elif isinstance(item, LTText):
+                            text_io.write(item.get_text())
+                        if isinstance(item, LTTextBox):
+                            text_io.write("\n")
+                        elif isinstance(item, LTImage):
+                            if self.images_parser:
+                                from pdfminer.image import ImageWriter
+
+                                image_writer = ImageWriter(tempdir)
+                                filename = image_writer.export_image(item)
+                                blob = Blob.from_path(Path(tempdir) / filename)
+                                blob.metadata["source"] = "#"
+                                image_text = next(
+                                    self.images_parser.lazy_parse(blob)
+                                ).page_content
+
+                                text_io.write(
+                                    _format_inner_image(
+                                        blob, image_text, self.images_inner_format
+                                    )
+                                )
+                        else:
+                            pass
+
+                    render(ltpage)
+
             text_io = io.StringIO()
-            with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
-                pages = PDFPage.get_pages(pdf_file_obj)
-                rsrcmgr = PDFResourceManager()
-                device_for_text = TextConverter(rsrcmgr, text_io, laparams=LAParams())
-                device_for_image = PDFPageAggregator(rsrcmgr, laparams=LAParams())
-                interpreter_for_text = PDFPageInterpreter(rsrcmgr, device_for_text)
-                interpreter_for_image = PDFPageInterpreter(rsrcmgr, device_for_image)
-                for i, page in enumerate(pages):
-                    interpreter_for_text.process_page(page)
-                    interpreter_for_image.process_page(page)
-                    content = text_io.getvalue() + self._extract_images_from_page(
-                        device_for_image.get_result()
-                    )
+            visitor_for_all = PDFPageInterpreter(
+                rsrcmgr, Visitor(rsrcmgr, laparams=LAParams())
+            )
+            all_content = []
+            for i, page in enumerate(pages):
+                text_io.truncate(0)
+                text_io.seek(0)
+                visitor_for_all.process_page(page)
+
+                all_text = text_io.getvalue()
+                # For legacy compatibility, net strip()
+                all_text = all_text.strip()
+                if self.mode == "page":
                     text_io.truncate(0)
                     text_io.seek(0)
-                    metadata = {"source": blob.source, "page": str(i)}  # type: ignore[attr-defined]
-                    yield Document(page_content=content, metadata=metadata)
-
-    def _extract_images_from_page(self, page: pdfminer.layout.LTPage) -> str:
-        """Extract images from page and get the text with RapidOCR."""
-        import pdfminer
-
-        def get_image(layout_object: Any) -> Any:
-            if isinstance(layout_object, pdfminer.layout.LTImage):
-                return layout_object
-            if isinstance(layout_object, pdfminer.layout.LTContainer):
-                for child in layout_object:
-                    return get_image(child)
-            else:
-                return None
-
-        images = []
-
-        for img in filter(bool, map(get_image, page)):
-            img_filter = img.stream["Filter"]
-            if isinstance(img_filter, list):
-                filter_names = [f.name for f in img_filter]
-            else:
-                filter_names = [img_filter.name]
-
-            without_loss = any(
-                name in _PDF_FILTER_WITHOUT_LOSS for name in filter_names
-            )
-            with_loss = any(name in _PDF_FILTER_WITH_LOSS for name in filter_names)
-            non_matching = {name for name in filter_names} - {
-                *_PDF_FILTER_WITHOUT_LOSS,
-                *_PDF_FILTER_WITH_LOSS,
-            }
-
-            if without_loss and with_loss:
-                warnings.warn(
-                    "Image has both lossy and lossless filters. Defaulting to lossless"
-                )
-
-            if non_matching:
-                warnings.warn(f"Unknown PDF Filter(s): {non_matching}")
-
-            if without_loss:
-                images.append(
-                    np.frombuffer(img.stream.get_data(), dtype=np.uint8).reshape(
-                        img.stream["Height"], img.stream["Width"], -1
+                    yield Document(
+                        page_content=all_text,
+                        metadata=_validate_metadata(doc_metadata | {"page": i}),
                     )
+                else:
+                    if all_text.endswith("\f"):
+                        all_text = all_text[:-1]
+                    all_content.append(all_text)
+            if self.mode == "single":
+                # Add pages_delimiter between pages
+                document_content = self.pages_delimiter.join(all_content)
+                yield Document(
+                    page_content=document_content,
+                    metadata=_validate_metadata(doc_metadata),
                 )
-            elif with_loss:
-                images.append(img.stream.get_data())
-
-        return extract_from_images_with_rapidocr(images)
 
 
 class PyMuPDFParser(BaseBlobParser):
@@ -614,7 +830,6 @@ class PyMuPDFParser(BaseBlobParser):
                 # password = None,
                 mode = "single",
                 pages_delimiter = "\n\f",
-                # extract_images = True,
                 # images_parser = TesseractBlobParser(),
                 # extract_tables="markdown",
                 # extract_tables_settings=None,

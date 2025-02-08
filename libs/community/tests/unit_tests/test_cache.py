@@ -30,7 +30,8 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 def get_sqlite_cache() -> SQLAlchemyCache:
     return SQLAlchemyCache(
         engine=create_engine(
-            "sqlite://", creator=lambda: sqlite3.connect("file::memory:?cache=shared")
+            "sqlite://",
+            creator=lambda: sqlite3.connect("file::memory:?cache=shared", uri=True),
         )
     )
 
