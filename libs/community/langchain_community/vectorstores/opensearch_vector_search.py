@@ -1351,7 +1351,7 @@ class OpenSearchVectorSearch(VectorStore):
         """
         embeddings = embedding.embed_documents(texts)
         bulk_size = (
-            bulk_size if bulk_size is not None else getattr(cls,"bulk_size",500)
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
         )
         return cls.from_embeddings(
             embeddings,
@@ -1419,7 +1419,7 @@ class OpenSearchVectorSearch(VectorStore):
         """
         embeddings = await embedding.aembed_documents(texts)
         bulk_size = (
-            bulk_size if bulk_size is not None else getattr(cls,"bulk_size",500)
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
         )
         return await cls.afrom_embeddings(
             embeddings,
@@ -1508,7 +1508,7 @@ class OpenSearchVectorSearch(VectorStore):
             "is_aoss",
         ]
         bulk_size = (
-            bulk_size if bulk_size is not None else getattr(cls,"bulk_size",500)
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
         )
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
@@ -1643,7 +1643,7 @@ class OpenSearchVectorSearch(VectorStore):
             "is_aoss",
         ]
         bulk_size = (
-            bulk_size if bulk_size is not None else getattr(cls,"bulk_size",500)
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
         )
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
