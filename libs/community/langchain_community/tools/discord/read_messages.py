@@ -4,7 +4,7 @@ from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from .base import DiscordClientWrapper, login
 
@@ -32,7 +32,7 @@ class DiscordReadMessages(BaseTool):
         "string."
     )
     args_schema: Type[DiscordReadMessagesSchema] = DiscordReadMessagesSchema
-    client: DiscordClientWrapper = Field(default_factory=login)
+    _client: DiscordClientWrapper = PrivateAttr(default_factory=login)
 
     def _validate_inputs(self, channel_id: str, limit: int) -> Optional[str]:
         if not channel_id.isdigit():
@@ -52,7 +52,7 @@ class DiscordReadMessages(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = asyncio.run(self.client.read_messages(int(channel_id), limit))
+            result = asyncio.run(self._client.read_messages(int(channel_id), limit))
             return "Read messages result: " + result
         except Exception as e:
             logger.error(f"Error in discord read messages: {str(e)}")
@@ -69,7 +69,7 @@ class DiscordReadMessages(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = await self.client.read_messages(int(channel_id), limit)
+            result = await self._client.read_messages(int(channel_id), limit)
             return "Read messages result: " + result
         except Exception as e:
             logger.error(f"Error in discord read messages: {str(e)}")

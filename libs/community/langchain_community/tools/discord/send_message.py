@@ -4,7 +4,7 @@ from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from .base import DiscordClientWrapper, login
 
@@ -34,7 +34,7 @@ class DiscordSendMessage(BaseTool):
         "Supports basic text formatting with Markdown."
     )
     args_schema: Type[DiscordSendMessageSchema] = DiscordSendMessageSchema
-    client: DiscordClientWrapper = Field(default_factory=login)
+    _client: DiscordClientWrapper = PrivateAttr(default_factory=login)
 
     def _validate_inputs(self, message: str, channel_id: str) -> Optional[str]:
         """Common validation logic for both sync and async paths."""
@@ -55,8 +55,7 @@ class DiscordSendMessage(BaseTool):
         if validation_error:
             return validation_error
         try:
-            # Synchronously run the async send_message method
-            result = asyncio.run(self.client.send_message(int(channel_id), message))
+            result = asyncio.run(self._client.send_message(int(channel_id), message))
             return "Message result: " + result
         except Exception as e:
             logger.error(f"Error in sync send: {str(e)}")
@@ -73,7 +72,7 @@ class DiscordSendMessage(BaseTool):
         if validation_error:
             return validation_error
         try:
-            result = await self.client.send_message(int(channel_id), message)
+            result = await self._client.send_message(int(channel_id), message)
             return "Message result: " + result
         except Exception as e:
             logger.error(f"Error in async send: {str(e)}")
