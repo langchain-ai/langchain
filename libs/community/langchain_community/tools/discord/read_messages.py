@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class DiscordReadMessagesSchema(BaseModel):
     """Input schema for Discord message reading tool."""
+
     channel_id: str = Field(
         ..., description="Numeric string representing the Discord channel ID."
     )
@@ -41,10 +42,10 @@ class DiscordReadMessages(BaseTool):
         return None
 
     def _run(
-            self,
-            channel_id: str,
-            limit: int = 50,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        channel_id: str,
+        limit: int = 50,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Synchronous execution method."""
         validation_error = self._validate_inputs(channel_id, limit)
@@ -58,10 +59,10 @@ class DiscordReadMessages(BaseTool):
             return f"Error reading messages: {str(e)}"
 
     async def _arun(
-            self,
-            channel_id: str,
-            limit: int = 50,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        channel_id: str,
+        limit: int = 50,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Asynchronous execution method."""
         validation_error = self._validate_inputs(channel_id, limit)

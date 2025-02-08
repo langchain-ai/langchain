@@ -30,10 +30,7 @@ class DiscordClientWrapper:
             "Authorization": f"Bot {self.token}",
             "Content-Type": "application/json",
         }
-        payload = {
-            "content": message,
-            "allowed_mentions": {"parse": []}
-        }
+        payload = {"content": message, "allowed_mentions": {"parse": []}}
         url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
 
         try:

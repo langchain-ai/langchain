@@ -17,11 +17,10 @@ class DiscordSendMessageSchema(BaseModel):
     message: str = Field(
         ...,
         description="Content of the message to send; supports basic Markdown "
-                    "formatting."
+        "formatting.",
     )
     channel_id: str = Field(
-        ...,
-        description="Numeric string representing the Discord channel ID."
+        ..., description="Numeric string representing the Discord channel ID."
     )
 
 
@@ -46,10 +45,10 @@ class DiscordSendMessage(BaseTool):
         return None
 
     def _run(
-            self,
-            message: str,
-            channel_id: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        message: str,
+        channel_id: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Synchronous execution method."""
         validation_error = self._validate_inputs(message, channel_id)
@@ -64,10 +63,10 @@ class DiscordSendMessage(BaseTool):
             return f"Error sending message: {str(e)}"
 
     async def _arun(
-            self,
-            message: str,
-            channel_id: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
+        self,
+        message: str,
+        channel_id: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Asynchronous execution method."""
         validation_error = self._validate_inputs(message, channel_id)
