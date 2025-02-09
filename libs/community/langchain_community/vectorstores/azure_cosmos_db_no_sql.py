@@ -3,7 +3,17 @@ from __future__ import annotations
 import uuid
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from langchain_core.documents import Document
@@ -67,7 +77,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         container_name: str = "vectorSearchContainer",
         text_key: str = "text",
         embedding_key: str = "embedding",
-        metadata_key: str = "metadata",
+        metadata_key: Union[
+            Literal["*"], str, List[str], Dict[str, str], None
+        ] = "metadata",
         create_container: bool = True,
         full_text_search_enabled: bool = False,
     ):
@@ -87,7 +99,18 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             text_key: Text key to use for text property which will be
                       embedded in the data schema.
             embedding_key: Embedding key to use for vector embedding.
-            metadata_key: Metadata key to use for data schema.
+            metadata_key: Field(s) to use for metadata. It can be:
+                - "*": all fields in the document will go in metadata.
+                - a string: field in the document that contains the metadata.
+                    It must be of `object` data type
+                    (it's properties will go in metadata).
+                - a list of strings: fields in the document to add to metadata.
+                    Use this if metadata is spread across multiple fields.
+                - a dictionary: same as list but allows to alias.
+                    A mapping of fields in the document to aliases to add as metadata
+                    (e.g., {"field1": "alias1", "field2": "alias2"}).
+                - None: no metadata will be added.
+
             create_container: Set to true if the container does not exist.
             full_text_search_enabled: Set to true if the full text search is enabled.
         """
@@ -106,6 +129,26 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._create_container = create_container
         self._full_text_search_enabled = full_text_search_enabled
 
+        # Validate that metadata doesn't conflict with text or embedding keys
+        reserved = ["SimilarityScore"]
+        if isinstance(metadata_key, str):
+            metadata = [metadata_key]
+        elif isinstance(metadata_key, list):
+            metadata = metadata_key
+        elif isinstance(metadata_key, dict):
+            metadata = list(metadata_key.values())
+            # Check if metadata_key values are unique
+            if len(metadata) != len(set(metadata)):
+                raise ValueError(
+                    "metadata_key values should be unique when using aliasing."
+                )
+        else:
+            metadata = []
+
+        if any(key in reserved for key in metadata):
+            raise ValueError(
+                f"metadata_key cannot contain these reserved aliases {reserved}."
+            )
         if self._create_container:
             if (
                 self._indexing_policy["vectorIndexes"] is None
@@ -638,7 +681,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             query += f""" ORDER BY RANK FullTextScore(c.{self._text_key}, 
             [{", ".join(f"'{term}'" for term in search_text.split())}])"""
         elif query_type == CosmosDBQueryType.VECTOR:
-            query += " ORDER BY VectorDistance(c[@embeddingKey], @embeddings)"
+            query += f" ORDER BY VectorDistance(c.{self._embedding_key}, @embeddings)"
         elif query_type == CosmosDBQueryType.HYBRID:
             if search_text is None:
                 raise ValueError("search text cannot be None for HYBRID queries.")
@@ -673,46 +716,46 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query_type: CosmosDBQueryType,
         embeddings: Optional[List[float]] = None,
     ) -> str:
-        # TODO: Remove this if check once parametrized queries
-        #  are allowed for these query functions
-        if (
-            query_type == CosmosDBQueryType.FULL_TEXT_RANK
-            or query_type == CosmosDBQueryType.HYBRID
-        ):
-            if projection_mapping:
-                projection = ", ".join(
-                    f"c.{key} as {alias}" for key, alias in projection_mapping.items()
-                )
-            else:
-                projection = (
-                    f"c.id, c.{self._text_key} as text, "
-                    f"c.{self._metadata_key} as metadata"
-                )
-            if query_type == CosmosDBQueryType.HYBRID:
-                projection += (
-                    f", c.{self._embedding_key} as embedding, "
-                    f"VectorDistance(c.{self._embedding_key}, "
-                    f"{embeddings}) as SimilarityScore"
-                )
-        else:
-            if projection_mapping:
-                projection = ", ".join(
-                    f"c.[@{key}] as {alias}"
-                    for key, alias in projection_mapping.items()
-                )
-            else:
-                projection = "c.id, c[@textKey] as text, c[@metadataKey] as metadata"
+        projection = f"id: c.id, text: c.{self._text_key}"
 
-            if (
-                query_type == CosmosDBQueryType.VECTOR
-                or query_type == CosmosDBQueryType.HYBRID
-            ):
-                projection += (
-                    ", c[@embeddingKey] as embedding, "
-                    "VectorDistance(c[@embeddingKey], "
-                    "@embeddings) as SimilarityScore"
+        # Add metadata fields to projection
+        if projection_mapping:
+            projection += (
+                ", metadata: {"
+                + ", ".join(
+                    f"{alias}: c.{key}]" for key, alias in projection_mapping.items()
                 )
-        return projection
+                + " }"
+            )
+        elif self._metadata_key == "*":
+            projection += ", metadata: c"
+        elif isinstance(self._metadata_key, str):
+            projection += (
+                f", metadata: {{ {self._metadata_key}: c.{self._metadata_key} }}"
+            )
+        elif isinstance(self._metadata_key, list):
+            projection += (
+                ", metadata: { "
+                + ", ".join(f"{key}: c.{key}" for key in self._metadata_key)
+                + " }"
+            )
+        elif isinstance(self._metadata_key, dict):
+            projection += (
+                ", metadata: {"
+                + ", ".join(
+                    f"{alias}: c.{key}" for key, alias in self._metadata_key.items()
+                )
+                + " }"
+            )
+
+        if query_type in [CosmosDBQueryType.VECTOR, CosmosDBQueryType.HYBRID]:
+            projection += (
+                f", embedding: c.{self._embedding_key}"
+                f", SimilarityScore: VectorDistance(c.{self._embedding_key}, "
+                f"@embeddings)"
+            )
+
+        return f"VALUE {{ {projection} }}"
 
     def _build_parameters(
         self,
@@ -724,25 +767,17 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     ) -> List[Dict[str, Any]]:
         parameters: List[Dict[str, Any]] = [
             {"name": "@limit", "value": k},
-            {"name": "@textKey", "value": self._text_key},
         ]
-
-        if projection_mapping:
-            for key in projection_mapping.keys():
-                parameters.append({"name": f"@{key}", "value": key})
-        else:
-            parameters.append({"name": "@metadataKey", "value": self._metadata_key})
 
         if (
             query_type == CosmosDBQueryType.FULL_TEXT_RANK
             or query_type == CosmosDBQueryType.HYBRID
         ):
             parameters.append({"name": "@searchTerms", "value": search_terms})
-        elif (
+        if (
             query_type == CosmosDBQueryType.VECTOR
             or query_type == CosmosDBQueryType.HYBRID
         ):
-            parameters.append({"name": "@embeddingKey", "value": self._embedding_key})
             parameters.append({"name": "@embeddings", "value": embeddings})
 
         return parameters
@@ -814,28 +849,17 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             )
         )
         for item in items:
-            text = item[self._text_key]
-            metadata = item.pop(self._metadata_key, {})
+            text = item["text"]
+            metadata = item.get("metadata", {})
             score = 0.0
 
-            if projection_mapping:
-                for key, alias in projection_mapping.items():
-                    if key == self._text_key:
-                        continue
-                    metadata[alias] = item[alias]
-            else:
-                metadata["id"] = item["id"]
-
-            if (
-                query_type == CosmosDBQueryType.VECTOR
-                or query_type == CosmosDBQueryType.HYBRID
-            ):
+            if query_type in [CosmosDBQueryType.VECTOR, CosmosDBQueryType.HYBRID]:
                 score = item["SimilarityScore"]
                 if with_embedding:
-                    metadata[self._embedding_key] = item[self._embedding_key]
+                    metadata[self._embedding_key] = item["embedding"]
             docs_and_scores.append(
                 (
-                    Document(page_content=text, metadata=metadata),
+                    Document(id=item["id"], page_content=text, metadata=metadata),
                     score,
                 )
             )
