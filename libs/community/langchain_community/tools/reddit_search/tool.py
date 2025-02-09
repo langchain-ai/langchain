@@ -32,6 +32,10 @@ class RedditSearchSchema(BaseModel):
         description="a positive integer indicating the maximum number \
         of results to return"
     )
+    include_comment_forest: bool = Field(
+        description="a boolean indicating whether to include the \
+        comment forest in the results"
+    )
 
 
 class RedditSearchRun(BaseTool):  # type: ignore[override, override]
@@ -52,6 +56,7 @@ class RedditSearchRun(BaseTool):  # type: ignore[override, override]
         time_filter: str,
         subreddit: str,
         limit: str,
+        include_comment_forest: bool = False,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
@@ -61,4 +66,5 @@ class RedditSearchRun(BaseTool):  # type: ignore[override, override]
             time_filter=time_filter,
             subreddit=subreddit,
             limit=int(limit),
+            include_comment_forest=include_comment_forest,
         )
