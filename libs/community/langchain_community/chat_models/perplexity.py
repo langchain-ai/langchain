@@ -45,7 +45,7 @@ from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from typing_extensions import Self
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -356,8 +356,14 @@ class ChatPerplexity(BaseChatModel):
                 schema, "model_json_schema"
             ):  # accounting for pydantic v1 and v2
                 response_format = schema.model_json_schema()  # type: ignore[union-attr]
-            else:
+            elif is_pydantic_schema:
                 response_format = schema.schema()  # type: ignore[union-attr]
+            elif isinstance(schema, dict):
+                response_format = schema
+            elif type(schema).__name__ == "_TypedDictMeta":
+                adapter = TypeAdapter(schema)  # if use passes typeddict
+                response_format = adapter.json_schema()
+
             llm = self.bind(
                 response_format={
                     "type": "json_schema",
