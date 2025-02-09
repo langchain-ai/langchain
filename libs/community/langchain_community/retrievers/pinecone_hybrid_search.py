@@ -31,7 +31,7 @@ def create_index(
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
     namespace: Optional[str] = None,
-    text_key: str = "content",
+    text_key: str = "context",
 ) -> None:
     """Create an index from a list of contexts.
 
@@ -115,7 +115,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Alpha value for hybrid search."""
     namespace: Optional[str] = None
     """Namespace value for index partition."""
-    text_key: str = "content"
+    text_key: str = "context"
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="forbid",
