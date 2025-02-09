@@ -692,7 +692,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                     + "])"
                     for search_field in self._full_text_search_fields
                 ]
-                query += f""" ORDER BY RANK RRF({', '.join(rank_components)}, 
+                query += f""" ORDER BY RANK RRF({", ".join(rank_components)}, 
                 VectorDistance(c.{self._vector_search_fields["embedding_field"]}, {embeddings}))"""  # noqa:E501
         else:
             query += ""
@@ -748,8 +748,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 if with_embedding:
                     projection += ", c[@embeddingKey] as embedding"
                 projection += (
-                    ", VectorDistance(c[@embeddingKey], "
-                    "@embeddings) as SimilarityScore"
+                    ", VectorDistance(c[@embeddingKey], @embeddings) as SimilarityScore"
                 )
         return projection
 
