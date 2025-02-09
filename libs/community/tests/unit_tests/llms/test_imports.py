@@ -63,6 +63,7 @@ EXPECT_ALL = [
     "NIBittensorLLM",
     "NLPCloud",
     "Ollama",
+    "OnnxruntimeGenai",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -104,8 +105,7 @@ EXPECT_ALL = [
     "You",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
-    "SparkLLM",
-    "OnnxruntimeGenAi"
+    "SparkLLM"
 ]
 
 

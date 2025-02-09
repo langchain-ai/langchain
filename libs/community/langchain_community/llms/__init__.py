@@ -422,6 +422,11 @@ def _import_ollama() -> Type[BaseLLM]:
     return Ollama
 
 
+def _import_onnxruntime_genai() -> Type[BaseLLM]:
+    from langchain_community.llms.onnxruntime_genai import OnnxruntimeGenai
+
+    return OnnxruntimeGenai
+
 def _import_opaqueprompts() -> Type[BaseLLM]:
     from langchain_community.llms.opaqueprompts import OpaquePrompts
 
@@ -432,12 +437,6 @@ def _import_azure_openai() -> Type[BaseLLM]:
     from langchain_community.llms.openai import AzureOpenAI
 
     return AzureOpenAI
-
-
-def _import_onnxruntime_genai() -> Type[BaseLLM]:
-    from langchain_community.llms.onnxruntime_genai import OnnxruntimeGenAi
-
-    return OnnxruntimeGenAi
 
 
 def _import_openai() -> Type[BaseLLM]:
@@ -807,6 +806,8 @@ def __getattr__(name: str) -> Any:
         return _import_octoai_endpoint()
     elif name == "Ollama":
         return _import_ollama()
+    elif name == "OnnxruntimeGenai":
+        return _import_onnxruntime_genai
     elif name == "OpaquePrompts":
         return _import_opaqueprompts()
     elif name == "AzureOpenAI":
@@ -963,6 +964,7 @@ __all__ = [
     "OCIModelDeploymentLLM",
     "OctoAIEndpoint",
     "Ollama",
+    "OnnxruntimeGenai",
     "OpaquePrompts",
     "OpenAI",
     "OpenAIChat",
@@ -1068,6 +1070,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "oci_generative_ai": _import_oci_gen_ai,
         "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
+        "onnxruntime_genai":_import_onnxruntime_genai,
         "openai": _import_openai,
         "openlm": _import_openlm,
         "pai_eas_endpoint": _import_pai_eas_endpoint,

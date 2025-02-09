@@ -4,7 +4,7 @@ from langchain_core.outputs import Generation, LLMResult
 from langchain_core.utils import pre_init
 from pydantic import Field
 
-class OnnxruntimeGenAi(BaseLLM):
+class OnnxruntimeGenai(BaseLLM):
     """Onnxruntime GenAI model.
 
     To use, you should have the onnxruntime-genai (CPU/DML/CUDA) library installed, and provide the
@@ -14,8 +14,8 @@ class OnnxruntimeGenAi(BaseLLM):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import OnnxruntimeGenAi
-            llm = OnnxruntimeGenAi(model_path="/path/to/onnx/model")
+            from langchain_community.llms import OnnxruntimeGenai
+            llm = OnnxruntimeGenai(model_path="/path/to/onnx/model")
     """
 
     model_path: str
@@ -42,6 +42,9 @@ class OnnxruntimeGenAi(BaseLLM):
 
     repeat_penalty: Optional[float] = 1.1
     """The penalty to apply to repeated tokens."""
+
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Any additional parameters to pass to llama_cpp.Llama."""
 
     verbose: bool = True
     """Print verbose output to stderr."""
@@ -105,11 +108,13 @@ class OnnxruntimeGenAi(BaseLLM):
 
         # Encode prompts
         input_token = self.tokenizer.encode_batch(prompts)
-        search_options = self._default_params
+        
+        model_params = self._default_params
+        model_params.update(self.model_kwargs)
 
         # Build generator params
         params = GeneratorParams(self.model)
-        params.set_search_options(**search_options)
+        params.set_search_options(**model_params)
         generator = Generator(self.model, params)
 
         # Append input token
@@ -117,8 +122,6 @@ class OnnxruntimeGenAi(BaseLLM):
         while not generator.is_done():
             generator.generate_next_token()
             new_token = generator.get_next_tokens()[0]
-
-            # TODO: Verify EOS token in here
             answer+=self.tokenizer.decode(new_token)
 
             print(self.tokenizer_stream.decode(new_token), end='', flush=True)
