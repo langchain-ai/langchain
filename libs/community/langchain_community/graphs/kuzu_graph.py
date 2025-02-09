@@ -78,7 +78,10 @@ class KuzuGraph:
                             list_type_flag += "[]"
                 property_type += list_type_flag
                 current_table_schema["properties"].append(
-                    (property_name, property_type)
+                    (
+                        property_name,
+                        property_type,
+                    )
                 )
             node_properties.append(current_table_schema)
 

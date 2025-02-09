@@ -20,7 +20,7 @@ class BalanceSheetsSchema(BaseModel):
         "Default is 'annual'.",
     )
     limit: int = Field(
-        description="The number of balance sheets to return. " "Default is 10.",
+        description="The number of balance sheets to return. Default is 10.",
     )
 
 

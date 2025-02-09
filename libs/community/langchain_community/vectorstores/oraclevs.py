@@ -75,8 +75,7 @@ def _table_exists(client: Connection, table_name: str) -> bool:
         import oracledb
     except ImportError as e:
         raise ImportError(
-            "Unable to import oracledb, please install with "
-            "`pip install -U oracledb`."
+            "Unable to import oracledb, please install with `pip install -U oracledb`."
         ) from e
 
     try:
@@ -775,8 +774,9 @@ class OracleVS(VectorStore):
         SELECT id,
           text,
           metadata,
-          vector_distance(embedding, :embedding, {_get_distance_function(
-            self.distance_strategy)}) as distance,
+          vector_distance(embedding, :embedding, {
+            _get_distance_function(self.distance_strategy)
+        }) as distance,
           embedding
         FROM {self.table_name}
         ORDER BY distance
@@ -1010,7 +1010,7 @@ class OracleVS(VectorStore):
         )
         if not isinstance(distance_strategy, DistanceStrategy):
             raise TypeError(
-                f"Expected DistanceStrategy got " f"{type(distance_strategy).__name__} "
+                f"Expected DistanceStrategy got {type(distance_strategy).__name__} "
             )
 
         query = kwargs.get("query", "What is a Oracle database")

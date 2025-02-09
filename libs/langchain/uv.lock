@@ -306,6 +306,18 @@ css = [
 ]
 
 [[package]]
+name = "blockbuster"
+version = "1.5.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "forbiddenfruit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e0/77/a46b97dc6807c88c864a134793d7c7b915dea45c7e44da6c3adebac90501/blockbuster-1.5.14.tar.gz", hash = "sha256:d77ed3b931b058b4e746f65e32ea21e8ed21a4ef0ca88b7bb046bdb057e1adb0", size = 50191 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/c2/1515ea61aa08f3b44882aa59a0c03be667a6fec2a4026aad76944b40b030/blockbuster-1.5.14-py3-none-any.whl", hash = "sha256:5b5e46ac4b5f5d2a7a599944d83bee0c9eb46509868acb6d8fbc7c8058769aaf", size = 12372 },
+]
+
+[[package]]
 name = "boto3"
 version = "1.36.12"
 source = { registry = "https://pypi.org/simple" }
@@ -1052,6 +1064,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/50/8d/cf8d6d3ed8ac9194e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/47/db86fba6ef53da08488917a18cbe55b913c8b60275a7f20484ffc73a969c/fireworks_ai-0.15.12-py3-none-any.whl", hash = "sha256:3fbf3f89e65ccfc46c88b71246b9d4fdf3301955ac4050193d8f4b4058cb193a", size = 111129 },
 ]
+
+[[package]]
+name = "forbiddenfruit"
+version = "0.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/79/d4f20e91327c98096d605646bdc6a5ffedae820f38d378d3515c42ec5e60/forbiddenfruit-0.1.4.tar.gz", hash = "sha256:e3f7e66561a29ae129aac139a85d610dbf3dd896128187ed5454b6421f624253", size = 43756 }
 
 [[package]]
 name = "fqdn"
@@ -2289,6 +2307,7 @@ lint = [
     { name = "ruff" },
 ]
 test = [
+    { name = "blockbuster" },
     { name = "cffi", version = "1.17.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "cffi", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "duckdb-engine" },
@@ -2382,6 +2401,7 @@ lint = [
     { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
 ]
 test = [
+    { name = "blockbuster", specifier = ">=1.5.14,<1.6" },
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "duckdb-engine", specifier = ">=0.9.2,<1.0.0" },

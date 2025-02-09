@@ -122,10 +122,10 @@ class GoogleScholarAPIWrapper(BaseModel):
         if not total_results:
             return "No good Google Scholar Result was found"
         docs = [
-            f"Title: {result.get('title','')}\n"
-            f"Authors: {','.join([author.get('name') for author in result.get('publication_info',{}).get('authors',[])])}\n"  # noqa: E501
-            f"Summary: {result.get('publication_info',{}).get('summary','')}\n"
-            f"Total-Citations: {result.get('inline_links',{}).get('cited_by',{}).get('total','')}"  # noqa: E501
+            f"Title: {result.get('title', '')}\n"
+            f"Authors: {','.join([author.get('name') for author in result.get('publication_info', {}).get('authors', [])])}\n"  # noqa: E501
+            f"Summary: {result.get('publication_info', {}).get('summary', '')}\n"
+            f"Total-Citations: {result.get('inline_links', {}).get('cited_by', {}).get('total', '')}"  # noqa: E501
             for result in total_results
         ]
         return "\n\n".join(docs)
