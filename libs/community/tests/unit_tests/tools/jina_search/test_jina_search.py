@@ -16,7 +16,7 @@ class TestJinaSearchTool(unittest.TestCase):
     )
     def test_invoke(self, mock_run: Any) -> None:
         query = "Test query text"
-        wrapper = JinaSearchAPIWrapper(api_key="test_key") # type: ignore[arg-type]
+        wrapper = JinaSearchAPIWrapper(api_key="test_key")  # type: ignore[arg-type]
         jina_search_tool = JinaSearch(api_wrapper=wrapper)  # type: ignore[call-arg]
         results = jina_search_tool.invoke(query)
         expected_result = "mocked_result"
