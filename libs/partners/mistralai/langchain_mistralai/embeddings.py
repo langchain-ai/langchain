@@ -224,7 +224,9 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             batch_responses = []
 
             @retry(
-                retry=retry_if_exception_type(httpx.TimeoutException),
+                retry=retry_if_exception_type(
+                    (httpx.TimeoutException, httpx.HTTPStatusError)
+                ),
                 wait=wait_fixed(self.wait_time),
                 stop=stop_after_attempt(self.max_retries),
             )

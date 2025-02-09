@@ -94,7 +94,7 @@ def _get_search_client(
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
-    user_agent: Optional[str] = "langchain",
+    user_agent: Optional[str] = "langchain-comm-python-azure-search",
     cors_options: Optional[CorsOptions] = None,
     async_: bool = False,
     additional_search_client_options: Optional[Dict[str, Any]] = None,

@@ -277,7 +277,10 @@ class ChatWriter(BaseChatModel):
             if not delta or not delta.content:
                 continue
             chunk = self._convert_writer_to_langchain(
-                {"role": "assistant", "content": delta.content}
+                {
+                    "role": "assistant",
+                    "content": delta.content,
+                }
             )
             chunk = ChatGenerationChunk(message=chunk)
 
@@ -303,7 +306,10 @@ class ChatWriter(BaseChatModel):
             if not delta or not delta.content:
                 continue
             chunk = self._convert_writer_to_langchain(
-                {"role": "assistant", "content": delta.content}
+                {
+                    "role": "assistant",
+                    "content": delta.content,
+                }
             )
             chunk = ChatGenerationChunk(message=chunk)
 

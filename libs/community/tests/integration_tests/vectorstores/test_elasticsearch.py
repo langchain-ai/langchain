@@ -896,9 +896,9 @@ class TestElasticsearch:
         pattern = r"^langchain-py-vs/\d+\.\d+\.\d+$"
         match = re.match(pattern, user_agent)
 
-        assert (
-            match is not None
-        ), f"The string '{user_agent}' does not match the expected pattern."
+        assert match is not None, (
+            f"The string '{user_agent}' does not match the expected pattern."
+        )
 
     def test_elasticsearch_with_internal_user_agent(
         self, elasticsearch_connection: Dict, index_name: str
@@ -917,9 +917,9 @@ class TestElasticsearch:
         pattern = r"^langchain-py-vs/\d+\.\d+\.\d+$"
         match = re.match(pattern, user_agent)
 
-        assert (
-            match is not None
-        ), f"The string '{user_agent}' does not match the expected pattern."
+        assert match is not None, (
+            f"The string '{user_agent}' does not match the expected pattern."
+        )
 
     def test_bulk_args(self, es_client: Any, index_name: str) -> None:
         """Test to make sure the user-agent is set correctly."""
