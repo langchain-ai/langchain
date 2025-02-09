@@ -105,6 +105,7 @@ EXPECT_ALL = [
     "VolcEngineMaasLLM",
     "WatsonxLLM",
     "SparkLLM",
+    "OnnxruntimeGenAi"
 ]
 
 

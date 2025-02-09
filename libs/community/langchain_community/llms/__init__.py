@@ -434,6 +434,12 @@ def _import_azure_openai() -> Type[BaseLLM]:
     return AzureOpenAI
 
 
+def _import_onnxruntime_genai() -> Type[BaseLLM]:
+    from langchain_community.llms.onnxruntime_genai import OnnxruntimeGenAi
+
+    return OnnxruntimeGenAi
+
+
 def _import_openai() -> Type[BaseLLM]:
     from langchain_community.llms.openai import OpenAI
 
