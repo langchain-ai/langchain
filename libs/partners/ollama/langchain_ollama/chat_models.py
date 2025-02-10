@@ -831,9 +831,7 @@ class ChatOllama(BaseChatModel):
         self,
         schema: Union[Dict, type],
         *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "json_schema",
+        method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
