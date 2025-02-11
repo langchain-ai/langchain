@@ -1350,7 +1350,9 @@ class OpenSearchVectorSearch(VectorStore):
 
         """
         embeddings = embedding.embed_documents(texts)
-        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
+        bulk_size = (
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
+        )
         return cls.from_embeddings(
             embeddings,
             texts,
@@ -1416,7 +1418,9 @@ class OpenSearchVectorSearch(VectorStore):
 
         """
         embeddings = await embedding.aembed_documents(texts)
-        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
+        bulk_size = (
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
+        )
         return await cls.afrom_embeddings(
             embeddings,
             texts,
@@ -1503,7 +1507,9 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
+        bulk_size = (
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
+        )
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable
@@ -1636,7 +1642,9 @@ class OpenSearchVectorSearch(VectorStore):
             "max_chunk_bytes",
             "is_aoss",
         ]
-        bulk_size = bulk_size if bulk_size is not None else cls.bulk_size
+        bulk_size = (
+            bulk_size if bulk_size is not None else getattr(cls, "bulk_size", 500)
+        )
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
         # Get the index name from either from kwargs or ENV Variable

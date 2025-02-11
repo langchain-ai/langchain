@@ -64,7 +64,7 @@ pdfplumber>=0.11
 pgvector>=0.1.6,<0.2
 playwright>=1.48.0,<2
 praw>=7.7.1,<8
-premai>=0.3.25,<0.4
+premai>=0.3.25,<0.4,!=0.3.100
 psychicapi>=0.8.0,<0.9
 pydantic>=2.7.4,<3
 pytesseract>=0.3.13
