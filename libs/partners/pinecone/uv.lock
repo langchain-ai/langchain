@@ -744,7 +744,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.10,<3.11" },
     { name = "langchain-core", specifier = ">=0.3.29,<1.0.0" },
     { name = "langchain-tests", specifier = ">=0.3.7,<1.0.0" },
-    { name = "numpy", specifier = ">=1.26.0,<2.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<2.0.0" },
     { name = "pinecone", specifier = ">=5.4.0,<6.0.0" },
 ]
 
