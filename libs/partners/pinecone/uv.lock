@@ -652,7 +652,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.4"
+version = "0.3.5"
 source = { directory = "../openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -700,7 +700,7 @@ typing = [
 
 [[package]]
 name = "langchain-pinecone"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -742,7 +742,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.10,<3.11" },
-    { name = "langchain-core", specifier = ">=0.3.29,<1.0.0" },
+    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
     { name = "langchain-tests", specifier = ">=0.3.7,<1.0.0" },
     { name = "numpy", specifier = ">=1.26.4,<2.0.0" },
     { name = "pinecone", specifier = ">=5.4.0,<6.0.0" },

@@ -7,14 +7,14 @@ authors = []
 license = {text = "MIT"}
 requires-python = "<3.14,>=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.29",
+    "langchain-core<1.0.0,>=0.3.34",
     "pinecone<6.0.0,>=5.4.0",
     "aiohttp<3.11,>=3.10",
     "numpy<2.0.0,>=1.26.4",
     "langchain-tests<1.0.0,>=0.3.7",
 ]
 name = "langchain-pinecone"
-version = "0.2.2"
+version = "0.2.3"
 description = "An integration package connecting Pinecone and LangChain"
 readme = "README.md"
 
