@@ -367,7 +367,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.33"
+version = "0.3.34"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonpatch" },
@@ -378,14 +378,14 @@ dependencies = [
     { name = "tenacity" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/57/b3/426268e07273c395affc6dd02cdf89803888121cfc59ce60922f363aeff8/langchain_core-0.3.33.tar.gz", hash = "sha256:b5dd93a4e7f8198d2fc6048723b0bfecf7aaf128b0d268cbac19c34c1579b953", size = 331492 }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/c8/a4394a5bdfc820f539bd6983b1408964723ed43ce8cfafbcc7cada69c015/langchain_core-0.3.34.tar.gz", hash = "sha256:26504cf1e8e6c310adad907b890d4e3c147581cfa7434114f6dc1134fe4bc6d3", size = 524756 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/78/463bc92174555cc04b3e234faa169bb8b58f36fff77892d7b8ae2b4f58e4/langchain_core-0.3.33-py3-none-any.whl", hash = "sha256:269706408a2223f863ff1f9616f31903a5712403199d828b50aadbc4c28b553a", size = 412656 },
+    { url = "https://files.pythonhosted.org/packages/9f/65/27a586c8871a0632d747059eb97855b49ac6dea12b263a79f6c1b4f18b99/langchain_core-0.3.34-py3-none-any.whl", hash = "sha256:a057ebeddd2158d3be14bde341b25640ddf958b6989bd6e47160396f5a8202ae", size = 412955 },
 ]
 
 [[package]]
 name = "langchain-deepseek"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -414,8 +414,8 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
-    { name = "langchain-openai", specifier = ">=0.3.3,<1.0.0" },
+    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-openai", specifier = ">=0.3.5,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -436,7 +436,7 @@ typing = [{ name = "mypy", specifier = ">=1.10,<2.0" }]
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.3"
+version = "0.3.5"
 source = { directory = "../openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -446,9 +446,40 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.33,<0.4.0" },
+    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
     { name = "openai", specifier = ">=1.58.1,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
+]
+
+[package.metadata.requires-dev]
+codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
+dev = [{ name = "langchain-core", directory = "../../core" }]
+lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
+test = [
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
+    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+]
+test-integration = [
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
+    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
+    { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
+]
+typing = [
+    { name = "langchain-core", directory = "../../core" },
+    { name = "mypy", specifier = ">=1.10,<2.0" },
+    { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
 ]
 
 [[package]]
