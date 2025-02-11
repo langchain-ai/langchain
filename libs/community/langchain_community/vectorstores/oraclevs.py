@@ -17,7 +17,6 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -48,55 +47,6 @@ logging.basicConfig(
 
 # Define a type variable that can be any kind of function
 T = TypeVar("T", bound=Callable[..., Any])
-
-
-class FilterCondition(TypedDict):
-    key: str
-    oper: str
-    value: str
-
-
-class FilterGroup(TypedDict, total=False):
-    _and: Optional[List[Union["FilterCondition", "FilterGroup"]]]
-    _or: Optional[List[Union["FilterCondition", "FilterGroup"]]]
-
-
-def _convert_oper_to_sql(oper: str) -> str:
-    oper_map = {"EQ": "==", "GT": ">", "LT": "<", "GTE": ">=", "LTE": "<="}
-    return oper_map.get(oper, "==")
-
-
-def _generate_condition(condition: FilterCondition) -> str:
-    key = condition["key"]
-    oper = _convert_oper_to_sql(condition["oper"])
-    value = condition["value"]
-    if isinstance(value, str):
-        value = f'"{value}"'
-    return f"JSON_EXISTS(metadata, '$.{key}?(@ {oper} {value})')"
-
-
-def _generate_where_clause(db_filter: Union[FilterCondition, FilterGroup]) -> str:
-    if "key" in db_filter:  # Identify as FilterCondition
-        return _generate_condition(cast(FilterCondition, db_filter))
-
-    if "_and" in db_filter and db_filter["_and"] is not None:
-        and_conditions = [
-            _generate_where_clause(cond)
-            for cond in db_filter["_and"]
-            if isinstance(cond, dict)
-        ]
-        return "(" + " AND ".join(and_conditions) + ")"
-
-    if "_or" in db_filter and db_filter["_or"] is not None:
-        or_conditions = [
-            _generate_where_clause(cond)
-            for cond in db_filter["_or"]
-            if isinstance(cond, dict)
-        ]
-        return "(" + " OR ".join(or_conditions) + ")"
-
-    raise ValueError(f"Invalid filter structure: {db_filter}")
-
 
 def _get_connection(client: Any) -> Connection | None:
     # Dynamically import oracledb and the required classes
@@ -256,28 +206,31 @@ def create_index(
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
-                connection,
-                vector_store.table_name,
-                vector_store.distance_strategy,
-                params,
+                connection, 
+                vector_store.table_name, 
+                vector_store.distance_strategy, 
+                params
             )
         elif params["idx_type"] == "IVF":
-            _create_ivf_index(
-                connection,
-                vector_store.table_name,
-                vector_store.distance_strategy,
-                params,
+            _create_ivf_index( 
+                connection, 
+                vector_store.table_name, 
+                vector_store.distance_strategy, 
+                params
             )
         else:
             _create_hnsw_index(
-                connection,
-                vector_store.table_name,
-                vector_store.distance_strategy,
-                params,
+                connection, 
+                vector_store.table_name, 
+                vector_store.distance_strategy, 
+                params
             )
     else:
         _create_hnsw_index(
-            connection, vector_store.table_name, vector_store.distance_strategy, params
+            connection, 
+            vector_store.table_name, 
+            vector_store.distance_strategy, 
+            params
         )
     return
 
@@ -440,6 +393,15 @@ def _create_ivf_index(
 
 @_handle_exceptions
 def drop_table_purge(client: Any, table_name: str) -> None:
+    """Drop a table and purge it from the database.
+
+    Args:
+        client: The OracleDB connection object.
+        table_name: The name of the table to drop.
+
+    Raises:
+        RuntimeError: If an error occurs while dropping the table.
+    """
     connection = _get_connection(client)
     if connection is None:
         raise ValueError("Failed to acquire a connection.")
@@ -455,6 +417,15 @@ def drop_table_purge(client: Any, table_name: str) -> None:
 
 @_handle_exceptions
 def drop_index_if_exists(client: Any, index_name: str) -> None:
+    """Drop an index if it exists.
+
+    Args:
+        client: The OracleDB connection object.
+        index_name: The name of the index to drop.
+
+    Raises:
+        RuntimeError: If an error occurs while dropping the index.
+    """
     connection = _get_connection(client)
     if connection is None:
         raise ValueError("Failed to acquire a connection.")
@@ -519,7 +490,7 @@ class OracleVS(VectorStore):
         if hasattr(connection, "thin") and connection.thin:
             if oracledb.__version__ == "2.1.0":
                 raise Exception(
-                    "Oracle DB python thin client driver version 2.1.0 " "not supported"
+                    "Oracle DB python thin client driver version 2.1.0 not supported"
                 )
             elif _compare_version(oracledb.__version__, "2.2.0"):
                 self.insert_mode = "clob"
@@ -581,6 +552,7 @@ class OracleVS(VectorStore):
                 "Failed to create table due to an unexpected error."
             ) from ex
 
+
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """
@@ -597,6 +569,7 @@ class OracleVS(VectorStore):
             else None
         )
 
+
     def get_embedding_dimension(self) -> int:
         # Embed the single document by wrapping it in a list
         embedded_document = self._embed_documents(
@@ -605,6 +578,7 @@ class OracleVS(VectorStore):
 
         # Get the first (and only) embedding's dimension
         return len(embedded_document[0])
+
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding_function, Embeddings):
@@ -616,11 +590,13 @@ class OracleVS(VectorStore):
                 "The embedding_function is neither Embeddings nor callable."
             )
 
+
     def _embed_query(self, text: str) -> List[float]:
         if isinstance(self.embedding_function, Embeddings):
             return self.embedding_function.embed_query(text)
         else:
             return self.embedding_function(text)
+
 
     @_handle_exceptions
     def add_texts(
@@ -694,6 +670,7 @@ class OracleVS(VectorStore):
             connection.commit()
         return processed_ids
 
+
     def similarity_search(
         self,
         query: str,
@@ -710,6 +687,7 @@ class OracleVS(VectorStore):
         )
         return documents
 
+
     def similarity_search_by_vector(
         self,
         embedding: List[float],
@@ -721,6 +699,7 @@ class OracleVS(VectorStore):
             embedding=embedding, k=k, filter=filter, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
+
 
     def similarity_search_with_score(
         self,
@@ -737,6 +716,7 @@ class OracleVS(VectorStore):
             embedding=embedding, k=k, filter=filter, **kwargs
         )
         return docs_and_scores
+
 
     @_handle_exceptions
     def _get_clob_value(self, result: Any) -> str:
@@ -764,6 +744,7 @@ class OracleVS(VectorStore):
                 raise Exception("Unexpected type:", type(result))
         return clob_value
 
+
     @_handle_exceptions
     def similarity_search_by_vector_with_relevance_scores(
         self,
@@ -780,9 +761,7 @@ class OracleVS(VectorStore):
         else:
             embedding_arr = array.array("f", embedding)
 
-        db_filter: Optional[FilterGroup] = kwargs.get("db_filter", None)
-        if db_filter is None:
-            query = f"""
+        query = f"""
             SELECT id,
               text,
               metadata,
@@ -791,20 +770,7 @@ class OracleVS(VectorStore):
             FROM {self.table_name}
             ORDER BY distance
             FETCH APPROX FIRST {k} ROWS ONLY
-            """
-        else:
-            where_clause = _generate_where_clause(db_filter)
-            query = f"""
-            SELECT id,
-              text,
-              metadata,
-              vector_distance(embedding, :embedding,
-              {_get_distance_function(self.distance_strategy)}) as distance
-            FROM {self.table_name}
-            WHERE {where_clause}
-            ORDER BY distance
-            FETCH APPROX FIRST {k} ROWS ONLY
-            """
+        """
 
         # Execute the query
         connection = _get_connection(self.client)
@@ -845,6 +811,7 @@ class OracleVS(VectorStore):
 
         return docs_and_scores
 
+
     @_handle_exceptions
     def similarity_search_by_vector_returning_embeddings(
         self,
@@ -861,9 +828,7 @@ class OracleVS(VectorStore):
 
         documents = []
 
-        db_filter: Optional[FilterGroup] = kwargs.get("db_filter", None)
-        if db_filter is None:
-            query = f"""
+        query = f"""
             SELECT id,
               text,
               metadata,
@@ -873,20 +838,7 @@ class OracleVS(VectorStore):
             FROM {self.table_name}
             ORDER BY distance
             FETCH APPROX FIRST {k} ROWS ONLY
-            """
-        else:
-            where_clause = _generate_where_clause(db_filter)
-            query = f"""
-            SELECT id,
-              text,
-              metadata,
-              vector_distance(embedding, :embedding, {_get_distance_function(
-                self.distance_strategy)}) as distance, embedding
-            FROM {self.table_name}
-            WHERE {where_clause}
-            ORDER BY distance
-            FETCH APPROX FIRST {k} ROWS ONLY
-            """
+        """
 
         # Execute the query
         connection = _get_connection(self.client)
@@ -920,6 +872,7 @@ class OracleVS(VectorStore):
 
                     documents.append((document, distance, current_embedding))
         return documents  # type: ignore
+
 
     @_handle_exceptions
     def max_marginal_relevance_search_with_score_by_vector(
@@ -985,6 +938,7 @@ class OracleVS(VectorStore):
 
         return mmr_selected_documents_with_scores
 
+
     @_handle_exceptions
     def max_marginal_relevance_search_by_vector(
         self,
@@ -1019,6 +973,7 @@ class OracleVS(VectorStore):
             embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
+
 
     @_handle_exceptions
     def max_marginal_relevance_search(
@@ -1064,6 +1019,7 @@ class OracleVS(VectorStore):
         )
         return documents
 
+
     @_handle_exceptions
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
@@ -1097,6 +1053,7 @@ class OracleVS(VectorStore):
         with connection.cursor() as cursor:
             cursor.execute(ddl, bind_vars)
             connection.commit()
+
 
     @classmethod
     @_handle_exceptions
