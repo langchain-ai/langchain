@@ -48,14 +48,14 @@ logging.basicConfig(
 # Define a type variable that can be any kind of function
 T = TypeVar("T", bound=Callable[..., Any])
 
+
 def _get_connection(client: Any) -> Connection | None:
     # Dynamically import oracledb and the required classes
     try:
         import oracledb
     except ImportError as e:
         raise ImportError(
-            "Unable to import oracledb, please install with "
-            "`pip install -U oracledb`."
+            "Unable to import oracledb, please install with `pip install -U oracledb`."
         ) from e
 
     # check if ConnectionPool exists
@@ -205,31 +205,28 @@ def create_index(
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
-                connection, 
-                vector_store.table_name, 
-                vector_store.distance_strategy, 
-                params
+                connection,
+                vector_store.table_name,
+                vector_store.distance_strategy,
+                params,
             )
         elif params["idx_type"] == "IVF":
-            _create_ivf_index( 
-                connection, 
-                vector_store.table_name, 
-                vector_store.distance_strategy, 
-                params
+            _create_ivf_index(
+                connection,
+                vector_store.table_name,
+                vector_store.distance_strategy,
+                params,
             )
         else:
             _create_hnsw_index(
-                connection, 
-                vector_store.table_name, 
-                vector_store.distance_strategy, 
-                params
+                connection,
+                vector_store.table_name,
+                vector_store.distance_strategy,
+                params,
             )
     else:
         _create_hnsw_index(
-            connection, 
-            vector_store.table_name, 
-            vector_store.distance_strategy, 
-            params
+            connection, vector_store.table_name, vector_store.distance_strategy, params
         )
     return
 
@@ -551,7 +548,6 @@ class OracleVS(VectorStore):
                 "Failed to create table due to an unexpected error."
             ) from ex
 
-
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """
@@ -568,7 +564,6 @@ class OracleVS(VectorStore):
             else None
         )
 
-
     def get_embedding_dimension(self) -> int:
         # Embed the single document by wrapping it in a list
         embedded_document = self._embed_documents(
@@ -577,7 +572,6 @@ class OracleVS(VectorStore):
 
         # Get the first (and only) embedding's dimension
         return len(embedded_document[0])
-
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding_function, Embeddings):
@@ -589,13 +583,11 @@ class OracleVS(VectorStore):
                 "The embedding_function is neither Embeddings nor callable."
             )
 
-
     def _embed_query(self, text: str) -> List[float]:
         if isinstance(self.embedding_function, Embeddings):
             return self.embedding_function.embed_query(text)
         else:
             return self.embedding_function(text)
-
 
     @_handle_exceptions
     def add_texts(
@@ -669,7 +661,6 @@ class OracleVS(VectorStore):
             connection.commit()
         return processed_ids
 
-
     def similarity_search(
         self,
         query: str,
@@ -686,7 +677,6 @@ class OracleVS(VectorStore):
         )
         return documents
 
-
     def similarity_search_by_vector(
         self,
         embedding: List[float],
@@ -698,7 +688,6 @@ class OracleVS(VectorStore):
             embedding=embedding, k=k, filter=filter, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
-
 
     def similarity_search_with_score(
         self,
@@ -715,7 +704,6 @@ class OracleVS(VectorStore):
             embedding=embedding, k=k, filter=filter, **kwargs
         )
         return docs_and_scores
-
 
     @_handle_exceptions
     def _get_clob_value(self, result: Any) -> str:
@@ -742,7 +730,6 @@ class OracleVS(VectorStore):
             else:
                 raise Exception("Unexpected type:", type(result))
         return clob_value
-
 
     @_handle_exceptions
     def similarity_search_by_vector_with_relevance_scores(
@@ -810,7 +797,6 @@ class OracleVS(VectorStore):
 
         return docs_and_scores
 
-
     @_handle_exceptions
     def similarity_search_by_vector_returning_embeddings(
         self,
@@ -831,8 +817,9 @@ class OracleVS(VectorStore):
             SELECT id,
               text,
               metadata,
-              vector_distance(embedding, :embedding, {_get_distance_function(
-                self.distance_strategy)}) as distance,
+              vector_distance(embedding, :embedding, {
+            _get_distance_function(self.distance_strategy)
+        }) as distance,
               embedding
             FROM {self.table_name}
             ORDER BY distance
@@ -871,7 +858,6 @@ class OracleVS(VectorStore):
 
                     documents.append((document, distance, current_embedding))
         return documents  # type: ignore
-
 
     @_handle_exceptions
     def max_marginal_relevance_search_with_score_by_vector(
@@ -937,7 +923,6 @@ class OracleVS(VectorStore):
 
         return mmr_selected_documents_with_scores
 
-
     @_handle_exceptions
     def max_marginal_relevance_search_by_vector(
         self,
@@ -972,7 +957,6 @@ class OracleVS(VectorStore):
             embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
-
 
     @_handle_exceptions
     def max_marginal_relevance_search(
@@ -1018,7 +1002,6 @@ class OracleVS(VectorStore):
         )
         return documents
 
-
     @_handle_exceptions
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
@@ -1052,7 +1035,6 @@ class OracleVS(VectorStore):
         with connection.cursor() as cursor:
             cursor.execute(ddl, bind_vars)
             connection.commit()
-
 
     @classmethod
     @_handle_exceptions
