@@ -307,8 +307,6 @@ class ChatAbso(BaseChatModel):
         Set then environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
-
-            pip install -U langchain-openai
             export OPENAI_API_KEY="your-api-key"
 
     .. dropdown:: Usage
