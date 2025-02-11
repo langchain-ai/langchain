@@ -231,7 +231,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             default_chunk_class,
             base_generation_info,
         )
-        if choices := chunk.get("choices"):
+        if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if reasoning_content := top.get("delta", {}).get("reasoning_content"):
                 if isinstance(generation_chunk.message, AIMessageChunk):
