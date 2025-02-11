@@ -21,6 +21,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.chat_models.abso import (
+        ChatAbso,
+    )
     from langchain_community.chat_models.anthropic import (
         ChatAnthropic,
     )
@@ -197,6 +200,7 @@ if TYPE_CHECKING:
 __all__ = [
     "AzureChatOpenAI",
     "BedrockChat",
+    "ChatAbso",
     "ChatAnthropic",
     "ChatAnyscale",
     "ChatBaichuan",
@@ -264,6 +268,7 @@ __all__ = [
 _module_lookup = {
     "AzureChatOpenAI": "langchain_community.chat_models.azure_openai",
     "BedrockChat": "langchain_community.chat_models.bedrock",
+    "ChatAbso": "langchain_community.chat_models.abso",
     "ChatAnthropic": "langchain_community.chat_models.anthropic",
     "ChatAnyscale": "langchain_community.chat_models.anyscale",
     "ChatBaichuan": "langchain_community.chat_models.baichuan",
