@@ -70,7 +70,7 @@ DEFAULT_PROPERTIES = [
 DEFAULT_LANG_CODE = "en"
 WIKIDATA_USER_AGENT = "langchain-wikidata"
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
-WIKIDATA_REST_API_URL = "https://www.wikidata.org/w/rest.php/wikibase/v0/"
+WIKIDATA_REST_API_URL = "https://www.wikidata.org/w/rest.php/wikibase/v1/"
 
 
 class WikidataAPIWrapper(BaseModel):
