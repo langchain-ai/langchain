@@ -1589,10 +1589,10 @@ def test_faiss_local_save_load() -> None:
 
 
 @pytest.mark.requires("faiss")
-async def test_faiss_async_local_save_load() -> None:
+def test_faiss_async_local_save_load() -> None:
     """Test end to end serialization."""
     texts = ["foo", "bar", "baz"]
-    docsearch = await FAISS.afrom_texts(texts, FakeEmbeddings())
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
@@ -1714,9 +1714,9 @@ def test_ip_score() -> None:
     scores = db.similarity_search_with_relevance_scores("sundays", k=1)
     assert len(scores) == 1, "only one vector should be in db"
     _, score = scores[0]
-    assert (
-        score == 1
-    ), f"expected inner product of equivalent vectors to be 1, not {score}"
+    assert score == 1, (
+        f"expected inner product of equivalent vectors to be 1, not {score}"
+    )
 
 
 @pytest.mark.requires("faiss")

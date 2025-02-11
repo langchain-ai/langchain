@@ -10,6 +10,22 @@ from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
+    # OpenAI o1 input
+    "o1": 0.015,
+    "o1-2024-12-17": 0.015,
+    "o1-cached": 0.0075,
+    "o1-2024-12-17-cached": 0.0075,
+    # OpenAI o1 output
+    "o1-completion": 0.06,
+    "o1-2024-12-17-completion": 0.06,
+    # OpenAI o3-mini input
+    "o3-mini": 0.0011,
+    "o3-mini-2025-01-31": 0.0011,
+    "o3-mini-cached": 0.00055,
+    "o3-mini-2025-01-31-cached": 0.00055,
+    # OpenAI o3-mini output
+    "o3-mini-completion": 0.0044,
+    "o3-mini-2025-01-31-completion": 0.0044,
     # OpenAI o1-preview input
     "o1-preview": 0.015,
     "o1-preview-cached": 0.0075,
@@ -128,6 +144,7 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-1106-finetuned": 0.003,
     "gpt-3.5-turbo-0125-finetuned": 0.003,
     "gpt-4o-mini-2024-07-18-finetuned": 0.0003,
+    "gpt-4o-mini-2024-07-18-finetuned-cached": 0.00015,
     # Fine Tuned output
     "babbage-002-finetuned-completion": 0.0016,
     "davinci-002-finetuned-completion": 0.012,

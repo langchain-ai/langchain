@@ -54,11 +54,6 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         raise ValueError(msg)
     try:
         import simsimd as simd  # type: ignore
-
-        x = np.array(x, dtype=np.float32)
-        y = np.array(y, dtype=np.float32)
-        z = 1 - np.array(simd.cdist(x, y, metric="cosine"))
-        return z
     except ImportError:
         logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
@@ -71,6 +66,10 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
             similarity = np.dot(x, y.T) / np.outer(x_norm, y_norm)
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
+
+    x = np.array(x, dtype=np.float32)
+    y = np.array(y, dtype=np.float32)
+    return 1 - np.array(simd.cdist(x, y, metric="cosine"))
 
 
 def maximal_marginal_relevance(

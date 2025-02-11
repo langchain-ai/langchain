@@ -20,7 +20,7 @@ from langchain_core.utils.pydantic import (
 
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
-    """Validate specified keyword args are mutually exclusive."
+    """Validate specified keyword args are mutually exclusive.".
 
     Args:
         *arg_groups (Tuple[str, ...]): Groups of mutually exclusive keyword args.

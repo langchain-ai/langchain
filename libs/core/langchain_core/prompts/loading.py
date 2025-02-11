@@ -78,7 +78,7 @@ def _load_examples(config: dict) -> dict:
         config["examples"] = examples
     else:
         msg = "Invalid examples format. Only list or string are supported."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa:TRY004
     return config
 
 
@@ -184,8 +184,7 @@ def _load_prompt_from_file(
 
 
 def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
-    """Load chat prompt from config"""
-
+    """Load chat prompt from config."""
     messages = config.pop("messages")
     template = messages[0]["prompt"].pop("template") if messages else None
     config.pop("input_variables")

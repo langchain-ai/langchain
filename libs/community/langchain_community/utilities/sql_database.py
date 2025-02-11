@@ -24,8 +24,8 @@ from sqlalchemy.types import NullType
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
-        f'Name: {index["name"]}, Unique: {index["unique"]},'
-        f' Columns: {str(index["column_names"])}'
+        f"Name: {index['name']}, Unique: {index['unique']},"
+        f" Columns: {str(index['column_names'])}"
     )
 
 
@@ -72,7 +72,7 @@ class SQLDatabase:
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=schema)
+            list(self._inspector.get_table_names(schema=schema))
             + (self._inspector.get_view_names(schema=schema) if view_support else [])
         )
 

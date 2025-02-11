@@ -1,7 +1,6 @@
-"""
-Adapted from
+"""Adapted from
 https://github.com/maxfischer2781/asyncstdlib/blob/master/asyncstdlib/itertools.py
-MIT License
+MIT License.
 """
 
 from collections import deque
@@ -54,7 +53,6 @@ def py_anext(
     Raises:
         TypeError: If the iterator is not an async iterator.
     """
-
     try:
         __anext__ = cast(
             Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
@@ -147,8 +145,7 @@ async def tee_peer(
 
 
 class Tee(Generic[T]):
-    """
-    Create ``n`` separate asynchronous iterators over ``iterable``.
+    """Create ``n`` separate asynchronous iterators over ``iterable``.
 
     This splits a single ``iterable`` into multiple iterators, each providing
     the same items in the same order.

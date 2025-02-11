@@ -100,7 +100,10 @@ class ChatModelTests(BaseStandardTests):
     def model(self) -> BaseChatModel:
         """:private:"""
         return self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
+            **{
+                **self.standard_chat_model_params,
+                **self.chat_model_params,
+            }
         )
 
     @pytest.fixture
@@ -130,7 +133,7 @@ class ChatModelTests(BaseStandardTests):
         return (
             self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
-        )
+        ) or self.has_tool_calling
 
     @property
     def structured_output_kwargs(self) -> dict:
@@ -290,9 +293,9 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports structured
         output.
 
-        By default, this is determined by whether the chat model's
-        ``with_structured_output`` method is overridden. If the base implementation is
-        intended to be used, this method should be overridden.
+        By default, this is determined by whether the chat model overrides the
+        ``with_structured_output`` or ``bind_tools`` methods. If the base
+        implementations are intended to be used, this method should be overridden.
 
         See: https://python.langchain.com/docs/concepts/structured_outputs/
 
@@ -511,7 +514,10 @@ class ChatModelUnitTests(ChatModelTests):
             2. The model accommodates standard parameters: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
         """  # noqa: E501
         model = self.chat_model_class(
-            **{**self.standard_chat_model_params, **self.chat_model_params}
+            **{
+                **self.standard_chat_model_params,
+                **self.chat_model_params,
+            }
         )
         assert model is not None
 
@@ -673,7 +679,7 @@ class ChatModelUnitTests(ChatModelTests):
         if not self.chat_model_class.is_lc_serializable():
             pytest.skip("Model is not serializable.")
         else:
-            env_params, model_params, expected_attrs = self.init_from_env_params
+            env_params, _model_params, _expected_attrs = self.init_from_env_params
             with mock.patch.dict(os.environ, env_params):
                 ser = dumpd(model)
                 assert ser == snapshot(name="serialized")
