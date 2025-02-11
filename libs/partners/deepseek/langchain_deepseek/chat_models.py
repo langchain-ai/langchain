@@ -3,6 +3,7 @@
 from typing import Dict, Optional, Type, Union
 
 import openai
+from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
@@ -233,7 +234,8 @@ class ChatDeepSeek(BaseChatOpenAI):
         if choices := chunk.get("choices"):
             top = choices[0]
             if reasoning_content := top.get("delta", {}).get("reasoning_content"):
-                generation_chunk.message.additional_kwargs["reasoning_content"] = (
-                    reasoning_content
-                )
+                if isinstance(generation_chunk.message, AIMessageChunk):
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning_content
+                    )
         return generation_chunk
