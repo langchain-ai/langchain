@@ -520,7 +520,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.4"
+version = "0.3.5"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
