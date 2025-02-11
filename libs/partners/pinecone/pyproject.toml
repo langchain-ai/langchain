@@ -5,12 +5,12 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = "<3.13,>=3.9"
+requires-python = "<3.14,>=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.29",
     "pinecone<6.0.0,>=5.4.0",
     "aiohttp<3.11,>=3.10",
-    "numpy<2.0.0,>=1.26.0",
+    "numpy<2.0.0,>=1.26.4",
     "langchain-tests<1.0.0,>=0.3.7",
 ]
 name = "langchain-pinecone"
