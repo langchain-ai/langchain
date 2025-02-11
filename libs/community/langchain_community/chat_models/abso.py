@@ -392,7 +392,7 @@ class ChatAbso(BaseChatModel):
         }
 
         response = requests.post(
-            "http://localhost:8787/v1/chat/completions",
+            "http://router.abso.ai/v1/chat/completions",
             json=payload,
             headers=headers,
         )
