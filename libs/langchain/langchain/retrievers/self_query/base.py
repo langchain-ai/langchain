@@ -34,6 +34,9 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
     from langchain_community.query_constructors.astradb import AstraDBTranslator
     from langchain_community.query_constructors.chroma import ChromaTranslator
+    from langchain_community.query_constructors.cosmosdb_no_sql import (
+        AzureCosmosDbNoSQLTranslator,
+    )
     from langchain_community.query_constructors.dashvector import DashvectorTranslator
     from langchain_community.query_constructors.databricks_vector_search import (
         DatabricksVectorSearchTranslator,
@@ -65,6 +68,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.query_constructors.weaviate import WeaviateTranslator
     from langchain_community.vectorstores import (
         AstraDB,
+        AzureCosmosDBNoSqlVectorSearch,
         DashVector,
         DatabricksVectorSearch,
         DeepLake,
@@ -97,6 +101,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
+        AzureCosmosDBNoSqlVectorSearch: AzureCosmosDbNoSQLTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
         CommunityChroma: ChromaTranslator,
