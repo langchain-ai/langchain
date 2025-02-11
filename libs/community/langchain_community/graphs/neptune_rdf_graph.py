@@ -249,7 +249,7 @@ class NeptuneRdfGraph:
             return [f"{tokens[0]}#", tokens[-1]]
         elif "/" in iri:
             tokens = iri.split("/")
-            return [f"{'/'.join(tokens[0:len(tokens)-1])}/", tokens[-1]]
+            return [f"{'/'.join(tokens[0 : len(tokens) - 1])}/", tokens[-1]]
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
 

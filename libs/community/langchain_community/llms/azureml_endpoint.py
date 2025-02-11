@@ -181,7 +181,10 @@ class GPT2ContentFormatter(ContentFormatterBase):
     ) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
-            {"inputs": {"input_string": [f'"{prompt}"']}, "parameters": model_kwargs}
+            {
+                "inputs": {"input_string": [f'"{prompt}"']},
+                "parameters": model_kwargs,
+            }
         )
         return str.encode(request_payload)
 
@@ -223,7 +226,10 @@ class HFContentFormatter(ContentFormatterBase):
     ) -> bytes:
         ContentFormatterBase.escape_special_characters(prompt)
         request_payload = json.dumps(
-            {"inputs": [f'"{prompt}"'], "parameters": model_kwargs}
+            {
+                "inputs": [f'"{prompt}"'],
+                "parameters": model_kwargs,
+            }
         )
         return str.encode(request_payload)
 

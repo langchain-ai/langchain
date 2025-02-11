@@ -53,6 +53,7 @@ class TestAGEGraph(unittest.TestCase):
             self.assertEqual(AGEGraph._get_col_name(*value), expected[idx])
 
     def test_wrap_query(self) -> None:
+        """Test basic query wrapping functionality."""
         inputs = [
             # Positive case: Simple return clause
             """
@@ -77,45 +78,194 @@ class TestAGEGraph(unittest.TestCase):
         expected = [
             # Expected output for the first positive case
             """
+                SELECT * FROM ag_catalog.cypher('test', $$
+                MATCH (keanu:Person {name:'Keanu Reeves'})
+                RETURN keanu.name AS name, keanu.born AS born
+                $$) AS (name agtype, born agtype);
+                """,
+            # Second test case (no RETURN clause)
+            """
+                SELECT * FROM ag_catalog.cypher('test', $$
+                MERGE (n:a {id: 1})
+                $$) AS (a agtype);
+                """,
+            # Expected output for the negative cases (no RETURN clause)
+            """
+                SELECT * FROM ag_catalog.cypher('test', $$
+                MATCH (n {description: "This will return a value"})
+                MERGE (n)-[:RELATED]->(m)
+                $$) AS (a agtype);
+                """,
+            """
+                SELECT * FROM ag_catalog.cypher('test', $$
+                MATCH (n {returnValue: "some value"})
+                MERGE (n)-[:RELATED]->(m)
+                $$) AS (a agtype);
+                """,
+        ]
+
+        for idx, value in enumerate(inputs):
+            result = AGEGraph._wrap_query(value, "test")
+            expected_result = expected[idx]
+            self.assertEqual(
+                re.sub(r"\s", "", result),
+                re.sub(r"\s", "", expected_result),
+                (
+                    f"Failed on test case {idx + 1}\n"
+                    f"Input:\n{value}\n"
+                    f"Expected:\n{expected_result}\n"
+                    f"Got:\n{result}"
+                ),
+            )
+
+    def test_wrap_query_union_except(self) -> None:
+        """Test query wrapping with UNION and EXCEPT operators."""
+        inputs = [
+            # UNION case
+            """
+                MATCH (n:Person)
+                RETURN n.name AS name, n.age AS age
+                UNION
+                MATCH (n:Employee)
+                RETURN n.name AS name, n.salary AS salary
+                """,
+            """
+                MATCH (a:Employee {name: "Alice"})
+                RETURN a.name AS name
+                UNION
+                MATCH (b:Manager {name: "Bob"})
+                RETURN b.name AS name
+                """,
+            # Complex UNION case
+            """
+                MATCH (n)-[r]->(m)
+                RETURN n.name AS source, type(r) AS relationship, m.name AS target
+                UNION
+                MATCH (m)-[r]->(n)
+                RETURN m.name AS source, type(r) AS relationship, n.name AS target
+                """,
+            """
+                MATCH (a:Person)-[:FRIEND]->(b:Person)
+                WHERE a.age > 30
+                RETURN a.name AS name
+                UNION
+                MATCH (c:Person)-[:FRIEND]->(d:Person)
+                WHERE c.age < 25
+                RETURN c.name AS name
+                """,
+            # EXCEPT case
+            """
+                MATCH (n:Person)
+                RETURN n.name AS name
+                EXCEPT
+                MATCH (n:Employee)
+                RETURN n.name AS name
+                """,
+            """
+                MATCH (a:Person)
+                RETURN a.name AS name, a.age AS age
+                EXCEPT
+                MATCH (b:Person {name: "Alice", age: 30})
+                RETURN b.name AS name, b.age AS age   
+                """,
+        ]
+
+        expected = [
+            """
             SELECT * FROM ag_catalog.cypher('test', $$
-            MATCH (keanu:Person {name:'Keanu Reeves'})
-            RETURN keanu.name AS name, keanu.born AS born
-            $$) AS (name agtype, born agtype);
+            MATCH (n:Person)
+            RETURN n.name AS name, n.age AS age
+            UNION
+            MATCH (n:Employee)
+            RETURN n.name AS name, n.salary AS salary
+            $$) AS (name agtype, age agtype, salary agtype);
             """,
             """
             SELECT * FROM ag_catalog.cypher('test', $$
-            MERGE (n:a {id: 1})
-            $$) AS (a agtype);
-            """,
-            # Expected output for the negative cases (no return clause)
-            """
-            SELECT * FROM ag_catalog.cypher('test', $$
-            MATCH (n {description: "This will return a value"})
-            MERGE (n)-[:RELATED]->(m)
-            $$) AS (a agtype);
+            MATCH (a:Employee {name: "Alice"})
+            RETURN a.name AS name
+            UNION
+            MATCH (b:Manager {name: "Bob"})
+            RETURN b.name AS name
+            $$) AS (name agtype);  
             """,
             """
             SELECT * FROM ag_catalog.cypher('test', $$
-            MATCH (n {returnValue: "some value"})
-            MERGE (n)-[:RELATED]->(m)
-            $$) AS (a agtype);
+            MATCH (n)-[r]->(m)
+            RETURN n.name AS source, type(r) AS relationship, m.name AS target
+            UNION
+            MATCH (m)-[r]->(n)
+            RETURN m.name AS source, type(r) AS relationship, n.name AS target
+            $$) AS (source agtype, relationship agtype, target agtype);
+            """,
+            """
+            SELECT * FROM ag_catalog.cypher('test', $$
+            MATCH (a:Person)-[:FRIEND]->(b:Person)
+            WHERE a.age > 30
+            RETURN a.name AS name
+            UNION
+            MATCH (c:Person)-[:FRIEND]->(d:Person)
+            WHERE c.age < 25
+            RETURN c.name AS name
+            $$) AS (name agtype);
+            """,
+            """
+            SELECT * FROM ag_catalog.cypher('test', $$
+            MATCH (n:Person)
+            RETURN n.name AS name
+            EXCEPT
+            MATCH (n:Employee)
+            RETURN n.name AS name
+            $$) AS (name agtype);
+            """,
+            """
+            SELECT * FROM ag_catalog.cypher('test', $$
+            MATCH (a:Person)
+            RETURN a.name AS name, a.age AS age
+            EXCEPT
+            MATCH (b:Person {name: "Alice", age: 30})
+            RETURN b.name AS name, b.age AS age
+            $$) AS (name agtype, age agtype);
             """,
         ]
 
         for idx, value in enumerate(inputs):
+            result = AGEGraph._wrap_query(value, "test")
+            expected_result = expected[idx]
             self.assertEqual(
-                re.sub(r"\s", "", AGEGraph._wrap_query(value, "test")),
-                re.sub(r"\s", "", expected[idx]),
+                re.sub(r"\s", "", result),
+                re.sub(r"\s", "", expected_result),
+                (
+                    f"Failed on test case {idx + 1}\n"
+                    f"Input:\n{value}\n"
+                    f"Expected:\n{expected_result}\n"
+                    f"Got:\n{result}"
+                ),
             )
 
-        with self.assertRaises(ValueError):
-            AGEGraph._wrap_query(
-                """
+    def test_wrap_query_errors(self) -> None:
+        """Test error cases for query wrapping."""
+        error_cases = [
+            # Empty query
+            "",
+            # Return * case
+            """
             MATCH ()
             RETURN *
             """,
-                "test",
-            )
+            # Return * in UNION
+            """
+            MATCH (n:Person)
+            RETURN n.name
+            UNION
+            MATCH ()
+            RETURN *
+            """,
+        ]
+
+        for query in error_cases:
+            with self.assertRaises(ValueError):
+                AGEGraph._wrap_query(query, "test")
 
     def test_format_properties(self) -> None:
         inputs: List[Dict[str, Any]] = [{}, {"a": "b"}, {"a": "b", "c": 1, "d": True}]

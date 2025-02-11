@@ -1,9 +1,18 @@
 import time
 from typing import Optional as Optional
 
+import pytest
+from blockbuster import BlockBuster
+
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
+
+
+@pytest.fixture(autouse=True)
+def deactivate_blockbuster(blockbuster: BlockBuster) -> None:
+    # Deactivate BlockBuster to not disturb the rate limiter timings
+    blockbuster.deactivate()
 
 
 def test_rate_limit_invoke() -> None:

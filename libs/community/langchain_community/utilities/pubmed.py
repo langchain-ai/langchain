@@ -193,7 +193,11 @@ class PubMedAPIWrapper(BaseModel):
         )
         a_d = ar.get("ArticleDate", {})
         pub_date = "-".join(
-            [a_d.get("Year", ""), a_d.get("Month", ""), a_d.get("Day", "")]
+            [
+                a_d.get("Year", ""),
+                a_d.get("Month", ""),
+                a_d.get("Day", ""),
+            ]
         )
 
         return {

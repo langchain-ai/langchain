@@ -93,7 +93,10 @@ async def test_aupdate_timestamp(amanager: MongoDocumentManager) -> None:
     records = [
         doc
         async for doc in amanager.async_collection.find(
-            {"namespace": amanager.namespace, "key": "key1"}
+            {
+                "namespace": amanager.namespace,
+                "key": "key1",
+            }
         )
     ]
 
@@ -165,7 +168,10 @@ def test_list_keys(manager: MongoDocumentManager) -> None:
         manager.update(["key4"], group_ids=["group1"])
     assert sorted(manager.list_keys()) == sorted(["key1", "key2", "key3", "key4"])
     assert sorted(manager.list_keys(after=datetime(2022, 2, 1).timestamp())) == sorted(
-        ["key3", "key4"]
+        [
+            "key3",
+            "key4",
+        ]
     )
     assert sorted(manager.list_keys(group_ids=["group1", "group2"])) == sorted(["key4"])
 
@@ -191,7 +197,12 @@ async def test_alist_keys(amanager: MongoDocumentManager) -> None:
     ):
         await amanager.aupdate(["key4"], group_ids=["group1"])
     assert sorted(await amanager.alist_keys()) == sorted(
-        ["key1", "key2", "key3", "key4"]
+        [
+            "key1",
+            "key2",
+            "key3",
+            "key4",
+        ]
     )
     assert sorted(
         await amanager.alist_keys(after=datetime(2022, 2, 1).timestamp())
@@ -244,7 +255,10 @@ async def test_anamespace_is_used(amanager: MongoDocumentManager) -> None:
     await amanager.aupdate(["key3"], group_ids=["group3"])
     assert (
         await amanager.async_collection.find_one(
-            {"key": "key3", "namespace": "kittens"}
+            {
+                "key": "key3",
+                "namespace": "kittens",
+            }
         )
     )["group_id"] == "group3"
 

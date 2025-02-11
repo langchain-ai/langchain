@@ -418,8 +418,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "energetic herders skilled in outdoor activities.",
             "Golden Retrievers are friendly, "
             "loyal companions with excellent retrieving skills.",
-            "Labrador Retrievers are playful, "
-            "eager learners and skilled retrievers.",
+            "Labrador Retrievers are playful, eager learners and skilled retrievers.",
             "Australian Shepherds are agile, "
             "energetic herders excelling in outdoor tasks.",
             "German Shepherds are brave, "

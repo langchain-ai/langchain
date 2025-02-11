@@ -367,7 +367,7 @@ def test_enhanced_schema_exception() -> None:
         url=url, username=username, password=password, enhanced_schema=True
     )
     graph.query("MATCH (n) DETACH DELETE n")
-    graph.query("CREATE (:Node {foo:'bar'})," "(:Node {foo: 1}), (:Node {foo: [1,2]})")
+    graph.query("CREATE (:Node {foo:'bar'}),(:Node {foo: 1}), (:Node {foo: [1,2]})")
     graph.refresh_schema()
     expected_output = {
         "node_props": {"Node": [{"property": "foo", "type": "STRING"}]},

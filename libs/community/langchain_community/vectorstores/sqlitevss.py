@@ -121,8 +121,7 @@ class SQLiteVSS(VectorStore):
             for text, metadata, embed in zip(texts, metadatas, embeds)
         ]
         self._connection.executemany(
-            f"INSERT INTO {self._table}(text, metadata, text_embedding) "
-            f"VALUES (?,?,?)",
+            f"INSERT INTO {self._table}(text, metadata, text_embedding) VALUES (?,?,?)",
             data_input,
         )
         self._connection.commit()

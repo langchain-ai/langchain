@@ -198,6 +198,7 @@ class BaseMessageChunk(BaseMessage):
 
             return self.__class__(  # type: ignore[call-arg]
                 id=self.id,
+                type=self.type,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
