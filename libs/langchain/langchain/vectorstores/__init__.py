@@ -98,6 +98,7 @@ if TYPE_CHECKING:
         Yellowbrick,
         ZepVectorStore,
         Zilliz,
+        Matrixone,
     )
 
 # Create a way to dynamically look up deprecated imports.
@@ -176,6 +177,7 @@ DEPRECATED_LOOKUP = {
     "Yellowbrick": "langchain_community.vectorstores",
     "ZepVectorStore": "langchain_community.vectorstores",
     "Zilliz": "langchain_community.vectorstores",
+    "Matrixone": "langchain_community.vectorstores",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -259,4 +261,5 @@ __all__ = [
     "Yellowbrick",
     "ZepVectorStore",
     "Zilliz",
+    "Matrixone",
 ]
