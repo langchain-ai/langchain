@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
@@ -7,8 +8,6 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict, model_validator
-
-import warnings
 
 warnings.warn(
     "The weaviate related classes in the langchain_community package are deprecated. "
