@@ -86,7 +86,7 @@ Documents about animals.
 
 ### Populating the Vector store
 
-This section shows how to populate a variety of vector stores with the animal data.
+This section shows how to populate a variety of vector stores with the sample data.
 
 For help on choosing one of the vector stores below, or to add support for your
 vector store, consult the documentation about
@@ -95,10 +95,13 @@ vector store, consult the documentation about
 <Tabs groupId="vector-store" queryString>
   <TabItem value="astra-db" label="AstraDB" default>
     <div style={{ paddingLeft: '30px' }}>
-      Install the langchain-graph-retriever with the Astra extra:
+      Install the `langchain-graph-retriever` package with the `astra` extra:
+
       ```bash
       pip install "langchain-graph-retriever[astra]"
       ```
+
+      Then create a vector store and load the test documents:
 
       ```python
       from langchain_astradb import AstraDBVectorStore
@@ -121,10 +124,13 @@ vector store, consult the documentation about
   </TabItem>
   <TabItem value="cassandra" label="Apache Cassandra">
     <div style={{ paddingLeft: '30px' }}>
-      Install the langchain-graph-retriever with the Cassandra extra:
+      Install the `langchain-graph-retriever` package with the `cassandra` extra:
+
       ```bash
       pip install "langchain-graph-retriever[cassandra]"
       ```
+
+      Then create a vector store and load the test documents:
 
       ```python
       from langchain_community.vectorstores.cassandra import Cassandra
@@ -136,6 +142,7 @@ vector store, consult the documentation about
           table_name="animals",
       )
       ```
+
       For help creating a Cassandra connection, consult the
       [Apache Cassandra Vector Store Guide](/docs/integrations/vectorstores/cassandra#connection-parameters)
 
@@ -148,10 +155,13 @@ vector store, consult the documentation about
   </TabItem>
   <TabItem value="opensearch" label="OpenSearch">
     <div style={{ paddingLeft: '30px' }}>
-      Install the langchain-graph-retriever with the OpenSearch extra:
+      Install the `langchain-graph-retriever` package with the `opensearch` extra:
+
       ```bash
       pip install "langchain-graph-retriever[opensearch]"
       ```
+
+      Then create a vector store and load the test documents:
 
       ```python
       from langchain_community.vectorstores import OpenSearchVectorSearch
@@ -165,16 +175,20 @@ vector store, consult the documentation about
           bulk_size=500,
       )
       ```
+
       For help creating an OpenSearch connection, consult the
       [OpenSearch Vector Store Guide](/docs/integrations/vectorstores/opensearch).
     </div>
   </TabItem>
   <TabItem value="chroma" label="Chroma">
     <div style={{ paddingLeft: '30px' }}>
-      Install the langchain-graph-retriever with the Chroma extra:
+      Install the `langchain-graph-retriever` package with the `chroma` extra:
+
       ```bash
       pip install "langchain-graph-retriever[chroma]"
       ```
+
+      Then create a vector store and load the test documents:
 
       ```python
       from langchain_chroma.vectorstores import Chroma
@@ -186,6 +200,7 @@ vector store, consult the documentation about
           collection_name="animals",
       )
       ```
+
       For help creating an Chroma connection, consult the
       [Chroma Vector Store Guide](/docs/integrations/vectorstores/chroma).
 
@@ -198,6 +213,14 @@ vector store, consult the documentation about
   </TabItem>
   <TabItem value="in-memory" label="InMemory" default>
     <div style={{ paddingLeft: '30px' }}>
+      Install the langchain-graph-retriever:
+
+      ```bash
+      pip install "langchain-graph-retriever"
+      ```
+
+      Then create a vector store and load the test documents:
+
       ```python
       from langchain_core.vectorstores import InMemoryVectorStore
 
@@ -206,6 +229,7 @@ vector store, consult the documentation about
           embedding=embeddings,
       )
       ```
+
       :::tip
       Using the `InMemoryVectorStore` is the fastest way to get started with Graph RAG
       but it isn't recommended for production use. Instead it is recommended to use
