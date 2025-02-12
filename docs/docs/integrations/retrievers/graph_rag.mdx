@@ -69,16 +69,12 @@ Documents about animals.
   <div>
     1. Ensure you have Python 3.10+ installed
 
-    1. Install the following packages:
+    1. Install the following package that provides sample data.
         ```bash
-        pip install -qU langchain-graph-retriever graph_rag_example_helpers
+        pip install -qU graph_rag_example_helpers
         ```
 
-        * `langchain-graph-retriever` provides the graph traversal retriever.
-        * `graph-rag-example-helpers` provides the animal data in an easy to consume format.
-
     1. Download the test documents:
-
         ```python
         from graph_rag_example_helpers.datasets.animals import fetch_documents
         animals = fetch_documents()
@@ -99,13 +95,18 @@ vector store, consult the documentation about
 <Tabs groupId="vector-store" queryString>
   <TabItem value="astra-db" label="AstraDB" default>
     <div style={{ paddingLeft: '30px' }}>
+      Install the langchain-graph-retriever with the Astra extra:
+      ```bash
+      pip install "langchain-graph-retriever[astra]"
+      ```
+
       ```python
       from langchain_astradb import AstraDBVectorStore
 
       vector_store = AstraDBVectorStore.from_documents(
-          collection_name="animals",
           documents=animals,
           embedding=embeddings,
+          collection_name="animals",
           api_endpoint=ASTRA_DB_API_ENDPOINT,
           token=ASTRA_DB_APPLICATION_TOKEN,
       )
@@ -120,6 +121,11 @@ vector store, consult the documentation about
   </TabItem>
   <TabItem value="cassandra" label="Apache Cassandra">
     <div style={{ paddingLeft: '30px' }}>
+      Install the langchain-graph-retriever with the Cassandra extra:
+      ```bash
+      pip install "langchain-graph-retriever[cassandra]"
+      ```
+
       ```python
       from langchain_community.vectorstores.cassandra import Cassandra
       from langchain_graph_retriever.transformers import ShreddingTransformer
@@ -142,15 +148,21 @@ vector store, consult the documentation about
   </TabItem>
   <TabItem value="opensearch" label="OpenSearch">
     <div style={{ paddingLeft: '30px' }}>
+      Install the langchain-graph-retriever with the OpenSearch extra:
+      ```bash
+      pip install "langchain-graph-retriever[opensearch]"
+      ```
+
       ```python
       from langchain_community.vectorstores import OpenSearchVectorSearch
 
       vector_store = OpenSearchVectorSearch.from_documents(
-          opensearch_url=OPEN_SEARCH_URL,
-          index_name="animals",
-          embedding_function=embeddings,
-          engine="faiss",
           documents=animals,
+          embedding=embeddings,
+          engine="faiss",
+          index_name="animals",
+          opensearch_url=OPEN_SEARCH_URL,
+          bulk_size=500,
       )
       ```
       For help creating an OpenSearch connection, consult the
@@ -159,6 +171,11 @@ vector store, consult the documentation about
   </TabItem>
   <TabItem value="chroma" label="Chroma">
     <div style={{ paddingLeft: '30px' }}>
+      Install the langchain-graph-retriever with the Chroma extra:
+      ```bash
+      pip install "langchain-graph-retriever[chroma]"
+      ```
+
       ```python
       from langchain_chroma.vectorstores import Chroma
       from langchain_graph_retriever.transformers import ShreddingTransformer
