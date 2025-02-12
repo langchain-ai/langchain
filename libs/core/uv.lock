@@ -1026,7 +1026,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.10"
+version = "0.3.11"
 source = { directory = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -1042,7 +1042,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pytest", specifier = ">=7,<9" },
@@ -1063,14 +1063,14 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.5"
+version = "0.3.6"
 source = { directory = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", specifier = ">=0.3.33,<1.0.0" }]
+requires-dist = [{ name = "langchain-core", specifier = ">=0.3.34,<1.0.0" }]
 
 [package.metadata.requires-dev]
 dev = [
