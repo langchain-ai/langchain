@@ -8,6 +8,15 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict, model_validator
 
+import warnings
+
+warnings.warn(
+    "The weaviate related classes in the langchain_community package are deprecated. "
+    "Please download and install the langchain-weaviate package.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
     """`Weaviate hybrid search` retriever.

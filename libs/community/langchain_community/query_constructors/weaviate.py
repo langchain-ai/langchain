@@ -10,6 +10,15 @@ from langchain_core.structured_query import (
     Visitor,
 )
 
+import warnings
+
+warnings.warn(
+    "The weaviate related classes in the langchain_community package are deprecated. "
+    "Please download and install the langchain-weaviate package.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 
 class WeaviateTranslator(Visitor):
     """Translate `Weaviate` internal query language elements to valid filters."""
