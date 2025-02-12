@@ -1,6 +1,5 @@
 """Main entrypoint into package."""
 
-import warnings
 from importlib import metadata
 
 try:
