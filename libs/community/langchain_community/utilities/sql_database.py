@@ -139,6 +139,14 @@ class SQLDatabase:
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     @classmethod
+    @deprecated(
+        "0.3.18",
+        message="For performing structured retrieval using Databricks SQL, "
+        "see the latest best practices and recommended APIs at "
+        "https://docs.databricks.com/en/generative-ai/agent-framework/"
+        "structured-retrieval-tools.html#table-query-tool instead",
+        removal="1.0",
+    )
     def from_databricks(
         cls,
         catalog: str,
