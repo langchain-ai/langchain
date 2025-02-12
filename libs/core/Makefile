@@ -23,7 +23,7 @@ test_watch:
 	-u LANGCHAIN_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
-	uv run --group test ptw --snapshot-update --now . --disable-socket --allow-unix-socket -- -vv $(TEST_FILE)
+	uv run --group test ptw --snapshot-update --now . --disable-socket --allow-unix-socket -vv -- $(TEST_FILE)
 
 test_profile:
 	uv run --group test pytest -vv tests/unit_tests/ --profile-svg
