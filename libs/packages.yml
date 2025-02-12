@@ -390,3 +390,7 @@ packages:
   repo: cvs-health/langfair
   path: .
   downloads: 0
+- name: langchain-abso
+  repo: lunary-ai/langchain-abso
+  path: .
+  downloads: 0
