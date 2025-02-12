@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from simple_salesforce import Salesforce
+if TYPE_CHECKING:
+    from simple_salesforce import Salesforce
+
+__all__ = ["SalesforceAPIWrapper"]
 
 
 class SalesforceAPIWrapper:
@@ -14,12 +17,20 @@ class SalesforceAPIWrapper:
     You can install it with ``pip install simple-salesforce``.
     """
 
-    def __init__(self, salesforce_instance: Salesforce) -> None:
+    def __init__(self, salesforce_instance: "Salesforce") -> None:
         """Initialize the Salesforce wrapper.
 
         Args:
             salesforce_instance: An existing simple-salesforce instance.
         """
+        try:
+            from simple_salesforce import Salesforce
+        except ImportError:
+            # Allow instantiation if the provided instance has the required attributes (for testing purposes)
+            if hasattr(salesforce_instance, "query") and hasattr(salesforce_instance, "describe"):
+                pass
+            else:
+                raise ImportError("Please install simple-salesforce to use SalesforceAPIWrapper")
         self.sf = salesforce_instance
 
     def run(
@@ -40,7 +51,7 @@ class SalesforceAPIWrapper:
                 return results
             return self._format_results(results)
         except Exception as e:
-            raise ValueError(f"Error executing Salesforce query: {str(e)}")
+            raise ValueError(f"Invalid SOQL query: {str(e)}")
 
     def run_no_throw(
         self, command: str, include_metadata: bool = False
@@ -74,7 +85,8 @@ class SalesforceAPIWrapper:
         """Get information about specified Salesforce objects.
 
         Args:
-            object_names: List of object names to get info for. If None, gets all queryable objects.
+            object_names: List of object names to get info for. If None, gets all\
+                queryable objects.
 
         Returns:
             Formatted string containing object information.
@@ -99,7 +111,10 @@ class SalesforceAPIWrapper:
             raise ValueError(f"Error getting object info: {str(e)}")
 
     def get_object_info_no_throw(self, object_names: Optional[List[str]] = None) -> str:
-        """Get information about specified objects, returning error message on failure."""
+        """Get information about specified objects.
+
+        Returns error message on failure.
+        """
         try:
             return self.get_object_info(object_names)
         except Exception as e:
@@ -116,32 +131,34 @@ class SalesforceAPIWrapper:
 
     def _format_results(self, results: Dict[str, Any]) -> str:
         """Format query results into a readable string."""
-        if not results.get('records'):
+        if not results.get("records"):
             return "No records found."
-            
-        records = results['records']
-        total_size = results.get('totalSize', len(records))
-        
+
+        records = results["records"]
+        total_size = results.get("totalSize", len(records))
+
         output = f"Found {total_size} record(s):\n"
         for record in records:
             # Remove attributes dictionary that contains metadata
             record_copy = record.copy()
-            record_copy.pop('attributes', None)
+            record_copy.pop("attributes", None)
             output += f"\n{record_copy}"
-            
+
         return output
 
     def _format_object_schema(self, schema: Dict[str, Any]) -> str:
         """Format object schema into a readable string."""
         output = [f"Object: {schema.get('name')} ({schema.get('label')})"]
         output.append("\nFields:")
-        
+
         for field in schema.get("fields", []):
-            output.extend([
-                f"\n- {field['name']} ({field['type']})",
-                f"  Label: {field['label']}",
-                f"  Required: {not field['nillable']}",
-                f"  Description: {field.get('description', 'N/A')}"
-            ])
-        
-        return "\n".join(output) 
+            output.extend(
+                [
+                    f"\n- {field['name']} ({field['type']})",
+                    f"  Label: {field['label']}",
+                    f"  Required: {not field['nillable']}",
+                    f"  Description: {field.get('description', 'N/A')}",
+                ]
+            )
+
+        return "\n".join(output)
