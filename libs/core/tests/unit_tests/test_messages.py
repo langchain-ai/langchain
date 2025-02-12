@@ -738,6 +738,15 @@ def test_convert_to_messages() -> None:
                 "artifact": {"foo": 123},
             },
             {"role": "remove", "id": "message_to_remove", "content": ""},
+            {
+                "content": "Now the turn for Larry to ask a question about the book!",
+                "additional_kwargs": {"metadata": {"speaker_name": "Presenter"}},
+                "response_metadata": {},
+                "type": "human",
+                "name": None,
+                "id": "1",
+                "example": False,
+            },
         ]
     )
     expected = [
@@ -762,6 +771,13 @@ def test_convert_to_messages() -> None:
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
         ToolMessage(tool_call_id="tool_id2", content="Bye!", artifact={"foo": 123}),
         RemoveMessage(id="message_to_remove"),
+        HumanMessage(
+            content="Now the turn for Larry to ask a question about the book!",
+            additional_kwargs={"metadata": {"speaker_name": "Presenter"}},
+            response_metadata={},
+            id="1",
+            example=False,
+        ),
     ]
     assert expected == actual
 
