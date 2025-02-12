@@ -173,6 +173,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.zapier import (
         ZapierNLAWrapper,
     )
+    from langchain_community.utilities.salesforce import (
+        SalesforceAPIWrapper,
+    )
 
 __all__ = [
     "AlphaVantageAPIWrapper",
@@ -236,6 +239,7 @@ __all__ = [
     "WolframAlphaAPIWrapper",
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
+    "SalesforceAPIWrapper",
 ]
 
 _module_lookup = {
@@ -300,6 +304,7 @@ _module_lookup = {
     "WolframAlphaAPIWrapper": "langchain_community.utilities.wolfram_alpha",
     "YouSearchAPIWrapper": "langchain_community.utilities.you",
     "ZapierNLAWrapper": "langchain_community.utilities.zapier",
+    "SalesforceAPIWrapper": "langchain_community.utilities.salesforce",
 }
 
 REMOVED = {
@@ -320,4 +325,8 @@ def __getattr__(name: str) -> Any:
     if name in _module_lookup:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
+    if name == "SalesforceAPIWrapper":
+        from langchain_community.utilities.salesforce import SalesforceAPIWrapper
+
+        return SalesforceAPIWrapper
     raise AttributeError(f"module {__name__} has no attribute {name}")
