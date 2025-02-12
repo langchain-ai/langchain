@@ -1,6 +1,6 @@
 """Tools for interacting with Salesforce."""
 
-from typing import Dict, List, Optional, Type, Any
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -23,10 +23,8 @@ class BaseSalesforceTool(BaseTool):
 
 class QuerySalesforceInput(BaseModel):
     """Input for Salesforce queries."""
-    query: str = Field(
-        ..., 
-        description="The SOQL query to execute against Salesforce"
-    )
+
+    query: str = Field(..., description="The SOQL query to execute against Salesforce")
 
 
 class QuerySalesforceTool(BaseSalesforceTool):
@@ -41,19 +39,21 @@ class QuerySalesforceTool(BaseSalesforceTool):
     args_schema: Type[BaseModel] = QuerySalesforceInput
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Execute the Salesforce query."""
-        return self.api_wrapper.run_no_throw(query)
+        result = self.api_wrapper.run_no_throw(query)
+        if isinstance(result, dict):
+            return str(result)
+        return result
 
 
 class InfoSalesforceInput(BaseModel):
     """Input for getting Salesforce object info."""
+
     object_names: str = Field(
         ...,
-        description="Comma-separated list of Salesforce object names to get info about"
+        description="Comma-separated list of Salesforce object names to get info about",
     )
 
 
@@ -69,9 +69,7 @@ class InfoSalesforceTool(BaseSalesforceTool):
     args_schema: Type[BaseModel] = InfoSalesforceInput
 
     def _run(
-        self,
-        object_names: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        self, object_names: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Get the schema for tables in a comma-separated list."""
         object_list = [name.strip() for name in object_names.split(",")]
@@ -90,7 +88,7 @@ class ListSalesforceTool(BaseSalesforceTool):
     def _run(
         self,
         tool_input: str = "",
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get a comma-separated list of Salesforce object names."""
         try:
