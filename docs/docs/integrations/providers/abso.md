@@ -9,6 +9,6 @@
 pip install langchain-abso
 ```
 
-## Chat
+## Chat Model
 
 See usage details [here](/docs/integrations/chat/abso)
