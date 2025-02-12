@@ -387,5 +387,5 @@ packages:
   path: .
   downloads: 0
 - name: langchain-vdms
-  repo: cwlacewe/langchain-vdms
+  repo: IntelLabs/langchain-vdms
   path: .
