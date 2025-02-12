@@ -11,4 +11,4 @@ pip install langchain-abso
 
 ## Chat
 
-See usage details [here](/docs/integrations/chat/abso.ipynb)
+See usage details [here](/docs/integrations/chat/abso)
