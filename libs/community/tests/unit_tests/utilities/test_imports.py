@@ -45,6 +45,7 @@ EXPECTED_ALL = [
     "Requests",
     "RequestsWrapper",
     "RememberizerAPIWrapper",
+    "SalesforceAPIWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",
