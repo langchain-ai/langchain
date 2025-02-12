@@ -3,13 +3,6 @@
 import warnings
 from importlib import metadata
 
-warnings.warn(
-    "The weaviate related classes in the langchain_community package are deprecated. "
-    "Please download and install the langchain-weaviate package.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
 try:
     __version__ = metadata.version(__package__)
 except metadata.PackageNotFoundError:
