@@ -25,15 +25,6 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     import weaviate
 
-import warnings
-
-warnings.warn(
-    "The weaviate related classes in the langchain_community package are deprecated. "
-    "Please download and install the langchain-weaviate package.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
 
 def _default_schema(index_name: str, text_key: str) -> Dict:
     return {
