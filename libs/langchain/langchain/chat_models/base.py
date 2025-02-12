@@ -118,6 +118,7 @@ def init_chat_model(
             - 'ollama'              -> langchain-ollama
             - 'google_anthropic_vertex'    -> langchain-google-vertexai
             - 'deepseek'            -> langchain-deepseek
+            - 'ibm'            -> langchain-ibm
             - 'nvidia'              -> langchain-nvidia-ai-endpoints
 
             Will attempt to infer model_provider from model if not specified. The
@@ -428,6 +429,11 @@ def _init_chat_model_helper(
         from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
         return ChatNVIDIA(model=model, **kwargs)
+    elif model_provider == "ibm":
+        _check_pkg("langchain_ibm")
+        from langchain_ibm import ChatWatsonx
+
+        return ChatWatsonx(model_id=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -453,11 +459,12 @@ _SUPPORTED_PROVIDERS = {
     "bedrock_converse",
     "google_anthropic_vertex",
     "deepseek",
+    "ibm",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1")):
+    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
         return "openai"
     elif model_name.startswith("claude"):
         return "anthropic"
