@@ -125,9 +125,6 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.vespa_retriever import (
         VespaRetriever,
     )
-    from langchain_community.retrievers.weaviate_hybrid_search import (
-        WeaviateHybridSearchRetriever,
-    )
     from langchain_community.retrievers.web_research import WebResearchRetriever
     from langchain_community.retrievers.wikipedia import (
         WikipediaRetriever,
@@ -185,7 +182,6 @@ _module_lookup = {
     "TFIDFRetriever": "langchain_community.retrievers.tfidf",
     "TavilySearchAPIRetriever": "langchain_community.retrievers.tavily_search_api",
     "VespaRetriever": "langchain_community.retrievers.vespa_retriever",
-    "WeaviateHybridSearchRetriever": "langchain_community.retrievers.weaviate_hybrid_search",  # noqa: E501
     "WebResearchRetriever": "langchain_community.retrievers.web_research",
     "WikipediaRetriever": "langchain_community.retrievers.wikipedia",
     "YouRetriever": "langchain_community.retrievers.you",
@@ -243,7 +239,6 @@ __all__ = [
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
     "VespaRetriever",
-    "WeaviateHybridSearchRetriever",
     "WebResearchRetriever",
     "WikipediaRetriever",
     "YouRetriever",

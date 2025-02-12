@@ -71,7 +71,6 @@ _EXPECTED = [
     "Vectara",
     "VectorStore",
     "VespaStore",
-    "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
     "Zilliz",
