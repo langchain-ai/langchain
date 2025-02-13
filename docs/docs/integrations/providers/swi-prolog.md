@@ -27,5 +27,3 @@ from langchain_prolog import PrologConfig, PrologTool
 ```
 
 See a [usage example](../tools/prolog_tool.ipynb).
-
-## API reference
