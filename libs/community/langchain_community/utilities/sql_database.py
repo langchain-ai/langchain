@@ -143,7 +143,7 @@ class SQLDatabase:
         "0.3.18",
         message="For performing structured retrieval using Databricks SQL, "
         "see the latest best practices and recommended APIs at "
-        "https://python.langchain.com/docs/integrations/providers/databricks/#sqldatabase "  # noqa: E501
+        "https://docs.unitycatalog.io/ai/integrations/langchain/ "  # noqa: E501
         "instead",
         removal="1.0",
     )
