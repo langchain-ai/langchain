@@ -69,10 +69,10 @@ test = [
     "blockbuster<1.6,>=1.5.14",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-    "langchain-openai @ file:///${PROJECT_ROOT}/../partners/openai",
+    "langchain-tests",
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
 ]
@@ -84,8 +84,8 @@ test_integration = [
     "python-dotenv<2.0.0,>=1.0.0",
     "cassio<1.0.0,>=0.1.0",
     "langchainhub<1.0.0,>=0.1.16",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-core",
+    "langchain-text-splitters",
 ]
 lint = [
     "ruff<1.0.0,>=0.9.2",
@@ -101,17 +101,23 @@ typing = [
     "types-pytz<2024.0.0.0,>=2023.3.0.0",
     "types-chardet<6.0.0.0,>=5.0.4.6",
     "mypy-protobuf<4.0.0,>=3.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-core",
+    "langchain-text-splitters",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",
     "playwright<2.0.0,>=1.28.0",
     "setuptools<68.0.0,>=67.6.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-core",
+    "langchain-text-splitters",
 ]
 
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain-tests = { path = "../standard-tests", editable = true }
+langchain-text-splitters = { path = "../text-splitters", editable = true }
+langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
 target-version = "py39"
