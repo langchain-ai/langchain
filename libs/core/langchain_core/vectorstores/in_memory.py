@@ -59,6 +59,12 @@ class InMemoryVectorStore(VectorStore):
             documents = [document_1, document_2, document_3]
             vector_store.add_documents(documents=documents)
 
+    Check Documents:
+        .. code-block:: python
+        
+            for doc in vector_store.store.values():
+                print(doc)
+
     Delete Documents:
         .. code-block:: python
 
