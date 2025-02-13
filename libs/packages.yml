@@ -394,3 +394,9 @@ packages:
   repo: lunary-ai/langchain-abso
   path: .
   downloads: 0
+- name: langchain-graph-retriever
+  name_title: 'Graph RAG'
+  repo: datastax/graph-rag
+  path: packages/langchain-graph-retriever
+  downloads: 0
+  provider_page: graph_rag
