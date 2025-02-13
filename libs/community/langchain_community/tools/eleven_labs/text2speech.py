@@ -59,7 +59,12 @@ class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
         elevenlabs = _import_elevenlabs()
         client = elevenlabs.client.ElevenLabs()
         try:
-            speech = client.text_to_speech.convert(text=query, model_id=self.model, voice_id=self.voice, output_format="mp3_44100_128")
+            speech = client.text_to_speech.convert(
+                text=query,
+                model_id=self.model,
+                voice_id=self.voice,
+                output_format="mp3_44100_128",
+            )
             with tempfile.NamedTemporaryFile(
                 mode="bx", suffix=".mp3", delete=False
             ) as f:
@@ -81,5 +86,7 @@ class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
         Play the text in your speakers."""
         elevenlabs = _import_elevenlabs()
         client = elevenlabs.client.ElevenLabs()
-        speech_stream = client.text_to_speech.convert_as_stream(text=query, model_id=self.model, voice_id=self.voice)
+        speech_stream = client.text_to_speech.convert_as_stream(
+            text=query, model_id=self.model, voice_id=self.voice
+        )
         elevenlabs.stream(speech_stream)
