@@ -343,8 +343,8 @@ packages:
   downloads_updated_at: '2025-02-13T20:29:06.035211+00:00'
 - name: langchain-lindorm-integration
   path: .
-  provider_page: lindorm
   repo: AlwaysBluer/langchain-lindorm-integration
+  provider_page: lindorm
   downloads: 79
   downloads_updated_at: '2025-02-13T20:30:13.814314+00:00'
 - name: langchain-hyperbrowser
@@ -424,3 +424,8 @@ packages:
   provider_page: graph_rag
   downloads: 2093
   downloads_updated_at: '2025-02-13T20:32:23.744801+00:00'
+- name: langchain-xai
+  path: libs/partners/xai
+  repo: langchain-ai/langchain
+  downloads: 9521
+  downloads_updated_at: '2025-02-13T23:35:48.490391+00:00'
