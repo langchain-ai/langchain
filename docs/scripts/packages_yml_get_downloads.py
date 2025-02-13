@@ -36,6 +36,7 @@ def _reorder_keys(p):
         "js",
         "downloads",
         "downloads_updated_at",
+        "disabled",
     ]
     if set(keys) - set(key_order):
         raise ValueError(f"Unexpected keys: {set(keys) - set(key_order)}")
