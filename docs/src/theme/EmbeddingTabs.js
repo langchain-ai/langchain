@@ -27,6 +27,8 @@ export default function EmbeddingTabs(props) {
       hideNvidia,
       voyageaiParams,
       hideVoyageai,
+      ibmParams,
+      hideIBM,
       fakeEmbeddingParams,
       hideFakeEmbedding,
       customVarName,
@@ -45,6 +47,8 @@ export default function EmbeddingTabs(props) {
     const nomicsParamsOrDefault = nomicParams ?? `model="nomic-embed-text-v1.5"`;
     const nvidiaParamsOrDefault = nvidiaParams ?? `model="NV-Embed-QA"`;
     const voyageaiParamsOrDefault = voyageaiParams ?? `model="voyage-3"`;
+    const ibmParamsOrDefault = ibmParams ?? 
+      `\n    model_id="ibm/slate-125m-english-rtrvr,\n    url="https://us-south.ml.cloud.ibm.com",\n    project_id="<WATSONX PROJECT_ID>",\n`;
     const fakeEmbeddingParamsOrDefault = fakeEmbeddingParams ?? `size=4096`;
 
     const embeddingVarName = customVarName ?? "embeddings";
@@ -148,6 +152,15 @@ export default function EmbeddingTabs(props) {
         packageName: "langchain-voyageai",
         default: false,
         shouldHide: hideVoyageai,
+      },
+      {
+        value: "IBM",
+        label: "IBM",
+        text: `from langchain_ibm import WatsonxEmbeddings\n\n${embeddingVarName} = WatsonxEmbeddings(${ibmParamsOrDefault})`,
+        apiKeyName: "WATSONX_APIKEY",
+        packageName: "langchain-ibm",
+        default: false,
+        shouldHide: hideIBM,
       },
       {
         value: "Fake",
