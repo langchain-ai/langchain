@@ -594,8 +594,8 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34"
-source = { directory = "../../core" }
+version = "0.3.35"
+source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langsmith" },
@@ -653,7 +653,7 @@ typing = [
 [[package]]
 name = "langchain-openai"
 version = "0.3.5"
-source = { directory = "../openai" }
+source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
     { name = "openai" },
@@ -662,19 +662,19 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "openai", specifier = ">=1.58.1,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "../../core" },
+    { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -693,7 +693,7 @@ test-integration = [
     { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
 ]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
 ]
@@ -742,7 +742,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.10,<3.11" },
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", specifier = ">=0.3.7,<1.0.0" },
     { name = "numpy", specifier = ">=1.26.4,<2.0.0" },
     { name = "pinecone", specifier = ">=5.4.0,<6.0.0" },
@@ -750,11 +750,11 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "pytest", specifier = ">=8,<9" },
     { name = "pytest-asyncio", specifier = ">=0.25.0,<1" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -762,9 +762,9 @@ test = [
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
 ]
-test-integration = [{ name = "langchain-openai", directory = "../openai" }]
+test-integration = [{ name = "langchain-openai", editable = "../openai" }]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "simsimd", specifier = ">=5.0.0,<6.0.0" },
 ]
