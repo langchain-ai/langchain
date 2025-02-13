@@ -547,7 +547,9 @@ class Chroma(VectorStore):
                 metadatas = [metadatas[idx] for idx in non_empty_ids]
                 texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
+                    [embeddings[idx] for idx in non_empty_ids]
+                    if embeddings is not None
+                    else None
                 )
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
