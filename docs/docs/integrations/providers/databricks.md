@@ -103,7 +103,7 @@ See [MLflow LangChain Integration](/docs/integrations/providers/mlflow_tracking)
 
 SQLDatabase
 -----------
-To connect to Databricks SQL or query structured data, see the [Databricks structured retriever tool documentation](https://docs.databricks.com/en/generative-ai/agent-framework/structured-retrieval-tools.html#table-query-tool).
+To connect to Databricks SQL or query structured data, see the [Databricks structured retriever tool documentation](https://docs.databricks.com/en/generative-ai/agent-framework/structured-retrieval-tools.html#table-query-tool) and to create an agent using the above created SQL UDF see [Databricks UC Integration](https://python.langchain.com/docs/integrations/tools/databricks/).
 
 Open Models
 -----------
