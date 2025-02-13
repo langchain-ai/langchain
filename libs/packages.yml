@@ -393,6 +393,7 @@ packages:
 - name: langfair
   repo: cvs-health/langfair
   path: .
+  name_title: LangFair
   downloads: 0
 - name: langchain-abso
   repo: lunary-ai/langchain-abso
