@@ -394,42 +394,6 @@ def test_json_mode_structured_output() -> None:
     assert len(result.punchline) != 0
 
 
-def test_tool_calling_no_arguments() -> None:
-    # Note: this is a variant of a test in langchain_tests
-    # that as of 2024-08-19 fails with "Failed to call a function. Please
-    # adjust your prompt." when `tool_choice="any"` is specified, but
-    # passes when `tool_choice` is not specified.
-    model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)  # type: ignore[call-arg]
-
-    @tool
-    def magic_function_no_args() -> int:
-        """Calculates a magic function."""
-        return 5
-
-    model_with_tools = model.bind_tools([magic_function_no_args])
-    query = "What is the value of magic_function()? Use the tool."
-    result = model_with_tools.invoke(query)
-    assert isinstance(result, AIMessage)
-    assert len(result.tool_calls) == 1
-    tool_call = result.tool_calls[0]
-    assert tool_call["name"] == "magic_function_no_args"
-    assert tool_call["args"] == {}
-    assert tool_call["id"] is not None
-    assert tool_call["type"] == "tool_call"
-
-    # Test streaming
-    full: Optional[BaseMessageChunk] = None
-    for chunk in model_with_tools.stream(query):
-        full = chunk if full is None else full + chunk  # type: ignore
-    assert isinstance(full, AIMessage)
-    assert len(full.tool_calls) == 1
-    tool_call = full.tool_calls[0]
-    assert tool_call["name"] == "magic_function_no_args"
-    assert tool_call["args"] == {}
-    assert tool_call["id"] is not None
-    assert tool_call["type"] == "tool_call"
-
-
 # Groq does not currently support N > 1
 # @pytest.mark.scheduled
 # def test_chat_multiple_completions() -> None:
