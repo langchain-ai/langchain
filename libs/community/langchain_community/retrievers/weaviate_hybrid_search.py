@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import warnings
+from langchain_core._api import deprecated
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
@@ -9,14 +9,12 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict, model_validator
 
-warnings.warn(
-    "The weaviate related classes in the langchain_community package are deprecated. "
-    "Please download and install the langchain-weaviate package.",
-    DeprecationWarning,
-    stacklevel=2,
+
+@deprecated(
+    since="0.3.18",
+    removal="1.0",
+    alternative_import="langchain_weaviate.WeaviateVectorStore",
 )
-
-
 class WeaviateHybridSearchRetriever(BaseRetriever):
     """`Weaviate hybrid search` retriever.
 
