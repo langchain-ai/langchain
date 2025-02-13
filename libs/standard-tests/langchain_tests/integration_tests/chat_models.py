@@ -1122,9 +1122,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         model_with_tools = model.bind_tools(
             [magic_function_no_args], tool_choice=tool_choice
         )
-        query = (
-            "What is the value of magic_function()? Use the tool. It has no arguments."
-        )
+        query = "What is the value of magic_function_no_args()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
