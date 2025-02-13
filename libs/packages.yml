@@ -386,6 +386,10 @@ packages:
   repo: Nimbleway/langchain-nimble
   path: .
   downloads: 0
+- name: langchain-apify
+  path: .
+  repo: apify/langchain-apify
+  downloads: 204
 - name: langfair
   repo: cvs-health/langfair
   path: .
