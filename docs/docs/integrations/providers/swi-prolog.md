@@ -16,7 +16,7 @@ The PrologRunnable class allows the generation of langchain runnables that use P
 from langchain_prolog import PrologConfig, PrologRunnable
 ```
 
-See a [usage example](../tools/prolog_runnable.ipynb).
+See a [usage example](/docs/integrations//tools/prolog_runnable.ipynb).
 
 ## Tools
 
@@ -26,4 +26,4 @@ The PrologTool class allows the generation of langchain tools that use Prolog ru
 from langchain_prolog import PrologConfig, PrologTool
 ```
 
-See a [usage example](../tools/prolog_tool.ipynb).
+See a [usage example](/docs/integrations//tools/prolog_tool.ipynb).
