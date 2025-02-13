@@ -61,7 +61,7 @@ class InMemoryVectorStore(VectorStore):
 
     Check Documents:
         .. code-block:: python
-        
+
             for doc in vector_store.store.values():
                 print(doc)
 
