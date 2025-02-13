@@ -83,3 +83,6 @@ lint lint_package lint_tests:
 format format_diff:
 	uv run --group lint ruff format docs cookbook
 	uv run --group lint ruff check --select I --fix docs cookbook
+
+update-package-downloads:
+	uv run python docs/scripts/packages_yml_get_downloads.py

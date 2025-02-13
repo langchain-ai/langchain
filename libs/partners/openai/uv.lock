@@ -462,8 +462,8 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34"
-source = { directory = "../../core" }
+version = "0.3.35"
+source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langsmith" },
@@ -565,19 +565,19 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "openai", specifier = ">=1.58.1,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "../../core" },
+    { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -596,7 +596,7 @@ test-integration = [
     { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
 ]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
 ]
@@ -604,7 +604,7 @@ typing = [
 [[package]]
 name = "langchain-tests"
 version = "0.3.11"
-source = { directory = "../../standard-tests" }
+source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },
@@ -618,7 +618,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pytest", specifier = ">=7,<9" },
@@ -630,10 +630,10 @@ requires-dist = [
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
-test = [{ name = "langchain-core", directory = "../core" }]
+test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
-    { name = "langchain-core", directory = "../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1,<2" },
 ]
 

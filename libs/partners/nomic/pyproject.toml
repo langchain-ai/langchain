@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
 dependencies = [
     "langchain-core!=0.3.0,!=0.3.1,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,<0.4.0,>=0.2.43",
@@ -29,32 +29,25 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1.0.0,>=0.21.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+    "langchain-core",
     "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
     "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = [
-    "ruff<1.0.0,>=0.1.5",
-]
-typing = [
-    "mypy<1.0,>=0.991",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
-dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
+lint = ["ruff<1.0.0,>=0.1.5"]
+typing = ["mypy<1.0,>=0.991", "langchain-core"]
+dev = ["langchain-core"]
 
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
 
 [tool.ruff.lint]
 select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "T201", # print
 ]
 
 [tool.mypy]
@@ -77,7 +70,7 @@ addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library",
-  "compile: mark placeholder test used to compile integration tests without running them",
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"

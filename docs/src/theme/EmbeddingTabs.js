@@ -48,7 +48,7 @@ export default function EmbeddingTabs(props) {
     const nvidiaParamsOrDefault = nvidiaParams ?? `model="NV-Embed-QA"`;
     const voyageaiParamsOrDefault = voyageaiParams ?? `model="voyage-3"`;
     const ibmParamsOrDefault = ibmParams ?? 
-      `\n    model_id="ibm/slate-125m-english-rtrvr,\n    url="https://us-south.ml.cloud.ibm.com",\n    project_id="<WATSONX PROJECT_ID>",\n`;
+      `\n    model_id="ibm/slate-125m-english-rtrvr",\n    url="https://us-south.ml.cloud.ibm.com",\n    project_id="<WATSONX PROJECT_ID>",\n`;
     const fakeEmbeddingParamsOrDefault = fakeEmbeddingParams ?? `size=4096`;
 
     const embeddingVarName = customVarName ?? "embeddings";

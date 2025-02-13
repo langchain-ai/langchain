@@ -1042,7 +1042,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-core", editable = "." },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pytest", specifier = ">=7,<9" },
@@ -1054,10 +1054,10 @@ requires-dist = [
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
-test = [{ name = "langchain-core", directory = "." }]
+test = [{ name = "langchain-core", editable = "." }]
 test-integration = []
 typing = [
-    { name = "langchain-core", directory = "." },
+    { name = "langchain-core", editable = "." },
     { name = "mypy", specifier = ">=1,<2" },
 ]
 
@@ -1070,20 +1070,20 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", specifier = ">=0.3.34,<1.0.0" }]
+requires-dist = [{ name = "langchain-core", editable = "." }]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "langchain-core", directory = "." },
+    { name = "langchain-core", editable = "." },
 ]
 lint = [
-    { name = "langchain-core", directory = "." },
+    { name = "langchain-core", editable = "." },
     { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "." },
+    { name = "langchain-core", editable = "." },
     { name = "pytest", specifier = ">=8,<9" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
