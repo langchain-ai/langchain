@@ -33,7 +33,7 @@ lint = ["ruff<1.0.0,>=0.9.2"]
 typing = ["mypy<2,>=1", "langchain-core"]
 
 [tool.uv.sources]
-langchain-core = { path = "../../core", editable = true }
+langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
