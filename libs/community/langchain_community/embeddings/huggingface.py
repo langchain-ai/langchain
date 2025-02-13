@@ -436,6 +436,18 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
             "Authorization": f"Bearer {self.api_key.get_secret_value()}",
             **self.additional_headers,
         }
+    
+    def _check_for_api_errors(self, response: requests.Response):
+        """Check the API response for errors and raise exceptions with details."""
+        try:
+            json_response = response.json()
+        except requests.JSONDecodeError:
+            raise
+
+        if "error" in json_response:
+            error_message = json_response.get("error", "Unknown error")
+            error_type = json_response.get("error_type", "Unknown error type")
+            raise ValueError(f"HuggingFace API Error [{error_type}]: {error_message}")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
@@ -469,6 +481,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
                 "options": {"wait_for_model": True, "use_cache": True},
             },
         )
+        self._check_for_api_errors(response)
         return response.json()
 
     def embed_query(self, text: str) -> List[float]:
