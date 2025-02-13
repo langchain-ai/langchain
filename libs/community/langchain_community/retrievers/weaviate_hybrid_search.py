@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from langchain_core._api import deprecated
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
