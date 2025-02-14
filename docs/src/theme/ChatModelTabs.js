@@ -192,6 +192,19 @@ ${llmVarName} = AzureChatOpenAI(
       packageName: "langchain[together]",
     },
     {
+      value: "ibm",
+      label: "IBM",
+      text: `from langchain_ibm import ChatWatsonx
+
+${llmVarName} = ChatWatsonx(
+    model_id="ibm/granite-34b-code-instruct", 
+    url="https://us-south.ml.cloud.ibm.com", 
+    project_id="<WATSONX PROJECT_ID>"
+)`,
+      apiKeyName: "WATSONX_APIKEY",
+      packageName: "langchain-ibm",
+    },
+    {
       value: "databricks",
       label: "Databricks",
       text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(endpoint="databricks-meta-llama-3-1-70b-instruct")`,

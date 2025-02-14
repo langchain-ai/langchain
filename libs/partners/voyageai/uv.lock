@@ -506,8 +506,8 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34rc1"
-source = { directory = "../../core" }
+version = "0.3.35"
+source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langsmith" },
@@ -600,18 +600,18 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.29,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "pydantic", specifier = ">=2,<3" },
     { name = "voyageai", specifier = ">=0.3.2,<1" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.1.5,<1.0.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -623,7 +623,7 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
 ]
 

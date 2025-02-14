@@ -393,8 +393,8 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34rc1"
-source = { directory = "../../core" }
+version = "0.3.35"
+source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langsmith" },
@@ -486,16 +486,16 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "exa-py", specifier = ">=1.0.8,<2.0.0" },
-    { name = "langchain-core", specifier = ">=0.3.15,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -504,7 +504,7 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "pydantic", specifier = ">2.0,<2.10" },
 ]
