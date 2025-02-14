@@ -17,6 +17,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 import pytest
@@ -1920,7 +1921,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = foo_tool.args_schema
+    args_schema = cast(BaseModel, foo_tool.args_schema)
     args_json_schema = (
         args_schema.model_json_schema()
         if hasattr(args_schema, "model_json_schema")

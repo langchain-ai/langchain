@@ -62,7 +62,12 @@ class StructuredTool(BaseTool):
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
-        return self.args_schema.model_json_schema()["properties"]
+        input_schema = self.get_input_schema()
+        if isinstance(input_schema, dict):
+            json_schema = input_schema
+        else:
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     def _run(
         self,

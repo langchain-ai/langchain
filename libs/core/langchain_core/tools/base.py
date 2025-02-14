@@ -317,7 +317,7 @@ class ToolException(Exception):  # noqa: N818
     """
 
 
-ArgsSchema = Union[TypeBaseModel, dict]
+ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
 
 
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
@@ -449,14 +449,16 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        return self.get_input_schema().model_json_schema()["properties"]
+        input_schema = self.get_input_schema()
+        if isinstance(input_schema, dict):
+            json_schema = input_schema
+        else:
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     @property
     def tool_call_schema(self) -> type[BaseModel]:
         full_schema = self.get_input_schema()
-        if isinstance(full_schema, dict):
-            return full_schema
-
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
@@ -469,7 +471,7 @@ class ChildTool(BaseTool):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> type[ArgsSchema]:
+    ) -> type[BaseModel]:
         """The tool's input schema.
 
         Args:
@@ -479,6 +481,8 @@ class ChildTool(BaseTool):
             The input schema for the tool.
         """
         if self.args_schema is not None:
+            if isinstance(self.args_schema, dict):
+                return super().get_input_schema(config)
             return self.args_schema
         else:
             return create_schema_from_function(self.name, self._run)
@@ -514,6 +518,12 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
+                if isinstance(input_args, dict):
+                    msg = (
+                        "String tool inputs are not allowed when "
+                        "using tools with JSON schema args_schema."
+                    )
+                    raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
                 if hasattr(input_args, "model_validate"):
                     input_args.model_validate({key_: tool_input})
