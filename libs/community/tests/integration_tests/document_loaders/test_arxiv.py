@@ -58,7 +58,12 @@ def test_load_returns_full_set_of_metadata() -> None:
         assert doc.page_content
         assert doc.metadata
         assert set(doc.metadata).issuperset(
-            {"Published", "Title", "Authors", "Summary"}
+            {
+                "Published",
+                "Title",
+                "Authors",
+                "Summary",
+            }
         )
         print(doc.metadata)  # noqa: T201
         assert len(set(doc.metadata)) > 4

@@ -15,15 +15,16 @@ class BaseExampleSelector(ABC):
 
         Args:
             example: A dictionary with keys as input variables
-                and values as their values."""
+                and values as their values.
+        """
 
     async def aadd_example(self, example: dict[str, str]) -> Any:
         """Async add new example to store.
 
         Args:
             example: A dictionary with keys as input variables
-                and values as their values."""
-
+                and values as their values.
+        """
         return await run_in_executor(None, self.add_example, example)
 
     @abstractmethod
@@ -32,13 +33,14 @@ class BaseExampleSelector(ABC):
 
         Args:
             input_variables: A dictionary with keys as input variables
-                and values as their values."""
+                and values as their values.
+        """
 
     async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
         """Async select which examples to use based on the inputs.
 
         Args:
             input_variables: A dictionary with keys as input variables
-                and values as their values."""
-
+                and values as their values.
+        """
         return await run_in_executor(None, self.select_examples, input_variables)

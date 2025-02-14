@@ -67,6 +67,39 @@ def test_similarity_search_by_vector(
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
+@pytest.mark.parametrize("content_payload_key", [QdrantVectorStore.CONTENT_KEY, "foo"])
+@pytest.mark.parametrize(
+    "metadata_payload_key", [QdrantVectorStore.METADATA_KEY, "bar"]
+)
+@pytest.mark.parametrize("vector_name", ["", "my-vector"])
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_similarity_search_with_score_by_vector(
+    location: str,
+    content_payload_key: str,
+    metadata_payload_key: str,
+    vector_name: str,
+    batch_size: int,
+) -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = QdrantVectorStore.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=location,
+        content_payload_key=content_payload_key,
+        metadata_payload_key=metadata_payload_key,
+        batch_size=batch_size,
+        vector_name=vector_name,
+    )
+    embeddings = ConsistentFakeEmbeddings().embed_query("foo")
+    output = docsearch.similarity_search_with_score_by_vector(embeddings, k=1)
+    assert len(output) == 1
+    document, score = output[0]
+    assert_documents_equals([document], [Document(page_content="foo")])
+    assert score >= 0
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
 @pytest.mark.parametrize(
     "metadata_payload_key", [QdrantVectorStore.METADATA_KEY, "bar"]
 )

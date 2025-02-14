@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, model_validator
@@ -8,6 +9,16 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders import ApifyDatasetLoader
 
 
+@deprecated(
+    since="0.3.18",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "You can swap to using the `ApifyWrapper`"
+        " implementation in `langchain_apify` package. "
+        "See <https://github.com/apify/langchain-apify>"
+    ),
+    alternative_import="langchain_apify.ApifyWrapper",
+)
 class ApifyWrapper(BaseModel):
     """Wrapper around Apify.
     To use, you should have the ``apify-client`` python package installed,

@@ -3,16 +3,11 @@
 This guide walks through how to run the repository locally and check in your first code.
 For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
-## Dependency Management: Poetry and other env/dependency managers
+## Dependency Management: `uv` and other env/dependency managers
 
-This project utilizes [Poetry](https://python-poetry.org/) v1.7.1+ as a dependency manager.
+This project utilizes [uv](https://docs.astral.sh/uv/) v0.5+ as a dependency manager.
 
-❗Note: *Before installing Poetry*, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
-
-Install Poetry: **[documentation on how to install it](https://python-poetry.org/docs/#installation)**.
-
-❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, after installing Poetry,
-tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
+Install `uv`: **[documentation on how to install it](https://docs.astral.sh/uv/getting-started/installation/)**.
 
 ## Different packages
 
@@ -37,7 +32,7 @@ cd libs/community
 Install langchain-community development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
 ```bash
-poetry install --with lint,typing,test,test_integration
+uv sync
 ```
 
 Then verify dependency installation:
@@ -45,12 +40,6 @@ Then verify dependency installation:
 ```bash
 make test
 ```
-
-If during installation you receive a `WheelFileValidationError` for `debugpy`, please make sure you are running
-Poetry v1.6.1+. This bug was present in older versions of Poetry (e.g. 1.4.1) and has been resolved in newer releases.
-If you are still seeing this bug on v1.6.1+, you may also try disabling "modern installation"
-(`poetry config installer.modern-installation false`) and re-installing requirements.
-See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
 ## Testing
 
@@ -79,7 +68,6 @@ If you are only developing `langchain_core` or `langchain_community`, you can si
 
 ```bash
 cd libs/core
-poetry install --with test
 make test
 ```
 
@@ -87,7 +75,6 @@ Or:
 
 ```bash
 cd libs/community
-poetry install --with test
 make test
 ```
 
@@ -179,7 +166,7 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 `langchain-core` and partner packages **do not use** optional dependencies in this way.
 
-You'll notice that `pyproject.toml` and `poetry.lock` are **not** touched when you add optional dependencies below.
+You'll notice that `pyproject.toml` and `uv.lock` are **not** touched when you add optional dependencies below.
 
 If you're adding a new dependency to Langchain, assume that it will be an optional dependency, and
 that most users won't have it installed.
@@ -196,18 +183,10 @@ test makes use of lightweight fixtures to test the logic of the code.
 
 ## Adding a Jupyter Notebook
 
-If you are adding a Jupyter Notebook example, you'll want to install the optional `dev` dependencies.
-
-To install dev dependencies:
+If you are adding a Jupyter Notebook example, you'll want to run with `test` dependencies:
 
 ```bash
-poetry install --with dev
+uv run --group test jupyter notebook
 ```
 
-Launch a notebook:
-
-```bash
-poetry run jupyter notebook
-```
-
-When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
+When you run `uv sync`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.

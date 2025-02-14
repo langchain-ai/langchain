@@ -151,12 +151,14 @@ class LanceDB(VectorStore):
             score_col = "_relevance_score"
         else:
             score_col = None
+        # Check if 'metadata' is in the columns
+        has_metadata = "metadata" in columns
 
         if score_col is None or not score:
             return [
                 Document(
                     page_content=results[self._text_key][idx].as_py(),
-                    metadata=results["metadata"][idx].as_py(),
+                    metadata=results["metadata"][idx].as_py() if has_metadata else {},
                 )
                 for idx in range(len(results))
             ]
@@ -165,7 +167,9 @@ class LanceDB(VectorStore):
                 (
                     Document(
                         page_content=results[self._text_key][idx].as_py(),
-                        metadata=results["metadata"][idx].as_py(),
+                        metadata=results["metadata"][idx].as_py()
+                        if has_metadata
+                        else {},
                     ),
                     results[score_col][idx].as_py(),
                 )
@@ -558,7 +562,7 @@ class LanceDB(VectorStore):
 
         if self._embedding is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         embedding = self._embedding.embed_query(query)
@@ -676,7 +680,7 @@ class LanceDB(VectorStore):
         if filter:
             tbl.delete(filter)
         elif ids:
-            tbl.delete("id in ('{}')".format(",".join(ids)))
+            tbl.delete(f"{self._id_key} in ('{{}}')".format(",".join(ids)))
         elif drop_columns:
             if self.api_key is not None:
                 raise NotImplementedError(

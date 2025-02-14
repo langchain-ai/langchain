@@ -71,7 +71,7 @@ class Pinecone(VectorStore):
             )
         if not isinstance(index, pinecone.Index):
             raise ValueError(
-                f"client should be an instance of pinecone.Index, " f"got {type(index)}"
+                f"client should be an instance of pinecone.Index, got {type(index)}"
             )
         self._index = index
         self._embedding = embedding

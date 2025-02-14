@@ -24,7 +24,7 @@ class PropertySettings(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     type: Literal["string", "number", "array", "object", "boolean"]
-    default: Union[str, int, float, List, Dict, bool] = Field(default=None)
+    default: Union[str, int, float, List, Dict, bool, None] = Field(default=None)
     description: str = Field(default="")
 
 
@@ -76,7 +76,7 @@ class Prompty(BaseModel):
     # template
     template: TemplateSettings
 
-    file: FilePath = Field(default="")
+    file: FilePath = Field(default="")  # type: ignore[assignment]
     content: str = Field(default="")
 
     def to_safe_dict(self) -> Dict[str, Any]:

@@ -45,6 +45,7 @@ class GoogleScholarAPIWrapper(BaseModel):
     hl: str = "en"
     lr: str = "lang_en"
     serp_api_key: Optional[str] = None
+    google_scholar_engine: Any = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -55,7 +56,7 @@ class GoogleScholarAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         serp_api_key = get_from_dict_or_env(values, "serp_api_key", "SERP_API_KEY")
-        values["SERP_API_KEY"] = serp_api_key
+        values["serp_api_key"] = serp_api_key
 
         try:
             from serpapi import GoogleScholarSearch
@@ -121,10 +122,10 @@ class GoogleScholarAPIWrapper(BaseModel):
         if not total_results:
             return "No good Google Scholar Result was found"
         docs = [
-            f"Title: {result.get('title','')}\n"
-            f"Authors: {','.join([author.get('name') for author in result.get('publication_info',{}).get('authors',[])])}\n"  # noqa: E501
-            f"Summary: {result.get('publication_info',{}).get('summary','')}\n"
-            f"Total-Citations: {result.get('inline_links',{}).get('cited_by',{}).get('total','')}"  # noqa: E501
+            f"Title: {result.get('title', '')}\n"
+            f"Authors: {','.join([author.get('name') for author in result.get('publication_info', {}).get('authors', [])])}\n"  # noqa: E501
+            f"Summary: {result.get('publication_info', {}).get('summary', '')}\n"
+            f"Total-Citations: {result.get('inline_links', {}).get('cited_by', {}).get('total', '')}"  # noqa: E501
             for result in total_results
         ]
         return "\n\n".join(docs)

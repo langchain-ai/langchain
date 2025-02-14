@@ -105,7 +105,6 @@ def dereference_refs(
     Returns:
         The dereferenced schema object.
     """
-
     full_schema = full_schema or schema_obj
     skip_keys = (
         skip_keys

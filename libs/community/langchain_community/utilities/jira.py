@@ -123,7 +123,13 @@ class JiraAPIWrapper(BaseModel):
             type = project["projectTypeKey"]
             style = project["style"]
             parsed.append(
-                {"id": id, "key": key, "name": name, "type": type, "style": style}
+                {
+                    "id": id,
+                    "key": key,
+                    "name": name,
+                    "type": type,
+                    "style": style,
+                }
             )
         return parsed
 

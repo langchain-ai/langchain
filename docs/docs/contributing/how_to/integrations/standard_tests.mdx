@@ -8,12 +8,10 @@ When creating either a custom class for yourself or to publish in a LangChain in
 
 ## Setup
 
-If you're coming from the [previous guide](../package), you have already installed these dependencies, and you can skip this section.
-
 First, let's install 2 dependencies:
 
 - `langchain-core` will define the interfaces we want to import to define our custom tool.
-- `langchain-tests` will provide the standard tests we want to use. Recommended to pin to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
+- `langchain-tests` will provide the standard tests we want to use, as well as pytest plugins necessary to run them. Recommended to pin to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
 
 :::note
 
@@ -31,41 +29,19 @@ If you followed the [previous guide](../package), you should already have these 
 
 ```bash
 poetry add langchain-core
-poetry add --group test pytest pytest-socket pytest-asyncio langchain-tests==<latest_version>
+poetry add --group test langchain-tests==<latest_version>
 poetry install --with test
 ```
     </TabItem>
     <TabItem value="pip" label="Pip">
 ```bash
-pip install -U langchain-core pytest pytest-socket pytest-asyncio langchain-tests
+pip install -U langchain-core langchain-tests
 
 # install current package in editable mode
 pip install --editable .
 ```
     </TabItem>
 </Tabs>
-
-Let's say we're publishing a package, `langchain_parrot_link`, that exposes the chat model from the [guide on implementing the package](../package). We can add the standard tests to the package by following the steps below.
-
-And we'll assume you've structured your package the same way as the main LangChain
-packages:
-
-```plaintext
-langchain-parrot-link/
-├── langchain_parrot_link/
-│   ├── __init__.py
-│   └── chat_models.py
-├── tests/
-│   ├── __init__.py
-│   ├── unit_tests/
-│   │   ├── __init__.py
-│   │   └── test_chat_models.py
-│   └── integration_tests/
-│       ├── __init__.py
-│       └── test_chat_models.py
-├── pyproject.toml
-└── README.md
-```
 
 ## Add and configure standard tests
 
@@ -79,6 +55,12 @@ Both types of tests are implemented as [`pytest` class-based test suites](https:
 By subclassing the base classes for each type of standard test (see below), you get all of the standard tests for that type, and you
 can override the properties that the test suite uses to configure the tests.
 
+In order to run the tests in the same way as this guide, we recommend subclassing these
+classes in test files under two test subdirectories:
+
+- `tests/unit_tests` for unit tests
+- `tests/integration_tests` for integration tests
+
 ### Implementing standard tests
 
 import CodeBlock from '@theme/CodeBlock';
@@ -90,17 +72,22 @@ each component type:
 
     <TabItem value="chat_models" label="Chat models">
 
-Here's how you would configure the standard unit tests for the custom chat model:
+To configure standard tests for a chat model, we subclass `ChatModelUnitTests` and `ChatModelIntegrationTests`. On each subclass, we override the following `@property` methods to specify the chat model to be tested and the chat model's configuration:
 
+| Property | Description |
+| --- | --- |
+| `chat_model_class` | The class for the chat model to be tested |
+| `chat_model_params` | The parameters to pass to the chat
+model's constructor |
 
-Chat model standard tests test a range of behaviors, from the most basic requirements (generating a response to a query) to optional capabilities like multi-modal support and tool-calling. For a test run to be successful:
+Additionally, chat model standard tests test a range of behaviors, from the most basic requirements (generating a response to a query) to optional capabilities like multi-modal support and tool-calling. For a test run to be successful:
 
 1. If a feature is intended to be supported by the model, it should pass;
 2. If a feature is not intended to be supported by the model, it should be skipped.
 
 Tests for "optional" capabilities are controlled via a set of properties that can be overridden on the test model subclass.
 
-You can see the entire list of properties in the API references for
+You can see the **entire list of configurable capabilities** in the API references for
 [unit tests](https://python.langchain.com/api_reference/standard_tests/unit_tests/langchain_tests.unit_tests.chat_models.ChatModelUnitTests.html)
 and [integration tests](https://python.langchain.com/api_reference/standard_tests/integration_tests/langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.html).
 
@@ -157,8 +144,7 @@ import ChatIntegrationSource from '../../../../src/theme/integration_template/te
 Here's how you would configure the standard tests for a typical vector store (using
 `ParrotVectorStore` as a placeholder):
 
-Note that unlike chat models, vector stores do not have optional capabilities that
-can be enabled or disabled at this time.
+Vector store tests do not have optional capabilities to be configured at this time.
 
 import VectorStoreIntegrationSource from '../../../../src/theme/integration_template/tests/integration_tests/test_vectorstores.py';
 
@@ -173,6 +159,10 @@ import VectorStoreIntegrationSource from '../../../../src/theme/integration_temp
 
 Configuring the tests consists of implementing pytest fixtures for setting up an
 empty vector store and tearing down the vector store after the test run ends.
+
+| Fixture | Description |
+| --- | --- |
+| `vectorstore` | A generator that yields an empty vector store for unit tests. The vector store is cleaned up after the test run ends. |
 
 For example, below is the `VectorStoreIntegrationTests` class for the [Chroma](https://python.langchain.com/docs/integrations/vectorstores/chroma/)
 integration:
@@ -220,11 +210,12 @@ Details on what tests are run and troubleshooting tips for each test can be foun
     </TabItem>
     <TabItem value="embeddings" label="Embeddings">
 
-To configure standard tests for an embeddings model, we subclass
-`EmbeddingsUnitTests` and `EmbeddingsIntegrationTests`. On each subclass, we
-implement the `embeddings_class` property to specify the embeddings model to be
-tested. We can also override the embedding_model_params property to specify
-initialization parameters. See examples below.
+To configure standard tests for an embeddings model, we subclass `EmbeddingsUnitTests` and `EmbeddingsIntegrationTests`. On each subclass, we override the following `@property` methods to specify the embeddings model to be tested and the embeddings model's configuration:
+
+| Property | Description |
+| --- | --- |
+| `embeddings_class` | The class for the embeddings model to be tested |
+| `embedding_model_params` | The parameters to pass to the embeddings model's constructor |
 
 :::note
 

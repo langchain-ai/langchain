@@ -168,7 +168,7 @@ class DeepLake(VectorStore):
         if _DEEPLAKE_INSTALLED is False:
             raise ImportError(
                 "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake[enterprise]`."
+                "Please install it with `pip install deeplake[enterprise]<4.0.0`."
             )
 
         if (
@@ -425,8 +425,7 @@ class DeepLake(VectorStore):
         if embedding is None:
             if _embedding_function is None:
                 raise ValueError(
-                    "Either `embedding` or `embedding_function` needs to be"
-                    " specified."
+                    "Either `embedding` or `embedding_function` needs to be specified."
                 )
 
             embedding = _embedding_function(query) if query else None

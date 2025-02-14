@@ -220,7 +220,7 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
         generation = ChatGeneration(message=message_)
@@ -242,7 +242,7 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         message = chat_result.generations[0].message
 
@@ -251,14 +251,17 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected invoke to return an AIMessage, "
                 f"but got {type(message)} instead."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         content = message.content
 
         if content:
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
-            assert isinstance(content, str)
+            if not isinstance(content, str):
+                msg = "Expected content to be a string."
+                raise ValueError(msg)
+
             content_chunks = cast(list[str], re.split(r"(\s)", content))
 
             for token in content_chunks:
@@ -339,7 +342,7 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property

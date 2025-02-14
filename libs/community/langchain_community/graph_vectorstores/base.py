@@ -855,7 +855,7 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
         return cast(GraphVectorStore, self.vectorstore)
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
         if self.search_type == "traversal":
             return list(
@@ -869,7 +869,11 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
             return super()._get_relevant_documents(query, run_manager=run_manager)
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> list[Document]:
         if self.search_type == "traversal":
             return [

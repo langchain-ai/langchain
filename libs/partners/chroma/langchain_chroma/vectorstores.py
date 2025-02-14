@@ -318,6 +318,9 @@ class Chroma(VectorStore):
                 client_settings.persist_directory = (
                     persist_directory or client_settings.persist_directory
                 )
+                client_settings.is_persistent = (
+                    client_settings.persist_directory is not None
+                )
 
                 _client_settings = client_settings
             elif persist_directory:
@@ -433,6 +436,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -519,10 +524,8 @@ class Chroma(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
-            # Assign strings to any null IDs
-            for idx, _id in enumerate(ids):
-                if _id is None:
-                    ids[idx] = str(uuid.uuid4())
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
+
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -544,7 +547,9 @@ class Chroma(VectorStore):
                 metadatas = [metadatas[idx] for idx in non_empty_ids]
                 texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
+                    [embeddings[idx] for idx in non_empty_ids]
+                    if embeddings is not None and len(embeddings) > 0
+                    else None
                 )
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
@@ -967,7 +972,7 @@ class Chroma(VectorStore):
         """
         if self._embedding_function is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function on creation."
             )
 
         embedding = self._embedding_function.embed_query(query)
@@ -1169,6 +1174,8 @@ class Chroma(VectorStore):
         )
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id if id is not None else str(uuid.uuid4()) for id in ids]
         if hasattr(
             chroma_collection._client, "get_max_batch_size"
         ) or hasattr(  # for Chroma 0.5.1 and above

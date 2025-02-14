@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from langchain_pinecone.vectorstores import Pinecone, PineconeVectorStore
+from langchain_pinecone.vectorstores import PineconeVectorStore
 
 
 def test_initialization() -> None:
@@ -9,7 +9,7 @@ def test_initialization() -> None:
     index = Mock()
     embedding = Mock()
     text_key = "xyz"
-    Pinecone(index, embedding, text_key)
+    PineconeVectorStore(index, embedding, text_key)
 
 
 def test_id_prefix() -> None:

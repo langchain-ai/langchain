@@ -20,6 +20,10 @@ class TestMistralStandard(ChatModelIntegrationTests):
         return {"model": "mistral-large-latest", "temperature": 0}
 
     @property
+    def supports_json_mode(self) -> bool:
+        return True
+
+    @property
     def tool_choice_value(self) -> Optional[str]:
         """Value to use for tool choice when used in tests."""
         return "any"

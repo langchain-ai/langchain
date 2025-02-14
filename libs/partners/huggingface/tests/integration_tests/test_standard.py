@@ -4,6 +4,7 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
+from langchain_core.tools import BaseTool
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
@@ -66,12 +67,14 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_bind_runnables_as_tools(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_output(self, model: BaseChatModel) -> None:
-        super().test_structured_output(model)
+    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
+        super().test_structured_output(model, schema_type)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_output_async(self, model: BaseChatModel) -> None:  # type: ignore[override]
-        super().test_structured_output(model)
+    async def test_structured_output_async(
+        self, model: BaseChatModel, schema_type: str
+    ) -> None:  # type: ignore[override]
+        super().test_structured_output(model, schema_type)
 
     @pytest.mark.xfail(reason=("Not implemented"))
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
@@ -82,9 +85,15 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_structured_output_optional_param(model)
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
-        super().test_tool_message_histories_list_content(model)
+    def test_tool_message_histories_list_content(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_tool_message_histories_list_content(
+            model, my_adder_tool=my_adder_tool
+        )
 
     @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
-        super().test_structured_few_shot_examples(model)
+    def test_structured_few_shot_examples(
+        self, model: BaseChatModel, my_adder_tool: BaseTool
+    ) -> None:
+        super().test_structured_few_shot_examples(model, my_adder_tool=my_adder_tool)

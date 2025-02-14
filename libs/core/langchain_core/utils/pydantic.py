@@ -1,4 +1,4 @@
-"""Utilities for tests."""
+"""Utilities for pydantic."""
 
 from __future__ import annotations
 
@@ -172,7 +172,6 @@ def pre_init(func: Callable) -> Any:
     Returns:
         Any: The decorated function.
     """
-
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
 
@@ -279,7 +278,7 @@ def _create_subset_model_v2(
     fn_description: Optional[str] = None,
 ) -> type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
-    from pydantic import ConfigDict, create_model
+    from pydantic import create_model
     from pydantic.fields import FieldInfo
 
     descriptions_ = descriptions or {}
@@ -390,6 +389,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
         else:
             msg = f"Expected a Pydantic model. Got {type(model)}"
             raise TypeError(msg)
+
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
 
@@ -398,6 +398,7 @@ elif PYDANTIC_MAJOR_VERSION == 1:
     ) -> dict[str, FieldInfoV1]:
         """Get the field names of a Pydantic model."""
         return model.__fields__  # type: ignore
+
 else:
     msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
     raise ValueError(msg)

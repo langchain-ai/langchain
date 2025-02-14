@@ -188,7 +188,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 last_error = e
             except BaseException as e:
                 run_manager.on_chain_error(e)
-                raise e
+                raise
             else:
                 run_manager.on_chain_end(output)
                 return output
@@ -241,7 +241,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 last_error = e
             except BaseException as e:
                 await run_manager.on_chain_error(e)
-                raise e
+                raise
             else:
                 await run_manager.on_chain_end(output)
                 return output
@@ -488,7 +488,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 last_error = e
             except BaseException as e:
                 run_manager.on_chain_error(e)
-                raise e
+                raise
             else:
                 first_error = None
                 break
@@ -507,7 +507,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     output = None
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         run_manager.on_chain_end(output)
 
     async def astream(
@@ -558,7 +558,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 last_error = e
             except BaseException as e:
                 await run_manager.on_chain_error(e)
-                raise e
+                raise
             else:
                 first_error = None
                 break
@@ -577,7 +577,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     output = None
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         await run_manager.on_chain_end(output)
 
     def __getattr__(self, name: str) -> Any:

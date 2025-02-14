@@ -669,7 +669,7 @@ class HanaDB(VectorStore):
                     if key in self.specific_metadata_columns
                     else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
                 )
-                where_str += f"{selector} " f"{operator} {sql_param}"
+                where_str += f"{selector} {operator} {sql_param}"
 
         return where_str, query_tuple
 
