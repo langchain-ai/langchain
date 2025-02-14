@@ -437,7 +437,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
             **self.additional_headers,
         }
     
-    def _check_for_api_errors(self, response: requests.Response):
+    def _check_for_api_errors(self, response: requests.Response) -> None:
         """Check the API response for errors and raise exceptions with details."""
         try:
             json_response = response.json()
