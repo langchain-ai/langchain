@@ -215,16 +215,14 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         if not isinstance(response, openai.BaseModel):
             return rtn
-
+        choice = response.choices[0].message  # type: ignore
         if hasattr(
-            response.choices[0].message,
-            "reasoning_content",  # type: ignore
+            choice,
+            "reasoning_content",
         ):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                response.choices[  # type: ignore
-                    0
-                ].message.reasoning_content
-            )
+                choice.reasoning_content
+            )  # type: ignore
 
         return rtn
 
