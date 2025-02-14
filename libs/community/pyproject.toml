@@ -48,7 +48,7 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "requests-mock<2.0.0,>=1.11.0",
     "pytest-xdist<4.0.0,>=3.6.1",
-    "blockbuster<1.6,>=1.5.13",
+    "blockbuster<1.6,>=1.5.18",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
     "langchain-core",
