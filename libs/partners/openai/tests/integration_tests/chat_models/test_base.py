@@ -630,14 +630,27 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
-def test_openai_structured_output() -> None:
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4"])
+def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
 
         name: str
         age: int
 
-    llm = ChatOpenAI().with_structured_output(MyModel)
+    llm = ChatOpenAI(model=model).with_structured_output(MyModel)
     result = llm.invoke("I'm a 27 year old named Erick")
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
@@ -706,6 +719,12 @@ async def test_openai_response_headers_async() -> None:
     assert "content-type" in headers
 
 
+@pytest.mark.xfail(
+    reason=(
+        "As of 12.19.24 OpenAI API returns 1151 instead of 1118. Not clear yet if "
+        "this is an undocumented API change or a bug on their end."
+    )
+)
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -738,6 +757,12 @@ def test_image_token_counting_jpeg() -> None:
     assert expected == actual
 
 
+@pytest.mark.xfail(
+    reason=(
+        "As of 12.19.24 OpenAI API returns 871 instead of 779. Not clear yet if "
+        "this is an undocumented API change or a bug on their end."
+    )
+)
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
@@ -808,20 +833,18 @@ def test_tool_calling_strict() -> None:
 
 
 @pytest.mark.parametrize(
-    ("model", "method", "strict"),
-    [("gpt-4o", "function_calling", True), ("gpt-4o-2024-08-06", "json_schema", None)],
+    ("model", "method"),
+    [("gpt-4o", "function_calling"), ("gpt-4o-2024-08-06", "json_schema")],
 )
 def test_structured_output_strict(
-    model: str,
-    method: Literal["function_calling", "json_schema"],
-    strict: Optional[bool],
+    model: str, method: Literal["function_calling", "json_schema"]
 ) -> None:
     """Test to verify structured output with strict=True."""
 
     from pydantic import BaseModel as BaseModelProper
     from pydantic import Field as FieldProper
 
-    llm = ChatOpenAI(model=model, temperature=0)
+    llm = ChatOpenAI(model=model)
 
     class Joke(BaseModelProper):
         """Joke to tell user."""
@@ -830,10 +853,7 @@ def test_structured_output_strict(
         punchline: str = FieldProper(description="answer to resolve the joke")
 
     # Pydantic class
-    # Type ignoring since the interface only officially supports pydantic 1
-    # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-    # We'll need to do a pass updating the type signatures.
-    chat = llm.with_structured_output(Joke, method=method, strict=strict)
+    chat = llm.with_structured_output(Joke, method=method, strict=True)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, Joke)
 
@@ -842,7 +862,7 @@ def test_structured_output_strict(
 
     # Schema
     chat = llm.with_structured_output(
-        Joke.model_json_schema(), method=method, strict=strict
+        Joke.model_json_schema(), method=method, strict=True
     )
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
@@ -863,14 +883,14 @@ def test_structured_output_strict(
             default="foo", description="answer to resolve the joke"
         )
 
-    chat = llm.with_structured_output(InvalidJoke, method=method, strict=strict)
+    chat = llm.with_structured_output(InvalidJoke, method=method, strict=True)
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
     with pytest.raises(openai.BadRequestError):
         next(chat.stream("Tell me a joke about cats."))
 
     chat = llm.with_structured_output(
-        InvalidJoke.model_json_schema(), method=method, strict=strict
+        InvalidJoke.model_json_schema(), method=method, strict=True
     )
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
@@ -878,11 +898,9 @@ def test_structured_output_strict(
         next(chat.stream("Tell me a joke about cats."))
 
 
-@pytest.mark.parametrize(
-    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
-)
+@pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
 def test_nested_structured_output_strict(
-    model: str, method: Literal["json_schema"], strict: Optional[bool]
+    model: str, method: Literal["json_schema"]
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
 
@@ -902,7 +920,7 @@ def test_nested_structured_output_strict(
         self_evaluation: SelfEvaluation
 
     # Schema
-    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=True)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
     assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
@@ -915,10 +933,51 @@ def test_nested_structured_output_strict(
     assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
 
 
+@pytest.mark.parametrize(
+    ("strict", "method"),
+    [
+        (True, "json_schema"),
+        (False, "json_schema"),
+        (True, "function_calling"),
+        (False, "function_calling"),
+    ],
+)
+def test_json_schema_openai_format(
+    strict: bool, method: Literal["json_schema", "function_calling"]
+) -> None:
+    """Test we can pass in OpenAI schema format specifying strict."""
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    schema = {
+        "name": "get_weather",
+        "description": "Fetches the weather in the given location",
+        "strict": strict,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location to get the weather for",
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "The unit to return the temperature in",
+                    "enum": ["F", "C"],
+                },
+            },
+            "additionalProperties": False,
+            "required": ["location", "unit"],
+        },
+    }
+    chat = llm.with_structured_output(schema, method=method)
+    result = chat.invoke("What is the weather in New York?")
+    assert isinstance(result, dict)
+
+
 def test_json_mode() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = llm.invoke(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks.",  # noqa: E501
+        response_format={"type": "json_object"},
     )
     assert isinstance(response.content, str)
     assert json.loads(response.content) == {"a": 1}
@@ -937,7 +996,7 @@ def test_json_mode() -> None:
 async def test_json_mode_async() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = await llm.ainvoke(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks."  # noqa: E501
     )
     assert isinstance(response.content, str)
     assert json.loads(response.content) == {"a": 1}
@@ -1079,21 +1138,103 @@ class Foo(BaseModel):
 
 
 def test_stream_response_format() -> None:
-    list(ChatOpenAI(model="gpt-4o-mini").stream("how are ya", response_format=Foo))
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    for chunk in ChatOpenAI(model="gpt-4o-mini").stream(
+        "how are ya", response_format=Foo
+    ):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
 
 
 async def test_astream_response_format() -> None:
-    async for _ in ChatOpenAI(model="gpt-4o-mini").astream(
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    async for chunk in ChatOpenAI(model="gpt-4o-mini").astream(
         "how are ya", response_format=Foo
     ):
-        pass
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
 
 
-def test_o1_max_tokens() -> None:
-    response = ChatOpenAI(model="o1-mini", max_tokens=10).invoke("how are you")  # type: ignore[call-arg]
-    assert isinstance(response, AIMessage)
-
-    response = ChatOpenAI(model="gpt-4o", max_completion_tokens=10).invoke(
-        "how are you"
+@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
+def test_o1(use_max_completion_tokens: bool) -> None:
+    if use_max_completion_tokens:
+        kwargs: dict = {"max_completion_tokens": 10}
+    else:
+        kwargs = {"max_tokens": 10}
+    response = ChatOpenAI(model="o1", reasoning_effort="low", **kwargs).invoke(
+        [
+            {"role": "developer", "content": "respond in all caps"},
+            {"role": "user", "content": "HOW ARE YOU"},
+        ]
     )
     assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert response.content.upper() == response.content
+
+
+@pytest.mark.scheduled
+def test_o1_doesnt_stream() -> None:
+    """
+    When this starts failing, remove the `disable_streaming` validator in
+    `BaseChatOpenAI`
+    """
+    with pytest.raises(openai.BadRequestError):
+        list(ChatOpenAI(model="o1", disable_streaming=False).stream("how are you"))
+
+
+@pytest.mark.scheduled
+def test_o1_stream_default_works() -> None:
+    result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
+    assert len(result) > 0
+
+
+def test_multi_party_conversation() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    messages = [
+        HumanMessage("Hi, I have black hair.", name="Alice"),
+        HumanMessage("Hi, I have brown hair.", name="Bob"),
+        HumanMessage("Who just spoke?", name="Charlie"),
+    ]
+    response = llm.invoke(messages)
+    assert "Bob" in response.content
+
+
+def test_structured_output_and_tools() -> None:
+    class ResponseFormat(BaseModel):
+        response: str
+        explanation: str
+
+    llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(
+        [GenerateUsername], strict=True, response_format=ResponseFormat
+    )
+
+    response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
+    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+
+    # Test streaming tool calls
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Generate a user name for Alice, black hair. Use the tool."
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
+    tool_call = full.tool_calls[0]
+    assert tool_call["name"] == "GenerateUsername"

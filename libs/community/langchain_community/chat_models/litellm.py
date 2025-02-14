@@ -253,6 +253,7 @@ class ChatLiteLLM(BaseChatModel):
     replicate_api_key: Optional[str] = None
     cohere_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
+    api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
@@ -299,6 +300,21 @@ class ChatLiteLLM(BaseChatModel):
         if self.model_name is not None:
             set_model_value = self.model_name
         self.client.api_base = self.api_base
+        self.client.api_key = self.api_key
+        for named_api_key in [
+            "openai_api_key",
+            "azure_api_key",
+            "anthropic_api_key",
+            "replicate_api_key",
+            "cohere_api_key",
+            "openrouter_api_key",
+        ]:
+            if api_key_value := getattr(self, named_api_key):
+                setattr(
+                    self.client,
+                    named_api_key.replace("_api_key", "_key"),
+                    api_key_value,
+                )
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": set_model_value,

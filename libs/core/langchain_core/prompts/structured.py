@@ -28,7 +28,7 @@ from langchain_core.utils import get_pydantic_field_names
 class StructuredPrompt(ChatPromptTemplate):
     """Structured prompt template for a language model."""
 
-    schema_: Union[dict, type[BaseModel]]
+    schema_: Union[dict, type]
     """Schema for the structured prompt."""
     structured_output_kwargs: dict[str, Any] = Field(default_factory=dict)
 
@@ -66,13 +66,12 @@ class StructuredPrompt(ChatPromptTemplate):
     def from_messages_and_schema(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        schema: Union[dict, type[BaseModel]],
+        schema: Union[dict, type],
         **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python

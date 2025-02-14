@@ -605,6 +605,9 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
+        if self.args_schema is not None and not get_fields(self.args_schema):
+            # StructuredTool with no args
+            return (), {}
         tool_input = self._parse_input(tool_input, tool_call_id)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
@@ -677,6 +680,7 @@ class ChildTool(BaseTool):
 
         content = None
         artifact = None
+        status = "success"
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -684,9 +688,9 @@ class ChildTool(BaseTool):
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
+                tool_kwargs = tool_kwargs | {"run_manager": run_manager}
             if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs[config_param] = config
+                tool_kwargs = tool_kwargs | {config_param: config}
             response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
@@ -696,26 +700,25 @@ class ChildTool(BaseTool):
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                    raise ValueError(msg)
-                content, artifact = response
+                    error_to_raise = ValueError(msg)
+                else:
+                    content, artifact = response
             else:
                 content = response
-            status = "success"
         except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
+                status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
+                status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
-            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
@@ -786,6 +789,7 @@ class ChildTool(BaseTool):
         )
         content = None
         artifact = None
+        status = "success"
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
@@ -813,26 +817,25 @@ class ChildTool(BaseTool):
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                    raise ValueError(msg)
-                content, artifact = response
+                    error_to_raise = ValueError(msg)
+                else:
+                    content, artifact = response
             else:
                 content = response
-            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
+                status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
+                status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
-            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
@@ -870,7 +873,7 @@ def _handle_validation_error(
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 
@@ -890,7 +893,7 @@ def _handle_tool_error(
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 

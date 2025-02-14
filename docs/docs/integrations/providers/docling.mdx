@@ -1,0 +1,42 @@
+# Docling
+
+> [Docling](https://github.com/DS4SD/docling) parses PDF, DOCX, PPTX, HTML, and other formats into a rich unified representation including document layout, tables etc., making them ready for generative AI workflows like RAG.
+>
+> This integration provides Docling's capabilities via the `DoclingLoader` document loader.
+
+## Installation and Setup
+
+Simply install `langchain-docling` from your package manager, e.g. pip:
+
+```shell
+pip install langchain-docling
+```
+
+## Document Loader
+
+The `DoclingLoader` class in `langchain-docling` seamlessly integrates Docling into
+LangChain, enabling you to:
+- use various document types in your LLM applications with ease and speed, and
+- leverage Docling's rich representation for advanced, document-native grounding.
+
+Basic usage looks as follows:
+
+```python
+from langchain_docling import DoclingLoader
+
+FILE_PATH = ["https://arxiv.org/pdf/2408.09869"]  # Docling Technical Report
+
+loader = DoclingLoader(file_path=FILE_PATH)
+
+docs = loader.load()
+```
+
+For end-to-end usage check out
+[this example](/docs/integrations/document_loaders/docling).
+
+## Additional Resources
+
+- [LangChain Docling integration GitHub](https://github.com/DS4SD/docling-langchain)
+- [LangChain Docling integration PyPI package](https://pypi.org/project/langchain-docling/)
+- [Docling GitHub](https://github.com/DS4SD/docling)
+- [Docling docs](https://ds4sd.github.io/docling/)

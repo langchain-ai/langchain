@@ -863,7 +863,7 @@ async def _astream_events_implementation_v1(
                 tags=log_entry["tags"],
                 metadata=log_entry["metadata"],
                 data=data,
-                parent_ids=[],  #  Not supported in v1
+                parent_ids=[],  # Not supported in v1
             )
 
         # Finally, we take care of the streaming output from the root chain

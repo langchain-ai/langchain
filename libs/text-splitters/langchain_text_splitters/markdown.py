@@ -197,7 +197,10 @@ class MarkdownHeaderTextSplitter:
 
         if current_content:
             lines_with_metadata.append(
-                {"content": "\n".join(current_content), "metadata": current_metadata}
+                {
+                    "content": "\n".join(current_content),
+                    "metadata": current_metadata,
+                }
             )
 
         # lines_with_metadata has each line with associated header metadata
@@ -324,6 +327,11 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             chunks of the input text. If `return_each_line` is enabled, each line
             is returned as a separate `Document`.
         """
+        # Reset the state for each new file processed
+        self.chunks.clear()
+        self.current_chunk = Document(page_content="")
+        self.current_header_stack.clear()
+
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:

@@ -474,7 +474,9 @@ class ChatHuggingFace(BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -502,7 +504,7 @@ class ChatHuggingFace(BaseChatModel):
                     f"tool. Received {len(formatted_tools)} tools."
                 )
             if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none"):
+                if tool_choice not in ("auto", "none", "required"):
                     tool_choice = {
                         "type": "function",
                         "function": {"name": tool_choice},

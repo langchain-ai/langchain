@@ -70,7 +70,7 @@ DEFAULT_PROPERTIES = [
 DEFAULT_LANG_CODE = "en"
 WIKIDATA_USER_AGENT = "langchain-wikidata"
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
-WIKIDATA_REST_API_URL = "https://www.wikidata.org/w/rest.php/wikibase/v0/"
+WIKIDATA_REST_API_URL = "https://www.wikidata.org/w/rest.php/wikibase/v1/"
 
 
 class WikidataAPIWrapper(BaseModel):
@@ -147,7 +147,9 @@ class WikidataAPIWrapper(BaseModel):
             doc_lines.append(f"Aliases: {', '.join(resp.aliases)}")
         for prop, values in resp.statements.items():
             if values:
-                doc_lines.append(f"{prop.label}: {', '.join(values)}")
+                doc_lines.append(
+                    f"{prop.label}: {', '.join([v.value or 'unknown' for v in values])}"
+                )
 
         return Document(
             page_content=("\n".join(doc_lines))[: self.doc_content_chars_max],

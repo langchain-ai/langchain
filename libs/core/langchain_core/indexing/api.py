@@ -241,7 +241,7 @@ def index(
     For the time being, documents are indexed using their hashes, and users
      are not able to specify the uid of the document.
 
-    IMPORTANT:
+    Important:
        * In full mode, the loader should be returning
          the entire dataset, and not just a subset of the dataset.
          Otherwise, the auto_cleanup will remove documents that it is not
@@ -546,7 +546,7 @@ async def aindex(
     For the time being, documents are indexed using their hashes, and users
      are not able to specify the uid of the document.
 
-    IMPORTANT:
+    Important:
        * In full mode, the loader should be returning
          the entire dataset, and not just a subset of the dataset.
          Otherwise, the auto_cleanup will remove documents that it is not
@@ -614,7 +614,6 @@ async def aindex(
 
         * Added `scoped_full` cleanup mode.
     """
-
     if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
             f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "

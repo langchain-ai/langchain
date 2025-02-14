@@ -116,6 +116,10 @@ def init_chat_model(
             - 'huggingface'         -> langchain-huggingface
             - 'groq'                -> langchain-groq
             - 'ollama'              -> langchain-ollama
+            - 'google_anthropic_vertex'    -> langchain-google-vertexai
+            - 'deepseek'            -> langchain-deepseek
+            - 'ibm'            -> langchain-ibm
+            - 'nvidia'              -> langchain-nvidia-ai-endpoints
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -410,6 +414,26 @@ def _init_chat_model_helper(
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
+    elif model_provider == "google_anthropic_vertex":
+        _check_pkg("langchain_google_vertexai")
+        from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+
+        return ChatAnthropicVertex(model=model, **kwargs)
+    elif model_provider == "deepseek":
+        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
+        from langchain_deepseek import ChatDeepSeek
+
+        return ChatDeepSeek(model=model, **kwargs)
+    elif model_provider == "nvidia":
+        _check_pkg("langchain_nvidia_ai_endpoints")
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+        return ChatNVIDIA(model=model, **kwargs)
+    elif model_provider == "ibm":
+        _check_pkg("langchain_ibm")
+        from langchain_ibm import ChatWatsonx
+
+        return ChatWatsonx(model_id=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -433,11 +457,14 @@ _SUPPORTED_PROVIDERS = {
     "groq",
     "bedrock",
     "bedrock_converse",
+    "google_anthropic_vertex",
+    "deepseek",
+    "ibm",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1")):
+    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
         return "openai"
     elif model_name.startswith("claude"):
         return "anthropic"
@@ -473,12 +500,11 @@ def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
     return model, model_provider
 
 
-def _check_pkg(pkg: str) -> None:
+def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
-        pkg_kebab = pkg.replace("_", "-")
+        pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
         raise ImportError(
-            f"Unable to import {pkg_kebab}. Please install with "
-            f"`pip install -U {pkg_kebab}`"
+            f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
 
 
@@ -583,7 +609,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
             queued_declarative_operations.append(
-                ("with_config", (), {"config": remaining_config})
+                (
+                    "with_config",
+                    (),
+                    {"config": remaining_config},
+                )
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},

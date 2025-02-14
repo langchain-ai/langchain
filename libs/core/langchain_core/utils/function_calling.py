@@ -1,4 +1,4 @@
-"""Methods for creating function specs in the style of OpenAI Functions"""
+"""Methods for creating function specs in the style of OpenAI Functions."""
 
 from __future__ import annotations
 
@@ -75,12 +75,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     return new_kv
 
 
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)
-def convert_pydantic_to_openai_function(
+def _convert_pydantic_to_openai_function(
     model: type,
     *,
     name: Optional[str] = None,
@@ -121,6 +116,13 @@ def convert_pydantic_to_openai_function(
     }
 
 
+convert_pydantic_to_openai_function = deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="1.0",
+)(_convert_pydantic_to_openai_function)
+
+
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
@@ -144,7 +146,7 @@ def convert_pydantic_to_openai_tool(
     Returns:
         The tool description.
     """
-    function = convert_pydantic_to_openai_function(
+    function = _convert_pydantic_to_openai_function(
         model, name=name, description=description
     )
     return {"type": "function", "function": function}
@@ -155,12 +157,7 @@ def _get_python_function_name(function: Callable) -> str:
     return function.__name__
 
 
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)
-def convert_python_function_to_openai_function(
+def _convert_python_function_to_openai_function(
     function: Callable,
 ) -> FunctionDescription:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
@@ -186,11 +183,18 @@ def convert_python_function_to_openai_function(
         error_on_invalid_docstring=False,
         include_injected=False,
     )
-    return convert_pydantic_to_openai_function(
+    return _convert_pydantic_to_openai_function(
         model,
         name=func_name,
         description=model.__doc__,
     )
+
+
+convert_python_function_to_openai_function = deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="1.0",
+)(_convert_python_function_to_openai_function)
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
@@ -201,7 +205,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
         type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
-    return convert_pydantic_to_openai_function(model)  # type: ignore
+    return _convert_pydantic_to_openai_function(model)  # type: ignore
 
 
 _MAX_TYPED_DICT_RECURSION = 25
@@ -272,12 +276,7 @@ def _convert_any_typed_dicts_to_pydantic(
         return type_
 
 
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)
-def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
+def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API.
 
     Args:
@@ -290,7 +289,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
     is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
-        return convert_pydantic_to_openai_function(
+        return _convert_pydantic_to_openai_function(
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
     else:
@@ -312,6 +311,13 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
         }
 
 
+format_tool_to_openai_function = deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="1.0",
+)(_format_tool_to_openai_function)
+
+
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
@@ -326,7 +332,7 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     Returns:
         The tool description.
     """
-    function = format_tool_to_openai_function(tool)
+    function = _format_tool_to_openai_function(tool)
     return {"type": "function", "function": function}
 
 
@@ -336,6 +342,7 @@ def convert_to_openai_function(
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
+
     Args:
         function:
             A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
@@ -408,15 +415,15 @@ def convert_to_openai_function(
         if function_copy and "properties" in function_copy:
             oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(dict, convert_pydantic_to_openai_function(function))
+        oai_function = cast(dict, _convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
             dict, _convert_typed_dict_to_openai_function(cast(type, function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(dict, format_tool_to_openai_function(function))
+        oai_function = cast(dict, _format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(dict, convert_python_function_to_openai_function(function))
+        oai_function = cast(dict, _convert_python_function_to_openai_function(function))
     else:
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -615,7 +622,8 @@ def _parse_google_docstring(
                 arg for arg in args if arg not in ("run_manager", "callbacks", "return")
             }
             if filtered_annotations and (
-                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
+                len(docstring_blocks) < 2
+                or not any(block.startswith("Args:") for block in docstring_blocks[1:])
             ):
                 msg = "Found invalid Google-Style docstring."
                 raise ValueError(msg)

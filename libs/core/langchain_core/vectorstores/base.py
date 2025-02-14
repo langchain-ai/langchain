@@ -132,7 +132,6 @@ class VectorStore(ABC):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-
         msg = "delete method must be implemented by subclass."
         raise NotImplementedError(msg)
 
@@ -423,7 +422,6 @@ class VectorStore(ABC):
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
-
         return 1.0 - distance
 
     @staticmethod
@@ -435,8 +433,7 @@ class VectorStore(ABC):
         return -1.0 * distance
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """
-        The 'correct' relevance function
+        """The 'correct' relevance function
         may differ depending on a few things, including:
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
@@ -473,7 +470,6 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score).
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -487,8 +483,7 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """
-        Default similarity search with relevance scores. Modify if necessary
+        """Default similarity search with relevance scores. Modify if necessary
         in subclass.
         Return docs and relevance scores in the range [0, 1].
 
@@ -514,8 +509,7 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """
-        Default similarity search with relevance scores. Modify if necessary
+        """Default similarity search with relevance scores. Modify if necessary
         in subclass.
         Return docs and relevance scores in the range [0, 1].
 
@@ -644,7 +638,6 @@ class VectorStore(ABC):
         Returns:
             List of Documents most similar to the query.
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -678,7 +671,6 @@ class VectorStore(ABC):
         Returns:
             List of Documents most similar to the query vector.
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -741,7 +733,6 @@ class VectorStore(ABC):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -1056,8 +1047,9 @@ class VectorStoreRetriever(BaseRetriever):
 
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
+        _kwargs = self.search_kwargs | kwargs
 
-        ls_params = super()._get_ls_params(**kwargs)
+        ls_params = super()._get_ls_params(**_kwargs)
         ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
 
         if self.vectorstore.embeddings:
@@ -1074,43 +1066,45 @@ class VectorStoreRetriever(BaseRetriever):
         return ls_params
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
+        _kwargs = self.search_kwargs | kwargs
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search(query, **_kwargs)
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query, **_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
-            docs = self.vectorstore.max_marginal_relevance_search(
-                query, **self.search_kwargs
-            )
+            docs = self.vectorstore.max_marginal_relevance_search(query, **_kwargs)
         else:
             msg = f"search_type of {self.search_type} not allowed."
             raise ValueError(msg)
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> list[Document]:
+        _kwargs = self.search_kwargs | kwargs
         if self.search_type == "similarity":
-            docs = await self.vectorstore.asimilarity_search(
-                query, **self.search_kwargs
-            )
+            docs = await self.vectorstore.asimilarity_search(query, **_kwargs)
         elif self.search_type == "similarity_score_threshold":
             docs_and_similarities = (
                 await self.vectorstore.asimilarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
+                    query, **_kwargs
                 )
             )
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = await self.vectorstore.amax_marginal_relevance_search(
-                query, **self.search_kwargs
+                query, **_kwargs
             )
         else:
             msg = f"search_type of {self.search_type} not allowed."

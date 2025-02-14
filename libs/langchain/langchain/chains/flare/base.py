@@ -236,7 +236,9 @@ class FlareChain(Chain):
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
-        llm = ChatOpenAI(max_tokens=max_generation_len, logprobs=True, temperature=0)
+        llm = ChatOpenAI(
+            max_completion_tokens=max_generation_len, logprobs=True, temperature=0
+        )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(
