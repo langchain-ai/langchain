@@ -193,7 +193,7 @@ ${llmVarName} = AzureChatOpenAI(
     },
     {
       value: "ibm",
-      label: "IBM",
+      label: "IBM watsonx",
       text: `from langchain_ibm import ChatWatsonx
 
 ${llmVarName} = ChatWatsonx(
