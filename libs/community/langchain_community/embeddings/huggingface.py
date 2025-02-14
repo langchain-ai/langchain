@@ -436,7 +436,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
             "Authorization": f"Bearer {self.api_key.get_secret_value()}",
             **self.additional_headers,
         }
-    
+
     def _check_for_api_errors(self, response: requests.Response) -> None:
         """Check the API response for errors and raise exceptions with details."""
         try:
