@@ -59,6 +59,17 @@ class InMemoryVectorStore(VectorStore):
             documents = [document_1, document_2, document_3]
             vector_store.add_documents(documents=documents)
 
+    Inspect documents:
+        .. code-block:: python
+
+            top_n = 10
+            for index, (id, doc) in enumerate(vector_store.store.items()):
+                if index < top_n:
+                    # docs have keys 'id', 'vector', 'text', 'metadata'
+                    print(f"{id}: {doc['text']}")
+                else:
+                    break
+
     Delete Documents:
         .. code-block:: python
 

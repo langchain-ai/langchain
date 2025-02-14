@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4,>=3.9"
 dependencies = [
     "qdrant-client<2.0.0,>=1.10.1",
@@ -36,27 +36,16 @@ test = [
     "pytest-asyncio<1.0.0,>=0.21.1",
     "requests<3.0.0,>=2.31.0",
     "pytest-socket<1.0.0,>=0.7.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core ; python_version >= \"3.9\"",
-    "langchain-core<0.3,>=0.1.40; python_version < \"3.9\"",
+    "langchain-core",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = [
-    "ruff<1.0,>=0.5",
-]
-dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core ; python_version >= \"3.9\"",
-    "langchain-core<0.3,>=0.1.52; python_version < \"3.9\"",
-]
-typing = [
-    "mypy<2.0,>=1.10",
-    "simsimd<7.0.0,>=6.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core ; python_version >= \"3.9\"",
-    "langchain-core<0.3,>=0.1.52; python_version < \"3.9\"",
-]
+lint = ["ruff<1.0,>=0.5"]
+dev = ["langchain-core"]
+typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
 
 [tool.ruff]
 select = ["E", "F", "I"]

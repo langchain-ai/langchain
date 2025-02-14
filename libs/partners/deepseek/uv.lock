@@ -367,8 +367,8 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34"
-source = { registry = "https://pypi.org/simple" }
+version = "0.3.35"
+source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langsmith" },
@@ -378,9 +378,49 @@ dependencies = [
     { name = "tenacity" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/c8/a4394a5bdfc820f539bd6983b1408964723ed43ce8cfafbcc7cada69c015/langchain_core-0.3.34.tar.gz", hash = "sha256:26504cf1e8e6c310adad907b890d4e3c147581cfa7434114f6dc1134fe4bc6d3", size = 524756 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9f/65/27a586c8871a0632d747059eb97855b49ac6dea12b263a79f6c1b4f18b99/langchain_core-0.3.34-py3-none-any.whl", hash = "sha256:a057ebeddd2158d3be14bde341b25640ddf958b6989bd6e47160396f5a8202ae", size = 412955 },
+
+[package.metadata]
+requires-dist = [
+    { name = "jsonpatch", specifier = ">=1.33,<2.0" },
+    { name = "langsmith", specifier = ">=0.1.125,<0.4" },
+    { name = "packaging", specifier = ">=23.2,<25" },
+    { name = "pydantic", marker = "python_full_version < '3.12.4'", specifier = ">=2.5.2,<3.0.0" },
+    { name = "pydantic", marker = "python_full_version >= '3.12.4'", specifier = ">=2.7.4,<3.0.0" },
+    { name = "pyyaml", specifier = ">=5.3" },
+    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10.0.0" },
+    { name = "typing-extensions", specifier = ">=4.7" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "grandalf", specifier = ">=0.8,<1.0" },
+    { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
+]
+lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
+test = [
+    { name = "blockbuster", specifier = "~=1.5.11" },
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "grandalf", specifier = ">=0.8,<1.0" },
+    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
+    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<3" },
+    { name = "pytest", specifier = ">=8,<9" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "responses", specifier = ">=0.25.0,<1.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+]
+test-integration = []
+typing = [
+    { name = "langchain-text-splitters", directory = "../../text-splitters" },
+    { name = "mypy", specifier = ">=1.10,<1.11" },
+    { name = "types-jinja2", specifier = ">=2.11.9,<3.0.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
+    { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
 
 [[package]]
@@ -414,8 +454,8 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
-    { name = "langchain-openai", specifier = ">=0.3.5,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
+    { name = "langchain-openai", editable = "../openai" },
 ]
 
 [package.metadata.requires-dev]
@@ -423,7 +463,7 @@ codespell = [{ name = "codespell", specifier = ">=2.2.6,<3.0.0" }]
 dev = []
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
-    { name = "langchain-openai", directory = "../openai" },
+    { name = "langchain-openai", editable = "../openai" },
     { name = "langchain-tests", specifier = ">=0.3.5,<1.0.0" },
     { name = "pytest", specifier = ">=7.4.3,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.2,<1.0.0" },
@@ -437,7 +477,7 @@ typing = [{ name = "mypy", specifier = ">=1.10,<2.0" }]
 [[package]]
 name = "langchain-openai"
 version = "0.3.5"
-source = { directory = "../openai" }
+source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
     { name = "openai" },
@@ -446,19 +486,19 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.34,<1.0.0" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "openai", specifier = ">=1.58.1,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "../../core" },
+    { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -477,7 +517,7 @@ test-integration = [
     { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
 ]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
 ]
