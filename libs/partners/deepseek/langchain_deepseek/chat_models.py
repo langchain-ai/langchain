@@ -180,15 +180,11 @@ class ChatDeepSeek(BaseChatOpenAI):
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
-            raise ValueError(
-                "If using default api base, DEEPSEEK_API_KEY must be set."
-            )
+            raise ValueError("If using default api base, DEEPSEEK_API_KEY must be set.")
         client_params: dict = {
             k: v
             for k, v in {
-                "api_key": (
-                    self.api_key.get_secret_value() if self.api_key else None
-                ),
+                "api_key": (self.api_key.get_secret_value() if self.api_key else None),
                 "base_url": self.api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
@@ -221,13 +217,14 @@ class ChatDeepSeek(BaseChatOpenAI):
             return rtn
 
         if hasattr(
-            response.choices[0].message, "reasoning_content"  # type: ignore
+            response.choices[0].message,
+            "reasoning_content",  # type: ignore
         ):
-            rtn.generations[0].message.additional_kwargs[
-                "reasoning_content"
-            ] = response.choices[  # type: ignore
-                0
-            ].message.reasoning_content
+            rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
+                response.choices[  # type: ignore
+                    0
+                ].message.reasoning_content
+            )
 
         return rtn
 
@@ -244,13 +241,11 @@ class ChatDeepSeek(BaseChatOpenAI):
         )
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
-            if reasoning_content := top.get("delta", {}).get(
-                "reasoning_content"
-            ):
+            if reasoning_content := top.get("delta", {}).get("reasoning_content"):
                 if isinstance(generation_chunk.message, AIMessageChunk):
-                    generation_chunk.message.additional_kwargs[
-                        "reasoning_content"
-                    ] = reasoning_content
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning_content
+                    )
         return generation_chunk
 
     def _stream(
