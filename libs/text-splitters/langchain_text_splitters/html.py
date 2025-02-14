@@ -214,9 +214,7 @@ class HTMLHeaderTextSplitter:
             if not current_chunk:
                 return None
 
-            final_text = "  \n".join(
-                line for line in current_chunk if line.strip()
-            )
+            final_text = "  \n".join(line for line in current_chunk if line.strip())
             current_chunk.clear()
             if not final_text.strip():
                 return None
@@ -263,9 +261,7 @@ class HTMLHeaderTextSplitter:
 
                 # Remove any active headers that are at or deeper than this new level
                 headers_to_remove = [
-                    k
-                    for k, (_, lvl, d) in active_headers.items()
-                    if lvl >= level
+                    k for k, (_, lvl, d) in active_headers.items() if lvl >= level
                 ]
                 for key in headers_to_remove:
                     del active_headers[key]
@@ -280,9 +276,7 @@ class HTMLHeaderTextSplitter:
 
             else:
                 headers_out_of_scope = [
-                    k
-                    for k, (_, _, d) in active_headers.items()
-                    if dom_depth < d
+                    k for k, (_, _, d) in active_headers.items() if dom_depth < d
                 ]
                 for key in headers_out_of_scope:
                     del active_headers[key]
@@ -370,15 +364,11 @@ class HTMLSectionSplitter:
                     if chunk.metadata[key] == "#TITLE#":
                         chunk.metadata[key] = metadata["Title"]
                 metadata = {**metadata, **chunk.metadata}
-                new_doc = Document(
-                    page_content=chunk.page_content, metadata=metadata
-                )
+                new_doc = Document(page_content=chunk.page_content, metadata=metadata)
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(
-        self, html_doc: str
-    ) -> List[Dict[str, Optional[str]]]:
+    def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
         """Split an HTML document into sections based on specified header tags.
 
         This method uses BeautifulSoup to parse the HTML content and divides it into
@@ -623,10 +613,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self._preserve_parent_metadata = preserve_parent_metadata
         if allowlist_tags:
             self._allowlist_tags = list(
-                set(
-                    allowlist_tags
-                    + [header[0] for header in headers_to_split_on]
-                )
+                set(allowlist_tags + [header[0] for header in headers_to_split_on])
             )
         self._denylist_tags = denylist_tags
         if denylist_tags:
@@ -831,9 +818,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             current_content: List[str],
             preserved_elements: Dict[str, str],
             placeholder_count: int,
-        ) -> Tuple[
-            List[Document], Dict[str, str], List[str], Dict[str, str], int
-        ]:
+        ) -> Tuple[List[Document], Dict[str, str], List[str], Dict[str, str], int]:
             for elem in element:
                 if elem.name.lower() in ["html", "body", "div", "main"]:
                     children = elem.find_all(recursive=False)
@@ -938,9 +923,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             )
             return [Document(page_content=page_content, metadata=metadata)]
         else:
-            return self._further_split_chunk(
-                content, metadata, preserved_elements
-            )
+            return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
         self, content: str, metadata: dict, preserved_elements: dict
