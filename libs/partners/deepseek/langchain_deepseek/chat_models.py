@@ -1,9 +1,12 @@
 """DeepSeek chat models."""
 
-from typing import Dict, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 import openai
-from langchain_core.messages import AIMessageChunk
+from langchain_core.callbacks import (
+    CallbackManagerForLLMRun,
+)
+from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
@@ -181,7 +184,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         client_params: dict = {
             k: v
             for k, v in {
-                "api_key": self.api_key.get_secret_value() if self.api_key else None,
+                "api_key": (self.api_key.get_secret_value() if self.api_key else None),
                 "base_url": self.api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
@@ -215,8 +218,8 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         if hasattr(response.choices[0].message, "reasoning_content"):  # type: ignore
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                response.choices[0].message.reasoning_content  # type: ignore
-            )
+                response.choices[0].message.reasoning_content
+            )  # type: ignore
 
         return rtn
 
@@ -239,3 +242,37 @@ class ChatDeepSeek(BaseChatOpenAI):
                         reasoning_content
                     )
         return generation_chunk
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        try:
+            yield from super()._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+        except ValueError as e:
+            raise ValueError(
+                "DeepSeek API returned an invalid response. "
+                "Please check the API status and try again."
+            ) from e
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        try:
+            return super()._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+        except ValueError as e:
+            raise ValueError(
+                "DeepSeek API returned an invalid response. "
+                "Please check the API status and try again."
+            ) from e
