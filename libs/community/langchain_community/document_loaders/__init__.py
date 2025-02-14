@@ -336,6 +336,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.open_city_data import (
         OpenCityDataLoader,
     )
+    from langchain_community.document_loaders.openvino_speech_to_text import (
+        OpenVINOSpeechToTextLoader,
+    )
     from langchain_community.document_loaders.oracleadb_loader import (
         OracleAutonomousDatabaseLoader,
     )
@@ -406,6 +409,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.rtf import (
         UnstructuredRTFLoader,
+    )
+    from langchain_community.document_loaders.video import (
+        VideoChunkLoader,
     )
     from langchain_community.document_loaders.s3_directory import (
         S3DirectoryLoader,
@@ -648,6 +654,7 @@ _module_lookup = {
     "OneDriveLoader": "langchain_community.document_loaders.onedrive",
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
+    "OpenVINOSpeechToTextLoader": "langchain_community.document_loaders.openvino_speech_to_text",  # noqa: E501
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
     "OracleDocLoader": "langchain_community.document_loaders.oracleai",
     "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
@@ -723,6 +730,7 @@ _module_lookup = {
     "UnstructuredURLLoader": "langchain_community.document_loaders.url",
     "UnstructuredWordDocumentLoader": "langchain_community.document_loaders.word_document",  # noqa: E501
     "UnstructuredXMLLoader": "langchain_community.document_loaders.xml",
+    "VideoChunkLoader": "langchain_community.document_loaders.video",
     "VsdxLoader": "langchain_community.document_loaders.vsdx",
     "WeatherDataLoader": "langchain_community.document_loaders.weather",
     "WebBaseLoader": "langchain_community.document_loaders.web_base",
@@ -856,6 +864,7 @@ __all__ = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OpenCityDataLoader",
+    "OpenVINOSpeechToTextLoader",
     "OracleAutonomousDatabaseLoader",
     "OracleDocLoader",
     "OracleTextSplitter",
@@ -931,6 +940,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "VideoChunkLoader",
     "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
