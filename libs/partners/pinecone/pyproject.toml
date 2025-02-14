@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<3.14,>=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.34",
@@ -32,26 +32,17 @@ test = [
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1,>=0.25.0",
     "pytest-socket<1.0.0,>=0.7.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+    "langchain-core",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
-test_integration = [
-    "langchain-openai @ file:///${PROJECT_ROOT}/../openai",
-]
-lint = [
-    "ruff<1.0,>=0.5",
-]
-dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
-typing = [
-    "mypy<2.0,>=1.10",
-    "simsimd<6.0.0,>=5.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
+test_integration = ["langchain-openai"]
+lint = ["ruff<1.0,>=0.5"]
+dev = ["langchain-core"]
+typing = ["mypy<2.0,>=1.10", "simsimd<6.0.0,>=5.0.0", "langchain-core"]
 
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-openai = { path = "../openai", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"

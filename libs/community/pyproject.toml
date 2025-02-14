@@ -51,9 +51,9 @@ test = [
     "blockbuster<1.6,>=1.5.13",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain @ file:///${PROJECT_ROOT}/../langchain",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
+    "langchain-core",
+    "langchain",
+    "langchain-tests",
     "toml>=0.10.2",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
@@ -63,11 +63,7 @@ lint = [
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
-dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "setuptools<68.0.0,>=67.6.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-]
+dev = ["jupyter<2.0.0,>=1.0.0", "setuptools<68.0.0,>=67.6.1", "langchain-core"]
 typing = [
     "mypy<2.0,>=1.12",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
@@ -77,10 +73,16 @@ typing = [
     "types-chardet<6.0.0.0,>=5.0.4.6",
     "types-redis<5.0.0.0,>=4.3.21.6",
     "mypy-protobuf<4.0.0,>=3.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-    "langchain @ file:///${PROJECT_ROOT}/../langchain",
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain",
 ]
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain = { path = "../langchain", editable = true }
+langchain-tests = { path = "../standard-tests", editable = true }
+langchain-text-splitters = { path = "../text-splitters", editable = true }
 
 
 [tool.ruff]

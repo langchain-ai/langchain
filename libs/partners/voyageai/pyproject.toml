@@ -7,7 +7,7 @@ includes = []
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<3.13,>=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.29",
@@ -35,34 +35,30 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
     "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+    "langchain-core",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = [
-    "ruff<1.0.0,>=0.1.5",
-]
-dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
-typing = [
-    "mypy<2.0,>=1.10",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
+lint = ["ruff<1.0.0,>=0.1.5"]
+dev = ["langchain-core"]
+typing = ["mypy<2.0,>=1.10", "langchain-core"]
 
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I",]
+select = ["E", "F", "I"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
