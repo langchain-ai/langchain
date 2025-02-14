@@ -227,8 +227,10 @@ class HTMLHeaderTextSplitter:
         while stack:
             node = stack.pop()
             children = list(node.children)
+            from bs4.element import Tag
+
             for child in reversed(children):
-                if getattr(child, "name", None):
+                if isinstance(child, Tag):
                     stack.append(child)
 
             tag = getattr(node, "name", None)
