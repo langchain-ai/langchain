@@ -48,7 +48,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
         ..., description="The ID of the Needle collection to search in"
     )
     top_k: Optional[int] = Field(
-        10, description="Maximum number of search results to return"
+        default=10, description="Maximum number of search results to return"
     )
 
     def _initialize_client(self) -> None:

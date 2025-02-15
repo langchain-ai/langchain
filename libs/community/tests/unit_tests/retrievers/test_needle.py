@@ -26,6 +26,7 @@ class MockNeedleClient:
             ]
             return results[:top_k]
 
+
 @pytest.mark.requires("needle")
 def test_needle_retriever_initialization() -> None:
     """
