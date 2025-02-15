@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Union, Optional
-from langchain_core.outputs import LLMResult
+from typing import Any, Dict, List, Optional, Union
 
-from langchain_community.callbacks.bedrock_anthropic_callback import BedrockAnthropicTokenUsageCallbackHandler
+from langchain_core.outputs import LLMResult
+from langchain_community.callbacks.bedrock_anthropic_callback import \
+    BedrockAnthropicTokenUsageCallbackHandler
 
 MODEL_COST_PER_1K_INPUT_TOKENS = {
     "amazon.nova-micro-v1:0": 0.000035,
@@ -16,7 +17,9 @@ MODEL_COST_PER_1K_OUTPUT_TOKENS = {
 }
 
 def _get_token_cost(
-        prompt_tokens: int, completion_tokens: int, model_id: Union[str, None]) -> float:
+        prompt_tokens: int, 
+        completion_tokens: int, 
+        model_id: Union[str, None]) -> float:
     if model_id:
         # The model ID can be a cross-region (system-defined) inference profile ID,
         # which has a prefix indicating the region (e.g., 'us', 'eu') but
@@ -27,7 +30,6 @@ def _get_token_cost(
         base_model_id = model_id.split(".")[-2] + "." + model_id.split(".")[-1]
     else:
         base_model_id = None
-    print("#### "+str(base_model_id))
     """Get the cost of tokens for the model."""
     if base_model_id not in MODEL_COST_PER_1K_INPUT_TOKENS:
         raise ValueError(
@@ -69,7 +71,8 @@ class BedrockTokenUsageCallbackHandler(BedrockAnthropicTokenUsageCallbackHandler
                 usage_metadata = jsondata["kwargs"]["message"].usage_metadata
                 completion_tokens += usage_metadata["input_tokens"]
                 prompt_tokens += usage_metadata["output_tokens"]
-                total_tokens += usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
+                total_tokens += \
+                    usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
         
         total_cost = _get_token_cost(
             prompt_tokens=prompt_tokens,
