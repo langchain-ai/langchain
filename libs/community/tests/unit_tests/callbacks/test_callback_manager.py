@@ -1,7 +1,6 @@
 """Test CallbackManager."""
 
-from unittest.mock import patch, MagicMock
-from typing import Dict, Any
+from unittest.mock import patch
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
