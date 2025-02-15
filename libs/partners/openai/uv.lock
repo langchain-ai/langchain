@@ -494,7 +494,7 @@ dev = [
 ]
 lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
 test = [
-    { name = "blockbuster", specifier = "~=1.5.11" },
+    { name = "blockbuster", specifier = "~=1.5.18" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8,<1.0" },
     { name = "langchain-tests", directory = "../../standard-tests" },
@@ -520,7 +520,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.5"
+version = "0.3.6"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -603,7 +603,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.11"
+version = "0.3.12"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
