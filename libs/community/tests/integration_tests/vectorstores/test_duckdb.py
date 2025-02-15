@@ -93,18 +93,18 @@ def test_duckdb_add_texts_with_metadata(
 
     # Check if the metadata is correctly associated with the texts
     assert len(result) == 2, "Should return two results"
-    assert (
-        result[0].metadata.get("author") == "Author 1"
-    ), "Metadata for Author 1 should be correctly retrieved"
-    assert (
-        result[0].metadata.get("date") == "2021-01-01"
-    ), "Date for Author 1 should be correctly retrieved"
-    assert (
-        result[1].metadata.get("author") == "Author 2"
-    ), "Metadata for Author 2 should be correctly retrieved"
-    assert (
-        result[1].metadata.get("date") == "2021-02-01"
-    ), "Date for Author 2 should be correctly retrieved"
+    assert result[0].metadata.get("author") == "Author 1", (
+        "Metadata for Author 1 should be correctly retrieved"
+    )
+    assert result[0].metadata.get("date") == "2021-01-01", (
+        "Date for Author 1 should be correctly retrieved"
+    )
+    assert result[1].metadata.get("author") == "Author 2", (
+        "Metadata for Author 2 should be correctly retrieved"
+    )
+    assert result[1].metadata.get("date") == "2021-02-01", (
+        "Date for Author 2 should be correctly retrieved"
+    )
 
 
 @pytest.mark.requires("duckdb")
@@ -127,9 +127,9 @@ def test_duckdb_add_texts_with_predefined_ids(
         result = store.similarity_search(text)
 
         found_texts = [doc.page_content for doc in result]
-        assert (
-            text in found_texts
-        ), f"Text '{text}' was not found in the search results."
+        assert text in found_texts, (
+            f"Text '{text}' was not found in the search results."
+        )
 
 
 @pytest.mark.requires("duckdb")

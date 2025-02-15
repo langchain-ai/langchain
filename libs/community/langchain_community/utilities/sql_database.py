@@ -24,8 +24,8 @@ from sqlalchemy.types import NullType
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
-        f'Name: {index["name"]}, Unique: {index["unique"]},'
-        f' Columns: {str(index["column_names"])}'
+        f"Name: {index['name']}, Unique: {index['unique']},"
+        f" Columns: {str(index['column_names'])}"
     )
 
 
@@ -139,6 +139,14 @@ class SQLDatabase:
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     @classmethod
+    @deprecated(
+        "0.3.18",
+        message="For performing structured retrieval using Databricks SQL, "
+        "see the latest best practices and recommended APIs at "
+        "https://docs.unitycatalog.io/ai/integrations/langchain/ "  # noqa: E501
+        "instead",
+        removal="1.0",
+    )
     def from_databricks(
         cls,
         catalog: str,

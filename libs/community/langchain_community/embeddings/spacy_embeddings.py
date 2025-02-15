@@ -48,8 +48,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         # Check if the spaCy package is installed
         if importlib.util.find_spec("spacy") is None:
             raise ValueError(
-                "SpaCy package not found. "
-                "Please install it with `pip install spacy`."
+                "SpaCy package not found. Please install it with `pip install spacy`."
             )
         try:
             # Try to load the spaCy model

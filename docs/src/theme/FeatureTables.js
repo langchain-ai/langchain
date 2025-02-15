@@ -27,7 +27,6 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/anthropic/chat_models/langchain_anthropic.chat_models.ChatAnthropic.html"
-                
             },
             {
                 "name": "ChatMistralAI",
@@ -200,21 +199,21 @@ const FEATURE_TABLES = {
                 "link": "upstage",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false, 
+                "json_mode": false,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_upstage.chat_models.ChatUpstage.html"
             },
             {
                 "name": "ChatDatabricks",
-                "package": "langchain-databricks",
+                "package": "databricks-langchain",
                 "link": "databricks",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false, 
+                "json_mode": false,
                 "multimodal": false,
                 "local": false,
-                "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
+                "apiLink": "https://api-docs.databricks.com/python/databricks-ai-bridge/latest/databricks_langchain.html#databricks_langchain.ChatDatabricks"
             },
             {
                 "name": "ChatWatsonx",
@@ -222,7 +221,7 @@ const FEATURE_TABLES = {
                 "link": "ibm_watsonx",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": true, 
+                "json_mode": true,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
@@ -389,8 +388,8 @@ const FEATURE_TABLES = {
             {
                 name: "Databricks",
                 link: "databricks",
-                package: "langchain-databricks",
-                apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
+                package: "databricks-langchain",
+                apiLink: "https://api-docs.databricks.com/python/databricks-ai-bridge/latest/databricks_langchain.html#databricks_langchain.DatabricksEmbeddings"
             },
             {
                 name: "VoyageAI",
@@ -620,7 +619,6 @@ const FEATURE_TABLES = {
                 partnerPackage: false,
                 loaderName: "SharePointLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.sharepoint.SharePointLoader.html"
-                
             },
             {
                 name: "Tencent COS Directory",
@@ -754,7 +752,6 @@ const FEATURE_TABLES = {
                 link: "twitter",
                 loaderName: "TwitterTweetLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.twitter.TwitterTweetLoader.html"
-                
             },
             {
                 name: "Reddit",
@@ -1185,7 +1182,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: false,
                 idsInAddDocuments: false,
-            }, 
+            },
         ],
     }
 };
