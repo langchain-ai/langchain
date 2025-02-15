@@ -166,8 +166,8 @@ def test_callback_manager_configure_context_vars(
                             content="Hello",
                             type="ai",
                             usage_metadata=UsageMetadata(
+                                input_tokens=2,
                                 output_tokens=2,
-                                input_tokens=1,
                                 total_tokens=3,
                             ),
                         ),
@@ -180,14 +180,14 @@ def test_callback_manager_configure_context_vars(
                     mngr.on_llm_start(
                         {},
                         ["prompt"],
-                        {"invocation_params": {"model_id": "us.amazon.nova-lite-v1:0"}},
+                        invocation_params={"model_id": "us.amazon.nova-lite-v1:0"},
                     )[0].on_llm_end(response)
-
+                    assert cb.model_id == "us.amazon.nova-lite-v1:0"
                     assert cb.successful_requests == 2
-                    assert cb.total_tokens == 6
+                    assert cb.total_tokens == 7
                     assert cb.prompt_tokens == 4
-                    assert cb.completion_tokens == 2
+                    assert cb.completion_tokens == 3
                     assert cb.total_cost > previous_cost
 
             wait_for_all_tracers()
-            assert LangChainTracer._persist_run_single.call_count == 5  # type: ignore
+            assert LangChainTracer._persist_run_single.call_count == 6  # type: ignore
