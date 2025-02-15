@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.outputs import LLMResult
-from langchain_community.callbacks.bedrock_anthropic_callback import \
-    BedrockAnthropicTokenUsageCallbackHandler
+
+from langchain_community.callbacks.bedrock_anthropic_callback import (
+    BedrockAnthropicTokenUsageCallbackHandler,
+)
 
 MODEL_COST_PER_1K_INPUT_TOKENS = {
     "amazon.nova-micro-v1:0": 0.000035,
@@ -16,10 +18,10 @@ MODEL_COST_PER_1K_OUTPUT_TOKENS = {
     "amazon.nova-pro-v1:0": 0.0032,
 }
 
+
 def _get_token_cost(
-        prompt_tokens: int, 
-        completion_tokens: int, 
-        model_id: Union[str, None]) -> float:
+    prompt_tokens: int, completion_tokens: int, model_id: Union[str, None]
+) -> float:
     if model_id:
         # The model ID can be a cross-region (system-defined) inference profile ID,
         # which has a prefix indicating the region (e.g., 'us', 'eu') but
@@ -40,11 +42,12 @@ def _get_token_cost(
         completion_tokens / 1000
     ) * MODEL_COST_PER_1K_OUTPUT_TOKENS[base_model_id]
 
+
 class BedrockTokenUsageCallbackHandler(BedrockAnthropicTokenUsageCallbackHandler):
     """Generic Bedrock callback handler that supports multiple model providers."""
 
     model_id: Optional[str] = None
-    
+
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -71,19 +74,18 @@ class BedrockTokenUsageCallbackHandler(BedrockAnthropicTokenUsageCallbackHandler
                 usage_metadata = jsondata["kwargs"]["message"].usage_metadata
                 completion_tokens += usage_metadata["input_tokens"]
                 prompt_tokens += usage_metadata["output_tokens"]
-                total_tokens += \
+                total_tokens += (
                     usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
-        
+                )
+
         total_cost = _get_token_cost(
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             model_id=self.model_id,
         )
 
-        
-
         # update shared state behind lock
-        
+
         with self._lock:
             self.total_cost += total_cost
             self.total_tokens += total_tokens
@@ -98,4 +100,3 @@ class BedrockTokenUsageCallbackHandler(BedrockAnthropicTokenUsageCallbackHandler
     def __deepcopy__(self, memo: Any) -> "BedrockTokenUsageCallbackHandler":
         """Return a deep copy of the callback handler."""
         return self
-    

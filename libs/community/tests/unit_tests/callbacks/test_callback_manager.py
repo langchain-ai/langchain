@@ -3,7 +3,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata
@@ -11,7 +10,6 @@ from langchain_core.outputs import LLMResult
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
 from langchain_core.utils.pydantic import get_fields
-
 from langsmith import utils as ls_utils
 
 from langchain_community.callbacks import get_openai_callback
@@ -168,20 +166,22 @@ def test_callback_manager_configure_context_vars(
                             content="Hello",
                             type="ai",
                             usage_metadata=UsageMetadata(
-                                output_tokens=2,  # completion_tokensとして使用される
-                                input_tokens=1,   # prompt_tokensとして使用される
-                                total_tokens=3
-                            )
-                        )
+                                output_tokens=2,
+                                input_tokens=1,
+                                total_tokens=3,
+                            ),
+                        ),
                     )
 
                     response = LLMResult(
                         generations=[[sample_generation]],
                         llm_output=None,
                     )
-                    mngr.on_llm_start({}, ["prompt"], {
-                        "invocation_params": {"model_id":"us.amazon.nova-lite-v1:0"}
-                    })[0].on_llm_end(response)
+                    mngr.on_llm_start(
+                        {},
+                        ["prompt"],
+                        {"invocation_params": {"model_id": "us.amazon.nova-lite-v1:0"}},
+                    )[0].on_llm_end(response)
 
                     assert cb.successful_requests == 2
                     assert cb.total_tokens == 6

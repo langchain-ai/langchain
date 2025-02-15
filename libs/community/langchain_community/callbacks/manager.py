@@ -28,9 +28,9 @@ openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
 bedrock_anthropic_callback_var: (ContextVar)[
     Optional[BedrockAnthropicTokenUsageCallbackHandler]
 ] = ContextVar("bedrock_anthropic_callback", default=None)
-bedrock_callback_var: (ContextVar)[
-    Optional[BedrockTokenUsageCallbackHandler]
-] = ContextVar("bedrock_callback", default=None)
+bedrock_callback_var: (ContextVar)[Optional[BedrockTokenUsageCallbackHandler]] = (
+    ContextVar("bedrock_callback", default=None)
+)
 wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(
     "tracing_wandb_callback", default=None
 )
@@ -87,10 +87,9 @@ def get_bedrock_anthropic_callback() -> Generator[
     yield cb
     bedrock_anthropic_callback_var.set(None)
 
+
 @contextmanager
-def get_bedrock_callback() -> Generator[
-    BedrockTokenUsageCallbackHandler, None, None
-]:
+def get_bedrock_callback() -> Generator[BedrockTokenUsageCallbackHandler, None, None]:
     """Get the Bedrock callback handler in a context manager.
     which conveniently exposes token and cost information.
 
@@ -106,6 +105,7 @@ def get_bedrock_callback() -> Generator[
     bedrock_callback_var.set(cb)
     yield cb
     bedrock_callback_var.set(None)
+
 
 @contextmanager
 def wandb_tracing_enabled(
