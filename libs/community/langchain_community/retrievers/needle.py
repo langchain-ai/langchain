@@ -80,9 +80,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
             raise ValueError("NeedleClient is not initialized. Provide an API key.")
 
         results = self.client.collections.search(
-            collection_id=self.collection_id, 
-            text=query,
-            top_k=self.top_k
+            collection_id=self.collection_id, text=query, top_k=self.top_k
         )
         docs = [Document(page_content=result.content) for result in results]
         return docs
