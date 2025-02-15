@@ -13,6 +13,9 @@ from langchain_core.tracers.context import register_configure_hook
 from langchain_community.callbacks.bedrock_anthropic_callback import (
     BedrockAnthropicTokenUsageCallbackHandler,
 )
+from langchain_community.callbacks.bedrock_callback import (
+    BedrockTokenUsageCallbackHandler,
+)
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.callbacks.tracers.comet import CometTracer
 from langchain_community.callbacks.tracers.wandb import WandbTracer
@@ -25,6 +28,9 @@ openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
 bedrock_anthropic_callback_var: (ContextVar)[
     Optional[BedrockAnthropicTokenUsageCallbackHandler]
 ] = ContextVar("bedrock_anthropic_callback", default=None)
+bedrock_callback_var: (ContextVar)[
+    Optional[BedrockTokenUsageCallbackHandler]
+] = ContextVar("bedrock_callback", default=None)
 wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(
     "tracing_wandb_callback", default=None
 )
@@ -34,6 +40,7 @@ comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(
 
 register_configure_hook(openai_callback_var, True)
 register_configure_hook(bedrock_anthropic_callback_var, True)
+register_configure_hook(bedrock_callback_var, True)
 register_configure_hook(
     wandb_tracing_callback_var, True, WandbTracer, "LANGCHAIN_WANDB_TRACING"
 )
@@ -61,9 +68,9 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 
 @contextmanager
-def get_bedrock_anthropic_callback() -> Generator[
-    BedrockAnthropicTokenUsageCallbackHandler, None, None
-]:
+def get_bedrock_anthropic_callback() -> (
+    Generator[BedrockAnthropicTokenUsageCallbackHandler, None, None]
+):
     """Get the Bedrock anthropic callback handler in a context manager.
     which conveniently exposes token and cost information.
 
@@ -80,6 +87,25 @@ def get_bedrock_anthropic_callback() -> Generator[
     yield cb
     bedrock_anthropic_callback_var.set(None)
 
+@contextmanager
+def get_bedrock_callback() -> (
+    Generator[BedrockTokenUsageCallbackHandler, None, None]
+):
+    """Get the Bedrock callback handler in a context manager.
+    which conveniently exposes token and cost information.
+
+    Returns:
+        BedrockTokenUsageCallbackHandler:
+            The Bedrock  callback handler.
+
+    Example:
+        >>> with get_bedrock_callback() as cb:
+        ...     # Use the Bedrock callback handler
+    """
+    cb = BedrockTokenUsageCallbackHandler()
+    bedrock_callback_var.set(cb)
+    yield cb
+    bedrock_callback_var.set(None)
 
 @contextmanager
 def wandb_tracing_enabled(
