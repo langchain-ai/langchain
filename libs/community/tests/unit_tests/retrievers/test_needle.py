@@ -17,12 +17,14 @@ class MockNeedleClient:
         self.collections = self.MockCollections()
 
     class MockCollections:
-        def search(self, collection_id: str, text: str) -> list[MockSearchResult]:
-            return [
+        def search(
+            self, collection_id: str, text: str, top_k: int = 10
+        ) -> list[MockSearchResult]:
+            results = [
                 MockSearchResult(content=f"Result for query: {text}"),
                 MockSearchResult(content=f"Another result for query: {text}"),
             ]
-
+            return results[:top_k]
 
 @pytest.mark.requires("needle")
 def test_needle_retriever_initialization() -> None:
