@@ -23,7 +23,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
         - `needle_api_key` (Optional[str]): The API key for authenticating with Needle.
         - `collection_id` (str): The ID of the Needle collection to search in.
         - `client` (Optional[NeedleClient]): An optional instance of the NeedleClient.
-        - `top_k` (Optional[int]): Maximum number of results to return (default: 10).
+        - `top_k` (Optional[int]): Maximum number of results to return.
 
     Usage:
         .. code-block:: python
@@ -48,7 +48,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
         ..., description="The ID of the Needle collection to search in"
     )
     top_k: Optional[int] = Field(
-        default=10, description="Maximum number of search results to return"
+        default=None, description="Maximum number of search results to return"
     )
 
     def _initialize_client(self) -> None:
