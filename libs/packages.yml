@@ -429,6 +429,11 @@ packages:
   repo: langchain-ai/langchain
   downloads: 9521
   downloads_updated_at: '2025-02-13T23:35:48.490391+00:00'
+- name: langchain-salesforce
+  path: .
+  repo: colesmcintosh/langchain-salesforce
+  downloads: 0
+  downloads_updated_at: '2025-02-13T23:35:48.490391+00:00'
 - name: langchain-discord-shikenso
   path: .
   repo: Shikenso-Analytics/langchain-discord
