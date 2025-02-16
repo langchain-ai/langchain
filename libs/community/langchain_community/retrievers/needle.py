@@ -23,6 +23,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
         - `needle_api_key` (Optional[str]): The API key for authenticating with Needle.
         - `collection_id` (str): The ID of the Needle collection to search in.
         - `client` (Optional[NeedleClient]): An optional instance of the NeedleClient.
+        - `top_k` (Optional[int]): Maximum number of results to return.
 
     Usage:
         .. code-block:: python
@@ -31,7 +32,8 @@ class NeedleRetriever(BaseRetriever, BaseModel):
 
             retriever = NeedleRetriever(
                 needle_api_key="your-api-key",
-                collection_id="your-collection-id"
+                collection_id="your-collection-id",
+                top_k=10  # optional
             )
 
             results = retriever.retrieve("example query")
@@ -44,6 +46,9 @@ class NeedleRetriever(BaseRetriever, BaseModel):
     needle_api_key: Optional[str] = Field(None, description="Needle API Key")
     collection_id: Optional[str] = Field(
         ..., description="The ID of the Needle collection to search in"
+    )
+    top_k: Optional[int] = Field(
+        default=None, description="Maximum number of search results to return"
     )
 
     def _initialize_client(self) -> None:
@@ -75,7 +80,7 @@ class NeedleRetriever(BaseRetriever, BaseModel):
             raise ValueError("NeedleClient is not initialized. Provide an API key.")
 
         results = self.client.collections.search(
-            collection_id=self.collection_id, text=query
+            collection_id=self.collection_id, text=query, top_k=self.top_k
         )
         docs = [Document(page_content=result.content) for result in results]
         return docs
