@@ -424,15 +424,19 @@ OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":
 [DONE]"""  # noqa: E501
 
 
-@pytest.fixture
-def mock_openai_completion() -> List[Dict]:
-    list_chunk_data = OPENAI_STREAM_DATA.split("\n")
+def chunk_list_from_raw_data(raw_data: str) -> List[Dict]:
+    list_chunk_data = raw_data.split("\n")
     result_list = []
     for msg in list_chunk_data:
         if msg != "[DONE]":
             result_list.append(json.loads(msg))
 
     return result_list
+
+
+@pytest.fixture
+def mock_openai_completion() -> List[Dict]:
+    return chunk_list_from_raw_data(OPENAI_STREAM_DATA)
 
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
@@ -481,6 +485,61 @@ def test_openai_stream(mock_openai_completion: list) -> None:
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+OPENAI_STREAM_AUDIO_DATA = """{"id":"chatcmpl-B1X1Ke7hd1S09V9CZp4bykJO2HROX","object":"chat.completion.chunk","created":1739704958,"model":"gpt-4o-audio-preview-2024-12-17","service_tier":"default","system_fingerprint":"fp_31e26c9138","choices":[{"index":0,"delta":{"content":null,"audio":{"id":"audio_67b1ca7e2ee4819096b51ffa85964f54","transcript":"Yes"}},"finish_reason":null}]}
+{"id":"chatcmpl-B1X1Ke7hd1S09V9CZp4bykJO2HROX","object":"chat.completion.chunk","created":1739704958,"model":"gpt-4o-audio-preview-2024-12-17","service_tier":"default","system_fingerprint":"fp_31e26c9138","choices":[{"index":0,"delta":{"audio":{"transcript":"Audio"}},"finish_reason":null}]}
+{"id":"chatcmpl-B1X1Ke7hd1S09V9CZp4bykJO2HROX","object":"chat.completion.chunk","created":1739704958,"model":"gpt-4o-audio-preview-2024-12-17","service_tier":"default","system_fingerprint":"fp_31e26c9138","choices":[{"index":0,"delta":{"audio":{"transcript":"Transcript"}},"finish_reason":null}]}
+{"id":"chatcmpl-B1X1Ke7hd1S09V9CZp4bykJO2HROX","object":"chat.completion.chunk","created":1739704958,"model":"gpt-4o-audio-preview-2024-12-17","service_tier":"default","system_fingerprint":"fp_31e26c9138","choices":[{"index":0,"delta":{"audio":{"data":"Audio"}},"finish_reason":null}]}
+{"id":"chatcmpl-B1X1Ke7hd1S09V9CZp4bykJO2HROX","object":"chat.completion.chunk","created":1739704958,"model":"gpt-4o-audio-preview-2024-12-17","service_tier":"default","system_fingerprint":"fp_31e26c9138","choices":[{"index":0,"delta":{"audio":{"data":"Data"}},"finish_reason":null}]}
+{"id":"chatcmpl-B1X1Ke7hd1S09V9CZp4bykJO2HROX","object":"chat.completion.chunk","created":1739704958,"model":"gpt-4o-audio-preview-2024-12-17","service_tier":"default","system_fingerprint":"fp_31e26c9138","choices":[{"index":0,"delta":{"audio":{"expires_at":1739708563}}}]}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_openai_audio_completion() -> List[Dict]:
+    return chunk_list_from_raw_data(OPENAI_STREAM_AUDIO_DATA)
+
+
+async def test_openai_audio_astream(mock_openai_audio_completion: list) -> None:
+    llm_name = "gpt-4o-audio-preview"
+    expected_audio_content = list(
+        map(lambda x: x["choices"][0]["delta"]["audio"], mock_openai_audio_completion)
+    )
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_openai_audio_completion)
+
+    mock_client.create = mock_create
+
+    with patch.object(llm, "async_client", mock_client):
+        chunk_list = [chunk async for chunk in llm.astream("AudioData")]
+        for i, chunk in enumerate(chunk_list):
+            audio_kwargs = chunk.additional_kwargs["audio"]
+            assert audio_kwargs == expected_audio_content[i]
+
+
+def test_openai_audio_stream(mock_openai_audio_completion: list) -> None:
+    llm_name = "gpt-4o-audio-preview"
+    expected_audio_content = list(
+        map(lambda x: x["choices"][0]["delta"]["audio"], mock_openai_audio_completion)
+    )
+
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_openai_audio_completion)
+
+    mock_client.create = mock_create
+
+    with patch.object(llm, "client", mock_client):
+        chunk_list = [chunk for chunk in llm.stream("AudioData")]
+        for i, chunk in enumerate(chunk_list):
+            audio_kwargs = chunk.additional_kwargs["audio"]
+            assert audio_kwargs == expected_audio_content[i]
 
 
 @pytest.fixture
