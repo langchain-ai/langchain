@@ -1336,7 +1336,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
         """
         import pymupdf4llm
 
-        pymupdf4llm_params = {}
+        pymupdf4llm_params: dict[str, Any] = {}
         if self.extract_images:
             temp_dir = TemporaryDirectory()
             pymupdf4llm_params["write_images"] = True
