@@ -117,7 +117,7 @@ def test_structured_args() -> None:
 
 
 def test_misannotated_base_tool_raises_error() -> None:
-    """Test that a BaseTool with the incorrect typehint raises an exception.""" ""
+    """Test that a BaseTool with the incorrect typehint raises an exception."""
     with pytest.raises(SchemaAnnotationError):
 
         class _MisAnnotatedTool(BaseTool):
@@ -136,7 +136,7 @@ def test_misannotated_base_tool_raises_error() -> None:
 
 
 def test_forward_ref_annotated_base_tool_accepted() -> None:
-    """Test that a using forward ref annotation syntax is accepted.""" ""
+    """Test that a using forward ref annotation syntax is accepted."""
 
     class _ForwardRefAnnotatedTool(BaseTool):
         name: str = "structured_api"
@@ -1289,7 +1289,8 @@ def test_docstring_parsing() -> None:
 
 
 def test_tool_invalid_docstrings() -> None:
-    # Test invalid docstrings
+    """Test invalid docstrings"""
+
     def foo3(bar: str, baz: int) -> str:
         """The foo."""
         return bar
@@ -1504,7 +1505,7 @@ def test_convert_from_runnable_other() -> None:
 
 @tool("foo", parse_docstring=True)
 def injected_tool(x: int, y: Annotated[str, InjectedToolArg]) -> str:
-    """foo.
+    """Foo.
 
     Args:
         x: abc
@@ -1518,7 +1519,7 @@ class InjectedTool(BaseTool):
     description: str = "foo."
 
     def _run(self, x: int, y: Annotated[str, InjectedToolArg]) -> Any:
-        """foo.
+        """Foo.
 
         Args:
             x: abc
@@ -1554,7 +1555,7 @@ def injected_tool_with_schema(x: int, y: str) -> str:
 def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     assert _schema(tool_.get_input_schema()) == {
         "title": "foo",
-        "description": "foo.\n\nArgs:\n    x: abc\n    y: 123",
+        "description": "Foo.\n\nArgs:\n    x: abc\n    y: 123",
         "type": "object",
         "properties": {
             "x": {"title": "X", "type": "integer"},
@@ -1647,7 +1648,7 @@ def test_tool_injected_arg() -> None:
     tool_ = injected_tool
     assert _schema(tool_.get_input_schema()) == {
         "title": "foo",
-        "description": "foo.",
+        "description": "Foo.",
         "type": "object",
         "properties": {
             "x": {"description": "abc", "title": "X", "type": "integer"},
@@ -1657,7 +1658,7 @@ def test_tool_injected_arg() -> None:
     }
     assert _schema(tool_.tool_call_schema) == {
         "title": "foo",
-        "description": "foo.",
+        "description": "Foo.",
         "type": "object",
         "properties": {"x": {"description": "abc", "title": "X", "type": "integer"}},
         "required": ["x"],
@@ -1679,7 +1680,7 @@ def test_tool_injected_arg() -> None:
 
     assert convert_to_openai_function(tool_) == {
         "name": "foo",
-        "description": "foo.",
+        "description": "Foo.",
         "parameters": {
             "type": "object",
             "properties": {"x": {"type": "integer", "description": "abc"}},

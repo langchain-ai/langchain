@@ -119,6 +119,7 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
 
 @lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
+    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg."""
     return accepts_context(asyncio.create_task)
 
 
@@ -182,6 +183,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
     """Check if the first argument of a function is a dict."""
 
     def __init__(self) -> None:
+        """Create a IsFunctionArgDict visitor."""
         self.keys: set[str] = set()
 
     @override
@@ -234,6 +236,7 @@ class NonLocals(ast.NodeVisitor):
     """Get nonlocal variables accessed."""
 
     def __init__(self) -> None:
+        """Create a NonLocals visitor."""
         self.loads: set[str] = set()
         self.stores: set[str] = set()
 
@@ -291,6 +294,7 @@ class FunctionNonLocals(ast.NodeVisitor):
     """Get the nonlocal variables accessed of a function."""
 
     def __init__(self) -> None:
+        """Create a FunctionNonLocals visitor."""
         self.nonlocals: set[str] = set()
 
     @override
@@ -466,6 +470,11 @@ class AddableDict(dict[str, Any]):
     """Dictionary that can be added to another dictionary."""
 
     def __add__(self, other: AddableDict) -> AddableDict:
+        """Add a dictionary to this dictionary.
+
+        Args:
+            other: The other dictionary to add.
+        """
         chunk = AddableDict(self)
         for key in other:
             if key not in chunk or chunk[key] is None:
@@ -479,6 +488,11 @@ class AddableDict(dict[str, Any]):
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
+        """Add this dictionary to another dictionary.
+
+        Args:
+            other: The other dictionary to be added to.
+        """
         chunk = AddableDict(other)
         for key in self:
             if key not in chunk or chunk[key] is None:
@@ -499,7 +513,8 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     """Protocol for objects that support addition."""
 
-    def __add__(self, __x: _T_contra) -> _T_co: ...
+    def __add__(self, __x: _T_contra) -> _T_co:
+        """Add the object to another object."""
 
 
 Addable = TypeVar("Addable", bound=SupportsAdd[Any, Any])
@@ -553,6 +568,7 @@ class ConfigurableField(NamedTuple):
     annotation: Optional[Any] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, self.annotation))
 
@@ -577,6 +593,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: Optional[str] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), self.default))
 
@@ -601,6 +618,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: Optional[str] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 

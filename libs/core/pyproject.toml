@@ -77,7 +77,9 @@ target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TID", "TRY", "UP", "W", "YTT",]
+pydocstyle.convention = "google"
+pydocstyle.ignore-var-parameters = true
+select = [ "ASYNC", "B", "C4", "COM", "D", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TID", "TRY", "UP", "W", "YTT",]
 ignore = [ "COM812", "UP007", "S110", "S112",]
 
 [tool.coverage.run]
@@ -96,5 +98,5 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
-"tests/**" = [ "S",]
+"tests/**" = [ "D", "S",]
 "scripts/**" = [ "S",]
