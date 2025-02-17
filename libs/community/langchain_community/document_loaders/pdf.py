@@ -35,8 +35,8 @@ from langchain_community.document_loaders.parsers.pdf import (
     DocumentIntelligenceParser,
     PDFMinerParser,
     PDFPlumberParser,
-    PyMuPDFParser,
     PyMuPDF4LLMParser,
+    PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
 )
@@ -979,6 +979,7 @@ class PyMuPDF4LLMLoader(BasePDFLoader):
             table_strategy=table_strategy,
             ignore_code=ignore_code,
         )
+
     def _lazy_load(self, **kwargs: Any) -> Iterator[Document]:
         """Lazily parse a blob from a PDF document.
 

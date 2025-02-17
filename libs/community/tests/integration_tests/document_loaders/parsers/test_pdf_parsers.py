@@ -128,12 +128,15 @@ def test_mode_and_extract_images_variations(
     mode: str,
     image_parser: BaseImageBlobParser,
 ) -> None:
-    _test_matrix(parser_factory, {
-        **params,
-        "mode": mode,
-        "images_parser": image_parser,
-        "images_inner_format": "text",
-    })
+    _test_matrix(
+        parser_factory,
+        {
+            **params,
+            "mode": mode,
+            "images_parser": image_parser,
+            "images_inner_format": "text",
+        },
+    )
 
 
 @pytest.mark.parametrize(
@@ -154,12 +157,15 @@ def test_mode_and_extract_images_variations_2(
     extract_images: bool,
     image_parser: BaseImageBlobParser,
 ) -> None:
-    _test_matrix(parser_factory, {
-        **params,
-        "mode": mode,
-        "extract_images": extract_images,
-        "images_parser": image_parser,
-    })
+    _test_matrix(
+        parser_factory,
+        {
+            **params,
+            "mode": mode,
+            "extract_images": extract_images,
+            "images_parser": image_parser,
+        },
+    )
 
 
 @pytest.mark.parametrize(
@@ -185,12 +191,15 @@ def test_mode_and_image_formats_variations(
     mode = "single"
     image_parser = EmptyImageBlobParser()
 
-    _test_matrix(parser_factory, {
-        **params,
-        "mode": mode,
-        "images_parser": image_parser,
-        "images_inner_format": images_inner_format,
-    })
+    _test_matrix(
+        parser_factory,
+        {
+            **params,
+            "mode": mode,
+            "images_parser": image_parser,
+            "images_inner_format": images_inner_format,
+        },
+    )
 
 
 def _test_matrix(

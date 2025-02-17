@@ -29,8 +29,8 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.parsers.pdf import (
         PDFMinerParser,
         PDFPlumberParser,
-        PyMuPDFParser,
         PyMuPDF4LLMParser,
+        PyMuPDFParser,
         PyPDFium2Parser,
         PyPDFParser,
     )

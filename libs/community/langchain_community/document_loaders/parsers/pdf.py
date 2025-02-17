@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import html
 import io
-import re
 import logging
+import re
 import threading
 import warnings
 from datetime import datetime
@@ -1284,14 +1284,14 @@ class PyMuPDF4LLMParser(BaseBlobParser):
             An iterator over the parsed documents with PDF content.
         """
         try:
-            import pymupdf4llm
             import pymupdf
+            import pymupdf4llm
         except ImportError:
             raise ImportError(
                 "pymupdf4llm package not found, please install it "
                 "with `pip install pymupdf4llm`"
             )
-        
+
         with PyMuPDF4LLMParser._lock:
             with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
                 if blob.data is None:  # type: ignore[attr-defined]
@@ -1335,6 +1335,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
             str: The content of the page in markdown.
         """
         import pymupdf4llm
+
         pymupdf4llm_params = {}
         if self.extract_images:
             temp_dir = TemporaryDirectory()
@@ -1342,7 +1343,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
             pymupdf4llm_params["image_path"] = temp_dir.name
 
             def find_img_paths_in_md(md_text: str) -> list[str]:
-                md_img_pattern = r'!\[\]\((.*?)\)' # Regex pattern to match ![](%s)
+                md_img_pattern = r"!\[\]\((.*?)\)"  # Regex pattern to match ![](%s)
                 img_paths = re.findall(md_img_pattern, md_text)
                 return img_paths
 
@@ -1351,7 +1352,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
             doc,
             pages=[page],
             ignore_code=self.ignore_code,
-            graphics_limit=5000, # to deal with excess amounts of vector graphics
+            graphics_limit=5000,  # to deal with excess amounts of vector graphics
             table_strategy=self.table_strategy,
             show_progress=False,
             **pymupdf4llm_params,
