@@ -1358,7 +1358,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
             **pymupdf4llm_params,
         )
 
-        if self.extract_images:
+        if self.extract_images and self.images_parser:
             # Replace image paths in extracted markdown with
             # generated image text/descriptions using image parser
             img_paths = find_img_paths_in_md(page_content_md)
