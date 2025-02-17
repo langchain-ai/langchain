@@ -12,6 +12,7 @@ def test_parsers_public_api_correct() -> None:
         "PyPDFParser",
         "PDFMinerParser",
         "PyMuPDFParser",
+        "PyMuPDF4LLMParser",
         "PyPDFium2Parser",
         "PDFPlumberParser",
     }
