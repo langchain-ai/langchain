@@ -130,7 +130,7 @@ class RankLLMRerank(BaseDocumentCompressor):
         )
 
         final_results = []
-        if hasattr(rerank_results, 'candidates'):
+        if hasattr(rerank_results, "candidates"):
             # Old API format
             for res in rerank_results.candidates:
                 doc = documents[int(res.docid)]
