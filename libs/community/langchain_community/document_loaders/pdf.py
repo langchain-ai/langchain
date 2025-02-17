@@ -952,11 +952,13 @@ class PyMuPDF4LLMLoader(BasePDFLoader):
                 some documents.
                 "text" is the least strict strategy and may work better
                 with documents that do not have tables with lines.
-            ignore_code: if True then mono-spaced text will not be parsed as code blocks.
+            ignore_code: if True then mono-spaced text will not be parsed as
+                code blocks.
 
         Returns:
             This method does not directly return data. Use the `load`, `lazy_load`, or
-            `aload` methods to retrieve parsed documents with markdown content and metadata.
+            `aload` methods to retrieve parsed documents with markdown content and
+            metadata.
 
         Raises:
             ValueError: If the `mode` argument is not one of "single" or "page".
@@ -992,7 +994,8 @@ class PyMuPDF4LLMLoader(BasePDFLoader):
         if kwargs:
             logger.warning(
                 f"Received runtime arguments {kwargs}. Passed runtime args to `load`"
-                f" are completely ignored. Please pass arguments during initialization instead."
+                " are completely ignored."
+                " Please pass arguments during initialization instead."
             )
         if self.web_path:
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]

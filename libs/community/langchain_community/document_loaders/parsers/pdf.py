@@ -40,7 +40,6 @@ from langchain_community.document_loaders.parsers.images import (
 if TYPE_CHECKING:
     import pdfplumber
     import pymupdf
-    import pymupdf4llm
     import pypdf
     import pypdfium2
     from textractor.data.text_linearization_config import TextLinearizationConfig
@@ -1245,7 +1244,8 @@ class PyMuPDF4LLMParser(BaseBlobParser):
                 some documents.
                 "text" is the least strict strategy and may work better
                 with documents that do not have tables with lines.
-            ignore_code: if True then mono-spaced text will not be parsed as code blocks.
+            ignore_code: if True then mono-spaced text will not be parsed as
+                code blocks.
 
         Returns:
             This method does not directly return data. Use the `parse` or `lazy_parse`
@@ -1285,7 +1285,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
         """
         try:
             import pymupdf
-            import pymupdf4llm
+            import pymupdf4llm  # noqa  # pylint: disable=unused-import
         except ImportError:
             raise ImportError(
                 "pymupdf4llm package not found, please install it "
