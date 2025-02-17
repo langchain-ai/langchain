@@ -40,6 +40,7 @@ huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
+xai = ["langchain-xai"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
