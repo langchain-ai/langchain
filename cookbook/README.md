@@ -17,4 +17,5 @@
 | [gigachat_phone_agent](/cookbook/gigachat_phone_agent.ipynb)                     | Агент «Продавец телефонов», который общается с пользователем, работает с базой товаров и оформляет заказы                            |
 | [gigachat_qa](/cookbook/gigachat_qa.ipynb)                                       | Демонстрация методики RAG, на примере ответов на вопросы по данной книге                                                             |
 | [playlists](/cookbook/playlists.ipynb)                                           | Составление плейлистов Spotify с помощью GigaChat API. **Пример дорабатывается**                                                     |
+| [reporter](/cookbook/reporter/README.md)
 
