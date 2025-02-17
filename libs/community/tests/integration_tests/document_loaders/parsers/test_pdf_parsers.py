@@ -128,13 +128,38 @@ def test_mode_and_extract_images_variations(
     mode: str,
     image_parser: BaseImageBlobParser,
 ) -> None:
-    _test_matrix(
-        parser_factory,
-        params,
-        mode,
-        image_parser,
-        images_inner_format="text",
-    )
+    _test_matrix(parser_factory, {
+        **params,
+        "mode": mode,
+        "images_parser": image_parser,
+        "images_inner_format": "text",
+    })
+
+
+@pytest.mark.parametrize(
+    "mode,extract_images,image_parser",
+    [("single", True, EmptyImageBlobParser()), ("page", False, None)],
+)
+@pytest.mark.parametrize(
+    "parser_factory,params",
+    [
+        ("PyMuPDF4LLMParser", {}),
+    ],
+)
+@pytest.mark.requires("pillow")
+def test_mode_and_extract_images_variations_2(
+    parser_factory: str,
+    params: dict,
+    mode: str,
+    extract_images: bool,
+    image_parser: BaseImageBlobParser,
+) -> None:
+    _test_matrix(parser_factory, {
+        **params,
+        "mode": mode,
+        "extract_images": extract_images,
+        "images_parser": image_parser,
+    })
 
 
 @pytest.mark.parametrize(
@@ -160,26 +185,22 @@ def test_mode_and_image_formats_variations(
     mode = "single"
     image_parser = EmptyImageBlobParser()
 
-    _test_matrix(
-        parser_factory,
-        params,
-        mode,
-        image_parser,
-        images_inner_format,
-    )
+    _test_matrix(parser_factory, {
+        **params,
+        "mode": mode,
+        "images_parser": image_parser,
+        "images_inner_format": images_inner_format,
+    })
 
 
 def _test_matrix(
     parser_factory: str,
     params: dict,
-    mode: str,
-    image_parser: BaseImageBlobParser,
-    images_inner_format: str,
 ) -> None:
     """Apply the same test for all *standard* PDF parsers.
 
-    - Try with mode `single` and `page`
-    - Try with image_parser `None` or others
+    - Try with `params["mode"]` = `single` and `page`
+    - Try with `params["image_parser"]` = `None` or others
     """
 
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
@@ -224,13 +245,8 @@ def _test_matrix(
 
     parser_class = getattr(pdf_parsers, parser_factory)
 
-    parser = parser_class(
-        mode=mode,
-        images_parser=image_parser,
-        images_inner_format=images_inner_format,
-        **params,
-    )
-    _assert_with_parser(parser, splits_by_page=(mode == "page"))
+    parser = parser_class(**params)
+    _assert_with_parser(parser, splits_by_page=(params["mode"] == "page"))
     _std_assert_with_parser(parser)
 
 
