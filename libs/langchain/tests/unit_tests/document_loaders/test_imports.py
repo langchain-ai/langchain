@@ -110,6 +110,7 @@ EXPECTED_ALL = [
     "PsychicLoader",
     "PubMedLoader",
     "PyMuPDFLoader",
+    "PyMuPDF4LLMLoader",
     "PyPDFDirectoryLoader",
     "PyPDFLoader",
     "PyPDFium2Loader",
