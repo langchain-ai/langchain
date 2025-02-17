@@ -166,10 +166,11 @@ def test_amazontextract_loader_failures() -> None:
 @pytest.mark.parametrize(
     "parser_factory,params",
     [
-        ("PDFMinerLoader", {}),
-        ("PyMuPDFLoader", {}),
-        ("PyPDFium2Loader", {}),
-        ("PyPDFLoader", {}),
+        ("PDFMinerLoader", {"images_inner_format": "text"}),
+        ("PyMuPDFLoader", {"images_inner_format": "text"}),
+        ("PyMuPDF4LLMLoader", {}),
+        ("PyPDFium2Loader", {"images_inner_format": "text"}),
+        ("PyPDFLoader", {"images_inner_format": "text"}),
     ],
 )
 def test_standard_parameters(
@@ -189,8 +190,8 @@ def test_standard_parameters(
         mode="page",
         pages_delimiter="---",
         images_parser=None,
-        images_inner_format="text",
         password=None,
+        **params,
     )
     docs = loader.load()
     assert len(docs) == 16
