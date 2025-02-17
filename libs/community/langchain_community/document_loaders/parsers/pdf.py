@@ -1285,6 +1285,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
         """
         try:
             import pymupdf4llm
+            import pymupdf
         except ImportError:
             raise ImportError(
                 "pymupdf4llm package not found, please install it "
@@ -1302,7 +1303,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
                 doc_metadata = self._extract_metadata(doc, blob)
                 full_content_md = []
                 for page in doc:
-                    all_text_md = self._get_page_content_in_md(doc, page).strip()
+                    all_text_md = self._get_page_content_in_md(doc, page.number).strip()
                     if self.mode == "page":
                         yield Document(
                             page_content=all_text_md,
@@ -1333,6 +1334,7 @@ class PyMuPDF4LLMParser(BaseBlobParser):
         Returns:
             str: The content of the page in markdown.
         """
+        import pymupdf4llm
         pymupdf4llm_params = {}
         if self.extract_images:
             temp_dir = TemporaryDirectory()
