@@ -473,6 +473,7 @@ _SUPPORTED_PROVIDERS = {
     "google_anthropic_vertex",
     "deepseek",
     "ibm",
+    "xai",
 }
 
 
