@@ -236,7 +236,10 @@ def _create_message_from_message_type(
     if tool_call_id is not None:
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
+        if response_metadata := additional_kwargs.pop("response_metadata", None):
+            kwargs["response_metadata"] = response_metadata
         kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+        additional_kwargs.update(additional_kwargs.pop("additional_kwargs", {}))
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
@@ -258,8 +261,12 @@ def _create_message_from_message_type(
             else:
                 kwargs["tool_calls"].append(tool_call)
     if message_type in ("human", "user"):
+        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+            kwargs["example"] = example
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
+        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+            kwargs["example"] = example
         message = AIMessage(content=content, **kwargs)
     elif message_type in ("system", "developer"):
         if message_type == "developer":

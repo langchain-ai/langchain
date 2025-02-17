@@ -25,7 +25,7 @@ def test_extract_paragraphs() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = markdownify.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# Header\n\n" "First paragraph.\n\n" "Second paragraph.\n\n" "# Ignore at end"
+        "# Header\n\nFirst paragraph.\n\nSecond paragraph.\n\n# Ignore at end"
     )
 
 
@@ -115,10 +115,7 @@ def test_convert_tags() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = markdownify.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Header "
-        "1st paragraph.\n\n "
-        "2nd paragraph. Here is link\n\n "
-        "Ignore at end"
+        "Header 1st paragraph.\n\n 2nd paragraph. Here is link\n\n Ignore at end"
     )
 
 
@@ -161,7 +158,7 @@ async def test_extract_paragraphs_async() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = await markdownify.atransform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# Header\n\n" "First paragraph.\n\n" "Second paragraph.\n\n" "# Ignore at end"
+        "# Header\n\nFirst paragraph.\n\nSecond paragraph.\n\n# Ignore at end"
     )
 
 
@@ -251,10 +248,7 @@ async def test_convert_tags_async() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = await markdownify.atransform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "Header "
-        "1st paragraph.\n\n "
-        "2nd paragraph. Here is link\n\n "
-        "Ignore at end"
+        "Header 1st paragraph.\n\n 2nd paragraph. Here is link\n\n Ignore at end"
     )
 
 

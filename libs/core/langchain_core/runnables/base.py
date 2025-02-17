@@ -71,6 +71,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
     asyncio_accepts_context,
+    gated_coro,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
     get_function_nonlocals,
@@ -952,8 +953,11 @@ class Runnable(Generic[Input, Output], ABC):
             return
 
         configs = get_config_list(config, len(inputs))
+        # Get max_concurrency from first config, defaulting to None (unlimited)
+        max_concurrency = configs[0].get("max_concurrency") if configs else None
+        semaphore = asyncio.Semaphore(max_concurrency) if max_concurrency else None
 
-        async def ainvoke(
+        async def ainvoke_task(
             i: int, input: Input, config: RunnableConfig
         ) -> tuple[int, Union[Output, Exception]]:
             if return_exceptions:
@@ -965,10 +969,14 @@ class Runnable(Generic[Input, Output], ABC):
                     out = e
             else:
                 out = await self.ainvoke(input, config, **kwargs)
-
             return (i, out)
 
-        coros = map(ainvoke, range(len(inputs)), inputs, configs)
+        coros = [
+            gated_coro(semaphore, ainvoke_task(i, input, config))
+            if semaphore
+            else ainvoke_task(i, input, config)
+            for i, (input, config) in enumerate(zip(inputs, configs))
+        ]
 
         for coro in asyncio.as_completed(coros):
             yield await coro

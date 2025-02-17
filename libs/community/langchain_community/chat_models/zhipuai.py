@@ -121,7 +121,7 @@ def _get_jwt_token(api_key: str) -> str:
         import jwt
     except ImportError:
         raise ImportError(
-            "jwt package not found, please install it with" "`pip install pyjwt`"
+            "jwt package not found, please install it with`pip install pyjwt`"
         )
 
     try:

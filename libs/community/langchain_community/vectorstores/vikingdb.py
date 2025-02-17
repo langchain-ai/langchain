@@ -131,8 +131,7 @@ class VikingDB(VectorStore):
                     fields.append(Field(key, FieldType.Text))
                 else:
                     raise ValueError(
-                        "metadatas value is invalid"
-                        "please change the type of metadatas."
+                        "metadatas value is invalidplease change the type of metadatas."
                     )
         # fields.append(Field("text", FieldType.String))
         fields.append(Field("text", FieldType.Text))

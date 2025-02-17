@@ -65,7 +65,7 @@ class MWDumpLoader(BaseLoader):
             import mwxml
         except ImportError as e:
             raise ImportError(
-                "Unable to import 'mwxml'. Please install with" " `pip install mwxml`."
+                "Unable to import 'mwxml'. Please install with `pip install mwxml`."
             ) from e
 
         return mwxml.Dump.from_file(open(self.file_path, encoding=self.encoding))

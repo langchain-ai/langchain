@@ -69,8 +69,7 @@ def _load_transformer(
             model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
         else:
             raise ValueError(
-                f"Got invalid task {task}, "
-                f"currently only {VALID_TASKS} are supported"
+                f"Got invalid task {task}, currently only {VALID_TASKS} are supported"
             )
     except ImportError as e:
         raise ImportError(

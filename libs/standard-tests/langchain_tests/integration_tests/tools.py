@@ -29,15 +29,10 @@ class ToolsIntegrationTests(ToolsTests):
         )
         result = tool.invoke(tool_call)
 
-        if tool.response_format == "content":
-            tool_message = result
-        elif tool.response_format == "content_and_artifact":
-            # should be (content, artifact)
-            assert isinstance(result, tuple)
-            assert len(result) == 2
-            tool_message, artifact = result
-
-            assert artifact  # artifact can be anything, but shouldn't be none
+        tool_message = result
+        if tool.response_format == "content_and_artifact":
+            # artifact can be anything, except none
+            assert tool_message.artifact is not None
 
         # check content is a valid ToolMessage content
         assert isinstance(tool_message.content, (str, list))
@@ -59,15 +54,10 @@ class ToolsIntegrationTests(ToolsTests):
         )
         result = await tool.ainvoke(tool_call)
 
-        if tool.response_format == "content":
-            tool_message = result
-        elif tool.response_format == "content_and_artifact":
-            # should be (content, artifact)
-            assert isinstance(result, tuple)
-            assert len(result) == 2
-            tool_message, artifact = result
-
-            assert artifact  # artifact can be anything, but shouldn't be none
+        tool_message = result
+        if tool.response_format == "content_and_artifact":
+            # artifact can be anything, except none
+            assert tool_message.artifact is not None
 
         # check content is a valid ToolMessage content
         assert isinstance(tool_message.content, (str, list))

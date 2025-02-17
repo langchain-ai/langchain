@@ -195,7 +195,13 @@ class Outlines(LLM):
             self.client = models.transformers(self.model, **self.model_kwargs)
         elif self.backend == "transformers_vision":
             check_packages_installed(
-                ["transformers", "datasets", "torchvision", "PIL", "flash_attn"]
+                [
+                    "transformers",
+                    "datasets",
+                    "torchvision",
+                    "PIL",
+                    "flash_attn",
+                ]
             )
             from transformers import LlavaNextForConditionalGeneration
 

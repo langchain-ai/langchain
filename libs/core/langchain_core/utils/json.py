@@ -94,6 +94,8 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # If we're still inside a string at the end of processing,
     # we need to close the string.
     if is_inside_string:
+        if escaped:  # Remoe unterminated escape character
+            new_chars.pop()
         new_chars.append('"')
 
     # Reverse the stack to get the closing characters.

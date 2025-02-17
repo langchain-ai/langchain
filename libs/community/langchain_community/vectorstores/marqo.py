@@ -269,7 +269,10 @@ class Marqo(VectorStore):
 
             metadata = json.loads(res.get("metadata", "{}"))
             documents.append(
-                (Document(page_content=text, metadata=metadata), res["_score"])
+                (
+                    Document(page_content=text, metadata=metadata),
+                    res["_score"],
+                )
             )
         return documents
 
