@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import io
+import re
 import logging
 import threading
 import warnings
@@ -39,6 +40,7 @@ from langchain_community.document_loaders.parsers.images import (
 if TYPE_CHECKING:
     import pdfplumber
     import pymupdf
+    import pymupdf4llm
     import pypdf
     import pypdfium2
     from textractor.data.text_linearization_config import TextLinearizationConfig
@@ -1155,6 +1157,248 @@ class PyMuPDFParser(BaseBlobParser):
                     f"extract_tables {self.extract_tables} not implemented"
                 )
         return ""
+
+
+class PyMuPDF4LLMParser(BaseBlobParser):
+    """Parse a blob from a PDF using `PyMuPDF4LLM` library.
+
+    This class provides methods to parse a blob from a PDF document to
+    extract the content in markdown, supporting various
+    configurations such as handling password-protected PDFs,
+    extracting images in form of text,
+    defining table extraction strategy and content extraction mode.
+    It integrates the 'PyMuPDF4LLM' library to extract PDF content in markdown format,
+    and offers synchronous blob parsing.
+
+    Examples:
+        Setup:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community pymupdf4llm
+
+        Load a blob from a PDF file:
+
+        .. code-block:: python
+
+            from langchain_core.documents.base import Blob
+
+            blob = Blob.from_path("./example_data/layout-parser-paper.pdf")
+
+        Instantiate the parser:
+
+        .. code-block:: python
+
+            from langchain_community.document_loaders.parsers import PyMuPDF4LLMParser
+
+            parser = PyMuPDF4LLMParser(
+                # password = None,
+                mode = "single",
+                pages_delimiter = "\n\f",
+                # images_parser = TesseractBlobParser(),
+                # table_strategy = "lines",
+            )
+
+        Lazily parse the blob:
+
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = parser.lazy_parse(blob)
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    """
+
+    # PyMuPDF is not thread safe.
+    # See https://pymupdf.readthedocs.io/en/latest/recipes-multiprocessing.html
+    _lock = threading.Lock()
+
+    def __init__(
+        self,
+        extract_images: bool = False,
+        *,
+        password: Optional[str] = None,
+        mode: Literal["single", "page"] = "page",
+        pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
+        images_parser: Optional[BaseImageBlobParser] = None,
+        table_strategy: Literal["lines_strict", "lines", "text"] = "lines_strict",
+        ignore_code: bool = False,
+    ) -> None:
+        """Initialize a parser to extract PDF content in markdown using PyMuPDF4LLM.
+
+        Args:
+            password: Optional password for opening encrypted PDFs.
+            mode: The extraction mode, either "single" for the entire document or "page"
+                for page-wise extraction.
+            pages_delimiter: A string delimiter to separate pages in single-mode
+                extraction.
+            extract_images: Whether to extract images from the PDF.
+            images_parser: Optional image blob parser.
+            table_strategy: The table extraction strategy to use. Options are
+                "lines_strict", "lines", or "text". "lines_strict" is the default
+                strategy and is the most accurate for tables with column and row lines,
+                but may not work well with all documents.
+                "lines" is a less strict strategy that may work better with
+                some documents.
+                "text" is the least strict strategy and may work better
+                with documents that do not have tables with lines.
+            ignore_code: if True then mono-spaced text will not be parsed as code blocks.
+
+        Returns:
+            This method does not directly return data. Use the `parse` or `lazy_parse`
+            methods to retrieve parsed documents with content and metadata.
+
+        Raises:
+            ValueError: If the mode is not "single" or "page".
+            ValueError: If the table strategy is not "lines_strict", "lines", or "text".
+        """
+        super().__init__()
+        if mode not in ["single", "page"]:
+            raise ValueError("mode must be single or page")
+        if table_strategy not in ["lines_strict", "lines", "text"]:
+            raise ValueError("table_strategy must be lines_strict, lines or text")
+
+        self.mode = mode
+        self.pages_delimiter = pages_delimiter
+        self.password = password
+        if extract_images and not images_parser:
+            images_parser = RapidOCRBlobParser()
+        self.extract_images = extract_images
+        self.images_parser = images_parser
+        self.table_strategy = table_strategy
+        self.ignore_code = ignore_code
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
+        """Lazily parse a blob from a PDF document.
+
+        Args:
+            blob: The blob from a PDF document to parse.
+
+        Raises:
+            ImportError: If the `pymupdf4llm` package is not found.
+
+        Yield:
+            An iterator over the parsed documents with PDF content.
+        """
+        try:
+            import pymupdf4llm
+        except ImportError:
+            raise ImportError(
+                "pymupdf4llm package not found, please install it "
+                "with `pip install pymupdf4llm`"
+            )
+        
+        with PyMuPDF4LLMParser._lock:
+            with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
+                if blob.data is None:  # type: ignore[attr-defined]
+                    doc = pymupdf.open(file_path)
+                else:
+                    doc = pymupdf.open(stream=file_path, filetype="pdf")
+                if doc.is_encrypted:
+                    doc.authenticate(self.password)
+                doc_metadata = self._extract_metadata(doc, blob)
+                full_content_md = []
+                for page in doc:
+                    all_text_md = self._get_page_content_in_md(doc, page).strip()
+                    if self.mode == "page":
+                        yield Document(
+                            page_content=all_text_md,
+                            metadata=_validate_metadata(
+                                doc_metadata | {"page": page.number}
+                            ),
+                        )
+                    else:
+                        full_content_md.append(all_text_md)
+
+                if self.mode == "single":
+                    yield Document(
+                        page_content=self.pages_delimiter.join(full_content_md),
+                        metadata=_validate_metadata(doc_metadata),
+                    )
+
+    def _get_page_content_in_md(
+        self,
+        doc: pymupdf.Document,
+        page: int,
+    ) -> str:
+        """Get the content of the page in markdown using PyMuPDF4LLM and RapidOCR.
+
+        Args:
+            doc: The PyMuPDF document object.
+            page: The page index.
+
+        Returns:
+            str: The content of the page in markdown.
+        """
+        pymupdf4llm_params = {}
+        if self.extract_images:
+            temp_dir = TemporaryDirectory()
+            pymupdf4llm_params["write_images"] = True
+            pymupdf4llm_params["image_path"] = temp_dir.name
+
+            def find_img_paths_in_md(md_text: str) -> list[str]:
+                md_img_pattern = r'!\[\]\((.*?)\)' # Regex pattern to match ![](%s)
+                img_paths = re.findall(md_img_pattern, md_text)
+                return img_paths
+
+        # Extract the content of the page in markdown format using PyMuPDF4LLM
+        page_content_md = pymupdf4llm.to_markdown(
+            doc,
+            pages=[page],
+            ignore_code=self.ignore_code,
+            graphics_limit=5000, # to deal with excess amounts of vector graphics
+            table_strategy=self.table_strategy,
+            show_progress=False,
+            **pymupdf4llm_params,
+        )
+
+        if self.extract_images:
+            # Replace image paths in extracted markdown with
+            # generated image text/descriptions using image parser
+            img_paths = find_img_paths_in_md(page_content_md)
+            for img_path in img_paths:
+                blob = Blob.from_path(img_path)
+                image_text = next(self.images_parser.lazy_parse(blob)).page_content
+                image_text = image_text.replace("]", r"\\]")
+                img_md = f"![{image_text}](#)"
+                page_content_md = page_content_md.replace(f"![]({img_path})", img_md)
+
+        return page_content_md
+
+    def _extract_metadata(self, doc: pymupdf.Document, blob: Blob) -> dict:
+        """Extract metadata from the PDF document.
+
+        Args:
+            doc: The PyMuPDF document object.
+            blob: The blob being parsed.
+
+        Returns:
+            dict: The extracted metadata from the PDF.
+        """
+        metadata = _purge_metadata(
+            {
+                **{
+                    "producer": "PyMuPDF4LLM",
+                    "creator": "PyMuPDF4LLM",
+                    "creationdate": "",
+                    "source": blob.source,  # type: ignore[attr-defined]
+                    "file_path": blob.source,  # type: ignore[attr-defined]
+                    "total_pages": len(doc),
+                },
+                **{
+                    k: doc.metadata[k]
+                    for k in doc.metadata
+                    if isinstance(doc.metadata[k], (str, int))
+                },
+            }
+        )
+        for k in ("modDate", "creationDate"):
+            if k in doc.metadata:
+                metadata[k] = doc.metadata[k]
+        return metadata
 
 
 class PyPDFium2Parser(BaseBlobParser):

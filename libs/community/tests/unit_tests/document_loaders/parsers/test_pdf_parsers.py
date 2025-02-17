@@ -76,6 +76,7 @@ def _assert_with_parser(parser: BaseBlobParser, *, splits_by_page: bool = True) 
     [
         ("PDFMinerParser", "pdfminer", {"splits_by_page": False}),
         ("PyMuPDFParser", "pymupdf", {}),
+        ("PyMuPDF4LLMParser", "pymupdf4llm", {}),
         ("PyPDFParser", "pypdf", {}),
         ("PyPDFium2Parser", "pypdfium2", {}),
     ],
