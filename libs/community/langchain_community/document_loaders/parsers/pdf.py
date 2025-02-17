@@ -1102,7 +1102,7 @@ class PyMuPDFParser(BaseBlobParser):
                 blob = Blob.from_data(
                     image_bytes.getvalue(), mime_type="application/x-npy"
                 )
-                image_text = next(self.images_parser.lazy_parse(blob)).page_content
+                image_text = next(self.images_parser.lazy_parse(blob)).page_content  # type: ignore[union-attr]
 
                 images.append(
                     _format_inner_image(blob, image_text, self.images_inner_format)
