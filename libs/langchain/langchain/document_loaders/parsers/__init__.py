@@ -14,6 +14,7 @@ if TYPE_CHECKING:
         PDFMinerParser,
         PDFPlumberParser,
         PyMuPDFParser,
+        PyMuPDF4LLMParser,
         PyPDFium2Parser,
         PyPDFParser,
     )
@@ -32,6 +33,7 @@ DEPRECATED_LOOKUP = {
     "PDFMinerParser": "langchain_community.document_loaders.parsers.pdf",
     "PDFPlumberParser": "langchain_community.document_loaders.parsers.pdf",
     "PyMuPDFParser": "langchain_community.document_loaders.parsers.pdf",
+    "PyMuPDF4LLMParser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFium2Parser": "langchain_community.document_loaders.parsers.pdf",
     "PyPDFParser": "langchain_community.document_loaders.parsers.pdf",
 }
@@ -53,6 +55,7 @@ __all__ = [
     "PDFMinerParser",
     "PDFPlumberParser",
     "PyMuPDFParser",
+    "PyMuPDF4LLMParser",
     "PyPDFium2Parser",
     "PyPDFParser",
 ]
