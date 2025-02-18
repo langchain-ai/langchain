@@ -1085,3 +1085,9 @@ def test_message_text() -> None:
     )  # missing type: text
     assert AIMessage(content=[{"type": "nottext", "text": "hi"}]).text() == ""
     assert AIMessage(content=[]).text() == ""
+    assert (
+        AIMessage(
+            content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
+        ).text()
+        == ""
+    )
