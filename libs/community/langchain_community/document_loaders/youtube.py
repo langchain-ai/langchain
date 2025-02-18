@@ -392,11 +392,11 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_channel_or_videoIds_is_set(cls, values: Dict[str, Any]) -> Any:
+    def validate_channel_or_videoIds_is_set(cls, values: Any) -> Any:
         """Validate that either folder_id or document_ids is set, but not both."""
-        if not values.get("channel_name") and not values.get("video_ids"):
+        if not values.kwargs.get("channel_name") and not values.kwargs.get("video_ids"):
             raise ValueError("Must specify either channel_name or video_ids")
-        return values
+        return values.kwargs
 
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
         from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi

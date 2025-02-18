@@ -1,9 +1,10 @@
 """DeepSeek chat models."""
 
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Type, Union
 
 import openai
-from langchain_core.outputs import ChatResult
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
@@ -218,3 +219,23 @@ class ChatDeepSeek(BaseChatOpenAI):
             )
 
         return rtn
+
+    def _convert_chunk_to_generation_chunk(
+        self,
+        chunk: dict,
+        default_chunk_class: Type,
+        base_generation_info: Optional[Dict],
+    ) -> Optional[ChatGenerationChunk]:
+        generation_chunk = super()._convert_chunk_to_generation_chunk(
+            chunk,
+            default_chunk_class,
+            base_generation_info,
+        )
+        if (choices := chunk.get("choices")) and generation_chunk:
+            top = choices[0]
+            if reasoning_content := top.get("delta", {}).get("reasoning_content"):
+                if isinstance(generation_chunk.message, AIMessageChunk):
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning_content
+                    )
+        return generation_chunk

@@ -4,12 +4,9 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
-dependencies = [
-    "langchain-core<1.0.0,>=0.3.15",
-    "pyyaml<7.0.0,>=6.0.1",
-]
+dependencies = ["langchain-core<1.0.0,>=0.3.15", "pyyaml<7.0.0,>=6.0.1"]
 name = "langchain-prompty"
 version = "0.1.1"
 description = "An integration package connecting Prompty and LangChain"
@@ -28,38 +25,40 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1.0.0,>=0.21.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-    "langchain @ file:///${PROJECT_ROOT}/../../langchain",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../../text-splitters",
+    "langchain-core",
+    "langchain",
+    "langchain-text-splitters",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = [
-    "ruff<1.0.0,>=0.1.5",
-]
-dev = [
-    "types-pyyaml<7.0.0.0,>=6.0.12.20240311",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
+lint = ["ruff<1.0.0,>=0.1.5"]
+dev = ["types-pyyaml<7.0.0.0,>=6.0.12.20240311", "langchain-core"]
 typing = [
     "mypy<1.0,>=0.991",
     "types-pyyaml<7.0.0.0,>=6.0.12.20240311",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
+    "langchain-core",
 ]
 
 
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-text-splitters = { path = "../../text-splitters", editable = true }
+langchain = { path = "../../langchain", editable = true }
+
+
 [tool.ruff]
-select = [ "E", "F", "I",]
+select = ["E", "F", "I"]
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"

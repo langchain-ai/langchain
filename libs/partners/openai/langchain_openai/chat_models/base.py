@@ -316,57 +316,6 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content, id=id_)  # type: ignore
 
 
-def _convert_chunk_to_generation_chunk(
-    chunk: dict, default_chunk_class: Type, base_generation_info: Optional[Dict]
-) -> Optional[ChatGenerationChunk]:
-    if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
-        return None
-    token_usage = chunk.get("usage")
-    choices = (
-        chunk.get("choices", [])
-        # from beta.chat.completions.stream
-        or chunk.get("chunk", {}).get("choices", [])
-    )
-
-    usage_metadata: Optional[UsageMetadata] = (
-        _create_usage_metadata(token_usage) if token_usage else None
-    )
-    if len(choices) == 0:
-        # logprobs is implicitly None
-        generation_chunk = ChatGenerationChunk(
-            message=default_chunk_class(content="", usage_metadata=usage_metadata)
-        )
-        return generation_chunk
-
-    choice = choices[0]
-    if choice["delta"] is None:
-        return None
-
-    message_chunk = _convert_delta_to_message_chunk(
-        choice["delta"], default_chunk_class
-    )
-    generation_info = {**base_generation_info} if base_generation_info else {}
-
-    if finish_reason := choice.get("finish_reason"):
-        generation_info["finish_reason"] = finish_reason
-        if model_name := chunk.get("model"):
-            generation_info["model_name"] = model_name
-        if system_fingerprint := chunk.get("system_fingerprint"):
-            generation_info["system_fingerprint"] = system_fingerprint
-
-    logprobs = choice.get("logprobs")
-    if logprobs:
-        generation_info["logprobs"] = logprobs
-
-    if usage_metadata and isinstance(message_chunk, AIMessageChunk):
-        message_chunk.usage_metadata = usage_metadata
-
-    generation_chunk = ChatGenerationChunk(
-        message=message_chunk, generation_info=generation_info or None
-    )
-    return generation_chunk
-
-
 def _update_token_usage(
     overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
 ) -> Union[int, dict]:
@@ -562,15 +511,6 @@ class BaseChatOpenAI(BaseChatModel):
             values["temperature"] = 1
         return values
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_disable_streaming(cls, values: Dict[str, Any]) -> Any:
-        """Disable streaming if n > 1."""
-        model = values.get("model_name") or values.get("model") or ""
-        if model == "o1" and values.get("disable_streaming") is None:
-            values["disable_streaming"] = True
-        return values
-
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
@@ -692,6 +632,59 @@ class BaseChatOpenAI(BaseChatModel):
             combined["system_fingerprint"] = system_fingerprint
         return combined
 
+    def _convert_chunk_to_generation_chunk(
+        self,
+        chunk: dict,
+        default_chunk_class: Type,
+        base_generation_info: Optional[Dict],
+    ) -> Optional[ChatGenerationChunk]:
+        if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
+            return None
+        token_usage = chunk.get("usage")
+        choices = (
+            chunk.get("choices", [])
+            # from beta.chat.completions.stream
+            or chunk.get("chunk", {}).get("choices", [])
+        )
+
+        usage_metadata: Optional[UsageMetadata] = (
+            _create_usage_metadata(token_usage) if token_usage else None
+        )
+        if len(choices) == 0:
+            # logprobs is implicitly None
+            generation_chunk = ChatGenerationChunk(
+                message=default_chunk_class(content="", usage_metadata=usage_metadata)
+            )
+            return generation_chunk
+
+        choice = choices[0]
+        if choice["delta"] is None:
+            return None
+
+        message_chunk = _convert_delta_to_message_chunk(
+            choice["delta"], default_chunk_class
+        )
+        generation_info = {**base_generation_info} if base_generation_info else {}
+
+        if finish_reason := choice.get("finish_reason"):
+            generation_info["finish_reason"] = finish_reason
+            if model_name := chunk.get("model"):
+                generation_info["model_name"] = model_name
+            if system_fingerprint := chunk.get("system_fingerprint"):
+                generation_info["system_fingerprint"] = system_fingerprint
+
+        logprobs = choice.get("logprobs")
+        if logprobs:
+            generation_info["logprobs"] = logprobs
+
+        if usage_metadata and isinstance(message_chunk, AIMessageChunk):
+            message_chunk.usage_metadata = usage_metadata
+
+        generation_chunk = ChatGenerationChunk(
+            message=message_chunk, generation_info=generation_info or None
+        )
+        return generation_chunk
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -727,7 +720,7 @@ class BaseChatOpenAI(BaseChatModel):
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
-                    generation_chunk = _convert_chunk_to_generation_chunk(
+                    generation_chunk = self._convert_chunk_to_generation_chunk(
                         chunk,
                         default_chunk_class,
                         base_generation_info if is_first_chunk else {},
@@ -895,7 +888,7 @@ class BaseChatOpenAI(BaseChatModel):
                 async for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
-                    generation_chunk = _convert_chunk_to_generation_chunk(
+                    generation_chunk = self._convert_chunk_to_generation_chunk(
                         chunk,
                         default_chunk_class,
                         base_generation_info if is_first_chunk else {},
