@@ -81,7 +81,7 @@ class GmailCreateDraft(GmailBaseTool):  # type: ignore[override, override]
                 .create(userId="me", body=create_message)
                 .execute()
             )
-            output = f'Draft created. Draft Id: {draft["id"]}'
+            output = f"Draft created. Draft Id: {draft['id']}"
             return output
         except Exception as e:
             raise Exception(f"An error occurred: {e}")

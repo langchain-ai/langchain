@@ -112,8 +112,7 @@ def test_vertexai_single_call_with_context() -> None:
 def test_multimodal() -> None:
     llm = ChatVertexAI(model_name="gemini-ultra-vision")
     gcs_url = (
-        "gs://cloud-samples-data/generative-ai/image/"
-        "320px-Felis_catus-cat_on_snow.jpg"
+        "gs://cloud-samples-data/generative-ai/image/320px-Felis_catus-cat_on_snow.jpg"
     )
     image_message = {
         "type": "image_url",
@@ -131,8 +130,7 @@ def test_multimodal() -> None:
 def test_multimodal_history() -> None:
     llm = ChatVertexAI(model_name="gemini-ultra-vision")
     gcs_url = (
-        "gs://cloud-samples-data/generative-ai/image/"
-        "320px-Felis_catus-cat_on_snow.jpg"
+        "gs://cloud-samples-data/generative-ai/image/320px-Felis_catus-cat_on_snow.jpg"
     )
     image_message = {
         "type": "image_url",

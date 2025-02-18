@@ -562,7 +562,7 @@ class LanceDB(VectorStore):
 
         if self._embedding is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         embedding = self._embedding.embed_query(query)

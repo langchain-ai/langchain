@@ -126,7 +126,7 @@ class NotionDBLoader(BaseLoader):
                 value = prop_data["url"]
             elif prop_type == "unique_id":
                 value = (
-                    f'{prop_data["unique_id"]["prefix"]}-{prop_data["unique_id"]["number"]}'
+                    f"{prop_data['unique_id']['prefix']}-{prop_data['unique_id']['number']}"
                     if prop_data["unique_id"]
                     else None
                 )

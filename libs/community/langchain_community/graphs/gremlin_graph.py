@@ -57,7 +57,7 @@ class GremlinGraph(GraphStore):
                 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         except ImportError:
             raise ImportError(
-                "Please install gremlin-python first: " "`pip3 install gremlinpython"
+                "Please install gremlin-python first: `pip3 install gremlinpython"
             )
 
         self.client = client.Client(

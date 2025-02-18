@@ -94,6 +94,7 @@ try:
         def delete_session(self) -> None:
             """Delete a session"""
             requests.delete(f"{self.url}/sessions/{self.session_id}/memory")
+
 except ImportError:
     # Placeholder object
     class MotorheadMemory:  # type: ignore[no-redef]

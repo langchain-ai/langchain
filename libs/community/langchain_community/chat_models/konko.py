@@ -179,8 +179,7 @@ class ChatKonko(ChatOpenAI):  # type: ignore[override]
 
         if models_response.status_code != 200:
             raise ValueError(
-                f"Error getting models from {models_url}: "
-                f"{models_response.status_code}"
+                f"Error getting models from {models_url}: {models_response.status_code}"
             )
 
         return {model["id"] for model in models_response.json()["data"]}

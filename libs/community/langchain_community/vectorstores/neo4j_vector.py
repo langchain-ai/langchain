@@ -323,8 +323,7 @@ def _handle_field_filter(
 
     if field.startswith("$"):
         raise ValueError(
-            f"Invalid filter condition. Expected a field but got an operator: "
-            f"{field}"
+            f"Invalid filter condition. Expected a field but got an operator: {field}"
         )
 
     # Allow [a-zA-Z0-9_], disallow $ for now until we support escape characters
@@ -344,8 +343,7 @@ def _handle_field_filter(
         # Verify that that operator is an operator
         if operator not in SUPPORTED_OPERATORS:
             raise ValueError(
-                f"Invalid operator: {operator}. "
-                f"Expected one of {SUPPORTED_OPERATORS}"
+                f"Invalid operator: {operator}. Expected one of {SUPPORTED_OPERATORS}"
             )
     else:  # Then we assume an equality operator
         operator = "$eq"
@@ -423,8 +421,7 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                 # Then it's an operator
                 if key.lower() not in ["$and", "$or"]:
                     raise ValueError(
-                        f"Invalid filter condition. Expected $and or $or "
-                        f"but got: {key}"
+                        f"Invalid filter condition. Expected $and or $or but got: {key}"
                     )
             else:
                 # Then it's a field
@@ -459,7 +456,7 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                     )
             else:
                 raise ValueError(
-                    f"Invalid filter condition. Expected $and or $or " f"but got: {key}"
+                    f"Invalid filter condition. Expected $and or $or but got: {key}"
                 )
         elif len(filter) > 1:
             # Then all keys have to be fields (they cannot be operators)
@@ -1336,8 +1333,7 @@ class Neo4jVector(VectorStore):
 
         if search_type == SearchType.HYBRID and not keyword_index_name:
             raise ValueError(
-                "keyword_index name has to be specified "
-                "when using hybrid search option"
+                "keyword_index name has to be specified when using hybrid search option"
             )
 
         store = cls(

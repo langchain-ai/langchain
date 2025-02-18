@@ -90,7 +90,7 @@ class InfinispanVS(VectorStore):
             self._textfield = self._configuration.get("text_field", "text")
         else:
             warnings.warn(
-                "`textfield` is deprecated. Please use `text_field` " "param.",
+                "`textfield` is deprecated. Please use `text_field` param.",
                 DeprecationWarning,
             )
         self._vectorfield = self._configuration.get("vectorfield", "")
@@ -98,7 +98,7 @@ class InfinispanVS(VectorStore):
             self._vectorfield = self._configuration.get("vector_field", "vector")
         else:
             warnings.warn(
-                "`vectorfield` is deprecated. Please use `vector_field` " "param.",
+                "`vectorfield` is deprecated. Please use `vector_field` param.",
                 DeprecationWarning,
             )
         self._to_content = self._configuration.get(
@@ -361,16 +361,16 @@ repeated float %s = 1;
     def configure(self, metadata: dict, dimension: int) -> None:
         schema = self.schema_builder(metadata, dimension)
         output = self.schema_create(schema)
-        assert (
-            output.status_code == self.ispn.Codes.OK
-        ), "Unable to create schema. Already exists? "
+        assert output.status_code == self.ispn.Codes.OK, (
+            "Unable to create schema. Already exists? "
+        )
         "Consider using clear_old=True"
         assert json.loads(output.text)["error"] is None
         if not self.cache_exists():
             output = self.cache_create()
-            assert (
-                output.status_code == self.ispn.Codes.OK
-            ), "Unable to create cache. Already exists? "
+            assert output.status_code == self.ispn.Codes.OK, (
+                "Unable to create cache. Already exists? "
+            )
             "Consider using clear_old=True"
             # Ensure index is clean
             self.cache_index_clear()
