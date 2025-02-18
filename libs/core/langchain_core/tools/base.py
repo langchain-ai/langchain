@@ -317,6 +317,9 @@ class ToolException(Exception):  # noqa: N818
     """
 
 
+ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
+
+
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
 
@@ -354,7 +357,7 @@ class ChildTool(BaseTool):
     You can provide few-shot examples as a part of the description.
     """
 
-    args_schema: Annotated[Optional[TypeBaseModel], SkipValidation()] = Field(
+    args_schema: Annotated[Optional[ArgsSchema], SkipValidation()] = Field(
         default=None, description="The tool schema."
     )
     """Pydantic model class to validate and parse the tool's input arguments.
@@ -364,6 +367,8 @@ class ChildTool(BaseTool):
     - A subclass of pydantic.BaseModel.
     or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
+    or
+    - a JSON schema dict
     """
     return_direct: bool = False
     """Whether to return the tool's output directly.
@@ -423,10 +428,11 @@ class ChildTool(BaseTool):
             "args_schema" in kwargs
             and kwargs["args_schema"] is not None
             and not is_basemodel_subclass(kwargs["args_schema"])
+            and not isinstance(kwargs["args_schema"], dict)
         ):
             msg = (
-                f"args_schema must be a subclass of pydantic BaseModel. "
-                f"Got: {kwargs['args_schema']}."
+                "args_schema must be a subclass of pydantic BaseModel or "
+                f"a JSON schema dict. Got: {kwargs['args_schema']}."
             )
             raise TypeError(msg)
         super().__init__(**kwargs)
@@ -443,10 +449,18 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        return self.get_input_schema().model_json_schema()["properties"]
+        if isinstance(self.args_schema, dict):
+            json_schema = self.args_schema
+        else:
+            input_schema = self.get_input_schema()
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     @property
-    def tool_call_schema(self) -> type[BaseModel]:
+    def tool_call_schema(self) -> ArgsSchema:
+        if isinstance(self.args_schema, dict):
+            return self.args_schema
+
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
@@ -470,6 +484,8 @@ class ChildTool(BaseTool):
             The input schema for the tool.
         """
         if self.args_schema is not None:
+            if isinstance(self.args_schema, dict):
+                return super().get_input_schema(config)
             return self.args_schema
         else:
             return create_schema_from_function(self.name, self._run)
@@ -505,6 +521,12 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
+                if isinstance(input_args, dict):
+                    msg = (
+                        "String tool inputs are not allowed when "
+                        "using tools with JSON schema args_schema."
+                    )
+                    raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
                 if hasattr(input_args, "model_validate"):
                     input_args.model_validate({key_: tool_input})
@@ -513,7 +535,9 @@ class ChildTool(BaseTool):
             return tool_input
         else:
             if input_args is not None:
-                if issubclass(input_args, BaseModel):
+                if isinstance(input_args, dict):
+                    return tool_input
+                elif issubclass(input_args, BaseModel):
                     for k, v in get_all_basemodel_annotations(input_args).items():
                         if (
                             _is_injected_arg_type(v, injected_type=InjectedToolCallId)
@@ -605,7 +629,12 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
-        if self.args_schema is not None and not get_fields(self.args_schema):
+        if (
+            self.args_schema is not None
+            and isinstance(self.args_schema, type)
+            and is_basemodel_subclass(self.args_schema)
+            and not get_fields(self.args_schema)
+        ):
             # StructuredTool with no args
             return (), {}
         tool_input = self._parse_input(tool_input, tool_call_id)
