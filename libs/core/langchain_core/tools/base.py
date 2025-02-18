@@ -348,7 +348,7 @@ class ChildTool(BaseTool):
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
-    description: str
+    description: Optional[str] = None
     """Used to tell the model how/when/why to use the tool.
 
     You can provide few-shot examples as a part of the description.
