@@ -249,6 +249,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             Literal["json", "text", "srt", "verbose_json", "vtt"], None
         ] = None,
         temperature: Union[float, None] = None,
+        model: str = "whisper-1",
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
@@ -259,6 +260,7 @@ class OpenAIWhisperParser(BaseBlobParser):
         self.prompt = prompt
         self.response_format = response_format
         self.temperature = temperature
+        self.model = model
 
     @property
     def _create_params(self) -> Dict[str, Any]:
@@ -324,10 +326,10 @@ class OpenAIWhisperParser(BaseBlobParser):
                 try:
                     if is_openai_v1():
                         transcript = client.audio.transcriptions.create(
-                            model="whisper-1", file=file_obj, **self._create_params
+                            model=self.model, file=file_obj, **self._create_params
                         )
                     else:
-                        transcript = openai.Audio.transcribe("whisper-1", file_obj)  # type: ignore[attr-defined]
+                        transcript = openai.Audio.transcribe(self.model, file_obj)  # type: ignore[attr-defined]
                     break
                 except Exception as e:
                     attempts += 1
