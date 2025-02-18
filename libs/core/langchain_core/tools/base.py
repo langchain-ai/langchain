@@ -449,15 +449,18 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        input_schema = self.get_input_schema()
-        if isinstance(input_schema, dict):
-            json_schema = input_schema
+        if isinstance(self.args_schema, dict):
+            json_schema = self.args_schema
         else:
+            input_schema = self.get_input_schema()
             json_schema = input_schema.model_json_schema()
         return json_schema["properties"]
 
     @property
-    def tool_call_schema(self) -> type[BaseModel]:
+    def tool_call_schema(self) -> ArgsSchema:
+        if isinstance(self.args_schema, dict):
+            return self.args_schema
+
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
@@ -628,8 +631,8 @@ class ChildTool(BaseTool):
     ) -> tuple[tuple, dict]:
         if (
             self.args_schema is not None
-            and not isinstance(self.args_schema, dict)
-            and issubclass(self.args_schema, (BaseModel, BaseModelV1))
+            and isinstance(self.args_schema, type)
+            and is_basemodel_subclass(self.args_schema)
             and not get_fields(self.args_schema)
         ):
             # StructuredTool with no args

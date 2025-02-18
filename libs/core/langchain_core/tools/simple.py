@@ -60,7 +60,7 @@ class Tool(BaseTool):
                 json_schema = self.args_schema
             else:
                 json_schema = self.args_schema.model_json_schema()
-                return json_schema["properties"]
+            return json_schema["properties"]
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
