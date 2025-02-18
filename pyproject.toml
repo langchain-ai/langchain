@@ -1,6 +1,6 @@
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
 dependencies = []
 name = "langchain-monorepo"
@@ -12,33 +12,29 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = [
-    "ruff<1.0.0,>=0.5.0",
-]
+lint = ["ruff<1.0.0,>=0.5.0"]
 dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/libs/core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/libs/text-splitters",
-    "langchain-community @ file:///${PROJECT_ROOT}/libs/community",
-    "langchain @ file:///${PROJECT_ROOT}/libs/langchain",
-    "langchain-openai @ file:///${PROJECT_ROOT}/libs/partners/openai",
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain-community",
+    "langchain",
+    "langchain-openai",
     "ipykernel<7.0.0,>=6.29.2",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 typing = []
 test = [
     "langchain-experimental @ git+https://github.com/langchain-ai/langchain-experimental.git#subdirectory=libs/experimental",
-    "langchain-anthropic @ file:///${PROJECT_ROOT}/libs/partners/anthropic",
+    "langchain-anthropic",
     "langchain-aws @ git+https://github.com/langchain-ai/langchain-aws.git#subdirectory=libs/aws",
-    "langchain-chroma @ file:///${PROJECT_ROOT}/libs/partners/chroma",
-    "langchain-fireworks @ file:///${PROJECT_ROOT}/libs/partners/fireworks",
+    "langchain-chroma",
+    "langchain-fireworks",
     "langchain-google-vertexai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/vertexai",
-    "langchain-groq @ file:///${PROJECT_ROOT}/libs/partners/groq",
-    "langchain-mistralai @ file:///${PROJECT_ROOT}/libs/partners/mistralai",
+    "langchain-groq",
+    "langchain-mistralai",
     "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
     "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
-    "langgraph @ git+https://github.com/langchain-ai/langgraph.git#subdirectory=libs/langgraph",
+    "langgraph",
     "jupyter<2.0.0,>=1.1.1",
     "click<9.0.0,>=8.1.7",
     "aiofiles<25.0.0,>=24.1.0",
@@ -53,6 +49,20 @@ test = [
     "pypdf<6.0.0,>=5.0.0",
     "vcrpy<7.0.0,>=6.0.1",
 ]
+
+
+[tool.uv.sources]
+langchain-core = { path = "./libs/core", editable = true }
+langchain-text-splitters = { path = "./libs/text-splitters", editable = true }
+langchain-tests = { path = "./libs/standard-tests", editable = true }
+langchain-community = { path = "./libs/community", editable = true }
+langchain = { path = "./libs/langchain", editable = true }
+langchain-openai = { path = "./libs/partners/openai", editable = true }
+langchain-anthropic = { path = "./libs/partners/anthropic", editable = true }
+langchain-chroma = { path = "./libs/partners/chroma", editable = true }
+langchain-fireworks = { path = "./libs/partners/fireworks", editable = true }
+langchain-groq = { path = "./libs/partners/groq", editable = true }
+langchain-mistralai = { path = "./libs/partners/mistralai", editable = true }
 
 [build-system]
 requires = ["pdm-backend"]
@@ -84,9 +94,9 @@ pydocstyle = { convention = "google" }
     "F401", # allow "imported but unused" example code
     "F811", # allow re-importing the same module, so that cells can stay independent
     "F841", # allow assignments to variables that are never read -- it's example code
-    
+
 ]
-"!libs/langchain/langchain/model_laboratory.py"=["D"]
+"!libs/langchain/langchain/model_laboratory.py" = ["D"]
 
 # These files were failing the listed rules at the time ruff was adopted for notebooks.
 # Don't require them to change at once, though we should look into them eventually.

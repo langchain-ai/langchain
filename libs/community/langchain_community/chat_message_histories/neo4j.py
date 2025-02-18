@@ -87,7 +87,7 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         query = (
             f"MATCH (s:`{self._node_label}`)-[:LAST_MESSAGE]->(last_message) "
             "WHERE s.id = $session_id MATCH p=(last_message)<-[:NEXT*0.."
-            f"{self._window*2}]-() WITH p, length(p) AS length "
+            f"{self._window * 2}]-() WITH p, length(p) AS length "
             "ORDER BY length DESC LIMIT 1 UNWIND reverse(nodes(p)) AS node "
             "RETURN {data:{content: node.content}, type:node.type} AS result"
         )

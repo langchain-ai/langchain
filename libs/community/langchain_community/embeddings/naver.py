@@ -108,7 +108,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         app_type = "serviceapp" if self.service_app else "testapp"
         model_name = self.model_name if self.model_name != "bge-m3" else "v2"
         if self._is_new_api_key():
-            return f"{self.base_url}/{app_type}" f"/v1/api-tools/embedding/{model_name}"
+            return f"{self.base_url}/{app_type}/v1/api-tools/embedding/{model_name}"
         else:
             return (
                 f"{self.base_url}/{app_type}"

@@ -21,24 +21,26 @@ def _import_elevenlabs() -> Any:
 class ElevenLabsModel(str, Enum):
     """Models available for Eleven Labs Text2Speech."""
 
-    MULTI_LINGUAL = "eleven_multilingual_v1"
-    MONO_LINGUAL = "eleven_monolingual_v1"
+    MULTI_LINGUAL = "eleven_multilingual_v2"
+    MULTI_LINGUAL_FLASH = "eleven_flash_v2_5"
+    MONO_LINGUAL = "eleven_flash_v2"
 
 
 class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
     """Tool that queries the Eleven Labs Text2Speech API.
 
     In order to set this up, follow instructions at:
-    https://docs.elevenlabs.io/welcome/introduction
+    https://elevenlabs.io/docs
     """
 
     model: Union[ElevenLabsModel, str] = ElevenLabsModel.MULTI_LINGUAL
+    voice: str = "JBFqnCBsd6RMkjVDRZzb"
 
     name: str = "eleven_labs_text2speech"
     description: str = (
         "A wrapper around Eleven Labs Text2Speech. "
         "Useful for when you need to convert text to speech. "
-        "It supports multiple languages, including English, German, Polish, "
+        "It supports more than 30 languages, including English, German, Polish, "
         "Spanish, Italian, French, Portuguese, and Hindi. "
     )
 
@@ -46,7 +48,7 @@ class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
-        _ = get_from_dict_or_env(values, "eleven_api_key", "ELEVEN_API_KEY")
+        _ = get_from_dict_or_env(values, "elevenlabs_api_key", "ELEVENLABS_API_KEY")
 
         return values
 
@@ -55,10 +57,16 @@ class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
     ) -> str:
         """Use the tool."""
         elevenlabs = _import_elevenlabs()
+        client = elevenlabs.client.ElevenLabs()
         try:
-            speech = elevenlabs.generate(text=query, model=self.model)
+            speech = client.text_to_speech.convert(
+                text=query,
+                model_id=self.model,
+                voice_id=self.voice,
+                output_format="mp3_44100_128",
+            )
             with tempfile.NamedTemporaryFile(
-                mode="bx", suffix=".wav", delete=False
+                mode="bx", suffix=".mp3", delete=False
             ) as f:
                 f.write(speech)
             return f.name
@@ -77,5 +85,8 @@ class ElevenLabsText2SpeechTool(BaseTool):  # type: ignore[override]
         """Stream the text as speech as it is generated.
         Play the text in your speakers."""
         elevenlabs = _import_elevenlabs()
-        speech_stream = elevenlabs.generate(text=query, model=self.model, stream=True)
+        client = elevenlabs.client.ElevenLabs()
+        speech_stream = client.text_to_speech.convert_as_stream(
+            text=query, model_id=self.model, voice_id=self.voice
+        )
         elevenlabs.stream(speech_stream)
