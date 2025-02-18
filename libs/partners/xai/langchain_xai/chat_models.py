@@ -348,9 +348,14 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             self.client = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
+            self.root_client = openai.OpenAI(**client_params, **sync_specific)
         if not (self.async_client or None):
             async_specific: dict = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
                 **client_params, **async_specific
             ).chat.completions
+            self.root_async_client = openai.AsyncOpenAI(
+                **client_params,
+                **async_specific,
+            )
         return self
