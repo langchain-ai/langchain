@@ -23,7 +23,7 @@ from typing import (
     cast,
 )
 
-from fireworks.client import AsyncFireworks, Fireworks  # type: ignore
+import openai
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -388,9 +388,13 @@ class ChatFireworks(BaseChatModel):
         }
 
         if not self.client:
-            self.client = Fireworks(**client_params).chat.completions
+            self.client = openai.OpenAI(
+                **client_params,
+            ).chat.completions
         if not self.async_client:
-            self.async_client = AsyncFireworks(**client_params).chat.completions
+            self.async_client = openai.AsyncOpenAI(
+                **client_params,
+            ).chat.completions
         if self.max_retries:
             self.client._max_retries = self.max_retries
             self.async_client._max_retries = self.max_retries
