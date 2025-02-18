@@ -136,9 +136,7 @@ def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
     return client
 
 
-@deprecated(
-    alternative_import="langchain_vdms.VDMS"
-)
+@deprecated(since="0.3.18", removal="1.0.0", alternative_import="langchain_vdms.VDMS")
 class VDMS(VectorStore):
     """Intel Lab's VDMS for vector-store workloads.
 
