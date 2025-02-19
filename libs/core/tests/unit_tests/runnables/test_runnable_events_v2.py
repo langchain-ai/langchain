@@ -1034,7 +1034,10 @@ async def test_event_stream_with_simple_chain() -> None:
     )
 
 
-async def test_event_streaming_with_tools() -> None:
+# This test will distinguish between v1 and v2. version="v2" is currently the default.
+# We parametrize this test to test the default case.
+@pytest.mark.parametrize("specify_version", [True, False])
+async def test_event_streaming_with_tools(specify_version: bool) -> None:
     """Test streaming events with different tool definitions."""
 
     @tool
@@ -1057,9 +1060,11 @@ async def test_event_streaming_with_tools() -> None:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
+    kwargs = {"version": "v2"} if specify_version else {}
+
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
-    events = await _collect_events(parameterless.astream_events({}, version="v2"))  # type: ignore
+    events = await _collect_events(parameterless.astream_events({}, **kwargs))  # type: ignore
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -1083,7 +1088,7 @@ async def test_event_streaming_with_tools() -> None:
             },
         ],
     )
-    events = await _collect_events(with_callbacks.astream_events({}, version="v2"))  # type: ignore
+    events = await _collect_events(with_callbacks.astream_events({}, **kwargs))  # type: ignore
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -1108,7 +1113,7 @@ async def test_event_streaming_with_tools() -> None:
         ],
     )
     events = await _collect_events(
-        with_parameters.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
+        with_parameters.astream_events({"x": 1, "y": "2"}, **kwargs)  # type: ignore
     )
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -1135,7 +1140,7 @@ async def test_event_streaming_with_tools() -> None:
     )
 
     events = await _collect_events(
-        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
+        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, **kwargs)  # type: ignore
     )
     _assert_events_equal_allow_superset_metadata(
         events,
