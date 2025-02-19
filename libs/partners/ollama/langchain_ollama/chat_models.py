@@ -228,7 +228,7 @@ class ChatOllama(BaseChatModel):
                 ("human", "Return the words Hello World!"),
             ]
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
 
         .. code-block:: python
