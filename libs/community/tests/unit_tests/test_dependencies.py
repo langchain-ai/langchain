@@ -83,6 +83,7 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "requests-mock",
             # TODO: Hack to get around cffi 1.17.1 not working with py3.9, remove when
             # fix is released.
+            "unstructured",
             "cffi",
         ]
     )
