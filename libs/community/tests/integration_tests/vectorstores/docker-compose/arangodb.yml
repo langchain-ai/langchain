@@ -1,0 +1,18 @@
+# Copyright (C) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+services:
+  arangodb:
+    image: arangodb/arangodb:3.12.4
+    container_name: arangodb
+    ports:
+      - "8529:8529"
+    environment:
+      - ARANGO_ROOT_PASSWORD=openSesame
+    volumes:
+      - arango_data:/var/lib/arangodb3
+    command: ["--experimental-vector-index=true"]
+
+volumes:
+  arango_data:
+    driver: local

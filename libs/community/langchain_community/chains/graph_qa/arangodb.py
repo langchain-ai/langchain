@@ -57,6 +57,10 @@ class ArangoGraphQAChain(Chain):
     # Specify the maximum amount of AQL Generation attempts that should be made
     max_aql_generation_attempts: int = 3
 
+    # Specify whether to execute the generated AQL Query
+    # If False, the AQL Query is only explained & returned, not executed
+    execute_aql_query: bool = True
+
     allow_dangerous_requests: bool = False
     """Forced user opt-in to acknowledge that the chain can make dangerous requests.
 
@@ -155,6 +159,11 @@ class ArangoGraphQAChain(Chain):
             AQL Query Execution Error. Defaults to 3.
         :type max_aql_generation_attempts: int
         """
+        try:
+            from arango import AQLQueryExecuteError, AQLQueryExplainError
+        except ImportError:
+            raise ImportError("ArangoDB not installed, please install with `pip install python-arango`.")
+
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         user_input = inputs[self.input_key]
@@ -176,48 +185,34 @@ class ArangoGraphQAChain(Chain):
         aql_result = None
         aql_generation_attempt = 1
 
-        while (
-            aql_result is None
-            and aql_generation_attempt < self.max_aql_generation_attempts + 1
-        ):
+        aql_execution_func = self.graph.query if self.execute_aql_query else self.graph.explain
+
+        while aql_result is None and aql_generation_attempt < self.max_aql_generation_attempts + 1:
             #####################
             # Extract AQL Query #
             pattern = r"```(?i:aql)?(.*?)```"
             matches = re.findall(pattern, aql_generation_output, re.DOTALL)
             if not matches:
-                _run_manager.on_text(
-                    "Invalid Response: ", end="\n", verbose=self.verbose
-                )
-                _run_manager.on_text(
-                    aql_generation_output, color="red", end="\n", verbose=self.verbose
-                )
+                _run_manager.on_text("Invalid Response: ", end="\n", verbose=self.verbose)
+                _run_manager.on_text(aql_generation_output, color="red", end="\n", verbose=self.verbose)
                 raise ValueError(f"Response is Invalid: {aql_generation_output}")
 
             aql_query = matches[0]
             #####################
 
-            _run_manager.on_text(
-                f"AQL Query ({aql_generation_attempt}):", verbose=self.verbose
-            )
-            _run_manager.on_text(
-                aql_query, color="green", end="\n", verbose=self.verbose
-            )
+            _run_manager.on_text(f"AQL Query ({aql_generation_attempt}):", verbose=self.verbose)
+            _run_manager.on_text(aql_query, color="green", end="\n", verbose=self.verbose)
 
-            #####################
-            # Execute AQL Query #
-            from arango import AQLQueryExecuteError
+            #############################
+            # Execute/Explain AQL Query #
 
             try:
-                aql_result = self.graph.query(aql_query, self.top_k)
-            except AQLQueryExecuteError as e:
+                aql_result = aql_execution_func(aql_query, self.top_k)
+            except (AQLQueryExecuteError, AQLQueryExplainError) as e:
                 aql_error = e.error_message
 
-                _run_manager.on_text(
-                    "AQL Query Execution Error: ", end="\n", verbose=self.verbose
-                )
-                _run_manager.on_text(
-                    aql_error, color="yellow", end="\n\n", verbose=self.verbose
-                )
+                _run_manager.on_text("AQL Query Execution Error: ", end="\n", verbose=self.verbose)
+                _run_manager.on_text(aql_error, color="yellow", end="\n\n", verbose=self.verbose)
 
                 ########################
                 # Retry AQL Generation #
@@ -243,10 +238,14 @@ class ArangoGraphQAChain(Chain):
             """
             raise ValueError(m)
 
-        _run_manager.on_text("AQL Result:", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            str(aql_result), color="green", end="\n", verbose=self.verbose
-        )
+        text = "AQL Result:" if self.execute_aql_query else "AQL Explain:"
+        _run_manager.on_text(text, end="\n", verbose=self.verbose)
+        _run_manager.on_text(str(aql_result), color="green", end="\n", verbose=self.verbose)
+
+        if not self.execute_aql_query:
+            result = {self.output_key: aql_query}
+
+            return result
 
         ########################
         # Interpret AQL Result #
