@@ -114,8 +114,8 @@ packages:
   downloads: 9823331
   downloads_updated_at: '2025-02-13T20:29:06.035211+00:00'
 - name: langchain-pinecone
-  path: libs/partners/pinecone
-  repo: langchain-ai/langchain
+  path: libs/pinecone
+  repo: langchain-ai/langchain-pinecone
   js: '@langchain/pinecone'
   downloads: 393153
   downloads_updated_at: '2025-02-13T20:29:06.035211+00:00'
