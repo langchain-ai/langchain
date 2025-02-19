@@ -440,7 +440,8 @@ class Kinetica(VectorStore):
 
                 return self._results_to_docs_and_scores(results)
             else:
-                self.logger.warning(f"No records found; status: {resp['status_info']['status']}")
+                self.logger.warning(f"No records found; "
+                                    f"status: {resp['status_info']['status']}")
         return results
 
     def similarity_search_by_vector(
