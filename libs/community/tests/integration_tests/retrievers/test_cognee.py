@@ -1,9 +1,8 @@
 from typing import Type
 
 import pytest
-from langchain_core.documents import Document
-
 from langchain_cognee.retrievers import CogneeRetriever
+from langchain_core.documents import Document
 from langchain_tests.integration_tests import (
     RetrieversIntegrationTests,
 )
@@ -17,9 +16,10 @@ class TestCogneeRetriever(RetrieversIntegrationTests):
 
     @property
     def retriever_constructor_params(self) -> dict:
-        return {"k": 3,
-                "llm_api_key": "",
-                "dataset_name": "test_dataset",
+        return {
+            "k": 3,
+            "llm_api_key": "",
+            "dataset_name": "test_dataset",
         }
 
     @property
@@ -30,10 +30,9 @@ class TestCogneeRetriever(RetrieversIntegrationTests):
         return "Tell me about SpaceX"
 
     @pytest.fixture(autouse=True)
-    def setup_dataset(self):
+    def setup_dataset(self) -> None:
         """
-        Optional: This ensures that each test can retrieve data from cognee for real, rather than mocking. 
-        If you want faster tests, you could remove this fixture and mock `_search_cognee` instead.
+        Retrieve real data. For faster tests, remove it and mock _search_cognee instead.
         """
         retriever = self.retriever_constructor(**self.retriever_constructor_params)
         retriever.prune()
@@ -42,6 +41,6 @@ class TestCogneeRetriever(RetrieversIntegrationTests):
             Document(page_content="SpaceX is focused on rockets and space travel."),
             Document(page_content="Tesla is another company led by Musk."),
             Document(page_content="SpaceX was founded in 2002."),
-        ]   
+        ]
         retriever.add_documents(docs)
         retriever.process_data()
