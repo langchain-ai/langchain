@@ -116,7 +116,7 @@ class MmrReranker(BaseModel):
         cutoff: Minimum score threshold for results after reranking.
     """
     type: Literal["mmr"] = "mmr"
-    diversity_bias: Optional[float] = 0.3
+    diversity_bias: Optional[float] = 0.2
     limit: Optional[int] = None
     cutoff:Optional[float] = None
 
@@ -156,7 +156,7 @@ class SearchConfig(BaseModel):
     offset: Optional[int] = None
     limit: Optional[int] = None
     context_configuration: Optional[ContextConfig] = None
-    reranker: Optional[Union[CustomerSpecificReranker, UserFunctionReranker, MmrReranker, NoneReranker]] = None
+    reranker: Optional[Union[CustomerSpecificReranker, UserFunctionReranker, MmrReranker, NoneReranker, ChainReranker]] = None
 
 class Cell(BaseModel):
     """
@@ -542,38 +542,58 @@ class Vectara(VectorStore):
             self,
             texts: Iterable[str],
             metadatas: Optional[List[dict]] = None,
-            doc_metadata: Optional[dict] = None,
-            doc_type: Literal["core", "structured"] = "structured",
-            corpus_key: str = None,
+            *,
+            ids: Optional[List[str]] = None,
             **kwargs: Any,
     ) -> List[str]:
-        """
-        Indexes a collection of text strings in the Vectara corpus as a single document.
+        """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
-            texts (Iterable[str]): A collection of text sections to index.
-            metadatas (Optional[List[dict]]): A list of metadata dictionaries for each section.
-            doc_metadata (Optional[dict]): Metadata at the document level.
-            doc_type (Literal["core", "structured"]): The document type to use. Defaults to "structured".
-            corpus_key (str): The corpus key where the document will be indexed.
-            **kwargs (Any): Additional parameters for indexing.
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of IDs associated with the texts.
+            **kwargs: Additional arguments:
+                - corpus_key (str): Required. The key of the corpus where documents will be stored.
+                - doc_metadata (dict): Optional. Metadata at the document level.
+                - doc_type (Literal["core", "structured"]): Optional. The document type. Defaults to "structured".
 
         Returns:
-            List[str]: A list containing the document ID of the added document.
+            List of ids from adding the texts into the vectorstore.
+
+        Raises:
+            ValueError: If corpus_key is not provided in kwargs.
+            ValueError: If the number of metadatas doesn't match the number of texts.
+            ValueError: If the number of ids doesn't match the number of texts.
         """
+
+        corpus_key: Optional[str] = kwargs.get("corpus_key")
         if not corpus_key:
-            raise ValueError("Corpus key cannot be empty.")
+            raise ValueError("Missing required parameter: 'corpus_key'.")
+
+        doc_metadata: Optional[dict] = kwargs.get("doc_metadata", {})
+        doc_metadata["source"] = "langchain"
+
+        doc_type: Literal["core", "structured"] = kwargs.get("doc_type", "structured")
+
+
+        texts = list(texts)
 
         doc_hash = md5()
         for text in texts:
             doc_hash.update(text.encode())
         doc_id = doc_hash.hexdigest()
 
-        metadatas = metadatas or [{} for _ in texts]
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+        elif len(metadatas) != len(texts):
+            logger.warning(
+                f"Mismatch in metadatas and texts length. "
+                f"Expected {len(texts)}, but got {len(metadatas)}. "
+                f"Filling remaining entries with empty metadata."
+            )
+            metadatas += [{}] * (len(texts) - len(metadatas))
 
-        doc_metadata = doc_metadata or {}
-        doc_metadata["source"] = "langchain"
-
+        # Create document based on doc_type
         if doc_type == "core":
             doc = CoreDocument(
                 id=doc_id,
@@ -632,8 +652,6 @@ class Vectara(VectorStore):
         }
         if config.chat:
             body["chat"] = {"store": True}
-            if config.chat_conv_id:
-                body["chat"]["chat_conv_id"] = config.chat_conv_id
 
         return body
 
@@ -715,10 +733,10 @@ class Vectara(VectorStore):
             if isinstance(summary_text, tuple) and len(summary_text) > 0:
                 summary_text = summary_text[0]
             fcs = result.get("factual_consistency_score"),
-            if config.generation:
-                metadata = {"summary": True, "fcs": fcs}
-            else:
+            if config.chat:
                 metadata = {"chat_convo_id": result["chat_id"], "fcs": fcs}
+            else:
+                metadata = {"summary": True, "fcs": fcs}
             res.append(
                 (
                     Document(
@@ -983,7 +1001,7 @@ class VectaraRAG(Runnable):
             if self.config.chat_conv_id:
                 response = self.vectara._session.post(
                     headers=self.vectara._get_post_headers(),
-                    url=f"https://api.vectara.io/v2/chats/{config.chat_conv_id}/turns",
+                    url=f"https://api.vectara.io/v2/chats/{self.config.chat_conv_id}/turns",
                     data=json.dumps(body),
                     timeout=self.vectara.vectara_api_timeout,
                     stream=True,
@@ -1004,8 +1022,9 @@ class VectaraRAG(Runnable):
                 timeout=self.vectara.vectara_api_timeout,
                 stream=True,
             )
-        result = response.content
+
         if response.status_code != 200:
+            result = response.json()
             if response.status_code == 400:
                 logger.error(
                     f"Query failed (code {response.status_code}), reason {result['field_errors']}"
