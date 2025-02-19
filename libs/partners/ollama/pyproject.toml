@@ -4,12 +4,9 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
-dependencies = [
-    "ollama<1,>=0.4.4",
-    "langchain-core<1.0.0,>=0.3.33",
-]
+dependencies = ["ollama<1,>=0.4.4", "langchain-core<1.0.0,>=0.3.33"]
 name = "langchain-ollama"
 version = "0.2.3"
 description = "An integration package connecting Ollama and LangChain"
@@ -27,35 +24,29 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-watcher<1.0.0,>=0.3.4",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../../standard-tests",
+    "langchain-core",
+    "langchain-tests",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.6",
-]
+codespell = ["codespell<3.0.0,>=2.2.6"]
 test_integration = []
-lint = [
-    "ruff<1.0.0,>=0.1.8",
-]
-dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
-typing = [
-    "mypy<2.0.0,>=1.7.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core",
-]
+lint = ["ruff<1.0.0,>=0.1.8"]
+dev = ["langchain-core"]
+typing = ["mypy<2.0.0,>=1.7.1", "langchain-core"]
 
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
 [tool.ruff.lint]
 select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-  "D",    # pydocstyle
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "T201", # print
+    "D",    # pydocstyle
 
 ]
 
@@ -71,6 +62,6 @@ omit = ["tests/*"]
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [
-  "compile: mark placeholder test used to compile integration tests without running them",
+    "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"

@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4,>=3.9"
 dependencies = [
     "langchain-core!=0.3.0,!=0.3.1,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,<0.4.0,>=0.2.43",
@@ -33,30 +33,27 @@ test = [
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
     "pytest-socket<1.0.0,>=0.7.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core ; python_version >= \"3.9\"",
-    "langchain-core<0.3,>=0.1.40; python_version < \"3.9\"",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../../standard-tests",
+    "langchain-core",
+    "langchain-tests",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
 lint = [
     "ruff<1.0,>=0.5",
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
 ]
-dev = [
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core ; python_version >= \"3.9\"",
-    "langchain-core<0.3,>=0.1.40; python_version < \"3.9\"",
-]
+dev = ["langchain-core"]
 typing = [
     "mypy<2.0,>=1.10",
     "types-requests<3.0.0.0,>=2.31.0.20240406",
-    "langchain-core @ file:///${PROJECT_ROOT}/../../core ; python_version >= \"3.9\"",
-    "langchain-core<0.3,>=0.1.40; python_version < \"3.9\"",
+    "langchain-core",
 ]
 
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = true
