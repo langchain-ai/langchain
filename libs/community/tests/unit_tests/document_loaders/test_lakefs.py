@@ -93,9 +93,6 @@ class TestLakeFSLoader(unittest.TestCase):
     @pytest.mark.requires("unstructured")
     def test_load_data(self, mocker: Mocker) -> None:
         mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
-        mocker.register_uri(
-            "GET", f"{self.endpoint}/api/v1/healthcheck", status_code=200
-        )
         mock_results = [
             {
                 "path": "books/sample1.txt",
@@ -138,3 +135,62 @@ class TestLakeFSLoader(unittest.TestCase):
         loader.set_path(self.path)
         documents = loader.load()
         self.assertEqual(len(documents), 2)
+
+    @requests_mock.Mocker()
+    @pytest.mark.requires("unstructured")
+    def test_load_with_metadata(self, mocker: Mocker) -> None:
+        mocker.register_uri(requests_mock.ANY, requests_mock.ANY, status_code=200)
+        mock_results = [
+            {
+                "path": "books/sample1.txt",
+                "physical_address": "local://fake/path/sample1.txt",
+                "metadata": {
+                    "author": "John Doe",
+                    "category": "fiction",
+                    "title": "Sample Book 1",
+                },
+            },
+            {
+                "path": "books/sample2.txt",
+                "physical_address": "local://fake/path/sample2.txt",
+                "metadata": {
+                    "author": "John Doe",
+                    "category": "fiction",
+                    "title": "Sample Book 1",
+                },
+            },
+        ]
+
+        mock_response = {
+            "pagination": {
+                "has_more": False,
+                "max_per_page": 1000,
+                "next_offset": "",
+                "results": len(mock_results),
+            },
+            "results": mock_results,
+        }
+        mock_config_response = {
+            "storage_config": {
+                "pre_sign_support": True
+            }
+        }
+        mocker.register_uri(
+            "GET",
+            f"{self.endpoint}/api/v1/repositories/{self.repo}/refs/{self.ref}/objects/ls",
+            json=mock_response,
+        )
+        mocker.get(f"{self.endpoint}/api/v1/config", json=mock_config_response)
+        loader = LakeFSLoader(
+            lakefs_access_key="lakefs_access_key",
+            lakefs_secret_key="lakefs_secret_key",
+            lakefs_endpoint=self.endpoint,
+            with_user_metadata=True,
+        )
+        #
+        loader.set_repo(self.repo)
+        loader.set_ref(self.ref)
+        loader.set_path(self.path)
+        documents = loader.load()
+        self.assertEqual(len(documents), 2)
+        self.assertEqual(documents[0].metadata["author"], "John Doe")

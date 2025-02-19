@@ -1,7 +1,7 @@
 import os
 import tempfile
 import urllib.parse
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 from urllib.parse import urljoin
 
 import requests
@@ -34,21 +34,43 @@ class LakeFSClient:
             )
 
     def ls_objects(
-        self, repo: str, ref: str, path: str, presign: Optional[bool]
-    ) -> List:
-        qp = {"prefix": path, "presign": presign}
-        eqp = urllib.parse.urlencode(qp)
-        objects_ls_endpoint = urljoin(
-            self.__endpoint, f"repositories/{repo}/refs/{ref}/objects/ls?{eqp}"
+        self,
+        repo: str,
+        ref: str,
+        path: str,
+        presign: Optional[bool],
+        with_user_metadata: Optional[bool] = False,
+    ) -> List[Tuple[Any, ...]]:
+        """List objects in a repository reference,
+        optionally with presigned URLs and user metadata."""
+
+        query_params = {
+            k: v
+            for k, v in {
+                "prefix": path,
+                "presign": presign,
+                "user_metadata": with_user_metadata,
+            }.items()
+            if v is not None
+        }
+
+        # Build the full URL
+        endpoint_url = urljoin(
+            self.__endpoint, f"repositories/{repo}/refs/{ref}/objects/ls"
         )
-        olsr = requests.get(objects_ls_endpoint, auth=self.__auth)
-        olsr.raise_for_status()
-        olsr_json = olsr.json()
-        return list(
-            map(
-                lambda res: (res["path"], res["physical_address"]), olsr_json["results"]
-            )
-        )
+        full_url = f"{endpoint_url}?{urllib.parse.urlencode(query_params)}"
+
+        response = requests.get(full_url, auth=self.__auth)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+
+        return [
+            (obj["path"], obj["physical_address"], obj["metadata"])
+            if with_user_metadata
+            else (obj["path"], obj["physical_address"])
+            for obj in results
+        ]
+
 
     def is_presign_supported(self) -> bool:
         config_endpoint = self.__endpoint + "config"
@@ -73,6 +95,7 @@ class LakeFSLoader(BaseLoader):
         repo: Optional[str] = None,
         ref: Optional[str] = "main",
         path: Optional[str] = "",
+        with_user_metadata: Optional[bool] = False,
     ):
         """
 
@@ -84,6 +107,7 @@ class LakeFSLoader(BaseLoader):
         :param ref: [optional, default = 'main'] target ref (branch name,
                tag, or commit ID)
         :param path: [optional, default = ''] target path
+        :param with_user_metadata: [optional, default = False] include user metadata
         """
 
         self.__lakefs_client = LakeFSClient(
@@ -92,6 +116,7 @@ class LakeFSLoader(BaseLoader):
         self.repo = "" if repo is None or repo == "" else str(repo)
         self.ref = "main" if ref is None or ref == "" else str(ref)
         self.path = "" if path is None else str(path)
+        self.user_metadata = with_user_metadata
 
     def set_path(self, path: str) -> None:
         self.path = path
@@ -103,18 +128,33 @@ class LakeFSLoader(BaseLoader):
         self.repo = repo
 
     def load(self) -> List[Document]:
+        """Load documents from lakeFS using presigned URLs if supported."""
+
         self.__validate_instance()
+
         presigned = self.__lakefs_client.is_presign_supported()
-        docs: List[Document] = []
-        objs = self.__lakefs_client.ls_objects(
-            repo=self.repo, ref=self.ref, path=self.path, presign=presigned
+
+        objects = self.__lakefs_client.ls_objects(
+            repo=self.repo,
+            ref=self.ref,
+            path=self.path,
+            presign=presigned,
+            with_user_metadata=self.user_metadata,
         )
-        for obj in objs:
-            lakefs_unstructured_loader = UnstructuredLakeFSLoader(
-                obj[1], self.repo, self.ref, obj[0], presigned
+
+        documents = []
+        for path, physical_address, *metadata in objects:
+            loader = UnstructuredLakeFSLoader(
+                physical_address,
+                self.repo,
+                self.ref,
+                path,
+                presigned,
+                user_metadata=(metadata[0] if metadata else None),
             )
-            docs.extend(lakefs_unstructured_loader.load())
-        return docs
+            documents.extend(loader.load())
+
+        return documents
 
     def __validate_instance(self) -> None:
         if self.repo is None or self.repo == "":
@@ -137,20 +177,25 @@ class UnstructuredLakeFSLoader(UnstructuredBaseLoader):
         ref: str = "main",
         path: str = "",
         presign: bool = True,
+        user_metadata: Optional[dict] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize UnstructuredLakeFSLoader.
 
         Args:
-
+        :param url:
+        :param repo:
+        :param ref:
+        :param path:
+        :param presign:
+        :param user_metadata:
         :param lakefs_access_key:
         :param lakefs_secret_key:
         :param lakefs_endpoint:
-        :param repo:
-        :param ref:
         """
 
         super().__init__(**unstructured_kwargs)
+        self.user_metadata = user_metadata
         self.url = url
         self.repo = repo
         self.ref = ref
@@ -158,7 +203,12 @@ class UnstructuredLakeFSLoader(UnstructuredBaseLoader):
         self.presign = presign
 
     def _get_metadata(self) -> dict:
-        return {"repo": self.repo, "ref": self.ref, "path": self.path}
+        metadata = {"repo": self.repo, "ref": self.ref, "path": self.path}
+        if self.user_metadata:
+            for key, value in self.user_metadata.items():
+                if key not in metadata:
+                    metadata[key] = value
+        return metadata
 
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
