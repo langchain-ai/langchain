@@ -1,25 +1,19 @@
 # Permit
 
-Permit is a platform that offers...
+[Permit.io](https://permit.io/) offers fine-grained access control and policy enforcement. With LangChain, you can integrate Permit checks to ensure only authorized users can access or retrieve data in your LLM applications.
 
 ## Installation and Setup
 
 ```bash
+pip install langchain-permit
 pip install permit
 ```
 
-## Example Usage
+Set environment variables for your Permit PDP and credentials:
 
 ```python
-from langchain.tools import PermitTool
-
-# Initialize the tool
-tool = PermitTool()
-
-# Example usage
-result = tool.run("your input here")
+export PERMIT_API_KEY="your_permit_api_key"
+export PERMIT_PDP_URL="http://localhost:7766"   # or your real PDP endpoint
 ```
 
-## Further Resources
-
-- [Permit Documentation](https://docs.permit.io)
+Make sure your PDP is running and configured. See [Permit Docs](https://docs.permit.io/sdk/python/quickstart-python/#2-setup-your-pdp-policy-decision-point-container) for policy setup.
