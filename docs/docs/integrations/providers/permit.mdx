@@ -17,3 +17,79 @@ export PERMIT_PDP_URL="http://localhost:7766"   # or your real PDP endpoint
 ```
 
 Make sure your PDP is running and configured. See [Permit Docs](https://docs.permit.io/sdk/python/quickstart-python/#2-setup-your-pdp-policy-decision-point-container) for policy setup.
+
+## Usage 
+
+### Tools 
+
+#### JWT Validation
+
+Validate JWT tokens via a JWKs URL or JSON keys.
+
+```python 
+from langchain_permit.tools import LangchainJWTValidationTool
+
+jwt_tool = LangchainJWTValidationTool(jwks_url="http://localhost:3458/.well-known/jwks.json")
+claims = await jwt_tool._arun("your_jwt_token")
+print("Decoded claims:", claims)
+```
+
+#### Permission Check
+Check if a user can perform an action on a resource using Permit’s PDP.
+
+```python
+from permit import Permit
+from langchain_permit.tools import LangchainPermissionsCheckTool
+
+permit_client = Permit(token="...", pdp="...")
+perm_tool = LangchainPermissionsCheckTool(permit=permit_client)
+result = await perm_tool._arun(user={"key": "user123"}, action="read", resource={"type": "Document", "key": "docABC"})
+print("Allowed?", result)
+
+### Retrievers
+
+#### PermitSelfQueryRetriever
+
+* Fetches allowed document IDs from Permit for a user.
+
+* Uses an LLM to build a structured query that filters your vector store.
+
+```python
+from langchain_permit.retrievers import PermitSelfQueryRetriever
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+
+vectorstore = FAISS.from_texts(["doc1 about cats", "doc2 about dogs"], OpenAIEmbeddings())
+retriever = PermitSelfQueryRetriever(
+    api_key="...",
+    pdp_url="...",
+    user={"key": "user123"},
+    resource_type="my_resource",
+    action="read",
+    llm=...,  # e.g., ChatOpenAI
+    vectorstore=vectorstore,
+)
+results = retriever.get_relevant_documents("Tell me about cats")
+```
+
+#### PermitEnsembleRetriever
+
+* Combines multiple child retrievers (e.g. vector + BM25).
+* Merges results, then filters out unauthorized docs with Permit.
+
+```python
+from langchain_permit.retrievers import PermitEnsembleRetriever
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+
+vectorstore = FAISS.from_texts(["docA cats", "docB dogs"], OpenAIEmbeddings())
+ensemble_retriever = PermitEnsembleRetriever(
+    api_key="...",
+    pdp_url="...",
+    user="user123",
+    action="read",
+    resource_type="my_resource",
+    retrievers=[vectorstore.as_retriever()],
+)
+docs = ensemble_retriever.get_relevant_documents("cats")
+```
