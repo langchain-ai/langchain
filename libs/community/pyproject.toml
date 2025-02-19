@@ -54,6 +54,7 @@ test = [
     "langchain-core",
     "langchain",
     "langchain-tests",
+    "unstructured",
     "toml>=0.10.2",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]

@@ -71,7 +71,6 @@ class LakeFSClient:
             for obj in results
         ]
 
-
     def is_presign_supported(self) -> bool:
         config_endpoint = self.__endpoint + "config"
         response = requests.get(config_endpoint, auth=self.__auth)

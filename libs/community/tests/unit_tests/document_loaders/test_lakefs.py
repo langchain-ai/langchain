@@ -170,11 +170,7 @@ class TestLakeFSLoader(unittest.TestCase):
             },
             "results": mock_results,
         }
-        mock_config_response = {
-            "storage_config": {
-                "pre_sign_support": True
-            }
-        }
+        mock_config_response = {"storage_config": {"pre_sign_support": True}}
         mocker.register_uri(
             "GET",
             f"{self.endpoint}/api/v1/repositories/{self.repo}/refs/{self.ref}/objects/ls",
