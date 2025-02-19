@@ -93,7 +93,7 @@ packages_n = [_enrich_package(p) for p in data["packages"]]
 packages = [p for p in packages_n if p is not None]
 
 # sort by downloads
-packages_sorted = sorted(packages, key=lambda p: p["downloads"], reverse=True)
+packages_sorted = sorted(packages, key=lambda p: p.get("downloads", 0), reverse=True)
 
 
 def package_row(p: dict) -> str:
