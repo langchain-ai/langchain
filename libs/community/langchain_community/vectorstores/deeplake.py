@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
         "Please do not submit further PRs to this class."
         "See <https://github.com/activeloopai/langchain-deeplake>"
     ),
-    alternative_import="from langchain_deeplake import DeeplakeVectorStore",
+    alternative_import="langchain_deeplake.DeeplakeVectorStore",
 )
 class DeepLake(VectorStore):
     """`Activeloop Deep Lake` vector store.
