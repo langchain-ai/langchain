@@ -234,6 +234,8 @@ packages:
   path: libs/azure-ai
   repo: langchain-ai/langchain-azure
   provider_page: microsoft
+  downloads: 5835
+  js: '@langchain/openai'
 - name: langchain-azure-dynamic-sessions
   path: libs/azure-dynamic-sessions
   repo: langchain-ai/langchain-azure
