@@ -392,7 +392,6 @@ class ChatMistralAI(BaseChatModel):
     random_seed: Optional[int] = None
     safe_mode: Optional[bool] = None
     streaming: bool = False
-    frequency_penalty: int = 0
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -409,7 +408,6 @@ class ChatMistralAI(BaseChatModel):
             "top_p": self.top_p,
             "random_seed": self.random_seed,
             "safe_prompt": self.safe_mode,
-            "frequency_penalty": self.frequency_penalty,
         }
         filtered = {k: v for k, v in defaults.items() if v is not None}
         return filtered
