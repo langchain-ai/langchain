@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
+from langchain_core._api import deprecated
+
 import numpy as np
 
 try:
@@ -24,6 +26,19 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.3.3",
+    removal="1.0",
+    message="DeepLake moved to separate repository langchain_deeplake",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "You can swap to using the `DeeplakeVectorStore`"
+        " implementation in `langchain-deeplake`. "
+        "Please do not submit further PRs to this class."
+        "See <https://github.com/activeloopai/langchain-deeplake>"
+    ),
+    alternative_import="from langchain_deeplake import DeeplakeVectorStore",
+)
 class DeepLake(VectorStore):
     """`Activeloop Deep Lake` vector store.
 
