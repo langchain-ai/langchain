@@ -230,6 +230,12 @@ packages:
   repo: langchain-ai/langchain-unstructured
   downloads: 118888
   downloads_updated_at: '2025-02-13T20:29:06.035211+00:00'
+- name: langchain-azure-ai
+  path: libs/azure-ai
+  repo: langchain-ai/langchain-azure
+  provider_page: azure_ai
+  downloads: 5835
+  js: '@langchain/openai'
 - name: langchain-azure-dynamic-sessions
   path: libs/azure-dynamic-sessions
   repo: langchain-ai/langchain-azure
