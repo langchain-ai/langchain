@@ -7,6 +7,11 @@ from langchain_tests.integration_tests import (
     RetrieversIntegrationTests,
 )
 
+try:
+    from langchain_cognee.retrievers import CogneeRetriever
+except ImportError:
+    pytestmark = pytest.mark.skip(reason="langchain_cognee not installed")
+    CogneeRetriever = None
 
 class TestCogneeRetriever(RetrieversIntegrationTests):
     @property
