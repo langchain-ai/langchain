@@ -114,8 +114,8 @@ packages:
   downloads: 9823331
   downloads_updated_at: '2025-02-13T20:29:06.035211+00:00'
 - name: langchain-pinecone
-  path: libs/partners/pinecone
-  repo: langchain-ai/langchain
+  path: libs/pinecone
+  repo: langchain-ai/langchain-pinecone
   js: '@langchain/pinecone'
   downloads: 393153
   downloads_updated_at: '2025-02-13T20:29:06.035211+00:00'
@@ -429,3 +429,13 @@ packages:
   repo: langchain-ai/langchain
   downloads: 9521
   downloads_updated_at: '2025-02-13T23:35:48.490391+00:00'
+- name: langchain-salesforce
+  path: .
+  repo: colesmcintosh/langchain-salesforce
+  downloads: 0
+  downloads_updated_at: '2025-02-13T23:35:48.490391+00:00'
+- name: langchain-discord-shikenso
+  path: .
+  repo: Shikenso-Analytics/langchain-discord
+  downloads: 1
+  downloads_updated_at: '2025-02-15T16:00:00.000000+00:00'

@@ -97,12 +97,6 @@ repos:
       entry: make -C libs/partners/openai format
       files: ^libs/partners/openai/
       pass_filenames: false
-    - id: pinecone
-      name: format partners/pinecone
-      language: system
-      entry: make -C libs/partners/pinecone format
-      files: ^libs/partners/pinecone/
-      pass_filenames: false
     - id: prompty
       name: format partners/prompty
       language: system
