@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
-from langchain_core._api import deprecated
-
 import numpy as np
 
 try:
@@ -17,6 +15,7 @@ try:
 except ImportError:
     _DEEPLAKE_INSTALLED = False
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -29,7 +28,6 @@ logger = logging.getLogger(__name__)
 @deprecated(
     since="0.3.3",
     removal="1.0",
-    message="DeepLake moved to separate repository langchain_deeplake",
     message=(
         "This class is deprecated and will be removed in a future version. "
         "You can swap to using the `DeeplakeVectorStore`"
