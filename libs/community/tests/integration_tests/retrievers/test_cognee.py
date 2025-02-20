@@ -1,17 +1,16 @@
 from typing import Type
 
 import pytest
-from langchain_cognee.retrievers import CogneeRetriever
-from langchain_core.documents import Document
-from langchain_tests.integration_tests import (
-    RetrieversIntegrationTests,
-)
 
 try:
     from langchain_cognee.retrievers import CogneeRetriever
 except ImportError:
     pytestmark = pytest.mark.skip(reason="langchain_cognee not installed")
     CogneeRetriever = None
+from langchain_core.documents import Document
+from langchain_tests.integration_tests import (
+    RetrieversIntegrationTests,
+)
 
 class TestCogneeRetriever(RetrieversIntegrationTests):
     @property
