@@ -445,3 +445,8 @@ packages:
   repo: Shikenso-Analytics/langchain-discord
   downloads: 1
   downloads_updated_at: '2025-02-15T16:00:00.000000+00:00'
+- name: langchain-prolog
+  path: .
+  repo: apisani1/langchain-prolog
+  downloads: 0
+  downloads_updated_at: '2025-02-15T16:00:00.000000+00:00'
