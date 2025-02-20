@@ -1128,7 +1128,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
-        version: Literal["v1", "v2"],
+        version: Literal["v1", "v2"] = "v2",
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,

@@ -120,6 +120,9 @@ class ConfluenceLoader(BaseLoader):
     :type include_archived_content: bool, optional
     :param include_attachments: defaults to False
     :type include_attachments: bool, optional
+    :param attachment_filter_func: A function that takes the attachment information
+                                   from Confluence and decides whether or not the
+                                   attachment is processed.
     :param include_comments: defaults to False
     :type include_comments: bool, optional
     :param content_format: Specify content format, defaults to
@@ -176,6 +179,7 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
         keep_newlines: bool = False,
+        attachment_filter_func: Optional[Callable[[dict], bool]] = None,
     ):
         self.space_key = space_key
         self.page_ids = page_ids
@@ -192,6 +196,7 @@ class ConfluenceLoader(BaseLoader):
         self.ocr_languages = ocr_languages
         self.keep_markdown_format = keep_markdown_format
         self.keep_newlines = keep_newlines
+        self.attachment_filter_func = attachment_filter_func
 
         confluence_kwargs = confluence_kwargs or {}
         errors = ConfluenceLoader.validate_init_args(
@@ -660,6 +665,11 @@ class ConfluenceLoader(BaseLoader):
         attachments = self.confluence.get_attachments_from_content(page_id)["results"]
         texts = []
         for attachment in attachments:
+            if self.attachment_filter_func and not self.attachment_filter_func(
+                attachment
+            ):
+                continue
+
             media_type = attachment["metadata"]["mediaType"]
             absolute_url = self.base_url + attachment["_links"]["download"]
             title = attachment["title"]
