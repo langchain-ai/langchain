@@ -125,7 +125,7 @@ prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
 parser = StrOutputParser()
 chain = prompt | model | parser
 
-async for event in chain.astream_events({"topic": "parrot"}, version="v2"):
+async for event in chain.astream_events({"topic": "parrot"}):
     kind = event["event"]
     if kind == "on_chat_model_stream":
         print(event, end="|", flush=True)
