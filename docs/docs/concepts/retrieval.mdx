@@ -77,6 +77,7 @@ These can then be run sequentially or in parallel on a downstream retrieval syst
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
+from typing import List
 
 # Define a pydantic model to enforce the output structure
 class Questions(BaseModel):
