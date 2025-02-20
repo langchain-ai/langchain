@@ -17,18 +17,17 @@ Access models like Azure OpenAI, DeepSeek R1, Cohere, Phi and Mistral using the 
 pip install -U langchain-azure-ai
 ```
 
-Configure your API key.
+Configure your API key and Endpoint.
 
 ```bash
-export API_KEY=your-api-key
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
 ```
 
 ```python
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
 llm = AzureAIChatCompletionsModel(
-    endpoint="https://{your-resource-name}.services.ai.azure.com/models",
-    credential="your-api-key", #if using Entra ID you can should use your Azure Credentials instead
     model_name="gpt-4o",
     api_version="2024-05-01-preview",
 )
@@ -44,19 +43,17 @@ llm.invoke('Tell me a joke and include some emojis')
 pip install -U langchain-azure-ai
 ```
 
-Configure your API key.
+Configure your API key and Endpoint.
 
 ```bash
-export API_KEY=your-api-key
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
 ```
 
 ```python
 from langchain_azure_ai.embeddings import AzureAIEmbeddingsModel
 
 embed_model = AzureAIEmbeddingsModel(
-    endpoint="https://{your-resource_name}.inference.ai.azure.com",
-    credential="your-api-key",
     model_name="text-embedding-ada-002"
 )
 ```
-
