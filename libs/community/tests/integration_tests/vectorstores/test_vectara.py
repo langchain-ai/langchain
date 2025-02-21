@@ -1,27 +1,27 @@
 import os
+import re
 import uuid
 
 import pytest
 import requests
-
 from langchain_core.documents import Document
+
 from langchain_community.vectorstores import Vectara
 from langchain_community.vectorstores.vectara import (
-    VectaraQueryConfig,
-    SearchConfig,
-    GenerationConfig,
-    CorpusConfig,
-    MmrReranker,
-    File,
-    TableExtractionConfig,
+    ChainReranker,
     ChunkingStrategy,
+    Citation,
+    CorpusConfig,
     CustomerSpecificReranker,
-    UserFunctionReranker,
+    File,
+    GenerationConfig,
+    MmrReranker,
     NoneReranker,
-    ChainReranker
+    SearchConfig,
+    TableExtractionConfig,
+    UserFunctionReranker,
+    VectaraQueryConfig,
 )
-
-from langchain_core.vectorstores import VectorStore
 
 #
 # For this test to run properly, please setup as follows:
@@ -34,6 +34,7 @@ from langchain_core.vectorstores import VectorStore
 
 test_prompt_name = "vectara-summary-ext-24-05-med-omni"
 
+
 @pytest.fixture(scope="module")
 def vectara():
     api_key = os.getenv("VECTARA_API_KEY")
@@ -44,16 +45,15 @@ def vectara():
     yield vectara_instance
 
     cleanup_documents(vectara_instance, os.getenv("VECTARA_CORPUS_KEY"))
+
+
 def cleanup_documents(vectara, corpus_key):
     """
     Fetch all documents from the corpus and delete them after tests are completed.
     """
 
     url = f"https://api.vectara.io/v2/corpora/{corpus_key}/documents"
-    headers = {
-        'Accept': 'application/json',
-        'x-api-key': vectara._vectara_api_key
-    }
+    headers = {"Accept": "application/json", "x-api-key": vectara._vectara_api_key}
 
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
@@ -66,6 +66,8 @@ def cleanup_documents(vectara, corpus_key):
         return
 
     vectara.delete(corpus_key, ids=document_ids)
+
+
 @pytest.fixture(scope="module")
 def corpus_key():
     corpus_key = os.getenv("VECTARA_CORPUS_KEY")
@@ -73,14 +75,20 @@ def corpus_key():
         pytest.skip("VECTARA_CORPUS_KEY environment variable not set")
     return corpus_key
 
+
 @pytest.fixture(scope="module")
 def add_test_doc(vectara, corpus_key):
     texts = [
-        "The quick brown fox jumps over the lazy dog.",
-        "The lazy dog sleeps while the quick brown fox jumps.",
+        "The quick brown fox jumps over the lazy dog."
+        "The lazy dog sleeps while the quick brown fox jumps."
         "A fox is quick and brown in color."
     ]
-    vectara.add_texts(texts=texts, corpus_key=corpus_key)
+    vectara.add_texts(
+        texts=texts,
+        corpus_key=corpus_key,
+        doc_metadata={"url": "https://www.example.com"},
+    )
+
 
 @pytest.fixture
 def temp_files(tmp_path):
@@ -100,82 +108,238 @@ def temp_files(tmp_path):
 
     return created_files
 
+
 def test_initialization(vectara):
     """Check that the instance is initialized properly."""
     api_key = os.getenv("VECTARA_API_KEY")
     assert vectara._vectara_api_key == api_key
+
 
 def test_get_post_headers(vectara):
     """Ensure headers are correctly formed."""
     headers = vectara._get_post_headers()
     assert "x-api-key" in headers
     assert "Content-Type" in headers
+
+
 def test_add_texts(vectara, corpus_key):
-    """Index texts and verify they are indexed successfully."""
-    texts = [
-        "This is a test document of type core.",
-        "This is another test document.",
-        "This is a third test document."
-    ]
-    metadatas = [
-        {"source": "test1"},
-        {"source": "test2"},
-        {"source": "test3"}
-    ]
+    """Index texts and verify they are indexed successfully as separate documents."""
 
     # Test adding texts with core document type
-    doc_ids = vectara.add_texts(
-        texts=texts,
-        metadatas=metadatas,
+    texts_core = [
+        "This is a test document of type core.",
+        "This is another test document.",
+        "This is a third test document.",
+    ]
+    metadatas_core = [{"source": "test1"}, {"source": "test2"}, {"source": "test3"}]
+    doc_ids_core = vectara.add_texts(
+        texts=texts_core,
+        metadatas=metadatas_core,
         doc_type="core",
-        corpus_key=corpus_key
+        corpus_key=corpus_key,
     )
-    assert len(doc_ids) == 1
-    assert isinstance(doc_ids[0], str)
+    # Expect one ID per text
+    assert len(doc_ids_core) == len(texts_core)
+    for doc_id in doc_ids_core:
+        assert isinstance(doc_id, str)
 
     # Test adding texts with structured document type
-    texts = [
-        "This is a test document of type structure.",
+    texts_structured = [
+        "This is a test document of type structured.",
         "This is another test document.",
-        "This is a third test document."
+        "This is a third test document.",
     ]
-    metadatas = [
+    metadatas_structured = [
         {"source": "test1"},
         {"source": "test2"},
-        {"source": "test3"}
+        {"source": "test3"},
     ]
-
-    doc_ids = vectara.add_texts(
-        texts=texts,
-        metadatas=metadatas,
+    doc_ids_structured = vectara.add_texts(
+        texts=texts_structured,
+        metadatas=metadatas_structured,
         doc_type="structured",
-        corpus_key=corpus_key
+        corpus_key=corpus_key,
     )
-    assert len(doc_ids) == 1
-    assert isinstance(doc_ids[0], str)
+    # Expect one ID per text
+    assert len(doc_ids_structured) == len(texts_structured)
+    for doc_id in doc_ids_structured:
+        assert isinstance(doc_id, str)
 
-def test_call_add_text_using_vectorstore():
-    """Ensure that add_text can be used generic VectorStore."""
-    api_key = os.getenv("VECTARA_API_KEY")
-    corpus_key = os.getenv("VECTARA_CORPUS_KEY")
 
-    if not api_key or not corpus_key:
-        pytest.skip("VECTARA_API_KEY or VECTARA_CORPUS_KEY environment variable not set")
-
-    vectara: VectorStore = Vectara(vectara_api_key=api_key)  # Store in VectorStore type
+def test_text_without_corpus_key(vectara):
+    """Ensure that Vectara add_text was called."""
 
     texts = ["Testing as generic VectorStore."]
     metadatas = [{"source": "generic_test"}]
 
-    doc_ids = vectara.add_texts(
-        texts=texts,
-        metadatas=metadatas,
-        corpus_key=corpus_key,
-        doc_type="structured"
+    with pytest.raises(ValueError, match="Missing required parameter: 'corpus_key'."):
+        vectara.add_texts(texts=texts, metadatas=metadatas, doc_type="structured")
+
+
+def test_add_documents_via_vectara_retriever(vectara, corpus_key):
+    """
+    Test that VectaraRetriever.add_documents indexes each Document as a separate document.
+    This test creates several Document objects, then calls add_documents on the retriever,
+    verifying that the returned document IDs match the number of input documents and are strings.
+    """
+    # Create a list of Document objects
+    docs = [
+        Document(page_content="Document 1 content", metadata={"source": "test"}),
+        Document(page_content="Document 2 content", metadata={"source": "test"}),
+        Document(page_content="Document 3 content", metadata={"source": "test"}),
+    ]
+
+    retriever = vectara.as_retriever(
+        config=VectaraQueryConfig(
+            search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)])
+        )
     )
 
-    assert len(doc_ids) == 1
-    assert isinstance(doc_ids[0], str)
+    doc_ids = retriever.add_documents(
+        docs, corpus_key=corpus_key, doc_type="structured"
+    )
+
+    assert len(doc_ids) == len(docs)
+    for doc_id in doc_ids:
+        assert isinstance(doc_id, str)
+
+
+def test_get_relevant_documents(vectara, corpus_key):
+    """Test _get_relevant_documents in VectaraRetriever returns a list of Document instances."""
+
+    retriever = vectara.as_retriever(
+        config=VectaraQueryConfig(
+            search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)])
+        )
+    )
+
+    # Dummy callback manager for testing purposes
+    class DummyCallbackManager:
+        pass
+
+    dummy_run_manager = DummyCallbackManager()
+    docs = retriever._get_relevant_documents(
+        "What is a fox?", run_manager=dummy_run_manager
+    )
+
+    assert isinstance(docs, list)
+    for doc in docs:
+        assert isinstance(doc, Document)
+
+
+def test_from_texts(corpus_key):
+    """Test that Vectara.from_texts returns a Vectara instance and indexes documents."""
+    texts = [
+        "This is a test document for from_texts.",
+        "Another test document for from_texts.",
+    ]
+    metadatas = [{"source": "test1"}, {"source": "test2"}]
+    api_key = os.getenv("VECTARA_API_KEY")
+    if not api_key:
+        pytest.skip("VECTARA_API_KEY environment variable not set")
+
+    vectara_instance = Vectara.from_texts(
+        texts=texts,
+        metadatas=metadatas,
+        vectara_api_key=api_key,
+        corpus_key=corpus_key,
+        doc_type="core",
+    )
+
+    assert isinstance(vectara_instance, Vectara)
+
+    config_search = SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)])
+
+    results = vectara_instance.similarity_search("test document", search=config_search)
+
+    assert isinstance(results, list)
+
+
+def test_from_documents(corpus_key):
+    """
+    Test that Vectara.from_documents returns a Vectara instance
+    and indexes documents using from_texts (which is called under the hood).
+    """
+    docs = [
+        Document(page_content="Document 1 content", metadata={"source": "test"}),
+        Document(page_content="Document 2 content", metadata={"source": "test"}),
+        Document(page_content="Document 3 content", metadata={"source": "test"}),
+    ]
+
+    api_key = os.getenv("VECTARA_API_KEY")
+    if not api_key:
+        pytest.skip("VECTARA_API_KEY environment variable not set")
+
+    vectara_instance = Vectara.from_documents(
+        documents=docs,
+        embedding=None,
+        vectara_api_key=api_key,
+        corpus_key=corpus_key,
+        doc_type="structured",
+        doc_metadata={"extra": "value"},
+    )
+
+    assert isinstance(vectara_instance, Vectara)
+
+    config_search = SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)])
+    results = vectara_instance.similarity_search("Document", search=config_search)
+
+    assert isinstance(results, list)
+
+
+def test_query_with_citation(vectara, corpus_key, add_test_doc):
+    """
+    Test that when a citation configuration is provided in the query generation config,
+    the summary output (last document) includes citation formatting as expected.
+    """
+    citation_config = Citation(
+        style="markdown", url_pattern="{doc.url}", text_pattern="(source)"
+    )
+
+    generation_config = GenerationConfig(
+        max_used_search_results=7,
+        response_language="eng",
+        generation_preset_name="vectara-summary-ext-24-05-med-omni",
+        enable_factual_consistency_score=True,
+        citations=citation_config,
+    )
+
+    config = VectaraQueryConfig(
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
+        generation=generation_config,
+        stream_response=False,
+        save_history=False,
+        chat=False,
+    )
+
+    query_text = "What color is the fox?"
+    results = vectara.vectara_query(query_text, config)
+
+    assert isinstance(results, list)
+    assert len(results) > 0
+
+    summary_doc, score = results[-1]
+    assert isinstance(summary_doc, Document)
+
+    summary_content = summary_doc.page_content
+    assert "(source)" in summary_content
+    assert "https://www.example.com" in summary_content
+
+    # test numeric citations
+    citation_config = Citation(style="numeric")
+    config.generation.citations = citation_config
+
+    query_text = "What color is the fox?"
+    results = vectara.vectara_query(query_text, config)
+
+    assert isinstance(results, list)
+    assert len(results) > 0
+
+    summary_doc, score = results[-1]
+    assert isinstance(summary_doc, Document)
+
+    summary_content = summary_doc.page_content
+    assert re.search(r"\[\d+\]", summary_content)
 
 
 def test_add_files_text(vectara, corpus_key, temp_files):
@@ -186,6 +350,7 @@ def test_add_files_text(vectara, corpus_key, temp_files):
     assert len(doc_ids) > 0
     assert isinstance(doc_ids[0], str)
 
+
 def test_add_files_pdf(vectara, corpus_key, tmp_path):
     """Test uploading a PDF file for indexing."""
     test_pdf_path = tmp_path / "test.pdf"
@@ -195,20 +360,16 @@ def test_add_files_pdf(vectara, corpus_key, tmp_path):
         b"1 0 obj\n"
         b"<< /Type /Catalog /Pages 2 0 R >>\n"
         b"endobj\n"
-
         b"2 0 obj\n"
         b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n"
         b"endobj\n"
-
         b"3 0 obj\n"
         b"<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> "
         b"/MediaBox [0 0 612 792] /Contents 5 0 R >>\n"
         b"endobj\n"
-
         b"4 0 obj\n"
         b"<< /Type /Font /Subtype /Type1 /Name /F1 /BaseFont /Helvetica >>\n"
         b"endobj\n"
-
         b"5 0 obj\n"
         b"<< /Length 44 >>\n"
         b"stream\n"
@@ -219,7 +380,6 @@ def test_add_files_pdf(vectara, corpus_key, tmp_path):
         b"ET\n"
         b"endstream\n"
         b"endobj\n"
-
         b"xref\n"
         b"0 6\n"
         b"0000000000 65535 f\n"
@@ -228,7 +388,6 @@ def test_add_files_pdf(vectara, corpus_key, tmp_path):
         b"0000000120 00000 n\n"
         b"0000000250 00000 n\n"
         b"0000000340 00000 n\n"
-
         b"trailer\n"
         b"<< /Size 6 /Root 1 0 R >>\n"
         b"startxref\n"
@@ -237,7 +396,7 @@ def test_add_files_pdf(vectara, corpus_key, tmp_path):
     )
 
     # Write PDF to file
-    with open(test_pdf_path, 'wb') as f:
+    with open(test_pdf_path, "wb") as f:
         f.write(pdf_content)
 
     file_obj = File(
@@ -259,6 +418,7 @@ def test_add_files_pptx(vectara, corpus_key, temp_files):
     assert len(doc_ids) > 0
     assert isinstance(doc_ids[0], str)
 
+
 def test_add_files_docx(vectara, corpus_key, temp_files):
     """Test uploading a DOCX file for indexing."""
     file_obj = File(
@@ -271,13 +431,17 @@ def test_add_files_docx(vectara, corpus_key, temp_files):
     assert len(doc_ids) > 0
     assert isinstance(doc_ids[0], str)
 
+
 def test_add_files_markdown(vectara, corpus_key, temp_files):
     """Test uploading a Markdown (MD) file for indexing."""
-    file_obj = File(file_path=temp_files["test.md"], metadata={"source": "markdown_file"})
+    file_obj = File(
+        file_path=temp_files["test.md"], metadata={"source": "markdown_file"}
+    )
     doc_ids = vectara.add_files([file_obj], corpus_key)
 
     assert len(doc_ids) > 0
     assert isinstance(doc_ids[0], str)
+
 
 def test_add_files_multiple(vectara, corpus_key, tmp_path):
     """Test uploading multiple file types at once."""
@@ -299,9 +463,12 @@ def test_add_files_multiple(vectara, corpus_key, tmp_path):
     assert len(doc_ids) == len(files_list)
     assert all(isinstance(doc_id, str) for doc_id in doc_ids)
 
+
 def test_add_files_missing(vectara, corpus_key, caplog):
     """Test attempting to upload a non-existent file (should log an error)."""
-    non_existent_file = File(file_path="invalid_path.txt", metadata={"source": "missing_file"})
+    non_existent_file = File(
+        file_path="invalid_path.txt", metadata={"source": "missing_file"}
+    )
 
     with caplog.at_level("ERROR"):
         doc_ids = vectara.add_files([non_existent_file], corpus_key)
@@ -309,19 +476,19 @@ def test_add_files_missing(vectara, corpus_key, caplog):
     assert len(doc_ids) == 0
     assert "File invalid_path.txt does not exist" in caplog.text
 
+
 def test_add_files_empty_list(vectara, corpus_key):
     """Test calling add_files with an empty list (should return empty list)."""
     doc_ids = vectara.add_files([], corpus_key)
     assert doc_ids == []
+
 
 def test_similarity_search(vectara, corpus_key, add_test_doc):
     """Run a similarity search query."""
     # Test basic similarity search
     results = vectara.similarity_search(
         query="What color is the fox?",
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        )
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
     )
     assert len(results) > 0
     assert isinstance(results[0], Document)
@@ -329,14 +496,13 @@ def test_similarity_search(vectara, corpus_key, add_test_doc):
     # Test similarity search with scores
     results_with_scores = vectara.similarity_search_with_score(
         query="What color is the fox?",
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        )
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
     )
     assert len(results_with_scores) > 0
     assert isinstance(results_with_scores[0], tuple)
     assert isinstance(results_with_scores[0][0], Document)
     assert isinstance(results_with_scores[0][1], float)
+
 
 def test_mmr_search(vectara, corpus_key, add_test_doc):
     query = "What color is the fox?"
@@ -344,52 +510,46 @@ def test_mmr_search(vectara, corpus_key, add_test_doc):
         query=query,
         fetch_k=5,
         lambda_mult=0.5,
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        )
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
     )
     assert len(results) > 0
     assert isinstance(results[0], Document)
+
 
 def test_customer_specific_reranker(vectara, corpus_key, add_test_doc):
     """Test a search query with CustomerSpecificReranker."""
     reranker = CustomerSpecificReranker(reranker_id="rnk_272725719", limit=3)
-    config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)],
-            reranker=reranker
-        )
+    config_search = SearchConfig(
+        corpora=[CorpusConfig(corpus_key=corpus_key)], reranker=reranker
     )
 
-    results = vectara.similarity_search("What color is the fox?", search=config.search)
+    results = vectara.similarity_search("What color is the fox?", search=config_search)
     assert len(results) > 0
     assert isinstance(results[0], Document)
+
 
 def test_none_reranker(vectara, corpus_key, add_test_doc):
     """Test a search query without reranking."""
     reranker = NoneReranker()
-    config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)],
-            reranker=reranker
-        )
+    config_search = SearchConfig(
+        corpora=[CorpusConfig(corpus_key=corpus_key)], reranker=reranker
     )
 
-    results = vectara.similarity_search("What color is the fox?", search=config.search)
+    results = vectara.similarity_search("What color is the fox?", search=config_search)
     assert len(results) > 0
     assert isinstance(results[0], Document)
 
+
 def test_user_function_reranker(vectara, corpus_key, add_test_doc):
     """Test a search query with a user-defined function reranker."""
-    reranker = UserFunctionReranker(user_function="if (get('$.score') < 0.1) null else get('$.score') + 1")
-    config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)],
-            reranker=reranker
-        )
+    reranker = UserFunctionReranker(
+        user_function="if (get('$.score') < 0.1) null else get('$.score') + 1"
+    )
+    config_search = SearchConfig(
+        corpora=[CorpusConfig(corpus_key=corpus_key)], reranker=reranker
     )
 
-    results = vectara.similarity_search("What color is the fox?", search=config.search)
+    results = vectara.similarity_search("What color is the fox?", search=config_search)
     assert len(results) > 0
     assert isinstance(results[0], Document)
 
@@ -399,39 +559,31 @@ def test_chain_reranker(vectara, corpus_key, add_test_doc):
     reranker = ChainReranker(
         rerankers=[
             MmrReranker(diversity_bias=0.3, limit=10),
-            CustomerSpecificReranker( reranker_id="rnk_272725719", limit=5)
+            CustomerSpecificReranker(reranker_id="rnk_272725719", limit=5),
         ]
     )
 
-    config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)],
-            reranker=reranker
-        )
+    config_search = SearchConfig(
+        corpora=[CorpusConfig(corpus_key=corpus_key)], reranker=reranker
     )
 
-    results = vectara.similarity_search("What color is the fox?", search=config.search)
+    results = vectara.similarity_search("What color is the fox?", search=config_search)
     assert len(results) > 0
     assert isinstance(results[0], Document)
+
+
 def test_delete_documents(vectara, corpus_key):
     texts = ["This is a test document to be deleted."]
-    doc_ids = vectara.add_texts(
-        texts=texts,
-        corpus_key=corpus_key
-    )
+    doc_ids = vectara.add_texts(texts=texts, corpus_key=corpus_key)
 
     success = vectara.delete(corpus_key=corpus_key, ids=doc_ids)
     assert success is True
 
+
 def test_vectara_as_rag(vectara, corpus_key, add_test_doc):
     config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        ),
-        generation=GenerationConfig(
-            max_used_search_results=5,
-            response_lang="eng"
-        )
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
+        generation=GenerationConfig(max_used_search_results=5, response_lang="eng"),
     )
 
     rag = vectara.as_rag(config)
@@ -441,15 +593,12 @@ def test_vectara_as_rag(vectara, corpus_key, add_test_doc):
     assert "answer" in result
     assert "context" in result
 
+
 def test_streaming(vectara, corpus_key, add_test_doc):
     config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        ),
-        generation=GenerationConfig(
-            max_used_search_results=5
-        ),
-        stream_response=True
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
+        generation=GenerationConfig(max_used_search_results=5),
+        stream_response=True,
     )
 
     rag = vectara.as_rag(config)
@@ -460,12 +609,10 @@ def test_streaming(vectara, corpus_key, add_test_doc):
     assert any("answer" in chunk for chunk in chunks)
     assert any("context" in chunk for chunk in chunks)
 
+
 def test_as_chat(vectara, corpus_key, add_test_doc):
     config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        ),
-        chat=True
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]), chat=True
     )
 
     chat = vectara.as_chat(config)
@@ -490,13 +637,8 @@ def test_vectara_query(vectara, corpus_key, add_test_doc):
     """Test vectara_query with and without streaming."""
 
     config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        ),
-        generation=GenerationConfig(
-            max_used_search_results=5,
-            response_language="eng"
-        )
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
+        generation=GenerationConfig(max_used_search_results=5, response_language="eng"),
     )
 
     query_text = "Tell me about the fox"
@@ -505,8 +647,9 @@ def test_vectara_query(vectara, corpus_key, add_test_doc):
     results = vectara.vectara_query(query_text, config)
 
     assert len(results) > 0
-    assert all(isinstance(doc, tuple) and isinstance(doc[0], Document) for doc in
-               results)
+    assert all(
+        isinstance(doc, tuple) and isinstance(doc[0], Document) for doc in results
+    )
 
     # Test Streaming Query
     config.stream_response = True
@@ -517,17 +660,14 @@ def test_vectara_query(vectara, corpus_key, add_test_doc):
     streamed_chunks = list(streamed_results)  # Collect all streamed responses
 
     assert len(streamed_chunks) > 0
-    assert any("answer" in chunk or "context" in chunk for chunk in
-               streamed_chunks)
+    assert any("answer" in chunk or "context" in chunk for chunk in streamed_chunks)
+
 
 def test_vectara_query_chat(vectara, corpus_key, add_test_doc):
     """Test Vectara query in chat mode and ensure conversation continuity."""
 
     config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        ),
-        chat=True
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]), chat=True
     )
 
     response = vectara.vectara_query("Tell me about the fox", config)
@@ -545,11 +685,9 @@ def test_vectara_query_chat(vectara, corpus_key, add_test_doc):
 
     # Step 3: Continue the conversation with a follow-up question
     followup_config = VectaraQueryConfig(
-        search=SearchConfig(
-            corpora=[CorpusConfig(corpus_key=corpus_key)]
-        ),
+        search=SearchConfig(corpora=[CorpusConfig(corpus_key=corpus_key)]),
         chat=True,
-        chat_conv_id=chat_id
+        chat_conv_id=chat_id,
     )
 
     followup_response = vectara.vectara_query("What color is the fox?", followup_config)
@@ -563,3 +701,42 @@ def test_vectara_query_chat(vectara, corpus_key, add_test_doc):
     assert isinstance(last_doc_followup, Document)
     assert "chat_convo_id" in last_doc_followup.metadata
     assert last_doc_followup.metadata["chat_convo_id"] == chat_id
+
+
+def test_get_by_ids(vectara, corpus_key):
+    """
+    Integration test for 'get_document' and 'get_by_ids'.
+
+    1. Adds documents via 'add_texts'.
+    2. Calls 'get_by_ids' to fetch them from Vectara.
+    3. Verifies the retrieved documents match the original text/metadata.
+    """
+
+    texts = ["This is the content of Document A.", "Here is the text for Document B."]
+    metadatas = [
+        {"test": "testA", "custom": "A_metadata"},
+        {"test": "testB", "custom": "B_metadata"},
+    ]
+
+    doc_ids = vectara.add_texts(
+        texts=texts, metadatas=metadatas, corpus_key=corpus_key, doc_type="structured"
+    )
+    assert len(doc_ids) == len(texts)
+
+    retrieved_docs = vectara.get_by_ids(doc_ids, corpus_key=corpus_key)
+    assert len(retrieved_docs) == len(doc_ids)
+
+    # Verify the merged text and metadata in each retrieved Document
+    # We expect 1:1 order with doc_ids -> retrieved_docs, but if not guaranteed, we can match by content
+    for idx, doc in enumerate(retrieved_docs):
+        assert isinstance(doc, Document)
+        # Confirm some or all of the text is present
+        assert texts[idx] in doc.page_content, (
+            f"Expected content '{texts[idx]}' to be in the retrieved doc page_content."
+        )
+        # Confirm top-level metadata was merged
+        # Our doc metadata is stored in doc.metadata. If 'parts' metadata was also merged, check here.
+        # e.g., 'source' or 'custom' keys from the original input:
+        assert doc.metadata.pop("source") == "langchain"
+        assert doc.metadata.get("test") == metadatas[idx]["test"]
+        assert doc.metadata.get("custom") == metadatas[idx]["custom"]
