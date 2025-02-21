@@ -235,8 +235,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), encoding=encoding) as f:
-            template = f.read()
+        template = Path(template_file).read_text(encoding=encoding)
         if input_variables:
             warnings.warn(
                 "`input_variables' is deprecated and ignored.",
