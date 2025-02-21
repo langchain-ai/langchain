@@ -6,7 +6,6 @@ from abc import abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator
 from io import StringIO
-from typing import Optional as Optional
 from typing import TypeVar, Union
 
 from langchain_core.messages import BaseMessage

@@ -33,11 +33,11 @@ from typing_extensions import TypeGuard, override
 from langchain_core.runnables.schema import StreamEvent
 
 # Re-export create-model for backwards compatibility
-from langchain_core.utils.pydantic import create_model as create_model
+from langchain_core.utils.pydantic import create_model  # noqa: F401
 
-Input = TypeVar("Input", contravariant=True)
+Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 # Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output", covariant=True)
+Output = TypeVar("Output", covariant=True)  # noqa: PLC0105
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:

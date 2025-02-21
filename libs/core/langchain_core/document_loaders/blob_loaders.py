@@ -11,8 +11,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
 # Re-export Blob and PathLike for backwards compatibility
-from langchain_core.documents.base import Blob as Blob
-from langchain_core.documents.base import PathLike as PathLike
+from langchain_core.documents.base import Blob, PathLike
 
 
 class BlobLoader(ABC):

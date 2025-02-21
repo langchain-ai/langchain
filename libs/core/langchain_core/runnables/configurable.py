@@ -4,7 +4,6 @@ import enum
 import threading
 from abc import abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
-from collections.abc import Mapping as Mapping
 from functools import wraps
 from typing import (
     Any,
