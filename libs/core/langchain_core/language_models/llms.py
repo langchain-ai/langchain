@@ -1019,6 +1019,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompts: list[str],
         stop: Optional[list[str]],
         run_managers: list[AsyncCallbackManagerForLLMRun],
+        *,
         new_arg_supported: bool,
         **kwargs: Any,
     ) -> LLMResult:
@@ -1212,7 +1213,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
-                bool(new_arg_supported),
+                new_arg_supported=bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )
             return output
@@ -1235,7 +1236,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 missing_prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
-                bool(new_arg_supported),
+                new_arg_supported=bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(

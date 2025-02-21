@@ -362,7 +362,7 @@ EXPECTED_STREAMED_JSON = [
 ]
 
 
-def _get_iter(use_tool_calls: bool = False) -> Any:
+def _get_iter(*, use_tool_calls: bool = False) -> Any:
     if use_tool_calls:
         list_to_iter = STREAMED_MESSAGES_WITH_TOOL_CALLS
     else:
@@ -374,7 +374,7 @@ def _get_iter(use_tool_calls: bool = False) -> Any:
     return input_iter
 
 
-def _get_aiter(use_tool_calls: bool = False) -> Any:
+def _get_aiter(*, use_tool_calls: bool = False) -> Any:
     if use_tool_calls:
         list_to_iter = STREAMED_MESSAGES_WITH_TOOL_CALLS
     else:
@@ -389,7 +389,7 @@ def _get_aiter(use_tool_calls: bool = False) -> Any:
 
 def test_partial_json_output_parser() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls)
+        input_iter = _get_iter(use_tool_calls=use_tool_calls)
         chain = input_iter | JsonOutputToolsParser()
 
         actual = list(chain.stream(None))
@@ -402,7 +402,7 @@ def test_partial_json_output_parser() -> None:
 
 async def test_partial_json_output_parser_async() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls)
+        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
         chain = input_iter | JsonOutputToolsParser()
 
         actual = [p async for p in chain.astream(None)]
@@ -415,7 +415,7 @@ async def test_partial_json_output_parser_async() -> None:
 
 def test_partial_json_output_parser_return_id() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls)
+        input_iter = _get_iter(use_tool_calls=use_tool_calls)
         chain = input_iter | JsonOutputToolsParser(return_id=True)
 
         actual = list(chain.stream(None))
@@ -434,7 +434,7 @@ def test_partial_json_output_parser_return_id() -> None:
 
 def test_partial_json_output_key_parser() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls)
+        input_iter = _get_iter(use_tool_calls=use_tool_calls)
         chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
         actual = list(chain.stream(None))
@@ -444,7 +444,7 @@ def test_partial_json_output_key_parser() -> None:
 
 async def test_partial_json_output_parser_key_async() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls)
+        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
 
         chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
@@ -455,7 +455,7 @@ async def test_partial_json_output_parser_key_async() -> None:
 
 def test_partial_json_output_key_parser_first_only() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls)
+        input_iter = _get_iter(use_tool_calls=use_tool_calls)
 
         chain = input_iter | JsonOutputKeyToolsParser(
             key_name="NameCollector", first_tool_only=True
@@ -466,7 +466,7 @@ def test_partial_json_output_key_parser_first_only() -> None:
 
 async def test_partial_json_output_parser_key_async_first_only() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls)
+        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
 
         chain = input_iter | JsonOutputKeyToolsParser(
             key_name="NameCollector", first_tool_only=True
@@ -507,7 +507,7 @@ EXPECTED_STREAMED_PYDANTIC = [
 
 def test_partial_pydantic_output_parser() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_iter(use_tool_calls)
+        input_iter = _get_iter(use_tool_calls=use_tool_calls)
 
         chain = input_iter | PydanticToolsParser(
             tools=[NameCollector], first_tool_only=True
@@ -519,7 +519,7 @@ def test_partial_pydantic_output_parser() -> None:
 
 async def test_partial_pydantic_output_parser_async() -> None:
     for use_tool_calls in [False, True]:
-        input_iter = _get_aiter(use_tool_calls)
+        input_iter = _get_aiter(use_tool_calls=use_tool_calls)
 
         chain = input_iter | PydanticToolsParser(
             tools=[NameCollector], first_tool_only=True
