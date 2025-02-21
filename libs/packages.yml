@@ -445,6 +445,10 @@ packages:
   repo: Shikenso-Analytics/langchain-discord
   downloads: 1
   downloads_updated_at: '2025-02-15T16:00:00.000000+00:00'
+- name: langchain-vdms
+  repo: IntelLabs/langchain-vdms
+  path: .
+  name_title: VDMS
 - name: langchain-deeplake
   path: .
   repo: activeloopai/langchain-deeplake
