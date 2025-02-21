@@ -833,7 +833,7 @@ def trim_messages(
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
         if (
-            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            next(iter(inspect.signature(token_counter).parameters.values())).annotation
             is BaseMessage
         ):
 

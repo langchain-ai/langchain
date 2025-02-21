@@ -77,8 +77,8 @@ target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TID", "TRY", "UP", "W", "YTT",]
-ignore = [ "COM812", "UP007", "S110", "S112",]
+select = [ "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "RUF", "S", "SIM", "SLOT", "T10", "T201", "TID", "TRY", "UP", "W", "YTT",]
+ignore = [ "COM812", "UP007", "RUF010", "RUF012", "S110", "S112",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

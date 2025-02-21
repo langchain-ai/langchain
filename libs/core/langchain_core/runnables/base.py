@@ -2795,7 +2795,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Returns:
             A list of Runnables.
         """
-        return [self.first] + self.middle + [self.last]
+        return [self.first, *self.middle, self.last]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -3340,7 +3340,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     ) -> Iterator[Output]:
         from langchain_core.beta.runnables.context import config_with_context
 
-        steps = [self.first] + self.middle + [self.last]
+        steps = [self.first, *self.middle, self.last]
         config = config_with_context(config, self.steps)
 
         # transform the input stream of each step with the next
@@ -3367,7 +3367,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[Output]:
         from langchain_core.beta.runnables.context import aconfig_with_context
 
-        steps = [self.first] + self.middle + [self.last]
+        steps = [self.first, *self.middle, self.last]
         config = aconfig_with_context(config, self.steps)
 
         # stream the last steps

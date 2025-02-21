@@ -607,7 +607,7 @@ async def _astream_log_implementation(
     if callbacks is None:
         config["callbacks"] = [stream]
     elif isinstance(callbacks, list):
-        config["callbacks"] = callbacks + [stream]
+        config["callbacks"] = [*callbacks, stream]
     elif isinstance(callbacks, BaseCallbackManager):
         callbacks = callbacks.copy()
         callbacks.add_handler(stream, inherit=True)

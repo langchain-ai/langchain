@@ -523,7 +523,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 raise ValueError(msg)
             prompt = []
             for tmpl in template:
-                if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
+                if isinstance(tmpl, str) or (isinstance(tmpl, dict) and "text" in tmpl):
                     if isinstance(tmpl, str):
                         text: str = tmpl
                     else:
@@ -1044,13 +1044,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         elif isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other])  # type: ignore[call-arg]
+            return ChatPromptTemplate(messages=[*self.messages, other])  # type: ignore[call-arg]
         elif isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
             return ChatPromptTemplate(messages=self.messages + _other.messages)  # type: ignore[call-arg]
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt])  # type: ignore[call-arg]
+            return ChatPromptTemplate(messages=[*self.messages, prompt])  # type: ignore[call-arg]
         else:
             msg = f"Unsupported operand type for +: {type(other)}"
             raise NotImplementedError(msg)
