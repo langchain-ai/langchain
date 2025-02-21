@@ -130,10 +130,17 @@ class RankLLMRerank(BaseDocumentCompressor):
         )
 
         final_results = []
-        for res in rerank_results.candidates:
-            doc = documents[int(res.docid)]
-            doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
-            final_results.append(doc_copy)
+        if hasattr(rerank_results, "candidates"):
+            # Old API format
+            for res in rerank_results.candidates:
+                doc = documents[int(res.docid)]
+                doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
+                final_results.append(doc_copy)
+        else:
+            for res in rerank_results:
+                doc = documents[int(res.docid)]
+                doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
+                final_results.append(doc_copy)
 
         return final_results[: self.top_n]
 
