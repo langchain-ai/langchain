@@ -541,6 +541,9 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
         assert "headers" not in res.response_metadata
     assert mock_client.create.called
 
+    assert llm.root_client is None
+    assert llm.root_async_client is None
+
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     llm = ChatOpenAI()
