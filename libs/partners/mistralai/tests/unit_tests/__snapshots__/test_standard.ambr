@@ -20,6 +20,10 @@
         'type': 'secret',
       }),
       'model': 'mistral-small',
+      'model_kwargs': dict({
+        'stop': list([
+        ]),
+      }),
       'temperature': 0.0,
       'timeout': 60,
       'top_p': 1,
