@@ -2457,3 +2457,22 @@ def test_simple_tool_args_schema_dict() -> None:
     assert tool.args == {
         "a": {"title": "A", "type": "integer"},
     }
+
+
+def test_empty_tool_call_id() -> None:
+    @tool
+    def foo(x: int) -> str:
+        """Foo."""
+        return "hi"
+
+    for empty_tool_call_id in (None, ""):
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Tool call ID must be a non-empty string. "
+                f"Got '{empty_tool_call_id}' for tool call '.*'."
+            ),
+        ):
+            foo.invoke(
+                {"type": "tool_call", "args": {"x": 0}, "id": empty_tool_call_id}
+            )

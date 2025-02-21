@@ -934,6 +934,13 @@ def _prep_run_args(
     config = ensure_config(config)
     if _is_tool_call(input):
         tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
+        if not tool_call_id:
+            msg = (
+                "Tool call ID must be a non-empty string. "
+                f"Got '{tool_call_id}' for tool call '{input}'."
+            )
+            raise ValueError(msg)
+
         tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
     else:
         tool_call_id = None
