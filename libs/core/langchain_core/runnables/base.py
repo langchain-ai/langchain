@@ -4641,7 +4641,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     )
 
             @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+            async def f(*args: Any, **kwargs: Any) -> Any:
                 return await run_in_executor(config, func, *args, **kwargs)
 
             afunc = f
@@ -4889,7 +4889,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 )
 
             @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+            async def f(*args: Any, **kwargs: Any) -> Any:
                 return await run_in_executor(config, func, *args, **kwargs)
 
             afunc = f

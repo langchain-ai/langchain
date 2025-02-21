@@ -465,7 +465,7 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         else:
 
             @RunnableLambda
-            def parent(_) -> str:  # type: ignore
+            def parent(_: Any) -> str:
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
