@@ -9,10 +9,7 @@ import pytest
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import (
-    BaseImageBlobParser,
-    PDFPlumberParser,
-)
+from langchain_community.document_loaders.parsers import BaseImageBlobParser
 
 if TYPE_CHECKING:
     from PIL.Image import Image
@@ -95,13 +92,6 @@ def _assert_with_duplicate_parser(parser: BaseBlobParser, dedupe: bool = False) 
         assert "11000000 SSeerriieess" == docs[0].page_content.split("\n")[0]
 
 
-def test_pdfplumber_parser() -> None:
-    """Test PDFPlumber parser."""
-    _assert_with_parser(PDFPlumberParser())
-    _assert_with_duplicate_parser(PDFPlumberParser())
-    _assert_with_duplicate_parser(PDFPlumberParser(dedupe=True), dedupe=True)
-
-
 class EmptyImageBlobParser(BaseImageBlobParser):
     def _analyze_image(self, img: "Image") -> str:
         return "Hello world"
@@ -115,6 +105,7 @@ class EmptyImageBlobParser(BaseImageBlobParser):
     "parser_factory,params",
     [
         ("PDFMinerParser", {}),
+        ("PDFPlumberParser", {}),
         ("PyMuPDFParser", {}),
         ("PyPDFium2Parser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
@@ -145,6 +136,7 @@ def test_mode_and_extract_images_variations(
     "parser_factory,params",
     [
         ("PDFMinerParser", {}),
+        ("PDFPlumberParser", {}),
         ("PyMuPDFParser", {}),
         ("PyPDFium2Parser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
@@ -245,6 +237,7 @@ def _test_matrix(
 @pytest.mark.parametrize(
     "parser_factory,params",
     [
+        ("PDFPlumberParser", {}),
         ("PyMuPDFParser", {}),
     ],
 )
