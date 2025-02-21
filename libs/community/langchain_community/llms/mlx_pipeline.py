@@ -101,7 +101,9 @@ class MLXPipeline(LLM):
 
         tokenizer_config = tokenizer_config or {}
         if adapter_file:
-            model, tokenizer = load(model_id, tokenizer_config, adapter_file, lazy)
+            model, tokenizer = load(
+                model_id, tokenizer_config, adapter_path=adapter_file, lazy=lazy
+            )
         else:
             model, tokenizer = load(model_id, tokenizer_config, lazy=lazy)
 
@@ -141,6 +143,7 @@ class MLXPipeline(LLM):
     ) -> str:
         try:
             from mlx_lm import generate
+            from mlx_lm.sample_utils import make_logits_processors, make_sampler
 
         except ImportError:
             raise ImportError(
@@ -161,18 +164,23 @@ class MLXPipeline(LLM):
             "repetition_context_size", None
         )
         top_p: float = pipeline_kwargs.get("top_p", 1.0)
+        min_p: float = pipeline_kwargs.get("min_p", 0.0)
+        min_tokens_to_keep: int = pipeline_kwargs.get("min_tokens_to_keep", 1)
+
+        sampler = make_sampler(temp, top_p, min_p, min_tokens_to_keep)
+        logits_processors = make_logits_processors(
+            None, repetition_penalty, repetition_context_size
+        )
 
         return generate(
             model=self.model,
             tokenizer=self.tokenizer,
             prompt=prompt,
-            temp=temp,
             max_tokens=max_tokens,
             verbose=verbose,
             formatter=formatter,
-            repetition_penalty=repetition_penalty,
-            repetition_context_size=repetition_context_size,
-            top_p=top_p,
+            sampler=sampler,
+            logits_processors=logits_processors,
         )
 
     def _stream(
@@ -184,6 +192,7 @@ class MLXPipeline(LLM):
     ) -> Iterator[GenerationChunk]:
         try:
             import mlx.core as mx
+            from mlx_lm.sample_utils import make_logits_processors, make_sampler
             from mlx_lm.utils import generate_step
 
         except ImportError:
@@ -203,6 +212,8 @@ class MLXPipeline(LLM):
             "repetition_context_size", None
         )
         top_p: float = pipeline_kwargs.get("top_p", 1.0)
+        min_p: float = pipeline_kwargs.get("min_p", 0.0)
+        min_tokens_to_keep: int = pipeline_kwargs.get("min_tokens_to_keep", 1)
 
         prompt = self.tokenizer.encode(prompt, return_tensors="np")
 
@@ -212,14 +223,18 @@ class MLXPipeline(LLM):
         detokenizer = self.tokenizer.detokenizer
         detokenizer.reset()
 
+        sampler = make_sampler(temp or 0.0, top_p, min_p, min_tokens_to_keep)
+
+        logits_processors = make_logits_processors(
+            None, repetition_penalty, repetition_context_size
+        )
+
         for (token, prob), n in zip(
             generate_step(
                 prompt=prompt_tokens,
                 model=self.model,
-                temp=temp,
-                repetition_penalty=repetition_penalty,
-                repetition_context_size=repetition_context_size,
-                top_p=top_p,
+                sampler=sampler,
+                logits_processors=logits_processors,
             ),
             range(max_new_tokens),
         ):
