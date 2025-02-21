@@ -174,6 +174,7 @@ class Milvus(VectorStore):
                 },
             },
             "GPU_IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
+            "GPU_BRUTE_FORCE": {"metric_type": "L2", "params": {"nprobe": 10}},
             "GPU_IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
         }
 
