@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-from functools import cached_property
 from typing import (
     Any,
     Awaitable,
@@ -660,35 +659,38 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         return self
 
-    @cached_property
+    @property
     def _root_client(self) -> openai.AzureOpenAI:
         if self.root_client is not None:
             return self.root_client
         sync_specific = {"http_client": self._http_client}
-        return openai.AzureOpenAI(**self._client_params, **sync_specific)  # type: ignore[call-overload]
+        self.root_client = openai.AzureOpenAI(**self._client_params, **sync_specific)  # type: ignore[call-overload]
+        return self.root_client
 
-    @cached_property
+    @property
     def _root_async_client(self) -> openai.AsyncAzureOpenAI:
         if self.root_async_client is not None:
             return self.root_async_client
         async_specific = {"http_client": self._http_async_client}
-
-        return openai.AsyncAzureOpenAI(
+        self.root_async_client = openai.AsyncAzureOpenAI(
             **self._client_params,
             **async_specific,  # type: ignore[call-overload]
         )
+        return self._root_async_client
 
-    @cached_property
+    @property
     def _client(self) -> Any:
         if self.client is not None:
             return self.client
-        return self._root_client.chat.completions
+        self.client = self._root_client.chat.completions
+        return self.client
 
-    @cached_property
+    @property
     def _async_client(self) -> Any:
         if self.async_client is not None:
             return self.async_client
-        return self._root_async_client.chat.completions
+        self.async_client = self._root_async_client.chat.completions
+        return self.async_client
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

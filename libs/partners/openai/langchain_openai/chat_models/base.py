@@ -8,7 +8,6 @@ import logging
 import os
 import sys
 import warnings
-from functools import cached_property
 from io import BytesIO
 from math import ceil
 from operator import itemgetter
@@ -564,7 +563,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         return self
 
-    @cached_property
+    @property
     def _http_client(self) -> Optional[httpx.Client]:
         """Optional httpx.Client. Only used for sync invocations.
 
@@ -585,9 +584,10 @@ class BaseChatOpenAI(BaseChatModel):
                 "Could not import httpx python package. "
                 "Please install it with `pip install httpx`."
             ) from e
-        return httpx.Client(proxy=self.openai_proxy)
+        self.http_client = httpx.Client(proxy=self.openai_proxy)
+        return self.http_client
 
-    @cached_property
+    @property
     def _http_async_client(self) -> Optional[httpx.AsyncClient]:
         """Optional httpx.AsyncClient. Only used for async invocations.
 
@@ -605,36 +605,41 @@ class BaseChatOpenAI(BaseChatModel):
                 "Could not import httpx python package. "
                 "Please install it with `pip install httpx`."
             ) from e
-        return httpx.AsyncClient(proxy=self.openai_proxy)
+        self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+        return self.http_async_client
 
-    @cached_property
+    @property
     def _root_client(self) -> openai.OpenAI:
         if self.root_client is not None:
             return self.root_client
         sync_specific = {"http_client": self._http_client}
-        return openai.OpenAI(**self._client_params, **sync_specific)  # type: ignore[arg-type]
+        self.root_client = openai.OpenAI(**self._client_params, **sync_specific)  # type: ignore[arg-type]
+        return self.root_client
 
-    @cached_property
+    @property
     def _root_async_client(self) -> openai.AsyncOpenAI:
         if self.root_async_client is not None:
             return self.root_async_client
         async_specific = {"http_client": self._http_async_client}
-        return openai.AsyncOpenAI(
+        self.root_async_client = openai.AsyncOpenAI(
             **self._client_params,
             **async_specific,  # type: ignore[arg-type]
         )
+        return self.root_async_client
 
-    @cached_property
+    @property
     def _client(self) -> Any:
         if self.client is not None:
             return self.client
-        return self._root_client.chat.completions
+        self.client = self._root_client.chat.completions
+        return self.client
 
-    @cached_property
+    @property
     def _async_client(self) -> Any:
         if self.async_client is not None:
             return self.async_client
-        return self._root_async_client.chat.completions
+        self.async_client = self._root_async_client.chat.completions
+        return self.async_client
 
     @property
     def _default_params(self) -> Dict[str, Any]:
