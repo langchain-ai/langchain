@@ -960,7 +960,7 @@ def _format_output(
     name: str,
     status: str,
 ) -> Union[ToolOutputMixin, Any]:
-    if isinstance(content, ToolOutputMixin) or not tool_call_id:
+    if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
     if not _is_message_content_type(content):
         content = _stringify(content)

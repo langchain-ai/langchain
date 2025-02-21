@@ -2457,3 +2457,14 @@ def test_simple_tool_args_schema_dict() -> None:
     assert tool.args == {
         "a": {"title": "A", "type": "integer"},
     }
+
+
+def test_empty_string_tool_call_id() -> None:
+    @tool
+    def foo(x: int) -> str:
+        """Foo."""
+        return "hi"
+
+    assert foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}) == ToolMessage(
+        content="hi", name="foo", tool_call_id=""
+    )
