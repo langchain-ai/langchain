@@ -448,6 +448,7 @@ packages:
 - name: langchain-vdms
   repo: IntelLabs/langchain-vdms
   path: .
+  name_title: VDMS
 - name: langchain-deeplake
   path: .
   repo: activeloopai/langchain-deeplake
