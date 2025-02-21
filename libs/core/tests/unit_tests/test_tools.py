@@ -2465,6 +2465,6 @@ def test_empty_string_tool_call_id() -> None:
         """Foo."""
         return "hi"
 
-    assert foo.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "id": ""}
-    ) == ToolMessage(content="hi", name="foo", tool_call_id="")
+    assert foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}) == ToolMessage(
+        content="hi", name="foo", tool_call_id=""
+    )
