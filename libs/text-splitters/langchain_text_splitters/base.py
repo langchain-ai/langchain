@@ -73,18 +73,34 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
+    
         for i, text in enumerate(texts):
-            index = 0
+            index = 0  # Track the start index of each chunk
             previous_chunk_len = 0
+            last_valid_index = 0  # Keep track of the last known valid index
+            
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
+    
                 if self._add_start_index:
-                    offset = index + previous_chunk_len - self._chunk_overlap
-                    index = text.find(chunk, max(0, offset))
-                    metadata["start_index"] = index
+                    # Use a smarter offset to find the chunk's position
+                    offset = max(0, index + previous_chunk_len - self._chunk_overlap)
+                    new_index = text.find(chunk, offset)
+    
+                    # If the chunk is not found, estimate a valid position
+                    if new_index == -1:
+                        new_index = last_valid_index + previous_chunk_len - self._chunk_overlap
+    
+                    # Ensure index is within bounds
+                    new_index = max(0, min(len(text), new_index))
+    
+                    metadata["start_index"] = new_index
+                    last_valid_index = new_index  # Update the last known good index
                     previous_chunk_len = len(chunk)
+    
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
+    
         return documents
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
