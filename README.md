@@ -262,7 +262,7 @@ giga
   * [RAG с текстовым поиском на основе Yandex Search API](/cookbook/yandex_search/retriever.ipynb)
 * Агенты:
   * [Агент для работы с функциями](/cookbook/gigachat_functions_agent.ipynb)
-  * [Агент «Продавец телефонов»](/cookbook/agents/gigachat_phone_agent.ipynb)
+  * [Агент «Продавец телефонов»](/cookbook/gigachat_phone_agent.ipynb)
   * [Агент с текстовым поиском на основе Yandex Search API](/cookbook/yandex_search/tool.ipynb)
   * [Дебаты агентов с разными ролями](/cookbook/agent_debates/README.md)
   * [Агент для получения рекомендаций Spotify](/cookbook/playlists.ipynb)
