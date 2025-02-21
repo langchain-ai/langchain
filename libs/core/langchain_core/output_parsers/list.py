@@ -71,9 +71,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -103,9 +104,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
