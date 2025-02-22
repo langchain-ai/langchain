@@ -680,18 +680,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self._root_async_client
 
     @property
-    def client(self) -> Any:
-        if self._client is None:
-            self._client = self.root_client.chat.completions
-        return self._client
-
-    @property
-    def async_client(self) -> Any:
-        if self._async_client is None:
-            self._async_client = self.root_async_client.chat.completions
-        return self._async_client
-
-    @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
