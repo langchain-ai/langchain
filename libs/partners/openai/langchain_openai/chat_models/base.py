@@ -6,6 +6,7 @@ import base64
 import json
 import logging
 import os
+import ssl
 import sys
 import warnings
 from io import BytesIO
@@ -107,6 +108,8 @@ if TYPE_CHECKING:
     import httpx
 
 logger = logging.getLogger(__name__)
+
+global_ssl_context = ssl.create_default_context()
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -601,7 +604,9 @@ class BaseChatOpenAI(BaseChatModel):
                     "Could not import httpx python package. "
                     "Please install it with `pip install httpx`."
                 ) from e
-            self._http_client = httpx.Client(proxy=self.openai_proxy)
+            self._http_client = httpx.Client(
+                proxy=self.openai_proxy, verify=global_ssl_context
+            )
         return self._http_client
 
     @property
@@ -621,7 +626,9 @@ class BaseChatOpenAI(BaseChatModel):
                     "Could not import httpx python package. "
                     "Please install it with `pip install httpx`."
                 ) from e
-            self._http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+            self._http_async_client = httpx.AsyncClient(
+                proxy=self.openai_proxy, verify=global_ssl_context
+            )
         return self._http_async_client
 
     @property
