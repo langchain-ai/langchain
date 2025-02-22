@@ -33,6 +33,7 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+import certifi
 import openai
 import tiktoken
 from langchain_core._api.deprecation import deprecated
@@ -109,7 +110,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-global_ssl_context = ssl.create_default_context()
+# This SSL context is equivelent to the default `verify=True`.
+global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
