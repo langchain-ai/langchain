@@ -17,6 +17,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 import pytest
@@ -59,9 +60,24 @@ from langchain_core.tools.base import (
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
+from langchain_core.utils.pydantic import (
+    PYDANTIC_MAJOR_VERSION,
+    _create_subset_model,
+    create_model_v2,
+)
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
+
+
+def _get_tool_call_json_schema(tool: BaseTool) -> dict:
+    tool_schema = tool.tool_call_schema
+    if isinstance(tool_schema, dict):
+        return tool_schema
+
+    if hasattr(tool_schema, "model_json_schema"):
+        return tool_schema.model_json_schema()
+    else:
+        return tool_schema.schema()
 
 
 def test_unnamed_decorator() -> None:
@@ -388,7 +404,6 @@ def test_base_tool_inheritance_base_schema() -> None:
 
 def test_tool_lambda_args_schema() -> None:
     """Test args schema inference when the tool argument is a lambda function."""
-
     tool = Tool(
         name="tool",
         description="A tool",
@@ -403,7 +418,7 @@ def test_structured_tool_from_function_docstring() -> None:
     """Test that structured tools can be created from functions."""
 
     def foo(bar: int, baz: str) -> str:
-        """Docstring
+        """Docstring.
 
         Args:
             bar: the bar value
@@ -437,7 +452,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     """Test that structured tools can be created from functions."""
 
     def foo(bar: int, baz: list[str]) -> str:
-        """Docstring
+        """Docstring.
 
         Args:
             bar: int
@@ -526,7 +541,7 @@ def test_tool_from_function_with_run_manager() -> None:
     def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
         """Docstring
         Args:
-            bar: str
+            bar: str.
         """
         assert callbacks is not None
         return "foo" + bar
@@ -544,7 +559,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
     def foo(
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        """Docstring
+        """Docstring.
 
         Args:
             bar: int
@@ -1381,7 +1396,7 @@ class _MockStructuredToolWithRawOutput(BaseTool):
 def _mock_structured_tool_with_artifact(
     arg1: int, arg2: bool, arg3: Optional[dict] = None
 ) -> tuple[str, dict]:
-    """A Structured Tool"""
+    """A Structured Tool."""
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
@@ -1572,7 +1587,12 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1615,7 +1635,12 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1655,7 +1680,12 @@ def test_tool_injected_arg() -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1707,7 +1737,7 @@ def test_tool_inherited_injected_arg() -> None:
         "required": ["y", "x"],
     }
     # Should not include `y` since it's annotated as an injected tool arg
-    assert tool_.tool_call_schema.model_json_schema() == {
+    assert _get_tool_call_json_schema(tool_) == {
         "title": "foo",
         "description": "foo.",
         "type": "object",
@@ -1716,7 +1746,12 @@ def test_tool_inherited_injected_arg() -> None:
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
     assert tool_.invoke(
-        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+        {
+            "name": "foo",
+            "args": {"x": 5, "y": "bar"},
+            "id": "123",
+            "type": "tool_call",
+        }
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
@@ -1821,12 +1856,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         "type": "object",
     }
 
-    tool_schema = tool.tool_call_schema
-    tool_json_schema = (
-        tool_schema.model_json_schema()
-        if hasattr(tool_schema, "model_json_schema")
-        else tool_schema.schema()
-    )
+    tool_json_schema = _get_tool_call_json_schema(tool)
     assert tool_json_schema == {
         "description": "some description",
         "properties": {
@@ -1873,7 +1903,7 @@ def test_args_schema_explicitly_typed() -> None:
         "type": "object",
     }
 
-    assert tool.tool_call_schema.model_json_schema() == {
+    assert _get_tool_call_json_schema(tool) == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1891,7 +1921,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     from langchain_core.tools import StructuredTool
 
     def foo(a: int, b: str) -> str:
-        """Hahaha"""
+        """Hahaha."""
         return "foo"
 
     foo_tool = StructuredTool.from_function(
@@ -1901,7 +1931,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = foo_tool.args_schema
+    args_schema = cast(BaseModel, foo_tool.args_schema)
     args_json_schema = (
         args_schema.model_json_schema()
         if hasattr(args_schema, "model_json_schema")
@@ -1988,6 +2018,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
 
         class ModelA(BaseModel1, Generic[A], extra="allow"):
             a: A
+
     else:
         from pydantic import BaseModel as BaseModel2
         from pydantic import ConfigDict
@@ -2187,11 +2218,11 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
 
     @tool(args_schema=Foo)
     def foo(x):  # type: ignore[no-untyped-def]
-        """foo"""
+        """Foo."""
         return x
 
-    assert foo.tool_call_schema.model_json_schema() == {
-        "description": "foo",
+    assert _get_tool_call_json_schema(foo) == {
+        "description": "Foo.",
         "properties": {
             "x": {
                 "description": "List of integers",
@@ -2269,11 +2300,16 @@ def test_injected_arg_with_complex_type() -> None:
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
-        """foo"""
+        """Foo."""
         return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
 
     assert foo.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
 
     with pytest.raises(ValueError):
@@ -2281,18 +2317,23 @@ def test_tool_injected_tool_call_id() -> None:
 
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
-        """foo"""
+        """Foo."""
         return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
 
     assert foo2.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
 
 
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:
-        """foo"""
+        """Foo."""
         return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
 
     with pytest.raises(ValueError):
@@ -2322,7 +2363,12 @@ def test_tool_return_output_mixin() -> None:
         return Bar(x=x)
 
     assert foo.invoke(
-        {"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"}
+        {
+            "type": "tool_call",
+            "args": {"x": 0},
+            "name": "foo",
+            "id": "bar",
+        }
     ) == Bar(x=0)
 
 
@@ -2341,3 +2387,84 @@ def test_tool_mutate_input() -> None:
     my_input = {"x": "hi"}
     MyTool().invoke(my_input)
     assert my_input == {"x": "hi"}
+
+
+def test_structured_tool_args_schema_dict() -> None:
+    args_schema = {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "integer"},
+        },
+        "required": ["a", "b"],
+        "title": "add",
+        "type": "object",
+    }
+    tool = StructuredTool(
+        name="add",
+        description="add two numbers",
+        args_schema=args_schema,
+        func=lambda a, b: a + b,
+    )
+    assert tool.invoke({"a": 1, "b": 2}) == 3
+    assert tool.args_schema == args_schema
+    # test that the tool call schema is the same as the args schema
+    assert _get_tool_call_json_schema(tool) == args_schema
+    # test that the input schema is the same as the parent (Runnable) input schema
+    assert (
+        tool.get_input_schema().model_json_schema()
+        == create_model_v2(
+            tool.get_name("Input"),
+            root=tool.InputType,
+            module_name=tool.__class__.__module__,
+        ).model_json_schema()
+    )
+    # test that args are extracted correctly
+    assert tool.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "integer"},
+    }
+
+
+def test_simple_tool_args_schema_dict() -> None:
+    args_schema = {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+        },
+        "required": ["a"],
+        "title": "square",
+        "type": "object",
+    }
+    tool = Tool(
+        name="square",
+        description="square a number",
+        args_schema=args_schema,
+        func=lambda a: a * a,
+    )
+    assert tool.invoke({"a": 2}) == 4
+    assert tool.args_schema == args_schema
+    # test that the tool call schema is the same as the args schema
+    assert _get_tool_call_json_schema(tool) == args_schema
+    # test that the input schema is the same as the parent (Runnable) input schema
+    assert (
+        tool.get_input_schema().model_json_schema()
+        == create_model_v2(
+            tool.get_name("Input"),
+            root=tool.InputType,
+            module_name=tool.__class__.__module__,
+        ).model_json_schema()
+    )
+    # test that args are extracted correctly
+    assert tool.args == {
+        "a": {"title": "A", "type": "integer"},
+    }
+
+
+def test_empty_string_tool_call_id() -> None:
+    @tool
+    def foo(x: int) -> str:
+        """Foo."""
+        return "hi"
+
+    assert foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}) == ToolMessage(
+        content="hi", name="foo", tool_call_id=""
+    )

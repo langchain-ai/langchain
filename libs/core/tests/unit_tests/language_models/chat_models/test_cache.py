@@ -227,7 +227,7 @@ def test_global_cache_batch() -> None:
         assert results[0].content == results[1].content
         assert {results[0].content, results[1].content}.issubset({"hello", "goodbye"})
 
-        ## RACE CONDITION -- note behavior is different from async
+        # RACE CONDITION -- note behavior is different from async
         # Now, reset cache and test the race condition
         # For now we just hard-code the result, if this changes
         # we can investigate further

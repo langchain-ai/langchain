@@ -35,35 +35,33 @@ def wait_for_all_evaluators() -> None:
 class EvaluatorCallbackHandler(BaseTracer):
     """Tracer that runs a run evaluator whenever a run is persisted.
 
-    Parameters
-    ----------
-    evaluators : Sequence[RunEvaluator]
-        The run evaluators to apply to all top level runs.
-    client : LangSmith Client, optional
-        The LangSmith client instance to use for evaluating the runs.
-        If not specified, a new instance will be created.
-    example_id : Union[UUID, str], optional
-        The example ID to be associated with the runs.
-    project_name : str, optional
-        The LangSmith project name to be organize eval chain runs under.
+    Args:
+        evaluators : Sequence[RunEvaluator]
+            The run evaluators to apply to all top level runs.
+        client : LangSmith Client, optional
+            The LangSmith client instance to use for evaluating the runs.
+            If not specified, a new instance will be created.
+        example_id : Union[UUID, str], optional
+            The example ID to be associated with the runs.
+        project_name : str, optional
+            The LangSmith project name to be organize eval chain runs under.
 
-    Attributes
-    ----------
-    example_id : Union[UUID, None]
-        The example ID associated with the runs.
-    client : Client
-        The LangSmith client instance used for evaluating the runs.
-    evaluators : Sequence[RunEvaluator]
-        The sequence of run evaluators to be executed.
-    executor : ThreadPoolExecutor
-        The thread pool executor used for running the evaluators.
-    futures : Set[Future]
-        The set of futures representing the running evaluators.
-    skip_unfinished : bool
-        Whether to skip runs that are not finished or raised
-        an error.
-    project_name : Optional[str]
-        The LangSmith project name to be organize eval chain runs under.
+    Attributes:
+        example_id : Union[UUID, None]
+            The example ID associated with the runs.
+        client : Client
+            The LangSmith client instance used for evaluating the runs.
+        evaluators : Sequence[RunEvaluator]
+            The sequence of run evaluators to be executed.
+        executor : ThreadPoolExecutor
+            The thread pool executor used for running the evaluators.
+        futures : Set[Future]
+            The set of futures representing the running evaluators.
+        skip_unfinished : bool
+            Whether to skip runs that are not finished or raised
+            an error.
+        project_name : Optional[str]
+            The LangSmith project name to be organize eval chain runs under.
     """
 
     name: str = "evaluator_callback_handler"
@@ -141,7 +139,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 f"{evaluator.__class__.__name__}: {repr(e)}",
                 exc_info=True,
             )
-            raise e
+            raise
         example_id = str(run.reference_example_id)
         with self.lock:
             for res in eval_results:

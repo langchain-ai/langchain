@@ -433,7 +433,7 @@ class CassandraDatabase:
             import cassio.config
         except ImportError:
             raise ValueError(
-                "cassio package not found, please install with" " `pip install cassio`"
+                "cassio package not found, please install with `pip install cassio`"
             )
 
         # Use pre-existing session on cassio
@@ -610,7 +610,11 @@ class Table(BaseModel):
                 partition_info.append((row["column_name"], row["position"]))
             elif row["kind"] == "clustering":
                 cluster_info.append(
-                    (row["column_name"], row["clustering_order"], row["position"])
+                    (
+                        row["column_name"],
+                        row["clustering_order"],
+                        row["position"],
+                    )
                 )
 
         partition = [

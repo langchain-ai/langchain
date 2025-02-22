@@ -10,10 +10,7 @@ from typing import (
     Optional,
 )
 
-from langchain_core._api import beta
 
-
-@beta(message="Introduced in 0.2.24. API subject to change.")
 class BaseRateLimiter(abc.ABC):
     """Base class for rate limiters.
 
@@ -73,7 +70,6 @@ class BaseRateLimiter(abc.ABC):
         """
 
 
-@beta(message="Introduced in 0.2.24. API subject to change.")
 class InMemoryRateLimiter(BaseRateLimiter):
     """An in memory rate limiter based on a token bucket algorithm.
 
@@ -248,14 +244,14 @@ class InMemoryRateLimiter(BaseRateLimiter):
         if not blocking:
             return self._consume()
 
-        while not self._consume():
+        while not self._consume():  # noqa: ASYNC110
             # This code ignores the ASYNC110 warning which is a false positive in this
             # case.
             # There is no external actor that can mark that the Event is done
             # since the tokens are managed by the rate limiter itself.
             # It needs to wake up to re-fill the tokens.
             # https://docs.astral.sh/ruff/rules/async-busy-wait/
-            await asyncio.sleep(self.check_every_n_seconds)  # ruff: noqa: ASYNC110
+            await asyncio.sleep(self.check_every_n_seconds)
         return True
 
 

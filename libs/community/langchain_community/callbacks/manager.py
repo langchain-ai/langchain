@@ -61,9 +61,9 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 
 @contextmanager
-def get_bedrock_anthropic_callback() -> (
-    Generator[BedrockAnthropicTokenUsageCallbackHandler, None, None]
-):
+def get_bedrock_anthropic_callback() -> Generator[
+    BedrockAnthropicTokenUsageCallbackHandler, None, None
+]:
     """Get the Bedrock anthropic callback handler in a context manager.
     which conveniently exposes token and cost information.
 

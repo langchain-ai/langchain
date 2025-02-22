@@ -307,8 +307,7 @@ class ContextSet(RunnableSerializable):
 
 
 class Context:
-    """
-    Context for a runnable.
+    """Context for a runnable.
 
     The `Context` class provides methods for creating context scopes,
     getters, and setters within a runnable. It allows for managing

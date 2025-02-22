@@ -13,8 +13,8 @@ from typing import (
 from typing import TypedDict as TypingTypedDict
 
 import pytest
-from pydantic import BaseModel as BaseModelV2Maybe  #  pydantic: ignore
-from pydantic import Field as FieldV2Maybe  #  pydantic: ignore
+from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
+from pydantic import Field as FieldV2Maybe  # pydantic: ignore
 from typing_extensions import (
     TypedDict as ExtensionsTypedDict,
 )
@@ -39,7 +39,7 @@ from langchain_core.utils.function_calling import (
 @pytest.fixture()
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
-        """dummy function"""
+        """Dummy function."""
 
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
@@ -53,7 +53,7 @@ def annotated_function() -> Callable:
         arg1: ExtensionsAnnotated[int, "foo"],
         arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"],
     ) -> None:
-        """dummy function"""
+        """Dummy function."""
 
     return dummy_function
 
@@ -61,7 +61,7 @@ def annotated_function() -> Callable:
 @pytest.fixture()
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
@@ -74,7 +74,7 @@ def function() -> Callable:
 @pytest.fixture()
 def function_docstring_annotations() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1 (int): foo
@@ -105,7 +105,7 @@ def dummy_tool() -> BaseTool:
     class DummyFunction(BaseTool):
         args_schema: type[BaseModel] = Schema
         name: str = "dummy_function"
-        description: str = "dummy function"
+        description: str = "Dummy function."
 
         def _run(self, *args: Any, **kwargs: Any) -> Any:
             pass
@@ -122,15 +122,37 @@ def dummy_structured_tool() -> StructuredTool:
     return StructuredTool.from_function(
         lambda x: None,
         name="dummy_function",
-        description="dummy function",
+        description="Dummy function.",
         args_schema=Schema,
+    )
+
+
+@pytest.fixture()
+def dummy_structured_tool_args_schema_dict() -> StructuredTool:
+    args_schema = {
+        "type": "object",
+        "properties": {
+            "arg1": {"type": "integer", "description": "foo"},
+            "arg2": {
+                "type": "string",
+                "enum": ["bar", "baz"],
+                "description": "one of 'bar', 'baz'",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    }
+    return StructuredTool.from_function(
+        lambda x: None,
+        name="dummy_function",
+        description="Dummy function.",
+        args_schema=args_schema,
     )
 
 
 @pytest.fixture()
 def dummy_pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
-        """dummy function"""
+        """Dummy function."""
 
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
@@ -141,7 +163,7 @@ def dummy_pydantic() -> type[BaseModel]:
 @pytest.fixture()
 def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     class dummy_function(BaseModelV2Maybe):  # noqa: N801
-        """dummy function"""
+        """Dummy function."""
 
         arg1: int = FieldV2Maybe(..., description="foo")
         arg2: Literal["bar", "baz"] = FieldV2Maybe(
@@ -154,7 +176,7 @@ def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
 @pytest.fixture()
 def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
-        """dummy function"""
+        """Dummy function."""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
         arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
@@ -165,7 +187,7 @@ def dummy_typing_typed_dict() -> type:
 @pytest.fixture()
 def dummy_typing_typed_dict_docstring() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
@@ -181,7 +203,7 @@ def dummy_typing_typed_dict_docstring() -> type:
 @pytest.fixture()
 def dummy_extensions_typed_dict() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
-        """dummy function"""
+        """Dummy function."""
 
         arg1: ExtensionsAnnotated[int, ..., "foo"]
         arg2: ExtensionsAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]
@@ -192,7 +214,7 @@ def dummy_extensions_typed_dict() -> type:
 @pytest.fixture()
 def dummy_extensions_typed_dict_docstring() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
@@ -209,7 +231,7 @@ def dummy_extensions_typed_dict_docstring() -> type:
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "type": "object",
         "properties": {
             "arg1": {"description": "foo", "type": "integer"},
@@ -227,7 +249,7 @@ def json_schema() -> dict:
 def anthropic_tool() -> dict:
     return {
         "name": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -248,7 +270,7 @@ def bedrock_converse_tool() -> dict:
     return {
         "toolSpec": {
             "name": "dummy_function",
-            "description": "dummy function",
+            "description": "Dummy function.",
             "inputSchema": {
                 "json": {
                     "type": "object",
@@ -269,7 +291,7 @@ def bedrock_converse_tool() -> dict:
 
 class Dummy:
     def dummy_function(self, arg1: int, arg2: Literal["bar", "baz"]) -> None:
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
@@ -280,7 +302,7 @@ class Dummy:
 class DummyWithClassMethod:
     @classmethod
     def dummy_function(cls, arg1: int, arg2: Literal["bar", "baz"]) -> None:
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
@@ -293,6 +315,7 @@ def test_convert_to_openai_function(
     function: Callable,
     function_docstring_annotations: Callable,
     dummy_structured_tool: StructuredTool,
+    dummy_structured_tool_args_schema_dict: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: dict,
     anthropic_tool: dict,
@@ -307,7 +330,7 @@ def test_convert_to_openai_function(
 ) -> None:
     expected = {
         "name": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -327,6 +350,7 @@ def test_convert_to_openai_function(
         function,
         function_docstring_annotations,
         dummy_structured_tool,
+        dummy_structured_tool_args_schema_dict,
         dummy_tool,
         json_schema,
         anthropic_tool,
@@ -345,7 +369,7 @@ def test_convert_to_openai_function(
         assert actual == expected
 
     # Test runnables
-    actual = convert_to_openai_function(runnable.as_tool(description="dummy function"))
+    actual = convert_to_openai_function(runnable.as_tool(description="Dummy function."))
     parameters = {
         "type": "object",
         "properties": {
@@ -392,7 +416,7 @@ def test_convert_to_openai_function_nested_v2() -> None:
         )
 
     def my_function(arg1: NestedV2) -> None:
-        """dummy function"""
+        """Dummy function."""
 
     convert_to_openai_function(my_function)
 
@@ -405,11 +429,11 @@ def test_convert_to_openai_function_nested() -> None:
         )
 
     def my_function(arg1: Nested) -> None:
-        """dummy function"""
+        """Dummy function."""
 
     expected = {
         "name": "my_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -442,11 +466,11 @@ def test_convert_to_openai_function_nested_strict() -> None:
         )
 
     def my_function(arg1: Nested) -> None:
-        """dummy function"""
+        """Dummy function."""
 
     expected = {
         "name": "my_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -608,7 +632,7 @@ def test_function_optional_param() -> None:
         b: str,
         c: Optional[list[Optional[str]]],
     ) -> None:
-        """A test function"""
+        """A test function."""
 
     func = convert_to_openai_function(func5)
     req = func["parameters"]["required"]
@@ -617,7 +641,7 @@ def test_function_optional_param() -> None:
 
 def test_function_no_params() -> None:
     def nullary_function() -> None:
-        """nullary function"""
+        """Nullary function."""
 
     func = convert_to_openai_function(nullary_function)
     req = func["parameters"].get("required")
@@ -722,12 +746,12 @@ def test__convert_typed_dict_to_openai_function(
     annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
 
     class SubTool(typed_dict):
-        """Subtool docstring"""
+        """Subtool docstring."""
 
         args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
 
     class Tool(typed_dict):
-        """Docstring
+        """Docstring.
 
         Args:
             arg1: foo
@@ -753,7 +777,7 @@ def test__convert_typed_dict_to_openai_function(
 
     expected = {
         "name": "Tool",
-        "description": "Docstring",
+        "description": "Docstring.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -768,7 +792,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg3": {
                     "type": "array",
                     "items": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -798,7 +822,7 @@ def test__convert_typed_dict_to_openai_function(
                                 {"type": "array", "items": {}},
                                 {
                                     "title": "SubTool",
-                                    "description": "Subtool docstring",
+                                    "description": "Subtool docstring.",
                                     "type": "object",
                                     "properties": {
                                         "args": {
@@ -816,7 +840,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg7": {
                     "type": "array",
                     "items": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -834,7 +858,7 @@ def test__convert_typed_dict_to_openai_function(
                     "items": [
                         {
                             "title": "SubTool",
-                            "description": "Subtool docstring",
+                            "description": "Subtool docstring.",
                             "type": "object",
                             "properties": {
                                 "args": {
@@ -850,7 +874,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg9": {
                     "type": "array",
                     "items": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -864,7 +888,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg10": {
                     "type": "array",
                     "items": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -878,7 +902,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg11": {
                     "type": "array",
                     "items": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -893,7 +917,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg12": {
                     "type": "object",
                     "additionalProperties": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -907,7 +931,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg13": {
                     "type": "object",
                     "additionalProperties": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -921,7 +945,7 @@ def test__convert_typed_dict_to_openai_function(
                 "arg14": {
                     "type": "object",
                     "additionalProperties": {
-                        "description": "Subtool docstring",
+                        "description": "Subtool docstring.",
                         "type": "object",
                         "properties": {
                             "args": {
@@ -981,13 +1005,13 @@ def test_convert_union_type_py_39() -> None:
 def test_convert_to_openai_function_no_args() -> None:
     @tool
     def empty_tool() -> str:
-        """No args"""
+        """No args."""
         return "foo"
 
     actual = convert_to_openai_function(empty_tool, strict=True)
     assert actual == {
         "name": "empty_tool",
-        "description": "No args",
+        "description": "No args.",
         "parameters": {
             "properties": {},
             "additionalProperties": False,

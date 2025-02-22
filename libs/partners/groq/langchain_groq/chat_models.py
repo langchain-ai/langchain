@@ -86,6 +86,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_groq.version import __version__
+
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -170,7 +172,7 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -386,6 +388,10 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
+        default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
+            self.default_headers or {}
+        )
+
         client_params: Dict[str, Any] = {
             "api_key": (
                 self.groq_api_key.get_secret_value() if self.groq_api_key else None
@@ -393,7 +399,7 @@ class ChatGroq(BaseChatModel):
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": default_headers,
             "default_query": self.default_query,
         }
 
@@ -990,8 +996,16 @@ class ChatGroq(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools([schema], tool_choice=tool_name)
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1002,7 +1016,13 @@ class ChatGroq(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                structured_output_format={
+                    "kwargs": {"method": "json_mode"},
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema

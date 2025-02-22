@@ -243,7 +243,7 @@ def test_prompt_jinja2_functionality(
     )
     output = prompt.format(foo="hello", bar="bye")
     expected_output = (
-        "Starting with hello\n\n" "happy: sad\n\n" "tall: short\n\n" "Ending with bye"
+        "Starting with hello\n\nhappy: sad\n\ntall: short\n\nEnding with bye"
     )
 
     assert output == expected_output

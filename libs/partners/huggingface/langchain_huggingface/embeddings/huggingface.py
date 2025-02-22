@@ -3,7 +3,16 @@ from typing import Any, Dict, List, Optional
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..utils.import_utils import (
+    IMPORT_ERROR,
+    is_ipex_available,
+    is_optimum_intel_available,
+    is_optimum_intel_version,
+)
+
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
+_MIN_OPTIMUM_VERSION = "1.22"
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
@@ -61,7 +70,28 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
 
-        self._client = sentence_transformers.SentenceTransformer(
+        if self.model_kwargs.get("backend", "torch") == "ipex":
+            if not is_optimum_intel_available() or not is_ipex_available():
+                raise ImportError(
+                    f'Backend: ipex {IMPORT_ERROR.format("optimum[ipex]")}'
+                )
+
+            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
+                raise ImportError(
+                    f"Backend: ipex requires optimum-intel>="
+                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
+                    "`pip install --upgrade --upgrade-strategy eager "
+                    "`optimum[ipex]`."
+                )
+
+            from optimum.intel import IPEXSentenceTransformer  # type: ignore[import]
+
+            model_cls = IPEXSentenceTransformer
+
+        else:
+            model_cls = sentence_transformers.SentenceTransformer
+
+        self._client = model_cls(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 

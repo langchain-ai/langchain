@@ -124,7 +124,7 @@ def get_buffer_string(
             role = m.role
         else:
             msg = f"Got unsupported message type: {m}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = f"{role}: {m.content}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
@@ -236,7 +236,10 @@ def _create_message_from_message_type(
     if tool_call_id is not None:
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
+        if response_metadata := additional_kwargs.pop("response_metadata", None):
+            kwargs["response_metadata"] = response_metadata
         kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+        additional_kwargs.update(additional_kwargs.pop("additional_kwargs", {}))
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
@@ -258,8 +261,12 @@ def _create_message_from_message_type(
             else:
                 kwargs["tool_calls"].append(tool_call)
     if message_type in ("human", "user"):
+        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+            kwargs["example"] = example
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
+        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+            kwargs["example"] = example
         message = AIMessage(content=content, **kwargs)
     elif message_type in ("system", "developer"):
         if message_type == "developer":
@@ -816,7 +823,6 @@ def trim_messages(
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
     """  # noqa: E501
-
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":
@@ -948,8 +954,9 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
+
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
@@ -1008,7 +1015,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(err)
                         content.append(
-                            {"type": "image_url", "image_url": block["image_url"]}
+                            {
+                                "type": "image_url",
+                                "image_url": block["image_url"],
+                            }
                         )
                     # Anthropic and Bedrock converse format
                     elif (block.get("type") == "image") or "image" in block:
@@ -1127,7 +1137,10 @@ def convert_to_openai_messages(
                             )
                             raise ValueError(msg)
                         content.append(
-                            {"type": "text", "text": json.dumps(block["json"])}
+                            {
+                                "type": "text",
+                                "text": json.dumps(block["json"]),
+                            }
                         )
                     elif (
                         block.get("type") == "guard_content"
@@ -1394,7 +1407,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
         return message.role
     else:
         msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:

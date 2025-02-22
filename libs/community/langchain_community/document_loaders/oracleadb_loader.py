@@ -82,8 +82,7 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
             import oracledb
         except ImportError as e:
             raise ImportError(
-                "Could not import oracledb, "
-                "please install with 'pip install oracledb'"
+                "Could not import oracledb, please install with 'pip install oracledb'"
             ) from e
         connect_param = {"user": self.user, "password": self.password, "dsn": self.dsn}
         if self.dsn == self.tns_name:

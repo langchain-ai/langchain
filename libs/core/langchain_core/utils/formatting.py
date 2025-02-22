@@ -44,7 +44,7 @@ class StrictFormatter(Formatter):
         Raises:
             ValueError: If any input variables are not used in the format string.
         """
-        dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
+        dummy_inputs = dict.fromkeys(input_variables, "foo")
         super().format(format_string, **dummy_inputs)
 
 

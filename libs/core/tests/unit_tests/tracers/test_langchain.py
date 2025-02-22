@@ -83,7 +83,6 @@ def test_tracer_with_run_tree_parent() -> None:
 
 def test_log_lock() -> None:
     """Test that example assigned at callback start/end is honored."""
-
     client = unittest.mock.MagicMock(spec=Client)
     tracer = LangChainTracer(client=client)
 
@@ -96,9 +95,7 @@ def test_log_lock() -> None:
 
 
 class LangChainProjectNameTest(unittest.TestCase):
-    """
-    Test that the project name is set correctly for runs.
-    """
+    """Test that the project name is set correctly for runs."""
 
     class SetProperTracerProjectTestCase:
         def __init__(

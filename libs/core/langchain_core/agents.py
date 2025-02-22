@@ -74,7 +74,8 @@ class AgentAction(Serializable):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "agent"]."""
+        Default is ["langchain", "schema", "agent"].
+        """
         return ["langchain", "schema", "agent"]
 
     @property
@@ -189,7 +190,6 @@ def _convert_agent_observation_to_messages(
     Returns:
         AIMessage that corresponds to the original tool invocation.
     """
-
     if isinstance(agent_action, AgentActionMessageLog):
         return [_create_function_message(agent_action, observation)]
     else:

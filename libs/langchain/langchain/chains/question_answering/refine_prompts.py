@@ -33,7 +33,11 @@ refine_template = (
     "If the context isn't useful, return the original answer."
 )
 CHAT_REFINE_PROMPT = ChatPromptTemplate.from_messages(
-    [("human", "{question}"), ("ai", "{existing_answer}"), ("human", refine_template)]
+    [
+        ("human", "{question}"),
+        ("ai", "{existing_answer}"),
+        ("human", refine_template),
+    ]
 )
 REFINE_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=DEFAULT_REFINE_PROMPT,
@@ -60,7 +64,10 @@ chat_qa_prompt_template = (
     "answer any questions"
 )
 CHAT_QUESTION_PROMPT = ChatPromptTemplate.from_messages(
-    [("system", chat_qa_prompt_template), ("human", "{question}")]
+    [
+        ("system", chat_qa_prompt_template),
+        ("human", "{question}"),
+    ]
 )
 QUESTION_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=DEFAULT_TEXT_QA_PROMPT,

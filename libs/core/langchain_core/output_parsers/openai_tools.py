@@ -168,7 +168,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."
@@ -283,19 +282,20 @@ class PydanticToolsParser(JsonOutputToolsParser):
         name_dict = {tool.__name__: tool for tool in self.tools}
         pydantic_objects = []
         for res in json_results:
-            try:
-                if not isinstance(res["args"], dict):
-                    msg = (
-                        f"Tool arguments must be specified as a dict, received: "
-                        f"{res['args']}"
-                    )
-                    raise ValueError(msg)
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
-            except (ValidationError, ValueError) as e:
+            if not isinstance(res["args"], dict):
                 if partial:
                     continue
-                else:
-                    raise e
+                msg = (
+                    f"Tool arguments must be specified as a dict, received: "
+                    f"{res['args']}"
+                )
+                raise ValueError(msg)
+            try:
+                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+            except (ValidationError, ValueError):
+                if partial:
+                    continue
+                raise
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
         else:

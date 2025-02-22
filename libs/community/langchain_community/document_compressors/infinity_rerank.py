@@ -101,7 +101,10 @@ class InfinityRerank(BaseDocumentCompressor):
         result_dicts = []
         for res in results:
             result_dicts.append(
-                {"index": res.index, "relevance_score": res.relevance_score}
+                {
+                    "index": res.index,
+                    "relevance_score": res.relevance_score,
+                }
             )
 
         result_dicts.sort(key=lambda x: x["relevance_score"], reverse=True)
