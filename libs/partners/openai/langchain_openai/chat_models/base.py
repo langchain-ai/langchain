@@ -611,6 +611,10 @@ class BaseChatOpenAI(BaseChatModel):
             )
         return self._http_client
 
+    @http_client.setter
+    def http_client(self, value: Optional[httpx.Client]) -> None:
+        self._http_client = value
+
     @property
     def http_async_client(self) -> Optional[httpx.AsyncClient]:
         """Optional httpx.AsyncClient. Only used for async invocations.
@@ -632,6 +636,10 @@ class BaseChatOpenAI(BaseChatModel):
                 proxy=self.openai_proxy, verify=global_ssl_context
             )
         return self._http_async_client
+
+    @http_async_client.setter
+    def http_async_client(self, value: Optional[httpx.AsyncClient]) -> None:
+        self._http_async_client = value
 
     @property
     def root_client(self) -> Any:
