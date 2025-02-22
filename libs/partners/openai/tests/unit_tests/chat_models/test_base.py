@@ -881,6 +881,20 @@ def test__get_request_payload() -> None:
     payload = llm._get_request_payload(messages)
     assert payload == expected
 
+    # Test we coerce to developer role for o-series models
+    llm = ChatOpenAI(model="o3-mini")
+    payload = llm._get_request_payload(messages)
+    expected = {
+        "messages": [
+            {"role": "developer", "content": "hello"},
+            {"role": "developer", "content": "bye"},
+            {"role": "user", "content": "how are you"},
+        ],
+        "model": "o3-mini",
+        "stream": False,
+    }
+    assert payload == expected
+
 
 def test_init_o1() -> None:
     with pytest.warns(None) as record:  # type: ignore[call-overload]
