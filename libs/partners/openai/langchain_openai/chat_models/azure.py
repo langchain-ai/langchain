@@ -629,7 +629,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
-        client_params: dict = {
+        self._client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.deployment_name,
@@ -650,26 +650,42 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
-            client_params["max_retries"] = self.max_retries
+            self._client_params["max_retries"] = self.max_retries
 
-        if not self.client:
-            sync_specific = {"http_client": self.http_client}
-            self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
-            self.client = self.root_client.chat.completions
-        if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
-
-            if self.azure_ad_async_token_provider:
-                client_params["azure_ad_token_provider"] = (
-                    self.azure_ad_async_token_provider
-                )
-
-            self.root_async_client = openai.AsyncAzureOpenAI(
-                **client_params,
-                **async_specific,  # type: ignore[arg-type]
+        if self.azure_ad_async_token_provider:
+            self._client_params["azure_ad_token_provider"] = (
+                self.azure_ad_async_token_provider
             )
-            self.async_client = self.root_async_client.chat.completions
+
         return self
+
+    @property
+    def root_client(self) -> Any:
+        if self._root_client is None:
+            sync_specific = {"http_client": self.http_client}
+            self._root_client = openai.AzureOpenAI(
+                **self._client_params,
+                **sync_specific,  # type: ignore[call-overload]
+            )
+        return self._root_client
+
+    @root_client.setter
+    def root_client(self, value: openai.AzureOpenAI) -> None:
+        self._root_client = value
+
+    @property
+    def root_async_client(self) -> Any:
+        if self._root_async_client is None:
+            async_specific = {"http_client": self.http_async_client}
+            self._root_async_client = openai.AsyncAzureOpenAI(
+                **self._client_params,
+                **async_specific,  # type: ignore[call-overload]
+            )
+        return self._root_async_client
+
+    @root_async_client.setter
+    def root_async_client(self, value: openai.AsyncAzureOpenAI) -> None:
+        self._root_async_client = value
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
