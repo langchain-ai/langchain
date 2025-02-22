@@ -78,7 +78,12 @@ class RankLLMRerank(BaseDocumentCompressor):
                     Candidate(
                         docid=index,
                         score=1,
-                        doc={"body": doc.page_content, "headings": "", "title": "", "url": ""}
+                        doc={
+                            "body": doc.page_content,
+                            "headings": "",
+                            "title": "",
+                            "url": "",
+                        },
                     )
                     for index, doc in enumerate(documents)
                 ],
