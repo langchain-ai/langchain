@@ -557,15 +557,14 @@ def merge_message_runs(
     messages = convert_to_messages(messages)
     merged: list[BaseMessage] = []
     for msg in messages:
-        curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
         if not last:
-            merged.append(curr)
-        elif isinstance(curr, ToolMessage) or not isinstance(curr, last.__class__):
-            merged.extend([last, curr])
+            merged.append(msg)
+        elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
+            merged.extend([last, msg])
         else:
             last_chunk = _msg_to_chunk(last)
-            curr_chunk = _msg_to_chunk(curr)
+            curr_chunk = _msg_to_chunk(msg)
             if curr_chunk.response_metadata:
                 curr_chunk.response_metadata.clear()
             if (
