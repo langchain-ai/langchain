@@ -660,7 +660,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self
 
     @property
-    def root_client(self) -> openai.AzureOpenAI:
+    def root_client(self) -> Any:
         if self._root_client is None:
             sync_specific = {"http_client": self.http_client}
             self._root_client = openai.AzureOpenAI(
@@ -669,8 +669,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
         return self._root_client
 
+    @root_client.setter
+    def root_client(self, value: openai.AzureOpenAI) -> None:
+        self._root_client = value
+
     @property
-    def root_async_client(self) -> openai.AsyncAzureOpenAI:
+    def root_async_client(self) -> Any:
         if self._root_async_client is None:
             async_specific = {"http_client": self.http_async_client}
             self._root_async_client = openai.AsyncAzureOpenAI(
@@ -678,6 +682,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 **async_specific,  # type: ignore[call-overload]
             )
         return self._root_async_client
+
+    @root_async_client.setter
+    def root_async_client(self, value: openai.AsyncAzureOpenAI) -> None:
+        self._root_async_client = value
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

@@ -634,7 +634,7 @@ class BaseChatOpenAI(BaseChatModel):
         return self._http_async_client
 
     @property
-    def root_client(self) -> openai.OpenAI:
+    def root_client(self) -> Any:
         if self._root_client is None:
             sync_specific = {"http_client": self.http_client}
             self._root_client = openai.OpenAI(
@@ -648,7 +648,7 @@ class BaseChatOpenAI(BaseChatModel):
         self._root_client = value
 
     @property
-    def root_async_client(self) -> openai.AsyncOpenAI:
+    def root_async_client(self) -> Any:
         if self._root_async_client is None:
             async_specific = {"http_client": self.http_async_client}
             self._root_async_client = openai.AsyncOpenAI(
