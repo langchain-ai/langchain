@@ -178,7 +178,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.api_key and self.api_key.get_secret_value()
         ):
             raise ValueError("If using default api base, DEEPSEEK_API_KEY must be set.")
-        client_params: dict = {
+        self._client_params: dict = {
             k: v
             for k, v in {
                 "api_key": self.api_key.get_secret_value() if self.api_key else None,
@@ -191,16 +191,6 @@ class ChatDeepSeek(BaseChatOpenAI):
             if v is not None
         }
 
-        if not (self.client or None):
-            sync_specific: dict = {"http_client": self.http_client}
-            self.client = openai.OpenAI(
-                **client_params, **sync_specific
-            ).chat.completions
-        if not (self.async_client or None):
-            async_specific: dict = {"http_client": self.http_async_client}
-            self.async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
-            ).chat.completions
         return self
 
     def _create_chat_result(
