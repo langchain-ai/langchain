@@ -567,7 +567,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["bye", "hello"],
     }
 
-    def get_value(input):  # type: ignore[no-untyped-def]
+    def get_value(input):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
         return input["variable_name"]
 
     assert RunnableLambda(get_value).get_input_jsonschema() == {
@@ -577,7 +577,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["variable_name"],
     }
 
-    async def aget_value(input):  # type: ignore[no-untyped-def]
+    async def aget_value(input):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
         return (input["variable_name"], input.get("another"))
 
     assert RunnableLambda(aget_value).get_input_jsonschema() == {
@@ -590,7 +590,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["another", "variable_name"],
     }
 
-    async def aget_values(input):  # type: ignore[no-untyped-def]
+    async def aget_values(input):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
         return {
             "hello": input["variable_name"],
             "bye": input["variable_name"],
