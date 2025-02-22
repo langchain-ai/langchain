@@ -216,9 +216,6 @@ if TYPE_CHECKING:
     from langchain_community.tools.openapi.utils.openapi_utils import (
         OpenAPISpec,
     )
-    from langchain_community.tools.openvino.text2speech import (
-        OpenVINOText2SpeechTool,
-    )
     from langchain_community.tools.openweathermap.tool import (
         OpenWeatherMapQueryRun,
     )
@@ -452,7 +449,6 @@ __all__ = [
     "O365SendMessage",
     "OpenAIText2SpeechTool",
     "OpenAPISpec",
-    "OpenVINOText2SpeechTool",
     "OpenWeatherMapQueryRun",
     "PolygonAggregates",
     "PolygonFinancials",
@@ -608,7 +604,6 @@ _module_lookup = {
     "O365SendMessage": "langchain_community.tools.office365.send_message",
     "OpenAIText2SpeechTool": "langchain_community.tools.openai.text2speech",
     "OpenAPISpec": "langchain_community.tools.openapi.utils.openapi_utils",
-    "OpenVINOText2SpeechTool": "langchain_community.tools.openvino.text2speech",
     "OpenWeatherMapQueryRun": "langchain_community.tools.openweathermap.tool",
     "PolygonAggregates": "langchain_community.tools.polygon.aggregates",
     "PolygonFinancials": "langchain_community.tools.polygon.financials",

@@ -15,7 +15,7 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
     and loads the transcribed text into one or more Documents,
     depending on the specified format.
 
-    To use, you should have the ``todo`` python package installed.
+    To use, you should have the ``optimum[openvino,nncf]`` python package installed.
 
     Audio files can be specified via a local file path.
 
@@ -63,8 +63,8 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
             from optimum.intel.openvino import OVModelForSpeechSeq2Seq
         except ImportError as exc:
             raise ImportError(
-                "Could not import todo python package. "
-                "Please install it with `pip install todo`."
+                "Could not import optimum.intel.openvino python package. "
+                "Please install it with `pip install optimum[openvino,nncf]`."
             ) from exc
 
         processor = AutoProcessor.from_pretrained(self.model_id)
@@ -128,7 +128,6 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
                 )["chunks"]
 
         result_total_latency = time.time() - start_time
-        print("ASR Inf time (seconds/minutes): " , result_total_latency, "/", result_total_latency/60)
 
         return [
             Document(

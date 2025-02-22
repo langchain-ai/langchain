@@ -10,7 +10,6 @@ from pydantic import model_validator
 import torch
 from dataclasses import dataclass, field
 from openai import OpenAI
-import time
 
 class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
     """Tool that queries OpenAI Speech API.
@@ -52,7 +51,6 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
 
         try:
             out_file_name = "tts-output.mp3"
-            start_time = time.time()
             client = OpenAI(
                     base_url=self.base_url,
                     api_key=self.api_key
@@ -64,8 +62,6 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
                 response_format="mp3"
             ) as response:
                 response.stream_to_file(out_file_name)
-            end_time = time.time()
-            print("TTS took: ", end_time - start_time, " (seconds) / ", (end_time-start_time)/60, " (minutes)")
 
             return out_file_name
         except Exception as e:
@@ -102,14 +98,13 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
         Play the text in your speakers."""
 
         import numpy as np
-        import pyaudio
 
         try:
-            from transformers.pipelines.audio_utils import ffmpeg_read
+            import pyaudio
         except ImportError as exc:
             raise ImportError(
-                "Could not import ffmpeg-python python package. "
-                "Please install it with `pip install ffmpeg-python`."
+                    "Could not import pyaudio python package. "
+                    "Please install it with `pip install pyaudio`."
             ) from exc
 
         try:
@@ -134,9 +129,5 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
                 for chunk in response.iter_bytes(chunk_size=1024):
                     d = np.frombuffer(chunk, dtype=np.int16)
                     player.write(chunk)
-
-
         except Exception as e:
             raise RuntimeError(f"Error while running OpenAIText2SpeechTool: {e}")
-
-
