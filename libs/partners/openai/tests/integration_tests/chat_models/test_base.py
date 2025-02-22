@@ -676,6 +676,16 @@ def test_openai_proxy() -> None:
         assert proxy.host == b"localhost"
         assert proxy.port == 8080
 
+    http_async_client = httpx.AsyncClient(proxy="http://localhost:8081")
+    chat_openai = ChatOpenAI(http_async_client=http_async_client)
+    mounts = chat_openai.async_client._client._client._mounts
+    assert len(mounts) == 1
+    for key, value in mounts.items():
+        proxy = value._pool._proxy_url.origin
+        assert proxy.scheme == b"http"
+        assert proxy.host == b"localhost"
+        assert proxy.port == 8081
+
 
 def test_openai_response_headers() -> None:
     """Test ChatOpenAI response headers."""
