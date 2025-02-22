@@ -641,6 +641,10 @@ class BaseChatOpenAI(BaseChatModel):
             )
         return self._root_client
 
+    @root_client.setter
+    def root_client(self, value: openai.OpenAI) -> None:
+        self._root_client = value
+
     @property
     def root_async_client(self) -> openai.AsyncOpenAI:
         if self._root_async_client is None:
@@ -651,17 +655,29 @@ class BaseChatOpenAI(BaseChatModel):
             )
         return self._root_async_client
 
+    @root_async_client.setter
+    def root_async_client(self, value: openai.AsyncOpenAI) -> None:
+        self._root_async_client = value
+
     @property
     def client(self) -> Any:
         if self._client is None:
             self._client = self.root_client.chat.completions
         return self._client
 
+    @client.setter
+    def client(self, value: Any) -> None:
+        self._client = value
+
     @property
     def async_client(self) -> Any:
         if self._async_client is None:
             self._async_client = self.root_async_client.chat.completions
         return self._async_client
+
+    @async_client.setter
+    def async_client(self, value: Any) -> None:
+        self._async_client = value
 
     @property
     def _default_params(self) -> Dict[str, Any]:
