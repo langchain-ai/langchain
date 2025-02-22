@@ -661,35 +661,34 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @property
     def root_client(self) -> openai.AzureOpenAI:
-        if self._root_client is not None:
-            return self._root_client
-        sync_specific = {"http_client": self.http_client}
-        self._root_client = openai.AzureOpenAI(**self._client_params, **sync_specific)  # type: ignore[call-overload]
+        if self._root_client is None:
+            sync_specific = {"http_client": self.http_client}
+            self._root_client = openai.AzureOpenAI(
+                **self._client_params,
+                **sync_specific,  # type: ignore[call-overload]
+            )
         return self._root_client
 
     @property
     def root_async_client(self) -> openai.AsyncAzureOpenAI:
-        if self._root_async_client is not None:
-            return self._root_async_client
-        async_specific = {"http_client": self.http_async_client}
-        self._root_async_client = openai.AsyncAzureOpenAI(
-            **self._client_params,
-            **async_specific,  # type: ignore[call-overload]
-        )
+        if self._root_async_client is None:
+            async_specific = {"http_client": self.http_async_client}
+            self._root_async_client = openai.AsyncAzureOpenAI(
+                **self._client_params,
+                **async_specific,  # type: ignore[call-overload]
+            )
         return self._root_async_client
 
     @property
     def client(self) -> Any:
-        if self._client is not None:
-            return self._client
-        self._client = self.root_client.chat.completions
+        if self._client is None:
+            self._client = self.root_client.chat.completions
         return self._client
 
     @property
     def async_client(self) -> Any:
-        if self._async_client is not None:
-            return self._async_client
-        self._async_client = self.root_async_client.chat.completions
+        if self._async_client is None:
+            self._async_client = self.root_async_client.chat.completions
         return self._async_client
 
     @property

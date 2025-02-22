@@ -591,18 +591,17 @@ class BaseChatOpenAI(BaseChatModel):
         # Configure a custom httpx client. See the
         # [httpx documentation](https://www.python-httpx.org/api/#client) for more
         # details.
-        if self._http_client is not None:
-            return self._http_client
-        if not self.openai_proxy:
-            return None
-        try:
-            import httpx
-        except ImportError as e:
-            raise ImportError(
-                "Could not import httpx python package. "
-                "Please install it with `pip install httpx`."
-            ) from e
-        self._http_client = httpx.Client(proxy=self.openai_proxy)
+        if self._http_client is None:
+            if not self.openai_proxy:
+                return None
+            try:
+                import httpx
+            except ImportError as e:
+                raise ImportError(
+                    "Could not import httpx python package. "
+                    "Please install it with `pip install httpx`."
+                ) from e
+            self._http_client = httpx.Client(proxy=self.openai_proxy)
         return self._http_client
 
     @property
@@ -612,51 +611,49 @@ class BaseChatOpenAI(BaseChatModel):
         Must specify http_client as well if you'd like a custom client for sync
         invocations.
         """
-        if self._http_async_client is not None:
-            return self._http_async_client
-        if not self.openai_proxy:
-            return None
-        try:
-            import httpx
-        except ImportError as e:
-            raise ImportError(
-                "Could not import httpx python package. "
-                "Please install it with `pip install httpx`."
-            ) from e
-        self._http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+        if self._http_async_client is None:
+            if not self.openai_proxy:
+                return None
+            try:
+                import httpx
+            except ImportError as e:
+                raise ImportError(
+                    "Could not import httpx python package. "
+                    "Please install it with `pip install httpx`."
+                ) from e
+            self._http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
         return self._http_async_client
 
     @property
     def root_client(self) -> openai.OpenAI:
-        if self._root_client is not None:
-            return self._root_client
-        sync_specific = {"http_client": self.http_client}
-        self._root_client = openai.OpenAI(**self._client_params, **sync_specific)  # type: ignore[arg-type]
+        if self._root_client is None:
+            sync_specific = {"http_client": self.http_client}
+            self._root_client = openai.OpenAI(
+                **self._client_params,
+                **sync_specific,  # type: ignore[arg-type]
+            )
         return self._root_client
 
     @property
     def root_async_client(self) -> openai.AsyncOpenAI:
-        if self._root_async_client is not None:
-            return self._root_async_client
-        async_specific = {"http_client": self.http_async_client}
-        self._root_async_client = openai.AsyncOpenAI(
-            **self._client_params,
-            **async_specific,  # type: ignore[arg-type]
-        )
+        if self._root_async_client is None:
+            async_specific = {"http_client": self.http_async_client}
+            self._root_async_client = openai.AsyncOpenAI(
+                **self._client_params,
+                **async_specific,  # type: ignore[arg-type]
+            )
         return self._root_async_client
 
     @property
     def client(self) -> Any:
-        if self._client is not None:
-            return self._client
-        self._client = self.root_client.chat.completions
+        if self._client is None:
+            self._client = self.root_client.chat.completions
         return self._client
 
     @property
     def async_client(self) -> Any:
-        if self._async_client is not None:
-            return self._async_client
-        self._async_client = self.root_async_client.chat.completions
+        if self._async_client is None:
+            self._async_client = self.root_async_client.chat.completions
         return self._async_client
 
     @property
