@@ -660,9 +660,6 @@ def test_openai_structured_output(model: str) -> None:
 def test_openai_proxy() -> None:
     """Test ChatOpenAI with proxy."""
     chat_openai = ChatOpenAI(openai_proxy="http://localhost:8080")
-    assert chat_openai.client is None
-    _ = chat_openai._client  # force client to instantiate
-    assert chat_openai.client is not None
     mounts = chat_openai.client._client._client._mounts
     assert len(mounts) == 1
     for key, value in mounts.items():
@@ -671,9 +668,6 @@ def test_openai_proxy() -> None:
         assert proxy.host == b"localhost"
         assert proxy.port == 8080
 
-    assert chat_openai.async_client is None
-    _ = chat_openai._async_client  # force client to instantiate
-    assert chat_openai.async_client is not None
     async_client_mounts = chat_openai.async_client._client._client._mounts
     assert len(async_client_mounts) == 1
     for key, value in async_client_mounts.items():

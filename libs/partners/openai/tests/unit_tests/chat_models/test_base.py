@@ -298,7 +298,7 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
     usage_chunk = mock_glm4_completion[-1]
 
     usage_metadata: Optional[UsageMetadata] = None
-    with patch.object(llm, "async_client", mock_client):
+    with patch.object(llm, "_async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
@@ -323,7 +323,7 @@ def test_glm4_stream(mock_glm4_completion: list) -> None:
     usage_chunk = mock_glm4_completion[-1]
 
     usage_metadata: Optional[UsageMetadata] = None
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, "_client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
@@ -378,7 +378,7 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
-    with patch.object(llm, "async_client", mock_client):
+    with patch.object(llm, "_async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
@@ -402,7 +402,7 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, "_client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
@@ -446,7 +446,7 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
-    with patch.object(llm, "async_client", mock_client):
+    with patch.object(llm, "_async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
@@ -470,7 +470,7 @@ def test_openai_stream(mock_openai_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
     usage_metadata: Optional[UsageMetadata] = None
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, "_client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
@@ -533,7 +533,7 @@ def mock_async_client(mock_completion: dict) -> AsyncMock:
 def test_openai_invoke(mock_client: MagicMock) -> None:
     llm = ChatOpenAI()
 
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, "_client", mock_client):
         res = llm.invoke("bar")
         assert res.content == "Bar Baz"
 
@@ -541,13 +541,13 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
         assert "headers" not in res.response_metadata
     assert mock_client.create.called
 
-    assert llm.async_client is None
+    assert llm._async_client is None
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     llm = ChatOpenAI()
 
-    with patch.object(llm, "async_client", mock_async_client):
+    with patch.object(llm, "_async_client", mock_async_client):
         res = await llm.ainvoke("bar")
         assert res.content == "Bar Baz"
 
@@ -575,7 +575,7 @@ def test__get_encoding_model(model: str) -> None:
 def test_openai_invoke_name(mock_client: MagicMock) -> None:
     llm = ChatOpenAI()
 
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, "_client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
         res = llm.invoke(messages)
         call_args, call_kwargs = mock_client.create.call_args

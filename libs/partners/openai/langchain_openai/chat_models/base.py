@@ -396,10 +396,10 @@ class _AllReturnType(TypedDict):
 
 
 class BaseChatOpenAI(BaseChatModel):
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    root_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    _client: Any = PrivateAttr(default=None)  #: :meta private:
+    _async_client: Any = PrivateAttr(default=None)  #: :meta private:
+    _root_client: Any = PrivateAttr(default=None)  #: :meta private:
+    _root_async_client: Any = PrivateAttr(default=None)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: Optional[float] = None
@@ -471,11 +471,11 @@ class BaseChatOpenAI(BaseChatModel):
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = Field(default=None, exclude=True)
+    _http_client: Union[Any, None] = PrivateAttr(default=None)
     """Optional httpx.Client. Only used for sync invocations. Must specify 
         http_async_client as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
+    _http_async_client: Union[Any, None] = PrivateAttr(default=None)
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
@@ -523,6 +523,24 @@ class BaseChatOpenAI(BaseChatModel):
             values["temperature"] = 1
         return values
 
+    def __init__(
+        self,
+        client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
+        root_client: Optional[Any] = None,
+        async_root_client: Optional[Any] = None,
+        http_client: Optional[Any] = None,
+        http_async_client: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._client = client
+        self._async_client = async_client
+        self._root_client = root_client
+        self._async_root_client = async_root_client
+        self._http_client = http_client
+        self._http_async_client = http_async_client
+
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
@@ -551,10 +569,10 @@ class BaseChatOpenAI(BaseChatModel):
         if self.max_retries is not None:
             self._client_params["max_retries"] = self.max_retries
 
-        if self.openai_proxy and (self.http_client or self.http_async_client):
+        if self.openai_proxy and (self._http_client or self._http_async_client):
             openai_proxy = self.openai_proxy
-            http_client = self.http_client
-            http_async_client = self.http_async_client
+            http_client = self._http_client
+            http_async_client = self._http_async_client
             raise ValueError(
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
@@ -564,7 +582,7 @@ class BaseChatOpenAI(BaseChatModel):
         return self
 
     @property
-    def _http_client(self) -> Optional[httpx.Client]:
+    def http_client(self) -> Optional[httpx.Client]:
         """Optional httpx.Client. Only used for sync invocations.
 
         Must specify http_async_client as well if you'd like a custom client for
@@ -573,8 +591,8 @@ class BaseChatOpenAI(BaseChatModel):
         # Configure a custom httpx client. See the
         # [httpx documentation](https://www.python-httpx.org/api/#client) for more
         # details.
-        if self.http_client is not None:
-            return self.http_client
+        if self._http_client is not None:
+            return self._http_client
         if not self.openai_proxy:
             return None
         try:
@@ -584,18 +602,18 @@ class BaseChatOpenAI(BaseChatModel):
                 "Could not import httpx python package. "
                 "Please install it with `pip install httpx`."
             ) from e
-        self.http_client = httpx.Client(proxy=self.openai_proxy)
-        return self.http_client
+        self._http_client = httpx.Client(proxy=self.openai_proxy)
+        return self._http_client
 
     @property
-    def _http_async_client(self) -> Optional[httpx.AsyncClient]:
+    def http_async_client(self) -> Optional[httpx.AsyncClient]:
         """Optional httpx.AsyncClient. Only used for async invocations.
 
         Must specify http_client as well if you'd like a custom client for sync
         invocations.
         """
-        if self.http_async_client is not None:
-            return self.http_async_client
+        if self._http_async_client is not None:
+            return self._http_async_client
         if not self.openai_proxy:
             return None
         try:
@@ -605,41 +623,41 @@ class BaseChatOpenAI(BaseChatModel):
                 "Could not import httpx python package. "
                 "Please install it with `pip install httpx`."
             ) from e
-        self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
-        return self.http_async_client
+        self._http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+        return self._http_async_client
 
     @property
-    def _root_client(self) -> openai.OpenAI:
-        if self.root_client is not None:
-            return self.root_client
-        sync_specific = {"http_client": self._http_client}
-        self.root_client = openai.OpenAI(**self._client_params, **sync_specific)  # type: ignore[arg-type]
-        return self.root_client
+    def root_client(self) -> openai.OpenAI:
+        if self._root_client is not None:
+            return self._root_client
+        sync_specific = {"http_client": self.http_client}
+        self._root_client = openai.OpenAI(**self._client_params, **sync_specific)  # type: ignore[arg-type]
+        return self._root_client
 
     @property
-    def _root_async_client(self) -> openai.AsyncOpenAI:
-        if self.root_async_client is not None:
-            return self.root_async_client
-        async_specific = {"http_client": self._http_async_client}
-        self.root_async_client = openai.AsyncOpenAI(
+    def root_async_client(self) -> openai.AsyncOpenAI:
+        if self._root_async_client is not None:
+            return self._root_async_client
+        async_specific = {"http_client": self.http_async_client}
+        self._root_async_client = openai.AsyncOpenAI(
             **self._client_params,
             **async_specific,  # type: ignore[arg-type]
         )
-        return self.root_async_client
+        return self._root_async_client
 
     @property
-    def _client(self) -> Any:
-        if self.client is not None:
-            return self.client
-        self.client = self._root_client.chat.completions
-        return self.client
+    def client(self) -> Any:
+        if self._client is not None:
+            return self._client
+        self._client = self.root_client.chat.completions
+        return self._client
 
     @property
-    def _async_client(self) -> Any:
-        if self.async_client is not None:
-            return self.async_client
-        self.async_client = self._root_async_client.chat.completions
-        return self.async_client
+    def async_client(self) -> Any:
+        if self._async_client is not None:
+            return self._async_client
+        self._async_client = self.root_async_client.chat.completions
+        return self._async_client
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -766,15 +784,15 @@ class BaseChatOpenAI(BaseChatModel):
                     "specified."
                 )
             payload.pop("stream")
-            response_stream = self._root_client.beta.chat.completions.stream(**payload)
+            response_stream = self.root_client.beta.chat.completions.stream(**payload)
             context_manager = response_stream
         else:
             if self.include_response_headers:
-                raw_response = self._client.with_raw_response.create(**payload)
+                raw_response = self.client.with_raw_response.create(**payload)
                 response = raw_response.parse()
                 base_generation_info = {"headers": dict(raw_response.headers)}
             else:
-                response = self._client.create(**payload)
+                response = self.client.create(**payload)
             context_manager = response
         try:
             with context_manager as response:
@@ -834,15 +852,15 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             payload.pop("stream")
             try:
-                response = self._root_client.beta.chat.completions.parse(**payload)
+                response = self.root_client.beta.chat.completions.parse(**payload)
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
         elif self.include_response_headers:
-            raw_response = self._client.with_raw_response.create(**payload)
+            raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         else:
-            response = self._client.create(**payload)
+            response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
 
     def _get_request_payload(
@@ -930,19 +948,19 @@ class BaseChatOpenAI(BaseChatModel):
                     "specified."
                 )
             payload.pop("stream")
-            response_stream = self._root_async_client.beta.chat.completions.stream(
+            response_stream = self.root_async_client.beta.chat.completions.stream(
                 **payload
             )
             context_manager = response_stream
         else:
             if self.include_response_headers:
-                raw_response = await self._async_client.with_raw_response.create(
+                raw_response = await self.async_client.with_raw_response.create(
                     **payload
                 )
                 response = raw_response.parse()
                 base_generation_info = {"headers": dict(raw_response.headers)}
             else:
-                response = await self._async_client.create(**payload)
+                response = await self.async_client.create(**payload)
             context_manager = response
         try:
             async with context_manager as response:
@@ -1002,17 +1020,17 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             payload.pop("stream")
             try:
-                response = await self._root_async_client.beta.chat.completions.parse(
+                response = await self.root_async_client.beta.chat.completions.parse(
                     **payload
                 )
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
         elif self.include_response_headers:
-            raw_response = await self._async_client.with_raw_response.create(**payload)
+            raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         else:
-            response = await self._async_client.create(**payload)
+            response = await self.async_client.create(**payload)
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
@@ -2022,6 +2040,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
