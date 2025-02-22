@@ -1,5 +1,6 @@
 """DeepSeek chat models."""
 
+from json import JSONDecodeError
 from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 import openai
@@ -257,10 +258,12 @@ class ChatDeepSeek(BaseChatOpenAI):
             yield from super()._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-        except ValueError as e:
-            raise ValueError(
+        except JSONDecodeError as e:
+            raise JSONDecodeError(
                 "DeepSeek API returned an invalid response. "
-                "Please check the API status and try again."
+                "Please check the API status and try again.",
+                e.doc,
+                e.pos,
             ) from e
 
     def _generate(
@@ -274,8 +277,10 @@ class ChatDeepSeek(BaseChatOpenAI):
             return super()._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-        except ValueError as e:
-            raise ValueError(
+        except JSONDecodeError as e:
+            raise JSONDecodeError(
                 "DeepSeek API returned an invalid response. "
-                "Please check the API status and try again."
+                "Please check the API status and try again.",
+                e.doc,
+                e.pos,
             ) from e
