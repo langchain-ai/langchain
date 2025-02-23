@@ -99,18 +99,6 @@ async def test_astream() -> None:
     assert "stop_reason" in full.response_metadata
     assert "stop_sequence" in full.response_metadata
 
-    # test usage metadata can be excluded
-    # model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
-    # async for token in model.astream("hi"):
-    #     assert isinstance(token, AIMessageChunk)
-    #     assert token.usage_metadata is None
-    # # check we override with kwarg
-    # model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
-    # assert model.stream_usage
-    # async for token in model.astream("hi", stream_usage=False):
-    #     assert isinstance(token, AIMessageChunk)
-    #     assert token.usage_metadata is None
-
     # Check expected raw API output
     async_client = llm._async_client
     params: dict = {
@@ -131,6 +119,20 @@ async def test_astream() -> None:
             assert event.usage.output_tokens > 1
         else:
             pass
+
+
+async def test_stream_usage() -> None:
+    """Test usage metadata can be excluded."""
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+    # check we override with kwarg
+    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
+    assert model.stream_usage
+    async for token in model.astream("hi", stream_usage=False):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
 
 
 async def test_abatch() -> None:
