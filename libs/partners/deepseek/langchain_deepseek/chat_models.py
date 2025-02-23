@@ -185,7 +185,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         client_params: dict = {
             k: v
             for k, v in {
-                "api_key": (self.api_key.get_secret_value() if self.api_key else None),
+                "api_key": self.api_key.get_secret_value() if self.api_key else None,
                 "base_url": self.api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
@@ -216,14 +216,11 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         if not isinstance(response, openai.BaseModel):
             return rtn
-        choice = response.choices[0].message  # type: ignore
-        if hasattr(
-            choice,
-            "reasoning_content",
-        ):
+
+        if hasattr(response.choices[0].message, "reasoning_content"):  # type: ignore
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
-                choice.reasoning_content
-            )  # type: ignore
+                response.choices[0].message.reasoning_content  # type: ignore
+            )
 
         return rtn
 
