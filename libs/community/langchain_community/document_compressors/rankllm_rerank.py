@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.utils import get_from_dict_or_env
-from packaging.version import Version
-from pydantic import ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     from rank_llm.data import Candidate, Query, Request
