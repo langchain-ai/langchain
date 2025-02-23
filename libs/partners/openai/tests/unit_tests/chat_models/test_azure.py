@@ -14,6 +14,7 @@ def test_initialize_azure_openai() -> None:
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
         azure_endpoint="my-base-url",
+        http_client=None,
     )
     assert llm.deployment_name == "35-turbo-dev"
     assert llm.openai_api_version == "2023-05-15"
