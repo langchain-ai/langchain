@@ -563,6 +563,7 @@ class Graph:
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: Optional[NodeStyles] = None,
         wrap_label_n_words: int = 9,
+        init_directive: Optional[dict[str, Any]] = None,
     ) -> str:
         """Draw the graph as a Mermaid syntax string.
 
@@ -572,6 +573,8 @@ class Graph:
             node_colors: The colors of the nodes. Defaults to NodeStyles().
             wrap_label_n_words: The number of words to wrap the node labels at.
                 Defaults to 9.
+            init_directive (dict[str, Any], optional): Mermaid init directive.
+                Can be used to customize theme and and styles. Defaults to None.
 
         Returns:
             The Mermaid syntax string.
@@ -591,6 +594,7 @@ class Graph:
             curve_style=curve_style,
             node_styles=node_colors,
             wrap_label_n_words=wrap_label_n_words,
+            init_directive=init_directive,
         )
 
     def draw_mermaid_png(
@@ -603,6 +607,7 @@ class Graph:
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
+        init_directive: Optional[dict[str, Any]] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -617,6 +622,19 @@ class Graph:
                 Defaults to MermaidDrawMethod.API.
             background_color: The color of the background. Defaults to "white".
             padding: The padding around the graph. Defaults to 10.
+            init_directive (dict[str, Any], optional): Mermaid init directive.
+                Can be used to customize theme and and styles. Defaults to None.
+                Example:
+                ```python
+                {
+                  "theme": "neutral",
+                  "look": "handDrawn",
+                  "themeVariables": { "primaryColor": "#e2e2e2"},
+                }
+                ```
+
+                See documentation at Mermaid for [directive](https://mermaid.js.org/config/directives.html)
+                and [theming](https://mermaid.js.org/config/theming.html).
 
         Returns:
             The PNG image as bytes.
@@ -627,6 +645,7 @@ class Graph:
             curve_style=curve_style,
             node_colors=node_colors,
             wrap_label_n_words=wrap_label_n_words,
+            init_directive=init_directive,
         )
         return draw_mermaid_png(
             mermaid_syntax=mermaid_syntax,
