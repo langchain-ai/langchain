@@ -214,7 +214,8 @@ class ChatDeepInfra(BaseChatModel):
     deepinfra_api_token: Optional[str] = None
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
-    """Run inference with this temperature. Must be in the closed interval [0.0, 1.0]."""
+    """Run inference with this temperature. Must be in the closed
+       interval [0.0, 1.0]."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
     top_p: Optional[float] = None
