@@ -244,6 +244,23 @@ def _format_messages(
                                     if k in ("type", "text", "cache_control")
                                 }
                             )
+                    elif block["type"] == "thinking":
+                        content.append(
+                            {
+                                k: v
+                                for k, v in block.items()
+                                if k
+                                in ("type", "thinking", "cache_control", "signature")
+                            }
+                        )
+                    elif block["type"] == "redacted_thinking":
+                        content.append(
+                            {
+                                k: v
+                                for k, v in block.items()
+                                if k in ("type", "cache_control", "data")
+                            }
+                        )
                     elif block["type"] == "tool_result":
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])]
@@ -600,6 +617,10 @@ class ChatAnthropic(BaseChatModel):
     message chunks will be generated during the stream including usage metadata.
     """
 
+    thinking: Optional[Dict[str, Any]] = Field(default=None)
+    """Parameters for Claude reasoning,
+    e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -631,6 +652,7 @@ class ChatAnthropic(BaseChatModel):
             "streaming": self.streaming,
             "max_retries": self.max_retries,
             "default_request_timeout": self.default_request_timeout,
+            "thinking": self.thinking,
         }
 
     def _get_ls_params(
@@ -702,6 +724,8 @@ class ChatAnthropic(BaseChatModel):
             **self.model_kwargs,
             **kwargs,
         }
+        if self.thinking is not None:
+            payload["thinking"] = self.thinking
         return {k: v for k, v in payload.items() if v is not None}
 
     def _stream(
@@ -718,9 +742,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         stream = self._client.messages.create(**payload)
-        coerce_content_to_string = not _tools_in_params(
-            payload
-        ) and not _documents_in_params(payload)
+        coerce_content_to_string = (
+            not _tools_in_params(payload)
+            and not _documents_in_params(payload)
+            and not _thinking_in_params(payload)
+        )
         for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
                 event,
@@ -747,9 +773,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         stream = await self._async_client.messages.create(**payload)
-        coerce_content_to_string = not _tools_in_params(
-            payload
-        ) and not _documents_in_params(payload)
+        coerce_content_to_string = (
+            not _tools_in_params(payload)
+            and not _documents_in_params(payload)
+            and not _thinking_in_params(payload)
+        )
         async for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
                 event,
@@ -774,6 +802,13 @@ class ChatAnthropic(BaseChatModel):
                 and block["citations"] is None
             ):
                 block.pop("citations")
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "thinking"
+                and "text" in block
+                and block["text"] is None
+            ):
+                block.pop("text")
 
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
@@ -1268,6 +1303,10 @@ def _tools_in_params(params: dict) -> bool:
     )
 
 
+def _thinking_in_params(params: dict) -> bool:
+    return params.get("thinking", {}).get("type") == "enabled"
+
+
 def _documents_in_params(params: dict) -> bool:
     for message in params.get("messages", []):
         if isinstance(message.get("content"), list):
@@ -1326,7 +1365,7 @@ def _make_message_chunk_from_anthropic_event(
     elif (
         event.type == "content_block_start"
         and event.content_block is not None
-        and event.content_block.type in ("tool_use", "document")
+        and event.content_block.type in ("tool_use", "document", "redacted_thinking")
     ):
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.")
@@ -1358,6 +1397,20 @@ def _make_message_chunk_from_anthropic_event(
                 if "citation" in content_block:
                     content_block["citations"] = [content_block.pop("citation")]
                 message_chunk = AIMessageChunk(content=[content_block])
+        elif event.delta.type == "thinking_delta":
+            content_block = event.delta.model_dump()
+            if "text" in content_block and content_block["text"] is None:
+                content_block.pop("text")
+            content_block["index"] = event.index
+            content_block["type"] = "thinking"
+            message_chunk = AIMessageChunk(content=[content_block])
+        elif event.delta.type == "signature_delta":
+            content_block = event.delta.model_dump()
+            if "text" in content_block and content_block["text"] is None:
+                content_block.pop("text")
+            content_block["index"] = event.index
+            content_block["type"] = "thinking"
+            message_chunk = AIMessageChunk(content=[content_block])
         elif event.delta.type == "input_json_delta":
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
