@@ -462,3 +462,8 @@ packages:
 - name: langchain-permit
   path: .
   repo: permitio/langchain-permit
+- name: langchain-writer
+  path: .
+  repo: writer/langchain-writer
+  downloads: 0
+  downloads_updated_at: '2025-02-24T13:19:19.816059+00:00'
