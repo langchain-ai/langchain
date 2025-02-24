@@ -128,6 +128,28 @@ def dummy_structured_tool() -> StructuredTool:
 
 
 @pytest.fixture()
+def dummy_structured_tool_args_schema_dict() -> StructuredTool:
+    args_schema = {
+        "type": "object",
+        "properties": {
+            "arg1": {"type": "integer", "description": "foo"},
+            "arg2": {
+                "type": "string",
+                "enum": ["bar", "baz"],
+                "description": "one of 'bar', 'baz'",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    }
+    return StructuredTool.from_function(
+        lambda x: None,
+        name="dummy_function",
+        description="Dummy function.",
+        args_schema=args_schema,
+    )
+
+
+@pytest.fixture()
 def dummy_pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -293,6 +315,7 @@ def test_convert_to_openai_function(
     function: Callable,
     function_docstring_annotations: Callable,
     dummy_structured_tool: StructuredTool,
+    dummy_structured_tool_args_schema_dict: StructuredTool,
     dummy_tool: BaseTool,
     json_schema: dict,
     anthropic_tool: dict,
@@ -327,6 +350,7 @@ def test_convert_to_openai_function(
         function,
         function_docstring_annotations,
         dummy_structured_tool,
+        dummy_structured_tool_args_schema_dict,
         dummy_tool,
         json_schema,
         anthropic_tool,

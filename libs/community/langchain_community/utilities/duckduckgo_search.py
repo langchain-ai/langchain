@@ -34,7 +34,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     """
     source: str = "text"
     """
-    Options: text, news
+    Options: text, news, images
     """
 
     model_config = ConfigDict(
@@ -91,12 +91,31 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                 return [r for r in ddgs_gen]
         return []
 
+    def _ddgs_images(
+        self, query: str, max_results: Optional[int] = None
+    ) -> List[Dict[str, str]]:
+        """Run query through DuckDuckGo image search and return results."""
+        from duckduckgo_search import DDGS
+
+        with DDGS() as ddgs:
+            ddgs_gen = ddgs.images(
+                query,
+                region=self.region,  # type: ignore[arg-type]
+                safesearch=self.safesearch,
+                max_results=max_results or self.max_results,
+            )
+            if ddgs_gen:
+                return [r for r in ddgs_gen]
+        return []
+
     def run(self, query: str) -> str:
         """Run query through DuckDuckGo and return concatenated results."""
         if self.source == "text":
             results = self._ddgs_text(query)
         elif self.source == "news":
             results = self._ddgs_news(query)
+        elif self.source == "images":
+            results = self._ddgs_images(query)
         else:
             results = []
 
@@ -136,6 +155,19 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                     "source": r["source"],
                 }
                 for r in self._ddgs_news(query, max_results=max_results)
+            ]
+        elif source == "images":
+            results = [
+                {
+                    "title": r["title"],
+                    "thumbnail": r["thumbnail"],
+                    "image": r["image"],
+                    "url": r["url"],
+                    "height": r["height"],
+                    "width": r["width"],
+                    "source": r["source"],
+                }
+                for r in self._ddgs_images(query, max_results=max_results)
             ]
         else:
             results = []
