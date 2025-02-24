@@ -13,6 +13,7 @@ from langchain_core.tools.structured import StructuredTool
 @overload
 def tool(
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
     args_schema: Optional[type] = None,
     infer_schema: bool = True,
@@ -27,6 +28,7 @@ def tool(
     name_or_callable: str,
     runnable: Runnable,
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
     args_schema: Optional[type] = None,
     infer_schema: bool = True,
@@ -40,6 +42,7 @@ def tool(
 def tool(
     name_or_callable: Callable,
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
     args_schema: Optional[type] = None,
     infer_schema: bool = True,
@@ -53,6 +56,7 @@ def tool(
 def tool(
     name_or_callable: str,
     *,
+    description: Optional[str] = None,
     return_direct: bool = False,
     args_schema: Optional[type] = None,
     infer_schema: bool = True,
@@ -66,6 +70,7 @@ def tool(
     name_or_callable: Optional[Union[str, Callable]] = None,
     runnable: Optional[Runnable] = None,
     *args: Any,
+    description: Optional[str] = None,
     return_direct: bool = False,
     args_schema: Optional[type] = None,
     infer_schema: bool = True,
@@ -213,6 +218,7 @@ def tool(
         """
 
         def _tool_factory(dec_func: Union[Callable, Runnable]) -> BaseTool:
+            tool_description = description
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
@@ -233,24 +239,22 @@ def tool(
                 coroutine = ainvoke_wrapper
                 func = invoke_wrapper
                 schema: Optional[type[BaseModel]] = runnable.input_schema
-                description = repr(runnable)
+                tool_description = description or repr(runnable)
             elif inspect.iscoroutinefunction(dec_func):
                 coroutine = dec_func
                 func = None
                 schema = args_schema
-                description = None
             else:
                 coroutine = None
                 func = dec_func
                 schema = args_schema
-                description = None
 
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
                     func,
                     coroutine,
                     name=tool_name,
-                    description=description,
+                    description=tool_description,
                     return_direct=return_direct,
                     args_schema=schema,
                     infer_schema=infer_schema,

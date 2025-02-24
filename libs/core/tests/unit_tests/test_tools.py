@@ -2468,3 +2468,18 @@ def test_empty_string_tool_call_id() -> None:
     assert foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}) == ToolMessage(
         content="hi", name="foo", tool_call_id=""
     )
+
+
+def test_tool_decorator_description() -> None:
+    @tool
+    def foo(x: int) -> str:
+        """Foo."""
+        return "hi"
+
+    @tool(description="description")
+    def foo_description(x: int) -> str:
+        """Foo."""
+        return "hi"
+
+    assert foo.description == "Foo."
+    assert foo_description.description == "description"
