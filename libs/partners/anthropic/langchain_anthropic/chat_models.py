@@ -610,7 +610,7 @@ class ChatAnthropic(BaseChatModel):
     """
 
     thinking: Optional[Dict[str, Any]] = Field(default=None)
-    """Parameters for Claude Denim reasoning,
+    """Parameters for Claude reasoning,
     e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
 
     @property
