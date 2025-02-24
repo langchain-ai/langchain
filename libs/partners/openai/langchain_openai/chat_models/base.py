@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import ssl
 import sys
 import warnings
 from functools import partial
@@ -33,6 +34,7 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+import certifi
 import openai
 import tiktoken
 from langchain_core._api.deprecation import deprecated
@@ -103,6 +105,10 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
+
+# This SSL context is equivelent to the default `verify=True`.
+# https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
+global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -564,7 +570,9 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                self.http_client = httpx.Client(proxy=self.openai_proxy)
+                self.http_client = httpx.Client(
+                    proxy=self.openai_proxy, verify=global_ssl_context
+                )
             sync_specific = {"http_client": self.http_client}
             self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
@@ -577,7 +585,9 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+                self.http_async_client = httpx.AsyncClient(
+                    proxy=self.openai_proxy, verify=global_ssl_context
+                )
             async_specific = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
