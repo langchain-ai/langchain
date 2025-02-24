@@ -661,3 +661,33 @@ def test_citations() -> None:
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
     assert not any("citation" in block for block in full.content)
+
+
+def test_thinking() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    )
+    response = llm.invoke("Hello")
+    assert any("thinking" in block for block in response.content)
+    for block in response.content:
+        assert isinstance(block, dict)
+        if block["type"] == "thinking":
+            assert set(block.keys()) == {"type", "thinking", "signature"}
+            assert block["thinking"] and isinstance(block["thinking"], str)
+            assert block["signature"] and isinstance(block["signature"], str)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Hello"):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    assert any("thinking" in block for block in full.content)
+    for block in full.content:
+        assert isinstance(block, dict)
+        if block["type"] == "thinking":
+            assert set(block.keys()) == {"type", "thinking", "signature", "index"}
+            assert block["thinking"] and isinstance(block["thinking"], str)
+            assert block["signature"] and isinstance(block["signature"], str)
