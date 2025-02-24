@@ -253,6 +253,14 @@ def _format_messages(
                                 in ("type", "thinking", "cache_control", "signature")
                             }
                         )
+                    elif block["type"] == "redacted_thinking":
+                        content.append(
+                            {
+                                k: v
+                                for k, v in block.items()
+                                if k in ("type", "cache_control", "data")
+                            }
+                        )
                     elif block["type"] == "tool_result":
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])]
@@ -1357,7 +1365,7 @@ def _make_message_chunk_from_anthropic_event(
     elif (
         event.type == "content_block_start"
         and event.content_block is not None
-        and event.content_block.type in ("tool_use", "document")
+        and event.content_block.type in ("tool_use", "document", "redacted_thinking")
     ):
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.")
