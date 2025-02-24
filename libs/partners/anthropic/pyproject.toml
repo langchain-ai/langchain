@@ -12,7 +12,7 @@ dependencies = [
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.7"
+version = "0.3.8"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
