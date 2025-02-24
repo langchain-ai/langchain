@@ -557,7 +557,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_dataforseo_api_search_json,
         ["api_login", "api_password", "aiosession"],
     ),
-    "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
+    "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["elevenlabs_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
     "read_file": (_get_file_management_tool, []),
     "reddit_search": (
