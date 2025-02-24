@@ -462,3 +462,6 @@ packages:
 - name: langchain-permit
   path: .
   repo: permitio/langchain-permit
+- name: langchain-pymupdf4llm
+  path: .
+  repo: lakinduboteju/langchain-pymupdf4llm
