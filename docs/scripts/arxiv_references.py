@@ -176,9 +176,9 @@ def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
             else:
                 module_name_and_member_reduced.add(module_name_and_member)
         if module_name_and_member_reduced:
-            arxiv_id2module_name_and_members_reduced[arxiv_id] = (
-                module_name_and_member_reduced
-            )
+            arxiv_id2module_name_and_members_reduced[
+                arxiv_id
+            ] = module_name_and_member_reduced
         if removed_modules:
             logger.warning(
                 f"{arxiv_id}: Removed the following modules with 2+ -part namespaces: {removed_modules}."
