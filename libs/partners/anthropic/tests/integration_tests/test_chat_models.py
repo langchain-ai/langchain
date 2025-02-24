@@ -24,7 +24,8 @@ from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-5-sonnet-20240620"
+MODEL_NAME = "claude-3-5-haiku-latest"
+IMAGE_MODEL_NAME = "claude-3-5-sonnet-latest"
 
 
 def test_stream() -> None:
@@ -98,22 +99,10 @@ async def test_astream() -> None:
     assert "stop_reason" in full.response_metadata
     assert "stop_sequence" in full.response_metadata
 
-    # test usage metadata can be excluded
-    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
-    async for token in model.astream("hi"):
-        assert isinstance(token, AIMessageChunk)
-        assert token.usage_metadata is None
-    # check we override with kwarg
-    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
-    assert model.stream_usage
-    async for token in model.astream("hi", stream_usage=False):
-        assert isinstance(token, AIMessageChunk)
-        assert token.usage_metadata is None
-
     # Check expected raw API output
-    async_client = model._async_client
+    async_client = llm._async_client
     params: dict = {
-        "model": "claude-3-haiku-20240307",
+        "model": MODEL_NAME,
         "max_tokens": 1024,
         "messages": [{"role": "user", "content": "hi"}],
         "temperature": 0.0,
@@ -130,6 +119,20 @@ async def test_astream() -> None:
             assert event.usage.output_tokens > 1
         else:
             pass
+
+
+async def test_stream_usage() -> None:
+    """Test usage metadata can be excluded."""
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+    # check we override with kwarg
+    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
+    assert model.stream_usage
+    async for token in model.astream("hi", stream_usage=False):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
 
 
 async def test_abatch() -> None:
@@ -318,7 +321,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
-    chat = ChatAnthropic(model=MODEL_NAME)
+    chat = ChatAnthropic(model=IMAGE_MODEL_NAME)
     messages: list[BaseMessage] = [
         HumanMessage(
             content=[
@@ -602,7 +605,7 @@ def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
     data = b64encode(requests.get(url).content).decode()
 
-    result = ChatAnthropic(model=MODEL_NAME).invoke(
+    result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(
         [
             HumanMessage(
                 [

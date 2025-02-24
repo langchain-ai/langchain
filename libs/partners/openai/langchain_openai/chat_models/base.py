@@ -6,6 +6,7 @@ import base64
 import json
 import logging
 import os
+import re
 import ssl
 import sys
 import warnings
@@ -2021,6 +2022,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         # in September 2024 release
         if "max_tokens" in payload:
             payload["max_completion_tokens"] = payload.pop("max_tokens")
+
+        # Mutate system message role to "developer" for o-series models
+        if self.model_name and re.match(r"^o\d", self.model_name):
+            for message in payload.get("messages", []):
+                if message["role"] == "system":
+                    message["role"] = "developer"
         return payload
 
     def _should_stream_usage(
