@@ -1,26 +1,11 @@
-"""Test Neo4jVector functionality."""
+"""Test ArangoVector functionality."""
 
-import os
-from typing import List
+from typing import Any, List
 
+from langchain_community.graphs.arangodb_graph import get_arangodb_client
 from langchain_community.vectorstores.arangodb_vector import ArangoVector
 from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
-try:
-    from arango import ArangoClient
-except ImportError:
-    raise ImportError(
-        "ArangoDB not installed, please install with `pip install python-arango`."
-    )
-
-
-url = os.environ.get("ARANGO_URL", "http://localhost:8529")
-username = os.environ.get("ARANGO_USERNAME", "root")
-password = os.environ.get("ARANGO_PASSWORD", "openSesame")
-collection_name = "documents"
-
-db = ArangoClient(hosts=url).db("_system", password=password, verify=True)
 
 OS_TOKEN_COUNT = 1536
 
@@ -31,8 +16,10 @@ cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f arangodb.yml up
 """
 
+collection_name = "documents"
 
-def drop_collection() -> None:
+
+def drop_collection(db: Any) -> None:
     """Cleanup document collection"""
     db.delete_collection(collection_name, ignore_missing=True)
 
@@ -54,7 +41,8 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
 
 def test_arangovector() -> None:
     """Test end to end construction and search."""
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     docsearch: ArangoVector = ArangoVector.from_texts(
         texts=texts,
@@ -68,7 +56,8 @@ def test_arangovector() -> None:
 
 def test_arangovector_euclidean() -> None:
     """Test euclidean distance"""
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     docsearch = ArangoVector.from_texts(
         texts=texts,
@@ -83,7 +72,8 @@ def test_arangovector_euclidean() -> None:
 
 def test_arangovector_with_metadatas() -> None:
     """Test end to end construction and search."""
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = ArangoVector.from_texts(
@@ -100,7 +90,8 @@ def test_arangovector_with_metadatas() -> None:
 
 def test_arangovector_with_metadatas_with_scores() -> None:
     """Test end to end construction and search."""
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = ArangoVector.from_texts(
@@ -122,7 +113,8 @@ def test_arangovector_with_metadatas_with_scores() -> None:
 
 def test_arangovector_relevance_score() -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = ArangoVector.from_texts(
@@ -152,7 +144,8 @@ def test_arangovector_relevance_score() -> None:
 
 def test_arangovector_retriever_search_threshold() -> None:
     """Test using retriever for searching with threshold."""
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = ArangoVector.from_texts(
@@ -193,7 +186,8 @@ def test_arangovector_max_marginal_relevance_search() -> None:
     With fetch_k==3 and k==2, when query is at (1, ),
     one expects that v2 and v0 are returned (in some order).
     """
-    drop_collection()
+    db = get_arangodb_client()
+    drop_collection(db)
 
     texts = ["-0.124", "+0.127", "+0.25", "+1.0"]
     metadatas = [{"page": i} for i in range(len(texts))]

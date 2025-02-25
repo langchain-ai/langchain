@@ -2,8 +2,6 @@
 
 from typing import Any
 
-from langchain_openai import ChatOpenAI
-
 from langchain_community.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain_community.graphs import ArangoGraph
 from langchain_community.graphs.arangodb_graph import get_arangodb_client
@@ -74,6 +72,12 @@ def test_empty_schema_on_no_data() -> None:
 
 def test_aql_generation() -> None:
     """Test that AQL statement is correctly generated and executed."""
+    try:
+        from langchain_openai import ChatOpenAI
+    except ImportError:
+        m = "Please install langchain_openai with pip install langchain_openai"
+        raise ImportError(m)
+
     db = get_arangodb_client()
 
     populate_arangodb_database(db)
