@@ -110,6 +110,65 @@ logger = logging.getLogger(__name__)
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
+class ToolNameHandler:
+    """Handles conversion of non-standard tool names while maintaining mappings."""
+
+    def __init__(self):
+        """Initialize the handler with an empty mapping."""
+        self.name_map: Dict[str, str] = {}  # Stores sanitized name → original name
+        self._INVALID_NAME_PATTERN = re.compile(r"[^\w\d_]")  # Allows only letters, numbers, and underscores
+
+    def sanitize(self, name: str) -> str:
+        """Convert a non-standard name to a valid OpenAI-compatible name."""
+        if self.is_standard(name):
+            return name  # If already valid, return unchanged
+
+        sanitized_name = re.sub(self._INVALID_NAME_PATTERN, "_", name)  # Replace invalid characters
+        self.name_map[sanitized_name] = name  # Store original for restoration
+        return sanitized_name
+    
+    def sanitize_tool_name(self, tool: BaseTool) -> BaseTool:
+        """Sanitize the name of a tool."""
+        tool.name = self.sanitize(tool.name)
+        return tool
+
+    def restore(self, name: str) -> str:
+        """Restore a sanitized name to its original form."""
+        return self.name_map.get(name, name)  # Return original if stored, else unchanged
+    
+    def restore_message_tool_names(self, response: AIMessage):
+        """Iterate over the message and restore the tool names."""
+        if isinstance(response, AIMessage):
+            if "function_call" in response.additional_kwargs:
+                function_call = response.additional_kwargs["function_call"]
+                if "name" in function_call:
+                    function_call["name"] = self.restore(function_call["name"])
+
+            if "tool_calls" in response.additional_kwargs:
+                for tool_call in response.additional_kwargs["tool_calls"]:
+                    if "name" in tool_call:
+                        tool_call["name"] = self.restore(tool_call["name"])
+
+            if "parsed" in response.additional_kwargs:
+                parsed = response.additional_kwargs["parsed"]
+                if "name" in parsed:
+                    parsed["name"] = self.restore(parsed["name"])
+
+            if "refusal" in response.additional_kwargs:
+                refusal = response.additional_kwargs["refusal"]
+                if "name" in refusal:
+                    refusal["name"] = self.restore(refusal["name"])
+        else:
+            raise ValueError(f"Unsupported response type: {type(response)}")
+
+    def is_standard(self, name: str) -> bool:
+        """Check if a name is valid as an OpenAI function name (letters, numbers, underscores)."""
+        return bool(re.fullmatch(r"[\w\d_]+", name))
+
+    def clear(self) -> None:
+        """Clear stored name mappings (for fresh runs)."""
+        self.name_map.clear()
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -506,6 +565,7 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+    _name_handler = ToolNameHandler()
 
     @model_validator(mode="before")
     @classmethod
@@ -837,8 +897,10 @@ class BaseChatOpenAI(BaseChatModel):
         token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
-            if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = _create_usage_metadata(token_usage)
+            if isinstance(message, AIMessage):
+                self._name_handler.restore_message_tool_names(message)
+                if token_usage:
+                    message.usage_metadata = _create_usage_metadata(token_usage)                    
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1233,7 +1295,7 @@ class BaseChatOpenAI(BaseChatModel):
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
-            convert_to_openai_tool(tool, strict=strict) for tool in tools
+            convert_to_openai_tool(self._name_handler.sanitize_tool_name(tool), strict=strict) for tool in tools
         ]
         if tool_choice:
             if isinstance(tool_choice, str):
