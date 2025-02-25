@@ -15,6 +15,7 @@ chardet>=5.1.0,<6
 cloudpathlib>=0.18,<0.19
 cloudpickle>=2.0.0
 cohere>=4,<6
+contextual-client>=0.2.0
 databricks-vectorsearch>=0.21,<0.22
 datasets>=2.15.0,<3
 dgml-utils>=0.3.0,<0.4
