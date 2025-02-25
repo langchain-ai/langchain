@@ -88,6 +88,8 @@ def tool(
             converted to a tool. Must be provided as a positional argument.
         runnable: Optional runnable to convert to a tool. Must be provided as a
             positional argument.
+        description: Optional description for the tool.
+            If not provided, will be inferred either from the args_schema or from the docstring.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
         args_schema: optional argument schema for user to specify.

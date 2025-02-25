@@ -2481,5 +2481,20 @@ def test_tool_decorator_description() -> None:
         """Foo."""
         return "hi"
 
+    class ArgsSchema(BaseModel):
+        """Bar."""
+
+        x: int
+
+    @tool(args_schema=ArgsSchema)
+    def foo_args_schema(x: int) -> str:
+        return "hi"
+
+    @tool(description="description", args_schema=ArgsSchema)
+    def foo_args_schema_description(x: int) -> str:
+        return "hi"
+
     assert foo.description == "Foo."
     assert foo_description.description == "description"
+    assert foo_args_schema.description == "Bar."
+    assert foo_args_schema_description.description == "description"
