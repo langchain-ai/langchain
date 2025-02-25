@@ -178,8 +178,11 @@ class TavilySearchAPIWrapper(BaseModel):
         for result in results:
             clean_results.append(
                 {
+                    "title": result["title"],
                     "url": result["url"],
                     "content": result["content"],
+                    "score": result["score"],
+                    "raw_content": result.get("raw_content"),
                 }
             )
         return clean_results
