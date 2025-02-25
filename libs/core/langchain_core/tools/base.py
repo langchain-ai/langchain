@@ -459,6 +459,12 @@ class ChildTool(BaseTool):
     @property
     def tool_call_schema(self) -> ArgsSchema:
         if isinstance(self.args_schema, dict):
+            if self.description:
+                return {
+                    **self.args_schema,
+                    "description": self.description,
+                }
+
             return self.args_schema
 
         full_schema = self.get_input_schema()
