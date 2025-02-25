@@ -1,6 +1,3 @@
-"""OpenWebUI chat models wrapper."""
-
-from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncIterator, Iterator
