@@ -143,6 +143,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.openai import (
         ChatOpenAI,
     )
+    from langchain_community.chat_models.openwebui import (
+        OpenWebUIAI,
+    )
     from langchain_community.chat_models.outlines import ChatOutlines
     from langchain_community.chat_models.pai_eas_endpoint import (
         PaiEasChatEndpoint,
@@ -258,6 +261,7 @@ __all__ = [
     "SolarChat",
     "VolcEngineMaasChat",
     "ChatYi",
+    "OpenWebUIAI",
 ]
 
 
@@ -325,6 +329,7 @@ _module_lookup = {
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
     "ChatYi": "langchain_community.chat_models.yi",
+    "OpenWebUIAI": "langchain_community.chat_models.openwebui",
 }
 
 
