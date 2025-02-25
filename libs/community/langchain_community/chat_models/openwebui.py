@@ -1,7 +1,6 @@
 """OpenWebUI chat models wrapper."""
 
 from __future__ import annotations
-import os
 import json
 import logging
 from collections.abc import AsyncIterator, Iterator
@@ -437,7 +436,8 @@ class OpenWebUIAI(BaseChatModel):
             values, ["openwebui_api_key", "api_key"], "OPENWEBUI_API_KEY"
         )
         values["openwebui_api_base"] = get_from_dict_or_env(
-            values, "openwebui_api_base", "OPENWEBUI_API_BASE", default=OPENWEBUI_API_BASE
+            values, "openwebui_api_base", "OPENWEBUI_API_BASE", 
+            default=OPENWEBUI_API_BASE
         )
 
         return values
