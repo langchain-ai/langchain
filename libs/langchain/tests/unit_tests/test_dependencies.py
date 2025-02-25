@@ -41,7 +41,6 @@ def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "numpy",
             "pydantic",
             "requests",
-            "tenacity",
         ]
     )
 

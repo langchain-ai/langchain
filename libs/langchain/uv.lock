@@ -2254,7 +2254,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "sqlalchemy" },
-    { name = "tenacity" },
 ]
 
 [package.optional-dependencies]
@@ -2398,7 +2397,6 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
-    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10" },
 ]
 
 [package.metadata.requires-dev]
@@ -2536,7 +2534,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.35"
+version = "0.3.39"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2713,7 +2711,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
