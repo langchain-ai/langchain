@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
-from langchain_core.tools.base import BaseTool
+from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
 
@@ -15,7 +15,7 @@ def tool(
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -30,7 +30,7 @@ def tool(
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -44,7 +44,7 @@ def tool(
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -58,7 +58,7 @@ def tool(
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -72,7 +72,7 @@ def tool(
     *args: Any,
     description: Optional[str] = None,
     return_direct: bool = False,
-    args_schema: Optional[type] = None,
+    args_schema: Optional[ArgsSchema] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -246,7 +246,7 @@ def tool(
 
                 coroutine = ainvoke_wrapper
                 func = invoke_wrapper
-                schema: Optional[type[BaseModel]] = runnable.input_schema
+                schema: Optional[ArgsSchema] = runnable.input_schema
                 tool_description = description or repr(runnable)
             elif inspect.iscoroutinefunction(dec_func):
                 coroutine = dec_func

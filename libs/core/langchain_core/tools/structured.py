@@ -27,6 +27,7 @@ from langchain_core.tools.base import (
     _get_runnable_config_param,
     create_schema_from_function,
 )
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 class StructuredTool(BaseTool):
@@ -188,7 +189,16 @@ class StructuredTool(BaseTool):
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            description_ = args_schema.__doc__ or None
+            if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
+                description_ = args_schema.__doc__ or None
+            elif isinstance(args_schema, dict):
+                description_ = args_schema.get("description")
+            else:
+                msg = (
+                    "Invalid args_schema: expected BaseModel or dict, "
+                    f"got {args_schema}"
+                )
+                raise TypeError(msg)
         if description_ is None:
             msg = "Function must have a docstring if description not provided."
             raise ValueError(msg)

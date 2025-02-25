@@ -52,6 +52,7 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.tools.base import (
+    ArgsSchema,
     InjectedToolArg,
     InjectedToolCallId,
     SchemaAnnotationError,
@@ -199,7 +200,7 @@ def test_decorator_with_specified_schema() -> None:
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
 
-    @tool(args_schema=_MockSchemaV1)
+    @tool(args_schema=cast(ArgsSchema, _MockSchemaV1))
     def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
@@ -2398,10 +2399,10 @@ def test_structured_tool_args_schema_dict() -> None:
         "required": ["a", "b"],
         "title": "add",
         "type": "object",
+        "description": "add two numbers",
     }
     tool = StructuredTool(
         name="add",
-        description="add two numbers",
         args_schema=args_schema,
         func=lambda a, b: a + b,
     )
@@ -2433,6 +2434,7 @@ def test_simple_tool_args_schema_dict() -> None:
         "required": ["a"],
         "title": "square",
         "type": "object",
+        "description": "square a number",
     }
     tool = Tool(
         name="square",
@@ -2471,16 +2473,25 @@ def test_empty_string_tool_call_id() -> None:
 
 
 def test_tool_decorator_description() -> None:
+    # test basic tool
     @tool
     def foo(x: int) -> str:
         """Foo."""
         return "hi"
 
+    assert foo.description == "Foo."
+    assert _get_tool_call_json_schema(foo)["description"] == "Foo."
+
+    # test basic tool with description
     @tool(description="description")
     def foo_description(x: int) -> str:
         """Foo."""
         return "hi"
 
+    assert foo_description.description == "description"
+    assert _get_tool_call_json_schema(foo_description)["description"] == "description"
+
+    # test tool with args schema
     class ArgsSchema(BaseModel):
         """Bar."""
 
@@ -2490,15 +2501,47 @@ def test_tool_decorator_description() -> None:
     def foo_args_schema(x: int) -> str:
         return "hi"
 
+    assert foo_args_schema.description == "Bar."
+    assert _get_tool_call_json_schema(foo_args_schema)["description"] == "Bar."
+
     @tool(description="description", args_schema=ArgsSchema)
     def foo_args_schema_description(x: int) -> str:
         return "hi"
 
-    assert foo.description == "Foo."
-    assert _get_tool_call_json_schema(foo)["description"] == "Foo."
-    assert foo_description.description == "description"
-    assert _get_tool_call_json_schema(foo_description)["description"] == "description"
-    assert foo_args_schema.description == "Bar."
-    assert _get_tool_call_json_schema(foo_args_schema)["description"] == "Bar."
     assert foo_args_schema_description.description == "description"
-    assert _get_tool_call_json_schema(foo_args_schema_description)["description"] == "description"
+    assert (
+        _get_tool_call_json_schema(foo_args_schema_description)["description"]
+        == "description"
+    )
+
+    args_json_schema = {
+        "description": "JSON Schema.",
+        "properties": {
+            "x": {"description": "my field", "title": "X", "type": "string"}
+        },
+        "required": ["x"],
+        "title": "my_tool",
+        "type": "object",
+    }
+
+    @tool(args_schema=args_json_schema)
+    def foo_args_jsons_schema(x: int) -> str:
+        return "hi"
+
+    @tool(description="description", args_schema=args_json_schema)
+    def foo_args_jsons_schema_with_description(x: int) -> str:
+        return "hi"
+
+    assert foo_args_jsons_schema.description == "JSON Schema."
+    assert (
+        _get_tool_call_json_schema(foo_args_jsons_schema)["description"]
+        == "JSON Schema."
+    )
+
+    assert foo_args_jsons_schema_with_description.description == "description"
+    assert (
+        _get_tool_call_json_schema(foo_args_jsons_schema_with_description)[
+            "description"
+        ]
+        == "description"
+    )
