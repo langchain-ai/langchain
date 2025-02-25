@@ -4,15 +4,11 @@ import json
 import logging
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
-from operator import itemgetter
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
-    Literal,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -22,7 +18,6 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -41,16 +36,8 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessage,
 )
-from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
-from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
@@ -58,8 +45,10 @@ logger = logging.getLogger(__name__)
 API_TOKEN_TTL_SECONDS = 3 * 60
 OPENWEBUI_API_BASE = "http://localhost:3000/api/chat/completions"
 
+
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
+
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
@@ -78,6 +67,7 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 
     with client.stream(method, url, **kwargs) as response:
         yield EventSource(response)
+
 
 @asynccontextmanager
 async def aconnect_sse(
@@ -98,6 +88,7 @@ async def aconnect_sse(
 
     async with client.stream(method, url, **kwargs) as response:
         yield EventSource(response)
+
 
 def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
     role = dct.get("role")
@@ -122,6 +113,7 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
             additional_kwargs=additional_kwargs,
         )
     return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
+
 
 def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
     """Convert a LangChain message to a dictionary.
@@ -152,6 +144,7 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
         raise TypeError(f"Got unknown type '{message.__class__.__name__}'.")
     return message_dict
 
+
 def _convert_delta_to_message_chunk(
     dct: Dict[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
@@ -171,6 +164,7 @@ def _convert_delta_to_message_chunk(
     if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     return default_class(content=content)  # type: ignore[call-arg]
+
 
 def _truncate_params(payload: Dict[str, Any]) -> None:
     temperature = payload.get("temperature")
@@ -348,7 +342,8 @@ class OpenWebUIAI(BaseChatModel):
               'model_name': 'glm-4',
               'finish_reason': 'stop'}
 
-    """  # noqa: E501 
+    """  # noqa: E501
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openwebuiai_api_key": "OPENWEBUI_API_KEY"}
@@ -435,8 +430,10 @@ class OpenWebUIAI(BaseChatModel):
             values, ["openwebui_api_key", "api_key"], "OPENWEBUI_API_KEY"
         )
         values["openwebui_api_base"] = get_from_dict_or_env(
-            values, "openwebui_api_base", "OPENWEBUI_API_BASE", 
-            default=OPENWEBUI_API_BASE
+            values,
+            "openwebui_api_base",
+            "OPENWEBUI_API_BASE",
+            default=OPENWEBUI_API_BASE,
         )
 
         return values
