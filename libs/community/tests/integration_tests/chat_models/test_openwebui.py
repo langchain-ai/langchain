@@ -4,6 +4,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 
 from langchain_community.chat_models.openwebui import OpenWebUIAI
 
+
 def test_default_call() -> None:
     """Test default model call."""
     llm = OpenWebUIAI(
