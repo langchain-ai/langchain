@@ -1,5 +1,6 @@
 """Test for some custom pydantic decorators."""
 
+import warnings
 from typing import Any, Optional
 
 import pytest
@@ -139,7 +140,7 @@ def test_is_basemodel_instance() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_with_field_metadata() -> None:
-    """Test pydantic with field metadata"""
+    """Test pydantic with field metadata."""
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
 
@@ -201,28 +202,31 @@ def test_fields_pydantic_v1_from_2() -> None:
 
 def test_create_model_v2() -> None:
     """Test that create model v2 works as expected."""
-
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         foo = create_model_v2("Foo", field_definitions={"a": (int, None)})
         foo.model_json_schema()
 
     assert list(record) == []
 
     # schema is used by pydantic, but OK to re-use
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         foo = create_model_v2("Foo", field_definitions={"schema": (int, None)})
         foo.model_json_schema()
 
     assert list(record) == []
 
     # From protected namespaces, but definitely OK to use.
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         foo = create_model_v2("Foo", field_definitions={"model_id": (int, None)})
         foo.model_json_schema()
 
     assert list(record) == []
 
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         # Verify that we can use non-English characters
         field_name = "もしもし"
         foo = create_model_v2("Foo", field_definitions={field_name: (int, None)})

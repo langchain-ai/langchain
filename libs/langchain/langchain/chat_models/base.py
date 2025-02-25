@@ -19,7 +19,6 @@ from typing import (
     overload,
 )
 
-from langchain_core._api import beta
 from langchain_core.language_models import (
     BaseChatModel,
     LanguageModelInput,
@@ -83,7 +82,6 @@ def init_chat_model(
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
 # existing providers.
-@beta()
 def init_chat_model(
     model: Optional[str] = None,
     *,
@@ -96,38 +94,49 @@ def init_chat_model(
 ) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel from the model name and provider.
 
-    Must have the integration package corresponding to the model provider installed.
+    **Note:** Must have the integration package corresponding to the model provider
+    installed.
 
     Args:
-        model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
-        model_provider: The model provider. Supported model_provider values and the
-            corresponding integration package:
+        model: The name of the model, e.g. "o3-mini", "claude-3-5-sonnet-latest". You can
+            also specify model and model provider in a single argument using
+            '{model_provider}:{model}' format, e.g. "openai:o1".
+        model_provider: The model provider if not specified as part of model arg (see
+            above). Supported model_provider values and the corresponding integration
+            package are:
 
-            - openai (langchain-openai)
-            - anthropic (langchain-anthropic)
-            - azure_openai (langchain-openai)
-            - google_vertexai (langchain-google-vertexai)
-            - google_genai (langchain-google-genai)
-            - bedrock (langchain-aws)
-            - bedrock_converse (langchain-aws)
-            - cohere (langchain-cohere)
-            - fireworks (langchain-fireworks)
-            - together (langchain-together)
-            - mistralai (langchain-mistralai)
-            - huggingface (langchain-huggingface)
-            - groq (langchain-groq)
-            - ollama (langchain-ollama)  [support added in langchain==0.2.12]
+            - 'openai'              -> langchain-openai
+            - 'anthropic'           -> langchain-anthropic
+            - 'azure_openai'        -> langchain-openai
+            - 'google_vertexai'     -> langchain-google-vertexai
+            - 'google_genai'        -> langchain-google-genai
+            - 'bedrock'             -> langchain-aws
+            - 'bedrock_converse'    -> langchain-aws
+            - 'cohere'              -> langchain-cohere
+            - 'fireworks'           -> langchain-fireworks
+            - 'together'            -> langchain-together
+            - 'mistralai'           -> langchain-mistralai
+            - 'huggingface'         -> langchain-huggingface
+            - 'groq'                -> langchain-groq
+            - 'ollama'              -> langchain-ollama
+            - 'google_anthropic_vertex'    -> langchain-google-vertexai
+            - 'deepseek'            -> langchain-deepseek
+            - 'ibm'                 -> langchain-ibm
+            - 'nvidia'              -> langchain-nvidia-ai-endpoints
+            - 'xai'                 -> langchain-xai
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - gpt-3..., gpt-4..., or o1... -> openai
-            - claude... -> anthropic
-            - amazon.... -> bedrock
-            - gemini... -> google_vertexai
-            - command... -> cohere
-            - accounts/fireworks... -> fireworks
-            - mistral... -> mistralai
+            - 'gpt-3...' | 'gpt-4...' | 'o1...' -> 'openai'
+            - 'claude...'                       -> 'anthropic'
+            - 'amazon....'                      -> 'bedrock'
+            - 'gemini...'                       -> 'google_vertexai'
+            - 'command...'                      -> 'cohere'
+            - 'accounts/fireworks...'           -> 'fireworks'
+            - 'mistral...'                      -> 'mistralai'
+            - 'deepseek...'                     -> 'deepseek'
+            - 'grok...'                         -> 'xai'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -150,7 +159,16 @@ def init_chat_model(
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
             config_prefix is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
-        kwargs: Additional keyword args to pass to
+        temperature: Model temperature.
+        max_tokens: Max output tokens.
+        timeout: The maximum time (in seconds) to wait for a response from the model
+            before canceling the request.
+        max_retries: The maximum number of attempts the system will make to resend a
+            request if it fails due to issues like network timeouts or rate limits.
+        base_url: The URL of the API endpoint where requests are sent.
+        rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
+            rate limits.
+        kwargs: Additional model-specific keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
     Returns:
@@ -170,13 +188,13 @@ def init_chat_model(
             # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
             from langchain.chat_models import init_chat_model
 
-            gpt_4o = init_chat_model("gpt-4o", model_provider="openai", temperature=0)
-            claude_opus = init_chat_model("claude-3-opus-20240229", model_provider="anthropic", temperature=0)
-            gemini_15 = init_chat_model("gemini-1.5-pro", model_provider="google_vertexai", temperature=0)
+            o3_mini = init_chat_model("openai:o3-mini", temperature=0)
+            claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
+            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.0-flash", temperature=0)
 
-            gpt_4o.invoke("what's your name")
-            claude_opus.invoke("what's your name")
-            gemini_15.invoke("what's your name")
+            o3_mini.invoke("what's your name")
+            claude_sonnet.invoke("what's your name")
+            gemini_2_flash.invoke("what's your name")
 
 
     .. dropdown:: Partially configurable model with no default
@@ -197,7 +215,7 @@ def init_chat_model(
 
             configurable_model.invoke(
                 "what's your name",
-                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
             )
             # claude-3.5 sonnet response
 
@@ -209,8 +227,7 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
 
             configurable_model_with_default = init_chat_model(
-                "gpt-4o",
-                model_provider="openai",
+                "openai:gpt-4o",
                 configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
                 config_prefix="foo",
                 temperature=0
@@ -223,8 +240,7 @@ def init_chat_model(
                 "what's your name",
                 config={
                     "configurable": {
-                        "foo_model": "claude-3-5-sonnet-20240620",
-                        "foo_model_provider": "anthropic",
+                        "foo_model": "anthropic:claude-3-5-sonnet-20240620",
                         "foo_temperature": 0.6
                     }
                 }
@@ -278,13 +294,21 @@ def init_chat_model(
 
     .. versionchanged:: 0.2.12
 
-        Support for ChatOllama via langchain-ollama package added
+        Support for Ollama via langchain-ollama package added
         (langchain_ollama.ChatOllama). Previously,
         the now-deprecated langchain-community version of Ollama was imported
         (langchain_community.chat_models.ChatOllama).
 
-        Support for langchain_aws.ChatBedrockConverse added
+        Support for AWS Bedrock models via the Converse API added
         (model_provider="bedrock_converse").
+
+    .. versionchanged:: 0.3.5
+
+        Out of beta.
+
+    .. versionchanged:: 0.3.19
+
+        Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
     if not model and not configurable_fields:
@@ -316,13 +340,7 @@ def init_chat_model(
 def _init_chat_model_helper(
     model: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
-    model_provider = model_provider or _attempt_infer_model_provider(model)
-    if not model_provider:
-        raise ValueError(
-            f"Unable to infer model provider for {model=}, please specify "
-            f"model_provider directly."
-        )
-    model_provider = model_provider.replace("-", "_").lower()
+    model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
         _check_pkg("langchain_openai")
         from langchain_openai import ChatOpenAI
@@ -404,6 +422,31 @@ def _init_chat_model_helper(
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
+    elif model_provider == "google_anthropic_vertex":
+        _check_pkg("langchain_google_vertexai")
+        from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+
+        return ChatAnthropicVertex(model=model, **kwargs)
+    elif model_provider == "deepseek":
+        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
+        from langchain_deepseek import ChatDeepSeek
+
+        return ChatDeepSeek(model=model, **kwargs)
+    elif model_provider == "nvidia":
+        _check_pkg("langchain_nvidia_ai_endpoints")
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+        return ChatNVIDIA(model=model, **kwargs)
+    elif model_provider == "ibm":
+        _check_pkg("langchain_ibm")
+        from langchain_ibm import ChatWatsonx
+
+        return ChatWatsonx(model_id=model, **kwargs)
+    elif model_provider == "xai":
+        _check_pkg("langchain_xai")
+        from langchain_xai import ChatXAI
+
+        return ChatXAI(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -427,11 +470,15 @@ _SUPPORTED_PROVIDERS = {
     "groq",
     "bedrock",
     "bedrock_converse",
+    "google_anthropic_vertex",
+    "deepseek",
+    "ibm",
+    "xai",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1")):
+    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
         return "openai"
     elif model_name.startswith("claude"):
         return "anthropic"
@@ -445,16 +492,37 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "bedrock"
     elif model_name.startswith("mistral"):
         return "mistralai"
+    elif model_name.startswith("deepseek"):
+        return "deepseek"
+    elif model_name.startswith("grok"):
+        return "xai"
     else:
         return None
 
 
-def _check_pkg(pkg: str) -> None:
+def _parse_model(model: str, model_provider: Optional[str]) -> Tuple[str, str]:
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":")[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":")[0]
+        model = ":".join(model.split(":")[1:])
+    model_provider = model_provider or _attempt_infer_model_provider(model)
+    if not model_provider:
+        raise ValueError(
+            f"Unable to infer model provider for {model=}, please specify "
+            f"model_provider directly."
+        )
+    model_provider = model_provider.replace("-", "_").lower()
+    return model, model_provider
+
+
+def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
-        pkg_kebab = pkg.replace("_", "-")
+        pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
         raise ImportError(
-            f"Unable to import {pkg_kebab}. Please install with "
-            f"`pip install -U {pkg_kebab}`"
+            f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
 
 
@@ -559,7 +627,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
             queued_declarative_operations.append(
-                ("with_config", (), {"config": remaining_config})
+                (
+                    "with_config",
+                    (),
+                    {"config": remaining_config},
+                )
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
@@ -803,7 +875,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
-        version: Literal["v1", "v2"],
+        version: Literal["v1", "v2"] = "v2",
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import csv
 import re
 from abc import abstractmethod
 from collections import deque
 from collections.abc import AsyncIterator, Iterator
+from io import StringIO
 from typing import Optional as Optional
 from typing import TypeVar, Union
 
@@ -44,8 +46,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         Args:
             text: The output of an LLM call.
 
-            Returns:
-                A list of strings.
+        Returns:
+            A list of strings.
         """
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:
@@ -133,7 +135,9 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Check if the langchain object is serializable.
-        Returns True."""
+
+        Returns True.
+        """
         return True
 
     @classmethod
@@ -162,7 +166,14 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return [part.strip() for part in text.split(",")]
+        try:
+            reader = csv.reader(
+                StringIO(text), quotechar='"', delimiter=",", skipinitialspace=True
+            )
+            return [item for sublist in reader for item in sublist]
+        except csv.Error:
+            # keep old logic for backup
+            return [part.strip() for part in text.split(",")]
 
     @property
     def _type(self) -> str:
@@ -216,7 +227,7 @@ class MarkdownListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.

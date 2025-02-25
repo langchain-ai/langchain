@@ -93,7 +93,7 @@ class Kinetica(VectorStore):
     To use, you should have the ``gpudb`` python package installed.
 
     Args:
-        kinetica_settings: Kinetica connection settings class.
+        config: Kinetica connection settings class.
         embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         collection_name: The name of the collection to use. (default: langchain)
@@ -170,7 +170,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.9`."
+                "Please install it with `pip install gpudb>=7.2.2.0`."
             )
 
         self.dimensions = dimensions
@@ -199,7 +199,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.9`."
+                "Please install it with `pip install gpudb>=7.2.2.0`."
             )
 
         options = GPUdb.Options()
@@ -290,7 +290,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.9`."
+                "Please install it with `pip install gpudb>=7.2.2.0`."
             )
         return GPUdbTable(
             _type=self.table_schema,
@@ -428,17 +428,22 @@ class Kinetica(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        from gpudb import GPUdbException
+        # from gpudb import GPUdbException
 
+        results = []
         resp: Dict = self.__query_collection(embedding, k, filter)
-        if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
-            records: OrderedDict = resp["records"]
-            results = list(zip(*list(records.values())))
+        if resp and resp["status_info"]["status"] == "OK":
+            total_records = resp["total_number_of_records"]
+            if total_records > 0:
+                records: OrderedDict = resp["records"]
+                results = list(zip(*list(records.values())))
 
-            return self._results_to_docs_and_scores(results)
-        else:
-            self.logger.error(resp["status_info"]["message"])
-            raise GPUdbException(resp["status_info"]["message"])
+                return self._results_to_docs_and_scores(results)
+            else:
+                self.logger.warning(
+                    f"No records found; status: {resp['status_info']['status']}"
+                )
+        return results
 
     def similarity_search_by_vector(
         self,
@@ -464,16 +469,20 @@ class Kinetica(VectorStore):
 
     def _results_to_docs_and_scores(self, results: Any) -> List[Tuple[Document, float]]:
         """Return docs and scores from results."""
-        docs = [
-            (
-                Document(
-                    page_content=result[0],
-                    metadata=json.loads(result[1]),
-                ),
-                result[2] if self.embedding_function is not None else None,
-            )
-            for result in results
-        ]
+        docs = (
+            [
+                (
+                    Document(
+                        page_content=result[0],
+                        metadata=json.loads(result[1]),
+                    ),
+                    result[2] if self.embedding_function is not None else None,
+                )
+                for result in results
+            ]
+            if len(results) > 0
+            else []
+        )
         return docs
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

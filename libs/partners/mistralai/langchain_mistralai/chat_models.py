@@ -68,9 +68,10 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import secret_from_env
+from langchain_core.utils import get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -345,6 +346,8 @@ def _convert_message_to_mistral_chat_message(
             message_dict["content"] = ""
         else:
             message_dict["content"] = message.content
+        if "prefix" in message.additional_kwargs:
+            message_dict["prefix"] = message.additional_kwargs["prefix"]
         return message_dict
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)
@@ -353,6 +356,9 @@ def _convert_message_to_mistral_chat_message(
             "role": "tool",
             "content": message.content,
             "name": message.name,
+            "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
+                message.tool_call_id
+            ),
         }
     else:
         raise ValueError(f"Got unknown type {message}")
@@ -361,8 +367,13 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None, exclude=True)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(
+    # The type for client and async_client is ignored because the type is not
+    # an Optional after the model is initialized and the model_validator
+    # is run.
+    client: httpx.Client = Field(  # type: ignore # : meta private:
+        default=None, exclude=True
+    )
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
         default=None, exclude=True
     )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
@@ -380,13 +391,23 @@ class ChatMistralAI(BaseChatModel):
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
-    safe_mode: bool = False
+    safe_mode: Optional[bool] = None
     streaming: bool = False
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any invocation parameters not explicitly specified."""
 
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        values = _build_model_kwargs(values, all_required_field_names)
+        return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -398,6 +419,7 @@ class ChatMistralAI(BaseChatModel):
             "top_p": self.top_p,
             "random_seed": self.random_seed,
             "safe_prompt": self.safe_mode,
+            **self.model_kwargs,
         }
         filtered = {k: v for k, v in defaults.items() if v is not None}
         return filtered
@@ -587,7 +609,7 @@ class ChatMistralAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -613,7 +635,7 @@ class ChatMistralAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk["choices"]) == 0:
+            if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
@@ -676,7 +698,9 @@ class ChatMistralAI(BaseChatModel):
         self,
         schema: Optional[Union[Dict, Type]] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
@@ -700,13 +724,25 @@ class ChatMistralAI(BaseChatModel):
 
                         Added support for TypedDict class.
 
-            method:
-                The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
+            method: The method for steering model generation, one of:
+
+                - "function_calling":
+                    Uses Mistral's
+                    `function-calling feature <https://docs.mistral.ai/capabilities/function_calling/>`_.
+                - "json_schema":
+                    Uses Mistral's
+                    `structured output feature <https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/>`_.
+                - "json_mode":
+                    Uses Mistral's
+                    `JSON mode <https://docs.mistral.ai/capabilities/structured-output/json_mode/>`_.
+                    Note that if using JSON mode then you
+                    must include instructions for formatting the output into the
+                    desired schema into the model call.
+
+                .. versionchanged:: 0.2.5
+
+                        Added method="json_schema"
+
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -867,11 +903,11 @@ class ChatMistralAI(BaseChatModel):
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
@@ -883,17 +919,18 @@ class ChatMistralAI(BaseChatModel):
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
                 #     'parsed': {
                 #         'answer': 'They are both the same weight.',
                 #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
                 #     },
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
@@ -906,7 +943,14 @@ class ChatMistralAI(BaseChatModel):
                 )
             # TODO: Update to pass in tool name as tool_choice if/when Mistral supports
             # specifying a tool.
-            llm = self.bind_tools([schema], tool_choice="any")
+            llm = self.bind_tools(
+                [schema],
+                tool_choice="any",
+                structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": schema,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -918,9 +962,38 @@ class ChatMistralAI(BaseChatModel):
                     key_name=key_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                structured_output_format={
+                    "kwargs": {
+                        # this is correct - name difference with mistral api
+                        "method": "json_mode"
+                    },
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'json_schema'. "
+                    "Received None."
+                )
+            response_format = _convert_to_openai_response_format(schema, strict=True)
+            llm = self.bind(
+                response_format=response_format,
+                structured_output_format={
+                    "kwargs": {"method": "json_schema"},
+                    "schema": schema,
+                },
+            )
+
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -959,3 +1032,38 @@ class ChatMistralAI(BaseChatModel):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "mistralai"]
+
+
+def _convert_to_openai_response_format(
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
+) -> Dict:
+    """Same as in ChatOpenAI, but don't pass through Pydantic BaseModels."""
+    if (
+        isinstance(schema, dict)
+        and "json_schema" in schema
+        and schema.get("type") == "json_schema"
+    ):
+        response_format = schema
+    elif isinstance(schema, dict) and "name" in schema and "schema" in schema:
+        response_format = {"type": "json_schema", "json_schema": schema}
+    else:
+        if strict is None:
+            if isinstance(schema, dict) and isinstance(schema.get("strict"), bool):
+                strict = schema["strict"]
+            else:
+                strict = False
+        function = convert_to_openai_tool(schema, strict=strict)["function"]
+        function["schema"] = function.pop("parameters")
+        response_format = {"type": "json_schema", "json_schema": function}
+
+    if strict is not None and strict is not response_format["json_schema"].get(
+        "strict"
+    ):
+        msg = (
+            f"Output schema already has 'strict' value set to "
+            f"{schema['json_schema']['strict']} but 'strict' also passed in to "
+            f"with_structured_output as {strict}. Please make sure that "
+            f"'strict' is only specified in one place."
+        )
+        raise ValueError(msg)
+    return response_format

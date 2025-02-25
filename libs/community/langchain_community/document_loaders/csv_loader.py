@@ -164,9 +164,13 @@ class CSVLoader(BaseLoader):
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             content = "\n".join(
-                f"""{k.strip() if k is not None else k}: {v.strip()
-                if isinstance(v, str) else ','.join(map(str.strip, v))
-                if isinstance(v, list) else v}"""
+                f"""{k.strip() if k is not None else k}: {
+                    v.strip()
+                    if isinstance(v, str)
+                    else ",".join(map(str.strip, v))
+                    if isinstance(v, list)
+                    else v
+                }"""
                 for k, v in row.items()
                 if (
                     k in self.content_columns
@@ -219,4 +223,4 @@ class UnstructuredCSVLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.csv import partition_csv
 
-        return partition_csv(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_csv(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

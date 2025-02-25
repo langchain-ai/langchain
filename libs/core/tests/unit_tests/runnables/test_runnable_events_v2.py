@@ -1,6 +1,7 @@
 """Module that contains tests for runnable.astream_events API."""
 
 import asyncio
+import inspect
 import sys
 import uuid
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
@@ -8,11 +9,13 @@ from functools import partial
 from itertools import cycle
 from typing import (
     Any,
+    Callable,
     Optional,
     cast,
 )
 
 import pytest
+from blockbuster import BlockBuster
 from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
@@ -38,7 +41,9 @@ from langchain_core.runnables import (
     chain,
     ensure_config,
 )
-from langchain_core.runnables.config import get_callback_manager_for_config
+from langchain_core.runnables.config import (
+    get_async_callback_manager_for_config,
+)
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
@@ -55,12 +60,12 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
         assert "parent_ids" in event, f"Event {event} does not have parent_ids."
-        assert isinstance(
-            event["run_id"], str
-        ), f"Event {event} run_id is not a string."
-        assert isinstance(
-            event["parent_ids"], list
-        ), f"Event {event} parent_ids is not a list."
+        assert isinstance(event["run_id"], str), (
+            f"Event {event} run_id is not a string."
+        )
+        assert isinstance(event["parent_ids"], list), (
+            f"Event {event} parent_ids is not a list."
+        )
 
     return cast(
         list[StreamEvent],
@@ -90,15 +95,15 @@ async def _collect_events(
 
 
 async def test_event_stream_with_simple_function_tool() -> None:
-    """Test the event stream with a function and tool"""
+    """Test the event stream with a function and tool."""
 
     def foo(x: int) -> dict:
-        """Foo"""
+        """Foo."""
         return {"x": 5}
 
     @tool
     def get_docs(x: int) -> list[Document]:
-        """Hello Doc"""
+        """Hello Doc."""
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -371,7 +376,7 @@ async def test_event_stream_exception() -> None:
 
 
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
-    """Test filtering based on tags / names"""
+    """Test filtering based on tags / names."""
 
     def reverse(s: str) -> str:
         """Reverse a string."""
@@ -828,7 +833,10 @@ async def test_astream_with_model_in_chain() -> None:
 async def test_event_stream_with_simple_chain() -> None:
     """Test as event stream."""
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
     infinite_cycle = cycle(
@@ -1553,7 +1561,7 @@ async def test_event_stream_with_retry() -> None:
     def fail(inputs: str) -> None:
         """Simple func."""
         msg = "fail"
-        raise Exception(msg)
+        raise ValueError(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1628,7 +1636,10 @@ async def test_event_stream_with_retry() -> None:
 async def test_with_llm() -> None:
     """Test with regular llm."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
     llm = FakeStreamingListLLM(responses=["abc"])
 
@@ -1677,7 +1688,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     }
                 },
                 "event": "on_llm_start",
@@ -1690,7 +1701,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     },
                     "output": {
                         "generations": [
@@ -1767,7 +1778,7 @@ async def test_runnable_each() -> None:
 
 
 async def test_events_astream_config() -> None:
-    """Test that astream events support accepting config"""
+    """Test that astream events support accepting config."""
     infinite_cycle = cycle([AIMessage(content="hello world!", id="ai1")])
     good_world_on_repeat = cycle([AIMessage(content="Goodbye world", id="ai2")])
     model = GenericFakeChatModel(messages=infinite_cycle).configurable_fields(
@@ -1859,13 +1870,16 @@ async def test_runnable_with_message_history() -> None:
     store: dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
-        """Get a chat message history"""
+        """Get a chat message history."""
         if session_id not in store:
             store[session_id] = []
         return InMemoryHistory(messages=store[session_id])
 
     infinite_cycle = cycle(
-        [AIMessage(content="hello", id="ai3"), AIMessage(content="world", id="ai4")]
+        [
+            AIMessage(content="hello", id="ai3"),
+            AIMessage(content="world", id="ai4"),
+        ]
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -1889,15 +1903,15 @@ async def test_runnable_with_message_history() -> None:
     # so we can raise them in this main thread
     raised_errors = []
 
-    def collect_errors(fn):  # type: ignore
+    def collect_errors(fn: Callable[..., Any]) -> Callable[..., Any]:
         nonlocal raised_errors
 
-        def _get_output_messages(*args, **kwargs):  # type: ignore
+        def _get_output_messages(*args: Any, **kwargs: Any) -> Any:
             try:
                 return fn(*args, **kwargs)
             except Exception as e:
                 raised_errors.append(e)
-                raise e
+                raise
 
         return _get_output_messages
 
@@ -1914,9 +1928,12 @@ async def test_runnable_with_message_history() -> None:
         ]
     }
 
-    with_message_history.with_config(
-        {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "meow"})
+    await asyncio.to_thread(
+        with_message_history.with_config(
+            {"configurable": {"session_id": "session-123"}}
+        ).invoke,
+        {"question": "meow"},
+    )
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
@@ -1986,8 +2003,9 @@ EXPECTED_EVENTS = [
 ]
 
 
-async def test_sync_in_async_stream_lambdas() -> None:
+async def test_sync_in_async_stream_lambdas(blockbuster: BlockBuster) -> None:
     """Test invoking nested runnable lambda."""
+    blockbuster.deactivate()
 
     def add_one(x: int) -> int:
         return x + 1
@@ -2046,7 +2064,7 @@ async def test_sync_in_sync_lambdas() -> None:
 
 
 class StreamingRunnable(Runnable[Input, Output]):
-    """A custom runnable used for testing purposes"""
+    """A custom runnable used for testing purposes."""
 
     iterable: Iterable[Any]
 
@@ -2076,8 +2094,8 @@ class StreamingRunnable(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         config = ensure_config(config)
-        callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
+        callback_manager = get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
             None,
             input,
             name=config.get("run_name", self.get_name()),
@@ -2088,7 +2106,7 @@ class StreamingRunnable(Runnable[Input, Output]):
             final_output = None
             for element in self.iterable:
                 if isinstance(element, BaseException):
-                    raise element
+                    raise element  # noqa: TRY301
                 yield element
 
                 if final_output is None:
@@ -2100,9 +2118,9 @@ class StreamingRunnable(Runnable[Input, Output]):
                         final_output = element
 
             # set final channel values as run output
-            run_manager.on_chain_end(final_output)
+            await run_manager.on_chain_end(final_output)
         except BaseException as e:
-            run_manager.on_chain_error(e)
+            await run_manager.on_chain_error(e)
             raise
 
 
@@ -2372,7 +2390,10 @@ async def test_with_explicit_config() -> None:
             return x
 
         chain = passthrough_to_trigger_issue | model.with_config(
-            {"tags": ["hello"], "callbacks": callbacks}
+            {
+                "tags": ["hello"],
+                "callbacks": callbacks,
+            }
         )
 
         return await chain.ainvoke(query)
@@ -2397,10 +2418,10 @@ async def test_break_astream_events() -> None:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
-                return input
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
+            return input
 
         def reset(self) -> None:
             self.started = False
@@ -2462,10 +2483,10 @@ async def test_cancel_astream_events() -> None:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
-                return input
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
+            return input
 
         def reset(self) -> None:
             self.started = False
@@ -2734,7 +2755,7 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
 
     @tool
     async def foo(x: int) -> int:
-        """Foo"""
+        """Foo."""
         await adispatch_custom_event("event1", {"x": x})
         return x + 1
 
@@ -2774,3 +2795,10 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
             },
         ],
     )
+
+
+def test_default_is_v2() -> None:
+    """Test that we default to version="v2"."""
+
+    signature = inspect.signature(Runnable.astream_events)
+    assert signature.parameters["version"].default == "v2"

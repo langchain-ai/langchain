@@ -19,7 +19,7 @@ class SendMessageSchema(BaseModel):
     )
 
 
-class SlackSendMessage(SlackBaseTool):
+class SlackSendMessage(SlackBaseTool):  # type: ignore[override, override]
     """Tool for sending a message in Slack."""
 
     name: str = "send_message"

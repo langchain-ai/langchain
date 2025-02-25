@@ -12,7 +12,7 @@ from typing_extensions import Self, cast
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
-class AzureOpenAIEmbeddings(OpenAIEmbeddings):
+class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """AzureOpenAI embedding model integration.
 
     Setup:
@@ -198,7 +198,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": {
+                **(self.default_headers or {}),
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
             "default_query": self.default_query,
         }
         if not self.client:

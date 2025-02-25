@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AscendEmbeddings(Embeddings, BaseModel):
@@ -32,6 +32,8 @@ class AscendEmbeddings(Embeddings, BaseModel):
     pooling_method: Optional[str] = "cls"
     model: Any
     tokenizer: Any
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -87,7 +89,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
         last_hidden_state = self.model(
             inputs.input_ids.npu(), inputs.attention_mask.npu(), return_dict=True
@@ -101,7 +103,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
         if self.pooling_method == "cls":
             return last_hidden_state[:, 0]

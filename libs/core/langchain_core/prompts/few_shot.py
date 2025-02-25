@@ -265,7 +265,6 @@ class FewShotChatMessagePromptTemplate(
     to dynamically select examples based on the input.
 
     Examples:
-
         Prompt template with a fixed list of examples (matching the sample
         conversation above):
 
@@ -282,7 +281,7 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [('human', '{input}'), ('ai', '{output}')]
+            [('human', 'What is {input}?'), ('ai', '{output}')]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(

@@ -1,5 +1,8 @@
 import base64
 import json
+import typing
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import pytest
 
@@ -19,6 +22,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
+from langchain_core.tools import BaseTool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -53,6 +57,24 @@ def test_merge_message_runs_str_without_separator(
     actual = merge_message_runs(messages, chunk_separator="")
     assert actual == expected
     assert messages == messages_model_copy
+
+
+def test_merge_message_runs_response_metadata() -> None:
+    messages = [
+        AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
+        AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
+    ]
+    expected = [
+        AIMessage(
+            "foo\nbar",
+            id="1",
+            response_metadata={"input_tokens": 1},
+        )
+    ]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    # Check it's not mutated
+    assert messages[1].response_metadata == {"input_tokens": 2}
 
 
 def test_merge_message_runs_content() -> None:
@@ -301,6 +323,42 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def test_trim_messages_allow_partial_one_message() -> None:
+    expected = [
+        HumanMessage("Th", id="third"),
+    ]
+
+    actual = trim_messages(
+        [HumanMessage("This is a funky text.", id="third")],
+        max_tokens=2,
+        token_counter=lambda messages: sum(len(m.content) for m in messages),
+        text_splitter=lambda x: list(x),
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def test_trim_messages_last_allow_partial_one_message() -> None:
+    expected = [
+        HumanMessage("t.", id="third"),
+    ]
+
+    actual = trim_messages(
+        [HumanMessage("This is a funky text.", id="third")],
+        max_tokens=2,
+        token_counter=lambda messages: sum(len(m.content) for m in messages),
+        text_splitter=lambda x: list(x),
+        strategy="last",
+        allow_partial=True,
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
 def test_trim_messages_allow_partial_text_splitter() -> None:
     expected = [
         HumanMessage("a 4 token text.", id="third"),
@@ -395,7 +453,15 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
 
 
 class FakeTokenCountingModel(FakeChatModel):
-    def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Optional[
+            Sequence[
+                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
+            ]
+        ] = None,
+    ) -> int:
         return dummy_token_counter(messages)
 
 
@@ -403,6 +469,7 @@ def test_convert_to_messages() -> None:
     message_like: list = [
         # BaseMessage
         SystemMessage("1"),
+        SystemMessage("1.1", additional_kwargs={"__openai_role__": "developer"}),
         HumanMessage([{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"),
         AIMessage(
             [
@@ -437,6 +504,7 @@ def test_convert_to_messages() -> None:
         ToolMessage("5.1", tool_call_id="5.2", name="5.3"),
         # OpenAI dict
         {"role": "system", "content": "6"},
+        {"role": "developer", "content": "6.1"},
         {
             "role": "user",
             "content": [{"type": "image_url", "image_url": {"url": "7.1"}}],
@@ -460,6 +528,7 @@ def test_convert_to_messages() -> None:
         {"role": "tool", "content": "10.1", "tool_call_id": "10.2"},
         # Tuple/List
         ("system", "11.1"),
+        ("developer", "11.2"),
         ("human", [{"type": "image_url", "image_url": {"url": "12.1"}}]),
         (
             "ai",
@@ -485,6 +554,9 @@ def test_convert_to_messages() -> None:
     ]
     expected = [
         SystemMessage(content="1"),
+        SystemMessage(
+            content="1.1", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(
             content=[{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"
         ),
@@ -520,6 +592,9 @@ def test_convert_to_messages() -> None:
         ),
         ToolMessage(content="5.1", name="5.3", tool_call_id="5.2"),
         SystemMessage(content="6"),
+        SystemMessage(
+            content="6.1", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(
             content=[{"type": "image_url", "image_url": {"url": "7.1"}}], name="7.2"
         ),
@@ -537,6 +612,9 @@ def test_convert_to_messages() -> None:
         ),
         ToolMessage(content="10.1", tool_call_id="10.2"),
         SystemMessage(content="11.1"),
+        SystemMessage(
+            content="11.2", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(content=[{"type": "image_url", "image_url": {"url": "12.1"}}]),
         AIMessage(
             content=[
@@ -585,7 +663,13 @@ def create_image_data() -> str:
 
 def create_base64_image(format: str = "jpeg") -> str:
     data = create_image_data()
-    return f"data:image/{format};base64,{data}"  # noqa: E501
+    return f"data:image/{format};base64,{data}"
+
+
+def test_convert_to_openai_messages_string() -> None:
+    message = "Hello"
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "user", "content": "Hello"}
 
 
 def test_convert_to_openai_messages_single_message() -> None:
@@ -871,3 +955,12 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
     assert isinstance(result[0]["content"][0], dict)
     assert isinstance(result[0]["content"][1], dict)
     assert isinstance(result[0]["content"][2], dict)
+
+
+def test_convert_to_openai_messages_developer() -> None:
+    messages: list = [
+        SystemMessage("a", additional_kwargs={"__openai_role__": "developer"}),
+        {"role": "developer", "content": "a"},
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result == [{"role": "developer", "content": "a"}] * 2

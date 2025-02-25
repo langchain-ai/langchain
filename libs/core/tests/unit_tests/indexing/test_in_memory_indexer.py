@@ -1,9 +1,9 @@
-"""Test in memory indexer"""
+"""Test in memory indexer."""
 
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
-from langchain_standard_tests.integration_tests.indexer import (
+from langchain_tests.integration_tests.indexer import (
     AsyncDocumentIndexTestSuite,
     DocumentIndexerTestSuite,
 )

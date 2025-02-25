@@ -1,4 +1,5 @@
-from typing import List
+from pathlib import Path
+from typing import Any, List, Union
 
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
@@ -27,7 +28,24 @@ class UnstructuredImageLoader(UnstructuredFileLoader):
     https://unstructured-io.github.io/unstructured/bricks.html#partition-image
     """
 
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
+        """
+
+        Args:
+            file_path: The path to the Image file to load.
+            mode: The mode to use when loading the file. Can be one of "single",
+                "multi", or "all". Default is "single".
+            **unstructured_kwargs: Any kwargs to pass to the unstructured.
+        """
+        file_path = str(file_path)
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
     def _get_elements(self) -> List:
         from unstructured.partition.image import partition_image
 
-        return partition_image(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_image(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

@@ -44,7 +44,7 @@ class ZenGuardInput(BaseModel):
     )
 
 
-class ZenGuardTool(BaseTool):
+class ZenGuardTool(BaseTool):  # type: ignore[override, override]
     name: str = "ZenGuard"
     description: str = (
         "ZenGuard AI integration package. ZenGuard AI - the fastest GenAI guardrails."
