@@ -64,7 +64,7 @@ class ArangoGraph(GraphStore):
 
     def __init__(
         self,
-        db: StandardDatabase,
+        db: "StandardDatabase",
         generate_schema_on_init: bool = True,
         schema_sample_ratio: float = 0,
         schema_graph_name: Optional[str] = None,
