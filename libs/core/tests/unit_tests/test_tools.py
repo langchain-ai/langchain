@@ -2480,7 +2480,7 @@ def test_tool_decorator_description() -> None:
         return "hi"
 
     assert foo.description == "Foo."
-    assert _get_tool_call_json_schema(foo)["description"] == "Foo."
+    assert foo.tool_call_schema.model_json_schema()["description"] == "Foo."
 
     # test basic tool with description
     @tool(description="description")
@@ -2489,7 +2489,10 @@ def test_tool_decorator_description() -> None:
         return "hi"
 
     assert foo_description.description == "description"
-    assert _get_tool_call_json_schema(foo_description)["description"] == "description"
+    assert (
+        foo_description.tool_call_schema.model_json_schema()["description"]
+        == "description"
+    )
 
     # test tool with args schema
     class ArgsSchema(BaseModel):
@@ -2502,7 +2505,7 @@ def test_tool_decorator_description() -> None:
         return "hi"
 
     assert foo_args_schema.description == "Bar."
-    assert _get_tool_call_json_schema(foo_args_schema)["description"] == "Bar."
+    assert foo_args_schema.tool_call_schema.model_json_schema()["description"] == "Bar."
 
     @tool(description="description", args_schema=ArgsSchema)
     def foo_args_schema_description(x: int) -> str:
@@ -2510,7 +2513,7 @@ def test_tool_decorator_description() -> None:
 
     assert foo_args_schema_description.description == "description"
     assert (
-        _get_tool_call_json_schema(foo_args_schema_description)["description"]
+        foo_args_schema_description.tool_call_schema.model_json_schema()["description"]
         == "description"
     )
 
@@ -2533,15 +2536,10 @@ def test_tool_decorator_description() -> None:
         return "hi"
 
     assert foo_args_jsons_schema.description == "JSON Schema."
-    assert (
-        _get_tool_call_json_schema(foo_args_jsons_schema)["description"]
-        == "JSON Schema."
-    )
+    assert foo_args_jsons_schema.tool_call_schema["description"] == "JSON Schema."
 
     assert foo_args_jsons_schema_with_description.description == "description"
     assert (
-        _get_tool_call_json_schema(foo_args_jsons_schema_with_description)[
-            "description"
-        ]
+        foo_args_jsons_schema_with_description.tool_call_schema["description"]
         == "description"
     )
