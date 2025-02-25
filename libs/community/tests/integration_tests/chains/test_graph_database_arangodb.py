@@ -2,10 +2,11 @@
 
 from typing import Any
 
+from langchain_openai import ChatOpenAI
+
 from langchain_community.chains.graph_qa.arangodb import ArangoGraphQAChain
 from langchain_community.graphs import ArangoGraph
 from langchain_community.graphs.arangodb_graph import get_arangodb_client
-from langchain_openai import ChatOpenAI
 
 
 def populate_arangodb_database(db: Any) -> None:
@@ -78,7 +79,9 @@ def test_aql_generation() -> None:
     populate_arangodb_database(db)
 
     graph = ArangoGraph(db)
-    chain = ArangoGraphQAChain.from_llm(ChatOpenAI(temperature=0), graph=graph, allow_dangerous_requests=True)
+    chain = ArangoGraphQAChain.from_llm(
+        ChatOpenAI(temperature=0), graph=graph, allow_dangerous_requests=True
+    )
     chain.return_aql_result = True
 
     output = chain("Is Ned Stark alive?")

@@ -162,7 +162,8 @@ class ArangoGraphQAChain(Chain):
         try:
             from arango import AQLQueryExecuteError, AQLQueryExplainError
         except ImportError:
-            raise ImportError("ArangoDB not installed, please install with `pip install python-arango`.")
+            m = "ArangoDB not installed, please install with pip install python-arango"
+            raise ImportError(m)
 
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
@@ -185,34 +186,51 @@ class ArangoGraphQAChain(Chain):
         aql_result = None
         aql_generation_attempt = 1
 
-        aql_execution_func = self.graph.query if self.execute_aql_query else self.graph.explain
+        aql_execution_func = (
+            self.graph.query if self.execute_aql_query else self.graph.explain
+        )
 
-        while aql_result is None and aql_generation_attempt < self.max_aql_generation_attempts + 1:
+        while (
+            aql_result is None
+            and aql_generation_attempt < self.max_aql_generation_attempts + 1
+        ):
             #####################
             # Extract AQL Query #
             pattern = r"```(?i:aql)?(.*?)```"
             matches = re.findall(pattern, aql_generation_output, re.DOTALL)
             if not matches:
-                _run_manager.on_text("Invalid Response: ", end="\n", verbose=self.verbose)
-                _run_manager.on_text(aql_generation_output, color="red", end="\n", verbose=self.verbose)
+                _run_manager.on_text(
+                    "Invalid Response: ", end="\n", verbose=self.verbose
+                )
+                _run_manager.on_text(
+                    aql_generation_output, color="red", end="\n", verbose=self.verbose
+                )
                 raise ValueError(f"Response is Invalid: {aql_generation_output}")
 
             aql_query = matches[0]
             #####################
 
-            _run_manager.on_text(f"AQL Query ({aql_generation_attempt}):", verbose=self.verbose)
-            _run_manager.on_text(aql_query, color="green", end="\n", verbose=self.verbose)
+            _run_manager.on_text(
+                f"AQL Query ({aql_generation_attempt}):", verbose=self.verbose
+            )
+            _run_manager.on_text(
+                aql_query, color="green", end="\n", verbose=self.verbose
+            )
 
             #############################
             # Execute/Explain AQL Query #
 
             try:
-                aql_result = aql_execution_func(aql_query, self.top_k)
+                aql_result = aql_execution_func(aql_query, {"top_k": self.top_k})
             except (AQLQueryExecuteError, AQLQueryExplainError) as e:
                 aql_error = e.error_message
 
-                _run_manager.on_text("AQL Query Execution Error: ", end="\n", verbose=self.verbose)
-                _run_manager.on_text(aql_error, color="yellow", end="\n\n", verbose=self.verbose)
+                _run_manager.on_text(
+                    "AQL Query Execution Error: ", end="\n", verbose=self.verbose
+                )
+                _run_manager.on_text(
+                    aql_error, color="yellow", end="\n\n", verbose=self.verbose
+                )
 
                 ########################
                 # Retry AQL Generation #
@@ -240,7 +258,9 @@ class ArangoGraphQAChain(Chain):
 
         text = "AQL Result:" if self.execute_aql_query else "AQL Explain:"
         _run_manager.on_text(text, end="\n", verbose=self.verbose)
-        _run_manager.on_text(str(aql_result), color="green", end="\n", verbose=self.verbose)
+        _run_manager.on_text(
+            str(aql_result), color="green", end="\n", verbose=self.verbose
+        )
 
         if not self.execute_aql_query:
             result = {self.output_key: aql_query}
@@ -261,12 +281,12 @@ class ArangoGraphQAChain(Chain):
         ########################
 
         # Return results #
-        result = {self.output_key: result[self.qa_chain.output_key]}
+        results: Dict[str, Any] = {self.output_key: result[self.qa_chain.output_key]}
 
         if self.return_aql_query:
-            result["aql_query"] = aql_query
+            results["aql_query"] = aql_query
 
         if self.return_aql_result:
-            result["aql_result"] = aql_result
+            results["aql_result"] = aql_result
 
-        return result
+        return results

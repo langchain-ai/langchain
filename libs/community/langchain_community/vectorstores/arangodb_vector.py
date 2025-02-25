@@ -15,7 +15,6 @@ try:
 
     ARANGO_INSTALLED = True
 except ImportError:
-    print("ArangoDB not installed, please install with `pip install python-arango`.")
     ARANGO_INSTALLED = False
 
 
@@ -44,42 +43,54 @@ DEFAULT_SEARCH_TYPE = SearchType.VECTOR
 class ArangoVector(VectorStore):
     """ArangoDB vector index.
 
-    To use this, you should have the `python-arango` python package installed.
+        To use this, you should have the `python-arango` python package installed.
 
-    Args:
-        embedding: Any embedding function implementing
-            `langchain.embeddings.base.Embeddings` interface.
-        embedding_dimension: The dimension of the to-be-inserted embedding vectors.
-        database: The python-arango database instance.
-        collection_name: The name of the collection to use. (default: "documents")
-        search_type: The type of search to be performed, currently only 'vector' is supported.
-        embedding_field: The field name storing the embedding vector. (default: "embedding")
-        text_field: The field name storing the text. (default: "text")
-        index_name: The name of the vector index to use. (default: "vector_index")
-        distance_strategy: The distance strategy to use. (default: "COSINE")
-        num_centroids: The number of centroids for the vector index. (default: 1)
-        relevance_score_fn: A function to normalize the relevance score. If not provided,
-            the default normalization function for the distance strategy will be used.
+        Args:
+            embedding: Any embedding function implementing
+                `langchain.embeddings.base.Embeddings` interface.
+            embedding_dimension: The dimension of the to-be-inserted embedding vectors.
+            database: The python-arango database instance.
+            collection_name: The name of the collection to use. (default: "documents")
+            search_type: The type of search to be performed, currently only 'vector'
+                is supported.
+            embedding_field: The field name storing the embedding vector.
+                (default: "embedding")
+            text_field: The field name storing the text. (default: "text")
+            index_name: The name of the vector index to use. (default: "vector_index")
+            distance_strategy: The distance strategy to use. (default: "COSINE")
+            num_centroids: The number of centroids for the vector index. (default: 1)
+            relevance_score_fn: A function to normalize the relevance score.
+                If not provided, the default normalization function for
+                the distance strategy will be used.
 
-    Example:
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            from arango import ArangoClient
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            from langchain_community.vectorstores.arangodb_vector import ArangoVector
+                from arango import ArangoClient
+                from langchain_community.embeddings.openai import OpenAIEmbeddings
+                from langchain_community.vectorstores.arangodb_vector import (
+                    ArangoVector
+                )
 
-            db = ArangoClient("http://localhost:8529").db("test", username="root", password="openSesame")
+                db = ArangoClient("http://localhost:8529").db(
+                    "test",
+                    username="root",
+                    password="openSesame"
+    )
 
-            embedding = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=dimension)
+                embedding = OpenAIEmbeddings(
+                    model="text-embedding-3-small",
+                    dimensions=dimension
+                )
 
-            vector_store = ArangoVector.from_texts(
-                texts=["hello world", "hello langchain", "hello arangodb"],
-                embedding=embedding,
-                database=db,
-                collection_name="Documents"
-            )
+                vector_store = ArangoVector.from_texts(
+                    texts=["hello world", "hello langchain", "hello arangodb"],
+                    embedding=embedding,
+                    database=db,
+                    collection_name="Documents"
+                )
 
-            print(vector_store.similarity_search("arangodb", k=1))
+                print(vector_store.similarity_search("arangodb", k=1))
     """
 
     def __init__(
@@ -97,7 +108,7 @@ class ArangoVector(VectorStore):
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ):
         if not ARANGO_INSTALLED:
-            m = "ArangoDB not installed, please install with `pip install python-arango`."
+            m = "ArangoDB not installed, please install with pip install python-arango"
             raise ImportError(m)
 
         if search_type not in [SearchType.VECTOR]:
@@ -174,11 +185,16 @@ class ArangoVector(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Add embeddings to the vectorstore."""
+        texts = list(texts)
+
         if ids is None:
             try:
                 import farmhash
             except ImportError:
-                m = "Farmhash not installed, please install with `pip install cityhash`.  Alternatively, provide ids."
+                m = """
+                    Farmhash not installed, please install with `pip install cityhash`.
+                    Alternatively, provide ids.
+                """
                 raise ImportError(m)
 
             ids = [str(farmhash.Fingerprint64(text.encode("utf-8"))) for text in texts]
@@ -371,7 +387,8 @@ class ArangoVector(VectorStore):
 
         if use_approx:
             if version.parse(self.db.version()) < version.parse("3.12.4"):
-                raise ValueError("Approximate Nearest Neighbor search requires ArangoDB >= 3.12.4, consider setting use_approx=False.")
+                m = "Approximate Nearest Neighbor search requires ArangoDB >= 3.12.4."
+                raise ValueError(m)
 
             if not self.retrieve_vector_index():
                 self.create_vector_index()
@@ -420,15 +437,14 @@ class ArangoVector(VectorStore):
 
         Returns:
             Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+                None if no ids are provided, or raises an exception if an error occurs.
         """
         if not ids:
-            return False
+            return None
 
         for result in self.collection.delete_many(ids, **kwargs):
             if isinstance(result, ArangoServerError):
-                print(result)
-                return False
+                raise result
 
         return True
 
@@ -519,7 +535,8 @@ class ArangoVector(VectorStore):
         cls: Type[ArangoVector],
         texts: List[str],
         embedding: Embeddings,
-        database: "StandardDatabase",
+        metadatas: Optional[List[dict]] = None,
+        database: "StandardDatabase" = None,
         collection_name: str = "documents",
         search_type: SearchType = DEFAULT_SEARCH_TYPE,
         embedding_field: str = "embedding",
@@ -527,7 +544,6 @@ class ArangoVector(VectorStore):
         index_name: str = "vector_index",
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         num_centroids: int = 1,
-        metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         overwrite_index: bool = False,
         **kwargs: Any,
@@ -535,6 +551,9 @@ class ArangoVector(VectorStore):
         """
         Return ArangoDBVector initialized from texts, embeddings and a database.
         """
+        if not database:
+            raise ValueError("Database must be provided.")
+
         embeddings = embedding.embed_documents(list(texts))
 
         embedding_dimension = len(embeddings[0])

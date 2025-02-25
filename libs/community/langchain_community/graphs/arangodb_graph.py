@@ -3,8 +3,11 @@ import json
 import os
 import re
 from collections import defaultdict
+from importlib.util import find_spec
 from math import ceil
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, DefaultDict, Dict, List, Optional, Set
+
+from langchain_core.embeddings import Embeddings
 
 from langchain_community.graphs.graph_document import (
     Document,
@@ -13,7 +16,6 @@ from langchain_community.graphs.graph_document import (
     Relationship,
 )
 from langchain_community.graphs.graph_store import GraphStore
-from langchain_core.embeddings import Embeddings
 
 try:
     from arango.database import StandardDatabase
@@ -21,7 +23,6 @@ try:
 
     ARANGO_INSTALLED = True
 except ImportError:
-    print("ArangoDB not installed, please install with `pip install python-arango`.")
     ARANGO_INSTALLED = False
 
 SOURCE_VERTEX_COLLECTION = "SOURCE"
@@ -71,7 +72,7 @@ class ArangoGraph(GraphStore):
         schema_list_limit: int = 32,
     ) -> None:
         if not ARANGO_INSTALLED:
-            m = "ArangoDB not installed, please install with `pip install python-arango`."
+            m = "ArangoDB not installed, please install with pip install python-arango"
             raise ImportError(m)
 
         self.__db = db
@@ -162,14 +163,13 @@ class ArangoGraph(GraphStore):
         if not 0 <= sample_ratio <= 1:
             raise ValueError("**sample_ratio** value must be in between 0 to 1")
 
+        graph_schema: List[Dict[str, Any]] = []
         if graph_name:
             # Fetch a single graph
             graph: Graph = self.db.graph(graph_name)
             edge_definitions = graph.edge_definitions()
 
-            graph_schema: List[Dict[str, Any]] = [
-                {"name": graph_name, "edge_definitions": edge_definitions}
-            ]
+            graph_schema = [{"name": graph_name, "edge_definitions": edge_definitions}]
 
             # Fetch graph-specific collections
             collection_names = set(graph.vertex_collections())
@@ -178,7 +178,7 @@ class ArangoGraph(GraphStore):
 
         else:
             # Fetch all graphs
-            graph_schema: List[Dict[str, Any]] = [
+            graph_schema = [
                 {"graph_name": g["name"], "edge_definitions": g["edge_definitions"]}
                 for g in self.db.graphs()
             ]
@@ -222,30 +222,40 @@ class ArangoGraph(GraphStore):
             }
 
             if include_examples and col_size > 0:
-                collection_schema_entry[f"example"] = self._sanitize_input(doc, list_limit)
+                collection_schema_entry["example"] = self._sanitize_input(
+                    doc, list_limit
+                )
 
             collection_schema.append(collection_schema_entry)
 
         return {"graph_schema": graph_schema, "collection_schema": collection_schema}
 
     def query(
-        self, query: str, top_k: Optional[int] = None, list_limit: int = 32, **kwargs: Any
+        self,
+        query: str,
+        params: dict = {},
     ) -> List[Dict[str, Any]]:
         """
         Execute an AQL query and return the results.
 
         Parameters:
         - query (str): The AQL query to execute.
-        - top_k (int): The number of results to return. If None, all results are returned.
+        - top_k (int): The number of results to return. If None, all results
+            are returned.
         - kwargs: Additional keyword arguments to pass to the AQL query.
 
         Returns:
         - A list of dictionaries containing the query results.
         """
-        cursor = self.__db.aql.execute(query, **kwargs)
-        return [self._sanitize_input(doc, list_limit) for doc in itertools.islice(cursor, top_k)]
+        top_k = params.pop("top_k", None)
+        list_limit = params.pop("list_limit", 32)
+        cursor = self.__db.aql.execute(query, **params)
+        return [
+            self._sanitize_input(doc, list_limit)
+            for doc in itertools.islice(cursor, top_k)
+        ]
 
-    def explain(self, query: str, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    def explain(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """
         Explain an AQL query without executing it.
 
@@ -295,7 +305,8 @@ class ArangoGraph(GraphStore):
         for merging process. Defaults to False.
         - graph_name (str): The name of the ArangoDB General Graph to create. If None,
             no graph will be created.
-        - update_graph_definition_if_exists (bool): If True, updates the graph Edge Definitions
+        - update_graph_definition_if_exists (bool): If True, updates the graph
+            Edge Definitions
         if it already exists. Defaults to False. Not used if `graph_name` is None. It is
         recommended to set this to True if `use_one_entity_collection` is set to False.
         - batch_size (int): The number of nodes/edges to insert in a single batch.
@@ -314,20 +325,18 @@ class ArangoGraph(GraphStore):
         `use_one_entity_collection` is True.
         - embeddings (Embeddings): An Embeddings object to use for embedding the source,
         nodes and relationships. Defaults to None.
-        - embedding_field (set[str]): The field name to store the embedding. Defaults to "embedding".
-            Only used if `embedding` is not None, and `embed_source`, `embed_nodes`, or
-            `embed_relationships` is True.
+        - embedding_field (set[str]): The field name to store the embedding. Defaults
+            to "embedding". Only used if `embedding` is not None, and `embed_source`,
+            `embed_nodes`, or `embed_relationships` is True.
         - embed_source (bool): If True, embeds the source document. Defaults to False.
         - embed_nodes (bool): If True, embeds the nodes. Defaults to False.
-        - embed_relationships (bool): If True, embeds the relationships. Defaults to False.
+        - embed_relationships (bool): If True, embeds the relationships.
+            Defaults to False.
         """
         if not graph_documents:
-            print("No Graph Documents to insert.")
             return
 
-        try:
-            import farmhash
-        except ImportError:
+        if find_spec("farmhash") is None:
             m = "Farmhash not install=, please install with `pip install cityhash`."
             raise ImportError(m)
 
@@ -336,7 +345,10 @@ class ArangoGraph(GraphStore):
             raise ValueError(m)
 
         def embed_text(text: str) -> list[float]:
-            res = embeddings.embed_documents([text])[0]
+            if not embeddings:
+                raise ValueError("**embedding** is required to embed text.")
+
+            res: Any = embeddings.embed_documents([text])[0]
 
             while type(res) is list:
                 if type(res[0]) is float:
@@ -363,7 +375,7 @@ class ArangoGraph(GraphStore):
         insertion_db = self.__async_db if insert_async else self.__db
         nodes: DefaultDict[str, list[dict[str, Any]]] = defaultdict(list)
         edges: DefaultDict[str, list[dict[str, Any]]] = defaultdict(list)
-        edge_definitions_dict: DefaultDict[str, DefaultDict[str, set[str]]] = (
+        edge_definitions_dict: DefaultDict[str, DefaultDict[str, Set[str]]] = (
             defaultdict(lambda: defaultdict(set))
         )
 
@@ -372,19 +384,24 @@ class ArangoGraph(GraphStore):
             self._create_collection(source_edge_collection_name, is_edge=True)
 
             from_cols = {entity_collection_name} if use_one_entity_collection else set()
-            edge_definitions_dict[source_edge_collection_name] = {
-                "from_vertex_collections": from_cols,
-                "to_vertex_collections": {source_collection_name},
-            }
+
+            edge_definitions_dict[source_edge_collection_name][
+                "from_vertex_collections"
+            ] = from_cols
+            edge_definitions_dict[source_edge_collection_name][
+                "to_vertex_collections"
+            ] = {source_collection_name}
 
         if use_one_entity_collection:
             self._create_collection(entity_collection_name)
             self._create_collection(entity_edge_collection_name, is_edge=True)
 
-            edge_definitions_dict[entity_edge_collection_name] = {
-                "from_vertex_collections": {entity_collection_name},
-                "to_vertex_collections": {entity_collection_name},
-            }
+            edge_definitions_dict[entity_edge_collection_name][
+                "from_vertex_collections"
+            ] = {entity_collection_name}
+            edge_definitions_dict[entity_edge_collection_name][
+                "to_vertex_collections"
+            ] = {entity_collection_name}
 
         process_node_fn = (
             self._process_node_as_entity
@@ -421,11 +438,12 @@ class ArangoGraph(GraphStore):
             # 2. Process Nodes
             node_key_map = {}
             for i, node in enumerate(document.nodes, 1):
+                node.id = str(node.id)
                 node_key = self._hash(node.id)
                 node_key_map[node.id] = node_key
 
                 if embed_nodes:
-                    node.properties[embedding_field] = embed_text(str(node.id))
+                    node.properties[embedding_field] = embed_text(node.id)
 
                 node_type = process_node_fn(
                     node_key, node, nodes, entity_collection_name
@@ -572,7 +590,7 @@ class ArangoGraph(GraphStore):
         data.clear()
 
     def _create_collection(
-        self, collection_name: str, is_edge: bool = False, **kwargs
+        self, collection_name: str, is_edge: bool = False, **kwargs: Any
     ) -> None:
         """Creates a collection in the ArangoDB database if it does not exist."""
         if not self.db.has_collection(collection_name):
@@ -584,7 +602,7 @@ class ArangoGraph(GraphStore):
         node: Node,
         nodes: DefaultDict[str, list],
         entity_collection_name: str,
-    ) -> tuple[str, str]:
+    ) -> str:
         """Processes a Graph Document Node into ArangoDB as a unanimous Entity."""
         nodes[entity_collection_name].append(
             {
@@ -666,6 +684,7 @@ class ArangoGraph(GraphStore):
         process_node_fn: Any,
     ) -> str:
         """Gets the key of a node and processes it if it doesn't exist."""
+        node.id = str(node.id)
         if node.id in node_key_map:
             return node_key_map[node.id]
 
