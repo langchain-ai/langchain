@@ -40,7 +40,9 @@ def _embedding_factory() -> Embeddings:
         from langchain_openai import OpenAIEmbeddings
     except ImportError:
         try:
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
+                OpenAIEmbeddings,
+            )
         except ImportError:
             raise ImportError(
                 "Could not import OpenAIEmbeddings. Please install the "
@@ -99,7 +101,9 @@ class _EmbeddingDistanceChainMixin(Chain):
             pass
 
         try:
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
+                OpenAIEmbeddings,
+            )
 
             types_.append(OpenAIEmbeddings)
         except ImportError:
@@ -326,7 +330,10 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """
         np = _import_numpy()
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["reference"]]
+            [
+                inputs["prediction"],
+                inputs["reference"],
+            ]
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)
@@ -444,7 +451,10 @@ class PairwiseEmbeddingDistanceEvalChain(
         np = _import_numpy()
         vectors = np.array(
             self.embeddings.embed_documents(
-                [inputs["prediction"], inputs["prediction_b"]]
+                [
+                    inputs["prediction"],
+                    inputs["prediction_b"],
+                ]
             )
         )
         score = self._compute_score(vectors)
@@ -467,7 +477,10 @@ class PairwiseEmbeddingDistanceEvalChain(
         """
         np = _import_numpy()
         embedded = await self.embeddings.aembed_documents(
-            [inputs["prediction"], inputs["prediction_b"]]
+            [
+                inputs["prediction"],
+                inputs["prediction_b"],
+            ]
         )
         vectors = np.array(embedded)
         score = self._compute_score(vectors)

@@ -568,7 +568,7 @@ class QdrantVectorStore(VectorStore):
             for result in results
         ]
 
-    def similarity_search_by_vector(
+    def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
@@ -578,11 +578,11 @@ class QdrantVectorStore(VectorStore):
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query.
+            List of Documents most similar to the query and distance for each.
         """
         qdrant_filter = filter
 
@@ -609,14 +609,45 @@ class QdrantVectorStore(VectorStore):
         ).points
 
         return [
-            self._document_from_point(
-                result,
-                self.collection_name,
-                self.content_payload_key,
-                self.metadata_payload_key,
+            (
+                self._document_from_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
+                result.score,
             )
             for result in results
         ]
+
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[models.Filter] = None,
+        search_params: Optional[models.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[models.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        results = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+        return list(map(itemgetter(0), results))
 
     def max_marginal_relevance_search(
         self,

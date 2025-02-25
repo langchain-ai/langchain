@@ -1,3 +1,5 @@
+"""Vectorstore stubs for the indexing api."""
+
 from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.document_loaders import BaseLoader
@@ -13,6 +15,7 @@ from langchain.chains.retrieval_qa.base import RetrievalQA
 
 
 def _get_default_text_splitter() -> TextSplitter:
+    """Return the default text splitter used for chunking documents."""
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
@@ -33,7 +36,17 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Query the vectorstore."""
+        """Query the vectorstore using the provided LLM.
+
+        Args:
+            question: The question or prompt to query.
+            llm: The language model to use. Must not be None.
+            retriever_kwargs: Optional keyword arguments for the retriever.
+            **kwargs: Additional keyword arguments forwarded to the chain.
+
+        Returns:
+            The result string from the RetrievalQA chain.
+        """
         if llm is None:
             raise NotImplementedError(
                 "This API has been changed to require an LLM. "
@@ -55,7 +68,17 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Query the vectorstore."""
+        """Asynchronously query the vectorstore using the provided LLM.
+
+        Args:
+            question: The question or prompt to query.
+            llm: The language model to use. Must not be None.
+            retriever_kwargs: Optional keyword arguments for the retriever.
+            **kwargs: Additional keyword arguments forwarded to the chain.
+
+        Returns:
+            The asynchronous result string from the RetrievalQA chain.
+        """
         if llm is None:
             raise NotImplementedError(
                 "This API has been changed to require an LLM. "
@@ -77,7 +100,17 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
-        """Query the vectorstore and get back sources."""
+        """Query the vectorstore and retrieve the answer along with sources.
+
+        Args:
+            question: The question or prompt to query.
+            llm: The language model to use. Must not be None.
+            retriever_kwargs: Optional keyword arguments for the retriever.
+            **kwargs: Additional keyword arguments forwarded to the chain.
+
+        Returns:
+            A dictionary containing the answer and source documents.
+        """
         if llm is None:
             raise NotImplementedError(
                 "This API has been changed to require an LLM. "
@@ -99,7 +132,17 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
-        """Query the vectorstore and get back sources."""
+        """Asynchronously query the vectorstore and retrieve the answer and sources.
+
+        Args:
+            question: The question or prompt to query.
+            llm: The language model to use. Must not be None.
+            retriever_kwargs: Optional keyword arguments for the retriever.
+            **kwargs: Additional keyword arguments forwarded to the chain.
+
+        Returns:
+            A dictionary containing the answer and source documents.
+        """
         if llm is None:
             raise NotImplementedError(
                 "This API has been changed to require an LLM. "
@@ -149,14 +192,28 @@ class VectorstoreIndexCreator(BaseModel):
     )
 
     def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
-        """Create a vectorstore index from loaders."""
+        """Create a vectorstore index from a list of loaders.
+
+        Args:
+            loaders: A list of `BaseLoader` instances to load documents.
+
+        Returns:
+            A `VectorStoreIndexWrapper` containing the constructed vectorstore.
+        """
         docs = []
         for loader in loaders:
             docs.extend(loader.load())
         return self.from_documents(docs)
 
     async def afrom_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
-        """Create a vectorstore index from loaders."""
+        """Asynchronously create a vectorstore index from a list of loaders.
+
+        Args:
+            loaders: A list of `BaseLoader` instances to load documents.
+
+        Returns:
+            A `VectorStoreIndexWrapper` containing the constructed vectorstore.
+        """
         docs = []
         for loader in loaders:
             async for doc in loader.alazy_load():
@@ -164,7 +221,14 @@ class VectorstoreIndexCreator(BaseModel):
         return await self.afrom_documents(docs)
 
     def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
-        """Create a vectorstore index from documents."""
+        """Create a vectorstore index from a list of documents.
+
+        Args:
+            documents: A list of `Document` objects.
+
+        Returns:
+            A `VectorStoreIndexWrapper` containing the constructed vectorstore.
+        """
         sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = self.vectorstore_cls.from_documents(
             sub_docs, self.embedding, **self.vectorstore_kwargs
@@ -174,7 +238,14 @@ class VectorstoreIndexCreator(BaseModel):
     async def afrom_documents(
         self, documents: List[Document]
     ) -> VectorStoreIndexWrapper:
-        """Create a vectorstore index from documents."""
+        """Asynchronously create a vectorstore index from a list of documents.
+
+        Args:
+            documents: A list of `Document` objects.
+
+        Returns:
+            A `VectorStoreIndexWrapper` containing the constructed vectorstore.
+        """
         sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = await self.vectorstore_cls.afrom_documents(
             sub_docs, self.embedding, **self.vectorstore_kwargs

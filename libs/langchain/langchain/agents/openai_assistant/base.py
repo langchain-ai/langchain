@@ -28,7 +28,7 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
-    from openai.types.beta.threads import ThreadMessage
+    from openai.types.beta.threads import ThreadMessage  # type: ignore[attr-defined]
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -293,6 +293,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 instructions: Additional run instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
+                parallel_tool_calls: Allow Assistant to set parallel_tool_calls
+                    for this run.
+                top_p: Override Assistant top_p for this run.
+                temperature: Override Assistant temperature for this run.
+                max_completion_tokens: Allow setting max_completion_tokens for this run.
+                max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
             config: Runnable config. Defaults to None.
 
@@ -412,6 +418,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 additional_instructions: Appends additional instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
+                parallel_tool_calls: Allow Assistant to set parallel_tool_calls
+                    for this run.
+                top_p: Override Assistant top_p for this run.
+                temperature: Override Assistant temperature for this run.
+                max_completion_tokens: Allow setting max_completion_tokens for this run.
+                max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
             config: Runnable config. Defaults to None.
             kwargs: Additional arguments.
@@ -514,6 +526,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 "model",
                 "tools",
                 "additional_instructions",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
                 "run_metadata",
             )
         }
@@ -527,7 +544,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k
+            in (
+                "instructions",
+                "model",
+                "tools",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
+                "run_metadata",
+            )
         }
         run = self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
@@ -562,7 +590,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
                     if version_gte_1_14
                     else isinstance(
-                        content, openai.types.beta.threads.MessageContentText
+                        content,
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
                     )
                 )
                 for content in answer
@@ -623,7 +652,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         self, intermediate_steps: List[Tuple[OpenAIAssistantAction, str]]
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
-        run = await self._wait_for_run(last_action.run_id, last_action.thread_id)
+        run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:
             required_tool_call_ids = {
@@ -651,6 +680,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 "model",
                 "tools",
                 "additional_instructions",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
                 "run_metadata",
             )
         }
@@ -664,7 +698,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k
+            in (
+                "instructions",
+                "model",
+                "tools",
+                "parallel_tool_calls",
+                "top_p",
+                "temperature",
+                "max_completion_tokens",
+                "max_prompt_tokens",
+                "run_metadata",
+            )
         }
         run = await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
@@ -699,7 +744,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
                     if version_gte_1_14
                     else isinstance(
-                        content, openai.types.beta.threads.MessageContentText
+                        content,
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
                     )
                 )
                 for content in answer

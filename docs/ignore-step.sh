@@ -21,7 +21,7 @@ fi
 
 echo "Checking for changes in docs/"
 echo "---"
-git log -n 50 --pretty=format:"%s" -- . | grep -v '(#'
+git log -n 50 --pretty=format:"%s" -- . ../packages.yml | grep -v '(#'
 if [ $? -eq 0 ]; then
     echo "---"
     echo "✅ Changes detected in docs/ - proceeding with build"

@@ -711,7 +711,7 @@ class SambaNovaCloud(LLM):
         }
         data = {key: value for key, value in data.items() if value is not None}
         headers = {
-            "Authorization": f"Bearer " f"{self.sambanova_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
             "Content-Type": "application/json",
         }
 

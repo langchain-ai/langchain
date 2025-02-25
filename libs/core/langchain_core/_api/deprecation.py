@@ -95,7 +95,7 @@ def deprecated(
     defaults to 'class' if decorating a class, 'attribute' if decorating a
     property, and 'function' otherwise.
 
-    Arguments:
+    Args:
         since : str
             The release at which this API became deprecated.
         message : str, optional
@@ -122,8 +122,7 @@ def deprecated(
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
 
-    Examples
-    --------
+    Examples:
 
         .. code-block:: python
 
@@ -183,7 +182,6 @@ def deprecated(
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
-
             nonlocal warned
             if not warned and not is_caller_internal():
                 warned = True
@@ -240,6 +238,7 @@ def deprecated(
                         exclude=obj.exclude,
                     ),
                 )
+
         elif isinstance(obj, FieldInfoV2):
             wrapped = None
             if not _obj_type:
@@ -271,28 +270,40 @@ def deprecated(
             class _DeprecatedProperty(property):
                 """A deprecated property."""
 
-                def __init__(self, fget=None, fset=None, fdel=None, doc=None):  # type: ignore[no-untyped-def]
+                def __init__(
+                    self,
+                    fget: Union[Callable[[Any], Any], None] = None,
+                    fset: Union[Callable[[Any, Any], None], None] = None,
+                    fdel: Union[Callable[[Any], None], None] = None,
+                    doc: Union[str, None] = None,
+                ) -> None:
                     super().__init__(fget, fset, fdel, doc)
                     self.__orig_fget = fget
                     self.__orig_fset = fset
                     self.__orig_fdel = fdel
 
-                def __get__(self, instance, owner=None):  # type: ignore[no-untyped-def]
+                def __get__(
+                    self, instance: Any, owner: Union[type, None] = None
+                ) -> Any:
                     if instance is not None or owner is not None:
                         emit_warning()
+                    if self.fget is None:
+                        return None
                     return self.fget(instance)
 
-                def __set__(self, instance, value):  # type: ignore[no-untyped-def]
+                def __set__(self, instance: Any, value: Any) -> None:
                     if instance is not None:
                         emit_warning()
-                    return self.fset(instance, value)
+                    if self.fset is not None:
+                        self.fset(instance, value)
 
-                def __delete__(self, instance):  # type: ignore[no-untyped-def]
+                def __delete__(self, instance: Any) -> None:
                     if instance is not None:
                         emit_warning()
-                    return self.fdel(instance)
+                    if self.fdel is not None:
+                        self.fdel(instance)
 
-                def __set_name__(self, owner, set_name):  # type: ignore[no-untyped-def]
+                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name

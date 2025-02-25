@@ -20,8 +20,7 @@ def _import_tiktoken() -> Any:
         import tiktoken
     except ImportError:
         raise ImportError(
-            "tiktoken is not installed. "
-            "Please install it with `pip install tiktoken`"
+            "tiktoken is not installed. Please install it with `pip install tiktoken`"
         )
     return tiktoken
 
@@ -90,8 +89,7 @@ class GitHubAPIWrapper(BaseModel):
             installation = installation[0]
         except ValueError as e:
             raise ValueError(
-                "Please make sure to give correct github parameters "
-                f"Error message: {e}"
+                f"Please make sure to give correct github parameters Error message: {e}"
             )
         # create a GitHub instance:
         g = installation.get_github_for_installation()
@@ -257,8 +255,7 @@ class GitHubAPIWrapper(BaseModel):
             if branches:
                 branches_str = "\n".join(branches)
                 return (
-                    f"Found {len(branches)} branches in the repository:"
-                    f"\n{branches_str}"
+                    f"Found {len(branches)} branches in the repository:\n{branches_str}"
                 )
             else:
                 return "No branches found in the repository"
@@ -774,8 +771,7 @@ class GitHubAPIWrapper(BaseModel):
                 code.path, ref=self.active_branch
             ).decoded_content.decode()
             results.append(
-                f"Filepath: `{code.path}`\nFile contents: "
-                f"{file_content}\n<END OF FILE>"
+                f"Filepath: `{code.path}`\nFile contents: {file_content}\n<END OF FILE>"
             )
             count += 1
         return "\n".join(results)
@@ -812,6 +808,50 @@ class GitHubAPIWrapper(BaseModel):
             )
         except Exception as e:
             return f"Failed to create a review request with error {e}"
+
+    def get_latest_release(self) -> str:
+        """
+        Fetches the latest release of the repository.
+
+        Returns:
+            str: The latest release
+        """
+        release = self.github_repo_instance.get_latest_release()
+        return (
+            f"Latest title: {release.title} "
+            f"tag: {release.tag_name} "
+            f"body: {release.body}"
+        )
+
+    def get_releases(self) -> str:
+        """
+        Fetches all releases of the repository.
+
+        Returns:
+            str: The releases
+        """
+        releases = self.github_repo_instance.get_releases()
+        max_results = min(5, releases.totalCount)
+        results = [f"Top {max_results} results:"]
+        for release in releases[:max_results]:
+            results.append(
+                f"Title: {release.title}, Tag: {release.tag_name}, Body: {release.body}"
+            )
+
+        return "\n".join(results)
+
+    def get_release(self, tag_name: str) -> str:
+        """
+        Fetches a specific release of the repository.
+
+        Parameters:
+            tag_name(str): The tag name of the release
+
+        Returns:
+            str: The release
+        """
+        release = self.github_repo_instance.get_release(tag_name)
+        return f"Release: {release.title} tag: {release.tag_name} body: {release.body}"
 
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issue":
@@ -854,5 +894,11 @@ class GitHubAPIWrapper(BaseModel):
             return self.search_code(query)
         elif mode == "create_review_request":
             return self.create_review_request(query)
+        elif mode == "get_latest_release":
+            return self.get_latest_release()
+        elif mode == "get_releases":
+            return self.get_releases()
+        elif mode == "get_release":
+            return self.get_release(query)
         else:
             raise ValueError("Invalid mode" + mode)

@@ -70,7 +70,7 @@ class BibtexparserWrapper(BaseModel):
         if "url" in entry:
             url = entry["url"]
         elif "doi" in entry:
-            url = f'https://doi.org/{entry["doi"]}'
+            url = f"https://doi.org/{entry['doi']}"
         else:
             url = None
         meta = {

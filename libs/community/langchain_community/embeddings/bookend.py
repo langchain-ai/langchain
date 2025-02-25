@@ -67,7 +67,12 @@ class BookendEmbeddings(BaseModel, Embeddings):
 
         for text in texts:
             data = json.dumps(
-                {"text": text, "question": None, "context": None, "instruction": None}
+                {
+                    "text": text,
+                    "question": None,
+                    "context": None,
+                    "instruction": None,
+                }
             )
             r = requests.request(
                 "POST",
