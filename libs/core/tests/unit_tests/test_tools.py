@@ -2495,6 +2495,10 @@ def test_tool_decorator_description() -> None:
         return "hi"
 
     assert foo.description == "Foo."
+    assert _get_tool_call_json_schema(foo)["description"] == "Foo."
     assert foo_description.description == "description"
+    assert _get_tool_call_json_schema(foo_description)["description"] == "description"
     assert foo_args_schema.description == "Bar."
+    assert _get_tool_call_json_schema(foo_args_schema)["description"] == "Bar."
     assert foo_args_schema_description.description == "description"
+    assert _get_tool_call_json_schema(foo_args_schema_description)["description"] == "description"
