@@ -57,7 +57,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
             import numpy as np
         except ImportError as e:
             raise ImportError(
-                "Could not import numpy," "please install with `pip install numpy`."
+                "Could not import numpy, please install with `pip install numpy`."
             ) from e
         return list(np.array(embeddings).mean(axis=0))
 

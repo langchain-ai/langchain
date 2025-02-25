@@ -60,7 +60,7 @@ def _low_confidence_spans(
         import numpy as np
     except ImportError as e:
         raise ImportError(
-            "Could not import numpy," "please install with `pip install numpy`."
+            "Could not import numpy, please install with `pip install numpy`."
         ) from e
     _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
     low_idx = [i for i in _low_idx if re.search(r"\w", tokens[i])]

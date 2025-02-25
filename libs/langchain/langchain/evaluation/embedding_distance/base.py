@@ -24,7 +24,7 @@ def _import_numpy() -> Any:
         return np
     except ImportError as e:
         raise ImportError(
-            "Could not import numpy," "please install with `pip install numpy`."
+            "Could not import numpy, please install with `pip install numpy`."
         ) from e
 
 
