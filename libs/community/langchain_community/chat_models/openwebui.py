@@ -5,31 +5,53 @@ import logging
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from operator import itemgetter
-from typing import (Any, Callable, Dict, List, Literal, Optional, Sequence,
-                    Tuple, Type, Union)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
-from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
-                                      CallbackManagerForLLMRun)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (BaseChatModel,
-                                                        agenerate_from_stream,
-                                                        generate_from_stream)
-from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
-                                     BaseMessageChunk, ChatMessage,
-                                     ChatMessageChunk, HumanMessage,
-                                     HumanMessageChunk, SystemMessage,
-                                     SystemMessageChunk, ToolMessage)
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessage,
+)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser, PydanticToolsParser)
-from langchain_core.outputs import (ChatGeneration, ChatGenerationChunk,
-                                    ChatResult)
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 
 logger = logging.getLogger(__name__)
 
