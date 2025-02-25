@@ -2251,7 +2251,6 @@ dependencies = [
     { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pydantic" },
     { name = "pyyaml" },
-    { name = "requests" },
     { name = "sqlalchemy" },
 ]
 
@@ -2339,6 +2338,7 @@ test = [
     { name = "pytest-socket" },
     { name = "pytest-watcher" },
     { name = "pytest-xdist" },
+    { name = "requests" },
     { name = "requests-mock" },
     { name = "responses" },
     { name = "syrupy" },
@@ -2359,6 +2359,7 @@ typing = [
     { name = "langchain-text-splitters" },
     { name = "mypy" },
     { name = "mypy-protobuf" },
+    { name = "requests" },
     { name = "types-chardet" },
     { name = "types-pytz" },
     { name = "types-pyyaml" },
@@ -2393,7 +2394,6 @@ requires-dist = [
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
-    { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
 
@@ -2432,6 +2432,7 @@ test = [
     { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
     { name = "pytest-watcher", specifier = ">=0.2.6,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "requests", specifier = ">=2,<3" },
     { name = "requests-mock", specifier = ">=1.11.0,<2.0.0" },
     { name = "responses", specifier = ">=0.22.0,<1.0.0" },
     { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
@@ -2452,6 +2453,7 @@ typing = [
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
+    { name = "requests", specifier = ">=2,<3" },
     { name = "types-chardet", specifier = ">=5.0.4.6,<6.0.0.0" },
     { name = "types-pytz", specifier = ">=2023.3.0.0,<2024.0.0.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },

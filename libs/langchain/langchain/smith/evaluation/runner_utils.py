@@ -46,7 +46,6 @@ from langsmith.evaluation import (
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, Run, TracerSession
 from langsmith.utils import LangSmithError
-from requests import HTTPError
 from typing_extensions import TypedDict
 
 from langchain.chains.base import Chain
@@ -972,6 +971,12 @@ def _prepare_eval_run(
     tags: Optional[List[str]] = None,
     dataset_version: Optional[Union[str, datetime]] = None,
 ) -> Tuple[MCF, TracerSession, Dataset, List[Example]]:
+    try:
+        from requests import HTTPError
+    except ImportError as e:
+        raise ImportError(
+            "Could not import requests, please install with `pip install requests`."
+        ) from e
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
 

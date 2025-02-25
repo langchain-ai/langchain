@@ -12,7 +12,6 @@ dependencies = [
     "langsmith<0.4,>=0.1.17",
     "pydantic<3.0.0,>=2.7.4",
     "SQLAlchemy<3,>=1.4",
-    "requests<3,>=2",
     "PyYAML>=5.3",
     "numpy<2,>=1.26.4; python_version < \"3.12\"",
     "numpy<3,>=1.26.2; python_version >= \"3.12\"",
@@ -74,6 +73,7 @@ test = [
     "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
+    "requests<3,>=2",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
@@ -102,6 +102,7 @@ typing = [
     "mypy-protobuf<4.0.0,>=3.0.0",
     "langchain-core",
     "langchain-text-splitters",
+    "requests<3,>=2",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",

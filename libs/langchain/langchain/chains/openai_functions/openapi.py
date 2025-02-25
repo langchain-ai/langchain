@@ -5,14 +5,12 @@ import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
-import requests
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
-from requests import Response
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -21,6 +19,7 @@ from langchain.chains.sequential import SequentialChain
 if TYPE_CHECKING:
     from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
+    from requests import Response
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
@@ -175,6 +174,12 @@ def openapi_spec_to_openai_fn(
         params: Optional[dict] = None,
         **kwargs: Any,
     ) -> Any:
+        try:
+            import requests
+        except ImportError as e:
+            raise ImportError(
+                "Could not import requests, please install with `pip install requests`."
+            ) from e
         method = _name_to_call_map[name]["method"]
         url = _name_to_call_map[name]["url"]
         path_params = fn_args.pop("path_params", {})
