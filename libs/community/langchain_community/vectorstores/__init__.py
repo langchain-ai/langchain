@@ -163,6 +163,10 @@ if TYPE_CHECKING:
         ManticoreSearch,
         ManticoreSearchSettings,
     )
+    from langchain_community.vectorstores.mariadb import (
+        MariaDBStore,
+        MariaDBStoreSettings,
+    )
     from langchain_community.vectorstores.marqo import (
         Marqo,
     )
@@ -364,6 +368,8 @@ __all__ = [
     "Lantern",
     "ManticoreSearch",
     "ManticoreSearchSettings",
+    "MariaDBStore",
+    "MariaDBStoreSettings",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
@@ -467,6 +473,8 @@ _module_lookup = {
     "LLMRails": "langchain_community.vectorstores.llm_rails",
     "LanceDB": "langchain_community.vectorstores.lancedb",
     "Lantern": "langchain_community.vectorstores.lantern",
+    "MariaDBStore": "langchain_community.vectorstores.mariadb",
+    "MariaDBStoreSettings": "langchain_community.vectorstores.mariadb",
     "ManticoreSearch": "langchain_community.vectorstores.manticore_search",
     "ManticoreSearchSettings": "langchain_community.vectorstores.manticore_search",
     "Marqo": "langchain_community.vectorstores.marqo",

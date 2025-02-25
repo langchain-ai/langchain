@@ -133,6 +133,12 @@ jobs:
         with:
           python-version: ${{ matrix.job-configs.python-version }}
 
+      - name: Install mariadb c/c client
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          sudo apt install libmariadb3 libmariadb-dev
+
       - name: Install dependencies and run extended tests
         shell: bash
         run: |

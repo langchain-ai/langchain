@@ -54,6 +54,8 @@ EXPECTED_ALL = [
     "Lantern",
     "ManticoreSearch",
     "ManticoreSearchSettings",
+    "MariaDBStore",
+    "MariaDBStoreSettings",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
@@ -120,6 +122,7 @@ def test_all_imports_exclusive() -> None:
             "DistanceStrategy",
             "KineticaSettings",
             "ManticoreSearchSettings",
+            "MariaDBStoreSettings",
         ]:
             assert issubclass(getattr(vectorstores, cls), VectorStore)
 
