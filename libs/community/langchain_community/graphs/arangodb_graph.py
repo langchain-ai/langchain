@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 from importlib.util import find_spec
 from math import ceil
-from typing import Any, DefaultDict, Dict, List, Optional, Set
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Union
 
 from langchain_core.embeddings import Embeddings
 
@@ -278,11 +278,11 @@ class ArangoGraph(GraphStore):
         batch_size: int = 1000,
         use_one_entity_collection: bool = True,
         insert_async: bool = False,
-        source_collection_name: str | None = None,
-        source_edge_collection_name: str | None = None,
-        entity_collection_name: str | None = None,
-        entity_edge_collection_name: str | None = None,
-        embeddings: Embeddings | None = None,
+        source_collection_name: Union[str, None] = None,
+        source_edge_collection_name: Union[str, None] = None,
+        entity_collection_name: Union[str, None] = None,
+        entity_edge_collection_name: Union[str, None] = None,
+        embeddings: Union[Embeddings, None] = None,
         embedding_field: str = "embedding",
         embed_source: bool = False,
         embed_nodes: bool = False,
@@ -698,7 +698,7 @@ class ArangoGraph(GraphStore):
         self,
         source: Document,
         source_collection_name: str,
-        source_embedding: list[float] | None,
+        source_embedding: Union[list[float], None],
         embedding_field: str,
     ) -> str:
         """Processes a Graph Document Source into ArangoDB."""

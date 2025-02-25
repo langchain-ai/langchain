@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -143,7 +143,7 @@ class ArangoVector(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
-    def retrieve_vector_index(self) -> dict[str, Any] | None:
+    def retrieve_vector_index(self) -> Union[dict[str, Any], None]:
         """Retrieve the vector index from the collection."""
         indexes = self.collection.indexes()
         for index in indexes:
