@@ -5,8 +5,6 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 
-import time
-
 class OpenVINOSpeechToTextLoader(BaseLoader):
     """
     Loader for OpenVINO Speech-to-Text audio transcripts.
@@ -92,6 +90,7 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         """
 
         try:
+            import time
             from transformers.pipelines.audio_utils import ffmpeg_read
         except ImportError as exc:
             raise ImportError(
