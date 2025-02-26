@@ -60,7 +60,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
             import numpy as np
 
             return list(np.array(embeddings).mean(axis=0))
-        except ImportError as e:
+        except ImportError:
             logger.warning(
                 "NumPy not found in the current Python environment. "
                 "HypotheticalDocumentEmbedder will use a pure Python implementation "

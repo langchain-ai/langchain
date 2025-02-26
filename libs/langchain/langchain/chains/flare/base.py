@@ -63,7 +63,7 @@ def _low_confidence_spans(
         import numpy as np
 
         _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
-    except ImportError as e:
+    except ImportError:
         logger.warning(
             "NumPy not found in the current Python environment. FlareChain will use a "
             "pure Python implementation for internal calculations, which may "
@@ -72,7 +72,7 @@ def _low_confidence_spans(
         )
         import math
 
-        _low_idx = [
+        _low_idx = [  # type: ignore[assignment]
             idx
             for idx, log_prob in enumerate(log_probs)
             if math.exp(log_prob) < min_prob
