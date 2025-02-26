@@ -48,7 +48,10 @@ class BaseImageBlobParser(BaseBlobParser):
 
             with blob.as_bytes_io() as buf:
                 if blob.mimetype == "application/x-npy":
-                    img = Img.fromarray(numpy.load(buf))
+                    try:
+                        img = Img.fromarray(numpy.load(buf))
+                    except EOFError:
+                        return  # Ignore too small images
                 else:
                     img = Img.open(buf)
                 content = self._analyze_image(img)

@@ -1476,7 +1476,7 @@ class PDFPlumberParser(BaseBlobParser):
             raise ValueError("mode must be single or page")
         if extract_tables and extract_tables not in ["csv", "markdown", "html"]:
             raise ValueError("mode must be csv, markdown or html")
-        if not extract_images and not images_parser:
+        if extract_images and not images_parser:
             images_parser = RapidOCRBlobParser()
         self.password = password
         self.extract_images = extract_images
@@ -1554,19 +1554,27 @@ class PDFPlumberParser(BaseBlobParser):
                     elif isinstance(content, list):  # Table
                         page_text.append(_JOIN_TABLES + self._convert_table(content))
                     else:  # Image
-                        image_bytes = io.BytesIO()
-                        numpy.save(image_bytes, content)
-                        blob = Blob.from_data(
-                            image_bytes.getvalue(), mime_type="application/x-npy"
-                        )
-                        text_from_image = next(
-                            self.images_parser.lazy_parse(blob)  # type: ignore
-                        ).page_content
-                        extras.append(
-                            _format_inner_image(
-                                blob, text_from_image, self.images_inner_format
-                            )
-                        )
+                        if self.images_parser:
+                            try:
+                                from PIL import Image as Img
+                                Img.fromarray(content) # Check if image is valid
+                                image_bytes = io.BytesIO()
+                                numpy.save(image_bytes, content)
+                                blob = Blob.from_data(
+                                    image_bytes.getvalue(), mime_type="application/x-npy"
+                                )
+                                text_from_image = next(
+                                    self.images_parser.lazy_parse(blob)  # type: ignore
+                                ).page_content
+                                extras.append(
+                                    _format_inner_image(
+                                        blob, text_from_image, self.images_inner_format
+                                    )
+                                )
+                            except TypeError:
+                                pass
+                            except EOFError:
+                                pass
 
                 all_text = _merge_text_and_extras(extras, "".join(page_text).strip())
 
