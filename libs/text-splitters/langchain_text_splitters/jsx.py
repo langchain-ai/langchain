@@ -57,7 +57,7 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         # Extract unique opening component tags using regex
         # Regex to match opening tags, excluding self-closing tags
         opening_tags = re.findall(r"<\s*([a-zA-Z0-9]+)[^>]*>", text)
-        
+
         component_tags = []
         for tag in opening_tags:
             if tag not in component_tags:
