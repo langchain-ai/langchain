@@ -39,7 +39,6 @@ IGNORED_PARTNERS = [
 
 PY_312_MAX_PACKAGES = [
     "libs/partners/huggingface",  # https://github.com/pytorch/pytorch/issues/130249
-    "libs/partners/pinecone",
     "libs/partners/voyageai",
 ]
 

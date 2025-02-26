@@ -86,7 +86,10 @@ async def test_async_sample_sql_docstore(async_sql_store: SQLStore) -> None:
 
     # Get values for keys
     values = await async_sql_store.amget(
-        ["key1", "key2"]
+        [
+            "key1",
+            "key2",
+        ]
     )  # Returns [b"value1", b"value2"]
     assert values == [b"value1", b"value2"]
     # Delete keys

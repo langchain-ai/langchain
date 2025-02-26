@@ -9,7 +9,6 @@ from langchain_community.document_loaders import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
     PDFMinerPDFasHTMLLoader,
-    PyPDFium2Loader,
     UnstructuredPDFLoader,
 )
 
@@ -54,21 +53,6 @@ def test_pdfminer_pdf_as_html_loader() -> None:
 
     docs = loader.load()
     assert len(docs) == 1
-
-
-def test_pypdfium2_loader() -> None:
-    """Test PyPDFium2Loader."""
-    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
-    loader = PyPDFium2Loader(file_path)
-    docs = loader.load()
-
-    assert len(docs) == 1
-
-    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
-    loader = PyPDFium2Loader(file_path)
-
-    docs = loader.load()
-    assert len(docs) == 16
 
 
 @pytest.mark.skipif(
@@ -184,6 +168,7 @@ def test_amazontextract_loader_failures() -> None:
     [
         ("PDFMinerLoader", {}),
         ("PyMuPDFLoader", {}),
+        ("PyPDFium2Loader", {}),
         ("PyPDFLoader", {}),
     ],
 )
@@ -206,8 +191,6 @@ def test_standard_parameters(
         images_parser=None,
         images_inner_format="text",
         password=None,
-        extract_tables=None,
-        extract_tables_settings=None,
     )
     docs = loader.load()
     assert len(docs) == 16

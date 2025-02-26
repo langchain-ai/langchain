@@ -4,31 +4,27 @@ build-backend = "pdm.backend"
 
 [project]
 authors = []
-license = {text = "MIT"}
+license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.34rc2",
-    "langchain-text-splitters<1.0.0,>=0.3.6rc2",
+    "langchain-core<1.0.0,>=0.3.35",
+    "langchain-text-splitters<1.0.0,>=0.3.6",
     "langsmith<0.4,>=0.1.17",
     "pydantic<3.0.0,>=2.7.4",
     "SQLAlchemy<3,>=1.4",
     "requests<3,>=2",
     "PyYAML>=5.3",
-    "aiohttp<4.0.0,>=3.8.3",
-    "tenacity!=8.4.0,<10,>=8.1.0",
-    "numpy<2,>=1.26.4; python_version < \"3.12\"",
-    "numpy<3,>=1.26.2; python_version >= \"3.12\"",
     "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
 ]
 name = "langchain"
-version = "0.3.18rc2"
+version = "0.3.19"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.optional-dependencies]
 community = ["langchain-community"]
-anthropic = ["langchain-anthropic>=0.3.7rc1"]
-openai = ["langchain-openai>=0.3.4rc1"]
+anthropic = ["langchain-anthropic"]
+openai = ["langchain-openai"]
 cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
@@ -40,6 +36,7 @@ huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
+xai = ["langchain-xai"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
@@ -66,18 +63,18 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "requests-mock<2.0.0,>=1.11.0",
     "pytest-xdist<4.0.0,>=3.6.1",
+    "blockbuster<1.6,>=1.5.18",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
-    "langchain-tests @ file:///${PROJECT_ROOT}/../standard-tests",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
-    "langchain-openai @ file:///${PROJECT_ROOT}/../partners/openai",
+    "langchain-tests",
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
+    "numpy<3,>=1.26.4",
 ]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-]
+codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
     "pytest-vcr<2.0.0,>=1.0.2",
     "urllib3<2; python_version < \"3.10\"",
@@ -85,8 +82,8 @@ test_integration = [
     "python-dotenv<2.0.0,>=1.0.0",
     "cassio<1.0.0,>=0.1.0",
     "langchainhub<1.0.0,>=0.1.16",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-core",
+    "langchain-text-splitters",
 ]
 lint = [
     "ruff<1.0.0,>=0.9.2",
@@ -102,26 +99,33 @@ typing = [
     "types-pytz<2024.0.0.0,>=2023.3.0.0",
     "types-chardet<6.0.0.0,>=5.0.4.6",
     "mypy-protobuf<4.0.0,>=3.0.0",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-core",
+    "langchain-text-splitters",
+    "numpy<3,>=1.26.4",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",
     "playwright<2.0.0,>=1.28.0",
     "setuptools<68.0.0,>=67.6.1",
-    "langchain-core @ file:///${PROJECT_ROOT}/../core",
-    "langchain-text-splitters @ file:///${PROJECT_ROOT}/../text-splitters",
+    "langchain-core",
+    "langchain-text-splitters",
 ]
 
 
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain-tests = { path = "../standard-tests", editable = true }
+langchain-text-splitters = { path = "../text-splitters", editable = true }
+langchain-openai = { path = "../partners/openai", editable = true }
+
 [tool.ruff]
 target-version = "py39"
-exclude = [ "tests/integration_tests/examples/non-utf8-encoding.py",]
+exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
-exclude = [ "notebooks", "examples", "example_data",]
+exclude = ["notebooks", "examples", "example_data"]
 
 [tool.codespell]
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
@@ -129,7 +133,7 @@ ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201", "D",]
+select = ["E", "F", "I", "T201", "D"]
 pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]
@@ -137,10 +141,18 @@ pydocstyle = { convention = "google" }
 "!langchain/indexes/vectorstore.py" = ["D"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
-filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning", "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests", "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",]
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+]

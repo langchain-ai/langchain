@@ -11,7 +11,7 @@ TEST_FILE ?= tests/unit_tests/
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
 test tests:
-	uv run --group test pytest -vvv --timeout 30 --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest -vvv --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
 	uv run --group test --group test_integration pytest -vvv --timeout 30 $(TEST_FILE)

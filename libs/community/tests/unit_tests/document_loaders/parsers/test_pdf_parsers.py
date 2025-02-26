@@ -9,10 +9,7 @@ import pytest
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers.pdf import (
-    PyPDFium2Parser,
-    _merge_text_and_extras,
-)
+from langchain_community.document_loaders.parsers.pdf import _merge_text_and_extras
 
 _THIS_DIR = Path(__file__).parents[3]
 
@@ -74,19 +71,13 @@ def _assert_with_parser(parser: BaseBlobParser, *, splits_by_page: bool = True) 
         assert int(metadata["page"]) == 0
 
 
-@pytest.mark.requires("pypdfium2")
-def test_pypdfium2_parser() -> None:
-    """Test PyPDFium2 parser."""
-    # Does not follow defaults to split by page.
-    _assert_with_parser(PyPDFium2Parser())
-
-
 @pytest.mark.parametrize(
     "parser_factory,require,params",
     [
         ("PDFMinerParser", "pdfminer", {"splits_by_page": False}),
         ("PyMuPDFParser", "pymupdf", {}),
         ("PyPDFParser", "pypdf", {}),
+        ("PyPDFium2Parser", "pypdfium2", {}),
     ],
 )
 def test_parsers(

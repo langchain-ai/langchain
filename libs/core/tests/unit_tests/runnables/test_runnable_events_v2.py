@@ -1,6 +1,7 @@
 """Module that contains tests for runnable.astream_events API."""
 
 import asyncio
+import inspect
 import sys
 import uuid
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
@@ -8,6 +9,7 @@ from functools import partial
 from itertools import cycle
 from typing import (
     Any,
+    Callable,
     Optional,
     cast,
 )
@@ -1901,10 +1903,10 @@ async def test_runnable_with_message_history() -> None:
     # so we can raise them in this main thread
     raised_errors = []
 
-    def collect_errors(fn):  # type: ignore
+    def collect_errors(fn: Callable[..., Any]) -> Callable[..., Any]:
         nonlocal raised_errors
 
-        def _get_output_messages(*args, **kwargs):  # type: ignore
+        def _get_output_messages(*args: Any, **kwargs: Any) -> Any:
             try:
                 return fn(*args, **kwargs)
             except Exception as e:
@@ -2793,3 +2795,10 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
             },
         ],
     )
+
+
+def test_default_is_v2() -> None:
+    """Test that we default to version="v2"."""
+
+    signature = inspect.signature(Runnable.astream_events)
+    assert signature.parameters["version"].default == "v2"

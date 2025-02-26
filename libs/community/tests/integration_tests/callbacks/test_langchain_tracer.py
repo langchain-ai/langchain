@@ -28,7 +28,7 @@ questions = [
         "Who won the US Open women's final in 2019? "
         "What is her age raised to the 0.34 power?"
     ),
-    ("Who is Beyonce's husband? " "What is his age raised to the 0.19 power?"),
+    ("Who is Beyonce's husband? What is his age raised to the 0.19 power?"),
 ]
 
 

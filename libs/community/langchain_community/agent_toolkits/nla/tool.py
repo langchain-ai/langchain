@@ -30,7 +30,7 @@ class NLATool(Tool):  # type: ignore[override]
             The API endpoint tool.
         """
         expanded_name = (
-            f'{api_title.replace(" ", "_")}.{chain.api_operation.operation_id}'
+            f"{api_title.replace(' ', '_')}.{chain.api_operation.operation_id}"
         )
         description = (
             f"I'm an AI from {api_title}. Instruct what you want,"

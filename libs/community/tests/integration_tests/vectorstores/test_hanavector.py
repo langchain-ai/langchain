@@ -1133,7 +1133,7 @@ def test_preexisting_specific_columns_for_metadata_fill(
 
     c = 0
     try:
-        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "quality"=' f"'ugly'"
+        sql_str = f"SELECT COUNT(*) FROM {table_name} WHERE \"quality\"='ugly'"
         cur = test_setup.conn.cursor()
         cur.execute(sql_str)
         if cur.has_result_set():
@@ -1195,7 +1195,7 @@ def test_preexisting_specific_columns_for_metadata_via_array(
 
     c = 0
     try:
-        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "quality"=' f"'ugly'"
+        sql_str = f"SELECT COUNT(*) FROM {table_name} WHERE \"quality\"='ugly'"
         cur = test_setup.conn.cursor()
         cur.execute(sql_str)
         if cur.has_result_set():
@@ -1206,7 +1206,7 @@ def test_preexisting_specific_columns_for_metadata_via_array(
     assert c == 3
 
     try:
-        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "Owner"=' f"'Steve'"
+        sql_str = f"SELECT COUNT(*) FROM {table_name} WHERE \"Owner\"='Steve'"
         cur = test_setup.conn.cursor()
         cur.execute(sql_str)
         if cur.has_result_set():

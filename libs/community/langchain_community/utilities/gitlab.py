@@ -138,7 +138,10 @@ class GitLabAPIWrapper(BaseModel):
             for comment in comments_page:
                 comment = issue.notes.get(comment.id)
                 comments.append(
-                    {"body": comment.body, "user": comment.author["username"]}
+                    {
+                        "body": comment.body,
+                        "user": comment.author["username"],
+                    }
                 )
             page += 1
 
