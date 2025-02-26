@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import aiohttp
 import json
 from typing import (
     TYPE_CHECKING,
@@ -15,6 +14,7 @@ from typing import (
     Union,
 )
 
+import aiohttp
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
