@@ -138,28 +138,15 @@ class ToolNameHandler:
     
     def restore_message_tool_names(self, response: AIMessage):
         """Iterate over the message and restore the tool names."""
-        if isinstance(response, AIMessage):
-            if "function_call" in response.additional_kwargs:
-                function_call = response.additional_kwargs["function_call"]
-                if "name" in function_call:
-                    function_call["name"] = self.restore(function_call["name"])
+        if "tool_calls" in response.additional_kwargs:
+            for tool_call in response.additional_kwargs["tool_calls"]:
+                original_name = self.restore(tool_call["function"]["name"])
+                tool_call["function"]["name"] = original_name
+        if "tool_calls" in response.lc_attributes:
+            for tool_call in response.lc_attributes["tool_calls"]:
+                original_name = self.restore(tool_call["name"])
+                tool_call["name"] = original_name
 
-            if "tool_calls" in response.additional_kwargs:
-                for tool_call in response.additional_kwargs["tool_calls"]:
-                    if "name" in tool_call:
-                        tool_call["name"] = self.restore(tool_call["name"])
-
-            if "parsed" in response.additional_kwargs:
-                parsed = response.additional_kwargs["parsed"]
-                if "name" in parsed:
-                    parsed["name"] = self.restore(parsed["name"])
-
-            if "refusal" in response.additional_kwargs:
-                refusal = response.additional_kwargs["refusal"]
-                if "name" in refusal:
-                    refusal["name"] = self.restore(refusal["name"])
-        else:
-            raise ValueError(f"Unsupported response type: {type(response)}")
 
     def is_standard(self, name: str) -> bool:
         """Check if a name is valid as an OpenAI function name (letters, numbers, underscores)."""
@@ -897,6 +884,7 @@ class BaseChatOpenAI(BaseChatModel):
         token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
+            self._name_handler.restore_message_tool_names(message)
             if isinstance(message, AIMessage):
                 self._name_handler.restore_message_tool_names(message)
                 if token_usage:
