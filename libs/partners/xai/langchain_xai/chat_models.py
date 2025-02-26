@@ -1,16 +1,16 @@
 """Wrapper around xAI's Chat Completions API."""
 
-from typing import Any, Dict, List, Optional
 import openai
+import os
+from typing import Any, Dict, List, Optional
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatResult
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
-from langchain_core.callbacks import CallbackManagerForLLMRun
-import os
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -373,14 +373,15 @@ class ChatGrok(ChatXAI):
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         grok_version: Optional[str] = None,
-        **kwargs,
+        **kwargs
     ):
         """Initialize ChatGrok with xAI API key and Grok version."""
         api_key = api_key or os.environ.get("XAI_API_KEY")
         if not api_key:
             raise ValueError(
                 "XAI_API_KEY must be provided or set "
-                "in environment.")
+                "in environment."
+            )
         if grok_version:
             model = f"grok-{grok_version}"
         super().__init__(
@@ -388,7 +389,7 @@ class ChatGrok(ChatXAI):
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            **kwargs,
+            **kwargs
         )
         self.grok_version = grok_version
 
@@ -397,11 +398,13 @@ class ChatGrok(ChatXAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs,
+        **kwargs
     ) -> ChatResult:
         """Generate a response using the specified Grok model."""
         print(f"Calling Grok model: {self.model_name}")
-        return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+        return super()._generate(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        )
 
     @property
     def _llm_type(self) -> str:
@@ -411,7 +414,9 @@ class ChatGrok(ChatXAI):
     def with_grok_config(self, grok_version: str) -> "ChatGrok":
         """Return a new ChatGrok instance with updated Grok version."""
         return ChatGrok(
-            api_key=self.xai_api_key.get_secret_value() if self.xai_api_key else None,
+            api_key=self.xai_api_key.get_secret_value()
+            if self.xai_api_key
+            else None,
             model=self.model_name,
             temperature=self.temperature,
             max_tokens=self.max_tokens,
