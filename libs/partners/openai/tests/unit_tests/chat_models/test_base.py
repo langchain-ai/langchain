@@ -1,11 +1,13 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
+from functools import partial
 from types import TracebackType
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain_core.load import dumps, loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -17,6 +19,8 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.outputs import ChatGeneration
+from langchain_core.runnables import RunnableLambda
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
@@ -27,6 +31,7 @@ from langchain_openai.chat_models.base import (
     _convert_to_openai_response_format,
     _create_usage_metadata,
     _format_message_content,
+    _oai_structured_outputs_parser,
 )
 
 
@@ -881,6 +886,20 @@ def test__get_request_payload() -> None:
     payload = llm._get_request_payload(messages)
     assert payload == expected
 
+    # Test we coerce to developer role for o-series models
+    llm = ChatOpenAI(model="o3-mini")
+    payload = llm._get_request_payload(messages)
+    expected = {
+        "messages": [
+            {"role": "developer", "content": "hello"},
+            {"role": "developer", "content": "bye"},
+            {"role": "user", "content": "how are you"},
+        ],
+        "model": "o3-mini",
+        "stream": False,
+    }
+    assert payload == expected
+
 
 def test_init_o1() -> None:
     with pytest.warns(None) as record:  # type: ignore[call-overload]
@@ -899,3 +918,21 @@ def test_structured_output_old_model() -> None:
     # assert tool calling was used instead of json_schema
     assert "tools" in llm.steps[0].kwargs  # type: ignore
     assert "response_format" not in llm.steps[0].kwargs  # type: ignore
+
+
+def test_structured_outputs_parser() -> None:
+    parsed_response = GenerateUsername(name="alice", hair_color="black")
+    llm_output = ChatGeneration(
+        message=AIMessage(
+            content='{"name": "alice", "hair_color": "black"}',
+            additional_kwargs={"parsed": parsed_response},
+        )
+    )
+    output_parser = RunnableLambda(
+        partial(_oai_structured_outputs_parser, schema=GenerateUsername)
+    )
+    serialized = dumps(llm_output)
+    deserialized = loads(serialized)
+    assert isinstance(deserialized, ChatGeneration)
+    result = output_parser.invoke(deserialized.message)
+    assert result == parsed_response
