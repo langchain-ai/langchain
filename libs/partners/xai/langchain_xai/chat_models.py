@@ -1,16 +1,18 @@
 """Wrapper around xAI's Chat Completions API."""
 
+import os
 from typing import Any, Dict, List, Optional
+
 import openai
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
-from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.outputs import ChatResult, ChatGeneration
-from langchain_core.callbacks import CallbackManagerForLLMRun
-import os
+
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
@@ -357,40 +359,37 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
         return self
 
+
 # Extension of ChatXAI optimized for Grok models (e.g., Grok 2, Grok 3)
 class ChatGrok(ChatXAI):
     """An extended version of ChatXAI optimized for Grok models (e.g., Grok 2, Grok 3)."""
 
-    grok_version: Optional[str] = Field(default=None, description="Grok model version (e.g., '2', '3')")
+    grok_version: Optional[str] = Field(
+        default=None, description="Grok model version (e.g., '2', '3')"
+    )
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "grok-2",  # Default to Grok 2, adaptable to Grok 3 later
+        model: str = "grok-2",
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
-        grok_version: Optional[str] = None,  # Hypothetical Grok-specific param
-        **kwargs
+        grok_version: Optional[str] = None,
+        **kwargs,
     ):
-        # Fetch API key from env if not provided (ChatXAI handles SecretStr conversion)
+        """Initialize ChatGrok with xAI API key and Grok version."""
         api_key = api_key or os.environ.get("XAI_API_KEY")
         if not api_key:
             raise ValueError("XAI_API_KEY must be provided or set in environment.")
-
-        # Adjust model based on grok_version before passing to parent
         if grok_version:
             model = f"grok-{grok_version}"
-
-        # Pass to parent ChatXAI
         super().__init__(
             api_key=api_key,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            **kwargs
+            **kwargs,
         )
-
-        # Grok-specific customization
         self.grok_version = grok_version
 
     def _generate(
@@ -398,13 +397,11 @@ class ChatGrok(ChatXAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs
+        **kwargs,
     ) -> ChatResult:
-        """Override to add Grok-specific tweaks if needed."""
-        print(f"Calling Grok model: {self.model_name}")  # Use model_name instead of model
-        # Delegate to BaseChatOpenAI's _generate, which returns ChatResult
-        result = super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
-        return result
+        """Generate a response using the specified Grok model."""
+        print(f"Calling Grok model: {self.model_name}")
+        return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
 
     @property
     def _llm_type(self) -> str:
@@ -412,11 +409,11 @@ class ChatGrok(ChatXAI):
         return "grok_chat"
 
     def with_grok_config(self, grok_version: str) -> "ChatGrok":
-        """Convenience method to switch Grok versions."""
+        """Return a new ChatGrok instance with updated Grok version."""
         return ChatGrok(
             api_key=self.xai_api_key.get_secret_value() if self.xai_api_key else None,
-            model=self.model_name,  # Use model_name here too
+            model=self.model_name,
             temperature=self.temperature,
             max_tokens=self.max_tokens,
-            grok_version=grok_version
+            grok_version=grok_version,
         )
