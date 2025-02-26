@@ -57,14 +57,15 @@ def test_sqlitevec_add_extra() -> None:
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
 
+
 @pytest.mark.requires("sqlite-vec")
 def test_sqlitevec_search_multiple_tables() -> None:
-    """ Test end to end construction and search with multiple tables."""
+    """Test end to end construction and search with multiple tables."""
     docsearch_1 = SQLiteVec.from_texts(
         fake_texts,
         FakeEmbeddings(),
         table="table_1",
-        db_file=":memory:", ## change to local storage for testing
+        db_file=":memory:",  ## change to local storage for testing
     )
 
     docsearch_2 = SQLiteVec.from_texts(
