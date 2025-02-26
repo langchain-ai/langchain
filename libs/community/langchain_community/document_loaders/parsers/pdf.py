@@ -1375,48 +1375,6 @@ class PyPDFium2Parser(BaseBlobParser):
         return _FORMAT_IMAGE_STR.format(image_text=_JOIN_IMAGES.join(str_images))
 
 
-# The legacy PDFPlumberParser use key with upper case.
-# This is not aligned with the new convention, which requires the key to be in
-# lower case.
-class _PDFPlumberParserMetadata(dict):
-    _warning_keys: set[str] = set()
-
-    def __init__(self, d: dict[str, Any]):
-        super().__init__({k.lower(): v for k, v in d.items()})
-        self._pdf_metadata_keys = set(d.keys())
-
-    def _lower(self, k: object) -> object:
-        assert isinstance(k, str)
-        if k in self._pdf_metadata_keys:
-            lk = k.lower()
-            if lk != k:
-                if k not in _PDFPlumberParserMetadata._warning_keys:
-                    _PDFPlumberParserMetadata._warning_keys.add(str(k))
-                    logger.warning(
-                        'The key "%s" with uppercase is deprecated. '
-                        "Update your code and vectorstore.",
-                        k,
-                    )
-            return lk
-        else:
-            return k
-
-    def __contains__(self, k: object) -> bool:
-        return super().__contains__(self._lower(k))
-
-    def __delitem__(self, k: object) -> None:
-        super().__delitem__(self._lower(k))
-
-    def __getitem__(self, k: object) -> Any:
-        return super().__getitem__(self._lower(k))
-
-    def get(self, k: object, default: Any = None) -> Any:
-        return super().get(self._lower(str(k)), default)
-
-    def __setitem__(self, k: object, v: Any) -> None:
-        super().__setitem__(self._lower(str(k)), v)
-
-
 class PDFPlumberParser(BaseBlobParser):
     """Parse a blob from a PDF using `pdfplumber` library.
 
@@ -1564,7 +1522,7 @@ class PDFPlumberParser(BaseBlobParser):
             from pdfplumber.utils import geometry  # import WordExctractor, TextMap
 
             contents = []
-            doc_metadata = _purge_metadata(
+            doc_metadata = doc.metadata | _purge_metadata(
                 (
                     doc.metadata
                     | {
@@ -1574,6 +1532,7 @@ class PDFPlumberParser(BaseBlobParser):
                     }
                 )
             )
+
             for page in doc.pages:
                 tables_bbox: list[tuple[float, float, float, float]] = (
                     self._extract_tables_bbox_from_page(page)
@@ -1618,12 +1577,10 @@ class PDFPlumberParser(BaseBlobParser):
                     yield Document(
                         page_content=all_text,
                         metadata=_validate_metadata(
-                            _PDFPlumberParserMetadata(
-                                doc_metadata
-                                | {
-                                    "page": page.page_number - 1,
-                                }
-                            )
+                            doc_metadata
+                            | {
+                                "page": page.page_number - 1,
+                            }
                         ),
                     )
                 else:
@@ -1638,9 +1595,7 @@ class PDFPlumberParser(BaseBlobParser):
             if self.mode == "single":
                 yield Document(
                     page_content=self.pages_delimiter.join(contents),
-                    metadata=_validate_metadata(
-                        _PDFPlumberParserMetadata(doc_metadata)
-                    ),
+                    metadata=_validate_metadata(doc_metadata),
                 )
 
     def _process_page_content(self, page: pdfplumber.page.Page) -> str:
@@ -2073,7 +2028,8 @@ class AmazonTextractPDFParser(BaseBlobParser):
         for idx, page in enumerate(document.pages):
             yield Document(
                 page_content=page.get_text(config=self.linearization_config),
-                metadata={"source": blob.source, "page": idx + 1},  # type: ignore[attr-defined]
+                metadata={"source": blob.source, "page": idx + 1},
+                # type: ignore[attr-defined]
             )
 
 
