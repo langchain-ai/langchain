@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import aiohttp
+import json
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Dict,
     Generator,
     Iterator,
@@ -305,3 +308,63 @@ class Xinference(LLM):
                 return GenerationChunk(text=token)
         else:
             raise TypeError("stream_response type error!")
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        generate_config = kwargs.get("generate_config", {})
+        generate_config = {**self.model_kwargs, **generate_config}
+        if stop:
+            generate_config["stop"] = stop
+        async for stream_resp in self._acreate_generate_stream(prompt, generate_config):
+            if stream_resp:
+                chunk = self._stream_response_to_generation_chunk(stream_resp)
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=self.verbose,
+                    )
+                yield chunk
+
+    async def _acreate_generate_stream(
+        self, prompt: str, generate_config: Optional[Dict[str, List[str]]] = None
+    ) -> AsyncIterator[str]:
+        request_body: Dict[str, Any] = {"model": self.model_uid, "prompt": prompt}
+        if generate_config is not None:
+            for key, value in generate_config.items():
+                request_body[key] = value
+
+        stream = bool(generate_config and generate_config.get("stream"))
+        headers = {}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url=f"{self.server_url}/v1/completions",
+                headers=headers,
+                json=request_body,
+            ) as response:
+                if response.status != 200:
+                    if response.status == 404:
+                        raise FileNotFoundError(
+                            "astream call failed with status code 404."
+                        )
+                    else:
+                        optional_detail = response.text
+                        raise ValueError(
+                            f"astream call failed with status code {response.status}."
+                            f" Details: {optional_detail}"
+                        )
+
+                async for line in response.content:
+                    if not stream:
+                        yield json.loads(line)
+                    else:
+                        json_str = line.decode("utf-8")
+                        if line.startswith(b"data:"):
+                            json_str = json_str[len(b"data:") :].strip()
+                            if not json_str:
+                                continue
+                            yield json.loads(json_str)
