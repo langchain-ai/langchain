@@ -605,6 +605,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             params = {**params, **kwargs}
             return str(sorted(params.items()))
 
+    def _format_params_for_provider(self, params: dict) -> dict:
+        return params
+
     def generate(
         self,
         messages: list[list[BaseMessage]],
@@ -641,6 +644,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        kwargs = self._format_params_for_provider(**kwargs)
+
         structured_output_format = kwargs.pop("structured_output_format", None)
         if structured_output_format:
             try:
