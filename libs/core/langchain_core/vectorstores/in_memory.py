@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -13,13 +12,15 @@ from typing import (
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
+    from langchain_core.embeddings import Embeddings
     from langchain_core.indexing import UpsertResponse
 
 

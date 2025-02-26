@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.utils.input import print_text
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
 
 
 class FileCallbackHandler(BaseCallbackHandler):
