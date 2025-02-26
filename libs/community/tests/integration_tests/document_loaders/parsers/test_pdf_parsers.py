@@ -247,9 +247,6 @@ def test_parser_with_table(
     mode: str,
     extract_tables: str,
 ) -> None:
-
-    from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
-
     parser_class = getattr(pdf_parsers, parser_factory)
 
     parser = parser_class(
