@@ -588,7 +588,6 @@ class ChildTool(BaseTool):
                 return {
                     k: getattr(result, k)
                     for k, v in result_dict.items()
-                    if k in tool_input
                 }
             return tool_input
 

@@ -628,7 +628,7 @@ def test_named_tool_decorator_return_direct() -> None:
     """Test functionality when arguments and return direct are provided as input."""
 
     @tool("search", return_direct=True)
-    def search_api(query: str, *args: Any) -> str:
+    def search_api(query: str) -> str:
         """Search the API for the query."""
         return "API result"
 
