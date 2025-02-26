@@ -1,4 +1,5 @@
-from typing import List
+from pathlib import Path
+from typing import Any, List, Union
 
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
@@ -26,6 +27,23 @@ class UnstructuredHTMLLoader(UnstructuredFileLoader):
     ----------
     https://unstructured-io.github.io/unstructured/bricks.html#partition-html
     """
+
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
+        """
+
+        Args:
+            file_path: The path to the HTML file to load.
+            mode: The mode to use when loading the file. Can be one of "single",
+                "multi", or "all". Default is "single".
+            **unstructured_kwargs: Any kwargs to pass to the unstructured.
+        """
+        file_path = str(file_path)
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         from unstructured.partition.html import partition_html

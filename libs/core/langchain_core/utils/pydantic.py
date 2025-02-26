@@ -9,6 +9,7 @@ from contextlib import nullcontext
 from functools import lru_cache, wraps
 from types import GenericAlias
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -29,13 +30,16 @@ from pydantic import (
 from pydantic import (
     create_model as _create_model_base,
 )
+from pydantic.fields import FieldInfo as FieldInfoV2
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from pydantic_core import core_schema
+
+if TYPE_CHECKING:
+    from pydantic_core import core_schema
 
 
 def get_pydantic_major_version() -> int:
@@ -71,8 +75,8 @@ elif PYDANTIC_MAJOR_VERSION == 2:
     from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
-    TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
+    TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore[misc]
 else:
     msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
     raise ValueError(msg)
@@ -172,7 +176,6 @@ def pre_init(func: Callable) -> Any:
     Returns:
         Any: The decorated function.
     """
-
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
 
@@ -358,7 +361,6 @@ def _create_subset_model(
 
 if PYDANTIC_MAJOR_VERSION == 2:
     from pydantic import BaseModel as BaseModelV2
-    from pydantic.fields import FieldInfo as FieldInfoV2
     from pydantic.v1 import BaseModel as BaseModelV1
 
     @overload
@@ -390,6 +392,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
         else:
             msg = f"Expected a Pydantic model. Got {type(model)}"
             raise TypeError(msg)
+
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
 
@@ -398,6 +401,7 @@ elif PYDANTIC_MAJOR_VERSION == 1:
     ) -> dict[str, FieldInfoV1]:
         """Get the field names of a Pydantic model."""
         return model.__fields__  # type: ignore
+
 else:
     msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
     raise ValueError(msg)

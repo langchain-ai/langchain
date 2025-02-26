@@ -87,6 +87,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.blob_loaders import (
         Blob,
         BlobLoader,
+        CloudBlobLoader,
         FileSystemBlobLoader,
         YoutubeAudioLoader,
     )
@@ -574,6 +575,7 @@ _module_lookup = {
     "CSVLoader": "langchain_community.document_loaders.csv_loader",
     "CassandraLoader": "langchain_community.document_loaders.cassandra",
     "ChatGPTLoader": "langchain_community.document_loaders.chatgpt",
+    "CloudBlobLoader": "langchain_community.document_loaders.blob_loaders",
     "CoNLLULoader": "langchain_community.document_loaders.conllu",
     "CollegeConfidentialLoader": "langchain_community.document_loaders.college_confidential",  # noqa: E501
     "ConcurrentLoader": "langchain_community.document_loaders.concurrent",
@@ -781,6 +783,7 @@ __all__ = [
     "CSVLoader",
     "CassandraLoader",
     "ChatGPTLoader",
+    "CloudBlobLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConcurrentLoader",

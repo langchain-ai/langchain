@@ -69,7 +69,11 @@ class NeMoEmbeddings(BaseModel, Embeddings):
         # Optional: A minimal test payload and headers required by the endpoint
         headers = {"Content-Type": "application/json"}
         payload = json.dumps(
-            {"input": "Hello World", "model": model, "input_type": "query"}
+            {
+                "input": "Hello World",
+                "model": model,
+                "input_type": "query",
+            }
         )
 
         is_endpoint_live(url, headers, payload)
@@ -111,7 +115,11 @@ class NeMoEmbeddings(BaseModel, Embeddings):
         """
 
         payload = json.dumps(
-            {"input": text, "model": self.model, "input_type": input_type}
+            {
+                "input": text,
+                "model": self.model,
+                "input_type": input_type,
+            }
         )
         headers = {"Content-Type": "application/json"}
 

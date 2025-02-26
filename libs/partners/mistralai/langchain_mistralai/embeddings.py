@@ -32,7 +32,8 @@ documents/chunks)"""
 class DummyTokenizer:
     """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
 
-    def encode_batch(self, texts: List[str]) -> List[List[str]]:
+    @staticmethod
+    def encode_batch(texts: List[str]) -> List[List[str]]:
         return [list(text) for text in texts]
 
 
@@ -223,7 +224,9 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             batch_responses = []
 
             @retry(
-                retry=retry_if_exception_type(httpx.TimeoutException),
+                retry=retry_if_exception_type(
+                    (httpx.TimeoutException, httpx.HTTPStatusError)
+                ),
                 wait=wait_fixed(self.wait_time),
                 stop=stop_after_attempt(self.max_retries),
             )

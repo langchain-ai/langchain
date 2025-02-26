@@ -82,7 +82,7 @@ class MockResponse:
     def raise_for_status(self) -> None:
         """Mocked raise for status."""
         if 400 <= self.status_code < 600:
-            raise HTTPError()
+            raise HTTPError()  # type: ignore[call-arg]
 
     def json(self) -> Dict:
         """Returns mocked json data."""

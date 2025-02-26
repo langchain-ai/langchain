@@ -181,6 +181,7 @@ def _get_embedding_collection_store(
                     postgresql_ops={"cmetadata": "jsonb_path_ops"},
                 ),
             )
+
     else:
         # For backwards comaptibilty with older versions of pgvector
         # This should be removed in the future (remove during migration)
@@ -900,8 +901,7 @@ class PGVector(VectorStore):
                         )
                 else:
                     raise ValueError(
-                        f"Invalid filter condition. Expected $and or $or "
-                        f"but got: {key}"
+                        f"Invalid filter condition. Expected $and or $or but got: {key}"
                     )
             elif len(filters) > 1:
                 # Then all keys have to be fields (they cannot be operators)

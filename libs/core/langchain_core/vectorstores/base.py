@@ -25,7 +25,6 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Iterator, Sequence
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
@@ -43,6 +42,8 @@ from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Iterator, Sequence
+
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
@@ -132,7 +133,6 @@ class VectorStore(ABC):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-
         msg = "delete method must be implemented by subclass."
         raise NotImplementedError(msg)
 
@@ -423,7 +423,6 @@ class VectorStore(ABC):
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
-
         return 1.0 - distance
 
     @staticmethod
@@ -435,8 +434,7 @@ class VectorStore(ABC):
         return -1.0 * distance
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """
-        The 'correct' relevance function
+        """The 'correct' relevance function
         may differ depending on a few things, including:
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
@@ -473,7 +471,6 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score).
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -487,8 +484,7 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """
-        Default similarity search with relevance scores. Modify if necessary
+        """Default similarity search with relevance scores. Modify if necessary
         in subclass.
         Return docs and relevance scores in the range [0, 1].
 
@@ -514,8 +510,7 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """
-        Default similarity search with relevance scores. Modify if necessary
+        """Default similarity search with relevance scores. Modify if necessary
         in subclass.
         Return docs and relevance scores in the range [0, 1].
 
@@ -644,7 +639,6 @@ class VectorStore(ABC):
         Returns:
             List of Documents most similar to the query.
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -678,7 +672,6 @@ class VectorStore(ABC):
         Returns:
             List of Documents most similar to the query vector.
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -741,7 +734,6 @@ class VectorStore(ABC):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
@@ -1056,7 +1048,6 @@ class VectorStoreRetriever(BaseRetriever):
 
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
-
         _kwargs = self.search_kwargs | kwargs
 
         ls_params = super()._get_ls_params(**_kwargs)

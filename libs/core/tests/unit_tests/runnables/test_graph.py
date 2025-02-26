@@ -426,7 +426,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
 
 
 def test_graph_mermaid_escape_node_label() -> None:
-    """Test that node labels are correctly preprocessed for draw_mermaid"""
+    """Test that node labels are correctly preprocessed for draw_mermaid."""
     assert _escape_node_label("foo") == "foo"
     assert _escape_node_label("foo-bar") == "foo-bar"
     assert _escape_node_label("foo_1") == "foo_1"

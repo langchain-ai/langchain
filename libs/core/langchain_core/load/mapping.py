@@ -1,5 +1,4 @@
-"""
-This file contains a mapping between the lc_namespace path for a given
+"""This file contains a mapping between the lc_namespace path for a given
 subclass that implements from Serializable to the namespace
 where that class is actually located.
 
@@ -528,6 +527,16 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "prompts",
         "structured",
         "StructuredPrompt",
+    ),
+    ("langchain_sambanova", "chat_models", "ChatSambaNovaCloud"): (
+        "langchain_sambanova",
+        "chat_models",
+        "ChatSambaNovaCloud",
+    ),
+    ("langchain_sambanova", "chat_models", "ChatSambaStudio"): (
+        "langchain_sambanova",
+        "chat_models",
+        "ChatSambaStudio",
     ),
 }
 

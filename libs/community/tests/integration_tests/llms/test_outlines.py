@@ -72,9 +72,9 @@ def test_outlines_regex(llm: Outlines) -> None:
 
     assert isinstance(output, str)
 
-    assert re.match(
-        ip_regex, output
-    ), f"Generated output '{output}' is not a valid IP address"
+    assert re.match(ip_regex, output), (
+        f"Generated output '{output}' is not a valid IP address"
+    )
 
 
 def test_outlines_type_constraints(llm: Outlines) -> None:
@@ -113,11 +113,11 @@ def test_outlines_grammar(llm: Outlines) -> None:
     output = llm.invoke("Here is a complex arithmetic expression: ")
 
     # Validate the output is a non-empty string
-    assert (
-        isinstance(output, str) and output.strip()
-    ), "Output should be a non-empty string"
+    assert isinstance(output, str) and output.strip(), (
+        "Output should be a non-empty string"
+    )
 
     # Use a simple regex to check if the output contains basic arithmetic operations and numbers
-    assert re.search(
-        r"[\d\+\-\*/\(\)]+", output
-    ), f"Generated output '{output}' does not appear to be a valid arithmetic expression"
+    assert re.search(r"[\d\+\-\*/\(\)]+", output), (
+        f"Generated output '{output}' does not appear to be a valid arithmetic expression"
+    )

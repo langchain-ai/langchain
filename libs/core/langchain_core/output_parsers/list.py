@@ -4,13 +4,15 @@ import csv
 import re
 from abc import abstractmethod
 from collections import deque
-from collections.abc import AsyncIterator, Iterator
 from io import StringIO
+from typing import TYPE_CHECKING, TypeVar, Union
 from typing import Optional as Optional
-from typing import TypeVar, Union
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
 
 T = TypeVar("T")
 
@@ -46,8 +48,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         Args:
             text: The output of an LLM call.
 
-            Returns:
-                A list of strings.
+        Returns:
+            A list of strings.
         """
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:
@@ -135,7 +137,9 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Check if the langchain object is serializable.
-        Returns True."""
+
+        Returns True.
+        """
         return True
 
     @classmethod
@@ -225,7 +229,7 @@ class MarkdownListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.

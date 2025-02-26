@@ -301,7 +301,7 @@ class Chroma(VectorStore):
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
             client: Chroma client. Documentation:
-                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
+                    https://docs.trychroma.com/reference/python/client
             relevance_score_fn: Function to calculate relevance score from distance.
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
@@ -547,7 +547,9 @@ class Chroma(VectorStore):
                 metadatas = [metadatas[idx] for idx in non_empty_ids]
                 texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
+                    [embeddings[idx] for idx in non_empty_ids]
+                    if embeddings is not None and len(embeddings) > 0
+                    else None
                 )
                 ids_with_metadata = [ids[idx] for idx in non_empty_ids]
                 try:
@@ -970,7 +972,7 @@ class Chroma(VectorStore):
         """
         if self._embedding_function is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function on creation."
             )
 
         embedding = self._embedding_function.embed_query(query)
@@ -1153,7 +1155,7 @@ class Chroma(VectorStore):
             ids: List of document IDs. Defaults to None.
             client_settings: Chroma client settings.
             client: Chroma client. Documentation:
-                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
+                    https://docs.trychroma.com/reference/python/client
             collection_metadata: Collection configurations.
                                                   Defaults to None.
             kwargs: Additional keyword arguments to initialize a Chroma client.
@@ -1222,7 +1224,7 @@ class Chroma(VectorStore):
             embedding: Embedding function. Defaults to None.
             client_settings: Chroma client settings.
             client: Chroma client. Documentation:
-                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
+                    https://docs.trychroma.com/reference/python/client
             collection_metadata: Collection configurations.
                                                   Defaults to None.
             kwargs: Additional keyword arguments to initialize a Chroma client.

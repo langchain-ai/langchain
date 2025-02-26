@@ -6,19 +6,11 @@ import ast
 import asyncio
 import inspect
 import textwrap
-from collections.abc import (
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Coroutine,
-    Iterable,
-    Mapping,
-    Sequence,
-)
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     NamedTuple,
@@ -30,10 +22,21 @@ from typing import (
 
 from typing_extensions import TypeGuard, override
 
-from langchain_core.runnables.schema import StreamEvent
-
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model as create_model
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        AsyncIterable,
+        AsyncIterator,
+        Awaitable,
+        Coroutine,
+        Iterable,
+        Mapping,
+        Sequence,
+    )
+
+    from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do
@@ -271,6 +274,20 @@ class NonLocals(ast.NodeVisitor):
             if isinstance(parent, ast.Name):
                 self.loads.add(parent.id + "." + attr_expr)
                 self.loads.discard(parent.id)
+            elif isinstance(parent, ast.Call):
+                if isinstance(parent.func, ast.Name):
+                    self.loads.add(parent.func.id)
+                else:
+                    parent = parent.func
+                    attr_expr = ""
+                    while isinstance(parent, ast.Attribute):
+                        if attr_expr:
+                            attr_expr = parent.attr + "." + attr_expr
+                        else:
+                            attr_expr = parent.attr
+                        parent = parent.value
+                    if isinstance(parent, ast.Name):
+                        self.loads.add(parent.id + "." + attr_expr)
 
 
 class FunctionNonLocals(ast.NodeVisitor):
@@ -383,9 +400,9 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else name
     except (SyntaxError, TypeError, OSError, SystemError):
         return name
+    return visitor.source if visitor.count == 1 else name
 
 
 @lru_cache(maxsize=256)
@@ -404,7 +421,11 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         visitor = FunctionNonLocals()
         visitor.visit(tree)
         values: list[Any] = []
-        closure = inspect.getclosurevars(func)
+        closure = (
+            inspect.getclosurevars(func.__wrapped__)
+            if hasattr(func, "__wrapped__") and callable(func.__wrapped__)
+            else inspect.getclosurevars(func)
+        )
         candidates = {**closure.globals, **closure.nonlocals}
         for k, v in candidates.items():
             if k in visitor.nonlocals:
@@ -422,9 +443,10 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                                 break
                     else:
                         values.append(vv)
-        return values
     except (SyntaxError, TypeError, OSError, SystemError):
         return []
+
+    return values
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
@@ -444,9 +466,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
 
 
 class AddableDict(dict[str, Any]):
-    """
-    Dictionary that can be added to another dictionary.
-    """
+    """Dictionary that can be added to another dictionary."""
 
     def __add__(self, other: AddableDict) -> AddableDict:
         chunk = AddableDict(self)

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -11,7 +10,6 @@ from pydantic import (
     Field,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -26,6 +24,11 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from typing_extensions import Self
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -265,7 +268,6 @@ class FewShotChatMessagePromptTemplate(
     to dynamically select examples based on the input.
 
     Examples:
-
         Prompt template with a fixed list of examples (matching the sample
         conversation above):
 
@@ -282,7 +284,7 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [('human', '{input}'), ('ai', '{output}')]
+            [('human', 'What is {input}?'), ('ai', '{output}')]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(

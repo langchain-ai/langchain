@@ -1167,7 +1167,7 @@ def test_incremental_delete_with_same_source(
 def test_incremental_indexing_with_batch_size(
     record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
-    """Test indexing with incremental indexing"""
+    """Test indexing with incremental indexing."""
     loader = ToyLoader(
         documents=[
             Document(
@@ -2031,7 +2031,6 @@ def test_index_with_upsert_kwargs_for_document_indexer(
     mocker: MockerFixture,
 ) -> None:
     """Test that kwargs are passed to the upsert method of the document indexer."""
-
     document_index = InMemoryDocumentIndex()
     upsert_spy = mocker.spy(document_index.__class__, "upsert")
     docs = [
@@ -2070,7 +2069,6 @@ async def test_aindex_with_upsert_kwargs_for_document_indexer(
     mocker: MockerFixture,
 ) -> None:
     """Test that kwargs are passed to the upsert method of the document indexer."""
-
     document_index = InMemoryDocumentIndex()
     upsert_spy = mocker.spy(document_index.__class__, "aupsert")
     docs = [

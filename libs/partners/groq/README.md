@@ -20,7 +20,7 @@ Install the integration package:
 pip install langchain-groq
 ```
 
-Request an [API key](https://wow.groq.com) and set it as an environment variable
+Request an [API key](https://console.groq.com/login?utm_source=langchain&utm_content=package_readme) and set it as an environment variable
 
 ```bash
 export GROQ_API_KEY=gsk_...
@@ -36,13 +36,13 @@ To develop the `langchain-groq` package, you'll need to follow these instruction
 ### Install dev dependencies
 
 ```bash
-poetry install --with test,test_integration,lint,codespell
+uv sync --group lint --group test
 ```
 
 ### Build the package
 
 ```bash
-poetry build
+uv build
 ```
 
 ### Run unit tests

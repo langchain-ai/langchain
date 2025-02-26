@@ -70,7 +70,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):  # type: ignore[override, override, ov
                 if temp["results"][self.providers[0]]["error"] is not None:
                     raise Exception(
                         f"""EdenAI returned an unexpected response 
-                        {temp['results'][self.providers[0]]['error']}"""
+                        {temp["results"][self.providers[0]]["error"]}"""
                     )
                 else:
                     return audio_analysis_result

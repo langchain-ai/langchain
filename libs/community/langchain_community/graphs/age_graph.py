@@ -473,71 +473,78 @@ class AGEGraph(GraphStore):
     @staticmethod
     def _wrap_query(query: str, graph_name: str) -> str:
         """
-        Convert a cypher query to an Apache Age compatible
-        sql query by wrapping the cypher query in ag_catalog.cypher,
-        casting results to agtype and building a select statement
+        Convert a Cyper query to an Apache Age compatible Sql Query.
+        Handles combined queries with UNION/EXCEPT operators
 
         Args:
-            query (str): a valid cypher query
-            graph_name (str): the name of the graph to query
+            query (str) : A valid cypher query, can include UNION/EXCEPT operators
+            graph_name (str) : The name of the graph to query
 
-        Returns:
-            str: an equivalent pgsql query
+        Returns :
+            str : An equivalent pgSql query wrapped with ag_catalog.cypher
+
+        Raises:
+            ValueError : If query is empty, contain RETURN *, or has invalid field names
         """
+
+        if not query.strip():
+            raise ValueError("Empty query provided")
 
         # pgsql template
         template = """SELECT {projection} FROM ag_catalog.cypher('{graph_name}', $$
             {query}
         $$) AS ({fields});"""
 
-        # if there are any returned fields they must be added to the pgsql query
-        return_match = re.search(r'\breturn\b(?![^"]*")', query, re.IGNORECASE)
-        if return_match:
-            # Extract the part of the query after the RETURN keyword
-            return_clause = query[return_match.end() :]
+        # split the query into parts based on UNION and EXCEPT
+        parts = re.split(r"\b(UNION\b|\bEXCEPT)\b", query, flags=re.IGNORECASE)
 
-            # parse return statement to identify returned fields
-            fields = (
-                return_clause.lower()
-                .split("distinct")[-1]
-                .split("order by")[0]
-                .split("skip")[0]
-                .split("limit")[0]
-                .split(",")
-            )
+        all_fields = []
 
-            # raise exception if RETURN * is found as we can't resolve the fields
-            if "*" in [x.strip() for x in fields]:
-                raise ValueError(
-                    "AGE graph does not support 'RETURN *'"
-                    + " statements in Cypher queries"
+        for part in parts:
+            if part.strip().upper() in ("UNION", "EXCEPT"):
+                continue
+
+            # if there are any returned fields they must be added to the pgsql query
+            return_match = re.search(r'\breturn\b(?![^"]*")', part, re.IGNORECASE)
+            if return_match:
+                # Extract the part of the query after the RETURN keyword
+                return_clause = part[return_match.end() :]
+
+                # parse return statement to identify returned fields
+                fields = (
+                    return_clause.lower()
+                    .split("distinct")[-1]
+                    .split("order by")[0]
+                    .split("skip")[0]
+                    .split("limit")[0]
+                    .split(",")
                 )
 
-            # get pgsql formatted field names
-            fields = [
-                AGEGraph._get_col_name(field, idx) for idx, field in enumerate(fields)
-            ]
+                # raise exception if RETURN * is found as we can't resolve the fields
+                clean_fileds = [f.strip() for f in fields if f.strip()]
+                if "*" in clean_fileds:
+                    raise ValueError(
+                        "Apache Age does not support RETURN * in Cypher queries"
+                    )
 
-            # build resulting pgsql relation
-            fields_str = ", ".join(
-                [
-                    field.split(".")[-1] + " agtype"
-                    for field in fields
-                    if field.split(".")[-1]
-                ]
-            )
+                # Format fields and maintain order of appearance
+                for idx, field in enumerate(clean_fileds):
+                    field_name = AGEGraph._get_col_name(field, idx)
+                    if field_name not in all_fields:
+                        all_fields.append(field_name)
 
-        # if no return statement we still need to return a single field of type agtype
-        else:
+        # if no return statements found in any part
+        if not all_fields:
             fields_str = "a agtype"
 
-        select_str = "*"
+        else:
+            fields_str = ", ".join(f"{field} agtype" for field in all_fields)
 
         return template.format(
             graph_name=graph_name,
             query=query,
             fields=fields_str,
-            projection=select_str,
+            projection="*",
         )
 
     @staticmethod

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -13,13 +12,15 @@ from typing import (
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
+    from langchain_core.embeddings import Embeddings
     from langchain_core.indexing import UpsertResponse
 
 
@@ -58,6 +59,17 @@ class InMemoryVectorStore(VectorStore):
 
             documents = [document_1, document_2, document_3]
             vector_store.add_documents(documents=documents)
+
+    Inspect documents:
+        .. code-block:: python
+
+            top_n = 10
+            for index, (id, doc) in enumerate(vector_store.store.items()):
+                if index < top_n:
+                    # docs have keys 'id', 'vector', 'text', 'metadata'
+                    print(f"{id}: {doc['text']}")
+                else:
+                    break
 
     Delete Documents:
         .. code-block:: python
@@ -189,7 +201,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -221,7 +233,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -258,8 +270,7 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.add_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
@@ -268,7 +279,7 @@ class InMemoryVectorStore(VectorStore):
         vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
@@ -284,8 +295,7 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.aadd_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
@@ -298,7 +308,7 @@ class InMemoryVectorStore(VectorStore):
         )
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,

@@ -116,7 +116,10 @@ class TestDynamoDBChatMessageHistory:
             "Item"
         ]
         assert item_after_ai_message[HISTORY_KEY] == messages_to_dict(
-            [first_message, second_message]
+            [
+                first_message,
+                second_message,
+            ]
         )  # Second message should have appended
         assert (
             item_after_ai_message[TTL_KEY] == mock_time_2 + chat_history_config["ttl"]

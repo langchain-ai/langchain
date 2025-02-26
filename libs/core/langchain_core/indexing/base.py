@@ -3,13 +3,16 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
 from langchain_core._api import beta
-from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import run_in_executor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.documents import Document
 
 
 class RecordManager(ABC):
@@ -288,7 +291,6 @@ class InMemoryRecordManager(RecordManager):
                 ids.
             ValueError: If time_at_least is in the future.
         """
-
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)

@@ -15,7 +15,7 @@ from langchain_fireworks import ChatFireworks
 def test_chat_fireworks_call() -> None:
     """Test valid call to fireworks."""
     llm = ChatFireworks(  # type: ignore[call-arg]
-        model="accounts/fireworks/models/firefunction-v1", temperature=0
+        model="accounts/fireworks/models/llama-v3p1-70b-instruct", temperature=0
     )
 
     resp = llm.invoke("Hello!")
@@ -27,7 +27,7 @@ def test_chat_fireworks_call() -> None:
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
     llm = ChatFireworks(  # type: ignore[call-arg]
-        model="accounts/fireworks/models/firefunction-v1", temperature=0
+        model="accounts/fireworks/models/llama-v3p1-70b-instruct", temperature=0
     )
 
     class MyTool(BaseModel):
@@ -59,7 +59,7 @@ def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
 
     llm = ChatFireworks(  # type: ignore[call-arg]
-        model="accounts/fireworks/models/firefunction-v1", temperature=0
+        model="accounts/fireworks/models/llama-v3p1-70b-instruct", temperature=0
     )
 
     class MyTool(BaseModel):
