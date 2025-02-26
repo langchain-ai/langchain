@@ -15,7 +15,10 @@ from typing import (
 )
 
 import aiohttp
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 
@@ -313,7 +316,7 @@ class Xinference(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         generate_config = kwargs.get("generate_config", {})
@@ -339,11 +342,9 @@ class Xinference(LLM):
                 request_body[key] = value
 
         stream = bool(generate_config and generate_config.get("stream"))
-        headers = {}
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url=f"{self.server_url}/v1/completions",
-                headers=headers,
                 json=request_body,
             ) as response:
                 if response.status != 200:
