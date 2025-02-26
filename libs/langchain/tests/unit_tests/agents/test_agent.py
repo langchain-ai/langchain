@@ -1,5 +1,6 @@
 """Unit tests for agents."""
 
+import asyncio
 import json
 from itertools import cycle
 from typing import Any, Dict, List, Optional, Union, cast
@@ -465,7 +466,7 @@ async def test_runnable_agent() -> None:
     executor = AgentExecutor(agent=agent, tools=[])  # type: ignore[arg-type]
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result: Any = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {"foo": "meow", "question": "hello"}
 
     # ainvoke
@@ -473,8 +474,8 @@ async def test_runnable_agent() -> None:
     assert result == {"foo": "meow", "question": "hello"}
 
     # Batch
-    result = executor.batch(  # type: ignore[assignment]
-        [{"question": "hello"}, {"question": "hello"}]
+    result = await asyncio.to_thread(
+        executor.batch, [{"question": "hello"}, {"question": "hello"}]
     )
     assert result == [
         {"foo": "meow", "question": "hello"},
@@ -482,16 +483,14 @@ async def test_runnable_agent() -> None:
     ]
 
     # abatch
-    result = await executor.abatch(  # type: ignore[assignment]
-        [{"question": "hello"}, {"question": "hello"}]
-    )
+    result = await executor.abatch([{"question": "hello"}, {"question": "hello"}])
     assert result == [
         {"foo": "meow", "question": "hello"},
         {"foo": "meow", "question": "hello"},
     ]
 
     # Stream
-    results = list(executor.stream({"question": "hello"}))
+    results = await asyncio.to_thread(list, executor.stream({"question": "hello"}))
     assert results == [
         {"foo": "meow", "messages": [AIMessage(content="hard-coded-message")]}
     ]
@@ -587,7 +586,7 @@ async def test_runnable_agent_with_function_calls() -> None:
     executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {"foo": "meow", "question": "hello"}
 
     # ainvoke
@@ -705,7 +704,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
     executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {"foo": "meow", "question": "hello"}
 
     # ainvoke
@@ -859,7 +858,7 @@ async def test_openai_agent_with_streaming() -> None:
     executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
-    result = executor.invoke({"question": "hello"})
+    result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
     assert result == {
         "output": "The cat is spying from under the bed.",
         "question": "hello",
@@ -1066,7 +1065,7 @@ async def test_openai_agent_tools_agent() -> None:
         executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
         # Invoke
-        result = executor.invoke({"question": "hello"})
+        result = await asyncio.to_thread(executor.invoke, {"question": "hello"})
         assert result == {
             "output": "The cat is spying from under the bed.",
             "question": "hello",

@@ -19,6 +19,8 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import beta, deprecated
@@ -27,8 +29,6 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
-
     from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -76,6 +76,40 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     return new_kv
 
 
+def _convert_json_schema_to_openai_function(
+    schema: dict,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    rm_titles: bool = True,
+) -> FunctionDescription:
+    """Converts a Pydantic model to a function description for the OpenAI API.
+
+    Args:
+        schema: The JSON schema to convert.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
+        rm_titles: Whether to remove titles from the schema. Defaults to True.
+
+    Returns:
+        The function description.
+    """
+    schema = dereference_refs(schema)
+    if "definitions" in schema:  # pydantic 1
+        schema.pop("definitions", None)
+    if "$defs" in schema:  # pydantic 2
+        schema.pop("$defs", None)
+    title = schema.pop("title", "")
+    default_description = schema.pop("description", "")
+    return {
+        "name": name or title,
+        "description": description or default_description,
+        "parameters": _rm_titles(schema) if rm_titles else schema,
+    }
+
+
 def _convert_pydantic_to_openai_function(
     model: type,
     *,
@@ -103,18 +137,9 @@ def _convert_pydantic_to_openai_function(
     else:
         msg = "Model must be a Pydantic model."
         raise TypeError(msg)
-    schema = dereference_refs(schema)
-    if "definitions" in schema:  # pydantic 1
-        schema.pop("definitions", None)
-    if "$defs" in schema:  # pydantic 2
-        schema.pop("$defs", None)
-    title = schema.pop("title", "")
-    default_description = schema.pop("description", "")
-    return {
-        "name": name or title,
-        "description": description or default_description,
-        "parameters": _rm_titles(schema) if rm_titles else schema,
-    }
+    return _convert_json_schema_to_openai_function(
+        schema, name=name, description=description, rm_titles=rm_titles
+    )
 
 
 convert_pydantic_to_openai_function = deprecated(
@@ -290,9 +315,20 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
     is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
-        return _convert_pydantic_to_openai_function(
-            tool.tool_call_schema, name=tool.name, description=tool.description
-        )
+        if isinstance(tool.tool_call_schema, dict):
+            return _convert_json_schema_to_openai_function(
+                tool.tool_call_schema, name=tool.name, description=tool.description
+            )
+        elif issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+            return _convert_pydantic_to_openai_function(
+                tool.tool_call_schema, name=tool.name, description=tool.description
+            )
+        else:
+            error_msg = (
+                f"Unsupported tool call schema: {tool.tool_call_schema}. "
+                "Tool call schema must be a JSON schema dict or a Pydantic model."
+            )
+            raise ValueError(error_msg)
     else:
         return {
             "name": tool.name,

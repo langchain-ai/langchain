@@ -39,7 +39,7 @@ The interface consists of basic methods for writing, deleting and searching for 
 The key methods are:
 
 - `add_documents`: Add a list of texts to the vector store.
-- `delete_documents`: Delete a list of documents from the vector store.
+- `delete`: Delete a list of documents from the vector store.
 - `similarity_search`: Search for similar documents to a given query.
 
 
@@ -89,10 +89,10 @@ vector_store.add_documents(documents=documents, ids=["doc1", "doc2"])
 
 ## Delete
 
-To delete documents, use the `delete_documents` method which takes a list of document IDs to delete.
+To delete documents, use the `delete` method which takes a list of document IDs to delete.
 
 ```python
-vector_store.delete_documents(ids=["doc1"])
+vector_store.delete(ids=["doc1"])
 ```
 
 ## Search

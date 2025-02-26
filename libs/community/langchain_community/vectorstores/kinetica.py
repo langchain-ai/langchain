@@ -430,16 +430,20 @@ class Kinetica(VectorStore):
     ) -> List[Tuple[Document, float]]:
         # from gpudb import GPUdbException
 
+        results = []
         resp: Dict = self.__query_collection(embedding, k, filter)
-        if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
-            records: OrderedDict = resp["records"]
-            results = list(zip(*list(records.values())))
+        if resp and resp["status_info"]["status"] == "OK":
+            total_records = resp["total_number_of_records"]
+            if total_records > 0:
+                records: OrderedDict = resp["records"]
+                results = list(zip(*list(records.values())))
 
-            return self._results_to_docs_and_scores(results)
-
-        self.logger.error(resp["status_info"]["message"])
-        # raise GPUdbException(resp["status_info"]["message"])
-        return []
+                return self._results_to_docs_and_scores(results)
+            else:
+                self.logger.warning(
+                    f"No records found; status: {resp['status_info']['status']}"
+                )
+        return results
 
     def similarity_search_by_vector(
         self,

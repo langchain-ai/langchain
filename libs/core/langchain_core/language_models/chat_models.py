@@ -209,8 +209,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
     """Whether to disable streaming for this model.
 
-    If streaming is bypassed, then ``stream()/astream()`` will defer to
-    ``invoke()/ainvoke()``.
+    If streaming is bypassed, then ``stream()``/``astream()``/``astream_events()`` will
+    defer to ``invoke()``/``ainvoke()``.
 
     - If True, will always bypass streaming case.
     - If "tool_calling", will bypass streaming case only when the model is called
@@ -366,11 +366,28 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
+            structured_output_format = kwargs.pop("structured_output_format", None)
+            if structured_output_format:
+                try:
+                    structured_output_format_dict = {
+                        "structured_output_format": {
+                            "kwargs": structured_output_format.get("kwargs", {}),
+                            "schema": convert_to_openai_tool(
+                                structured_output_format["schema"]
+                            ),
+                        }
+                    }
+                except ValueError:
+                    structured_output_format_dict = {}
+            else:
+                structured_output_format_dict = {}
+
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
+                **structured_output_format_dict,
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -442,11 +459,29 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
+
+        structured_output_format = kwargs.pop("structured_output_format", None)
+        if structured_output_format:
+            try:
+                structured_output_format_dict = {
+                    "structured_output_format": {
+                        "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
+                    }
+                }
+            except ValueError:
+                structured_output_format_dict = {}
+        else:
+            structured_output_format_dict = {}
+
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params(stop=stop, **kwargs),
+            **structured_output_format_dict,
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -607,11 +642,28 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        structured_output_format = kwargs.pop("structured_output_format", None)
+        if structured_output_format:
+            try:
+                structured_output_format_dict = {
+                    "structured_output_format": {
+                        "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
+                    }
+                }
+            except ValueError:
+                structured_output_format_dict = {}
+        else:
+            structured_output_format_dict = {}
+
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
+            **structured_output_format_dict,
         }
 
         callback_manager = CallbackManager.configure(
@@ -698,11 +750,28 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        structured_output_format = kwargs.pop("structured_output_format", None)
+        if structured_output_format:
+            try:
+                structured_output_format_dict = {
+                    "structured_output_format": {
+                        "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
+                    }
+                }
+            except ValueError:
+                structured_output_format_dict = {}
+        else:
+            structured_output_format_dict = {}
+
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
+            **structured_output_format_dict,
         }
 
         callback_manager = AsyncCallbackManager.configure(
@@ -1241,7 +1310,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
-        llm = self.bind_tools([schema], tool_choice="any")
+
+        llm = self.bind_tools(
+            [schema],
+            tool_choice="any",
+            structured_output_format={"kwargs": {}, "schema": schema},
+        )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[cast(TypeBaseModel, schema)], first_tool_only=True

@@ -1,6 +1,7 @@
 """Module that contains tests for runnable.astream_events API."""
 
 import asyncio
+import inspect
 import sys
 import uuid
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
@@ -8,11 +9,13 @@ from functools import partial
 from itertools import cycle
 from typing import (
     Any,
+    Callable,
     Optional,
     cast,
 )
 
 import pytest
+from blockbuster import BlockBuster
 from pydantic import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
@@ -38,7 +41,9 @@ from langchain_core.runnables import (
     chain,
     ensure_config,
 )
-from langchain_core.runnables.config import get_callback_manager_for_config
+from langchain_core.runnables.config import (
+    get_async_callback_manager_for_config,
+)
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
@@ -1898,10 +1903,10 @@ async def test_runnable_with_message_history() -> None:
     # so we can raise them in this main thread
     raised_errors = []
 
-    def collect_errors(fn):  # type: ignore
+    def collect_errors(fn: Callable[..., Any]) -> Callable[..., Any]:
         nonlocal raised_errors
 
-        def _get_output_messages(*args, **kwargs):  # type: ignore
+        def _get_output_messages(*args: Any, **kwargs: Any) -> Any:
             try:
                 return fn(*args, **kwargs)
             except Exception as e:
@@ -1923,9 +1928,12 @@ async def test_runnable_with_message_history() -> None:
         ]
     }
 
-    with_message_history.with_config(
-        {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "meow"})
+    await asyncio.to_thread(
+        with_message_history.with_config(
+            {"configurable": {"session_id": "session-123"}}
+        ).invoke,
+        {"question": "meow"},
+    )
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
@@ -1995,8 +2003,9 @@ EXPECTED_EVENTS = [
 ]
 
 
-async def test_sync_in_async_stream_lambdas() -> None:
+async def test_sync_in_async_stream_lambdas(blockbuster: BlockBuster) -> None:
     """Test invoking nested runnable lambda."""
+    blockbuster.deactivate()
 
     def add_one(x: int) -> int:
         return x + 1
@@ -2085,8 +2094,8 @@ class StreamingRunnable(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         config = ensure_config(config)
-        callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
+        callback_manager = get_async_callback_manager_for_config(config)
+        run_manager = await callback_manager.on_chain_start(
             None,
             input,
             name=config.get("run_name", self.get_name()),
@@ -2109,9 +2118,9 @@ class StreamingRunnable(Runnable[Input, Output]):
                         final_output = element
 
             # set final channel values as run output
-            run_manager.on_chain_end(final_output)
+            await run_manager.on_chain_end(final_output)
         except BaseException as e:
-            run_manager.on_chain_error(e)
+            await run_manager.on_chain_error(e)
             raise
 
 
@@ -2786,3 +2795,10 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
             },
         ],
     )
+
+
+def test_default_is_v2() -> None:
+    """Test that we default to version="v2"."""
+
+    signature = inspect.signature(Runnable.astream_events)
+    assert signature.parameters["version"].default == "v2"

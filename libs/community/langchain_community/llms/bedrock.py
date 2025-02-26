@@ -454,8 +454,7 @@ class BedrockBase(BaseModel, ABC):
             return self.provider
         if self.model_id.startswith("arn"):
             raise ValueError(
-                "Model provider should be supplied when passing a model ARN as "
-                "model_id"
+                "Model provider should be supplied when passing a model ARN as model_id"
             )
 
         return self.model_id.split(".")[0]

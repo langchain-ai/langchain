@@ -28,7 +28,7 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     import openai
-    from openai.types.beta.threads import ThreadMessage
+    from openai.types.beta.threads import ThreadMessage  # type: ignore[attr-defined]
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -590,7 +590,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
                     if version_gte_1_14
                     else isinstance(
-                        content, openai.types.beta.threads.MessageContentText
+                        content,
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
                     )
                 )
                 for content in answer
@@ -651,7 +652,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         self, intermediate_steps: List[Tuple[OpenAIAssistantAction, str]]
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
-        run = await self._wait_for_run(last_action.run_id, last_action.thread_id)
+        run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:
             required_tool_call_ids = {
@@ -743,7 +744,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
                     if version_gte_1_14
                     else isinstance(
-                        content, openai.types.beta.threads.MessageContentText
+                        content,
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
                     )
                 )
                 for content in answer

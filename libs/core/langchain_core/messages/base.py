@@ -93,6 +93,27 @@ class BaseMessage(Serializable):
         """
         return ["langchain", "schema", "messages"]
 
+    def text(self) -> str:
+        """Get the text content of the message.
+
+        Returns:
+            The text content of the message.
+        """
+        if isinstance(self.content, str):
+            return self.content
+
+        # must be a list
+        blocks = [
+            block
+            for block in self.content
+            if isinstance(block, str)
+            or block.get("type") == "text"
+            and isinstance(block.get("text"), str)
+        ]
+        return "".join(
+            block if isinstance(block, str) else block["text"] for block in blocks
+        )
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
@@ -199,6 +220,7 @@ class BaseMessageChunk(BaseMessage):
 
             return self.__class__(  # type: ignore[call-arg]
                 id=self.id,
+                type=self.type,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs

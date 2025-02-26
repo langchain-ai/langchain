@@ -738,6 +738,15 @@ def test_convert_to_messages() -> None:
                 "artifact": {"foo": 123},
             },
             {"role": "remove", "id": "message_to_remove", "content": ""},
+            {
+                "content": "Now the turn for Larry to ask a question about the book!",
+                "additional_kwargs": {"metadata": {"speaker_name": "Presenter"}},
+                "response_metadata": {},
+                "type": "human",
+                "name": None,
+                "id": "1",
+                "example": False,
+            },
         ]
     )
     expected = [
@@ -762,6 +771,13 @@ def test_convert_to_messages() -> None:
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
         ToolMessage(tool_call_id="tool_id2", content="Bye!", artifact={"foo": 123}),
         RemoveMessage(id="message_to_remove"),
+        HumanMessage(
+            content="Now the turn for Larry to ask a question about the book!",
+            additional_kwargs={"metadata": {"speaker_name": "Presenter"}},
+            response_metadata={},
+            id="1",
+            example=False,
+        ),
     ]
     assert expected == actual
 
@@ -1017,3 +1033,61 @@ def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id=uuid.uuid4())
     ToolMessage("foo", tool_call_id=1)
     ToolMessage("foo", tool_call_id=1.0)
+
+
+def test_message_text() -> None:
+    # partitions:
+    # message types: [ai], [human], [system], [tool]
+    # content types: [str], [list[str]], [list[dict]], [list[str | dict]]
+    # content: [empty], [single element], [multiple elements]
+    # content dict types: [text], [not text], [no type]
+
+    assert HumanMessage(content="foo").text() == "foo"
+    assert AIMessage(content=[]).text() == ""
+    assert AIMessage(content=["foo", "bar"]).text() == "foobar"
+    assert (
+        AIMessage(
+            content=[
+                {"type": "text", "text": "<thinking>thinking...</thinking>"},
+                {
+                    "type": "tool_use",
+                    "id": "toolu_01A09q90qw90lq917835lq9",
+                    "name": "get_weather",
+                    "input": {"location": "San Francisco, CA"},
+                },
+            ]
+        ).text()
+        == "<thinking>thinking...</thinking>"
+    )
+    assert (
+        SystemMessage(content=[{"type": "text", "text": "foo"}, "bar"]).text()
+        == "foobar"
+    )
+    assert (
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "15 degrees"},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "/9j/4AAQSkZJRg...",
+                    },
+                },
+            ],
+            tool_call_id="1",
+        ).text()
+        == "15 degrees"
+    )
+    assert (
+        AIMessage(content=[{"text": "hi there"}, "hi"]).text() == "hi"
+    )  # missing type: text
+    assert AIMessage(content=[{"type": "nottext", "text": "hi"}]).text() == ""
+    assert AIMessage(content=[]).text() == ""
+    assert (
+        AIMessage(
+            content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
+        ).text()
+        == ""
+    )

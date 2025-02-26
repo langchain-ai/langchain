@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -323,6 +324,11 @@ KENDRA_CONFIDENCE_MAPPING = {
 }
 
 
+@deprecated(
+    since="0.3.16",
+    removal="1.0",
+    alternative_import="langchain_aws.AmazonKendraRetriever",
+)
 class AmazonKendraRetriever(BaseRetriever):
     """`Amazon Kendra Index` retriever.
 

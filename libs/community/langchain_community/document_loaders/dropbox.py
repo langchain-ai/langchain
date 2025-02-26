@@ -54,7 +54,7 @@ class DropboxLoader(BaseLoader, BaseModel):
         try:
             from dropbox import Dropbox, exceptions
         except ImportError:
-            raise ImportError("You must run " "`pip install dropbox")
+            raise ImportError("You must run `pip install dropbox")
 
         try:
             dbx = Dropbox(self.dropbox_access_token)
@@ -73,7 +73,7 @@ class DropboxLoader(BaseLoader, BaseModel):
             from dropbox import exceptions
             from dropbox.files import FileMetadata
         except ImportError:
-            raise ImportError("You must run " "`pip install dropbox")
+            raise ImportError("You must run `pip install dropbox")
 
         try:
             results = dbx.files_list_folder(folder_path, recursive=self.recursive)
@@ -98,7 +98,7 @@ class DropboxLoader(BaseLoader, BaseModel):
         try:
             from dropbox import exceptions
         except ImportError:
-            raise ImportError("You must run " "`pip install dropbox")
+            raise ImportError("You must run `pip install dropbox")
 
         try:
             file_metadata = dbx.files_get_metadata(file_path)
