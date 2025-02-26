@@ -1,6 +1,6 @@
 from langchain_xai import __all__
 
-EXPECTED_ALL = ["ChatXAI", "ChatGrok"]
+EXPECTED_ALL = ["ChatXAI"]
 
 
 def test_all_imports() -> None:
