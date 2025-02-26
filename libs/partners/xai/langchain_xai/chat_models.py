@@ -1,17 +1,16 @@
 """Wrapper around xAI's Chat Completions API."""
 
-import os
 from typing import Any, Dict, List, Optional
-
 import openai
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.utils import secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatResult
+from langchain_core.callbacks import CallbackManagerForLLMRun
+import os
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -362,7 +361,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
 # Extension of ChatXAI optimized for Grok models (e.g., Grok 2, Grok 3)
 class ChatGrok(ChatXAI):
-    """An extended version of ChatXAI optimized for Grok models (e.g., Grok 2, Grok 3)."""
 
     grok_version: Optional[str] = Field(
         default=None, description="Grok model version (e.g., '2', '3')"
@@ -380,7 +378,9 @@ class ChatGrok(ChatXAI):
         """Initialize ChatGrok with xAI API key and Grok version."""
         api_key = api_key or os.environ.get("XAI_API_KEY")
         if not api_key:
-            raise ValueError("XAI_API_KEY must be provided or set in environment.")
+            raise ValueError(
+                "XAI_API_KEY must be provided or set "
+                "in environment.")
         if grok_version:
             model = f"grok-{grok_version}"
         super().__init__(
