@@ -376,20 +376,18 @@ class ChatGrok(ChatXAI):
         self,
         api_key: Optional[str] = None,
         model: str = "grok-2",
-        temperature: float = 0.7,
+        temperature: Optional[float] = 0.7,
         max_tokens: Optional[int] = None,
         grok_version: Optional[str] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Initialize ChatGrok with xAI API key and Grok version."""
-        api_key = api_key or os.environ.get("XAI_API_KEY")
-        if not api_key:
+        api_key_str = api_key or os.environ.get("XAI_API_KEY")
+        if not api_key_str:
             raise ValueError("XAI_API_KEY must be provided or set in environment.")
-        if grok_version:
-            model = f"grok-{grok_version}"
         super().__init__(
-            api_key=api_key,
-            model=model,
+            api_key=SecretStr(api_key_str) if api_key_str else None,
+            model=model if not grok_version else f"grok-{grok_version}",
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
@@ -401,7 +399,7 @@ class ChatGrok(ChatXAI):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ChatResult:
         """Generate a response using the specified Grok model."""
         print(f"Calling Grok model: {self.model_name}")
