@@ -28,10 +28,6 @@ class ChatXAI(BaseChatOpenAI):
     """xAI API key. Auto-read from `XAI_API_KEY` env var if not provided."""
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
-    grok_version: Optional[str] = Field(
-        default=None, description="Grok model version (e.g., '2', '3')"
-    )
-    """Optional Grok version to override the model name."""
 
     openai_api_key: Optional[SecretStr] = None
     openai_api_base: Optional[str] = None
@@ -48,7 +44,17 @@ class ChatXAI(BaseChatOpenAI):
         max_retries: int = 2,
         **kwargs: Any,
     ) -> None:
-        """Initialize ChatXAI with xAI API key and optional Grok version."""
+        """Initialize ChatXAI with xAI API key and optional Grok version.
+
+        Args:
+            api_key: xAI API key (defaults to `XAI_API_KEY` env var).
+            model: Model name (e.g., "grok-beta", overridden by grok_version).
+            grok_version: Optional Grok version (e.g., "2" for "grok-2").
+            temperature: Sampling temperature.
+            max_tokens: Max tokens to generate.
+            max_retries: Max retries for API requests.
+            **kwargs: Additional arguments passed to BaseChatOpenAI.
+        """
         api_key_str = api_key or os.environ.get("XAI_API_KEY")
         if not api_key_str:
             raise ValueError("XAI_API_KEY must be provided or set in environment.")
@@ -62,7 +68,6 @@ class ChatXAI(BaseChatOpenAI):
             max_retries=max_retries,
             **kwargs,
         )
-        self.grok_version = grok_version
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -140,15 +145,18 @@ class ChatXAI(BaseChatOpenAI):
         if not (self.client or None):
             sync_specific: Dict[str, Any] = {"http_client": self.http_client}
             self.client = openai.OpenAI(
-                **client_params, **sync_specific
+                **client_params,
+                **sync_specific,
             ).chat.completions
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
         if not (self.async_client or None):
             async_specific: Dict[str, Any] = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,
             ).chat.completions
             self.root_async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
+                **client_params,
+                **async_specific,
             )
         return self
