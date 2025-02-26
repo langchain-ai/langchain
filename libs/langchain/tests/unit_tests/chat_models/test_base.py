@@ -193,6 +193,7 @@ def test_configurable_with_default() -> None:
             "model": "claude-3-sonnet-20240229",
             "max_tokens": 1024,
             "temperature": None,
+            "thinking": None,
             "top_k": None,
             "top_p": None,
             "default_request_timeout": None,
