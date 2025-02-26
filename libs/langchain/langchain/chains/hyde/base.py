@@ -5,6 +5,7 @@ https://arxiv.org/abs/2212.10496
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -18,6 +19,8 @@ from pydantic import ConfigDict
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
+
+logger = logging.getLogger(__name__)
 
 
 class HypotheticalDocumentEmbedder(Chain, Embeddings):
@@ -55,11 +58,20 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Combine embeddings into final embeddings."""
         try:
             import numpy as np
+
+            return list(np.array(embeddings).mean(axis=0))
         except ImportError as e:
-            raise ImportError(
-                "Could not import numpy, please install with `pip install numpy`."
-            ) from e
-        return list(np.array(embeddings).mean(axis=0))
+            logger.warning(
+                "NumPy not found in the current Python environment. "
+                "HypotheticalDocumentEmbedder will use a pure Python implementation "
+                "for internal calculations, which may significantly impact "
+                "performance, especially for large datasets. For optimal speed and "
+                "efficiency, consider installing NumPy: pip install numpy"
+            )
+            if not embeddings:
+                return []
+            num_vectors = len(embeddings)
+            return [sum(dim_values) / num_vectors for dim_values in zip(*embeddings)]
 
     def embed_query(self, text: str) -> List[float]:
         """Generate a hypothetical document and embedded it."""

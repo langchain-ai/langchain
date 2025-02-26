@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -21,6 +22,8 @@ from langchain.chains.flare.prompts import (
     FinishedOutputParser,
 )
 from langchain.chains.llm import LLMChain
+
+logger = logging.getLogger(__name__)
 
 
 def _extract_tokens_and_log_probs(response: AIMessage) -> Tuple[List[str], List[float]]:
@@ -58,11 +61,22 @@ def _low_confidence_spans(
 ) -> List[str]:
     try:
         import numpy as np
+
+        _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
     except ImportError as e:
-        raise ImportError(
-            "Could not import numpy, please install with `pip install numpy`."
-        ) from e
-    _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
+        logger.warning(
+            "NumPy not found in the current Python environment. FlareChain will use a "
+            "pure Python implementation for internal calculations, which may "
+            "significantly impact performance, especially for large datasets. For "
+            "optimal speed and efficiency, consider installing NumPy: pip install numpy"
+        )
+        import math
+
+        _low_idx = [
+            idx
+            for idx, log_prob in enumerate(log_probs)
+            if math.exp(log_prob) < min_prob
+        ]
     low_idx = [i for i in _low_idx if re.search(r"\w", tokens[i])]
     if len(low_idx) == 0:
         return []
