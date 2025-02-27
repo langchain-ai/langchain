@@ -4,13 +4,15 @@ import csv
 import re
 from abc import abstractmethod
 from collections import deque
-from collections.abc import AsyncIterator, Iterator
 from io import StringIO
+from typing import TYPE_CHECKING, TypeVar, Union
 from typing import Optional as Optional
-from typing import TypeVar, Union
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
 
 T = TypeVar("T")
 

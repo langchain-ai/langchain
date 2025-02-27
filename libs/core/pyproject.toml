@@ -77,8 +77,9 @@ target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TID", "TRY", "UP", "W", "YTT",]
-ignore = [ "ANN401", "COM812", "UP007", "S110", "S112",]
+select = [ "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TC", "TID", "TRY", "UP", "W", "YTT",]
+ignore = [ "ANN401", "COM812", "UP007", "S110", "S112", "TC001", "TC002", "TC003"]
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 

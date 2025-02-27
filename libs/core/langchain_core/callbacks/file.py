@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.utils.input import print_text
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
 
 
 class FileCallbackHandler(BaseCallbackHandler):
@@ -45,9 +47,15 @@ class FileCallbackHandler(BaseCallbackHandler):
             inputs (Dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
-        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+        if "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+            else:
+                name = "<unknown>"
         print_text(
-            f"\n\n\033[1m> Entering new {class_name} chain...\033[0m",
+            f"\n\n\033[1m> Entering new {name} chain...\033[0m",
             end="\n",
             file=self.file,
         )
