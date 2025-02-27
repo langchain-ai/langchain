@@ -535,7 +535,6 @@ class BaseChatOpenAI(BaseChatModel):
         """Currently only o-series models support reasoning_effort."""
         model = values.get("model_name") or values.get("model") or ""
         if not re.match(r"^o\d", model) and values.get("reasoning_effort") is not None:
-            reasoning_effort = values.get("reasoning_effort")
             warnings.warn(
                 f"Reasoning effort is not supported for model '{model}'. Defaulting "
                 "to null."

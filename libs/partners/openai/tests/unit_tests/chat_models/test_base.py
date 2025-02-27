@@ -47,11 +47,22 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
 
 
-def test_openai_o1_temperature() -> None:
-    llm = ChatOpenAI(model="o1-preview")
-    assert llm.temperature == 1
-    llm = ChatOpenAI(model_name="o1-mini")  # type: ignore[call-arg]
-    assert llm.temperature == 1
+def test_openai_o_series_temperature() -> None:
+    with pytest.warns(None) as record:  # type: ignore[call-overload]
+        llm = ChatOpenAI(model="o1-preview")
+        assert llm.temperature is None
+        llm = ChatOpenAI(model_name="o1-mini")  # type: ignore[call-arg]
+        assert llm.temperature is None
+        llm = ChatOpenAI(model="o3-mini")
+        assert llm.temperature is None
+        llm = ChatOpenAI(model="o3-mini", temperature=1)
+        assert llm.temperature == 1
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
+    assert len(record) == 0
+
+    with pytest.warns(match="invalid temperature"):
+        llm = ChatOpenAI(model="o3-mini", temperature=0.5)
+    assert llm.temperature is None
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -901,10 +912,15 @@ def test__get_request_payload() -> None:
     assert payload == expected
 
 
-def test_init_o1() -> None:
+def test_init_reasoning_effort() -> None:
     with pytest.warns(None) as record:  # type: ignore[call-overload]
-        ChatOpenAI(model="o1", reasoning_effort="medium")
+        llm_o1 = ChatOpenAI(model="o1", reasoning_effort="medium")
     assert len(record) == 0
+    assert llm_o1.reasoning_effort == "medium"
+
+    with pytest.warns(match="Reasoning effort is not supported"):
+        llm_gpt = ChatOpenAI(model="gpt-4o-mini", reasoning_effort="medium")
+    assert llm_gpt.reasoning_effort is None
 
 
 def test_structured_output_old_model() -> None:
