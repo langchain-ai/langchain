@@ -15,6 +15,7 @@ from typing import (
 )
 
 import aiohttp
+import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -22,7 +23,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 
-import requests
 if TYPE_CHECKING:
     from xinference.client import RESTfulChatModelHandle, RESTfulGenerateModelHandle
     from xinference.model.llm.core import LlamaCppGenerateConfig
@@ -133,6 +133,7 @@ class Xinference(LLM):
         self,
         server_url: Optional[str] = None,
         model_uid: Optional[str] = None,
+        api_key: Optional[str] = None,
         **model_kwargs: Any,
     ):
         try:
@@ -192,7 +193,8 @@ class Xinference(LLM):
         else:
             if response.status_code != 200:
                 raise RuntimeError(
-                    f"Failed to get cluster information, detail: {response.json()['detail']}"
+                    f"Failed to get cluster information, "
+                    f"detail: {response.json()['detail']}"
                 )
             response_data = response.json()
             self._cluster_authed = bool(response_data["auth"])
