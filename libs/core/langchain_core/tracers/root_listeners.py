@@ -1,6 +1,5 @@
 from collections.abc import Awaitable
-from typing import Callable, Optional, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -9,6 +8,9 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.tracers.base import AsyncBaseTracer, BaseTracer
 from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 Listener = Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
 AsyncListener = Union[

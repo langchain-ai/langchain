@@ -889,6 +889,13 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PyMuPDFLoader.html"
             },
             {
+                name: "PyMuPDF4LLM",
+                link: "pymupdf4llm",
+                source: "Load PDF content to Markdown using PyMuPDF4LLM",
+                api: "Package",
+                apiLink: "https://github.com/lakinduboteju/langchain-pymupdf4llm"
+            },
+            {
                 name: "PDFMiner",
                 link: "pdfminer",
                 source: "Load PDF files using PDFMiner",

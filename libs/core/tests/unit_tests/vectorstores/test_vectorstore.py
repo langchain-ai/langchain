@@ -7,14 +7,16 @@ the relevant methods.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Sequence
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_core.vectorstores import VectorStore
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 
 class CustomAddTextsVectorstore(VectorStore):
