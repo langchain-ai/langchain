@@ -1410,7 +1410,7 @@ class BaseChatOpenAI(BaseChatModel):
                 strict=strict,
                 structured_output_format={
                     "kwargs": {"method": method},
-                    "schema": schema,
+                    "schema": _convert_to_json_schema(schema, strict=strict),
                 },
             )
 
@@ -1429,7 +1429,9 @@ class BaseChatOpenAI(BaseChatModel):
                 response_format={"type": "json_object"},
                 structured_output_format={
                     "kwargs": {"method": method},
-                    "schema": schema,
+                    "schema": _convert_to_json_schema(schema, strict=strict)
+                    if schema
+                    else None,
                 },
             )
             output_parser = (
@@ -1448,7 +1450,7 @@ class BaseChatOpenAI(BaseChatModel):
                 response_format=response_format,
                 structured_output_format={
                     "kwargs": {"method": method},
-                    "schema": convert_to_openai_tool(schema),
+                    "schema": _convert_to_json_schema(schema, strict=strict),
                 },
             )
             if is_pydantic_schema:
@@ -2516,7 +2518,7 @@ def _convert_to_openai_response_format(
                 strict = schema["strict"]
             else:
                 strict = False
-        function = convert_to_openai_function(schema, strict=strict)
+        function = convert_to_openai_tool(schema, strict=strict)["function"]
         function["schema"] = function.pop("parameters")
         response_format = {"type": "json_schema", "json_schema": function}
 
@@ -2594,3 +2596,19 @@ def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
             **{k: v for k, v in output_token_details.items() if v is not None}
         ),
     )
+
+
+def _convert_to_json_schema(
+    schema: Union[Dict[str, Any], Type], *, strict: Optional[bool] = None
+) -> Union[Dict, TypeBaseModel]:
+    if _is_pydantic_class(schema):
+        schema = convert_to_openai_function(schema)
+    response_format = cast(
+        dict, _convert_to_openai_response_format(schema, strict=strict)
+    )
+    json_schema = response_format["json_schema"]["schema"]
+    if "name" in response_format["json_schema"]:
+        json_schema["title"] = response_format["json_schema"]["name"]
+    if "description" in response_format["json_schema"]:
+        json_schema["description"] = response_format["json_schema"]["description"]
+    return json_schema
