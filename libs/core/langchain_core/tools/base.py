@@ -4,13 +4,12 @@ import asyncio
 import functools
 import inspect
 import json
-import uuid
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from contextvars import copy_context
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -67,6 +66,10 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
