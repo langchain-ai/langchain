@@ -51,9 +51,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
 
             tool.invoke({'query': 'who won the last french open'})
 
-        .. code-block:: python
+        .. code-block:: json
 
-            '{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...'
+            {
+                "url": "https://www.nytimes.com...", 
+                "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..."
+            }
 
     Invoke with tool call:
 
