@@ -23,7 +23,7 @@ For more information:
 To use `Vectara` with LangChain no special installation steps are required. 
 To get started, [sign up](https://vectara.com/integrations/langchain) for a free Vectara trial,
 and follow the [quickstart](https://docs.vectara.com/docs/quickstart) guide to create a corpus and an API key. 
-Once you have API Key, you can provide it as arguments to the Vectara `vectorstore`, or you can set it as environment variables.
+Once you have API Key, you can provide it as arguments to the Vectara `vectorstore`, or you can set it as an environment variables.
 
 ```bash
 - export `VECTARA_API_KEY`="your-vectara-api-key"
@@ -54,7 +54,7 @@ After you have the vectorstore, you can use `add_texts` or `add_documents` as pe
 ```python
 doc_ids = vectara.add_texts(
     texts=["to be or not to be", "that is the question"],
-    metadatas=[{"": "en"}, {"language": "it"}],
+    metadatas=[{"title": "test"}, {"title": "test"}],
     corpus_key="your-corpus-key",
 )
 

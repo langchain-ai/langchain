@@ -421,7 +421,7 @@ class VectaraQueryConfig(BaseModel):
     """
 
     search: SearchConfig = Field(default_factory=SearchConfig)
-    generation: GenerationConfig | None = Field(default_factory=GenerationConfig)
+    generation: Union[GenerationConfig, None] = Field(default_factory=GenerationConfig)
     stream_response: bool = False
     save_history: bool = False
     chat: bool = Field(default=False)
