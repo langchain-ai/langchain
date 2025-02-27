@@ -93,6 +93,7 @@ EXPECTED_ALL = [
     "O365SearchEvents",
     "O365SendEvent",
     "O365SendMessage",
+    "OpenAIText2SpeechTool",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",

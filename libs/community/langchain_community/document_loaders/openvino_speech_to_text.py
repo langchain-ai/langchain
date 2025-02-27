@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+
 
 class OpenVINOSpeechToTextLoader(BaseLoader):
     """
@@ -26,12 +28,12 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         self,
         file_path: str,
         model_id: str,
-        device = "CPU",
-        return_timestamps = True,
-        return_language = "en",
-        chunk_length_s = 30,
-        load_in_8bit = False,
-        batch_size = 1,
+        device="CPU",
+        return_timestamps=True,
+        return_language="en",
+        chunk_length_s=30,
+        load_in_8bit=False,
+        batch_size=1,
     ):
         """
         Initializes the OpenVINOSpeechToTextLoader.
@@ -44,8 +46,14 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
             return_language: Set language for model
             chunk_length: Number of seconds for a chunk
         """
-        if device.lower() == "npu":
-            raise NotImplementedError("NPU not supported")
+        from pathlib import Path
+
+        check_device = device.lower()
+        if "gpu" != check_device and "cpu" != check_device:
+            raise NotImplementedError(f"{device} not supported")
+
+        if not Path(file_path).exists():
+            raise NotImplementedError(f"{file_path} does not exist")
 
         self.file_path = file_path
         self.model_id = model_id
@@ -57,8 +65,8 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         self.batch_size = batch_size
 
         try:
-            from transformers import AutoProcessor, pipeline
             from optimum.intel.openvino import OVModelForSpeechSeq2Seq
+            from transformers import AutoProcessor, pipeline
         except ImportError as exc:
             raise ImportError(
                 "Could not import optimum.intel.openvino python package. "
@@ -66,21 +74,21 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
             ) from exc
 
         processor = AutoProcessor.from_pretrained(self.model_id)
-        model = OVModelForSpeechSeq2Seq.from_pretrained(self.model_id , 
-                load_in_8bit=self.load_in_8bit,
-                export=False)
+        model = OVModelForSpeechSeq2Seq.from_pretrained(
+            self.model_id, load_in_8bit=self.load_in_8bit, export=False
+        )
 
         model = model.to(self.device)
         model.compile()
-        self.pipe = pipeline("automatic-speech-recognition",
-                model=model,
-                batch_size=self.batch_size,
-                chunk_length_s=self.chunk_length_s,
-                return_language=self.return_language,
-                tokenizer=processor.tokenizer,
-                feature_extractor=processor.feature_extractor)
-
-
+        self.pipe = pipeline(
+            "automatic-speech-recognition",
+            model=model,
+            batch_size=self.batch_size,
+            chunk_length_s=self.chunk_length_s,
+            return_language=self.return_language,
+            tokenizer=processor.tokenizer,
+            feature_extractor=processor.feature_extractor,
+        )
 
     def load(self) -> List[Document]:
         """Transcribes the audio file and loads the transcript into documents.
@@ -91,49 +99,52 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
 
         try:
             import time
+
             from transformers.pipelines.audio_utils import ffmpeg_read
         except ImportError as exc:
             raise ImportError(
-                    "Could not import ffmpeg-python python package. "
-                    "Please install it with `pip install ffmpeg-python`."
-                    ) from exc
+                "Could not import ffmpeg-python python package. "
+                "Please install it with `pip install ffmpeg-python`."
+            ) from exc
 
         audio_decoded = None
         if "gs://" in self.file_path:
             raise NotImplementedError
         elif ".mp4" in self.file_path:
             raise NotImplementedError
-        elif ".wav" in self.file_path:
+        elif (
+            ".wav" in self.file_path
+            or ".mp3" in self.file_path
+            or ".m4a" in self.file_path
+        ):
             with open(self.file_path, "rb") as f:
                 content = f.read()
-                audio_decoded = ffmpeg_read(content, self.pipe.feature_extractor.sampling_rate)
-        elif ".mp3" in self.file_path:
-            with open(self.file_path, "rb") as f:
-                content = f.read()
-                audio_decoded = ffmpeg_read(content, 
-                    self.pipe.feature_extractor.sampling_rate)
+                audio_decoded = ffmpeg_read(
+                    content, self.pipe.feature_extractor.sampling_rate
+                )
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Audio file type not supported")
 
         audio_info = {
             "raw": audio_decoded,
             "sampling_rate": self.pipe.feature_extractor.sampling_rate,
-            }
+        }
 
         start_time = time.time()
-        chunks = self.pipe(audio_info, 
-                return_language=self.return_language, 
-                return_timestamps=self.return_timestamps
-                )["chunks"]
+        chunks = self.pipe(
+            audio_info,
+            return_language=self.return_language,
+            return_timestamps=self.return_timestamps,
+        )["chunks"]
 
         result_total_latency = time.time() - start_time
 
         return [
             Document(
-                page_content=chunk['text'],
+                page_content=chunk["text"],
                 metadata={
-                    "language": chunk['language'],
-                    "timestamp": str(chunk['timestamp']),
+                    "language": chunk["language"],
+                    "timestamp": str(chunk["timestamp"]),
                     "result_total_latency": str(result_total_latency),
                 },
             )

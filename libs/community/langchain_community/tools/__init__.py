@@ -207,11 +207,11 @@ if TYPE_CHECKING:
     from langchain_community.tools.office365.utils import (
         authenticate,
     )
-    from langchain_community.tools.openapi.utils.api_models import (
-        APIOperation,
-    )
     from langchain_community.tools.openai.text2speech import (
         OpenAIText2SpeechTool,
+    )
+    from langchain_community.tools.openapi.utils.api_models import (
+        APIOperation,
     )
     from langchain_community.tools.openapi.utils.openapi_utils import (
         OpenAPISpec,

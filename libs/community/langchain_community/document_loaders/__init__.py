@@ -410,9 +410,6 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.rtf import (
         UnstructuredRTFLoader,
     )
-    from langchain_community.document_loaders.video import (
-        VideoChunkLoader,
-    )
     from langchain_community.document_loaders.s3_directory import (
         S3DirectoryLoader,
     )
@@ -504,6 +501,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.url_selenium import (
         SeleniumURLLoader,
+    )
+    from langchain_community.document_loaders.video import (
+        VideoChunkLoader,
     )
     from langchain_community.document_loaders.vsdx import (
         VsdxLoader,
