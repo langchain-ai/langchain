@@ -1,3 +1,5 @@
+"""Output parser for XML format."""
+
 import contextlib
 import re
 import xml

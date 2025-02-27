@@ -1,5 +1,6 @@
-"""**Example selector** implements logic for selecting examples to include them
-in prompts.
+"""Example selectors.
+
+**Example selector** implements logic for selecting examples to include them in prompts.
 This allows us to select examples that are most relevant to the input.
 """
 

@@ -1,3 +1,5 @@
+"""Utilities for image processing."""
+
 from typing import Any
 
 

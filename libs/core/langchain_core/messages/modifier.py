@@ -1,3 +1,5 @@
+"""Message responsible for deleting other messages."""
+
 from typing import Any, Literal
 
 from langchain_core.messages.base import BaseMessage
@@ -24,13 +26,6 @@ class RemoveMessage(BaseMessage):
             raise ValueError(msg)
 
         return super().__init__("", id=id, **kwargs)
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
 
 
 RemoveMessage.model_rebuild()
