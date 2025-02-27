@@ -130,6 +130,13 @@ export default function ChatModelTabs(props) {
       packageName: "langchain[anthropic]",
     },
     {
+      value: "xai",
+      label: "xAI",
+      model: "grok-2",
+      apiKeyName: "XAI_API_KEY",
+      packageName: "langchain-xai",
+    },
+    {
       value: "azure",
       label: "Azure",
       text: `from langchain_openai import AzureChatOpenAI
