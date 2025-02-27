@@ -22,6 +22,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 
+import requests
 if TYPE_CHECKING:
     from xinference.client import RESTfulChatModelHandle, RESTfulGenerateModelHandle
     from xinference.model.llm.core import LlamaCppGenerateConfig
@@ -161,7 +162,13 @@ class Xinference(LLM):
         if self.model_uid is None:
             raise ValueError("Please provide the model UID")
 
-        self.client = RESTfulClient(server_url)
+        self._headers: Dict[str, str] = {}
+        self._cluster_authed = False
+        self._check_cluster_authenticated()
+        if api_key is not None and self._cluster_authed:
+            self._headers["Authorization"] = f"Bearer {api_key}"
+
+        self.client = RESTfulClient(server_url, api_key)
 
     @property
     def _llm_type(self) -> str:
@@ -176,6 +183,19 @@ class Xinference(LLM):
             **{"model_uid": self.model_uid},
             **{"model_kwargs": self.model_kwargs},
         }
+
+    def _check_cluster_authenticated(self):
+        url = f"{self.server_url}/v1/cluster/auth"
+        response = requests.get(url)
+        if response.status_code == 404:
+            self._cluster_authed = False
+        else:
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"Failed to get cluster information, detail: {response.json()['detail']}"
+                )
+            response_data = response.json()
+            self._cluster_authed = bool(response_data["auth"])
 
     def _call(
         self,
