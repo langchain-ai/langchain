@@ -39,16 +39,18 @@ class Citation(BaseModel):
         style: The citation style to be used. Valid options include:
             - "numeric": Formats citations as simple numerals (e.g. [1], [2], ...).
             - "none": Omits citations from the output.
-            - "html": Formats citations as HTML links using the specified URL and text patterns,
-              e.g. `<a href="url_pattern">text_pattern</a>`.
-            - "markdown": Formats citations as Markdown links using the specified URL and text patterns,
-              e.g. `[text_pattern](url_pattern)`.
-        url_pattern: (Optional) The URL pattern to be used when the citation style is "html" or "markdown".
-            This pattern can incorporate metadata placeholders (e.g. "https://my.doc/foo/{doc.id}/{part.id}").
-        text_pattern: (Optional) The text pattern to be used when the citation style is "html" or "markdown".
-            This pattern sets the display text (or link text) in the final citation.
-            If not provided, it defaults to using the result index (e.g. [N](<url_pattern>)).
-            Metadata placeholders (e.g. "{doc.title}") can be used to insert document attributes.
+            - "html": Formats citations as HTML links using the specified URL and text
+              patterns, e.g. `<a href="url_pattern">text_pattern</a>`.
+            - "markdown": Formats citations as Markdown links using the specified URL
+              and text patterns, e.g. `[text_pattern](url_pattern)`.
+        url_pattern: (Optional) The URL pattern to be used when the citation style is
+            "html" or "markdown". This pattern can incorporate metadata placeholders
+            (e.g. "https://my.doc/foo/{doc.id}/{part.id}").
+        text_pattern: (Optional) The text pattern to be used when the citation style is
+            "html" or "markdown". This pattern sets the display text (or link text) in
+            the final citation. If not provided, it defaults to using the result index
+            (e.g. [N](<url_pattern>)). Metadata placeholders (e.g. "{doc.title}") can be
+             used to insert document attributes.
     """
 
     style: Optional[Union[Literal["none", "numeric", "html", "markdown"], Any]] = Field(
@@ -62,11 +64,13 @@ class GenerationConfig(BaseModel):
     """Configuration for summary generation.
 
     Attributes:
-        max_used_search_results: The maximum number of search results to be available to the prompt.
+        max_used_search_results: The maximum number of search results to be available to
+            the prompt.
         response_language: requested language for the summary
-        generation_preset_name: name of the prompt to use for summarization
-          (see https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer)
-        enable_factual_consistency_score: Score based on the HHEM that indicates the factual accuracy of the summary
+            generation_preset_name: name of the prompt to use for summarization (see
+            https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer)
+        enable_factual_consistency_score: Score based on the HHEM that indicates the
+        factual accuracy of the summary
     """
 
     max_used_search_results: int = 7
@@ -82,11 +86,16 @@ class ContextConfig(BaseModel):
     Configuration on the presentation of each document part in the result set.
 
     Attributes:
-        characters_before: Number of characters shown before the matching part, ignored if `sentences_before` is set.
-        characters_after: Number of characters shown after the matching part, ignored if `sentences_after` is set.
-        sentences_before: Number of sentences shown before the matching part to provide context.
-        sentences_after: Number of sentences shown after the matching part to provide context.
-        start_tag: Tag wrapping the document part at the start, useful for UI highlighting.
+        characters_before: Number of characters shown before the matching part,
+            ignored if `sentences_before` is set.
+        characters_after: Number of characters shown after the matching part,
+            ignored if `sentences_after` is set.
+        sentences_before: Number of sentences shown before the matching part to
+            provide context.
+        sentences_after: Number of sentences shown after the matching part to
+            provide context.
+        start_tag: Tag wrapping the document part at the start, useful for UI
+            highlighting.
         end_tag: Tag wrapping the document part at the end, useful for UI highlighting.
     """
 
@@ -104,17 +113,18 @@ class CorpusConfig(BaseModel):
 
     Attributes:
         corpus_key: Unique identifier for the corpus.
-        custom_dimensions: User-defined numerical dimensions that influence scoring(https://docs.vectara.com/docs/learn/semantic-search/add-custom-dimensions).
-        metadata_filter: SQL-like filter string to restrict search based on metadata attributes.
-        lexical_interpolation: Weighting between lexical (keyword) and embedding search, from 0 (embedding only) to 1 (lexical only).
-        semantics: Defines the semantic interpretation mode for queries, default is "default".
+        custom_dimensions: User-defined numerical dimensions that influence scoring
+            (https://docs.vectara.com/docs/learn/semantic-search/add-custom-dimensions).
+        metadata_filter: SQL-like filter string to restrict search based on metadata
+            attributes.
+        lexical_interpolation: Weighting between lexical (keyword) and embedding search,
+            from 0 (embedding only) to 1 (lexical only).
     """
 
-    corpus_key: str = None
-    custom_dimensions: Optional[dict[str, float]] = Field(default_factory=dict)
+    corpus_key: Optional[str] = None
+    custom_dimensions: Optional[dict[str, float]] = None
     metadata_filter: Optional[str] = None
     lexical_interpolation: Optional[float] = 0.0
-    semantics: Optional[Union[Literal["default", "query", "response"]]] = "default"
 
 
 class CustomerSpecificReranker(BaseModel):
@@ -123,7 +133,7 @@ class CustomerSpecificReranker(BaseModel):
 
     Attributes:
         type: Identifier for this reranker type.
-        reranker_id: Unique ID of the reranker (deprecated, use `reranker_name` instead).
+        reranker_id: Unique ID of the reranker (deprecated, use `reranker_name` instead)
         reranker_name: Name of the reranker, excluding MMR rerankers.
         limit: Maximum number of results returned after reranking.
         cutoff: Minimum score threshold for results after reranking.
@@ -155,7 +165,7 @@ class UserFunctionReranker(BaseModel):
 
 class MmrReranker(BaseModel):
     """
-    A reranker that applies Maximal Marginal Relevance (MMR) to diversify search results.
+    A reranker that applies Maximal Marginal Relevance (MMR) to diversify search results
 
     Attributes:
         type: Identifier for this reranker type.
@@ -213,7 +223,9 @@ class SearchConfig(BaseModel):
     corpora: List[CorpusConfig] = Field(default_factory=list)
     offset: Optional[int] = None
     limit: Optional[int] = None
-    context_configuration: Optional[ContextConfig] = None
+    context_configuration: Optional[ContextConfig] = Field(
+        default_factory=ContextConfig
+    )
     reranker: Optional[
         Union[
             CustomerSpecificReranker,
@@ -304,7 +316,8 @@ class CoreDocument(BaseModel):
         type (Literal["core"]): Specifies the document type as "core".
         metadata: Document-level metadata that can be used in query-time filtering.
         tables: List of tables contained within the document.
-        document_parts: Individual parts of the document, typically sentences, that are indexed separately.
+        document_parts: Individual parts of the document, typically sentences, that are
+        indexed separately.
     """
 
     id: str
@@ -344,10 +357,13 @@ class StructuredDocument(BaseModel):
         type (Literal["structured"]): Document type, always "structured".
         title (Optional[str]): The title of the document.
         description (Optional[str]): The description of the document.
-        metadata (Optional[Dict[str, Any]]): Arbitrary JSON metadata for filtering and categorization.
-        custom_dimensions (Optional[CustomDimensions]): User-defined dimensions for ranking.
+        metadata (Optional[Dict[str, Any]]): Arbitrary JSON metadata for filtering and
+            categorization.
+        custom_dimensions (Optional[CustomDimensions]): User-defined dimensions for
+            ranking.
         sections (List[StructuredDocumentSection]): Subsections of the document.
-        chunking_strategy (Optional[ComponentsSchemasMaxCharsChunkingStrategy]): Strategy for chunking document content.
+        chunking_strategy (Optional[ComponentsSchemasMaxCharsChunkingStrategy]):
+            Strategy for chunking document content.
     """
 
     id: str
@@ -365,7 +381,8 @@ class ChunkingStrategy(BaseModel):
     Defines a chunking strategy that limits the number of characters per chunk.
 
      Attributes:
-        type (Literal["max_chars_chunking_strategy"]): Identifies the chunking strategy type.
+        type (Literal["max_chars_chunking_strategy"]): Identifies the chunking strategy
+            type.
         max_chars_per_chunk (int): Maximum number of characters allowed per chunk.
     """
 
@@ -396,14 +413,15 @@ class VectaraQueryConfig(BaseModel):
     Attributes:
         search (SearchConfig): Configuration for search parameters.
         generation (GenerationConfig): Configuration for generating summaries.
-        stream_response (bool): Whether to stream responses in real-time. Defaults to False.
+        stream_response (bool): Whether to stream responses in real-time.
         save_history (bool): Whether to save query history. Defaults to False.
-        chat (bool): If True, the last document is treated as the answer with `chat_conv_id` in metadata.
+        chat (bool): If True, the last document is treated as the answer with
+            `chat_conv_id` in metadata.
         chat_conv_id (Optional[str]): Conversation ID for chat mode.
     """
 
     search: SearchConfig = Field(default_factory=SearchConfig)
-    generation: GenerationConfig = Field(default_factory=GenerationConfig)
+    generation: GenerationConfig | None = Field(default_factory=GenerationConfig)
     stream_response: bool = False
     save_history: bool = False
     chat: bool = Field(default=False)
@@ -430,9 +448,13 @@ class Vectara(VectorStore):
         vectara_api_key: Optional[str] = None,
         vectara_api_timeout: int = 120,
         source: str = "langchain",
+        vectara_base_url: str = "https://api.vectara.io",
+        vectara_verify_ssl: bool = True,
     ):
         """Initialize with Vectara API."""
         self._vectara_api_key = vectara_api_key or os.environ.get("VECTARA_API_KEY")
+        self._base_url = vectara_base_url.rstrip("/")
+        self._verify_ssl = vectara_verify_ssl
         if self._vectara_api_key is None:
             logger.warning("Can't find Vectara API key in environment.")
             raise ValueError("unable to find Vectara API key.")
@@ -448,7 +470,7 @@ class Vectara(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return None
 
-    def _get_post_headers(self) -> dict:
+    def _get_post_headers(self) -> dict[str, str | None]:
         """Returns headers that should be attached to each post request."""
         return {
             "x-api-key": self._vectara_api_key,
@@ -475,13 +497,26 @@ class Vectara(VectorStore):
         )
         return error_message
 
+    def _generate_doc_id(self, text: str) -> str:
+        """
+        Generate a unique document ID by hashing the given text with MD5.
+
+        Args:
+            text (str): The text to be hashed.
+
+        Returns:
+            str: The hexadecimal digest of the MD5 hash.
+        """
+        return md5(text.encode("utf-8")).hexdigest()
+
     def _delete_doc(self, doc_id: str, corpus_key: str) -> bool:
         """
         Deletes a document from the specified corpus.
 
         Args:
             doc_id (str): The ID of the document to delete.
-            corpus_key (str): The key of the corpus from which the document should be deleted.
+            corpus_key (str): The key of the corpus from which the document should be
+                deleted.
 
         Returns:
             bool: True if the document was successfully deleted, False otherwise.
@@ -493,7 +528,7 @@ class Vectara(VectorStore):
             raise ValueError("Corpus key cannot be empty.")
 
         response = self._session.delete(
-            f"https://api.vectara.io/v2/corpora/{corpus_key}/documents/{doc_id}",
+            f"{self._base_url}/v2/corpora/{corpus_key}/documents/{doc_id}",
             verify=True,
             headers=self._get_post_headers(),
             timeout=self.vectara_api_timeout,
@@ -517,7 +552,8 @@ class Vectara(VectorStore):
             corpus_key (str): The key of the corpus where the document should be stored.
 
         Returns:
-            str: "SUCCEEDED" if the document is successfully indexed, otherwise an error message.
+            str: "SUCCEEDED" if the document is successfully indexed, otherwise an
+                error message.
         """
 
         if not corpus_key:
@@ -526,10 +562,10 @@ class Vectara(VectorStore):
         doc_payload = json.dumps(doc.model_dump(mode="json", exclude_none=True))
         response = self._session.post(
             headers=self._get_post_headers(),
-            url=f"https://api.vectara.io/v2/corpora/{corpus_key}/documents",
+            url=f"{self._base_url}/v2/corpora/{corpus_key}/documents",
             data=doc_payload,
             timeout=self.vectara_api_timeout,
-            verify=True,
+            verify=self._verify_ssl,
         )
 
         result = response.json()
@@ -539,28 +575,32 @@ class Vectara(VectorStore):
             return "SUCCEEDED"
 
         error_message = self._get_error_message(result)
-        logger.error(f"Document upload failed ({status_code}), reason: {error_message}")
 
-        if status_code == 409:
+        if status_code == 409 or status_code == 412:
             return "ALREADY_EXISTS"
 
         return error_message
 
-    def delete(
-        self, corpus_key: str, ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """
         Delete document using document ids.
 
         Args:
-            corpus_key (str): The key of the corpus from which documents should be deleted.
             ids (Optional[List[str]]): List of document IDs to delete.
+            **kwargs: Additional arguments:
+                - corpus_key (str): Required. The key of the corpus where documents will
+                    be stored.
+
 
         Returns:
-            Optional[bool]: True if deletion is successful, False otherwise. None if not implemented.
+            Optional[bool]: True if deletion is successful, False otherwise. None if not
+                implemented.
         """
+        corpus_key = kwargs.get("corpus_key")
+        if not corpus_key:
+            raise ValueError("Corpus key cannot be empty.")
         if ids:
-            success = [self._delete_doc(id, corpus_key) for id in ids]
+            success = [self._delete_doc(doc_id, corpus_key) for doc_id in ids]
             return all(success)
         else:
             return True
@@ -572,10 +612,13 @@ class Vectara(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """
-        Upload files such as PDFs and Word Documents for automatic text extraction and metadata parsing.
+        Upload files such as PDFs and Word Documents for automatic text extraction and
+            metadata parsing.
 
         Args:
-            files_list (List[File]): A list of File objects containing file paths and optional metadata.
+            files_list (List[File]): A list of File objects containing file paths and
+                optional metadata.
+            corpus_key (str): The key of the corpus where the document should be stored.
 
         Returns:
             List[str]: A list of document IDs for successfully indexed files.
@@ -590,10 +633,12 @@ class Vectara(VectorStore):
             if file_obj.filename is None:
                 file_obj.filename = file_path.split("/")[-1]
 
-            files = {"file": (file_obj.filename, open(file_path, "rb"))}
+            files: Dict[str, tuple | str] = {
+                "file": (file_obj.filename, open(file_path, "rb"))
+            }
 
             if file_obj.metadata:
-                file_obj.metadata["framework"] = "langchain"
+                file_obj.metadata["framework"] = self._source
                 files["metadata"] = (
                     None,
                     json.dumps(file_obj.metadata),
@@ -618,9 +663,9 @@ class Vectara(VectorStore):
             headers = self._get_post_headers()
             headers.pop("Content-Type", None)
             response = self._session.post(
-                f"https://api.vectara.io/v2/corpora/{corpus_key}/upload_file",
+                f"{self._base_url}/v2/corpora/{corpus_key}/upload_file",
                 files=files,
-                verify=True,
+                verify=self._verify_ssl,
                 headers=headers,
                 timeout=self.vectara_api_timeout,
             )
@@ -630,7 +675,8 @@ class Vectara(VectorStore):
             else:
                 error_message = self._get_error_message(result)
                 logger.error(
-                    f"File upload failed ({response.status_code}), reason: {error_message}"
+                    f"File upload failed ({response.status_code}), reason: "
+                    f"{error_message}"
                 )
 
         return doc_ids
@@ -652,9 +698,11 @@ class Vectara(VectorStore):
             metadatas: Optional list of metadatas associated with each text.
             ids: Optional list of IDs associated with each text.
             **kwargs: Additional arguments:
-                - corpus_key (str): Required. The key of the corpus where documents will be stored.
+                - corpus_key (str): Required. The key of the corpus where documents will
+                    be stored.
                 - doc_metadata (dict): Optional. Metadata at the document level.
-                - doc_type (Literal["core", "structured"]): Optional. The document type. Defaults to "structured".
+                - doc_type (Literal["core", "structured"]): Optional. The document type.
+                    Defaults to "structured".
 
         Returns:
             List of document IDs for the documents that were successfully indexed.
@@ -679,8 +727,9 @@ class Vectara(VectorStore):
         elif len(metadatas) != n_texts:
             if n_texts > len(metadatas):
                 logger.warning(
-                    f"Mismatch in metadatas and texts length. Expected {n_texts} but got {len(metadatas)}. "
-                    "Auto-generating metadata for the remaining documents."
+                    f"Mismatch in metadatas and texts length. Expected {n_texts} "
+                    f"but got {len(metadatas)}. Auto-generating metadata for the "
+                    f"remaining documents."
                 )
                 metadatas += [{}] * (n_texts - len(metadatas))
             else:
@@ -690,21 +739,17 @@ class Vectara(VectorStore):
         if ids is None:
             # Generate auto IDs per text using MD5 of text and doc_metadata as a seed
             for text in texts:
-                hash_obj = md5()
-                hash_obj.update(text.encode())
-                final_ids.append(hash_obj.hexdigest())
+                final_ids.append(self._generate_doc_id(text))
         else:
             ids = list(ids)
             if len(ids) < n_texts:
                 logger.warning(
-                    f"Length of ids ({len(ids)}) is less than number of texts ({n_texts}). "
-                    "Auto-generating IDs for the remaining documents."
+                    f"Length of ids ({len(ids)}) is less than number of texts "
+                    f"({n_texts}). Auto-generating IDs for the remaining documents."
                 )
                 final_ids = ids[:]
                 for text in texts[len(ids) :]:
-                    hash_obj = md5()
-                    hash_obj.update(text.encode())
-                    final_ids.append(hash_obj.hexdigest())
+                    final_ids.append(self._generate_doc_id(text))
             elif len(ids) > n_texts:
                 # If more IDs than texts, we only use the first n_texts
                 final_ids = ids[:n_texts]
@@ -714,6 +759,8 @@ class Vectara(VectorStore):
         results = []
         for i, text in enumerate(texts):
             doc_id = final_ids[i]
+
+            doc: Union[CoreDocument, StructuredDocument]
             if doc_type == "core":
                 doc = CoreDocument(
                     id=doc_id,
@@ -736,6 +783,7 @@ class Vectara(VectorStore):
                 results.append(doc_id)
             elif success_str == "ALREADY_EXISTS":
                 # If already exists, try deleting then indexing again
+                logger.info(f"Document upload failed, reason: {success_str}")
                 self._delete_doc(doc_id, corpus_key)
                 success_str = self._index_doc(doc, corpus_key=corpus_key)
                 if success_str == "SUCCEEDED":
@@ -765,8 +813,16 @@ class Vectara(VectorStore):
         Returns:
             A dictionary with the body of the query
         """
-        search_config = config.search.model_dump(mode="json", exclude_none=True)
-        generation_config = config.generation.model_dump(mode="json", exclude_none=True)
+        search_config = (
+            config.search.model_dump(mode="json", exclude_none=True)
+            if config.search
+            else None
+        )
+        generation_config = (
+            config.generation.model_dump(mode="json", exclude_none=True)
+            if config.generation
+            else None
+        )
         body = {
             "query": query,
             "search": search_config,
@@ -784,7 +840,7 @@ class Vectara(VectorStore):
         query: str,
         config: VectaraQueryConfig,
         **kwargs: Any,
-    ) -> Union[List[Tuple[Document, float]], Iterator[dict]]:
+    ) -> Union[List[Tuple[Document, float]]]:
         """Run a Vectara query
 
         Args:
@@ -794,46 +850,45 @@ class Vectara(VectorStore):
              If streaming is enabled, an iterator that yields streamed chunks.
             Otherwise,
                 A list of k Documents matching the given query
-                If summary is enabled, last document is the summary text with 'summary'=True
-                if chat is set to Ture, last document is the answer with chat_convo_id in the metadata
+                If summary is enabled, last document is the summary text with
+                'summary'=True
+                if chat is set to Ture, last document is the answer with chat_convo_id
+                in the metadata
         """
-        if config.stream_response:
-            vectara_rag = VectaraRAG(self, config)
-            return vectara_rag.stream(query)
 
         body = self._get_query_body(query, config, **kwargs)
         if config.chat:
             if config.chat_conv_id:
                 response = self._session.post(
                     headers=self._get_post_headers(),
-                    url=f"https://api.vectara.io/v2/chats/{config.chat_conv_id}/turns",
+                    url=f"{self._base_url}/v2/chats/{config.chat_conv_id}/turns",
                     data=json.dumps(body),
                     timeout=self.vectara_api_timeout,
+                    verify=self._verify_ssl,
                 )
             else:
                 response = self._session.post(
                     headers=self._get_post_headers(),
-                    url="https://api.vectara.io/v2/chats",
+                    url=f"{self._base_url}/v2/chats",
                     data=json.dumps(body),
                     timeout=self.vectara_api_timeout,
+                    verify=self._verify_ssl,
                 )
         else:
             response = self._session.post(
                 headers=self._get_post_headers(),
-                url="https://api.vectara.io/v2/query",
+                url=f"{self._base_url}/v2/query",
                 data=json.dumps(body),
                 timeout=self.vectara_api_timeout,
+                verify=self._verify_ssl,
             )
         result = response.json()
+        error_message = self._get_error_message(response.json())
+
         if response.status_code != 200:
-            if response.status_code == 400:
-                logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
-                )
-            else:
-                logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
-                )
+            logger.error(
+                f"Query failed (code {response.status_code}), reason {error_message}"
+            )
             return []
 
         if "warnings" in result:
@@ -890,20 +945,21 @@ class Vectara(VectorStore):
             List of Documents most similar to the query and score for each.
         """
         config = VectaraQueryConfig(**kwargs)
+        if kwargs.get("filter"):
+            config.search.corpora[0].metadata_filter = kwargs.get("filter", "")
+
         docs = self.vectara_query(query, config)
         return docs
 
-    def similarity_search(
+    def similarity_search(  # type: ignore[override]
         self,
         query: str,
-        k: int = 10,  # setting it to 10 because Vectara's default limit is also 10
         **kwargs: Any,
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
             **kwargs (Any): Additional parameters including:
                 - search (SearchConfig): Configuration for search parameters.
                 - generation (GenerationConfig): Configuration for generating summaries.
@@ -913,16 +969,13 @@ class Vectara(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        if kwargs["search"]:
-            kwargs["search"].limit = k
-
         docs_and_scores = self.similarity_search_with_score(
             query,
             **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def max_marginal_relevance_search(
+    def max_marginal_relevance_search(  # type: ignore[override]
         self,
         query: str,
         fetch_k: int = 50,
@@ -935,8 +988,9 @@ class Vectara(VectorStore):
 
         Args:
             query (str): Text to look up documents similar to.
-            fetch_k (int): Number of documents to retrieve before applying MMR. Defaults to 50.
-            lambda_mult (float): Diversity parameter (0 for max diversity, 1 for min diversity). Defaults to 0.5.
+            fetch_k (int): Number of documents to retrieve before applying MMR.
+            lambda_mult (float): Diversity parameter (0 for max diversity, 1 for
+                min diversity).
             **kwargs (Any): Additional VectaraQueryConfig parameters.
 
         Returns:
@@ -961,15 +1015,16 @@ class Vectara(VectorStore):
             corpus_key (str): The key of the corpus to retrieve the document from.
 
         Returns:
-            A Document object if retrieval is successful, or None if retrieval fails or the document type is unrecognized.
+            A Document object if retrieval is successful, or None if retrieval fails or
+                the document type is unrecognized.
         """
 
-        url = f"https://api.vectara.io/v2/corpora/{corpus_key}/documents/{doc_id}"
+        url = f"{self._base_url}/v2/corpora/{corpus_key}/documents/{doc_id}"
         response = self._session.get(
             url,
             headers=self._get_post_headers(),
             timeout=self.vectara_api_timeout,
-            verify=True,
+            verify=self._verify_ssl,
         )
 
         if response.status_code == 200:
@@ -988,11 +1043,12 @@ class Vectara(VectorStore):
         else:
             error_message = self._get_error_message(response.json())
             logger.error(
-                f"Failed to retrieve doc_id='{doc_id}',  status=({response.status_code}), reason: {error_message}"
+                f"Failed to retrieve doc_id='{doc_id}',  "
+                f"status=({response.status_code}), reason: {error_message}"
             )
             return None
 
-    def get_by_ids(self, ids: Sequence[str], /, **kwargs: any) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
         """
         Retrieve documents from Vectara by their IDs and merge their content.
 
@@ -1032,14 +1088,15 @@ class Vectara(VectorStore):
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
-            embedding (Optional[Embeddings]): Ignored, as Vectara generates its own embeddings.
+            embedding (Optional[Embeddings]): Ignored, as Vectara generates its own
+                embeddings.
             metadatas: Optional list of metadatas associated with each text.
             ids: Optional list of IDs associated with each text.
             **kwargs: Additional arguments:
-                - vectara_api_key (str): API key to use for initializing Vectara and indexing
-                - corpus_key (str): Required. The key of the corpus where documents will be stored.
+                - vectara_api_key (str): API key to use for initializing Vectara
+                - corpus_key (str): Required. The key of the corpus.
                 - doc_metadata (dict): Optional. Metadata at the document level.
-                - doc_type (Literal["core", "structured"]): Optional. The document type. Defaults to "structured".
+                - doc_type (Literal["core", "structured"]): Optional. The document type.
 
         Returns:
             List of document IDs for the documents that were successfully indexed.
@@ -1097,7 +1154,7 @@ class Vectara(VectorStore):
                 - vectara_api_key (str): API key for initializing Vectara.
                 - corpus_key (str): Required. The corpus key for indexing.
                 - doc_metadata (dict): Optional document-level metadata.
-                - doc_type (Literal["core", "structured"]): Optional. Defaults to "structured".
+                - doc_type (Literal["core", "structured"]): Optional.
 
         Returns:
             Vectara: An instance of Vectara with the documents indexed.
@@ -1186,37 +1243,43 @@ class VectaraRAG(Runnable):
             if self.config.chat_conv_id:
                 response = self.vectara._session.post(
                     headers=self.vectara._get_post_headers(),
-                    url=f"https://api.vectara.io/v2/chats/{self.config.chat_conv_id}/turns",
+                    url=f"{self.vectara._base_url}/v2/chats/{self.config.chat_conv_id}"
+                    f"/turns",
                     data=json.dumps(body),
                     timeout=self.vectara.vectara_api_timeout,
                     stream=True,
+                    verify=self.vectara._verify_ssl,
                 )
             else:
                 response = self.vectara._session.post(
                     headers=self.vectara._get_post_headers(),
-                    url="https://api.vectara.io/v2/chats",
+                    url=f"{self.vectara._base_url}/v2/chats",
                     data=json.dumps(body),
                     timeout=self.vectara.vectara_api_timeout,
                     stream=True,
+                    verify=self.vectara._verify_ssl,
                 )
         else:
             response = self.vectara._session.post(
                 headers=self.vectara._get_post_headers(),
-                url="https://api.vectara.io/v2/query",
+                url=f"{self.vectara._base_url}/v2/query",
                 data=json.dumps(body),
                 timeout=self.vectara.vectara_api_timeout,
                 stream=True,
+                verify=self.vectara._verify_ssl,
             )
 
         if response.status_code != 200:
             result = response.json()
             if response.status_code == 400:
                 logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
+                    f"Query failed (code {response.status_code}), "
+                    f"reason {result['field_errors']}"
                 )
             else:
                 logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+                    f"Query failed (code {response.status_code}), "
+                    f"reason {result['messages'][0]}"
                 )
 
             return

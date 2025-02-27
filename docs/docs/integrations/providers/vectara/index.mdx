@@ -23,11 +23,11 @@ For more information:
 To use `Vectara` with LangChain no special installation steps are required. 
 To get started, [sign up](https://vectara.com/integrations/langchain) for a free Vectara trial,
 and follow the [quickstart](https://docs.vectara.com/docs/quickstart) guide to create a corpus and an API key. 
-Once you have these, you can provide them as arguments to the Vectara `vectorstore`, or you can set them as environment variables.
+Once you have API Key, you can provide it as arguments to the Vectara `vectorstore`, or you can set it as environment variables.
 
-- export `VECTARA_CUSTOMER_ID`="your_customer_id"
-- export `VECTARA_CORPUS_ID`="your_corpus_id"
+```bash
 - export `VECTARA_API_KEY`="your-vectara-api-key"
+```
 
 ## Vectara as a Vector Store
 
@@ -41,20 +41,23 @@ from langchain_community.vectorstores import Vectara
 To create an instance of the Vectara vectorstore:
 ```python
 vectara = Vectara(
-    vectara_customer_id=customer_id, 
-    vectara_corpus_id=corpus_id, 
     vectara_api_key=api_key
 )
 ```
-The `customer_id`, `corpus_id` and `api_key` are optional, and if they are not supplied will be read from 
-the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY`, respectively.
+The `api_key` is optional, and if its not supplied will be read from the environment variables.
 
-### Adding Texts or Files
+### Indexing Data
 
-After you have the vectorstore, you can `add_texts` or `add_documents` as per the standard `VectorStore` interface, for example:
+After you have the vectorstore, you can use `add_texts` or `add_documents` as per the standard `VectorStore` interface, for example:
+
 
 ```python
-vectara.add_texts(["to be or not to be", "that is the question"])
+doc_ids = vectara.add_texts(
+    texts=["to be or not to be", "that is the question"],
+    metadatas=[{"": "en"}, {"language": "it"}],
+    corpus_key="your-corpus-key",
+)
+
 ```
 
 Since Vectara supports file-upload in the platform, we also added the ability to upload files (PDF, TXT, HTML, PPT, DOC, etc) directly. 
@@ -63,7 +66,14 @@ When using this method, each file is uploaded directly to the Vectara backend, p
 As an example:
 
 ```python
-vectara.add_files(["path/to/file1.pdf", "path/to/file2.pdf",...])
+from langchain_community.vectorstores import File
+
+file_objects = [
+    File(file_path="path/to/file1.pdf", metadata={"doc_type": "pdf"}),
+    File(file_path="path/to/file2.docx", metadata={"doc_type": "word"}),
+]
+
+doc_ids = vectara.add_files(file_objects, corpus_key="your-corpus-key")
 ```
 
 Of course you do not have to add any data, and instead just connect to an existing Vectara corpus where data may already be indexed.
@@ -72,19 +82,29 @@ Of course you do not have to add any data, and instead just connect to an existi
 
 To query the Vectara vectorstore, you can use the `similarity_search` method (or `similarity_search_with_score`), which takes a query string and returns a list of results:
 ```python
-results = vectara.similarity_search_with_score("what is LangChain?")
+from langchain_community.vectorstores.vectara import (
+    SearchConfig,
+    CorpusConfig
+    )
+
+results_with_score = vectara.similarity_search_with_score(
+    "what is LangChain?",
+    search=SearchConfig(
+        corpora=[CorpusConfig(corpus_key="your-corpus-key")])
+)
 ```
 The results are returned as a list of relevant documents, and a relevance score of each document.
 
-In this case, we used the default retrieval parameters, but you can also specify the following additional arguments in `similarity_search` or `similarity_search_with_score`:
-- `k`: number of results to return (defaults to 5)
-- `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
+In this case, we used the default retrieval parameters, but you can also specify the following additional arguments in the `SearchConfig` and `CorpusConfig`:
+- `limit`: number of results to return (defaults to 10)
+- `lexical_interpolation`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.0)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
-- `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
-- `rerank_config`: can be used to specify reranker for thr results
-   - `reranker`: mmr, rerank_multilingual_v1 or none. Note that "rerank_multilingual_v1" is a Scale only feature
-   - `rerank_k`: number of results to use for reranking
-   - `mmr_diversity_bias`: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
+- `context_configuration`: Context settings for search results.
+- `reranker`: Reranker to refine search results. Vectara has multiple [reranker](https://docs.vectara.com/docs/api-reference/search-apis/reranking)
+   - Multilingual Reranker v1/CustomerSpecific
+   - Maximal Marginal Relevance (MMR)
+   - User Defined Function
+   - Chain
 
 To get results without the relevance score, you can simply use the 'similarity_search' method:
 ```python   
@@ -94,25 +114,48 @@ results = vectara.similarity_search("what is LangChain?")
 ## Vectara for Retrieval Augmented Generation (RAG)
 
 Vectara provides a full RAG pipeline, including generative summarization. To use it as a complete RAG solution, you can use the `as_rag` method.
-There are a few additional parameters that can be specified in the `VectaraQueryConfig` object to control retrieval and summarization:
-* k: number of results to return
-* lambda_val: the lexical matching factor for hybrid search
-* summary_config (optional): can be used to request an LLM summary in RAG
-   - is_enabled: True or False
-   - max_results: number of results to use for summary generation
-   - response_lang: language of the response summary, in ISO 639-2 format (e.g. 'en', 'fr', 'de', etc)
-* rerank_config (optional): can be used to specify Vectara Reranker of the results
-   - reranker: mmr, rerank_multilingual_v1 or none
-   - rerank_k: number of results to use for reranking
-   - mmr_diversity_bias: 0 = no diversity, 1 = full diversity. 
-     This is the lambda parameter in the MMR formula and is in the range 0...1
+Following are the parameters that can be specified in the `VectaraQueryConfig` object to control retrieval and summarization:
+* search: Config for search results to return
+    - corpora: List of corpora to search within.
+    - offset: Number of results to skip, useful for pagination.
+    - limit: Maximum number of search results to return.
+    - context_configuration: Context settings for search results.
+    - reranker: Reranker to refine search results.
+* generation: can be used to request an LLM summary in RAG
+    - max_used_search_results: The maximum number of search results to be available to the prompt.
+    - response_language: requested language for the summary
+    - generation_preset_name: name of the prompt to use for summarization (see https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer)
+    - enable_factual_consistency_score: Score based on the HHEM that indicates the factual accuracy of the summary
+
 
 For example:
 
 ```python
-summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
+from langchain_community.vectorstores.vectara import (
+    VectaraQueryConfig,
+    SearchConfig,
+    CorpusConfig,
+    CustomerSpecificReranker,
+    GenerationConfig,
+)
+
+search_config = SearchConfig(
+    corpora=[CorpusConfig(corpus_key="your-corpus-key")],
+    reranker=CustomerSpecificReranker(reranker_id="rnk_272725719", limit=100),
+    limit=25
+)
+
+generation_config = GenerationConfig(
+    max_used_search_results=7,
+    response_language="eng",
+    enable_factual_consistency_score=True,
+)
+
+config = VectaraQueryConfig(
+    search=search_config,
+    generation=generation_config,
+)
+
 ```
 Then you can use the `as_rag` method to create a RAG pipeline:
 
@@ -130,10 +173,6 @@ The `as_rag` method returns a `VectaraRAG` object, which behaves just like any L
 The RAG functionality can be used to create a chatbot. For example, you can create a simple chatbot that responds to user input:
 
 ```python
-summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
-
 query_str = "what did Biden say?"
 bot = vectara.as_chat(config)
 bot.invoke(query_str)['answer']
@@ -151,7 +190,6 @@ retriever.invoke(query_str)
 ```
 
 Like with as_rag, you provide a `VectaraQueryConfig` object to control the retrieval parameters.
-In most cases you would not enable the summary_config, but it is left as an option for backwards compatibility. 
 If no summary is requested, the response will be a list of relevant documents, each with a relevance score.
 If a summary is requested, the response will be a list of relevant documents as before, plus an additional document that includes the generative summary.
 
@@ -162,10 +200,6 @@ As part of the Vectara RAG, the "Factual Consistency Score" (or FCS), which is a
 This is automatically included in the output of the RAG pipeline
 
 ```python
-summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
-
 rag = vectara.as_rag(config)
 resp = rag.invoke(query_str)
 print(resp['answer'])
