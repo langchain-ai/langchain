@@ -518,10 +518,29 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: Dict[str, Any]) -> Any:
-        """Currently o1 models only allow temperature=1."""
+        """Currently o-series only allow temperature=1."""
         model = values.get("model_name") or values.get("model") or ""
-        if model.startswith("o1") and "temperature" not in values:
-            values["temperature"] = 1
+        if re.match(r"^o\d", model) and values.get("temperature") not in (None, 1):
+            temperature = values.get("temperature")
+            warnings.warn(
+                f"Received invalid temperature value of {temperature} "
+                f"for model {model}. Defaulting to null."
+            )
+            values["temperature"] = None
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_reasoning_effort(cls, values: Dict[str, Any]) -> Any:
+        """Currently only o-series models support reasoning_effort."""
+        model = values.get("model_name") or values.get("model") or ""
+        if not re.match(r"^o\d", model) and values.get("reasoning_effort") is not None:
+            reasoning_effort = values.get("reasoning_effort")
+            warnings.warn(
+                f"Reasoning effort is not supported for model '{model}'. Defaulting "
+                "to null."
+            )
+            values["reasoning_effort"] = None
         return values
 
     @model_validator(mode="after")
