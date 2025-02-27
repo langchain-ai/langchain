@@ -6,7 +6,6 @@ from abc import abstractmethod
 from collections import deque
 from io import StringIO
 from typing import TYPE_CHECKING, TypeVar, Union
-from typing import Optional as Optional
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
