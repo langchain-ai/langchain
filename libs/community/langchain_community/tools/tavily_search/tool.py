@@ -54,7 +54,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         .. code-block:: json
 
             {
-                "url": "https://www.nytimes.com...", 
+                "url": "https://www.nytimes.com...",
                 "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..."
             }
 
