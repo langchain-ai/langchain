@@ -41,7 +41,7 @@ async def test_inline_handlers_share_parent_context() -> None:
         called.
         """
 
-        def __init__(self, run_inline: bool) -> None:
+        def __init__(self, *, run_inline: bool) -> None:
             """Initialize the handler."""
             self.run_inline = run_inline
 
@@ -91,7 +91,7 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
             counter_var.reset(token)
 
     class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
-        def __init__(self, name: str, run_inline: bool = True):
+        def __init__(self, name: str, *, run_inline: bool = True):
             self.name = name
             self.run_inline = run_inline
 
