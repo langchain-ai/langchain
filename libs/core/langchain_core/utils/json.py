@@ -64,11 +64,14 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     # Process each character in the string one at a time.
     for char in s:
+        new_char = char
         if is_inside_string:
             if char == '"' and not escaped:
                 is_inside_string = False
             elif char == "\n" and not escaped:
-                char = "\\n"  # Replace the newline character with the escape sequence.
+                new_char = (
+                    "\\n"  # Replace the newline character with the escape sequence.
+                )
             elif char == "\\":
                 escaped = not escaped
             else:
@@ -89,7 +92,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                     return None
 
         # Append the processed character to the new string.
-        new_chars.append(char)
+        new_chars.append(new_char)
 
     # If we're still inside a string at the end of processing,
     # we need to close the string.
