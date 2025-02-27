@@ -185,7 +185,7 @@ class Xinference(LLM):
             **{"model_kwargs": self.model_kwargs},
         }
 
-    def _check_cluster_authenticated(self):
+    def _check_cluster_authenticated(self) -> None:
         url = f"{self.server_url}/v1/cluster/auth"
         response = requests.get(url)
         if response.status_code == 404:
