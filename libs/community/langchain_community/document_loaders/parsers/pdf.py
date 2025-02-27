@@ -1557,11 +1557,13 @@ class PDFPlumberParser(BaseBlobParser):
                         if self.images_parser:
                             try:
                                 from PIL import Image as Img
-                                Img.fromarray(content) # Check if image is valid
+
+                                Img.fromarray(content)  # Check if image is valid
                                 image_bytes = io.BytesIO()
                                 numpy.save(image_bytes, content)
                                 blob = Blob.from_data(
-                                    image_bytes.getvalue(), mime_type="application/x-npy"
+                                    image_bytes.getvalue(),
+                                    mime_type="application/x-npy",
                                 )
                                 text_from_image = next(
                                     self.images_parser.lazy_parse(blob)  # type: ignore
