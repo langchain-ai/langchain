@@ -6,19 +6,11 @@ import ast
 import asyncio
 import inspect
 import textwrap
-from collections.abc import (
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Coroutine,
-    Iterable,
-    Mapping,
-    Sequence,
-)
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     NamedTuple,
@@ -30,10 +22,21 @@ from typing import (
 
 from typing_extensions import TypeGuard, override
 
-from langchain_core.runnables.schema import StreamEvent
-
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model as create_model
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        AsyncIterable,
+        AsyncIterator,
+        Awaitable,
+        Coroutine,
+        Iterable,
+        Mapping,
+        Sequence,
+    )
+
+    from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)
 # Output type should implement __concat__, as eg str, list, dict do

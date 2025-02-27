@@ -17,8 +17,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 from pydantic import BaseModel, Field
 
@@ -28,6 +27,9 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class BaseChatMessageHistory(ABC):
