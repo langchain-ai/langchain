@@ -1402,7 +1402,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm.save(file_path="path/llm.yaml")
         """
         # Convert file to Path object.
-        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+        save_path = Path(file_path)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -1411,10 +1411,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
