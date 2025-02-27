@@ -2,7 +2,7 @@ import os
 import re
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 import pytest
 import requests
@@ -52,7 +52,7 @@ def vectara() -> Generator[Vectara, None, None]:
     cleanup_documents(vectara_instance, os.getenv("VECTARA_CORPUS_KEY"))
 
 
-def cleanup_documents(vectara: Vectara, corpus_key: str | None) -> None:
+def cleanup_documents(vectara: Vectara, corpus_key: Union[str, None]) -> None:
     """
     Fetch all documents from the corpus and delete them after tests are completed.
     """
