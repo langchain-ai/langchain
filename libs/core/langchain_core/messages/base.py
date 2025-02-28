@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator
@@ -11,6 +10,8 @@ from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
