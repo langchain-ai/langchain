@@ -579,7 +579,11 @@ class ChatMistralAI(BaseChatModel):
             )
             generations.append(gen)
 
-        llm_output = {"token_usage": token_usage, "model": self.model}
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": self.model,
+            "model": self.model,  # Backwards compatability
+        }
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
