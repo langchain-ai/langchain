@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from langchain_core.documents import BaseDocumentCompressor, Document
 from typing import (
     Any, 
     Dict, 
@@ -10,6 +9,8 @@ from typing import (
     Sequence, 
     Union
 )
+from langchain_core.documents import BaseDocumentCompressor, Document
+
 
 class XinferenceRerank(BaseDocumentCompressor):
     """Document compressor that uses `Xinference Rerank API`."""
