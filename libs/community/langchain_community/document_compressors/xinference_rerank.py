@@ -113,17 +113,3 @@ class XinferenceRerank(BaseDocumentCompressor):
             doc_copy.metadata["relevance_score"] = res["relevance_score"]
             compressed.append(doc_copy)
         return compressed
-
-if __name__ == "__main__":
-  query = "A man is eating pasta."
-  corpus = [
-      "A man is eating food.",
-      "A man is eating a piece of bread.",
-      "The girl is carrying a baby.",
-      "A man is riding a horse.",
-      "A woman is playing violin."
-  ]
-  compressor = XinferenceRerank(server_url="http://0.0.0.0:9997", model_uid="bge-reranker-large")
-  compressor.rerank(corpus, query, top_n=2)
-
-  compressor.compress_documents(corpus[:3], query) # corpus => langchain Documents
