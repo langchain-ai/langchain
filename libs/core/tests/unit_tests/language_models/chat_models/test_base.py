@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
 
@@ -29,6 +29,9 @@ from tests.unit_tests.fake.callbacks import (
     FakeCallbackHandler,
 )
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.outputs.llm_result import LLMResult
 
 
 @pytest.fixture
