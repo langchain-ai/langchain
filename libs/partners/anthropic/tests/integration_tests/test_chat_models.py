@@ -62,6 +62,7 @@ def test_stream() -> None:
     )
     assert "stop_reason" in full.response_metadata
     assert "stop_sequence" in full.response_metadata
+    assert "model_name" in full.response_metadata
 
 
 async def test_astream() -> None:
@@ -219,6 +220,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert "model_name" in result.response_metadata
 
 
 def test_invoke() -> None:
