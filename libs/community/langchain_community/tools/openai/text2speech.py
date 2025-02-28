@@ -28,23 +28,53 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
     api_key: str
     model_id: str
     voice: str
+    sample_rate: float
 
     def __init__(self, model_id: str, voice: str, base_url: str, api_key: str) -> None:
-        from openai import OpenAI
-
         model_id = model_id
         voice = voice
         base_url = base_url
         api_key = api_key
+        sample_rate = 24000.0
+
+        try:
+            import pyaudio
+        except ImportError as exc:
+            raise ImportError(
+                "Could not import pyaudio python package. "
+                "Please install it with `pip install pyaudio`."
+            ) from exc
+
+        pa = pyaudio.PyAudio()
+        try:
+            devices_found = pa.get_device_count()
+            if devices_found == 0:
+                raise Exception("get_device_count() failed.")
+        except Exception as exc:
+            raise Exception("No audio devices found! Error: {exc}")
+
+        try:
+        
+            info = pa.get_default_output_device_info()['index']
+            if not pa.is_format_supported(sample_rate, output_device=info, output_channels=1, output_format=pyaudio.paInt16):
+                raise Exception(f"is_format_supported failed.")
+        except Exception as exc:
+            raise Exception(f"Default audio output device doesn't support sampleRate={sample_rate}. Error: {exc}")
 
         super().__init__(  # type: ignore[call-arg]
-            model_id=model_id, voice=voice, base_url=base_url, api_key=api_key
+            model_id=model_id, voice=voice, base_url=base_url, api_key=api_key, sample_rate=sample_rate
         )
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
+
+        try:
+            from openai import OpenAI
+        except Exception as e:
+            raise RuntimeError(f"Please install the `openai` Python package.")
+        
 
         try:
             out_file_name = "tts-output.mp3"
@@ -74,8 +104,8 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
             from transformers.pipelines.audio_utils import ffmpeg_read
         except ImportError as exc:
             raise ImportError(
-                "Could not import ffmpeg-python python package. "
-                "Please install it with `pip install ffmpeg-python`."
+                "Could not import ffmpeg_read python package. "
+                "Please install it with `pip install torchaudio transformers`."
             ) from exc
 
         audio_decoded = None
@@ -94,6 +124,11 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
         import numpy as np
 
         try:
+            from openai import OpenAI
+        except Exception as e:
+            raise RuntimeError(f"Please install the `openai` Python package.")
+
+        try:
             import pyaudio
         except ImportError as exc:
             raise ImportError(
@@ -104,7 +139,7 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
         try:
             client = OpenAI(base_url=self.base_url, api_key=self.api_key)
             player = pyaudio.PyAudio().open(
-                format=pyaudio.paInt16, channels=1, rate=24000, output=True
+                format=pyaudio.paInt16, channels=1, rate=self.sample_rate, output=True
             )
 
             with client.audio.speech.with_streaming_response.create(
