@@ -26,6 +26,37 @@
   
   '''
 # ---
+# name: test_triple_nested_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	parent_1(parent_1)
+  	child_child_1_grandchild_1(grandchild_1)
+  	child_child_1_grandchild_1_greatgrandchild(greatgrandchild)
+  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child_child_2(child_2)
+  	parent_2(parent_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> parent_1;
+  	child_child_2 --> parent_2;
+  	parent_1 --> child_child_1_grandchild_1;
+  	parent_2 --> __end__;
+  	subgraph child
+  	child_child_1_grandchild_2 --> child_child_2;
+  	subgraph child_1
+  	child_child_1_grandchild_1_greatgrandchild --> child_child_1_grandchild_2;
+  	subgraph grandchild_1
+  	child_child_1_grandchild_1 --> child_child_1_grandchild_1_greatgrandchild;
+  	end
+  	end
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
 # name: test_graph_mermaid_duplicate_nodes[mermaid]
   '''
   graph TD;
