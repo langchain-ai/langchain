@@ -11,10 +11,6 @@ from pydantic import BaseModel, Field, create_model
 
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 
-"""
-WHATS UP WITH THE VERSIONING? FOR THE ARGS SCHEMA?
-"""
-
 
 class TavilySearchInput(BaseModel):
     """
@@ -81,50 +77,36 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     """A list of domains to specifically include in the search results. 
     
     Default is None, which includes all domains.
-    
-    .. versionadded:: 0.2.5
     """
     exclude_domains: Optional[List[str]] = []
     """A list of domains to specifically exclude from the search results. 
     
     Default is None, which doesn't exclude any domains.
-    
-    .. versionadded:: 0.2.5
     """
     include_answer: Optional[bool] = False
     """Include a short answer to original query in the search results. 
     
     Default is False.
-    
-    .. versionadded:: 0.2.5
     """
     include_raw_content: Optional[bool] = False
     """Include cleaned and parsed HTML of each site search results. 
     
     Default is False.
-    
-    .. versionadded:: 0.2.5
     """
     include_images: Optional[bool] = False
     """Include a list of query related images in the response. 
     
     Default is False.
-    
-    .. versionadded:: 0.2.5
     """
     include_image_descriptions: Optional[bool] = False
     """When include_images is True, also add a descriptive text for each image.
     
     Default is False.
-    
-    .. versionadded:: 0.2.6
     """
     topic: Optional[Literal["general", "news"]] = "general"
     """The category of the search. Can be "general" or "news".
     
     Default is "general".
-    
-    .. versionadded:: 0.2.6
     """
     time_range: Optional[
         Literal["day", "week", "month", "year", "d", "w", "m", "y"]
@@ -133,15 +115,11 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     
     Can be "day", "week", "month", "year", "d", "w", "m", "y".
     Default is None.
-    
-    .. versionadded:: 0.2.6
     """
     days: Optional[int] = None
     """Number of days back from the current date to include. Only if topic is "news".
     
-    Default is 3.
-    
-    .. versionadded:: 0.2.6
+    Default is None.
     """
 
     # Flags to control which parameters are settable by the agent
