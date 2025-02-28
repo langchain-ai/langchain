@@ -77,6 +77,21 @@
             'default': None,
             'title': 'Name',
           }),
+          'parsed': dict({
+            'anyOf': list([
+              dict({
+                'type': 'object',
+              }),
+              dict({
+                '$ref': '#/$defs/BaseModel',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Parsed',
+          }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
@@ -181,6 +196,21 @@
             'default': None,
             'title': 'Name',
           }),
+          'parsed': dict({
+            'anyOf': list([
+              dict({
+                'type': 'object',
+              }),
+              dict({
+                '$ref': '#/$defs/BaseModel',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Parsed',
+          }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
@@ -225,6 +255,12 @@
           'content',
         ]),
         'title': 'AIMessageChunk',
+        'type': 'object',
+      }),
+      'BaseModel': dict({
+        'properties': dict({
+        }),
+        'title': 'BaseModel',
         'type': 'object',
       }),
       'ChatMessage': dict({
@@ -1507,6 +1543,21 @@
             'default': None,
             'title': 'Name',
           }),
+          'parsed': dict({
+            'anyOf': list([
+              dict({
+                'type': 'object',
+              }),
+              dict({
+                '$ref': '#/$defs/BaseModel',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Parsed',
+          }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
@@ -1611,6 +1662,21 @@
             'default': None,
             'title': 'Name',
           }),
+          'parsed': dict({
+            'anyOf': list([
+              dict({
+                'type': 'object',
+              }),
+              dict({
+                '$ref': '#/$defs/BaseModel',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Parsed',
+          }),
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
@@ -1655,6 +1721,12 @@
           'content',
         ]),
         'title': 'AIMessageChunk',
+        'type': 'object',
+      }),
+      'BaseModel': dict({
+        'properties': dict({
+        }),
+        'title': 'BaseModel',
         'type': 'object',
       }),
       'ChatMessage': dict({
