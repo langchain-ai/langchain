@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
+from langchain_core.documents import BaseDocumentCompressor
 from langchain_core.documents import Document
 
 
