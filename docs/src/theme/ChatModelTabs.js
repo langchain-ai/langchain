@@ -130,13 +130,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain[anthropic]",
     },
     {
-      value: "xai",
-      label: "xAI",
-      model: "grok-2",
-      apiKeyName: "XAI_API_KEY",
-      packageName: "langchain-xai",
-    },
-    {
       value: "azure",
       label: "Azure",
       text: `from langchain_openai import AzureChatOpenAI
@@ -217,6 +210,13 @@ ${llmVarName} = ChatWatsonx(
       text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(endpoint="databricks-meta-llama-3-1-70b-instruct")`,
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
+    },
+    {
+      value: "xai",
+      label: "xAI",
+      model: "grok-2",
+      apiKeyName: "XAI_API_KEY",
+      packageName: "langchain-xai",
     },
   ].map((item) => ({
     ...item,
