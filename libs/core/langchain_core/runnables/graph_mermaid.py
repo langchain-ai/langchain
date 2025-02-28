@@ -141,10 +141,10 @@ def draw_mermaid(
             )
 
         # Recursively add nested subgraphs
-        for nested_prefix in edge_groups:
+        for nested_prefix, edges_ in edge_groups.items():
             if not nested_prefix.startswith(prefix + ":") or nested_prefix == prefix:
                 continue
-            add_subgraph(edge_groups[nested_prefix], nested_prefix)
+            add_subgraph(edges_, nested_prefix)
 
         if prefix and not self_loop:
             mermaid_graph += "\tend\n"
@@ -153,10 +153,10 @@ def draw_mermaid(
     add_subgraph(edge_groups.get("", []), "")
 
     # Add remaining subgraphs
-    for prefix in edge_groups:
+    for prefix, edges_ in edge_groups.items():
         if ":" in prefix or prefix == "":
             continue
-        add_subgraph(edge_groups[prefix], prefix)
+        add_subgraph(edges_, prefix)
 
     # Add custom styles for nodes
     if with_styles:
