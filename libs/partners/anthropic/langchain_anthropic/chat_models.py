@@ -900,7 +900,7 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
-        if "model" in llm_output:
+        if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
             len(content) == 1
