@@ -509,6 +509,93 @@ class ChatAnthropic(BaseChatModel):
 
             "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
 
+    Extended thinking:
+        Claude 3.7 Sonnet supports an
+        `extended thinking <https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking>`_
+        feature, which will output the step-by-step reasoning process that led to its
+        final answer.
+
+        To use it, specify the `thinking` parameter when initializing `ChatAnthropic`.
+        It can also be passed in as a kwarg during invocation.
+
+        You will need to specify a token budget to use this feature. See usage example:
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-3-7-sonnet-latest",
+                max_tokens=5000,
+                thinking={"type": "enabled", "budget_tokens": 2000},
+            )
+
+            response = llm.invoke("What is the cube root of 50.653?")
+            response.content
+
+        .. code-block:: python
+
+            [{'signature': '...', 'thinking': "To find the cube root of 50.653...", 'type': 'thinking'}, {'text': 'The cube root of 50.653 is ...', 'type': 'text'}]
+
+    Citations:
+        Anthropic supports a
+        `citations <https://docs.anthropic.com/en/docs/build-with-claude/citations>`_
+        feature that lets Claude attach context to its answers based on source
+        documents supplied by the user. When
+        `document content blocks <https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types>`_
+        with ``"citations": {"enabled": True}`` are included in a query, Claude may
+        generate citations in its response.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "text",
+                                "media_type": "text/plain",
+                                "data": "The grass is green. The sky is blue.",
+                            },
+                            "title": "My Document",
+                            "context": "This is a trustworthy document.",
+                            "citations": {"enabled": True},
+                        },
+                        {"type": "text", "text": "What color is the grass and sky?"},
+                    ],
+                }
+            ]
+            response = llm.invoke(messages)
+            response.content
+
+        .. code-block:: python
+
+            [{'text': 'Based on the document, ', 'type': 'text'},
+            {'text': 'the grass is green',
+            'type': 'text',
+            'citations': [{'type': 'char_location',
+                'cited_text': 'The grass is green. ',
+                'document_index': 0,
+                'document_title': 'My Document',
+                'start_char_index': 0,
+                'end_char_index': 20}]},
+            {'text': ', and ', 'type': 'text'},
+            {'text': 'the sky is blue',
+            'type': 'text',
+            'citations': [{'type': 'char_location',
+                'cited_text': 'The sky is blue.',
+                'document_index': 0,
+                'document_title': 'My Document',
+                'start_char_index': 20,
+                'end_char_index': 36}]},
+            {'text': '.', 'type': 'text'}]
+
     Token usage:
         .. code-block:: python
 
