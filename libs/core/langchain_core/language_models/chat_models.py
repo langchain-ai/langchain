@@ -1,3 +1,5 @@
+"""Chat models for conversational AI."""
+
 from __future__ import annotations
 
 import asyncio
@@ -271,6 +273,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             raise ValueError(msg)  # noqa: TRY004
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -294,6 +297,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ).generations[0][0],
         ).message
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -350,6 +354,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -441,6 +446,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
             run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
@@ -635,6 +641,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: The tags to apply.
+            metadata: The metadata to apply.
+            run_name: The name of the run.
+            run_id: The ID of the run.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -743,6 +753,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: The tags to apply.
+            metadata: The metadata to apply.
+            run_name: The name of the run.
+            run_id: The ID of the run.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -850,6 +864,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ]
         return output
 
+    @override
     def generate_prompt(
         self,
         prompts: list[PromptValue],
@@ -860,6 +875,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         prompt_messages = [p.to_messages() for p in prompts]
         return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
 
+    @override
     async def agenerate_prompt(
         self,
         prompts: list[PromptValue],
@@ -1089,6 +1105,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseMessage:
+        """Call the model.
+
+        Args:
+            messages: List of messages.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output message.
+        """
         generation = self.generate(
             [messages], stop=stop, callbacks=callbacks, **kwargs
         ).generations[0][0]
@@ -1119,12 +1149,37 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def call_as_llm(
         self, message: str, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> str:
+        """Call the model.
+
+        Args:
+            message: The input message.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output string.
+        """
         return self.predict(message, stop=stop, **kwargs)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
+        """Predict the next message.
+
+        Args:
+            text: The input message.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The predicted output string.
+        """
         _stop = None if stop is None else list(stop)
         result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
         if isinstance(result.content, str):
@@ -1134,6 +1189,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
     def predict_messages(
         self,
         messages: list[BaseMessage],
@@ -1145,6 +1201,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         return self(messages, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1159,6 +1216,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
     async def apredict_messages(
         self,
         messages: list[BaseMessage],
@@ -1187,6 +1245,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tools to the model.
+
+        Args:
+            tools: Sequence of tools to bind to the model.
+
+        Returns:
+            A Runnable that returns a message.
+        """
         raise NotImplementedError
 
     def with_structured_output(

@@ -115,8 +115,9 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
 def guard_import(
     module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
 ) -> Any:
-    """Dynamically import a module and raise an exception if the module is not
-    installed.
+    """Dynamically import a module.
+
+    Raise an exception if the module is not installed.
 
     Args:
         module_name (str): The name of the module to import.

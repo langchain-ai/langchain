@@ -1,3 +1,5 @@
+"""Tool that takes in function or coroutine directly."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable
@@ -9,6 +11,8 @@ from typing import (
     Optional,
     Union,
 )
+
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -37,6 +41,7 @@ class Tool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],

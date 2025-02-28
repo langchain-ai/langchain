@@ -1,4 +1,6 @@
-"""**Document** module is a collection of classes that handle documents
+"""Documents module.
+
+**Document** module is a collection of classes that handle documents
 and their transformations.
 
 """
