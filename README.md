@@ -166,7 +166,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 const httpsAgent = new Agent({
     rejectUnauthorized: false, // Отключение проверки сертификатов НУЦ Минцифры
-}); 
+});
 
 const giga = new GigaChat({
     credentials: 'ключ_авторизации',
@@ -175,13 +175,13 @@ const giga = new GigaChat({
 })
 
 const messages = [
-  new SystemMessage("Переведи следующее сообщение на английский"),
-  new HumanMessage("Привет!"),
+    new SystemMessage("Переведи следующее сообщение на английский"),
+    new HumanMessage("Привет!"),
 ];
 
 const resp = await giga.invoke(messages);
 
-console.log(resp.choices[0]?.message.content);
+console.log(resp.content);
 ```
 
 Объект GigaChat принимает параметры:
