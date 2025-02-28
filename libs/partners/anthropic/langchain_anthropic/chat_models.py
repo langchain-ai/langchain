@@ -26,6 +26,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -81,6 +82,15 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+
+class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
+    name: str
+    description: str
+    input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
 
 
 def _format_image(image_url: str) -> Dict:
@@ -954,6 +964,31 @@ class ChatAnthropic(BaseChatModel):
         data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
+    def _get_llm_for_structured_output_when_thinking_is_enabled(
+        self,
+        schema: Union[Dict, type],
+        formatted_tool: AnthropicTool,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        thinking_admonition = (
+            "Anthropic structured output relies on forced tool calling, "
+            "which is not supported when `thinking` is enabled. This method will raise "
+            "langchain_core.exceptions.OutputParserException if tool calls are not "
+            "generated. Consider disabling `thinking` or adjust your prompt to ensure "
+            "the tool is called."
+        )
+        warnings.warn(thinking_admonition)
+        llm = self.bind_tools(
+            [schema],
+            structured_output_format={"kwargs": {}, "schema": formatted_tool},
+        )
+
+        def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
+            if not message.tool_calls:
+                raise OutputParserException(thinking_admonition)
+            return message
+
+        return llm | _raise_if_no_tool_calls
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
@@ -1251,11 +1286,17 @@ class ChatAnthropic(BaseChatModel):
         """  # noqa: E501
         formatted_tool = convert_to_anthropic_tool(schema)
         tool_name = formatted_tool["name"]
-        llm = self.bind_tools(
-            [schema],
-            tool_choice=tool_name,
-            structured_output_format={"kwargs": {}, "schema": formatted_tool},
-        )
+        if self.thinking is not None and self.thinking.get("type") == "enabled":
+            llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
+                schema, formatted_tool
+            )
+        else:
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                structured_output_format={"kwargs": {}, "schema": formatted_tool},
+            )
+
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
@@ -1356,15 +1397,6 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
-
-
-class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
-
-    name: str
-    description: str
-    input_schema: Dict[str, Any]
-    cache_control: NotRequired[Dict[str, str]]
 
 
 def convert_to_anthropic_tool(
