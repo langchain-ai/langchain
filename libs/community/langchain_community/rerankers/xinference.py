@@ -1,3 +1,5 @@
+"""Wrapper around Xinference rerank models."""
+
 from copy import deepcopy
 from langchain_core.documents import Document
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
