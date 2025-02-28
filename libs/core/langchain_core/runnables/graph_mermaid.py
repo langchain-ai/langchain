@@ -290,9 +290,9 @@ async def _render_mermaid_using_pyppeteer(
     img_bytes = await page.screenshot({"fullPage": False})
     await browser.close()
 
-    def write_to_file(path: str, bytes: bytes) -> None:
+    def write_to_file(path: str, content: bytes) -> None:
         with open(path, "wb") as file:
-            file.write(bytes)
+            file.write(content)
 
     if output_file_path is not None:
         await asyncio.get_event_loop().run_in_executor(

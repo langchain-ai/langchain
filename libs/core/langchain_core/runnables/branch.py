@@ -8,6 +8,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 from langchain_core.runnables.base import (
     Runnable,
@@ -191,6 +192,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise ValueError(msg)
         return specs
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -252,6 +254,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         run_manager.on_chain_end(output)
         return output
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -300,6 +303,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_end(output)
         return output
 
+    @override
     def stream(
         self,
         input: Input,
@@ -387,6 +391,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(final_output)
 
+    @override
     async def astream(
         self,
         input: Input,
