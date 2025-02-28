@@ -341,9 +341,8 @@ def _render_mermaid_using_api(
                 file.write(response.content)
 
         return img_bytes
-    else:
-        msg = (
-            f"Failed to render the graph using the Mermaid.INK API. "
-            f"Status code: {response.status_code}."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Failed to render the graph using the Mermaid.INK API. "
+        f"Status code: {response.status_code}."
+    )
+    raise ValueError(msg)

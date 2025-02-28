@@ -47,8 +47,7 @@ class BaseMedia(Serializable):
     def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
         if id_value is not None:
             return str(id_value)
-        else:
-            return id_value
+        return id_value
 
 
 class Blob(BaseMedia):
@@ -165,9 +164,9 @@ class Blob(BaseMedia):
         """Read data as bytes."""
         if isinstance(self.data, bytes):
             return self.data
-        elif isinstance(self.data, str):
+        if isinstance(self.data, str):
             return self.data.encode(self.encoding)
-        elif self.data is None and self.path:
+        if self.data is None and self.path:
             with open(str(self.path), "rb") as f:
                 return f.read()
         else:
@@ -308,5 +307,4 @@ class Document(BaseMedia):
         # a more general solution of formatting content directly inside the prompts.
         if self.metadata:
             return f"page_content='{self.page_content}' metadata={self.metadata}"
-        else:
-            return f"page_content='{self.page_content}'"
+        return f"page_content='{self.page_content}'"
