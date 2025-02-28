@@ -1,13 +1,8 @@
-from __future__ import annotations
-
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Union
-from pydantic import ConfigDict, model_validator
-from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.utils import get_from_dict_or_env
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
+from typing import Any, Dict, List, Optional, Sequence, Union
+
 
 class XinferenceRerank(BaseDocumentCompressor):
     """Document compressor that uses `Xinference Rerank API`."""
@@ -20,7 +15,7 @@ class XinferenceRerank(BaseDocumentCompressor):
     """UID of the launched model"""
 
     def __init__(
-        self, server_url: Optional[str] = None, model_uid: Optional[str] = None,  top_n: Optional[int] = 3
+        self, server_url: Optional[str] = None, model_uid: Optional[str] = None, top_n: Optional[int] = 3
     ):
         try:
             from xinference.client import RESTfulClient
@@ -43,7 +38,7 @@ class XinferenceRerank(BaseDocumentCompressor):
 
         self.server_url = server_url
         self.model_uid = model_uid
-        self.top_n=top_n
+        self.top_n = top_n
         self.client = RESTfulClient(server_url)
 
 
@@ -67,7 +62,7 @@ class XinferenceRerank(BaseDocumentCompressor):
             top_n : The number of results to return. If None returns all results.
                 Defaults to self.top_n.
             max_chunks_per_doc : The maximum number of chunks derived from a document.
-        """  # noqa: E501
+        """  
         if len(documents) == 0:  # to avoid empty api call
             return []
         docs = [
@@ -125,8 +120,8 @@ if __name__ == "__main__":
       "A man is riding a horse.",
       "A woman is playing violin."
   ]
-  compressor = XinferenceRerank(server_url="http://0.0.0.0:9997", model_uid="bge-reranker-large", top_n=25)
+  compressor = XinferenceRerank(server_url="http://0.0.0.0:9997", model_uid="bge-reranker-large")
   compressor.rerank(corpus, query, top_n=2)
 
-  compressor.compress_documents(documents[:3], query) # documents => langchain Documents
+  compressor.compress_documents(corpus[:3], query) # corpus => langchain Documents
 
