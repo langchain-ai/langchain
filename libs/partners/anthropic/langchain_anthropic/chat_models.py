@@ -900,6 +900,8 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        if "model" in llm_output and "model_name" not in llm_output:
+            llm_output["model_name"] = llm_output["model"]
         if (
             len(content) == 1
             and content[0]["type"] == "text"
@@ -1445,9 +1447,14 @@ def _make_message_chunk_from_anthropic_event(
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         usage_metadata = _create_usage_metadata(event.message.usage)
+        if hasattr(event.message, "model"):
+            response_metadata = {"model_name": event.message.model}
+        else:
+            response_metadata = {}
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
         )
     elif (
         event.type == "content_block_start"
