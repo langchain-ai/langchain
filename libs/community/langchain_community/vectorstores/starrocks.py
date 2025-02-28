@@ -4,15 +4,16 @@ import json
 import logging
 from hashlib import sha1
 from threading import Thread
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Sequence, Mapping
-from typing_extensions import TypedDict
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing_extensions import TypedDict
+
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger()
 DEBUG = False
@@ -154,10 +155,10 @@ class StarRocks(VectorStore):
     """
 
     def __init__(
-            self,
-            embedding: Embeddings,
-            config: Optional[StarRocksSettings] = None,
-            **kwargs: Any,
+        self,
+        embedding: Embeddings,
+        config: Optional[StarRocksSettings] = None,
+        **kwargs: Any,
     ) -> None:
         """StarRocks Wrapper to LangChain
 
@@ -260,12 +261,12 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         get_named_result(self.connection, _insert_query)
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            batch_size: int = 32,
-            ids: Optional[Iterable[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        batch_size: int = 32,
+        ids: Optional[Iterable[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Insert more texts through the embeddings and add to the VectorStore.
 
@@ -318,14 +319,14 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[Dict[Any, Any]]] = None,
-            config: Optional[StarRocksSettings] = None,
-            text_ids: Optional[Iterable[str]] = None,
-            batch_size: int = 32,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        config: Optional[StarRocksSettings] = None,
+        text_ids: Optional[Iterable[str]] = None,
+        batch_size: int = 32,
+        **kwargs: Any,
     ) -> StarRocks:
         """Create StarRocks wrapper with existing texts
 
@@ -372,7 +373,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return _repr
 
     def _build_query_sql(
-            self, q_emb: List[float], topk: int, where_str: Optional[str] = None
+        self, q_emb: List[float], topk: int, where_str: Optional[str] = None
     ) -> str:
         q_emb_str = ",".join(map(str, q_emb))
         if where_str:
@@ -387,7 +388,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                 {self.config.column_map["metadata"]} as metadata, 
                 cosine_similarity_norm(array<float>[{q_emb_str}],
                 {self.config.column_map["embedding"]}) as dist,
-                {self.config.column_map['embedding']} as embedding
+                {self.config.column_map["embedding"]} as embedding
             FROM {self.config.database}.{self.config.table}
             {where_str}
             ORDER BY dist {self.dist_order}
@@ -398,7 +399,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return q_str
 
     def similarity_search(
-            self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
     ) -> Union[List[Document], StarRocksQueryResult]:
         """Perform a similarity search with StarRocks
 
@@ -421,11 +422,11 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         )
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            where_str: Optional[str] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        where_str: Optional[str] = None,
+        **kwargs: Any,
     ) -> Union[List[Document], StarRocksQueryResult]:
         """Perform a similarity search with StarRocks by vectors
 
@@ -449,26 +450,15 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             search_type = kwargs.get("search_type", "similarity")
             if search_type == "mmr":
                 return StarRocksQueryResult(
-                    ids=[
-                        r["id"]
-                        for r in q_r
-                    ],
+                    ids=[r["id"] for r in q_r],
                     embeddings=[
-                        json.loads(r[self.config.column_map["embedding"]])
-                        for r in q_r
+                        json.loads(r[self.config.column_map["embedding"]]) for r in q_r
                     ],
-                    documents=[
-                        r[self.config.column_map["document"]]
-                        for r in q_r
-                    ],
+                    documents=[r[self.config.column_map["document"]] for r in q_r],
                     metadatas=[
-                        json.loads(r[self.config.column_map["metadata"]])
-                        for r in q_r
+                        json.loads(r[self.config.column_map["metadata"]]) for r in q_r
                     ],
-                    distances=[
-                        r["dist"]
-                        for r in q_r
-                    ]
+                    distances=[r["dist"] for r in q_r],
                 )
             return [
                 Document(
@@ -482,7 +472,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             return []
 
     def similarity_search_with_relevance_scores(
-            self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Perform a similarity search with StarRocks
 
@@ -532,15 +522,15 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return self.config.column_map["metadata"]
 
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            query: str = None,
-            k: int = 5,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            filter: Optional[Dict[str, str]] = None,
-            where_document: Optional[Dict[str, str]] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        query: str = None,
+        k: int = 5,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         if query is None:
             raise ValueError("Either query or embedding must be provided.")
@@ -565,18 +555,18 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return selected_results
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 5,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            filter: Optional[Dict[str, str]] = None,
-            where_document: Optional[Dict[str, str]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 5,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         if self.embeddings is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         embedding = self.embeddings.embed_query(query)
