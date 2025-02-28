@@ -4,7 +4,7 @@ import json
 import logging
 from hashlib import sha1
 from threading import Thread
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -18,19 +18,15 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 logger = logging.getLogger()
 DEBUG = False
 
-ID = str
-IDs = List[ID]
-Vector = Union[Sequence[float], Sequence[int]]
-Embedding = Vector
 Metadata = Mapping[str, Union[str, int, float, bool]]
 
 
-class ApacheDorisQueryResult(TypedDict):
-    ids: List[IDs]
-    embeddings: Optional[List[List[Embedding]]]
-    documents: Optional[List[List[Document]]]
-    metadatas: Optional[List[List[Metadata]]]
-    distances: Optional[List[List[float]]]
+class QueryResult(TypedDict):
+    ids: List[List[str]]
+    embeddings: List[Any]
+    documents: List[Document]
+    metadatas: Optional[List[Metadata]]
+    distances: Optional[List[float]]
 
 
 class ApacheDorisSettings(BaseSettings):
@@ -346,7 +342,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def similarity_search(
         self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
-    ) -> Union[List[Document], ApacheDorisQueryResult]:
+    ) -> List[Document]:
         """Perform a similarity search with Apache Doris
 
         Args:
@@ -373,7 +369,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         k: int = 4,
         where_str: Optional[str] = None,
         **kwargs: Any,
-    ) -> Union[List[Document], ApacheDorisQueryResult]:
+    ) -> List[Document]:
         """Perform a similarity search with Apache Doris by vectors
 
         Args:
@@ -393,19 +389,6 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         q_str = self._build_query_sql(embedding, k, where_str)
         try:
             q_r = _get_named_result(self.connection, q_str)
-            search_type = kwargs.get("search_type", "similarity")
-            if search_type == "mmr":
-                return ApacheDorisQueryResult(
-                    ids=[r["id"] for r in q_r],
-                    embeddings=[
-                        json.loads(r[self.config.column_map["embedding"]]) for r in q_r
-                    ],
-                    documents=[r[self.config.column_map["document"]] for r in q_r],
-                    metadatas=[
-                        json.loads(r[self.config.column_map["metadata"]]) for r in q_r
-                    ],
-                    distances=[r["dist"] for r in q_r],
-                )
             return [
                 Document(
                     page_content=r[self.config.column_map["document"]],
@@ -467,23 +450,22 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
-        query: str = None,
-        k: int = 5,
+        embedding: list[float],
+        k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, str]] = None,
-        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
-        if query is None:
-            raise ValueError("Either query or embedding must be provided.")
-
-        results = self.similarity_search(
-            query=query,
-            k=fetch_k,
-            where_str=where_document,
-            **kwargs,
+    ) -> list[Document]:
+        q_str = self._build_query_sql(embedding, fetch_k, None)
+        q_r = _get_named_result(self.connection, q_str)
+        results = QueryResult(
+            ids=[r["id"] for r in q_r],
+            embeddings=[
+                json.loads(r[self.config.column_map["embedding"]]) for r in q_r
+            ],
+            documents=[r[self.config.column_map["document"]] for r in q_r],
+            metadatas=[json.loads(r[self.config.column_map["metadata"]]) for r in q_r],
+            distances=[r["dist"] for r in q_r],
         )
 
         mmr_selected = maximal_marginal_relevance(
@@ -516,13 +498,11 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         embedding = self.embeddings.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding,
-            query,
             k,
             fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
             where_document=where_document,
-            search_type="mmr",
         )
 
 
