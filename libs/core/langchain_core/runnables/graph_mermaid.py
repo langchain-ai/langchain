@@ -2,6 +2,7 @@ import asyncio
 import base64
 import re
 from dataclasses import asdict
+from pathlib import Path
 from typing import Literal, Optional
 
 from langchain_core.runnables.graph import (
@@ -290,13 +291,9 @@ async def _render_mermaid_using_pyppeteer(
     img_bytes = await page.screenshot({"fullPage": False})
     await browser.close()
 
-    def write_to_file(path: str, bytes: bytes) -> None:
-        with open(path, "wb") as file:
-            file.write(bytes)
-
     if output_file_path is not None:
         await asyncio.get_event_loop().run_in_executor(
-            None, write_to_file, output_file_path, img_bytes
+            None, Path(output_file_path).write_bytes, img_bytes
         )
 
     return img_bytes
@@ -337,8 +334,7 @@ def _render_mermaid_using_api(
     if response.status_code == 200:
         img_bytes = response.content
         if output_file_path is not None:
-            with open(output_file_path, "wb") as file:
-                file.write(response.content)
+            Path(output_file_path).write_bytes(response.content)
 
         return img_bytes
     else:
