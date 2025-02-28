@@ -6,6 +6,7 @@ from typing import List, Optional
 
 import pytest
 import requests
+from anthropic import BadRequestError
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
@@ -745,3 +746,19 @@ def test_structured_output_thinking_enabled() -> None:
     # Test streaming
     for chunk in structured_llm.stream(query):
         assert isinstance(chunk, GenerateUsername)
+
+
+def test_structured_output_thinking_force_tool_use() -> None:
+    # Structured output currently relies on forced tool use, which is not supported
+    # when `thinking` is enabled. When this test fails, it means that the feature
+    # is supported and the workarounds in `with_structured_output` should be removed.
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    ).bind_tools(
+        [GenerateUsername],
+        tool_choice="GenerateUsername",
+    )
+    with pytest.raises(BadRequestError):
+        llm.invoke("Generate a username for Sally with green hair")
