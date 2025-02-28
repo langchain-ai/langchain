@@ -9,8 +9,10 @@ from typing import (
     Sequence, 
     Union
 )
-from langchain_core.documents import BaseDocumentCompressor, Document
-
+from langchain_core.documents import (
+    BaseDocumentCompressor, 
+    Document
+)
 
 class XinferenceRerank(BaseDocumentCompressor):
     """Document compressor that uses `Xinference Rerank API`."""
