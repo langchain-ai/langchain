@@ -4,15 +4,15 @@ import json
 import logging
 from hashlib import sha1
 from threading import Thread
-from typing_extensions import TypedDict
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Sequence, Mapping
+from typing_extensions import TypedDict
 
+import numpy as np
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
-import numpy as np
 
 logger = logging.getLogger()
 DEBUG = False

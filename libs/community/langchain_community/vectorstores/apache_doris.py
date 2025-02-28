@@ -4,15 +4,15 @@ import json
 import logging
 from hashlib import sha1
 from threading import Thread
-from typing_extensions import TypedDict
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Sequence, Mapping
+from typing_extensions import TypedDict
 
+import numpy as np
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
-import numpy as np
 
 logger = logging.getLogger()
 DEBUG = False
@@ -244,7 +244,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                 zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
                 assert (
-                        len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
+                    len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
                 )
                 transac.append(v)
                 if len(transac) == batch_size:
