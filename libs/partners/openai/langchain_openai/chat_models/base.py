@@ -129,8 +129,16 @@ class ToolNameHandler:
     
     def sanitize_tool_name(self, tool: BaseTool) -> BaseTool:
         """Sanitize the name of a tool."""
-        tool.name = self.sanitize(tool.name)
+        if tool.name:
+            tool.name = self.sanitize(tool.name)
         return tool
+    
+    def sanitize_tool_call_name(self, tool_call: ToolCall) -> ToolCall:
+        """Sanitize the name of a tool call."""
+        if tool_call.name:
+            tool_call.name = self.sanitize(tool_call.name)
+        logger.debug(f"Sanitized tool call: {tool_call}")
+        return tool_call
 
     def restore(self, name: str) -> str:
         """Restore a sanitized name to its original form."""
@@ -156,6 +164,7 @@ class ToolNameHandler:
         """Clear stored name mappings (for fresh runs)."""
         self.name_map.clear()
 
+tool_name_handler = ToolNameHandler()
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -184,6 +193,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
+                    if "function" in raw_tool_call:
+                        raw_tool_call["function"]["name"] = tool_name_handler.restore(raw_tool_call["function"]["name"])                       
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
                     invalid_tool_calls.append(
@@ -282,8 +293,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             tool_call_supported_props = {"id", "type", "function"}
             message_dict["tool_calls"] = [
-                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
-                for tool_call in message_dict["tool_calls"]
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
             ]
         else:
             pass
@@ -552,7 +565,6 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
-    _name_handler = ToolNameHandler()
 
     @model_validator(mode="before")
     @classmethod
@@ -884,9 +896,7 @@ class BaseChatOpenAI(BaseChatModel):
         token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
-            self._name_handler.restore_message_tool_names(message)
             if isinstance(message, AIMessage):
-                self._name_handler.restore_message_tool_names(message)
                 if token_usage:
                     message.usage_metadata = _create_usage_metadata(token_usage)                    
             generation_info = generation_info or {}
@@ -1283,7 +1293,7 @@ class BaseChatOpenAI(BaseChatModel):
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
-            convert_to_openai_tool(self._name_handler.sanitize_tool_name(tool), strict=strict) for tool in tools
+            convert_to_openai_tool(tool_name_handler.sanitize_tool_name(tool), strict=strict) for tool in tools
         ]
         if tool_choice:
             if isinstance(tool_choice, str):
@@ -1291,7 +1301,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice not in ("auto", "none", "any", "required"):
                     tool_choice = {
                         "type": "function",
-                        "function": {"name": tool_choice},
+                        "function": {"name": tool_name_handler.sanitize(tool_choice)},
                     }
                 # 'any' is not natively supported by OpenAI API.
                 # We support 'any' since other models use this instead of 'required'.
@@ -2455,7 +2465,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
         "type": "function",
         "id": tool_call["id"],
         "function": {
-            "name": tool_call["name"],
+            "name": tool_name_handler.sanitize(tool_call["name"]),
             "arguments": json.dumps(tool_call["args"]),
         },
     }
@@ -2468,7 +2478,7 @@ def _lc_invalid_tool_call_to_openai_tool_call(
         "type": "function",
         "id": invalid_tool_call["id"],
         "function": {
-            "name": invalid_tool_call["name"],
+            "name": tool_name_handler.sanitize(invalid_tool_call["name"]),
             "arguments": invalid_tool_call["args"],
         },
     }
