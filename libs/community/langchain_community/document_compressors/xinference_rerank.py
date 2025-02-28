@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
-from langchain_core.documents import BaseDocumentCompressor
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentCompressor, Document
+
 
 
 class XinferenceRerank(BaseDocumentCompressor):
