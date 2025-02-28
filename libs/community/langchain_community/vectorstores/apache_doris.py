@@ -4,15 +4,31 @@ import json
 import logging
 from hashlib import sha1
 from threading import Thread
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing_extensions import TypedDict
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Sequence, Mapping
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger()
 DEBUG = False
+
+ID = str
+IDs = List[ID]
+Vector = Union[Sequence[float], Sequence[int]]
+Embedding = Vector
+Metadata = Mapping[str, Union[str, int, float, bool]]
+
+
+class ApacheDorisQueryResult(TypedDict):
+    ids: List[IDs]
+    embeddings: Optional[List[List[Embedding]]]
+    documents: Optional[List[List[Document]]]
+    metadatas: Optional[List[List[Metadata]]]
+    distances: Optional[List[List[float]]]
 
 
 class ApacheDorisSettings(BaseSettings):
@@ -81,11 +97,11 @@ class ApacheDoris(VectorStore):
     """
 
     def __init__(
-        self,
-        embedding: Embeddings,
-        *,
-        config: Optional[ApacheDorisSettings] = None,
-        **kwargs: Any,
+            self,
+            embedding: Embeddings,
+            *,
+            config: Optional[ApacheDorisSettings] = None,
+            **kwargs: Any,
     ) -> None:
         """Constructor for Apache Doris.
 
@@ -189,12 +205,12 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         _get_named_result(self.connection, _insert_query)
 
     def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        batch_size: int = 32,
-        ids: Optional[Iterable[str]] = None,
-        **kwargs: Any,
+            self,
+            texts: Iterable[str],
+            metadatas: Optional[List[dict]] = None,
+            batch_size: int = 32,
+            ids: Optional[Iterable[str]] = None,
+            **kwargs: Any,
     ) -> List[str]:
         """Insert more texts through the embeddings and add to the VectorStore.
 
@@ -224,10 +240,10 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         try:
             t = None
             for v in self.pgbar(
-                zip(*values), desc="Inserting data...", total=len(metadatas)
+                    zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
                 assert (
-                    len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
+                        len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
                 )
                 transac.append(v)
                 if len(transac) == batch_size:
@@ -247,14 +263,14 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     @classmethod
     def from_texts(
-        cls,
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
-        config: Optional[ApacheDorisSettings] = None,
-        text_ids: Optional[Iterable[str]] = None,
-        batch_size: int = 32,
-        **kwargs: Any,
+            cls,
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[Dict[Any, Any]]] = None,
+            config: Optional[ApacheDorisSettings] = None,
+            text_ids: Optional[Iterable[str]] = None,
+            batch_size: int = 32,
+            **kwargs: Any,
     ) -> ApacheDoris:
         """Create Apache Doris wrapper with existing texts
 
@@ -301,7 +317,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return _repr
 
     def _build_query_sql(
-        self, q_emb: List[float], topk: int, where_str: Optional[str] = None
+            self, q_emb: List[float], topk: int, where_str: Optional[str] = None
     ) -> str:
         q_emb_str = ",".join(map(str, q_emb))
         if where_str:
@@ -310,10 +326,12 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map["document"]}, 
-                {self.config.column_map["metadata"]}, 
-                cosine_distance(array<float>[{q_emb_str}],
-                  {self.config.column_map["embedding"]}) as dist
+            SELECT 
+                id as id,
+                {self.config.column_map["document"]} as document, 
+                {self.config.column_map["metadata"]} as metadata, 
+                cosine_distance(array<float>[{q_emb_str}], {self.config.column_map["embedding"]}) as dist,
+                {self.config.column_map['embedding']} as embedding
             FROM {self.config.database}.{self.config.table}
             {where_str}
             ORDER BY dist {self.dist_order}
@@ -324,8 +342,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return q_str
 
     def similarity_search(
-        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
-    ) -> List[Document]:
+            self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+    ) -> Union[List[Document], ApacheDorisQueryResult]:
         """Perform a similarity search with Apache Doris
 
         Args:
@@ -347,12 +365,12 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         )
 
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        where_str: Optional[str] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
+            self,
+            embedding: List[float],
+            k: int = 4,
+            where_str: Optional[str] = None,
+            **kwargs: Any,
+    ) -> Union[List[Document], ApacheDorisQueryResult]:
         """Perform a similarity search with Apache Doris by vectors
 
         Args:
@@ -371,19 +389,29 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         """
         q_str = self._build_query_sql(embedding, k, where_str)
         try:
+            q_r = _get_named_result(self.connection, q_str)
+            search_type = kwargs.get("search_type", "similarity")
+            if search_type == "mmr":
+                return ApacheDorisQueryResult(
+                    ids=[r["id"] for r in q_r],
+                    embeddings=[json.loads(r[self.config.column_map["embedding"]]) for r in q_r],
+                    documents=[r[self.config.column_map["document"]] for r in q_r],
+                    metadatas=[json.loads(r[self.config.column_map["metadata"]]) for r in q_r],
+                    distances=[r["dist"] for r in q_r]
+                )
             return [
                 Document(
                     page_content=r[self.config.column_map["document"]],
                     metadata=json.loads(r[self.config.column_map["metadata"]]),
                 )
-                for r in _get_named_result(self.connection, q_str)
+                for r in q_r
             ]
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
             return []
 
     def similarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
+            self, query: str, k: int = 4, where_str: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Perform a similarity search with Apache Doris
 
@@ -429,6 +457,66 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     @property
     def metadata_column(self) -> str:
         return self.config.column_map["metadata"]
+
+    def max_marginal_relevance_search_by_vector(
+            self,
+            embedding: List[float],
+            query: str = None,
+            k: int = 5,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            filter: Optional[Dict[str, str]] = None,
+            where_document: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
+    ) -> List[Document]:
+        if query is None:
+            raise ValueError("Either query or embedding must be provided.")
+
+        results = self.similarity_search(
+            query=query,
+            k=fetch_k,
+            where_str=where_document,
+            **kwargs,
+        )
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            results["embeddings"],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = _results_to_docs(results)
+
+        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
+        return selected_results
+
+    def max_marginal_relevance_search(
+            self,
+            query: str,
+            k: int = 5,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            filter: Optional[Dict[str, str]] = None,
+            where_document: Optional[Dict[str, str]] = None,
+            **kwargs: Any,
+    ) -> List[Document]:
+        if self.embeddings is None:
+            raise ValueError(
+                "For MMR search, you must specify an embedding function on" "creation."
+            )
+
+        embedding = self.embeddings.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding,
+            query,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            where_document=where_document,
+            search_type="mmr",
+        )
 
 
 def _has_mul_sub_str(s: str, *args: Any) -> bool:
@@ -480,3 +568,18 @@ def _get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
     _debug_output(result)
     cursor.close()
     return result
+
+
+def _results_to_docs(results: Any) -> List[Document]:
+    return [doc for doc, _ in _results_to_docs_and_scores(results)]
+
+
+def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
+    return [
+        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
+        for result in zip(
+            results["documents"],
+            results["metadatas"],
+            results["distances"],
+        )
+    ]
