@@ -1,4 +1,5 @@
 import asyncio
+import re
 import sys
 import uuid
 import warnings
@@ -3827,13 +3828,13 @@ def test_retrying(mocker: MockerFixture) -> None:
     _lambda_mock = mocker.Mock(side_effect=_lambda)
     runnable = RunnableLambda(_lambda_mock)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is 1"):
         runnable.invoke(1)
 
     assert _lambda_mock.call_count == 1
     _lambda_mock.reset_mock()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is 1"):
         runnable.with_retry(
             stop_after_attempt=2,
             retry_if_exception_type=(ValueError,),
@@ -3852,7 +3853,7 @@ def test_retrying(mocker: MockerFixture) -> None:
     assert _lambda_mock.call_count == 1  # did not retry
     _lambda_mock.reset_mock()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is 1"):
         runnable.with_retry(
             stop_after_attempt=2,
             wait_exponential_jitter=False,
@@ -3892,13 +3893,13 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     _lambda_mock = mocker.Mock(side_effect=_lambda)
     runnable = RunnableLambda(_lambda_mock)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is 1"):
         await runnable.ainvoke(1)
 
     assert _lambda_mock.call_count == 1
     _lambda_mock.reset_mock()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is 1"):
         await runnable.with_retry(
             stop_after_attempt=2,
             wait_exponential_jitter=False,
@@ -3918,7 +3919,7 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     assert _lambda_mock.call_count == 1  # did not retry
     _lambda_mock.reset_mock()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is 1"):
         await runnable.with_retry(
             stop_after_attempt=2,
             wait_exponential_jitter=False,
@@ -3982,9 +3983,8 @@ def test_runnable_lambda_stream_with_callbacks() -> None:
         raise ValueError(msg)
 
     # Check that the chain on error is invoked
-    with pytest.raises(ValueError):
-        for _ in RunnableLambda(raise_value_error).stream(1000, config=config):
-            pass
+    with pytest.raises(ValueError, match="x is too large"):
+        _ = list(RunnableLambda(raise_value_error).stream(1000, config=config))
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is too large')" in str(tracer.runs[1].error)
@@ -4061,9 +4061,13 @@ async def test_runnable_lambda_astream_with_callbacks() -> None:
         raise ValueError(msg)
 
     # Check that the chain on error is invoked
-    with pytest.raises(ValueError):
-        async for _ in RunnableLambda(raise_value_error).astream(1000, config=config):
-            pass
+    with pytest.raises(ValueError, match="x is too large"):
+        _ = [
+            _
+            async for _ in RunnableLambda(raise_value_error).astream(
+                1000, config=config
+            )
+        ]
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is too large')" in str(tracer.runs[1].error)
@@ -4088,7 +4092,11 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
             outputs: list[Any] = []
             for input in inputs:
                 if input.startswith(self.fail_starts_with):
-                    outputs.append(ValueError())
+                    outputs.append(
+                        ValueError(
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {input}"
+                        )
+                    )
                 else:
                     outputs.append(input + "a")
             return outputs
@@ -4119,7 +4127,9 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
     assert isinstance(chain, RunnableSequence)
 
     # Test batch
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match=re.escape("ControlledExceptionRunnable(bar) fail for bara")
+    ):
         chain.batch(["foo", "bar", "baz", "qux"])
 
     spy = mocker.spy(ControlledExceptionRunnable, "batch")
@@ -4155,32 +4165,44 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
 
     parent_run_foo = parent_runs[0]
     assert parent_run_foo.inputs["input"] == "foo"
-    assert repr(ValueError()) in str(parent_run_foo.error)
+    assert repr(ValueError("ControlledExceptionRunnable(foo) fail for fooaaa")) in str(
+        parent_run_foo.error
+    )
     assert len(parent_run_foo.child_runs) == 4
     assert [r.error for r in parent_run_foo.child_runs[:-1]] == [
         None,
         None,
         None,
     ]
-    assert repr(ValueError()) in str(parent_run_foo.child_runs[-1].error)
+    assert repr(ValueError("ControlledExceptionRunnable(foo) fail for fooaaa")) in str(
+        parent_run_foo.child_runs[-1].error
+    )
 
     parent_run_bar = parent_runs[1]
     assert parent_run_bar.inputs["input"] == "bar"
-    assert repr(ValueError()) in str(parent_run_bar.error)
+    assert repr(ValueError("ControlledExceptionRunnable(bar) fail for bara")) in str(
+        parent_run_bar.error
+    )
     assert len(parent_run_bar.child_runs) == 2
     assert parent_run_bar.child_runs[0].error is None
-    assert repr(ValueError()) in str(parent_run_bar.child_runs[1].error)
+    assert repr(ValueError("ControlledExceptionRunnable(bar) fail for bara")) in str(
+        parent_run_bar.child_runs[1].error
+    )
 
     parent_run_baz = parent_runs[2]
     assert parent_run_baz.inputs["input"] == "baz"
-    assert repr(ValueError()) in str(parent_run_baz.error)
+    assert repr(ValueError("ControlledExceptionRunnable(baz) fail for bazaa")) in str(
+        parent_run_baz.error
+    )
     assert len(parent_run_baz.child_runs) == 3
 
     assert [r.error for r in parent_run_baz.child_runs[:-1]] == [
         None,
         None,
     ]
-    assert repr(ValueError()) in str(parent_run_baz.child_runs[-1].error)
+    assert repr(ValueError("ControlledExceptionRunnable(baz) fail for bazaa")) in str(
+        parent_run_baz.child_runs[-1].error
+    )
 
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
@@ -4209,7 +4231,11 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
             outputs: list[Any] = []
             for input in inputs:
                 if input.startswith(self.fail_starts_with):
-                    outputs.append(ValueError())
+                    outputs.append(
+                        ValueError(
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {input}"
+                        )
+                    )
                 else:
                     outputs.append(input + "a")
             return outputs
@@ -4240,7 +4266,9 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
     assert isinstance(chain, RunnableSequence)
 
     # Test abatch
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match=re.escape("ControlledExceptionRunnable(bar) fail for bara")
+    ):
         await chain.abatch(["foo", "bar", "baz", "qux"])
 
     spy = mocker.spy(ControlledExceptionRunnable, "abatch")
@@ -4278,31 +4306,43 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
     parent_run_foo = parent_runs[0]
     assert parent_run_foo.inputs["input"] == "foo"
-    assert repr(ValueError()) in str(parent_run_foo.error)
+    assert repr(ValueError("ControlledExceptionRunnable(foo) fail for fooaaa")) in str(
+        parent_run_foo.error
+    )
     assert len(parent_run_foo.child_runs) == 4
     assert [r.error for r in parent_run_foo.child_runs[:-1]] == [
         None,
         None,
         None,
     ]
-    assert repr(ValueError()) in str(parent_run_foo.child_runs[-1].error)
+    assert repr(ValueError("ControlledExceptionRunnable(foo) fail for fooaaa")) in str(
+        parent_run_foo.child_runs[-1].error
+    )
 
     parent_run_bar = parent_runs[1]
     assert parent_run_bar.inputs["input"] == "bar"
-    assert repr(ValueError()) in str(parent_run_bar.error)
+    assert repr(ValueError("ControlledExceptionRunnable(bar) fail for bara")) in str(
+        parent_run_bar.error
+    )
     assert len(parent_run_bar.child_runs) == 2
     assert parent_run_bar.child_runs[0].error is None
-    assert repr(ValueError()) in str(parent_run_bar.child_runs[1].error)
+    assert repr(ValueError("ControlledExceptionRunnable(bar) fail for bara")) in str(
+        parent_run_bar.child_runs[1].error
+    )
 
     parent_run_baz = parent_runs[2]
     assert parent_run_baz.inputs["input"] == "baz"
-    assert repr(ValueError()) in str(parent_run_baz.error)
+    assert repr(ValueError("ControlledExceptionRunnable(baz) fail for bazaa")) in str(
+        parent_run_baz.error
+    )
     assert len(parent_run_baz.child_runs) == 3
     assert [r.error for r in parent_run_baz.child_runs[:-1]] == [
         None,
         None,
     ]
-    assert repr(ValueError()) in str(parent_run_baz.child_runs[-1].error)
+    assert repr(ValueError("ControlledExceptionRunnable(baz) fail for bazaa")) in str(
+        parent_run_baz.child_runs[-1].error
+    )
 
     parent_run_qux = parent_runs[3]
     assert parent_run_qux.inputs["input"] == "qux"
@@ -4319,11 +4359,15 @@ def test_runnable_branch_init() -> None:
     condition = RunnableLambda(lambda x: x > 0)
 
     # Test failure with less than 2 branches
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="RunnableBranch requires at least two branches"
+    ):
         RunnableBranch((condition, add))
 
     # Test failure with less than 2 branches
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="RunnableBranch requires at least two branches"
+    ):
         RunnableBranch(condition)
 
 
@@ -4408,7 +4452,7 @@ def test_runnable_branch_invoke() -> None:
     assert branch.invoke(10) == 100
     assert branch.invoke(0) == -1
     # Should raise an exception
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is too large"):
         branch.invoke(1000)
 
 
@@ -4472,7 +4516,7 @@ def test_runnable_branch_invoke_callbacks() -> None:
     assert tracer.runs[0].outputs == {"output": 0}
 
     # Check that the chain on end is invoked
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is too large"):
         branch.invoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
@@ -4500,7 +4544,7 @@ async def test_runnable_branch_ainvoke_callbacks() -> None:
     assert tracer.runs[0].outputs == {"output": 0}
 
     # Check that the chain on end is invoked
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="x is too large"):
         await branch.ainvoke(1000, config={"callbacks": [tracer]})
 
     assert len(tracer.runs) == 2
@@ -4561,9 +4605,8 @@ def test_runnable_branch_stream_with_callbacks() -> None:
     assert tracer.runs[0].outputs == {"output": llm_res}
 
     # Verify that the chain on error is invoked
-    with pytest.raises(ValueError):
-        for _ in branch.stream("error", config=config):
-            pass
+    with pytest.raises(ValueError, match="x is error"):
+        _ = list(branch.stream("error", config=config))
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is error')" in str(tracer.runs[1].error)
@@ -4638,9 +4681,8 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
     assert tracer.runs[0].outputs == {"output": llm_res}
 
     # Verify that the chain on error is invoked
-    with pytest.raises(ValueError):
-        async for _ in branch.astream("error", config=config):
-            pass
+    with pytest.raises(ValueError, match="x is error"):
+        _ = [_ async for _ in branch.astream("error", config=config)]
 
     assert len(tracer.runs) == 2
     assert "ValueError('x is error')" in str(tracer.runs[1].error)
