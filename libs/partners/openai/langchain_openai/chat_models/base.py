@@ -164,6 +164,12 @@ class ToolNameHandler:
         """Clear stored name mappings (for fresh runs)."""
         self.name_map.clear()
 
+    def sanitize_tool_dict(self, tool_dict: dict) -> dict:
+        """Sanitize the name in a tool dictionary."""
+        if "function" in tool_dict and "name" in tool_dict["function"]:
+            tool_dict["function"]["name"] = self.sanitize(tool_dict["function"]["name"])
+        return tool_dict
+
 tool_name_handler = ToolNameHandler()
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -1293,7 +1299,8 @@ class BaseChatOpenAI(BaseChatModel):
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
-            convert_to_openai_tool(tool_name_handler.sanitize_tool_name(tool), strict=strict) for tool in tools
+            tool_name_handler.sanitize_tool_dict(convert_to_openai_tool(tool, strict=strict))
+            for tool in tools
         ]
         if tool_choice:
             if isinstance(tool_choice, str):
