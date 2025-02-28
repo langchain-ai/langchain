@@ -20,7 +20,7 @@ _EDGE_DIRECTION = {
     "bidir": "both",
 }
 
-_WORD_RE = re.compile("\s*\S+")
+_WORD_RE = re.compile(r"\s*\S+")
 
 
 def _split_prefix(s: str, max_chars: int = 50) -> str:
