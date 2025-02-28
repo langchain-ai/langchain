@@ -1,0 +1,102 @@
+# Discord
+
+> [Taiga](https://docs.taiga.io/) is an open-source project management platform designed for agile teams, offering features like Kanban, Scrum, and issue tracking.
+
+## Installation and Setup
+
+Install the `langchain-taiga` package:
+
+```bash
+pip install langchain-taiga
+```
+
+You must provide a logins via environment variable so the tools can authenticate.
+
+```bash
+export TAIGA_URL="https://taiga.xyz.org/"
+export TAIGA_API_URL="https://taiga.xyz.org/"
+export TAIGA_USERNAME="username"
+export TAIGA_PASSWORD="pw"
+export OPENAI_API_KEY="OPENAI_API_KEY"
+```
+
+
+---
+
+## Tools
+
+Below is a simple example of calling the tool with keyword arguments in a dictionary.
+
+```python
+from langchain_taiga.tools.taiga_tools import (
+    add_attachment_by_ref_tool,
+    add_comment_by_ref_tool,
+    create_entity_tool,
+    get_entity_by_ref_tool,
+    search_entities_tool,
+    update_entity_by_ref_tool,
+)
+
+response = create_entity_tool(
+    {
+        "project_slug": "slug",
+        "entity_type": "us",
+        "subject": "subject",
+        "status": "new",
+        "description": "desc",
+        "parent_ref": 5,
+        "assign_to": "user",
+        "due_date": "2022-01-01",
+        "tags": ["tag1", "tag2"],
+    }
+)
+
+response = search_entities_tool(
+    {"project_slug": "slug", "query": "query", "entity_type": "task"}
+)
+
+response = get_entity_by_ref_tool(
+    {"entity_type": "user_story", "project_id": 1, "ref": "1"}
+)
+
+response = update_entity_by_ref_tool(
+    {"project_slug": "slug", "entity_ref": 555, "entity_type": "us"}
+)
+
+
+response = add_comment_by_ref_tool(
+    {"project_slug": "slug", "entity_ref": 3, "entity_type": "us", "comment": "new"}
+)
+
+response = add_attachment_by_ref_tool(
+    {
+        "project_slug": "slug",
+        "entity_ref": 3,
+        "entity_type": "us",
+        "attachment_url": "url",
+        "content_type": "png",
+        "description": "desc",
+    }
+)
+```
+
+---
+
+## Toolkit
+
+`TaigaToolkit` groups multiple Taiga-related tools into a single interface.
+
+```python
+from langchain_taiga.toolkits import TaigaToolkit
+
+toolkit = TaigaToolkit()
+tools = toolkit.get_tools()
+
+```
+
+---
+
+## Future Integrations
+
+
+Check the [Taiga Developer Docs](https://docs.taiga.io/) for more information, and watch for updates or advanced usage examples in the [langchain_taiga GitHub repo](https://github.com/Shikenso-Analytics/langchain-taiga).
