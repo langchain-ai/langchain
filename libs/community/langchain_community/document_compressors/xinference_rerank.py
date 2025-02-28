@@ -18,7 +18,10 @@ class XinferenceRerank(BaseDocumentCompressor):
     """UID of the launched model"""
 
     def __init__(
-        self, server_url: Optional[str] = None, model_uid: Optional[str] = None, top_n: Optional[int] = 3
+        self, 
+        server_url: Optional[str] = None, 
+        model_uid: Optional[str] = None, 
+        top_n: Optional[int] = 3
     ):
         try:
             from xinference.client import RESTfulClient
@@ -56,7 +59,8 @@ class XinferenceRerank(BaseDocumentCompressor):
         return_len: Optional[bool] = None,
         **kwargs,
     ) -> List[Dict[str, Any]]:
-        """Returns an ordered list of documents ordered by their relevance to the provided query.
+        """Returns an ordered list of documents \
+        ordered by their relevance to the provided query.
 
         Args:
             query: The query to use for reranking.
