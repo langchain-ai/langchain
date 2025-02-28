@@ -8,6 +8,7 @@ import pytest
 import requests
 from anthropic import BadRequestError
 from langchain_core.callbacks import CallbackManager
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -740,7 +741,7 @@ def test_structured_output_thinking_enabled() -> None:
     response = structured_llm.invoke(query)
     assert isinstance(response, GenerateUsername)
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(OutputParserException):
         structured_llm.invoke("Hello")
 
     # Test streaming

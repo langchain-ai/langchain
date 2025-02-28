@@ -26,6 +26,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -969,8 +970,9 @@ class ChatAnthropic(BaseChatModel):
         thinking_admonition = (
             "Anthropic structured output relies on forced tool calling, "
             "which is not supported when `thinking` is enabled. This method will raise "
-            "NotImplementedError if tool calls are not generated. Consider disabling "
-            "`thinking` or adjust your prompt to ensure the tool is called."
+            "langchain_core.exceptions.OutputParserException if tool calls are not "
+            "generated. Consider disabling `thinking` or adjust your prompt to ensure "
+            "the tool is called."
         )
         warnings.warn(thinking_admonition)
         llm = self.bind_tools(
@@ -980,7 +982,7 @@ class ChatAnthropic(BaseChatModel):
 
         def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
             if not message.tool_calls:
-                raise NotImplementedError(thinking_admonition)
+                raise OutputParserException(thinking_admonition)
             return message
 
         return llm | _raise_if_no_tool_calls
