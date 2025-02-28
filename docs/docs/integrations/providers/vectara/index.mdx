@@ -23,7 +23,7 @@ For more information:
 To use `Vectara` with LangChain no special installation steps are required. 
 To get started, [sign up](https://vectara.com/integrations/langchain) for a free Vectara trial,
 and follow the [quickstart](https://docs.vectara.com/docs/quickstart) guide to create a corpus and an API key. 
-Once you have API Key, you can provide it as arguments to the Vectara `vectorstore`, or you can set it as an environment variables.
+Once you have API Key, you can provide it as an argument to the Vectara `vectorstore`, or you can set it as an environment variable..
 
 ```bash
 - export `VECTARA_API_KEY`="your-vectara-api-key"
@@ -98,13 +98,13 @@ The results are returned as a list of relevant documents, and a relevance score 
 In this case, we used the default retrieval parameters, but you can also specify the following additional arguments in the `SearchConfig` and `CorpusConfig`:
 - `limit`: number of results to return (defaults to 10)
 - `lexical_interpolation`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.0)
-- `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
-- `context_configuration`: Context settings for search results.
+- `filter`: a [metadata filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
+- `context_configuration`: [Context configuration](https://docs.vectara.com/docs/api-reference/search-apis/interpreting-responses/highlighting) settings for search results.
 - `reranker`: Reranker to refine search results. Vectara has multiple [reranker](https://docs.vectara.com/docs/api-reference/search-apis/reranking)
    - Multilingual Reranker v1/CustomerSpecific
-   - Maximal Marginal Relevance (MMR)
-   - User Defined Function
-   - Chain
+   - Maximal Marginal Relevance (MMR) reranker
+   - User Defined Function reranker
+   - Chain reranker
 
 To get results without the relevance score, you can simply use the 'similarity_search' method:
 ```python   
@@ -114,9 +114,9 @@ results = vectara.similarity_search("what is LangChain?")
 ## Vectara for Retrieval Augmented Generation (RAG)
 
 Vectara provides a full RAG pipeline, including generative summarization. To use it as a complete RAG solution, you can use the `as_rag` method.
-Following are the parameters that can be specified in the `VectaraQueryConfig` object to control retrieval and summarization:
+Following are the parameters that can be specified in the [`VectaraQueryConfig`](https://docs.vectara.com/docs/rest-api/query) object to control retrieval and summarization:
 * search: Config for search results to return
-    - corpora: List of corpora to search within.
+    - corpora:  List of corpora to search within. Vectara supports searching within a single corpus or multiple corpora.
     - offset: Number of results to skip, useful for pagination.
     - limit: Maximum number of search results to return.
     - context_configuration: Context settings for search results.
@@ -166,11 +166,27 @@ rag = vectara.as_rag(config)
 rag.invoke(query_str)['answer']
 ```
 
+For streaming:
+
+```python
+output = {}
+for chunk in rag.stream("what did he said about the covid?"):
+    for key in chunk:
+        if key not in output:
+            output[key] = chunk[key]
+        else:
+            output[key] += chunk[key]
+        if key == "answer":
+            print(chunk[key], end="", flush=True)
+```
+
 The `as_rag` method returns a `VectaraRAG` object, which behaves just like any LangChain Runnable, including the `invoke` or `stream` methods.
 
 ## Vectara Chat
 
-The RAG functionality can be used to create a chatbot. For example, you can create a simple chatbot that responds to user input:
+The RAG functionality can be used to create a chatbot with multi-turn question/response turns in a conversation. In this case, the full chat history is also maintained and used as needed by the Vectara platform.
+
+For example:
 
 ```python
 query_str = "what did Biden say?"

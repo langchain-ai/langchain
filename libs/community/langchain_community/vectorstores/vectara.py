@@ -783,7 +783,9 @@ class Vectara(VectorStore):
                 results.append(doc_id)
             elif success_str == "ALREADY_EXISTS":
                 # If already exists, try deleting then indexing again
-                logger.info(f"Document upload failed, reason: {success_str}")
+                logger.error(
+                    f"Unable to index document {doc_id}. Reason: {success_str}"
+                )
                 self._delete_doc(doc_id, corpus_key)
                 success_str = self._index_doc(doc, corpus_key=corpus_key)
                 if success_str == "SUCCEEDED":
@@ -1116,7 +1118,7 @@ class Vectara(VectorStore):
                 )
 
         """
-        corpus_key: Optional[str] = kwargs.pop("corpus_key")
+        corpus_key: Optional[str] = kwargs.pop("corpus_key", None)
         if not corpus_key:
             raise ValueError("Missing required parameter: 'corpus_key'.")
 
