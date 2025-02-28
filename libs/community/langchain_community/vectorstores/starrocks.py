@@ -12,6 +12,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
+import numpy as np
 
 logger = logging.getLogger()
 DEBUG = False
@@ -294,10 +295,10 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         try:
             t = None
             for v in self.pgbar(
-                    zip(*values), desc="Inserting data...", total=len(metadatas)
+                zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
                 assert (
-                        len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
+                    len(v[keys.index(self.config.column_map["embedding"])]) == self.dim
                 )
                 transac.append(v)
                 if len(transac) == batch_size:
@@ -384,7 +385,8 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                 id as id,
                 {self.config.column_map["document"]} as document, 
                 {self.config.column_map["metadata"]} as metadata, 
-                cosine_similarity_norm(array<float>[{q_emb_str}], {self.config.column_map["embedding"]}) as dist,
+                cosine_similarity_norm(array<float>[{q_emb_str}],
+                {self.config.column_map["embedding"]}) as dist,
                 {self.config.column_map['embedding']} as embedding
             FROM {self.config.database}.{self.config.table}
             {where_str}
@@ -447,11 +449,26 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             search_type = kwargs.get("search_type", "similarity")
             if search_type == "mmr":
                 return StarRocksQueryResult(
-                    ids=[r["id"] for r in q_r],
-                    embeddings=[json.loads(r[self.config.column_map["embedding"]]) for r in q_r],
-                    documents=[r[self.config.column_map["document"]] for r in q_r],
-                    metadatas=[json.loads(r[self.config.column_map["metadata"]]) for r in q_r],
-                    distances=[r["dist"] for r in q_r]
+                    ids=[
+                        r["id"]
+                        for r in q_r
+                    ],
+                    embeddings=[
+                        json.loads(r[self.config.column_map["embedding"]])
+                        for r in q_r
+                    ],
+                    documents=[
+                        r[self.config.column_map["document"]]
+                        for r in q_r
+                    ],
+                    metadatas=[
+                        json.loads(r[self.config.column_map["metadata"]])
+                        for r in q_r
+                    ],
+                    distances=[
+                        r["dist"]
+                        for r in q_r
+                    ]
                 )
             return [
                 Document(
