@@ -1,10 +1,8 @@
-"""Wrapper around Xinference rerank models."""
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core.documents import BaseDocumentCompressor, Document
-
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 
 class XinferenceRerank(BaseDocumentCompressor):
