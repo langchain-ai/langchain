@@ -6,7 +6,9 @@ from typing import List, Optional
 
 import pytest
 import requests
+from anthropic import BadRequestError
 from langchain_core.callbacks import CallbackManager
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -35,6 +37,7 @@ def test_stream() -> None:
     full: Optional[BaseMessageChunk] = None
     chunks_with_input_token_counts = 0
     chunks_with_output_token_counts = 0
+    chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
         full = token if full is None else full + token
@@ -44,12 +47,14 @@ def test_stream() -> None:
                 chunks_with_input_token_counts += 1
             elif token.usage_metadata.get("output_tokens"):
                 chunks_with_output_token_counts += 1
+        chunks_with_model_name += int("model_name" in token.response_metadata)
     if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
         raise AssertionError(
             "Expected exactly one chunk with input or output token counts. "
             "AIMessageChunk aggregation adds counts. Check that "
             "this is behaving properly."
         )
+    assert chunks_with_model_name == 1
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
     assert full.usage_metadata is not None
@@ -62,6 +67,7 @@ def test_stream() -> None:
     )
     assert "stop_reason" in full.response_metadata
     assert "stop_sequence" in full.response_metadata
+    assert "model_name" in full.response_metadata
 
 
 async def test_astream() -> None:
@@ -219,6 +225,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert "model_name" in result.response_metadata
 
 
 def test_invoke() -> None:
@@ -725,3 +732,39 @@ def test_redacted_thinking() -> None:
             assert set(block.keys()) == {"type", "data", "index"}
             assert block["data"] and isinstance(block["data"], str)
     assert stream_has_reasoning
+
+
+def test_structured_output_thinking_enabled() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    )
+    with pytest.warns(match="structured output"):
+        structured_llm = llm.with_structured_output(GenerateUsername)
+    query = "Generate a username for Sally with green hair"
+    response = structured_llm.invoke(query)
+    assert isinstance(response, GenerateUsername)
+
+    with pytest.raises(OutputParserException):
+        structured_llm.invoke("Hello")
+
+    # Test streaming
+    for chunk in structured_llm.stream(query):
+        assert isinstance(chunk, GenerateUsername)
+
+
+def test_structured_output_thinking_force_tool_use() -> None:
+    # Structured output currently relies on forced tool use, which is not supported
+    # when `thinking` is enabled. When this test fails, it means that the feature
+    # is supported and the workarounds in `with_structured_output` should be removed.
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    ).bind_tools(
+        [GenerateUsername],
+        tool_choice="GenerateUsername",
+    )
+    with pytest.raises(BadRequestError):
+        llm.invoke("Generate a username for Sally with green hair")
