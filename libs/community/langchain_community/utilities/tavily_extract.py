@@ -38,9 +38,7 @@ class TavilyExtractAPIWrapper(BaseModel):
     def raw_results(
         self,
         urls: List[str],
-        extract_depth: Optional[
-            Literal["basic", "advanced"]
-        ] = "advanced",  
+        extract_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_images: Optional[bool] = False,
     ) -> Dict:
         params = {
@@ -67,9 +65,7 @@ class TavilyExtractAPIWrapper(BaseModel):
         self,
         urls: List[str],
         include_images: Optional[bool] = False,
-        extract_depth: Optional[
-            Literal["basic", "advanced"]
-        ] = "advanced",
+        extract_depth: Optional[Literal["basic", "advanced"]] = "advanced",
     ) -> Dict:
         """Get results from the Tavily Extract API asynchronously."""
 

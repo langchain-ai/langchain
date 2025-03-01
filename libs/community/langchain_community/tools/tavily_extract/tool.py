@@ -79,12 +79,12 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
     Default is False
     """
 
-    api_wrapper: TavilyExtractAPIWrapper = Field(default_factory=TavilyExtractAPIWrapper)  # type: ignore[arg-type]
+    apiwrapper: TavilyExtractAPIWrapper = Field(default_factory=TavilyExtractAPIWrapper)  # type: ignore[arg-type]
 
     def __init__(self, **kwargs: Any) -> None:
-        # Create api_wrapper with tavily_api_key if provided
+        # Create apiwrapper with tavily_api_key if provided
         if "tavily_api_key" in kwargs:
-            kwargs["api_wrapper"] = TavilyExtractAPIWrapper(
+            kwargs["apiwrapper"] = TavilyExtractAPIWrapper(
                 tavily_api_key=kwargs["tavily_api_key"]
             )
         super().__init__(**kwargs)
@@ -99,7 +99,7 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
         """Use the tool."""
         try:
             # Execute search with parameters directly
-            raw_results = self.api_wrapper.raw_results(
+            raw_results = self.apiwrapper.raw_results(
                 urls=urls,
                 extract_depth=extract_depth if extract_depth else self.extract_depth,
                 include_images=include_images
@@ -133,7 +133,7 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
             # Re-raise tool exceptions
             raise
         except Exception as e:
-            return repr(e)
+            return {"error": e}
 
     async def _arun(
         self,
@@ -144,7 +144,7 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
     ) -> Dict[str, Any]:
         """Use the tool asynchronously."""
         try:
-            raw_results = await self.api_wrapper.raw_results_async(
+            raw_results = await self.apiwrapper.raw_results_async(
                 urls=urls,
                 extract_depth=extract_depth if extract_depth else self.extract_depth,
                 include_images=include_images
@@ -177,4 +177,4 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
             # Re-raise tool exceptions
             raise
         except Exception as e:
-            return repr(e)
+            return {"error": e}
