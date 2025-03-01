@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 
 
-class TavilySearchInput(BaseModel):
+class TavilyInput(BaseModel):
     """Input for [TavilySearchResults]"""
 
     query: str = Field(description=("Search query to look up"))
@@ -165,7 +165,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         "Input should be a search query."
     )
 
-    args_schema: Type[BaseModel] = TavilySearchInput
+    args_schema: Type[BaseModel] = TavilyInput
     handle_tool_error: bool = True
 
     include_domains: Optional[List[str]] = []
@@ -362,7 +362,7 @@ class TavilyAnswer(BaseTool):  # type: ignore[override, override]
         "This returns only the answer - not the original source data."
     )
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
-    args_schema: Type[BaseModel] = TavilySearchInput
+    args_schema: Type[BaseModel] = TavilyInput
 
     def _run(
         self,
