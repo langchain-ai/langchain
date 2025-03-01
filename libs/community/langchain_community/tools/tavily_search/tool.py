@@ -1,6 +1,6 @@
 """Tool for the Tavily search API."""
 
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -65,7 +65,95 @@ def _generate_suggestions(params: dict) -> list:
 
 
 class TavilySearchResults(BaseTool):  # type: ignore[override, override]
-    """Tool that queries the Tavily Search API with dynamically settable parameters."""
+    """Tool that queries the Tavily Search API and gets back json.
+
+    Setup:
+        Install ``langchain-openai`` and ``tavily-python``, and set environment variable ``TAVILY_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-community tavily-python
+            export TAVILY_API_KEY="your-api-key"
+
+    Instantiate:
+
+        .. code-block:: python
+
+            from langchain_community.tools import TavilySearchResults
+
+            tool = TavilySearchResults(
+                max_results=5,
+                topic="general",
+                include_answer=False,
+                include_raw_content=True,           # including raw content may lead to hitting context length limits
+                # include_images=True,
+                # include_image_descriptions=True
+                # time_range="day",
+                # days=3,
+                # include_domains=[...],
+                # exclude_domains=[...],
+                # name="...",            # overwrite default tool name
+                # description="...",     # overwrite default tool description
+                # args_schema=...,       # overwrite default args_schema: BaseModel
+            )
+
+    Invoke directly with args:
+
+        .. code-block:: python
+
+            tool.invoke({"query": "What happened at the last wimbledon"})
+
+        .. code-block:: json
+
+            {
+                'query': 'What happened at the last wimbledon',
+                'follow_up_questions': None,
+                'answer': None,
+                'images': [],
+                'results': [{'title': "Andy Murray pulls out of the men's singles draw at his last Wimbledon",
+                             'url': 'https://www.nbcnews.com/news/sports/andy-murray-wimbledon-tennis-singles-draw-rcna159912',
+                             'content': "NBC News Now LONDON — Andy Murray, one of the last decade's most successful ..."
+                             'score': 0.6755297,
+                             'raw_content': "Andy Murray pulls out of the men's singles draw at his last Wimbledon ....."
+                             }],
+                'response_time': 2.92
+            }
+
+    Invoke with tool call:
+
+        .. code-block:: python
+
+            tool.invoke({"args": {'query': 'who won the last french open'}, "type": "tool_call", "id": "foo", "name": "tavily"})
+
+        .. code-block:: python
+
+            ToolMessage(
+                content='{ "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..." }',
+                artifact={
+                    'query': 'who won the last french open',
+                    'follow_up_questions': None,
+                    'answer': 'Novak ...',
+                    'images': [
+                        'https://www.amny.com/wp-content/uploads/2023/06/AP23162622181176-1200x800.jpg',
+                        ...
+                        ],
+                    'results': [
+                        {
+                            'title': 'Djokovic ...',
+                            'url': 'https://www.nytimes.com...',
+                            'content': "Novak...",
+                            'score': 0.99505633,
+                            'raw_content': 'Tennis\nNovak ...'
+                        },
+                        ...
+                    ],
+                    'response_time': 2.92
+                },
+                tool_call_id='1',
+                name='tavily_search',
+            )
+
+    """  # noqa: E501
 
     name: str = "tavily_search"
     description: str = (
@@ -136,6 +224,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     Default is None.
     """
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def __init__(self, **kwargs: Any) -> None:
         # Create api_wrapper with tavily_api_key if provided
@@ -155,7 +244,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         include_images: Optional[bool] = None,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
         """Use the tool."""
         try:
             # Execute search with parameters directly
@@ -197,12 +286,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                     f"Try modifying your search parameters with one of these approaches."  # noqa: E501
                 )
                 raise ToolException(error_message)
-            return raw_results
+            return self.api_wrapper.clean_results(raw_results["results"]), raw_results
         except ToolException:
             # Re-raise tool exceptions
             raise
         except Exception as e:
-            raise e
+            return repr(e), {}
 
     async def _arun(
         self,
@@ -213,7 +302,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         include_images: Optional[bool] = None,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
         """Use the tool asynchronously."""
         try:
             raw_results = await self.api_wrapper.raw_results_async(
@@ -254,14 +343,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                     f"Try modifying your search parameters with one of these approaches."  # noqa: E501
                 )
                 raise ToolException(error_message)
-            return raw_results
+            return self.api_wrapper.clean_results(raw_results["results"]), raw_results
         except ToolException:
             # Re-raise tool exceptions
             raise
         except Exception as e:
-            # Convert other exceptions to ToolException
-            error_message = f"Error during Tavily search: {str(e)}"
-            raise ToolException(error_message)
+            return repr(e), {}
 
 
 class TavilyAnswer(BaseTool):  # type: ignore[override, override]
@@ -274,7 +361,7 @@ class TavilyAnswer(BaseTool):  # type: ignore[override, override]
         "Input should be a search query. "
         "This returns only the answer - not the original source data."
     )
-    api_wrapper: TavilySearchAPIWrapper
+    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
     args_schema: Type[BaseModel] = TavilySearchInput
 
     def _run(
