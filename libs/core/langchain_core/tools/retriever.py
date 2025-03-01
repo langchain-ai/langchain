@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from langchain_core.callbacks import Callbacks
-from langchain_core.documents import Document
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
     aformat_document,
     format_document,
 )
-from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools.simple import Tool
+
+if TYPE_CHECKING:
+    from langchain_core.callbacks import Callbacks
+    from langchain_core.documents import Document
+    from langchain_core.retrievers import BaseRetriever
 
 
 class RetrieverInput(BaseModel):

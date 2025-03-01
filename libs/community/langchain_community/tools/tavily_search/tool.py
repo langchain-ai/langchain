@@ -51,9 +51,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
 
             tool.invoke({'query': 'who won the last french open'})
 
-        .. code-block:: python
+        .. code-block:: json
 
-            '{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...'
+            {
+                "url": "https://www.nytimes.com...",
+                "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..."
+            }
 
     Invoke with tool call:
 
@@ -64,7 +67,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         .. code-block:: python
 
             ToolMessage(
-                content='{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
+                content='{ "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..." }',
                 artifact={
                     'query': 'who won the last french open',
                     'follow_up_questions': None,

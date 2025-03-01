@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator, Mapping
+from collections.abc import Mapping
 from itertools import starmap
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -30,6 +31,9 @@ from langchain_core.runnables.utils import (
     gather_with_concurrency,
     get_unique_config_specs,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
 
 
 class RouterInput(TypedDict):

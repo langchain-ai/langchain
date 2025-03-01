@@ -2243,18 +2243,14 @@ name = "langchain"
 version = "0.3.19"
 source = { editable = "." }
 dependencies = [
-    { name = "aiohttp" },
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
     { name = "langsmith" },
-    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "sqlalchemy" },
-    { name = "tenacity" },
 ]
 
 [package.optional-dependencies]
@@ -2331,6 +2327,8 @@ test = [
     { name = "langchain-tests" },
     { name = "langchain-text-splitters" },
     { name = "lark" },
+    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "pytest" },
@@ -2361,6 +2359,8 @@ typing = [
     { name = "langchain-text-splitters" },
     { name = "mypy" },
     { name = "mypy-protobuf" },
+    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "types-chardet" },
     { name = "types-pytz" },
     { name = "types-pyyaml" },
@@ -2372,7 +2372,6 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.8.3,<4.0.0" },
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
@@ -2392,13 +2391,10 @@ requires-dist = [
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
     { name = "langsmith", specifier = ">=0.1.17,<0.4" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
-    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10" },
 ]
 
 [package.metadata.requires-dev]
@@ -2426,6 +2422,7 @@ test = [
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "lark", specifier = ">=1.1.5,<2.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "pandas", specifier = ">=2.0.0,<3.0.0" },
     { name = "pytest", specifier = ">=8,<9" },
@@ -2456,6 +2453,7 @@ typing = [
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "types-chardet", specifier = ">=5.0.4.6,<6.0.0.0" },
     { name = "types-pytz", specifier = ">=2023.3.0.0,<2024.0.0.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
@@ -2536,7 +2534,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.35"
+version = "0.3.39"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2713,7 +2711,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },

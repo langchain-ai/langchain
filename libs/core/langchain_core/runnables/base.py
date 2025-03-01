@@ -60,7 +60,6 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -94,6 +93,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
     from langchain_core.tracers.log_stream import (
         RunLog,
@@ -4641,7 +4641,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     )
 
             @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+            async def f(*args: Any, **kwargs: Any) -> Any:
                 return await run_in_executor(config, func, *args, **kwargs)
 
             afunc = f
@@ -4889,7 +4889,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 )
 
             @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+            async def f(*args: Any, **kwargs: Any) -> Any:
                 return await run_in_executor(config, func, *args, **kwargs)
 
             afunc = f

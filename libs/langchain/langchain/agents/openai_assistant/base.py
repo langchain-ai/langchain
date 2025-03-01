@@ -652,7 +652,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         self, intermediate_steps: List[Tuple[OpenAIAssistantAction, str]]
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
-        run = await self._wait_for_run(last_action.run_id, last_action.thread_id)
+        run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:
             required_tool_call_ids = {
