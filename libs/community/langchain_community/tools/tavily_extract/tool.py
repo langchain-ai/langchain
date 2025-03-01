@@ -1,4 +1,4 @@
-"""Tool for the Tavily search API."""
+"""Tool for the Tavily Extract API."""
 
 from typing import Any, Dict, List, Literal, Optional, Type
 
@@ -20,11 +20,11 @@ class TavilyExtractInput(BaseModel):
 
     urls: List[str] = Field(description="list of urls to extract")
     extract_depth: Optional[Literal["basic", "advanced"]] = Field(
-        default="basic",
+        default="advanced",
         description=(
             "The depth of the extraction process. 'advanced' extraction "
             "retrieves more data than 'basic', including tables and embedded content, "
-            "with higher success but may increase latency. Default is 'basic'"
+            "with higher success but may increase latency. Default is 'advanced'"
         ),
     )
     include_images: Optional[bool] = Field(
@@ -79,7 +79,7 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
     Default is False
     """
 
-    api_wrapper: TavilyExtractAPIWrapper
+    api_wrapper: TavilyExtractAPIWrapper = Field(default_factory=TavilyExtractAPIWrapper)  # type: ignore[arg-type]
 
     def __init__(self, **kwargs: Any) -> None:
         # Create api_wrapper with tavily_api_key if provided
@@ -133,7 +133,7 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
             # Re-raise tool exceptions
             raise
         except Exception as e:
-            raise e
+            return repr(e)
 
     async def _arun(
         self,
@@ -177,4 +177,4 @@ class TavilyExtract(BaseTool):  # type: ignore[override, override]
             # Re-raise tool exceptions
             raise
         except Exception as e:
-            raise e
+            return repr(e)

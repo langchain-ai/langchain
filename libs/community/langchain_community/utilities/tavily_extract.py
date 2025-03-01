@@ -40,8 +40,7 @@ class TavilyExtractAPIWrapper(BaseModel):
         urls: List[str],
         extract_depth: Optional[
             Literal["basic", "advanced"]
-        ] = "basic",  # advanced extract is 2 credits per 5 successful extractions.
-        # https://docs.tavily.com/api-reference/endpoint/extract#body-extract-depth
+        ] = "advanced",  
         include_images: Optional[bool] = False,
     ) -> Dict:
         params = {
@@ -70,8 +69,7 @@ class TavilyExtractAPIWrapper(BaseModel):
         include_images: Optional[bool] = False,
         extract_depth: Optional[
             Literal["basic", "advanced"]
-        ] = "advanced",  # advanced extract is 2 credits per 5 successful extractions.
-        # https://docs.tavily.com/api-reference/endpoint/extract#body-extract-depth
+        ] = "advanced",
     ) -> Dict:
         """Get results from the Tavily Extract API asynchronously."""
 
