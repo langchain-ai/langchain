@@ -120,8 +120,12 @@ class AscendEmbeddings(Embeddings, BaseModel):
             )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        import numpy as np
-        
+        try:
+            import numpy as np
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import numpy, please install with `pip install -U numpy`."
+            ) from e
         embedding_list = []
         for i in range(0, len(texts), self.batch_size):
             texts_ = texts[i : i + self.batch_size]
