@@ -47,9 +47,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_images: Optional[bool] = None,
         include_image_descriptions: Optional[bool] = None,
         topic: Optional[Literal["general", "news"]] = None,
-        time_range: Optional[
-            Literal["day", "week", "month", "year", "d", "w", "m", "y"]
-        ] = None,
+        time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         days: Optional[int] = None,
     ) -> Dict:
         params = {
@@ -67,8 +65,7 @@ class TavilySearchAPIWrapper(BaseModel):
             **({"time_range": time_range} if time_range is not None else {}),
             **({"days": days} if days is not None else {}),
         }
-        from pdb import set_trace as bp
-        bp()
+
         response = requests.post(
             # type: ignore
             f"{TAVILY_API_URL}/search",
@@ -85,18 +82,16 @@ class TavilySearchAPIWrapper(BaseModel):
     async def raw_results_async(
         self,
         query: str,
-        max_results: Optional[int] = 5,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
-        include_domains: Optional[List[str]] = [],
-        exclude_domains: Optional[List[str]] = [],
-        include_answer: Optional[bool] = False,
-        include_raw_content: Optional[bool] = False,
-        include_images: Optional[bool] = False,
-        include_image_descriptions: Optional[bool] = False,
-        topic: Optional[Literal["general", "news"]] = "general",
-        time_range: Optional[
-            Literal["day", "week", "month", "year", "d", "w", "m", "y"]
-        ] = None,
+        max_results: Optional[int] = None,
+        search_depth: Optional[Literal["basic", "advanced"]] = None,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        include_answer: Optional[bool] = None,
+        include_raw_content: Optional[bool] = None,
+        include_images: Optional[bool] = None,
+        include_image_descriptions: Optional[bool] = None,
+        topic: Optional[Literal["general", "news"]] = None,
+        time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         days: Optional[int] = None,
     ) -> Dict:
         """Get results from the Tavily Search API asynchronously."""
