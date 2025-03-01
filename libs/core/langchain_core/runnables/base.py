@@ -1644,8 +1644,13 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            from langchain_core.runnables import RunnableLambda
+            from langchain_core.runnables import RunnableLambda, Runnable
+            from datetime import datetime, timezone
             import time
+            import asyncio
+
+            def format_t(timestamp: float) -> str:
+                return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
 
             async def test_runnable(time_to_sleep : int):
                 print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
@@ -1653,12 +1658,12 @@ class Runnable(Generic[Input, Output], ABC):
                 print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
 
             async def fn_start(run_obj : Runnable):
-                print(f"on start callback starts at {format_t(time.time())}
+                print(f"on start callback starts at {format_t(time.time())}")
                 await asyncio.sleep(3)
                 print(f"on start callback ends at {format_t(time.time())}")
 
             async def fn_end(run_obj : Runnable):
-                print(f"on end callback starts at {format_t(time.time())}
+                print(f"on end callback starts at {format_t(time.time())}")
                 await asyncio.sleep(2)
                 print(f"on end callback ends at {format_t(time.time())}")
 
@@ -1671,18 +1676,18 @@ class Runnable(Generic[Input, Output], ABC):
 
             asyncio.run(concurrent_runs())
             Result:
-            on start callback starts at 2024-05-16T14:20:29.637053+00:00
-            on start callback starts at 2024-05-16T14:20:29.637150+00:00
-            on start callback ends at 2024-05-16T14:20:32.638305+00:00
-            on start callback ends at 2024-05-16T14:20:32.638383+00:00
-            Runnable[3s]: starts at 2024-05-16T14:20:32.638849+00:00
-            Runnable[5s]: starts at 2024-05-16T14:20:32.638999+00:00
-            Runnable[3s]: ends at 2024-05-16T14:20:35.640016+00:00
-            on end callback starts at 2024-05-16T14:20:35.640534+00:00
-            Runnable[5s]: ends at 2024-05-16T14:20:37.640169+00:00
-            on end callback starts at 2024-05-16T14:20:37.640574+00:00
-            on end callback ends at 2024-05-16T14:20:37.640654+00:00
-            on end callback ends at 2024-05-16T14:20:39.641751+00:00
+            on start callback starts at 2025-03-01T07:05:22.875378+00:00
+            on start callback starts at 2025-03-01T07:05:22.875495+00:00
+            on start callback ends at 2025-03-01T07:05:25.878862+00:00
+            on start callback ends at 2025-03-01T07:05:25.878947+00:00
+            Runnable[2s]: starts at 2025-03-01T07:05:25.879392+00:00
+            Runnable[3s]: starts at 2025-03-01T07:05:25.879804+00:00
+            Runnable[2s]: ends at 2025-03-01T07:05:27.881998+00:00
+            on end callback starts at 2025-03-01T07:05:27.882360+00:00
+            Runnable[3s]: ends at 2025-03-01T07:05:28.881737+00:00
+            on end callback starts at 2025-03-01T07:05:28.882428+00:00
+            on end callback ends at 2025-03-01T07:05:29.883893+00:00
+            on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
         """
         from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
