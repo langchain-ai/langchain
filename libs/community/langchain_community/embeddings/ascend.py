@@ -123,7 +123,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
         import numpy as np
         embedding_list = []
         for i in range(0, len(texts), self.batch_size):
-            texts_ = texts[i:i+self.batch_size]
+            texts_ = texts[i : i + self.batch_size]
             emb = self.encode([self.document_instruction + text for text in texts_])
             embedding_list.append(emb)
         return np.concatenate(embedding_list)
