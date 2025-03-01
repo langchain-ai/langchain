@@ -1,16 +1,7 @@
-# import tempfile
-# from enum import Enum
 from typing import Optional  # ,Union, Any, Dict
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-
-# from langchain_core.utils import get_from_dict_or_env
-# from pydantic import model_validator
-
-# import torch
-# from dataclasses import dataclass, field
-# from openai import OpenAI
 
 
 class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
@@ -54,15 +45,25 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
             raise Exception("No audio devices found! Error: {exc}")
 
         try:
-        
-            info = pa.get_default_output_device_info()['index']
-            if not pa.is_format_supported(sample_rate, output_device=info, output_channels=1, output_format=pyaudio.paInt16):
+            info = pa.get_default_output_device_info()["index"]
+            if not pa.is_format_supported(
+                sample_rate,
+                output_device=info,
+                output_channels=1,
+                output_format=pyaudio.paInt16,
+            ):
                 raise Exception(f"is_format_supported failed.")
         except Exception as exc:
-            raise Exception(f"Default audio output device doesn't support sampleRate={sample_rate}. Error: {exc}")
+            raise Exception(
+                f"Default audio output device doesn't support sampleRate={sample_rate}. Error: {exc}"
+            )
 
         super().__init__(  # type: ignore[call-arg]
-            model_id=model_id, voice=voice, base_url=base_url, api_key=api_key, sample_rate=sample_rate
+            model_id=model_id,
+            voice=voice,
+            base_url=base_url,
+            api_key=api_key,
+            sample_rate=sample_rate,
         )
 
     def _run(
@@ -74,7 +75,6 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
             from openai import OpenAI
         except Exception as e:
             raise RuntimeError(f"Please install the `openai` Python package.")
-        
 
         try:
             out_file_name = "tts-output.mp3"
