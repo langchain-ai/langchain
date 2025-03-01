@@ -13,19 +13,20 @@ class VideoChunkLoader(BaseLoader):
     def __init__(
         self,
         video_path: str,
-        chunking_mechanism: str = "sliding_window",  # "specific_chunks" or "sliding_window"
+        # "specific_chunks" or "sliding_window"
+        chunking_mechanism: str = "sliding_window",
         chunk_duration: int = 10,
         chunk_overlap: int = 2,
-        specific_intervals: List[Dict] = None,
+        specific_intervals: List[Dict] = [],
         output_dir: str = "video_chunks",
     ) -> None:
         """Initialize the loader with video chunking parameters.
 
         Args:
             video_path: Path to the video file.
-            chunking_mechanism: Chunking strategy, either "sliding_window" or "specific_chunks".
+            chunking_mechanism: "sliding_window" or "specific_chunks".
             chunk_duration: Duration of each chunk in seconds (for sliding window).
-            chunk_overlap: Overlap between consecutive chunks in seconds (for sliding window).
+            chunk_overlap: Between consecutive chunks in seconds (for sliding window).
             specific_intervals: List of specific intervals for chunking.
             output_dir: Directory to save chunked videos.
         """
@@ -37,7 +38,8 @@ class VideoChunkLoader(BaseLoader):
         self.output_dir = output_dir
 
         if self.output_dir:
-            # Remove the existing directory if it alreade exists, and create a fresh one before processing new chunks
+            # Remove the existing directory if it alreade exists
+            # and create a fresh one before processing new chunks
             if os.path.exists(self.output_dir):
                 shutil.rmtree(self.output_dir)
             os.makedirs(self.output_dir)
@@ -131,14 +133,14 @@ class VideoChunkLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Lazily load video chunks as langchain Documents."""
         if self.chunking_mechanism == "specific_chunks":
-            intervals = self._compute_specific_intervals()
+            si_intervals = self._compute_specific_intervals()
         else:
-            intervals = self._compute_sliding_window_intervals()
+            wi_intervals = self._compute_sliding_window_intervals()
 
         for chunk_id, interval in enumerate(
-            intervals.values()
+            si_intervals.values()
             if self.chunking_mechanism == "specific_chunks"
-            else intervals
+            else wi_intervals
         ):
             start_time = interval["start"]
             duration = interval["end"] - interval["start"]

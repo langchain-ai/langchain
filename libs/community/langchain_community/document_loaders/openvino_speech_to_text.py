@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import List
 
 from langchain_core.documents import Document
 
@@ -28,12 +28,12 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
         self,
         file_path: str,
         model_id: str,
-        device="CPU",
-        return_timestamps=True,
-        return_language="en",
-        chunk_length_s=30,
-        load_in_8bit=False,
-        batch_size=1,
+        device: str = "CPU",
+        return_timestamps: bool = True,
+        return_language: str = "en",
+        chunk_length_s: int = 30,
+        load_in_8bit: bool = False,
+        batch_size: int = 1,
     ):
         """
         Initializes the OpenVINOSpeechToTextLoader.
@@ -44,7 +44,9 @@ class OpenVINOSpeechToTextLoader(BaseLoader):
             device: Hardware acclerator to utilize for inference
             return_timestamps: Enable text with corresponding timestamps for model
             return_language: Set language for model
-            chunk_length: Number of seconds for a chunk
+            chunk_length_s: Length of the chunk in seconds
+            load_in_8bit: Auto convert/quantize model to 8 bit if needed
+            batch_size: Size of the batch
         """
         from pathlib import Path
 

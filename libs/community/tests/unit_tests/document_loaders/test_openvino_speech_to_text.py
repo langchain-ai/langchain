@@ -11,26 +11,34 @@ AUDIO_FILE = EXAMPLES_DIR / "hello_world.m4a"
 
 
 class TestOpenVINOSpeechToTextLoader(unittest.TestCase):
-    file_path: str = AUDIO_FILE
+    file_path: str = str(AUDIO_FILE)
     model_id: str = "distil-whisper/distil-small.en"
     device: str = "cpu"
 
     def test_invalid_device_npu(self) -> None:
-        with self.assertRaises(NotImplementedError) as c:
+        loader = None
+        with self.assertRaises(NotImplementedError):
             loader = OpenVINOSpeechToTextLoader(self.file_path, self.model_id, "npu")
+        assert loader is None
 
     def test_invalid_device(self) -> None:
-        with self.assertRaises(Exception) as c:
+        loader = None
+        with self.assertRaises(Exception):
             loader = OpenVINOSpeechToTextLoader(self.file_path, self.model_id, "zpu")
+        assert loader is None
 
     def test_invalid_audio_type(self) -> None:
-        with self.assertRaises(NotImplementedError) as c:
+        loader = None
+        with self.assertRaises(NotImplementedError):
             loader = OpenVINOSpeechToTextLoader(
                 "invalid_audio.mp4", self.model_id, self.device
             )
+        assert loader is None
 
     def test_audio_not_found(self) -> None:
-        with self.assertRaises(NotImplementedError) as c:
+        loader = None
+        with self.assertRaises(NotImplementedError):
             loader = OpenVINOSpeechToTextLoader(
                 "invalid_audio.mp3", self.model_id, self.device
             )
+        assert loader is None

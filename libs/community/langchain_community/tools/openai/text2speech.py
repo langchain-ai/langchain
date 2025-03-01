@@ -42,7 +42,7 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
             if devices_found == 0:
                 raise Exception("get_device_count() failed.")
         except Exception as exc:
-            raise Exception("No audio devices found! Error: {exc}")
+            raise Exception(f"No audio devices found! Error: {exc}")
 
         try:
             info = pa.get_default_output_device_info()["index"]
@@ -52,11 +52,11 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
                 output_channels=1,
                 output_format=pyaudio.paInt16,
             ):
-                raise Exception(f"is_format_supported failed.")
+                raise Exception("is_format_supported failed.")
         except Exception as exc:
-            raise Exception(
-                f"Default audio output device doesn't support sampleRate={sample_rate}. Error: {exc}"
-            )
+            exc_str = "Default audio device doesn't support "
+            exc_str += f"sampleRate={sample_rate}. Error: {exc}"
+            raise Exception(exc_str)
 
         super().__init__(  # type: ignore[call-arg]
             model_id=model_id,
@@ -74,7 +74,9 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
         try:
             from openai import OpenAI
         except Exception as e:
-            raise RuntimeError(f"Please install the `openai` Python package.")
+            raise RuntimeError(
+                f"Please install the `openai` Python package. Error: {e}."
+            )
 
         try:
             out_file_name = "tts-output.mp3"
@@ -121,12 +123,10 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
         """Stream the text as speech as it is generated.
         Play the text in your speakers."""
 
-        import numpy as np
-
         try:
             from openai import OpenAI
         except Exception as e:
-            raise RuntimeError(f"Please install the `openai` Python package.")
+            raise RuntimeError(f"Please install `openai` Python package. Error: {e}")
 
         try:
             import pyaudio
@@ -149,7 +149,6 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
                 response_format="pcm",
             ) as response:
                 for chunk in response.iter_bytes(chunk_size=1024):
-                    d = np.frombuffer(chunk, dtype=np.int16)
                     player.write(chunk)
         except Exception as e:
             raise RuntimeError(f"Error while running OpenAIText2SpeechTool: {e}")
