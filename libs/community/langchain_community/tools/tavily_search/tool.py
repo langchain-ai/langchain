@@ -80,10 +80,40 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     args_schema: Type[BaseModel] = TavilySearchInput
     handle_tool_error: bool = True
 
+    include_domains: Optional[List[str]] = []
+    """A list of domains to specifically include in the search results
+
+    default is []
+    """
+    exclude_domains: Optional[List[str]] = []
+    """A list of domains to specifically exclude from the search results
+
+    default is []
+    """
+    search_depth: Optional[Literal["basic", "advanced"]] = "basic"
+    """The depth of the search. It can be 'basic' or 'advanced'
+    
+    default is "basic"
+    """
+    include_images: Optional[bool] = False
+    """Include a list of query related images in the response
+    
+    default is False
+    """
+    time_range: Optional[Literal["day", "week", "month", "year"]] = None
+    """The time range back from the current date to filter results
+    
+    default is None
+    """
     max_results: Optional[int] = 5
     """Max search results to return, 
     
     default is 5
+    """
+    topic: Optional[Literal["general", "news"]] = "general"
+    """The category of the search. Can be "general" or "news".
+    
+    Default is "general".
     """
     include_answer: Optional[bool] = False
     """Include a short answer to original query in the search results. 
@@ -100,18 +130,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     
     Default is False.
     """
-    topic: Optional[Literal["general", "news"]] = "general"
-    """The category of the search. Can be "general" or "news".
-    
-    Default is "general".
-    """
     days: Optional[int] = None
     """Number of days back from the current date to include. Only if topic is "news".
     
     Default is None.
     """
-
-    api_wrapper: TavilySearchAPIWrapper
+    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
 
     def __init__(self, **kwargs: Any) -> None:
         # Create api_wrapper with tavily_api_key if provided
@@ -125,10 +149,10 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     def _run(
         self,
         query: str,
-        include_domains: Optional[List[str]] = [],
-        exclude_domains: Optional[List[str]] = [],
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
-        include_images: Optional[bool] = False,
+        include_domains: Optional[List[str]] = None,
+        exclude_domains: Optional[List[str]] = None,
+        search_depth: Optional[Literal["basic", "advanced"]] = None,
+        include_images: Optional[bool] = None,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Dict[str, Any]:
@@ -137,11 +161,17 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
             # Execute search with parameters directly
             raw_results = self.api_wrapper.raw_results(
                 query=query,
-                include_domains=include_domains,
-                exclude_domains=exclude_domains,
-                search_depth=search_depth,
-                include_images=include_images,
-                time_range=time_range,
+                include_domains=include_domains
+                if include_domains
+                else self.include_domains,
+                exclude_domains=exclude_domains
+                if exclude_domains
+                else self.exclude_domains,
+                search_depth=search_depth if search_depth else self.search_depth,
+                include_images=include_images
+                if include_images
+                else self.include_images,
+                time_range=time_range if time_range else self.time_range,
                 max_results=self.max_results,
                 include_answer=self.include_answer,
                 include_raw_content=self.include_raw_content,
@@ -188,11 +218,17 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         try:
             raw_results = await self.api_wrapper.raw_results_async(
                 query=query,
-                include_domains=include_domains,
-                exclude_domains=exclude_domains,
-                search_depth=search_depth,
-                include_images=include_images,
-                time_range=time_range,
+                include_domains=include_domains
+                if include_domains
+                else self.include_domains,
+                exclude_domains=exclude_domains
+                if exclude_domains
+                else self.exclude_domains,
+                search_depth=search_depth if search_depth else self.search_depth,
+                include_images=include_images
+                if include_images
+                else self.include_images,
+                time_range=time_range if time_range else self.time_range,
                 max_results=self.max_results,
                 include_answer=self.include_answer,
                 include_raw_content=self.include_raw_content,
