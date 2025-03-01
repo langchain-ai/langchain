@@ -313,12 +313,12 @@ if TYPE_CHECKING:
     from langchain_community.tools.steamship_image_generation import (
         SteamshipImageGenerationTool,
     )
+    from langchain_community.tools.tavily_extract import (
+        TavilyExtract,
+    )
     from langchain_community.tools.tavily_search import (
         TavilyAnswer,
         TavilySearchResults,
-    )
-    from langchain_community.tools.tavily_extract import (
-        TavilyExtract,
     )
     from langchain_community.tools.vectorstore.tool import (
         VectorStoreQATool,
