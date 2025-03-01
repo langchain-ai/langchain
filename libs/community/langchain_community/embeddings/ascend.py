@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -30,6 +31,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
     document_instruction: str = ""
     use_fp16: bool = True
     pooling_method: Optional[str] = "cls"
+    batch_size: int = 32
     model: Any
     tokenizer: Any
 
@@ -119,7 +121,12 @@ class AscendEmbeddings(Embeddings, BaseModel):
             )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.encode([self.document_instruction + text for text in texts])
+        embedding_list = []
+        for i in range(0, len(texts), self.batch_size):
+            texts_ = texts[i:i+self.batch_size]
+            embedding_list.append(self.encode([self.document_instruction + text for text in texts_]))
+        
+        return np.concatenate(embedding_list)
 
     def embed_query(self, text: str) -> List[float]:
         return self.encode([self.query_instruction + text])[0]
