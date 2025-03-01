@@ -121,6 +121,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         import numpy as np
+        
         embedding_list = []
         for i in range(0, len(texts), self.batch_size):
             texts_ = texts[i : i + self.batch_size]
