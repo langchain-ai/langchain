@@ -28,14 +28,14 @@ class OpenAIText2SpeechTool(BaseTool):  # type: ignore[override]
     api_key: str
     model_id: str
     voice: str
-    sample_rate: float
+    sample_rate: int
 
     def __init__(self, model_id: str, voice: str, base_url: str, api_key: str) -> None:
         model_id = model_id
         voice = voice
         base_url = base_url
         api_key = api_key
-        sample_rate = 24000.0
+        sample_rate = 24000
 
         try:
             import pyaudio
