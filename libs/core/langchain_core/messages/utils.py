@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import inspect
 import json
+import logging
 from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
@@ -44,6 +45,9 @@ if TYPE_CHECKING:
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_type(v: Any) -> str:
@@ -890,6 +894,7 @@ def convert_to_openai_messages(
     messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
     *,
     text_format: Literal["string", "block"] = "string",
+    coerce: bool = False,
 ) -> Union[dict, list[dict]]:
     """Convert LangChain messages into OpenAI message dicts.
 
@@ -1003,8 +1008,17 @@ def convert_to_openai_messages(
                                 f"but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(err)
-                        content.append({"type": block["type"], "text": block["text"]})
+                            _raise_or_warn(err, coerce)
+                            text = (
+                                _try_json_dumps(
+                                    {k: v for k, v in block.items() if k != "type"}
+                                )
+                                if len(block) > 1
+                                else ""
+                            )
+                        else:
+                            text = block["text"]
+                        content.append({"type": block["type"], "text": text})
                     elif block.get("type") == "image_url":
                         if missing := [k for k in ("image_url",) if k not in block]:
                             err = (
@@ -1013,7 +1027,8 @@ def convert_to_openai_messages(
                                 f"but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            _raise_or_warn(err, coerce)
+                            continue
                         content.append(
                             {
                                 "type": "image_url",
@@ -1035,7 +1050,8 @@ def convert_to_openai_messages(
                                     f"but 'source' is missing expected key(s) "
                                     f"{missing}. Full content block:\n\n{block}"
                                 )
-                                raise ValueError(err)
+                                _raise_or_warn(err, coerce)
+                                continue
                             content.append(
                                 {
                                     "type": "image_url",
@@ -1058,7 +1074,8 @@ def convert_to_openai_messages(
                                     f"but 'image' is missing expected key(s) "
                                     f"{missing}. Full content block:\n\n{block}"
                                 )
-                                raise ValueError(err)
+                                _raise_or_warn(err, coerce)
+                                continue
                             b64_image = _bytes_to_b64_str(image["source"]["bytes"])
                             content.append(
                                 {
@@ -1078,7 +1095,8 @@ def convert_to_openai_messages(
                                 f"but does not have a 'source' or 'image' key. Full "
                                 f"content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            _raise_or_warn(err, coerce)
+                            continue
                     elif block.get("type") == "tool_use":
                         if missing := [
                             k for k in ("id", "name", "input") if k not in block
@@ -1089,7 +1107,8 @@ def convert_to_openai_messages(
                                 f"'tool_use', but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            _raise_or_warn(err, coerce)
+                            continue
                         if not any(
                             tool_call["id"] == block["id"]
                             for tool_call in cast(AIMessage, message).tool_calls
@@ -1115,7 +1134,8 @@ def convert_to_openai_messages(
                                 f"'tool_result', but is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
-                            raise ValueError(msg)
+                            _raise_or_warn(err, coerce)
+                            continue
                         tool_message = ToolMessage(
                             block["content"],
                             tool_call_id=block["tool_use_id"],
@@ -1135,7 +1155,8 @@ def convert_to_openai_messages(
                                 f"but does not have a 'json' key. Full "
                                 f"content block:\n\n{block}"
                             )
-                            raise ValueError(msg)
+                            _raise_or_warn(msg, coerce)
+                            continue
                         content.append(
                             {
                                 "type": "text",
@@ -1156,8 +1177,16 @@ def convert_to_openai_messages(
                                 f"messages[{i}].content[{j}]['guard_content']['text'] "
                                 f"key. Full content block:\n\n{block}"
                             )
-                            raise ValueError(msg)
-                        text = block["guard_content"]["text"]
+                            _raise_or_warn(msg, coerce)
+                            text = (
+                                _try_json_dumps(
+                                    {k: v for k, v in block.items() if k != "type"}
+                                )
+                                if len(block) > 1
+                                else ""
+                            )
+                        else:
+                            text = block["guard_content"]["text"]
                         if isinstance(text, dict):
                             text = text["text"]
                         content.append({"type": "text", "text": text})
@@ -1172,14 +1201,16 @@ def convert_to_openai_messages(
                                 f"'media' but does not have key(s) {missing}. Full "
                                 f"content block:\n\n{block}"
                             )
-                            raise ValueError(err)
+                            _raise_or_warn(err, coerce)
+                            continue
                         if "image" not in block["mime_type"]:
                             err = (
                                 f"OpenAI messages can only support text and image data."
                                 f" Received content block with media of type:"
                                 f" {block['mime_type']}"
                             )
-                            raise ValueError(err)
+                            _raise_or_warn(err, coerce)
+                            continue
                         b64_image = _bytes_to_b64_str(block["data"])
                         content.append(
                             {
@@ -1198,7 +1229,8 @@ def convert_to_openai_messages(
                             f"Anthropic, Bedrock Converse, or VertexAI format. Full "
                             f"content block:\n\n{block}"
                         )
-                        raise ValueError(err)
+                        _raise_or_warn(err, coerce)
+                        continue
                 if text_format == "string" and not any(
                     block["type"] != "text" for block in content
                 ):
@@ -1422,3 +1454,17 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
         }
         for tool_call in tool_calls
     ]
+
+
+def _try_json_dumps(o: Any) -> str:
+    try:
+        return json.dumps(o)
+    except Exception:
+        return str(o)
+
+
+def _raise_or_warn(msg: str, silence: bool) -> None:
+    if not silence:
+        raise ValueError(msg)
+    else:
+        logger.warning(msg)
