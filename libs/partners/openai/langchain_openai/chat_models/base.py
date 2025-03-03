@@ -110,29 +110,34 @@ logger = logging.getLogger(__name__)
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
+
 class ToolNameHandler:
     """Handles conversion of non-standard tool names while maintaining mappings."""
 
     def __init__(self):
         """Initialize the handler with an empty mapping."""
         self._name_map: Dict[str, str] = {}  # Stores sanitized name → original name
-        self._INVALID_NAME_PATTERN = re.compile(r"[^\w\d_]")  # Allows only letters, numbers, and underscores
+        self._INVALID_NAME_PATTERN = re.compile(
+            r"[^\w\d_]"
+        )  # Allows only letters, numbers, and underscores
 
     def sanitize(self, name: str) -> str:
         """Convert a non-standard name to a valid OpenAI-compatible name."""
         if self._is_standard(name):
             return name  # If already valid, return unchanged
 
-        sanitized_name = re.sub(self._INVALID_NAME_PATTERN, "_", name)  # Replace invalid characters
+        sanitized_name = re.sub(
+            self._INVALID_NAME_PATTERN, "_", name
+        )  # Replace invalid characters
         self._name_map[sanitized_name] = name  # Store original for restoration
         return sanitized_name
-    
+
     def sanitize_tool_name(self, tool: BaseTool) -> BaseTool:
         """Sanitize the name of a tool."""
         if tool.name:
             tool.name = self.sanitize(tool.name)
         return tool
-    
+
     def sanitize_tool_call_name(self, tool_call: ToolCall) -> ToolCall:
         """Sanitize the name of a tool call."""
         if "name" in tool_call:
@@ -141,8 +146,10 @@ class ToolNameHandler:
 
     def restore(self, name: str) -> str:
         """Restore a sanitized name to its original form."""
-        return self._name_map.get(name, name)  # Return original if stored, else unchanged
-    
+        return self._name_map.get(
+            name, name
+        )  # Return original if stored, else unchanged
+
     def restore_message_tool_names(self, response: AIMessage):
         """Iterate over the message and restore the tool names."""
         if "tool_calls" in response.additional_kwargs:
@@ -154,7 +161,6 @@ class ToolNameHandler:
                 original_name = self.restore(tool_call["name"])
                 tool_call["name"] = original_name
 
-
     def _is_standard(self, name: str) -> bool:
         """Check if a name is valid as an OpenAI function name (letters, numbers, underscores)."""
         return bool(re.fullmatch(r"[\w\d_]+", name))
@@ -165,7 +171,9 @@ class ToolNameHandler:
             tool_dict["function"]["name"] = self.sanitize(tool_dict["function"]["name"])
         return tool_dict
 
+
 tool_name_handler = ToolNameHandler()
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -195,7 +203,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             for raw_tool_call in raw_tool_calls:
                 try:
                     if "function" in raw_tool_call:
-                        raw_tool_call["function"]["name"] = tool_name_handler.restore(raw_tool_call["function"]["name"])                       
+                        raw_tool_call["function"]["name"] = tool_name_handler.restore(
+                            raw_tool_call["function"]["name"]
+                        )
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
                     invalid_tool_calls.append(
@@ -899,7 +909,7 @@ class BaseChatOpenAI(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             if isinstance(message, AIMessage):
                 if token_usage:
-                    message.usage_metadata = _create_usage_metadata(token_usage)                    
+                    message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1294,7 +1304,9 @@ class BaseChatOpenAI(BaseChatModel):
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
-            tool_name_handler.sanitize_tool_dict(convert_to_openai_tool(tool, strict=strict))
+            tool_name_handler.sanitize_tool_dict(
+                convert_to_openai_tool(tool, strict=strict)
+            )
             for tool in tools
         ]
         if tool_choice:
