@@ -969,7 +969,7 @@ def test_tool_name_handler_sanitize_tool() -> None:
     """Test sanitization of BaseTool instances."""
     handler = ToolNameHandler()
 
-    class CustomTool(BaseTool):
+    class CustomTool(BaseTool):  # type: ignore[override]
         name: str = "test-tool"
         description: str = "A test tool"
 
@@ -1051,7 +1051,7 @@ def test_tool_name_handler_restore_unsanitized_name() -> None:
 def test_tool_name_handler_restore_unsanitized_tool() -> None:
     """Test restoration of a tool with an unsanitized name."""
 
-    class DummyTool(BaseTool):
+    class DummyTool(BaseTool):  # type: ignore[override]
         """Dummy tool for testing."""
 
         name: str = "unsanitized-tool"
