@@ -911,9 +911,8 @@ class BaseChatOpenAI(BaseChatModel):
         token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
-            if isinstance(message, AIMessage):
-                if token_usage:
-                    message.usage_metadata = _create_usage_metadata(token_usage)
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
