@@ -13,8 +13,7 @@ dependencies = [
     "httpx<1,>=0.25.0",
     "syrupy<5,>=4",
     "pytest-socket<1,>=0.6.0",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.2; python_version >= \"3.12\"",
+    "numpy<3,>=1.26.2",
 ]
 name = "langchain-tests"
 version = "0.3.12"
