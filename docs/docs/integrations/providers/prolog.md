@@ -4,7 +4,7 @@ SWI-Prolog offers a comprehensive free Prolog environment.
 
 ## Installation and Setup
 
-Install lanchain-prolog using pip:
+Once SWI-Prolog has been installed, install lanchain-prolog using pip:
 ```bash
 pip install langchain-prolog
 ```
