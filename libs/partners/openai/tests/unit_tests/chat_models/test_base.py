@@ -940,7 +940,7 @@ def test_structured_outputs_parser() -> None:
     assert result == parsed_response
 
 
-def test_tool_name_handler_sanitize():
+def test_tool_name_handler_sanitize() -> None:
     """Test basic sanitization of tool names."""
     handler = ToolNameHandler()
 
@@ -955,7 +955,7 @@ def test_tool_name_handler_sanitize():
     assert handler.restore(sanitized) == "hello-world"
 
 
-def test_tool_name_handler_standard_names():
+def test_tool_name_handler_standard_names() -> None:
     """Test that standard names are not modified."""
     handler = ToolNameHandler()
 
@@ -965,7 +965,7 @@ def test_tool_name_handler_standard_names():
     assert handler.sanitize("_hello") == "_hello"
 
 
-def test_tool_name_handler_sanitize_tool():
+def test_tool_name_handler_sanitize_tool() -> None:
     """Test sanitization of BaseTool instances."""
     handler = ToolNameHandler()
 
@@ -984,7 +984,7 @@ def test_tool_name_handler_sanitize_tool():
     assert handler.restore(sanitized_tool.name) == "test-tool"
 
 
-def test_tool_name_handler_sanitize_tool_call():
+def test_tool_name_handler_sanitize_tool_call() -> None:
     """Test sanitization of ToolCall instances."""
     handler = ToolNameHandler()
 
@@ -1003,7 +1003,7 @@ def test_tool_name_handler_sanitize_tool_call():
     assert handler.restore(sanitized_tool_call["name"]) == "test-tool"
 
 
-def test_tool_name_handler_restore_message_tool_names():
+def test_tool_name_handler_restore_message_tool_names() -> None:
     """Test restoration of tool names in AIMessage."""
     handler = ToolNameHandler()
 
@@ -1035,7 +1035,7 @@ def test_tool_name_handler_restore_message_tool_names():
 
 
 @pytest.mark.xfail(reason="Restoring a name that hasn't been sanitized should fail")
-def test_tool_name_handler_restore_unsanitized_name():
+def test_tool_name_handler_restore_unsanitized_name() -> None:
     """Test restoration of a name that hasn't been sanitized."""
     handler = ToolNameHandler()
 
@@ -1048,25 +1048,40 @@ def test_tool_name_handler_restore_unsanitized_name():
 
 
 @pytest.mark.xfail(reason="Restoring a tool with an unsanitized name should fail")
-def test_tool_name_handler_restore_unsanitized_tool():
+def test_tool_name_handler_restore_unsanitized_tool() -> None:
     """Test restoration of a tool with an unsanitized name."""
+
+    class DummyTool(BaseTool):
+        """Dummy tool for testing."""
+
+        name: str = "unsanitized-tool"
+        description: str = "A test tool"
+
+        def _run(self, *args: Any, **kwargs: Any) -> Any:
+            """Implementation of abstract method."""
+            return "test result"
+
+        async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+            """Implementation of abstract async method."""
+            return "test result"
+
     handler = ToolNameHandler()
 
     # Create a tool with an unsanitized name
-    tool = BaseTool(name="unsanitized-tool")
+    tool = DummyTool()
 
     # Attempt to restore the tool's name
-    restored_name = handler.restore(tool.name)
+    restored_name = handler.restore(str(tool.name))
 
     # The restored name should not match the unsanitized name
     assert restored_name == tool.name
 
 
-def test_tool_name_handler_sanitize_tool_dict():
+def test_tool_name_handler_sanitize_tool_dict() -> None:
     """Test sanitization of tool dictionary."""
     handler = ToolNameHandler()
 
-    tool_dict = {
+    tool_dict: Dict[str, Any] = {
         "type": "function",
         "function": {
             "name": "test-tool",
@@ -1083,12 +1098,12 @@ def test_tool_name_handler_sanitize_tool_dict():
 @pytest.mark.xfail(
     reason="Restoring a tool dictionary with an unsanitized name should fail"
 )
-def test_tool_name_handler_restore_unsanitized_dict():
+def test_tool_name_handler_restore_unsanitized_dict() -> None:
     """Test restoration of a tool dictionary with an unsanitized name."""
     handler = ToolNameHandler()
 
     # Create a tool dictionary with an unsanitized name
-    tool_dict = {
+    tool_dict: Dict[str, Any] = {
         "type": "function",
         "function": {
             "name": "unsanitized-tool",
@@ -1098,7 +1113,7 @@ def test_tool_name_handler_restore_unsanitized_dict():
     }
 
     # Attempt to restore the tool dictionary's name
-    restored_name = handler.restore(tool_dict["function"]["name"])
+    restored_name = handler.restore(str(tool_dict["function"]["name"]))
 
     # The restored name should not match the unsanitized name
     assert restored_name == tool_dict["function"]["name"]

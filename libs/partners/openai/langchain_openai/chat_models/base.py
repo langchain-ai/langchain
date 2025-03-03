@@ -114,7 +114,7 @@ global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 class ToolNameHandler:
     """Handles conversion of non-standard tool names while maintaining mappings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the handler with an empty mapping."""
         self._name_map: Dict[str, str] = {}  # Stores sanitized name → original name
         self._INVALID_NAME_PATTERN = re.compile(
@@ -150,7 +150,7 @@ class ToolNameHandler:
             name, name
         )  # Return original if stored, else unchanged
 
-    def restore_message_tool_names(self, response: AIMessage):
+    def restore_message_tool_names(self, response: AIMessage) -> None:
         """Iterate over the message and restore the tool names."""
         if "tool_calls" in response.additional_kwargs:
             for tool_call in response.additional_kwargs["tool_calls"]:
@@ -162,7 +162,7 @@ class ToolNameHandler:
                 tool_call["name"] = original_name
 
     def _is_standard(self, name: str) -> bool:
-        """Check if a name is valid as an OpenAI function name (letters, numbers, underscores)."""
+        """Check if a name is valid as an OpenAI function name."""
         return bool(re.fullmatch(r"[\w\d_]+", name))
 
     def sanitize_tool_dict(self, tool_dict: dict) -> dict:
@@ -303,6 +303,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             tool_call_supported_props = {"id", "type", "function"}
+            message_dict["tool_calls"] = [
+                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
+                for tool_call in message_dict["tool_calls"]
+            ]
             message_dict["tool_calls"] = [
                 _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
             ] + [
@@ -2488,11 +2492,12 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
+    name = invalid_tool_call["name"] or ""
     return {
         "type": "function",
         "id": invalid_tool_call["id"],
         "function": {
-            "name": tool_name_handler.sanitize(invalid_tool_call["name"]),
+            "name": tool_name_handler.sanitize(name),
             "arguments": invalid_tool_call["args"],
         },
     }
