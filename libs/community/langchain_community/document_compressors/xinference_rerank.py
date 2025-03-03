@@ -1,11 +1,4 @@
-from typing import (
-    Any, 
-    Dict, 
-    List, 
-    Optional, 
-    Sequence, 
-    Union
-)
+
 from langchain_core.documents import (
     BaseDocumentCompressor, 
     Document
@@ -14,7 +7,14 @@ from langchain_core.documents import (
 
 class XinferenceRerank(BaseDocumentCompressor):
     """Document compressor that uses `Xinference Rerank API`."""
-
+    from typing import (
+        Any, 
+        Dict, 
+        List, 
+        Optional, 
+        Sequence, 
+        Union
+    )
     top_n: Optional[int] = 3
     client: Any
     server_url: Optional[str]
