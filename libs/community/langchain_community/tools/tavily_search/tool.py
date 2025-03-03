@@ -83,14 +83,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                 topic="general",
                 include_answer=False,
                 include_raw_content=True,           # including raw content may lead to hitting context length limits
+                # include_domains=[],
+                # exclude_domains=[],
+                # search_depth="basic"
                 # include_images=True,
                 # include_image_descriptions=True
                 # time_range="day",
-                # include_domains=[],
-                # exclude_domains=[],
-                # name="...",            # overwrite default tool name
-                # description="...",     # overwrite default tool description
-                # args_schema=...,       # overwrite default args_schema: BaseModel
             )
 
     Invoke directly with args:
