@@ -25,60 +25,7 @@ export OPENAI_API_KEY="OPENAI_API_KEY"
 
 ## Tools
 
-Below is a simple example of calling the tool with keyword arguments in a dictionary.
-
-```python
-from langchain_taiga.tools.taiga_tools import (
-    add_attachment_by_ref_tool,
-    add_comment_by_ref_tool,
-    create_entity_tool,
-    get_entity_by_ref_tool,
-    search_entities_tool,
-    update_entity_by_ref_tool,
-)
-
-response = create_entity_tool(
-    {
-        "project_slug": "slug",
-        "entity_type": "us",
-        "subject": "subject",
-        "status": "new",
-        "description": "desc",
-        "parent_ref": 5,
-        "assign_to": "user",
-        "due_date": "2022-01-01",
-        "tags": ["tag1", "tag2"],
-    }
-)
-
-response = search_entities_tool(
-    {"project_slug": "slug", "query": "query", "entity_type": "task"}
-)
-
-response = get_entity_by_ref_tool(
-    {"entity_type": "user_story", "project_id": 1, "ref": "1"}
-)
-
-response = update_entity_by_ref_tool(
-    {"project_slug": "slug", "entity_ref": 555, "entity_type": "us"}
-)
-
-
-response = add_comment_by_ref_tool(
-    {"project_slug": "slug", "entity_ref": 3, "entity_type": "us", "comment": "new"}
-)
-
-response = add_attachment_by_ref_tool(
-    {
-        "project_slug": "slug",
-        "entity_ref": 3,
-        "entity_type": "us",
-        "attachment_url": "url",
-        "content_type": "png",
-        "description": "desc",
-    }
-)
-```
+See a [usage example](/docs/integrations/tools/taiga)
 
 ---
 
