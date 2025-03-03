@@ -46,12 +46,9 @@ def _generate_suggestions(params: dict) -> list:
     exclude_domains = params.get("exclude_domains")
     include_domains = params.get("include_domains")
     time_range = params.get("time_range")
-    days = params.get("days")
 
     if time_range:
         suggestions.append("Remove time_range argument")
-    elif days:
-        suggestions.append("Remove days argument")
     elif include_domains:
         suggestions.append("Remove include_domains argument")
     elif exclude_domains:
@@ -89,9 +86,8 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                 # include_images=True,
                 # include_image_descriptions=True
                 # time_range="day",
-                # days=3,
-                # include_domains=[...],
-                # exclude_domains=[...],
+                # include_domains=[],
+                # exclude_domains=[],
                 # name="...",            # overwrite default tool name
                 # description="...",     # overwrite default tool description
                 # args_schema=...,       # overwrite default args_schema: BaseModel
@@ -150,12 +146,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                     'response_time': 2.92
                 },
                 tool_call_id='1',
-                name='tavily_search',
+                name='tavily_search_results_json',
             )
 
     """  # noqa: E501
 
-    name: str = "tavily_search"
+    name: str = "tavily_search_results_json"
     description: str = (
         "A search engine optimized for comprehensive, accurate, and trusted results. "
         "Useful for when you need to answer questions about current events. "
@@ -168,15 +164,15 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     args_schema: Type[BaseModel] = TavilyInput
     handle_tool_error: bool = True
 
-    include_domains: Optional[List[str]] = []
+    include_domains: Optional[List[str]] = None
     """A list of domains to specifically include in the search results
 
-    default is []
+    default is None
     """
-    exclude_domains: Optional[List[str]] = []
+    exclude_domains: Optional[List[str]] = None
     """A list of domains to specifically exclude from the search results
 
-    default is []
+    default is None
     """
     search_depth: Optional[Literal["basic", "advanced"]] = "basic"
     """The depth of the search. It can be 'basic' or 'advanced'
@@ -218,11 +214,6 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     
     Default is False.
     """
-    days: Optional[int] = None
-    """Number of days back from the current date to include. Only if topic is "news".
-    
-    Default is None.
-    """
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
     response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
@@ -240,8 +231,8 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         query: str,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
-        search_depth: Optional[Literal["basic", "advanced"]] = None,
-        include_images: Optional[bool] = None,
+        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        include_images: Optional[bool] = False,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
@@ -266,7 +257,6 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                 include_raw_content=self.include_raw_content,
                 include_image_descriptions=self.include_image_descriptions,
                 topic=self.topic,
-                days=self.days,
             )
 
             # Check if results are empty and raise a specific exception
@@ -298,8 +288,8 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         query: str,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
-        search_depth: Optional[Literal["basic", "advanced"]] = None,
-        include_images: Optional[bool] = None,
+        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        include_images: Optional[bool] = False,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
@@ -323,7 +313,6 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                 include_raw_content=self.include_raw_content,
                 include_image_descriptions=self.include_image_descriptions,
                 topic=self.topic,
-                days=self.days,
             )
 
             # Check if results are empty and raise a specific exception
