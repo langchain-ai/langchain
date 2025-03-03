@@ -20,7 +20,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration
-from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnableLambda, RunnableSerializable
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -973,6 +973,14 @@ def test_tool_name_handler_sanitize_tool() -> None:
         name: str = "test-tool"
         description: str = "A test tool"
 
+        def __replace__(
+            self, *, name: Optional[str] = None
+        ) -> RunnableSerializable[Union[str, Dict[Any, Any], ToolCall], Any]:
+            """Override replace to match RunnableSerializable signature."""
+            if name is not None:
+                return self.__class__(name=name)
+            return self
+
         def _run(self, *args: Any, **kwargs: Any) -> Any:
             """Implementation of abstract method."""
             return "test result"
@@ -1056,6 +1064,14 @@ def test_tool_name_handler_restore_unsanitized_tool() -> None:
 
         name: str = "unsanitized-tool"
         description: str = "A test tool"
+
+        def __replace__(
+            self, *, name: Optional[str] = None
+        ) -> RunnableSerializable[Union[str, Dict[Any, Any], ToolCall], Any]:
+            """Override replace to match RunnableSerializable signature."""
+            if name is not None:
+                return self.__class__(name=name)
+            return self
 
         def _run(self, *args: Any, **kwargs: Any) -> Any:
             """Implementation of abstract method."""
