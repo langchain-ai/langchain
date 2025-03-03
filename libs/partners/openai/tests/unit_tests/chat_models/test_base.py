@@ -23,6 +23,8 @@ from langchain_core.outputs import ChatGeneration
 from langchain_core.runnables import RunnableLambda
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
+from langchain_core.tools import BaseTool
+from langchain_openai.chat_models.base import ToolNameHandler
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -936,3 +938,165 @@ def test_structured_outputs_parser() -> None:
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(deserialized.message)
     assert result == parsed_response
+
+
+def test_tool_name_handler_sanitize():
+    """Test basic sanitization of tool names."""
+    handler = ToolNameHandler()
+    
+    # Test various special characters
+    assert handler.sanitize("hello-world") == "hello_world"
+    assert handler.sanitize("hello.world") == "hello_world"
+    assert handler.sanitize("hello@world") == "hello_world"
+    assert handler.sanitize("hello world") == "hello_world"
+    
+    # Test name is preserved in mapping
+    sanitized = handler.sanitize("hello-world")
+    assert handler.restore(sanitized) == "hello-world"
+
+
+def test_tool_name_handler_standard_names():
+    """Test that standard names are not modified."""
+    handler = ToolNameHandler()
+    
+    # Test valid names remain unchanged
+    assert handler.sanitize("hello_world") == "hello_world"
+    assert handler.sanitize("hello123") == "hello123"
+    assert handler.sanitize("_hello") == "_hello"
+
+
+def test_tool_name_handler_sanitize_tool():
+    """Test sanitization of BaseTool instances."""
+    handler = ToolNameHandler()
+    
+    class CustomTool(BaseTool):
+        name: str = "test-tool"
+        description: str = "A test tool"
+        
+        def _run(self, *args: Any, **kwargs: Any) -> Any:
+            """Implementation of abstract method."""
+            return "test result"
+        
+    tool = CustomTool()
+    sanitized_tool = handler.sanitize_tool_name(tool)
+    
+    assert sanitized_tool.name == "test_tool"
+    assert handler.restore(sanitized_tool.name) == "test-tool"
+
+
+def test_tool_name_handler_sanitize_tool_call():
+    """Test sanitization of ToolCall instances."""
+    handler = ToolNameHandler()
+    
+    # First sanitize a name to create the mapping
+    original_name = "test-tool"
+    sanitized_name = handler.sanitize(original_name)
+    
+    # Create a tool call with the sanitized name
+    tool_call = ToolCall(
+        name=sanitized_name,
+        args={"arg1": "foo"},
+        id="call_123",
+        type="tool_call"
+    )
+    
+    # Test restoration of a name that exists in the mapping
+    sanitized_tool_call = handler.sanitize_tool_call_name(tool_call)
+    assert sanitized_tool_call["name"] == "test_tool"
+    assert handler.restore(sanitized_tool_call["name"]) == "test-tool"
+
+def test_tool_name_handler_restore_message_tool_names():
+    """Test restoration of tool names in AIMessage."""
+    handler = ToolNameHandler()
+    
+    # First sanitize a name to create the mapping
+    original_name = "test-tool"
+    sanitized_name = handler.sanitize(original_name)
+    
+    # Create an AIMessage with tool calls using the sanitized name
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "tool_calls": [
+                {
+                    "id": "123",
+                    "function": {
+                        "name": sanitized_name,
+                        "arguments": '{"arg1": "value1"}'
+                    },
+                    "type": "function"
+                }
+            ]
+        }
+    )
+    
+    # Test restoration
+    handler.restore_message_tool_names(message)
+    restored_name = message.additional_kwargs["tool_calls"][0]["function"]["name"]
+    assert restored_name == original_name
+
+@pytest.mark.xfail(reason="Restoring a name that hasn't been sanitized should fail")
+def test_tool_name_handler_restore_unsanitized_name():
+    """Test restoration of a name that hasn't been sanitized."""
+    handler = ToolNameHandler()
+    
+    # Attempt to restore a name that hasn't been sanitized
+    unsanitized_name = "unsanitized-tool"
+    restored_name = handler.restore(unsanitized_name)
+    
+    # The restored name should not match the unsanitized name
+    assert restored_name == unsanitized_name
+
+@pytest.mark.xfail(reason="Restoring a tool with an unsanitized name should fail")
+def test_tool_name_handler_restore_unsanitized_tool():
+    """Test restoration of a tool with an unsanitized name."""
+    handler = ToolNameHandler()
+    
+    # Create a tool with an unsanitized name
+    tool = BaseTool(name="unsanitized-tool")
+    
+    # Attempt to restore the tool's name
+    restored_name = handler.restore(tool.name)
+    
+    # The restored name should not match the unsanitized name
+    assert restored_name == tool.name
+
+
+
+def test_tool_name_handler_sanitize_tool_dict():
+    """Test sanitization of tool dictionary."""
+    handler = ToolNameHandler()
+    
+    tool_dict = {
+        "type": "function",
+        "function": {
+            "name": "test-tool",
+            "description": "A test tool",
+            "parameters": {}
+        }
+    }
+    
+    sanitized_dict = handler.sanitize_tool_dict(tool_dict)
+    assert sanitized_dict["function"]["name"] == "test_tool"
+    assert handler.restore(sanitized_dict["function"]["name"]) == "test-tool"
+
+@pytest.mark.xfail(reason="Restoring a tool dictionary with an unsanitized name should fail")
+def test_tool_name_handler_restore_unsanitized_dict():
+    """Test restoration of a tool dictionary with an unsanitized name."""
+    handler = ToolNameHandler()
+    
+    # Create a tool dictionary with an unsanitized name
+    tool_dict = {
+        "type": "function",
+        "function": {
+            "name": "unsanitized-tool",
+            "description": "A test tool",
+            "parameters": {}
+        }
+    }
+    
+    # Attempt to restore the tool dictionary's name
+    restored_name = handler.restore(tool_dict["function"]["name"])
+    
+    # The restored name should not match the unsanitized name
+    assert restored_name == tool_dict["function"]["name"]

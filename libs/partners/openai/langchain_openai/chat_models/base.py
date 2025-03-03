@@ -115,16 +115,16 @@ class ToolNameHandler:
 
     def __init__(self):
         """Initialize the handler with an empty mapping."""
-        self.name_map: Dict[str, str] = {}  # Stores sanitized name → original name
+        self._name_map: Dict[str, str] = {}  # Stores sanitized name → original name
         self._INVALID_NAME_PATTERN = re.compile(r"[^\w\d_]")  # Allows only letters, numbers, and underscores
 
     def sanitize(self, name: str) -> str:
         """Convert a non-standard name to a valid OpenAI-compatible name."""
-        if self.is_standard(name):
+        if self._is_standard(name):
             return name  # If already valid, return unchanged
 
         sanitized_name = re.sub(self._INVALID_NAME_PATTERN, "_", name)  # Replace invalid characters
-        self.name_map[sanitized_name] = name  # Store original for restoration
+        self._name_map[sanitized_name] = name  # Store original for restoration
         return sanitized_name
     
     def sanitize_tool_name(self, tool: BaseTool) -> BaseTool:
@@ -135,14 +135,13 @@ class ToolNameHandler:
     
     def sanitize_tool_call_name(self, tool_call: ToolCall) -> ToolCall:
         """Sanitize the name of a tool call."""
-        if tool_call.name:
-            tool_call.name = self.sanitize(tool_call.name)
-        logger.debug(f"Sanitized tool call: {tool_call}")
+        if "name" in tool_call:
+            tool_call["name"] = self.sanitize(tool_call["name"])
         return tool_call
 
     def restore(self, name: str) -> str:
         """Restore a sanitized name to its original form."""
-        return self.name_map.get(name, name)  # Return original if stored, else unchanged
+        return self._name_map.get(name, name)  # Return original if stored, else unchanged
     
     def restore_message_tool_names(self, response: AIMessage):
         """Iterate over the message and restore the tool names."""
@@ -156,13 +155,9 @@ class ToolNameHandler:
                 tool_call["name"] = original_name
 
 
-    def is_standard(self, name: str) -> bool:
+    def _is_standard(self, name: str) -> bool:
         """Check if a name is valid as an OpenAI function name (letters, numbers, underscores)."""
         return bool(re.fullmatch(r"[\w\d_]+", name))
-
-    def clear(self) -> None:
-        """Clear stored name mappings (for fresh runs)."""
-        self.name_map.clear()
 
     def sanitize_tool_dict(self, tool_dict: dict) -> dict:
         """Sanitize the name in a tool dictionary."""
