@@ -1,10 +1,4 @@
-from __future__ import annotations
-
 from copy import deepcopy
-from langchain_core.documents import (
-    BaseDocumentCompressor, 
-    Document
-)
 from typing import (
     Any, 
     Dict, 
@@ -13,6 +7,16 @@ from typing import (
     Sequence, 
     Union
 )
+try:
+    from langchain_core.documents import (
+        BaseDocumentCompressor, 
+        Document
+    )
+except ImportError as e:
+    raise ImportError(
+        "Unable to import langchain_core, please install with `pip install -U langchain_core`."
+    ) from e
+
 
 class XinferenceRerank(BaseDocumentCompressor):
     """Document compressor that uses `Xinference Rerank API`."""
