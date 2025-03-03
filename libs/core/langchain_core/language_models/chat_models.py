@@ -4,7 +4,6 @@ import asyncio
 import inspect
 import json
 import typing
-import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -70,6 +69,8 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
+    import uuid
+
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
@@ -208,8 +209,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
     """Whether to disable streaming for this model.
 
-    If streaming is bypassed, then ``stream()/astream()`` will defer to
-    ``invoke()/ainvoke()``.
+    If streaming is bypassed, then ``stream()``/``astream()``/``astream_events()`` will
+    defer to ``invoke()``/``ainvoke()``.
 
     - If True, will always bypass streaming case.
     - If "tool_calling", will bypass streaming case only when the model is called

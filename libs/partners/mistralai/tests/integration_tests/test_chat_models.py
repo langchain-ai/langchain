@@ -87,6 +87,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert "model_name" in result.response_metadata
 
 
 def test_invoke() -> None:

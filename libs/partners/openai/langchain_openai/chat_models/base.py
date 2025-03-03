@@ -6,8 +6,11 @@ import base64
 import json
 import logging
 import os
+import re
+import ssl
 import sys
 import warnings
+from functools import partial
 from io import BytesIO
 from math import ceil
 from operator import itemgetter
@@ -31,6 +34,7 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+import certifi
 import openai
 import tiktoken
 from langchain_core._api.deprecation import deprecated
@@ -77,7 +81,12 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableMap,
+    RunnablePassthrough,
+)
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_pydantic_field_names
@@ -96,6 +105,10 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
+
+# This SSL context is equivelent to the default `verify=True`.
+# https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
+global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -439,7 +452,7 @@ class BaseChatOpenAI(BaseChatModel):
     reasoning_effort: Optional[str] = None
     """Constrains effort on reasoning for reasoning models. 
     
-    o1 models only.
+    Reasoning models only, like OpenAI o1 and o3-mini.
 
     Currently supported values are low, medium, and high. Reducing reasoning effort 
     can result in faster responses and fewer tokens used on reasoning in a response.
@@ -557,7 +570,9 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                self.http_client = httpx.Client(proxy=self.openai_proxy)
+                self.http_client = httpx.Client(
+                    proxy=self.openai_proxy, verify=global_ssl_context
+                )
             sync_specific = {"http_client": self.http_client}
             self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
@@ -570,7 +585,9 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+                self.http_async_client = httpx.AsyncClient(
+                    proxy=self.openai_proxy, verify=global_ssl_context
+                )
             async_specific = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
@@ -1435,9 +1452,9 @@ class BaseChatOpenAI(BaseChatModel):
                 },
             )
             if is_pydantic_schema:
-                output_parser = _oai_structured_outputs_parser.with_types(
-                    output_type=cast(type, schema)
-                )
+                output_parser = RunnableLambda(
+                    partial(_oai_structured_outputs_parser, schema=cast(type, schema))
+                ).with_types(output_type=cast(type, schema))
             else:
                 output_parser = JsonOutputParser()
         else:
@@ -1616,7 +1633,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -2011,6 +2028,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         # in September 2024 release
         if "max_tokens" in payload:
             payload["max_completion_tokens"] = payload.pop("max_tokens")
+
+        # Mutate system message role to "developer" for o-series models
+        if self.model_name and re.match(r"^o\d", self.model_name):
+            for message in payload.get("messages", []):
+                if message["role"] == "system":
+                    message["role"] = "developer"
         return payload
 
     def _should_stream_usage(
@@ -2510,10 +2533,14 @@ def _convert_to_openai_response_format(
     return response_format
 
 
-@chain
-def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
-    if ai_msg.additional_kwargs.get("parsed"):
-        return ai_msg.additional_kwargs["parsed"]
+def _oai_structured_outputs_parser(
+    ai_msg: AIMessage, schema: Type[_BM]
+) -> PydanticBaseModel:
+    if parsed := ai_msg.additional_kwargs.get("parsed"):
+        if isinstance(parsed, dict):
+            return schema(**parsed)
+        else:
+            return parsed
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
     else:

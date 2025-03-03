@@ -6,7 +6,9 @@ from typing import List, Optional
 
 import pytest
 import requests
+from anthropic import BadRequestError
 from langchain_core.callbacks import CallbackManager
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -24,7 +26,8 @@ from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-5-sonnet-20240620"
+MODEL_NAME = "claude-3-5-haiku-latest"
+IMAGE_MODEL_NAME = "claude-3-5-sonnet-latest"
 
 
 def test_stream() -> None:
@@ -34,6 +37,7 @@ def test_stream() -> None:
     full: Optional[BaseMessageChunk] = None
     chunks_with_input_token_counts = 0
     chunks_with_output_token_counts = 0
+    chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
         full = token if full is None else full + token
@@ -43,12 +47,14 @@ def test_stream() -> None:
                 chunks_with_input_token_counts += 1
             elif token.usage_metadata.get("output_tokens"):
                 chunks_with_output_token_counts += 1
+        chunks_with_model_name += int("model_name" in token.response_metadata)
     if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
         raise AssertionError(
             "Expected exactly one chunk with input or output token counts. "
             "AIMessageChunk aggregation adds counts. Check that "
             "this is behaving properly."
         )
+    assert chunks_with_model_name == 1
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
     assert full.usage_metadata is not None
@@ -61,6 +67,7 @@ def test_stream() -> None:
     )
     assert "stop_reason" in full.response_metadata
     assert "stop_sequence" in full.response_metadata
+    assert "model_name" in full.response_metadata
 
 
 async def test_astream() -> None:
@@ -98,22 +105,10 @@ async def test_astream() -> None:
     assert "stop_reason" in full.response_metadata
     assert "stop_sequence" in full.response_metadata
 
-    # test usage metadata can be excluded
-    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
-    async for token in model.astream("hi"):
-        assert isinstance(token, AIMessageChunk)
-        assert token.usage_metadata is None
-    # check we override with kwarg
-    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
-    assert model.stream_usage
-    async for token in model.astream("hi", stream_usage=False):
-        assert isinstance(token, AIMessageChunk)
-        assert token.usage_metadata is None
-
     # Check expected raw API output
-    async_client = model._async_client
+    async_client = llm._async_client
     params: dict = {
-        "model": "claude-3-haiku-20240307",
+        "model": MODEL_NAME,
         "max_tokens": 1024,
         "messages": [{"role": "user", "content": "hi"}],
         "temperature": 0.0,
@@ -130,6 +125,20 @@ async def test_astream() -> None:
             assert event.usage.output_tokens > 1
         else:
             pass
+
+
+async def test_stream_usage() -> None:
+    """Test usage metadata can be excluded."""
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+    # check we override with kwarg
+    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
+    assert model.stream_usage
+    async for token in model.astream("hi", stream_usage=False):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
 
 
 async def test_abatch() -> None:
@@ -216,6 +225,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert "model_name" in result.response_metadata
 
 
 def test_invoke() -> None:
@@ -318,7 +328,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
-    chat = ChatAnthropic(model=MODEL_NAME)
+    chat = ChatAnthropic(model=IMAGE_MODEL_NAME)
     messages: list[BaseMessage] = [
         HumanMessage(
             content=[
@@ -602,7 +612,7 @@ def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
     data = b64encode(requests.get(url).content).decode()
 
-    result = ChatAnthropic(model=MODEL_NAME).invoke(
+    result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(
         [
             HumanMessage(
                 [
@@ -658,3 +668,103 @@ def test_citations() -> None:
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
     assert not any("citation" in block for block in full.content)
+
+
+def test_thinking() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    )
+    response = llm.invoke("Hello")
+    assert any("thinking" in block for block in response.content)
+    for block in response.content:
+        assert isinstance(block, dict)
+        if block["type"] == "thinking":
+            assert set(block.keys()) == {"type", "thinking", "signature"}
+            assert block["thinking"] and isinstance(block["thinking"], str)
+            assert block["signature"] and isinstance(block["signature"], str)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Hello"):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    assert any("thinking" in block for block in full.content)
+    for block in full.content:
+        assert isinstance(block, dict)
+        if block["type"] == "thinking":
+            assert set(block.keys()) == {"type", "thinking", "signature", "index"}
+            assert block["thinking"] and isinstance(block["thinking"], str)
+            assert block["signature"] and isinstance(block["signature"], str)
+
+
+def test_redacted_thinking() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    )
+    query = "ANTHROPIC_MAGIC_STRING_TRIGGER_REDACTED_THINKING_46C9A13E193C177646C7398A98432ECCCE4C1253D5E2D82641AC0E52CC2876CB"  # noqa: E501
+
+    response = llm.invoke(query)
+    has_reasoning = False
+    for block in response.content:
+        assert isinstance(block, dict)
+        if block["type"] == "redacted_thinking":
+            has_reasoning = True
+            assert set(block.keys()) == {"type", "data"}
+            assert block["data"] and isinstance(block["data"], str)
+    assert has_reasoning
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(query):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    stream_has_reasoning = False
+    for block in full.content:
+        assert isinstance(block, dict)
+        if block["type"] == "redacted_thinking":
+            stream_has_reasoning = True
+            assert set(block.keys()) == {"type", "data", "index"}
+            assert block["data"] and isinstance(block["data"], str)
+    assert stream_has_reasoning
+
+
+def test_structured_output_thinking_enabled() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    )
+    with pytest.warns(match="structured output"):
+        structured_llm = llm.with_structured_output(GenerateUsername)
+    query = "Generate a username for Sally with green hair"
+    response = structured_llm.invoke(query)
+    assert isinstance(response, GenerateUsername)
+
+    with pytest.raises(OutputParserException):
+        structured_llm.invoke("Hello")
+
+    # Test streaming
+    for chunk in structured_llm.stream(query):
+        assert isinstance(chunk, GenerateUsername)
+
+
+def test_structured_output_thinking_force_tool_use() -> None:
+    # Structured output currently relies on forced tool use, which is not supported
+    # when `thinking` is enabled. When this test fails, it means that the feature
+    # is supported and the workarounds in `with_structured_output` should be removed.
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",
+        max_tokens=5_000,
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+    ).bind_tools(
+        [GenerateUsername],
+        tool_choice="GenerateUsername",
+    )
+    with pytest.raises(BadRequestError):
+        llm.invoke("Generate a username for Sally with green hair")
