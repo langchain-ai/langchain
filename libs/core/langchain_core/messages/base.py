@@ -145,11 +145,11 @@ def merge_content(
     first_content: Union[str, list[Union[str, dict]]],
     *contents: Union[str, list[Union[str, dict]]],
 ) -> Union[str, list[Union[str, dict]]]:
-    """Merge two message contents.
+    """Merge multiple message contents.
 
     Args:
         first_content: The first content. Can be a string or a list.
-        second_content: The second content. Can be a string or a list.
+        contents: The other contents. Can be a string or a list.
 
     Returns:
         The merged content.
