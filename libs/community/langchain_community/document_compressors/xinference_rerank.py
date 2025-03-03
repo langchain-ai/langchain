@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import (
     Any, 
     Dict, 
@@ -7,15 +6,10 @@ from typing import (
     Sequence, 
     Union
 )
-try:
-    from langchain_core.documents import (
-        BaseDocumentCompressor, 
-        Document
-    )
-except ImportError as e:
-    raise ImportError(
-        "Unable to import langchain_core, please install with `pip install -U langchain_core`."
-    ) from e
+from langchain_core.documents import (
+    BaseDocumentCompressor, 
+    Document
+)
 
 
 class XinferenceRerank(BaseDocumentCompressor):
@@ -122,6 +116,7 @@ class XinferenceRerank(BaseDocumentCompressor):
             A sequence of compressed documents.
         """
         compressed = []
+        from copy import deepcopy
         for res in self.rerank(documents, query):
             doc = documents[res["index"]]
             doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
