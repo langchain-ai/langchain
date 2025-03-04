@@ -288,7 +288,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.40"
+version = "0.3.41"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -346,7 +346,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.12"
+version = "0.3.13"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
