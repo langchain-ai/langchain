@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator
@@ -11,6 +10,8 @@ from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -144,11 +145,11 @@ def merge_content(
     first_content: Union[str, list[Union[str, dict]]],
     *contents: Union[str, list[Union[str, dict]]],
 ) -> Union[str, list[Union[str, dict]]]:
-    """Merge two message contents.
+    """Merge multiple message contents.
 
     Args:
         first_content: The first content. Can be a string or a list.
-        second_content: The second content. Can be a string or a list.
+        contents: The other contents. Can be a string or a list.
 
     Returns:
         The merged content.
