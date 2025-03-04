@@ -113,7 +113,7 @@ def mustache_formatter(template: str, /, **kwargs: Any) -> str:
     Returns:
         The formatted string.
     """
-    return mustache.render(template, kwargs)
+    return mustache.render(template, **kwargs)
 
 
 def mustache_template_vars(
