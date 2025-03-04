@@ -135,8 +135,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     def _async_retrying(self, **kwargs: Any) -> AsyncRetrying:
         return AsyncRetrying(**self._kwargs_retrying, **kwargs)
 
+    @staticmethod
     def _patch_config(
-        self,
         config: RunnableConfig,
         run_manager: "T",
         retry_state: RetryCallState,
