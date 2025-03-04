@@ -1757,7 +1757,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         function_result = json.dumps({"result": 3})
 
         tool_schema = my_adder_tool.args_schema
-        assert tool_schema is not None
+        assert isinstance(tool_schema, type) and issubclass(tool_schema, BaseModel)
         few_shot_messages = tool_example_to_messages(
             "What is 1 + 2",
             [tool_schema(a=1, b=2)],
