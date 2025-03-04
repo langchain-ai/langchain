@@ -86,6 +86,10 @@ class ChatModelTests(BaseStandardTests):
         return {}
 
     @property
+    def chat_model_model_param(self) -> dict:
+        return self.chat_model_params.get("model", "test-model-name")
+
+    @property
     def standard_chat_model_params(self) -> dict:
         """:private:"""
         return {
@@ -520,6 +524,45 @@ class ChatModelUnitTests(ChatModelTests):
             }
         )
         assert model is not None
+
+    def test_model_param_name(self) -> None:
+        """Tests model initializatiokn with a model= parameter. This should pass for all
+        integrations.
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, ensure that the model can be initialized with a
+            ``model`` parameter, and that the model parameter can be accessed as
+            ``.model``.
+
+            If not, the easiest way to configure this is likely to add
+            ``from pydantic import ConfigDict`` at the top of your file, and add a
+            ``model_config`` class attribute to your model class:
+
+            .. code-block:: python
+            
+                class MyChatModel(BaseChatModel):
+                    model: str = Field(alias="model_name")
+                    model_config = ConfigDict(populate_by_name=True)
+
+                    # optional property for backwards-compatibility
+                    # for folks accessing chat_model.model_name
+                    @property
+                    def model_name(self) -> str:
+                        return self.model
+        """
+        params = {
+            **self.standard_chat_model_params,
+            **self.chat_model_params,
+        }
+        if "model_name" in params:
+            params["model"] = params.pop("model_name")
+        else:
+            params["model"] = self.chat_model_model_param
+
+        model = self.chat_model_class(**params)
+        assert model is not None
+        assert model.model == params["model"]
 
     def test_init_from_env(self) -> None:
         """Test initialization from environment variables. Relies on the
