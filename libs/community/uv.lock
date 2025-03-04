@@ -1491,7 +1491,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.19"
+version = "0.3.20"
 source = { editable = "../langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -1598,7 +1598,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.18"
+version = "0.3.19"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1744,7 +1744,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.40"
+version = "0.3.41"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1802,7 +1802,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.12"
+version = "0.3.13"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
