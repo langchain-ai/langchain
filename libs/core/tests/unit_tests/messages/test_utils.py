@@ -964,3 +964,34 @@ def test_convert_to_openai_messages_developer() -> None:
     ]
     result = convert_to_openai_messages(messages)
     assert result == [{"role": "developer", "content": "a"}] * 2
+
+
+def test_trim_message_edge_cases() -> None:
+    """Trim messages fails to produce a valid message history."""
+    messages = [
+        SystemMessage(content="This is a system message"),
+        HumanMessage(content="This is a user message"),
+        AIMessage(
+            content="AI message",
+            tool_calls=[
+                ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call")
+            ],
+            id="2",
+        ),
+        ToolMessage("1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16", tool_call_id="2"),
+    ]
+
+    new_history = trim_messages(
+        messages,
+        allow_partial=True,
+        strategy="last",
+        token_counter=lambda messages: sum(
+            len(message.content) for message in messages
+        ),
+        max_tokens=70,
+        include_system=True,
+        end_on=("human", "tool"),
+    )
+
+    # New history has SystemMessage, ToolMessage -- which is not a valid message history
+    assert 1 == 0
