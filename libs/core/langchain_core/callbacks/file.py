@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -30,7 +31,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             mode: The mode to open the file in. Defaults to "a".
             color: The color to use for the text. Defaults to None.
         """
-        self.file = cast(TextIO, open(filename, mode, encoding="utf-8"))  # noqa: SIM115
+        self.file = cast(TextIO, Path(filename).open(mode, encoding="utf-8"))  # noqa: SIM115
         self.color = color
 
     def __del__(self) -> None:
