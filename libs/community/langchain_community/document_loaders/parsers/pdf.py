@@ -1519,7 +1519,7 @@ class PDFPlumberParser(BaseBlobParser):
 
         with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
             doc = pdfplumber.open(file_path, password=self.password)  # open document
-            from pdfplumber.utils import geometry  # import WordExctractor, TextMap
+            from pdfplumber.utils import geometry
 
             contents = []
             doc_metadata = doc.metadata | _purge_metadata(
@@ -1595,13 +1595,6 @@ class PDFPlumberParser(BaseBlobParser):
                     )
                 else:
                     contents.append(all_text)
-                # "tables_as_html": [self._convert_table_to_html(table)
-                #                    for
-                #                    table in tables_content],
-                # "images": images_content,
-                # tables_as_html.extend([self._convert_table(table)
-                #                        for
-                #                        table in tables_content])
             if self.mode == "single":
                 yield Document(
                     page_content=self.pages_delimiter.join(contents),
@@ -1671,13 +1664,11 @@ class PDFPlumberParser(BaseBlobParser):
         extract_wordmaps: list[Any] = []
         used_arrays = [False] * len(tables_bbox)
         for word, o in wordmap.tuples:
-            # print(f"  Try with '{word['text']}' ...")
             is_table = False
             word_bbox = geometry.obj_to_bbox(word)
             for i, table_bbox in enumerate(tables_bbox):
                 if geometry.get_bbox_overlap(word_bbox, table_bbox):
                     # Find a world in a table
-                    # print("  Find in an array")
                     is_table = True
                     if not used_arrays[i]:
                         # First time I see a word in this array
@@ -1691,7 +1682,6 @@ class PDFPlumberParser(BaseBlobParser):
                                     if k in kwargs
                                 }
                             )
-                            # print(f"yield {new_textmap.to_string()}")
                             yield new_textmap.to_string()
                             extract_wordmaps.clear()
                         # and yield the table
