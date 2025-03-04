@@ -145,6 +145,9 @@ def draw_mermaid(
         for nested_prefix in edge_groups:
             if not nested_prefix.startswith(prefix + ":") or nested_prefix == prefix:
                 continue
+            # only go to first level subgraphs
+            if ":" in nested_prefix[len(prefix) + 1 :]:
+                continue
             add_subgraph(edge_groups[nested_prefix], nested_prefix)
 
         if prefix and not self_loop:
