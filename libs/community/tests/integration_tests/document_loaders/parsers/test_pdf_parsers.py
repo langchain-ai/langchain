@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterator
 
 import pytest
+from PIL.Image import Image
 
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
@@ -119,6 +120,7 @@ class EmptyImageBlobParser(BaseImageBlobParser):
         ("PyPDFium2Parser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
         ("PyPDFParser", {"extraction_mode": "layout"}),
+        ("ZeroxPDFParser", {}),
     ],
 )
 @pytest.mark.requires("pillow")
@@ -149,6 +151,7 @@ def test_mode_and_extract_images_variations(
         ("PyPDFium2Parser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
         ("PyPDFParser", {"extraction_mode": "layout"}),
+        ("ZeroxPDFParser", {}),
     ],
 )
 @pytest.mark.requires("pillow")
@@ -246,6 +249,7 @@ def _test_matrix(
     "parser_factory,params",
     [
         ("PyMuPDFParser", {}),
+        ("ZeroxPDFParser", {}),
     ],
 )
 def test_parser_with_table(
