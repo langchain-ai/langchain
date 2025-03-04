@@ -70,6 +70,7 @@ spell_fix:
 
 ## lint: Run linting on the project.
 lint lint_package lint_tests:
+	uv sync --group lint
 	uv run --group lint ruff check docs cookbook
 	uv run --group lint ruff format docs cookbook cookbook --diff
 	uv run --group lint ruff check --select I docs cookbook
@@ -81,6 +82,7 @@ lint lint_package lint_tests:
 
 ## format: Format the project files.
 format format_diff:
+	uv sync --group lint
 	uv run --group lint ruff format docs cookbook
 	uv run --group lint ruff check --select I --fix docs cookbook
 
