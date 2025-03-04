@@ -2,7 +2,7 @@ import json
 import operator
 from typing import Any, Literal, Optional, Union, cast
 
-from pydantic import model_validator
+from pydantic import BaseModel, model_validator
 from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_core.messages.base import (
@@ -163,6 +163,8 @@ class AIMessage(BaseMessage):
 
     This is a standard representation of token usage that is consistent across models.
     """
+    parsed: Optional[Union[dict, BaseModel]] = None
+    """The auto-parsed message contents."""
 
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
@@ -443,11 +445,20 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
+    # 'parsed' always represents an aggregation not an incremental value, so the last
+    # non-null value is kept.
+    parsed = None
+    for m in reversed([left, *others]):
+        if m.parsed is not None:
+            parsed = m.parsed
+            break
+
     return left.__class__(
         example=left.example,
         content=content,
         additional_kwargs=additional_kwargs,
         tool_call_chunks=tool_call_chunks,
+        parsed=parsed,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=left.id,
