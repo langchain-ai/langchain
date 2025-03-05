@@ -1,5 +1,4 @@
-from typing import Any, Generator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -7,7 +6,7 @@ from langchain_community.utilities.jira import JiraAPIWrapper
 
 
 @pytest.fixture
-def mock_jira() -> Generator[MagicMock | AsyncMock, Any, None]:  # type: ignore
+def mock_jira():  # type: ignore
     with patch("atlassian.Jira") as mock_jira:
         yield mock_jira
 
