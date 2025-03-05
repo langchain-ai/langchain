@@ -46,11 +46,15 @@ def prepare_collection() -> Tuple[Collection, AgnosticCollection]:
 
 
 @pytest.fixture()
+@pytest.mark.requires("pymongo")
+@pytest.mark.requires("motor")
 def collections() -> Any:
     return prepare_collection()
 
 
 @pytest.fixture()
+@pytest.mark.requires("pymongo")
+@pytest.mark.requires("motor")
 def embedding_openai() -> Any:
     openai_embeddings: OpenAIEmbeddings = OpenAIEmbeddings(
         deployment=model_deployment, model=model_name, chunk_size=1
@@ -89,12 +93,16 @@ class TestDocumentDBVectorSearch:
         collection.drop_indexes()
 
     @pytest.fixture(autouse=True)
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def setup(self) -> None:
         collection, async_collection = prepare_collection()
         # delete all the documents in the collection
         collection.delete_many({})  # type: ignore[index]
         collection.drop_indexes()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_documents_cosine_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -126,6 +134,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_documents_cosine_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -159,6 +169,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_documents_inner_product(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -189,6 +201,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_documents_inner_product(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -222,6 +236,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_texts_cosine_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -248,6 +264,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].page_content == "What is a sandwich?"
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_texts_cosine_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -275,6 +293,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].page_content == "What is a sandwich?"
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_texts_with_metadatas_cosine_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -306,6 +326,8 @@ class TestDocumentDBVectorSearch:
 
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_texts_with_metadatas_cosine_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -338,6 +360,8 @@ class TestDocumentDBVectorSearch:
 
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_texts_with_metadatas_delete_one(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -379,6 +403,8 @@ class TestDocumentDBVectorSearch:
 
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_texts_with_metadatas_delete_one(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -421,6 +447,8 @@ class TestDocumentDBVectorSearch:
 
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_texts_with_metadatas_delete_multiple(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -470,6 +498,8 @@ class TestDocumentDBVectorSearch:
 
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_texts_with_metadatas_delete_multiple(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -520,6 +550,8 @@ class TestDocumentDBVectorSearch:
 
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_texts_with_metadatas_inner_product(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -550,6 +582,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_texts_with_metadatas_inner_product(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -581,6 +615,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_from_texts_with_metadatas_euclidean_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -611,6 +647,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         vectorstore.delete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_afrom_texts_with_metadatas_euclidean_distance(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -642,6 +680,8 @@ class TestDocumentDBVectorSearch:
         assert output[0].metadata["c"] == 1
         await vectorstore.adelete_index()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def invoke_delete_with_no_args(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> Optional[bool]:
@@ -656,6 +696,8 @@ class TestDocumentDBVectorSearch:
 
         return vectorstore.delete()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def ainvoke_delete_with_no_args(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> Optional[bool]:
@@ -670,6 +712,8 @@ class TestDocumentDBVectorSearch:
 
         return await vectorstore.adelete()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def invoke_delete_by_id_with_no_args(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -684,6 +728,8 @@ class TestDocumentDBVectorSearch:
 
         vectorstore.delete_document_by_id()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def ainvoke_delete_by_id_with_no_args(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -698,6 +744,8 @@ class TestDocumentDBVectorSearch:
 
         await vectorstore.adelete_document_by_id()
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_invalid_arguments_to_delete(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -706,6 +754,8 @@ class TestDocumentDBVectorSearch:
             self.invoke_delete_with_no_args(embedding_openai, collection)
         assert str(exception_info.value) == "No document ids provided to delete."
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_ainvalid_arguments_to_delete(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -714,6 +764,8 @@ class TestDocumentDBVectorSearch:
             await self.ainvoke_delete_with_no_args(embedding_openai, collection)
         assert str(exception_info.value) == "No document ids provided to delete."
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     def test_no_arguments_to_delete_by_id(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
@@ -722,6 +774,8 @@ class TestDocumentDBVectorSearch:
             self.invoke_delete_by_id_with_no_args(embedding_openai, collection)
         assert str(exception_info.value) == "No document id provided to delete."
 
+    @pytest.mark.requires("pymongo")
+    @pytest.mark.requires("motor")
     async def test_ano_arguments_to_delete_by_id(
         self, embedding_openai: OpenAIEmbeddings, collections: Any
     ) -> None:
