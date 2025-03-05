@@ -42,7 +42,7 @@ class JiraAPIWrapper(BaseModel):
 
         if "jira_cloud" in values and values["jira_cloud"] is not None:
             values["jira_cloud"] = str(values["jira_cloud"])
-            
+
         jira_cloud_str = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
         jira_cloud = jira_cloud_str.lower() == "true"
         values["jira_cloud"] = jira_cloud
