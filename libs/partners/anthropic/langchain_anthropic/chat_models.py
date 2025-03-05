@@ -967,7 +967,6 @@ class ChatAnthropic(BaseChatModel):
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
         schema: Union[Dict, type],
-        formatted_tool: AnthropicTool,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
             "Anthropic structured output relies on forced tool calling, "
@@ -979,7 +978,7 @@ class ChatAnthropic(BaseChatModel):
         warnings.warn(thinking_admonition)
         llm = self.bind_tools(
             [schema],
-            structured_output_format={"kwargs": {}, "schema": formatted_tool},
+            structured_output_format={"kwargs": {"method": "function_calling"}},
         )
 
         def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
@@ -1287,14 +1286,12 @@ class ChatAnthropic(BaseChatModel):
         formatted_tool = convert_to_anthropic_tool(schema)
         tool_name = formatted_tool["name"]
         if self.thinking is not None and self.thinking.get("type") == "enabled":
-            llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
-                schema, formatted_tool
-            )
+            llm = self._get_llm_for_structured_output_when_thinking_is_enabled(schema)
         else:
             llm = self.bind_tools(
                 [schema],
                 tool_choice=tool_name,
-                structured_output_format={"kwargs": {}, "schema": formatted_tool},
+                structured_output_format={"kwargs": {"method": "function_calling"}},
             )
 
         if isinstance(schema, type) and is_basemodel_subclass(schema):
