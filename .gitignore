@@ -183,3 +183,4 @@ docs/docs/templates
 
 prof
 virtualenv/
+.venv
