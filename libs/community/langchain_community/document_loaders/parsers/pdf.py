@@ -1650,9 +1650,7 @@ class PDFPlumberParser(BaseBlobParser):
                 "keep_blank_chars": True,
                 # "use_text_flow": True,
                 "presorted": True,
-                "layout_bbox": kwargs.get("layout_bbox")
-                # or geometry.objects_to_bbox(page.chars),
-                or page.cropbox,
+                "layout_bbox": kwargs.get("layout_bbox") or page.cropbox,
             }
         )
         chars = page.dedupe_chars().objects["char"] if self.dedupe else page.chars
@@ -1740,7 +1738,7 @@ class PDFPlumberParser(BaseBlobParser):
     def _extract_tables_bbox_from_page(
         self,
         page: pdfplumber.page.Page,
-    ) -> list[tuple]:
+    ) -> list[tuple[float, float, float, float]]:
         """Extract bounding boxes of tables from a PDF page.
 
         Args:
@@ -1805,14 +1803,12 @@ class PDFPlumberParser(BaseBlobParser):
 
         Returns:
             The table content as a string in CSV format.
+            Replace "\n" with " ".
         """
         if not table:
             return ""
 
         output = ["\n\n"]
-
-        # skip first row in details if header is part of the table
-        # j = 0 if self.header.external else 1
 
         # iterate over detail rows
         for row in table:
@@ -1861,6 +1857,7 @@ class PDFPlumberParser(BaseBlobParser):
 
         Returns:
             The table content as a string in Markdown format.
+            Replace "-" to "&#45;" and "\n" to " ".
         """
         clean = False
         if not table:
@@ -1871,7 +1868,6 @@ class PDFPlumberParser(BaseBlobParser):
         output += "|" + "|".join("---" for i in range(col_count)) + "|\n"
 
         # skip first row in details if header is part of the table
-        # j = 0 if self.header.external else 1
 
         # iterate over detail rows
         for row in table:
