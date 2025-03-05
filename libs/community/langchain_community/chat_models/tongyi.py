@@ -123,6 +123,8 @@ def convert_dict_to_message(
                             tool_calls.append(parsed_tool)
                     except Exception as e:
                         invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
+        elif "partial" in _dict and isinstance(_dict["partial"], bool):
+            additional_kwargs = {"partial": _dict["partial"]}
         else:
             additional_kwargs = {}
 
