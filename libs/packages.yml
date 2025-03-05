@@ -474,3 +474,7 @@ packages:
   name_title: Taiga
   path: .
   repo: Shikenso-Analytics/langchain-taiga
+- name: langchain-valthera
+  name_title: Valthera
+  path: .
+  repo: valthera/langchain-valthera
