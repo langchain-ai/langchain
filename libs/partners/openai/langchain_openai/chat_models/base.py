@@ -200,6 +200,7 @@ def _format_message_content(content: Any) -> Any:
                 isinstance(block, dict)
                 and block.get("type") == "image"
                 and (source := block.get("source"))
+                and isinstance(source, dict)
             ):
                 if source.get("type") == "base64" and (
                     (media_type := source.get("media_type"))
