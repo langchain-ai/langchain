@@ -186,15 +186,38 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _format_message_content(content: Any) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
-        # Remove unexpected block types
         formatted_content = []
         for block in content:
+            # Remove unexpected block types
             if (
                 isinstance(block, dict)
                 and "type" in block
-                and block["type"] == "tool_use"
+                and block["type"] in ("tool_use", "thinking")
             ):
                 continue
+            # Anthropic image blocks
+            elif (
+                isinstance(block, dict)
+                and block.get("type") == "image"
+                and (source := block.get("source"))
+                and isinstance(source, dict)
+            ):
+                if source.get("type") == "base64" and (
+                    (media_type := source.get("media_type"))
+                    and (data := source.get("data"))
+                ):
+                    formatted_content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{media_type};base64,{data}"},
+                        }
+                    )
+                elif source.get("type") == "url" and (url := source.get("url")):
+                    formatted_content.append(
+                        {"type": "image_url", "image_url": {"url": url}}
+                    )
+                else:
+                    continue
             else:
                 formatted_content.append(block)
     else:
