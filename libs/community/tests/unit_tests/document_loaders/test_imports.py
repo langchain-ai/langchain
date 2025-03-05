@@ -200,6 +200,7 @@ EXPECTED_ALL = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
+    "ZeroxPDFLoader",
 ]
 
 
