@@ -4,7 +4,7 @@ import logging
 import os
 from asyncio import sleep as asyncio_sleep
 from time import sleep
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 from langchain_core.documents import Document
