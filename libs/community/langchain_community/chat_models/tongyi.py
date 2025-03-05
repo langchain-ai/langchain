@@ -204,6 +204,9 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
         if "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        # support Partial Mode for text continuation
+        if "partial" in message.additional_kwargs:
+            message_dict["partial"] = message.additional_kwargs["partial"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
