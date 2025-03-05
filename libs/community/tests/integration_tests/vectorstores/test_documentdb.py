@@ -58,7 +58,7 @@ make test TEST_FILE=tests/integration_tests/vectorstores/test_documentdb.py
 
 NOTE: You will first need to follow the contributor setup steps:
 https://python.langchain.com/docs/contributing/code. You will also need to install
-`pymongo` via `poetry`. You can also run the test directly using `pytest`, but please
+`pymongo` via `uv`. You can also run the test directly using `pytest`, but please
 make sure to install all dependencies.
 """
 
