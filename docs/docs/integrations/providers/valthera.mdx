@@ -1,25 +1,154 @@
-# Valthera
+# Valthera & langchain-valthera
 
->[Valthera](https://github.com/valthera/valthera) is an open-source framework that empowers LLM Agents to drive meaningful user engagement. It leverages BJ Fogg’s Behavior Model (B=MAT) to assess users' motivation and ability, ensuring that notifications and actions are both timely and context-aware.
->
->Valthera aggregates data from multiple sources—including HubSpot, PostHog, and Snowflake—to create a real-time user context, enabling personalized and behavior-driven interactions.
+> [Valthera](https://github.com/valthera/valthera) is an open-source framework that empowers LLM Agents to drive meaningful, context-aware user engagement. It evaluates user motivation and ability in real time, ensuring that notifications and actions are triggered only when users are most receptive.
+> 
+> **langchain-valthera** integrates Valthera with LangChain, enabling developers to build smarter, behavior-driven engagement systems that deliver personalized interactions.
 
 ## Installation and Setup
 
-1. **Install Valthera:**  
-   Install the package via pip:
-   ```bash
-   pip install valthera
+### Install langchain-valthera
 
-2. **Configure Your Connectors:**
-   Set up your data connectors (e.g., HubSpot, PostHog, Snowflake) and ensure your API keys are properly configured.
+Install the LangChain Valthera package via pip:
 
-3. **Get Started:**
-   Follow the quick start guide for detailed instructions on initializing and running Valthera.
+```bash
+pip install -U langchain-valthera
+```
 
-## Toolkits
+Import the ValtheraTool:
 
 ```python
-from valthera.tool import ValtheraTool
-from valthera.aggregator import DataAggregator
+from langchain_valthera.tools import ValtheraTool
 ```
+
+## Examples
+
+### Example 1: Initializing the ValtheraTool for LangChain
+
+This example shows how to initialize the ValtheraTool using a `DataAggregator` and configuration for motivation and ability scoring.
+
+```python
+import os
+from langchain_openai import ChatOpenAI
+from valthera.aggregator import DataAggregator
+from mocks import hubspot, posthog, snowflake  # Replace these with your actual connector implementations
+from langchain_valthera.tools import ValtheraTool
+
+# Initialize the DataAggregator with your data connectors
+data_aggregator = DataAggregator(
+    connectors={
+        "hubspot": hubspot(),
+        "posthog": posthog(),
+        "app_db": snowflake()
+    }
+)
+
+# Initialize the ValtheraTool with your scoring configurations
+valthera_tool = ValtheraTool(
+    data_aggregator=data_aggregator,
+    motivation_config=[
+        {"key": "hubspot_lead_score", "weight": 0.30, "transform": lambda x: min(x, 100) / 100.0},
+        {"key": "posthog_events_count_past_30days", "weight": 0.30, "transform": lambda x: min(x, 50) / 50.0},
+        {"key": "hubspot_marketing_emails_opened", "weight": 0.20, "transform": lambda x: min(x / 10.0, 1.0)},
+        {"key": "posthog_session_count", "weight": 0.20, "transform": lambda x: min(x / 5.0, 1.0)}
+    ],
+    ability_config=[
+        {"key": "posthog_onboarding_steps_completed", "weight": 0.30, "transform": lambda x: min(x / 5.0, 1.0)},
+        {"key": "posthog_session_count", "weight": 0.30, "transform": lambda x: min(x / 10.0, 1.0)},
+        {"key": "behavior_complexity", "weight": 0.40, "transform": lambda x: 1 - (min(x, 5) / 5.0)}
+    ]
+)
+
+print("✅ ValtheraTool successfully initialized for LangChain integration!")
+```
+
+### Example 2: Using ValtheraTool with LangChain Agents
+
+This example demonstrates how to integrate the ValtheraTool with a LangChain agent. Note that the tool requires structured input with the keys: `user_id`, `email`, `behavior_id`, `behavior_name`, and `behavior_description`.
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.prompts import PromptTemplate
+from langchain_valthera.tools import ValtheraTool
+
+# Assume valthera_tool is already initialized as shown in Example 1
+
+# Define a custom prompt for the agent
+agent_prompt = PromptTemplate.from_template("""
+You are an engagement specialist that helps determine when and how to engage users.
+Use the Valthera tool to evaluate user readiness for a behavior and recommend engagement strategies.
+
+{tools}
+
+{chat_history}
+User Query: {input}
+{agent_scratchpad}
+""")
+
+# Create a LangChain agent with the ValtheraTool
+agent = create_react_agent(
+    llm=ChatOpenAI(model_name="gpt-4-turbo", temperature=0),
+    tools=[valthera_tool],
+    prompt=agent_prompt
+)
+
+# Set up the agent executor
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=[valthera_tool],
+    verbose=True
+)
+
+# Run the agent with a query that includes the required structured input
+response = agent_executor.invoke({
+    "input": {
+        "user_id": "user_12345",
+        "email": "user@example.com",
+        "behavior_id": "onboarding_001",
+        "behavior_name": "Unfinished Onboarding",
+        "behavior_description": "User has not completed all onboarding steps."
+    }
+})
+
+print(response["output"])
+```
+
+### Example 3: Integrating with LangGraph
+
+This example shows how to use the ValtheraTool with LangGraph for more complex agent workflows.
+
+```python
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
+from langchain_valthera.tools import ValtheraTool
+
+# Assume valthera_tool is already initialized as shown in Example 1
+
+# Initialize the LangChain LLM
+llm = ChatOpenAI(
+    model_name="gpt-4-turbo",
+    temperature=0.0,
+    openai_api_key=os.environ.get("OPENAI_API_KEY")
+)
+
+# Create the LangGraph React Agent with the ValtheraTool
+graph = create_react_agent(llm, tools=[valthera_tool])
+
+# Prepare an input message with the required behavior evaluation details
+inputs = {
+    "messages": [
+        (
+            "user",
+            "Evaluate engagement readiness for a user with the following details: "
+            "user_id: user_12345, email: user@example.com, behavior_id: onboarding_001, "
+            "behavior_name: Unfinished Onboarding, behavior_description: User has not completed all onboarding steps."
+        )
+    ]
+}
+
+print("=== Running LangGraph Agent with ValtheraTool ===")
+for response in graph.stream(inputs, stream_mode="values"):
+    print(response)
+```
+
+The langchain-valthera integration allows you to assess user behavior and decide on the best course of action for engagement, ensuring that interactions are both timely and relevant within your LangChain applications.
