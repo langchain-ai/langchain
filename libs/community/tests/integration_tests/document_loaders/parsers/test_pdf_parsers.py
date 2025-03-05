@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterator
 
 import pytest
-from PIL.Image import Image
 
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser

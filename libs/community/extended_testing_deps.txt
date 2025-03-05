@@ -62,7 +62,7 @@ pandas>=2.0.1,<3
 pdfminer-six==20231228
 pdfplumber>=0.11
 pgvector>=0.1.6,<0.2
-pillow>=10.4
+pillow>=11.1
 playwright>=1.48.0,<2
 praw>=7.7.1,<8
 premai>=0.3.25,<0.4,!=0.3.100
