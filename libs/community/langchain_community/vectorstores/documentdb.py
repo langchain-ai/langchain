@@ -279,7 +279,7 @@ class DocumentDBVectorSearch(VectorStore):
     ) -> DocumentDBVectorSearch:
         if collection is None:
             raise ValueError("Must provide 'collection' named parameter.")
-        vectorstore = cls(collection, embedding, **kwargs)
+        vectorstore = cls(collection, embedding, **kwargs)  # type: ignore[arg-type]
         vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
 
