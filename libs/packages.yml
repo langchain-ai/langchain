@@ -474,3 +474,6 @@ packages:
   name_title: Taiga
   path: .
   repo: Shikenso-Analytics/langchain-taiga
+- name: langchain-opengradient
+  path: .
+  repo: OpenGradient/og-langchain
