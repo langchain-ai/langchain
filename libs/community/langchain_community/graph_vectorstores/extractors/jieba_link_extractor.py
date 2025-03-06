@@ -1,5 +1,13 @@
 "Extract keywords using jieba"
-from typing import Any, Dict, Iterable, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Optional,
+    Set,
+    Tuple,
+    Union
+)
 from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
@@ -25,7 +33,9 @@ class JiebaLinkExtractor(LinkExtractor[KeybertInput]):
     How to apply JiebaLinkExtractor to 
     langchain_community.graph_vectorstores.extractors.LinkExtractorTransformer
     Example::
-        from langchain_community.graph_vectorstores.extractors import LinkExtractorTransformer
+        from langchain_community.graph_vectorstores.extractors import (
+            LinkExtractorTransformer
+        )
         pipeline = LinkExtractorTransformer([JiebaLinkExtractor()])
         results = pipeline.transform_documents(docs)
 
@@ -35,7 +45,8 @@ class JiebaLinkExtractor(LinkExtractor[KeybertInput]):
         analyzer: The analyzer to use. Must be one of `tfidf`, `textrank`, or `mixed`.
         weight: Only works when the analyzer is `mixed`. 
         Must be a tuple of length 2 and sum to 1.
-        extract_keywords_kwargs: Keyword arguments to pass to jieba.analyse.extract_keywords.
+        extract_keywords_kwargs: Keyword arguments to pass to 
+            jieba.analyse.extract_keywords.
         stop_words_path: Path to a file containing stop words.
     Example::
         extractor = JiebaLinkExtractor(
@@ -79,8 +90,12 @@ class JiebaLinkExtractor(LinkExtractor[KeybertInput]):
             self,
             input: KeybertInput
         ) -> Set[Link]:
-        from jieba.analyse.tfidf import TFIDF
-        from jieba.analyse.textrank import TextRank
+        from jieba.analyse.tfidf import (
+            TFIDF
+        )
+        from jieba.analyse.textrank import (
+            TextRank
+        )
         if isinstance(input, Document):
             input = input.page_content
         if self._analyzer == 'tfidf':
