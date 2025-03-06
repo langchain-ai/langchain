@@ -972,6 +972,7 @@ class ChatFireworks(BaseChatModel):
                 tool_choice=tool_name,
                 structured_output_format={
                     "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
                 },
             )
             if is_pydantic_schema:
@@ -988,6 +989,7 @@ class ChatFireworks(BaseChatModel):
                 response_format={"type": "json_object"},
                 structured_output_format={
                     "kwargs": {"method": "json_mode"},
+                    "schema": schema,
                 },
             )
             output_parser = (

@@ -19,7 +19,10 @@ from langchain_core.messages import (
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
-from langchain_core.utils.function_calling import tool_example_to_messages
+from langchain_core.utils.function_calling import (
+    convert_to_openai_tool,
+    tool_example_to_messages,
+)
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
@@ -1244,14 +1247,12 @@ class ChatModelIntegrationTests(ChatModelTests):
             "Expected on_chat_model_start to be called once"
         )
         assert isinstance(invoke_callback.metadatas[0], dict)
-        tracing_kwargs = invoke_callback.metadatas[0]["structured_output_format"][
-            "kwargs"
-        ]
-        assert isinstance(tracing_kwargs, dict)
-        if tracing_kwargs:
-            assert "method" in tracing_kwargs and isinstance(
-                tracing_kwargs["method"], str
-            )
+        assert isinstance(
+            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert invoke_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
         stream_callback = _TestCallbackHandler()
 
@@ -1265,14 +1266,12 @@ class ChatModelIntegrationTests(ChatModelTests):
             "Expected on_chat_model_start to be called once"
         )
         assert isinstance(stream_callback.metadatas[0], dict)
-        tracing_kwargs = invoke_callback.metadatas[0]["structured_output_format"][
-            "kwargs"
-        ]
-        assert isinstance(tracing_kwargs, dict)
-        if tracing_kwargs:
-            assert "method" in tracing_kwargs and isinstance(
-                tracing_kwargs["method"], str
-            )
+        assert isinstance(
+            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert stream_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
@@ -1324,14 +1323,12 @@ class ChatModelIntegrationTests(ChatModelTests):
             "Expected on_chat_model_start to be called once"
         )
         assert isinstance(ainvoke_callback.metadatas[0], dict)
-        tracing_kwargs = ainvoke_callback.metadatas[0]["structured_output_format"][
-            "kwargs"
-        ]
-        assert isinstance(tracing_kwargs, dict)
-        if tracing_kwargs:
-            assert "method" in tracing_kwargs and isinstance(
-                tracing_kwargs["method"], str
-            )
+        assert isinstance(
+            ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert ainvoke_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
         astream_callback = _TestCallbackHandler()
 
@@ -1346,14 +1343,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
 
         assert isinstance(astream_callback.metadatas[0], dict)
-        tracing_kwargs = ainvoke_callback.metadatas[0]["structured_output_format"][
-            "kwargs"
-        ]
-        assert isinstance(tracing_kwargs, dict)
-        if tracing_kwargs:
-            assert "method" in tracing_kwargs and isinstance(
-                tracing_kwargs["method"], str
-            )
+        assert isinstance(
+            astream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+        )
+        assert astream_callback.metadatas[0]["structured_output_format"][
+            "schema"
+        ] == convert_to_openai_tool(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:

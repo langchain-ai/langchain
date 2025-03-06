@@ -1092,6 +1092,7 @@ class ChatOllama(BaseChatModel):
                 tool_choice=tool_name,
                 structured_output_format={
                     "kwargs": {"method": method},
+                    "schema": formatted_tool,
                 },
             )
             if is_pydantic_schema:
@@ -1108,6 +1109,7 @@ class ChatOllama(BaseChatModel):
                 format="json",
                 structured_output_format={
                     "kwargs": {"method": method},
+                    "schema": schema,
                 },
             )
             output_parser = (
@@ -1127,6 +1129,7 @@ class ChatOllama(BaseChatModel):
                     format=schema.model_json_schema(),
                     structured_output_format={
                         "kwargs": {"method": method},
+                        "schema": schema,
                     },
                 )
                 output_parser = PydanticOutputParser(pydantic_object=schema)
@@ -1147,6 +1150,7 @@ class ChatOllama(BaseChatModel):
                     format=response_format,
                     structured_output_format={
                         "kwargs": {"method": method},
+                        "schema": response_format,
                     },
                 )
                 output_parser = JsonOutputParser()

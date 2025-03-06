@@ -952,6 +952,7 @@ class ChatMistralAI(BaseChatModel):
                 tool_choice="any",
                 structured_output_format={
                     "kwargs": {"method": "function_calling"},
+                    "schema": schema,
                 },
             )
             if is_pydantic_schema:
@@ -972,6 +973,7 @@ class ChatMistralAI(BaseChatModel):
                         # this is correct - name difference with mistral api
                         "method": "json_mode"
                     },
+                    "schema": schema,
                 },
             )
             output_parser = (
@@ -990,6 +992,7 @@ class ChatMistralAI(BaseChatModel):
                 response_format=response_format,
                 structured_output_format={
                     "kwargs": {"method": "json_schema"},
+                    "schema": schema,
                 },
             )
 

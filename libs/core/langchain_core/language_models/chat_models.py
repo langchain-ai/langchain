@@ -372,6 +372,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     structured_output_format_dict = {
                         "structured_output_format": {
                             "kwargs": structured_output_format.get("kwargs", {}),
+                            "schema": convert_to_openai_tool(
+                                structured_output_format["schema"]
+                            ),
                         }
                     }
                 except ValueError:
@@ -463,6 +466,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 structured_output_format_dict = {
                     "structured_output_format": {
                         "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
                     }
                 }
             except ValueError:
@@ -642,6 +648,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 structured_output_format_dict = {
                     "structured_output_format": {
                         "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
                     }
                 }
             except ValueError:
@@ -747,6 +756,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 structured_output_format_dict = {
                     "structured_output_format": {
                         "kwargs": structured_output_format.get("kwargs", {}),
+                        "schema": convert_to_openai_tool(
+                            structured_output_format["schema"]
+                        ),
                     }
                 }
             except ValueError:
@@ -1302,7 +1314,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm = self.bind_tools(
             [schema],
             tool_choice="any",
-            structured_output_format={"kwargs": {"method": "function_calling"}},
+            structured_output_format={"kwargs": {}, "schema": schema},
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
