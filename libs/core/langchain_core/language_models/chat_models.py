@@ -383,11 +383,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 structured_output_format_dict = {}
 
             params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs}
+            options = {"stop": stop, **kwargs, **structured_output_format_dict}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
-                **structured_output_format_dict,
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -477,11 +476,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             structured_output_format_dict = {}
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs}
+        options = {"stop": stop, **kwargs, **structured_output_format_dict}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params(stop=stop, **kwargs),
-            **structured_output_format_dict,
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -659,11 +657,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             structured_output_format_dict = {}
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop}
+        options = {"stop": stop, **structured_output_format_dict}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
-            **structured_output_format_dict,
         }
 
         callback_manager = CallbackManager.configure(
@@ -767,11 +764,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             structured_output_format_dict = {}
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop}
+        options = {"stop": stop, **structured_output_format_dict}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
-            **structured_output_format_dict,
         }
 
         callback_manager = AsyncCallbackManager.configure(
@@ -1314,7 +1310,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm = self.bind_tools(
             [schema],
             tool_choice="any",
-            structured_output_format={"kwargs": {}, "schema": schema},
+            structured_output_format={
+                "kwargs": {"method": "function_calling"},
+                "schema": schema,
+            },
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(

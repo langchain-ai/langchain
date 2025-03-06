@@ -76,17 +76,17 @@ class _TestCallbackHandler(BaseCallbackHandler):
 
     def __init__(self) -> None:
         super().__init__()
-        self.metadatas = []
+        self.options = []
 
     def on_chat_model_start(
         self,
         serialized: Any,
         messages: Any,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        options: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        self.metadatas.append(metadata)
+        self.options.append(options)
 
 
 class _MagicFunctionSchema(BaseModel):
@@ -1243,14 +1243,14 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(invoke_callback.metadatas) == 1, (
+        assert len(invoke_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(invoke_callback.metadatas[0], dict)
+        assert isinstance(invoke_callback.options[0], dict)
         assert isinstance(
-            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            invoke_callback.options[0]["structured_output_format"]["schema"], dict
         )
-        assert invoke_callback.metadatas[0]["structured_output_format"][
+        assert invoke_callback.options[0]["structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
@@ -1262,14 +1262,14 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(stream_callback.metadatas) == 1, (
+        assert len(stream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(stream_callback.metadatas[0], dict)
+        assert isinstance(stream_callback.options[0], dict)
         assert isinstance(
-            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            stream_callback.options[0]["structured_output_format"]["schema"], dict
         )
-        assert stream_callback.metadatas[0]["structured_output_format"][
+        assert stream_callback.options[0]["structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
@@ -1319,14 +1319,14 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(ainvoke_callback.metadatas) == 1, (
+        assert len(ainvoke_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(ainvoke_callback.metadatas[0], dict)
+        assert isinstance(ainvoke_callback.options[0], dict)
         assert isinstance(
-            ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            ainvoke_callback.options[0]["structured_output_format"]["schema"], dict
         )
-        assert ainvoke_callback.metadatas[0]["structured_output_format"][
+        assert ainvoke_callback.options[0]["structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
@@ -1338,15 +1338,15 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(astream_callback.metadatas) == 1, (
+        assert len(astream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
 
-        assert isinstance(astream_callback.metadatas[0], dict)
+        assert isinstance(astream_callback.options[0], dict)
         assert isinstance(
-            astream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            astream_callback.options[0]["structured_output_format"]["schema"], dict
         )
-        assert astream_callback.metadatas[0]["structured_output_format"][
+        assert astream_callback.options[0]["structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
