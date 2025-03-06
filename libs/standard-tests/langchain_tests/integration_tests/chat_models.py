@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
-    convert_to_openai_tool,
+    convert_to_json_schema,
     tool_example_to_messages,
 )
 from pydantic import BaseModel, Field
@@ -1252,7 +1252,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert invoke_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
         stream_callback = _TestCallbackHandler()
 
@@ -1271,7 +1271,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert stream_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
@@ -1328,7 +1328,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert ainvoke_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
         astream_callback = _TestCallbackHandler()
 
@@ -1348,7 +1348,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert astream_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:

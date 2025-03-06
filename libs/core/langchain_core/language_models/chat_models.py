@@ -65,7 +65,10 @@ from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
-from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
+    convert_to_openai_tool,
+)
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
@@ -374,7 +377,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     ls_structured_output_format_dict = {
                         "ls_structured_output_format": {
                             "kwargs": ls_structured_output_format.get("kwargs", {}),
-                            "schema": convert_to_openai_tool(
+                            "schema": convert_to_json_schema(
                                 ls_structured_output_format["schema"]
                             ),
                         }
@@ -467,7 +470,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 ls_structured_output_format_dict = {
                     "ls_structured_output_format": {
                         "kwargs": ls_structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
+                        "schema": convert_to_json_schema(
                             ls_structured_output_format["schema"]
                         ),
                     }
@@ -648,7 +651,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 ls_structured_output_format_dict = {
                     "ls_structured_output_format": {
                         "kwargs": ls_structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
+                        "schema": convert_to_json_schema(
                             ls_structured_output_format["schema"]
                         ),
                     }
@@ -755,7 +758,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 ls_structured_output_format_dict = {
                     "ls_structured_output_format": {
                         "kwargs": ls_structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
+                        "schema": convert_to_json_schema(
                             ls_structured_output_format["schema"]
                         ),
                     }
