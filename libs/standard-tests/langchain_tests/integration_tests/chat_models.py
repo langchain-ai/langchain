@@ -1960,7 +1960,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             set the ``supports_anthropic_inputs`` property to False.
         """  # noqa: E501
         if not self.supports_anthropic_inputs:
-            return
+            pytest.skip("Model does not explicitly support Anthropic inputs.")
 
         class color_picker(BaseModelV1):
             """Input your fav color and get a random fact about it."""
@@ -1998,26 +1998,55 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "id": "foo",
                         "name": "color_picker",
                     },
+                ],
+                tool_calls=[
+                    {
+                        "name": "color_picker",
+                        "args": {"fav_color": "green"},
+                        "id": "foo",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+            ToolMessage("That's a great pick!", tool_call_id="foo"),
+        ]
+        response = model.bind_tools([color_picker]).invoke(messages)
+        assert isinstance(response, AIMessage)
+
+        # Test thinking blocks
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Hello",
+                    },
+                ]
+            ),
+            AIMessage(
+                [
+                    {
+                        "type": "thinking",
+                        "thinking": "I'm thinking...",
+                        "signature": "abc123",
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, how are you?",
+                    },
                 ]
             ),
             HumanMessage(
                 [
                     {
-                        "type": "tool_result",
-                        "tool_use_id": "foo",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
-                            }
-                        ],
-                        "is_error": False,
+                        "type": "text",
+                        "text": "Well, thanks.",
                     },
-                    {"type": "text", "text": "what's my sister's favorite color"},
                 ]
             ),
         ]
-        model.bind_tools([color_picker]).invoke(messages)
+        response = model.invoke(messages)
+        assert isinstance(response, AIMessage)
 
     def test_tool_message_error_status(
         self, model: BaseChatModel, my_adder_tool: BaseTool

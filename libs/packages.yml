@@ -478,3 +478,7 @@ packages:
   name_title: Valthera
   path: .
   repo: valthera/langchain-valthera
+- name: langchain-tableau
+  name_title: Tableau
+  path: .
+  repo: Tab-SE/tableau_langchain
