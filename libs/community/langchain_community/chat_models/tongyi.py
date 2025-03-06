@@ -123,6 +123,8 @@ def convert_dict_to_message(
                             tool_calls.append(parsed_tool)
                     except Exception as e:
                         invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
+        elif "partial" in _dict and isinstance(_dict["partial"], bool):
+            additional_kwargs = {"partial": _dict["partial"]}
         else:
             additional_kwargs = {}
 
@@ -204,6 +206,9 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
         if "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        # support Partial Mode for text continuation
+        if "partial" in message.additional_kwargs:
+            message_dict["partial"] = message.additional_kwargs["partial"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
