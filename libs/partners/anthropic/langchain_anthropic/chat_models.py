@@ -979,7 +979,7 @@ class ChatAnthropic(BaseChatModel):
         warnings.warn(thinking_admonition)
         llm = self.bind_tools(
             [schema],
-            structured_output_format={
+            ls_structured_output_format={
                 "kwargs": {"method": "function_calling"},
                 "schema": formatted_tool,
             },
@@ -1297,7 +1297,7 @@ class ChatAnthropic(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice=tool_name,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
                     "schema": formatted_tool,
                 },

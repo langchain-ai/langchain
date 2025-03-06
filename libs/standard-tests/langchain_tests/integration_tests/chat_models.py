@@ -72,7 +72,7 @@ def _get_joke_class(
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    metadatas: list[Optional[dict]]
+    options: list[Optional[dict]]
 
     def __init__(self) -> None:
         super().__init__()
@@ -1248,9 +1248,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert isinstance(invoke_callback.options[0], dict)
         assert isinstance(
-            invoke_callback.options[0]["structured_output_format"]["schema"], dict
+            invoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert invoke_callback.options[0]["structured_output_format"][
+        assert invoke_callback.options[0]["ls_structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
@@ -1267,9 +1267,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert isinstance(stream_callback.options[0], dict)
         assert isinstance(
-            stream_callback.options[0]["structured_output_format"]["schema"], dict
+            stream_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert stream_callback.options[0]["structured_output_format"][
+        assert stream_callback.options[0]["ls_structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
@@ -1324,9 +1324,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         assert isinstance(ainvoke_callback.options[0], dict)
         assert isinstance(
-            ainvoke_callback.options[0]["structured_output_format"]["schema"], dict
+            ainvoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert ainvoke_callback.options[0]["structured_output_format"][
+        assert ainvoke_callback.options[0]["ls_structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 
@@ -1344,9 +1344,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         assert isinstance(astream_callback.options[0], dict)
         assert isinstance(
-            astream_callback.options[0]["structured_output_format"]["schema"], dict
+            astream_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert astream_callback.options[0]["structured_output_format"][
+        assert astream_callback.options[0]["ls_structured_output_format"][
             "schema"
         ] == convert_to_openai_tool(schema)
 

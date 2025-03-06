@@ -366,24 +366,26 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
-            structured_output_format = kwargs.pop("structured_output_format", None)
-            if structured_output_format:
+            ls_structured_output_format = kwargs.pop(
+                "ls_structured_output_format", None
+            )
+            if ls_structured_output_format:
                 try:
-                    structured_output_format_dict = {
-                        "structured_output_format": {
-                            "kwargs": structured_output_format.get("kwargs", {}),
+                    ls_structured_output_format_dict = {
+                        "ls_structured_output_format": {
+                            "kwargs": ls_structured_output_format.get("kwargs", {}),
                             "schema": convert_to_openai_tool(
-                                structured_output_format["schema"]
+                                ls_structured_output_format["schema"]
                             ),
                         }
                     }
                 except ValueError:
-                    structured_output_format_dict = {}
+                    ls_structured_output_format_dict = {}
             else:
-                structured_output_format_dict = {}
+                ls_structured_output_format_dict = {}
 
             params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs, **structured_output_format_dict}
+            options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
@@ -459,24 +461,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
 
-        structured_output_format = kwargs.pop("structured_output_format", None)
-        if structured_output_format:
+        ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
+        if ls_structured_output_format:
             try:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
+                ls_structured_output_format_dict = {
+                    "ls_structured_output_format": {
+                        "kwargs": ls_structured_output_format.get("kwargs", {}),
                         "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
+                            ls_structured_output_format["schema"]
                         ),
                     }
                 }
             except ValueError:
-                structured_output_format_dict = {}
+                ls_structured_output_format_dict = {}
         else:
-            structured_output_format_dict = {}
+            ls_structured_output_format_dict = {}
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **structured_output_format_dict}
+        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params(stop=stop, **kwargs),
@@ -640,24 +642,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        structured_output_format = kwargs.pop("structured_output_format", None)
-        if structured_output_format:
+        ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
+        if ls_structured_output_format:
             try:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
+                ls_structured_output_format_dict = {
+                    "ls_structured_output_format": {
+                        "kwargs": ls_structured_output_format.get("kwargs", {}),
                         "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
+                            ls_structured_output_format["schema"]
                         ),
                     }
                 }
             except ValueError:
-                structured_output_format_dict = {}
+                ls_structured_output_format_dict = {}
         else:
-            structured_output_format_dict = {}
+            ls_structured_output_format_dict = {}
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **structured_output_format_dict}
+        options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
@@ -747,24 +749,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        structured_output_format = kwargs.pop("structured_output_format", None)
-        if structured_output_format:
+        ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
+        if ls_structured_output_format:
             try:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
+                ls_structured_output_format_dict = {
+                    "ls_structured_output_format": {
+                        "kwargs": ls_structured_output_format.get("kwargs", {}),
                         "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
+                            ls_structured_output_format["schema"]
                         ),
                     }
                 }
             except ValueError:
-                structured_output_format_dict = {}
+                ls_structured_output_format_dict = {}
         else:
-            structured_output_format_dict = {}
+            ls_structured_output_format_dict = {}
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **structured_output_format_dict}
+        options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
@@ -1310,7 +1312,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm = self.bind_tools(
             [schema],
             tool_choice="any",
-            structured_output_format={
+            ls_structured_output_format={
                 "kwargs": {"method": "function_calling"},
                 "schema": schema,
             },
