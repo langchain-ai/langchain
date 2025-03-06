@@ -26,6 +26,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -81,6 +82,15 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+
+class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
+    name: str
+    description: str
+    input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
 
 
 def _format_image(image_url: str) -> Dict:
@@ -900,6 +910,8 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        if "model" in llm_output and "model_name" not in llm_output:
+            llm_output["model_name"] = llm_output["model"]
         if (
             len(content) == 1
             and content[0]["type"] == "text"
@@ -951,6 +963,31 @@ class ChatAnthropic(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
+
+    def _get_llm_for_structured_output_when_thinking_is_enabled(
+        self,
+        schema: Union[Dict, type],
+        formatted_tool: AnthropicTool,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        thinking_admonition = (
+            "Anthropic structured output relies on forced tool calling, "
+            "which is not supported when `thinking` is enabled. This method will raise "
+            "langchain_core.exceptions.OutputParserException if tool calls are not "
+            "generated. Consider disabling `thinking` or adjust your prompt to ensure "
+            "the tool is called."
+        )
+        warnings.warn(thinking_admonition)
+        llm = self.bind_tools(
+            [schema],
+            structured_output_format={"kwargs": {}, "schema": formatted_tool},
+        )
+
+        def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
+            if not message.tool_calls:
+                raise OutputParserException(thinking_admonition)
+            return message
+
+        return llm | _raise_if_no_tool_calls
 
     def bind_tools(
         self,
@@ -1249,11 +1286,17 @@ class ChatAnthropic(BaseChatModel):
         """  # noqa: E501
         formatted_tool = convert_to_anthropic_tool(schema)
         tool_name = formatted_tool["name"]
-        llm = self.bind_tools(
-            [schema],
-            tool_choice=tool_name,
-            structured_output_format={"kwargs": {}, "schema": formatted_tool},
-        )
+        if self.thinking is not None and self.thinking.get("type") == "enabled":
+            llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
+                schema, formatted_tool
+            )
+        else:
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                structured_output_format={"kwargs": {}, "schema": formatted_tool},
+            )
+
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
@@ -1356,15 +1399,6 @@ class ChatAnthropic(BaseChatModel):
         return response.input_tokens
 
 
-class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
-
-    name: str
-    description: str
-    input_schema: Dict[str, Any]
-    cache_control: NotRequired[Dict[str, str]]
-
-
 def convert_to_anthropic_tool(
     tool: Union[Dict[str, Any], Type, Callable, BaseTool],
 ) -> AnthropicTool:
@@ -1445,9 +1479,14 @@ def _make_message_chunk_from_anthropic_event(
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         usage_metadata = _create_usage_metadata(event.message.usage)
+        if hasattr(event.message, "model"):
+            response_metadata = {"model_name": event.message.model}
+        else:
+            response_metadata = {}
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
         )
     elif (
         event.type == "content_block_start"
