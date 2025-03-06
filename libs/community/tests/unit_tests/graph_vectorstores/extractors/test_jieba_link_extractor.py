@@ -1,5 +1,8 @@
+"jieba_link_extractor unit test"
 import pytest
-from langchain_community.graph_vectorstores.extractors.jieba_link_extractor import JiebaLinkExtractor
+from langchain_community.graph_vectorstores.extractors.jieba_link_extractor import (
+    JiebaLinkExtractor
+)
 from langchain_community.graph_vectorstores.links import Link
 
 CONTENT1 = '''
@@ -21,6 +24,7 @@ CONTENT1 = '''
 
 @pytest.mark.requires("jieba")
 def test_tfidf_analyzer():
+    "tfidf analyzer test case"
     extractor = JiebaLinkExtractor(analyzer="tfidf")
     results = extractor.extract_one(CONTENT1)
     assert results == {
@@ -31,6 +35,7 @@ def test_tfidf_analyzer():
 
 @pytest.mark.requires("jieba")
 def test_textrank_analyzer():
+    "textrank analyzer test case"
     extractor = JiebaLinkExtractor(analyzer="textrank")
     results = extractor.extract_one(CONTENT1)
     assert results == {
@@ -41,6 +46,7 @@ def test_textrank_analyzer():
 
 @pytest.mark.requires("jieba")
 def test_mixed_analyzer():
+    "mixed analyzer test case"
     extractor = JiebaLinkExtractor(analyzer="mixed",weight=(0.4,0.6))
     results = extractor.extract_one(CONTENT1)
     assert results == {
@@ -51,7 +57,13 @@ def test_mixed_analyzer():
 
 @pytest.mark.requires("jieba")
 def test_with_extract_keywords_kwargs():
-    extractor = JiebaLinkExtractor(extract_keywords_kwargs={"topK": 5, "withWeight": True, "allowPOS": ('n','nr','ns','nt','nz')})
+    "test with extract_keywords_kwargs params"
+    extractor = JiebaLinkExtractor(extract_keywords_kwargs={
+        "topK": 5, 
+        "withWeight": True, 
+        "allowPOS": ('n','nr','ns','nt','nz')
+        }
+    )
     results = extractor.extract_one(CONTENT1)
     assert results == {
         Link.bidir(kind="kw", tag="文洁"),
