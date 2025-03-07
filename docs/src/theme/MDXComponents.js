@@ -5,6 +5,7 @@ import CodeBlock from "./CodeBlock";
 import Compatibility from "./Compatibility.js";
 import Div from "./Div.js";
 import EmbeddingTabs from "./EmbeddingTabs.js";
+import { ItemTable } from "./FeatureTables.js";
 import Prerequisites from "./Prerequisites.js";
 import Tabs from "@theme-original/Tabs";
 import TabItem from "@theme-original/TabItem";
@@ -19,6 +20,7 @@ export default {
   Div,
   EmbeddingTabs,
   Fragment,
+  ItemTable,
   Prerequisites,
   TabItem,
   Tabs,
