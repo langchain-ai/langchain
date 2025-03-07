@@ -478,3 +478,8 @@ packages:
   name_title: Tableau
   path: .
   repo: Tab-SE/tableau_langchain
+- name: ads4gpts
+  name_title: ADS4GPTs
+  path: libs/python-sdk/ads4gpts-langchain
+  repo: ADS4GPTs/ads4gpts
+  downloads: 733
