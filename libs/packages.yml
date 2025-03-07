@@ -478,3 +478,7 @@ packages:
   name_title: Tableau
   path: .
   repo: Tab-SE/tableau_langchain
+- name: langchain-netmind
+  name_title: netmind
+  path: .
+  repo: protagolabs/langchain
