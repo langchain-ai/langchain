@@ -519,6 +519,41 @@ class ChatAnthropic(BaseChatModel):
 
             "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
 
+    PDF input:
+        .. code-block:: python
+
+            from base64 import b64encode
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.messages import HumanMessage
+            import requests
+
+            url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            data = b64encode(requests.get(url).content).decode()
+
+            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+            ai_msg = llm.invoke(
+                [
+                    HumanMessage(
+                        [
+                            "Summarize this document.",
+                            {
+                                "type": "document",
+                                "source": {
+                                    "type": "base64",
+                                    "data": data,
+                                    "media_type": "application/pdf",
+                                },
+                            },
+                        ]
+                    )
+                ]
+            )
+            ai_msg.content
+
+        .. code-block:: python
+
+            "This appears to be a simple document..."
+
     Extended thinking:
         Claude 3.7 Sonnet supports an
         `extended thinking <https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking>`_
