@@ -1191,6 +1191,8 @@ def convert_to_openai_messages(
                                 },
                             }
                         )
+                    elif block.get("type") == "thinking":
+                        content.append(block)
                     else:
                         err = (
                             f"Unrecognized content block at "
