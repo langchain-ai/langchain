@@ -474,6 +474,10 @@ packages:
   name_title: Taiga
   path: .
   repo: Shikenso-Analytics/langchain-taiga
+- name: langchain-tableau
+  name_title: Tableau
+  path: .
+  repo: Tab-SE/tableau_langchain
 - name: langchain-opengradient
   path: .
   repo: OpenGradient/og-langchain
