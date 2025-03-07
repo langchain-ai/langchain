@@ -1266,8 +1266,8 @@ class PyPDFium2Parser(BaseBlobParser):
         self.pages_delimiter = pages_delimiter
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
-        """
-        Lazily parse the blob.
+        """Lazily parse the blob.
+
         Insert image, if possible, between two paragraphs.
         In this way, a paragraph can be continued on the next page.
 
@@ -1469,7 +1469,6 @@ class PDFPlumberParser(BaseBlobParser):
         Raises:
             ValueError: If the `mode` is not "single" or "page".
             ValueError: If the `extract_tables` is not "csv", "markdown" or "html".
-
         """
         super().__init__()
         if mode not in ["single", "page"]:
@@ -1495,10 +1494,7 @@ class PDFPlumberParser(BaseBlobParser):
         }
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
-        """
-        Lazily parse the blob.
-        Insert image, if possible, between two paragraphs.
-        In this way, a paragraph can be continued on the next page.
+        """Lazily parse the blob.
 
         Args:
             blob: The blob to parse.
@@ -1682,23 +1678,19 @@ class PDFPlumberParser(BaseBlobParser):
                             )
                             yield new_textmap.to_string()
                             extract_wordmaps.clear()
-                        # and yield the table
+                        # And yield the table
                         used_arrays[i] = True
-                        # print(f"yield table {i}")
                         yield tables_content[i]
                     break
             if not is_table:
-                # print(f'  Add {word["text"]}')
                 extract_wordmaps.append((word, o))
         if extract_wordmaps:
-            # Text after the array ?
             new_wordmap = text.WordMap(tuples=extract_wordmaps)
             new_textmap = new_wordmap.to_textmap(
                 **{k: kwargs[k] for k in text.TEXTMAP_KWARGS if k in kwargs}
             )
-            # print(f"yield {new_textmap.to_string()}")
             yield new_textmap.to_string()
-        # Add images-
+        # Add images
         for content in images_content:
             yield content
 
@@ -1868,7 +1860,6 @@ class PDFPlumberParser(BaseBlobParser):
         output += "|" + "|".join("---" for i in range(col_count)) + "|\n"
 
         # skip first row in details if header is part of the table
-
         # iterate over detail rows
         for row in table:
             line = "|"
