@@ -88,6 +88,8 @@ from typing_extensions import Self
 
 from langchain_groq.version import __version__
 
+WARNED_DEFAULT_MODEL = False
+
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -109,7 +111,7 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use. E.g. "mixtral-8x7b-32768".
+            Name of Groq model to use. E.g. "llama-3.1-8b-instant".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
@@ -140,7 +142,7 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             llm = ChatGroq(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",
                 temperature=0.0,
                 max_retries=2,
                 # other params...
@@ -164,7 +166,7 @@ class ChatGroq(BaseChatModel):
             response_metadata={'token_usage': {'completion_tokens': 38,
             'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
             0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
+            'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
@@ -222,7 +224,7 @@ class ChatGroq(BaseChatModel):
            response_metadata={'token_usage': {'completion_tokens': 53,
            'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
            0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768',
+           'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
 
@@ -295,7 +297,7 @@ class ChatGroq(BaseChatModel):
             'prompt_time': 0.007518279,
             'queue_time': None,
             'total_time': 0.11947467},
-            'model_name': 'mixtral-8x7b-32768',
+            'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
@@ -350,6 +352,27 @@ class ChatGroq(BaseChatModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def warn_default_model(cls, values: Dict[str, Any]) -> Any:
+        """Warning anticipating removal of default model."""
+        # TODO(ccurme): remove this warning in 0.3.0 when default model is removed
+        global WARNED_DEFAULT_MODEL
+        if (
+            "model" not in values
+            and "model_name" not in values
+            and not WARNED_DEFAULT_MODEL
+        ):
+            warnings.warn(
+                "Groq is retiring the default model for ChatGroq, mixtral-8x7b-32768, "
+                "on March 20, 2025. Requests with the default model will start failing "
+                "on that date. Version 0.3.0 of langchain-groq will remove the "
+                "default. Please specify `model` explicitly, e.g., "
+                "`model='mistral-saba-24b'` or `model='llama-3.3-70b-versatile'`.",
+            )
+            WARNED_DEFAULT_MODEL = True
+        return values
 
     @model_validator(mode="before")
     @classmethod
