@@ -481,4 +481,4 @@ packages:
 - name: langchain-netmind
   name_title: netmind
   path: .
-  repo: protagolabs/langchain
+  repo: protagolabs/langchain-netmind
