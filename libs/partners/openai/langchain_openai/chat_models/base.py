@@ -1431,7 +1431,7 @@ class BaseChatOpenAI(BaseChatModel):
                 tool_choice=tool_name,
                 parallel_tool_calls=False,
                 strict=strict,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": schema,
                 },
@@ -1450,7 +1450,7 @@ class BaseChatOpenAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": schema,
                 },
@@ -1469,7 +1469,7 @@ class BaseChatOpenAI(BaseChatModel):
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(
                 response_format=response_format,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": convert_to_openai_tool(schema),
                 },
