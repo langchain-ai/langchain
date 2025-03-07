@@ -1470,6 +1470,17 @@ class PDFPlumberParser(BaseBlobParser):
 
         return extract_from_images_with_rapidocr(images)
 
+_map_extract_tables: Dict[Literal["markdown", "html", None], str] = {
+    "markdown": "",
+    "html": "But, use html syntax for convert all tables. ",
+}
+_map_extract_images = {
+    RapidOCRBlobParser: "",
+    TesseractBlobParser: "",
+    LLMImageBlobParser: "If you come across a picture, "
+    "diagram or other illustration, "
+    "describe it. ",
+}
 
 class ZeroxPDFParser(BaseBlobParser):
     """Parse a blob from a PDF using `py-zerox` library.
@@ -1520,25 +1531,8 @@ class ZeroxPDFParser(BaseBlobParser):
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
     """
-
-    warnings.filterwarnings(
-        "ignore",
-        module=r"^pyzerox.models.modellitellm$",
-        message=r"\s*Custom system prompt was provided which.*",
-    )
     _warn_images_to_text = False
     _warn_creator = False
-    _map_extract_tables: Dict[Literal["markdown", "html", None], str] = {
-        "markdown": "",
-        "html": "But, use html syntax for convert all tables. ",
-    }
-    _map_extract_images = {
-        RapidOCRBlobParser: "",
-        TesseractBlobParser: "",
-        LLMImageBlobParser: "If you come across a picture, "
-        "diagram or other illustration, "
-        "describe it. ",
-    }
     _prompt = (
         "Convert the following PDF page to markdown. "
         "{prompt_tables}"
@@ -1680,10 +1674,10 @@ class ZeroxPDFParser(BaseBlobParser):
             zerox_prompt = self.custom_system_prompt
 
             if not zerox_prompt and self.images_parser or self.extract_tables:
-                prompt_tables = ZeroxPDFParser._map_extract_tables[self.extract_tables]
+                prompt_tables = _map_extract_tables[self.extract_tables]
                 clazz = self.images_parser.__class__
-                if clazz in ZeroxPDFParser._map_extract_images:
-                    prompt_images = ZeroxPDFParser._map_extract_images[clazz]
+                if clazz in _map_extract_images:
+                    prompt_images = _map_extract_images[clazz]
                 else:
                     if not ZeroxPDFParser._warn_creator:
                         ZeroxPDFParser._warn_creator = True
