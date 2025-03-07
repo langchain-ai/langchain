@@ -22,7 +22,7 @@ from langchain_valthera.tools import ValtheraTool
 
 ## Examples
 
-### Example 1: Initializing the ValtheraTool for LangChain
+### Example: Initializing the ValtheraTool for LangChain
 
 This example shows how to initialize the ValtheraTool using a `DataAggregator` and configuration for motivation and ability scoring.
 
@@ -61,94 +61,5 @@ valthera_tool = ValtheraTool(
 print("✅ ValtheraTool successfully initialized for LangChain integration!")
 ```
 
-### Example 2: Using ValtheraTool with LangChain Agents
-
-This example demonstrates how to integrate the ValtheraTool with a LangChain agent. Note that the tool requires structured input with the keys: `user_id`, `email`, `behavior_id`, `behavior_name`, and `behavior_description`.
-
-```python
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.prompts import PromptTemplate
-from langchain_valthera.tools import ValtheraTool
-
-# Assume valthera_tool is already initialized as shown in Example 1
-
-# Define a custom prompt for the agent
-agent_prompt = PromptTemplate.from_template("""
-You are an engagement specialist that helps determine when and how to engage users.
-Use the Valthera tool to evaluate user readiness for a behavior and recommend engagement strategies.
-
-{tools}
-
-{chat_history}
-User Query: {input}
-{agent_scratchpad}
-""")
-
-# Create a LangChain agent with the ValtheraTool
-agent = create_react_agent(
-    llm=ChatOpenAI(model_name="gpt-4-turbo", temperature=0),
-    tools=[valthera_tool],
-    prompt=agent_prompt
-)
-
-# Set up the agent executor
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=[valthera_tool],
-    verbose=True
-)
-
-# Run the agent with a query that includes the required structured input
-response = agent_executor.invoke({
-    "input": {
-        "user_id": "user_12345",
-        "email": "user@example.com",
-        "behavior_id": "onboarding_001",
-        "behavior_name": "Unfinished Onboarding",
-        "behavior_description": "User has not completed all onboarding steps."
-    }
-})
-
-print(response["output"])
-```
-
-### Example 3: Integrating with LangGraph
-
-This example shows how to use the ValtheraTool with LangGraph for more complex agent workflows.
-
-```python
-from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
-from langchain_valthera.tools import ValtheraTool
-
-# Assume valthera_tool is already initialized as shown in Example 1
-
-# Initialize the LangChain LLM
-llm = ChatOpenAI(
-    model_name="gpt-4-turbo",
-    temperature=0.0,
-    openai_api_key=os.environ.get("OPENAI_API_KEY")
-)
-
-# Create the LangGraph React Agent with the ValtheraTool
-graph = create_react_agent(llm, tools=[valthera_tool])
-
-# Prepare an input message with the required behavior evaluation details
-inputs = {
-    "messages": [
-        (
-            "user",
-            "Evaluate engagement readiness for a user with the following details: "
-            "user_id: user_12345, email: user@example.com, behavior_id: onboarding_001, "
-            "behavior_name: Unfinished Onboarding, behavior_description: User has not completed all onboarding steps."
-        )
-    ]
-}
-
-print("=== Running LangGraph Agent with ValtheraTool ===")
-for response in graph.stream(inputs, stream_mode="values"):
-    print(response)
-```
 
 The langchain-valthera integration allows you to assess user behavior and decide on the best course of action for engagement, ensuring that interactions are both timely and relevant within your LangChain applications.
