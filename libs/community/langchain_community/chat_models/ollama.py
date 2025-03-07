@@ -12,6 +12,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     ChatMessage,
+    ControlMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -107,6 +108,8 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 message_text = f"[INST] {message.content} [/INST]"
         elif isinstance(message, AIMessage):
             message_text = f"{message.content}"
+        elif isinstance(message, ControlMessage):
+            message_text = f"{message.content}"
         elif isinstance(message, SystemMessage):
             message_text = f"<<SYS>> {message.content} <</SYS>>"
         else:
@@ -130,6 +133,8 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 role = "assistant"
             elif isinstance(message, SystemMessage):
                 role = "system"
+            elif isinstance(message, ControlMessage):
+                role = "control"
             else:
                 raise ValueError("Received unsupported message type for Ollama.")
 
