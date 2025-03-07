@@ -4,7 +4,6 @@ import ChatModelTabs from "./ChatModelTabs.js"
 import CodeBlock from "./CodeBlock";
 import Compatibility from "./Compatibility.js";
 import DocPaginator from "./DocPaginator";
-import DocItem from "./DocItem";
 import Div from "./Div.js";
 import EmbeddingTabs from "./EmbeddingTabs.js";
 import FeatureTables from "./FeatureTables.js";
@@ -22,7 +21,6 @@ export default {
   ChatModelTabs,
   CodeBlock,
   Compatibility,
-  DocItem,
   DocPaginator,
   Div,
   EmbeddingTabs,
