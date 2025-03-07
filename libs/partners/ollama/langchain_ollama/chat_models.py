@@ -131,6 +131,8 @@ def _parse_arguments_from_tool_call(
                 parsed_arguments[key] = _parse_json_string(
                     value, skip=True, raw_tool_call=raw_tool_call
                 )
+                if not isinstance(parsed_arguments[key], (dict, list)):
+                    parsed_arguments[key] = str(value)
             else:
                 parsed_arguments[key] = value
     else:
