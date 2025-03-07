@@ -478,3 +478,6 @@ packages:
   name_title: Tableau
   path: .
   repo: Tab-SE/tableau_langchain
+- name: langchain-jieba
+  path: .
+  repo: cqzyys/langchain-jieba
