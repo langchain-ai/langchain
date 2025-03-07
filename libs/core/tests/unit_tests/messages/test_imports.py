@@ -10,6 +10,8 @@ EXPECTED_ALL = [
     "BaseMessageChunk",
     "ChatMessage",
     "ChatMessageChunk",
+    "ControlMessage",
+    "ControlMessageChunk",
     "FunctionMessage",
     "FunctionMessageChunk",
     "HumanMessage",
