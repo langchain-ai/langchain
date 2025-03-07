@@ -119,6 +119,25 @@ async def agenerate_from_stream(
     return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
+def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) -> dict:
+    if ls_structured_output_format:
+        try:
+            ls_structured_output_format_dict = {
+                "ls_structured_output_format": {
+                    "kwargs": ls_structured_output_format.get("kwargs", {}),
+                    "schema": convert_to_json_schema(
+                        ls_structured_output_format["schema"]
+                    ),
+                }
+            }
+        except ValueError:
+            ls_structured_output_format_dict = {}
+    else:
+        ls_structured_output_format_dict = {}
+
+    return ls_structured_output_format_dict
+
+
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for chat models.
 
@@ -372,20 +391,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ls_structured_output_format = kwargs.pop(
                 "ls_structured_output_format", None
             )
-            if ls_structured_output_format:
-                try:
-                    ls_structured_output_format_dict = {
-                        "ls_structured_output_format": {
-                            "kwargs": ls_structured_output_format.get("kwargs", {}),
-                            "schema": convert_to_json_schema(
-                                ls_structured_output_format["schema"]
-                            ),
-                        }
-                    }
-                except ValueError:
-                    ls_structured_output_format_dict = {}
-            else:
-                ls_structured_output_format_dict = {}
+            ls_structured_output_format_dict = _format_ls_structured_output(
+                ls_structured_output_format
+            )
 
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
@@ -465,20 +473,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         messages = self._convert_input(input).to_messages()
 
         ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
-        if ls_structured_output_format:
-            try:
-                ls_structured_output_format_dict = {
-                    "ls_structured_output_format": {
-                        "kwargs": ls_structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_json_schema(
-                            ls_structured_output_format["schema"]
-                        ),
-                    }
-                }
-            except ValueError:
-                ls_structured_output_format_dict = {}
-        else:
-            ls_structured_output_format_dict = {}
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
@@ -646,20 +643,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
-        if ls_structured_output_format:
-            try:
-                ls_structured_output_format_dict = {
-                    "ls_structured_output_format": {
-                        "kwargs": ls_structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_json_schema(
-                            ls_structured_output_format["schema"]
-                        ),
-                    }
-                }
-            except ValueError:
-                ls_structured_output_format_dict = {}
-        else:
-            ls_structured_output_format_dict = {}
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
@@ -753,20 +739,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
-        if ls_structured_output_format:
-            try:
-                ls_structured_output_format_dict = {
-                    "ls_structured_output_format": {
-                        "kwargs": ls_structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_json_schema(
-                            ls_structured_output_format["schema"]
-                        ),
-                    }
-                }
-            except ValueError:
-                ls_structured_output_format_dict = {}
-        else:
-            ls_structured_output_format_dict = {}
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
