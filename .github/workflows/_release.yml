@@ -313,7 +313,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
   # Test select published packages against new core
-  test-published-packages-against-core:
+  test-prior-published-packages-against-new-core:
     needs:
       - build
       # - release-notes
@@ -376,8 +376,7 @@ jobs:
           # Run tests
           uv sync --group test --group test_integration
           uv pip install ../../core/dist/*.whl
-          make test
-          make integration_test
+          make integration_tests
 
   # publish:
   #   needs:
