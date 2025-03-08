@@ -121,6 +121,8 @@ def get_buffer_string(
             role = "Function"
         elif isinstance(m, ToolMessage):
             role = "Tool"
+        elif isinstance(m, ControlMessage):
+            role = "Control"
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
