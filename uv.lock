@@ -149,7 +149,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.45.2"
+version = "0.49.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -160,9 +160,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/15/74/2b2485fc120da834c0c5be07462541ec082e9fa8851d845f2587e480535a/anthropic-0.45.2.tar.gz", hash = "sha256:32a18b9ecd12c91b2be4cae6ca2ab46a06937b5aa01b21308d97a6d29794fb5e", size = 200901 }
+sdist = { url = "https://files.pythonhosted.org/packages/86/e3/a88c8494ce4d1a88252b9e053607e885f9b14d0a32273d47b727cbee4228/anthropic-0.49.0.tar.gz", hash = "sha256:c09e885b0f674b9119b4f296d8508907f6cff0009bc20d5cf6b35936c40b4398", size = 210016 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/86/e81814e542d1eaeec84d2312bec93a99b9ef1d78d9bfae1fc5dd74abdf15/anthropic-0.45.2-py3-none-any.whl", hash = "sha256:ecd746f7274451dfcb7e1180571ead624c7e1195d1d46cb7c70143d2aedb4d35", size = 222797 },
+    { url = "https://files.pythonhosted.org/packages/76/74/5d90ad14d55fbe3f9c474fdcb6e34b4bed99e3be8efac98734a5ddce88c1/anthropic-0.49.0-py3-none-any.whl", hash = "sha256:bbc17ad4e7094988d2fa86b87753ded8dce12498f4b85fe5810f208f454a8375", size = 243368 },
 ]
 
 [[package]]
@@ -2152,25 +2152,21 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.18"
+version = "0.3.19"
 source = { editable = "libs/langchain" }
 dependencies = [
-    { name = "aiohttp" },
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
     { name = "langsmith" },
-    { name = "numpy" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "sqlalchemy" },
-    { name = "tenacity" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.8.3,<4.0.0" },
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
@@ -2188,14 +2184,12 @@ requires-dist = [
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "libs/partners/openai" },
     { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
+    { name = "langchain-xai", marker = "extra == 'xai'" },
     { name = "langsmith", specifier = ">=0.1.17,<0.4" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
-    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10" },
 ]
 
 [package.metadata.requires-dev]
@@ -2213,7 +2207,7 @@ lint = [
     { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
 ]
 test = [
-    { name = "blockbuster", specifier = ">=1.5.14,<1.6" },
+    { name = "blockbuster", specifier = ">=1.5.18,<1.6" },
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "duckdb-engine", specifier = ">=0.9.2,<1.0.0" },
@@ -2223,6 +2217,7 @@ test = [
     { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "lark", specifier = ">=1.1.5,<2.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "pandas", specifier = ">=2.0.0,<3.0.0" },
     { name = "pytest", specifier = ">=8,<9" },
@@ -2253,6 +2248,7 @@ typing = [
     { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "types-chardet", specifier = ">=5.0.4.6,<6.0.0.0" },
     { name = "types-pytz", specifier = ">=2023.3.0.0,<2024.0.0.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
@@ -2263,7 +2259,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.7"
+version = "0.3.8"
 source = { editable = "libs/partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2273,7 +2269,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.45.0,<1" },
+    { name = "anthropic", specifier = ">=0.47.0,<1" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
@@ -2364,7 +2360,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.17"
+version = "0.3.18"
 source = { editable = "libs/community" }
 dependencies = [
     { name = "aiohttp" },
@@ -2411,7 +2407,7 @@ lint = [
     { name = "ruff", specifier = ">=0.9,<0.10" },
 ]
 test = [
-    { name = "blockbuster", specifier = ">=1.5.13,<1.6" },
+    { name = "blockbuster", specifier = ">=1.5.18,<1.6" },
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "duckdb-engine", specifier = ">=0.13.6,<1.0.0" },
@@ -2454,7 +2450,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.35"
+version = "0.3.40"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2486,7 +2482,7 @@ dev = [
 ]
 lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
 test = [
-    { name = "blockbuster", specifier = "~=1.5.11" },
+    { name = "blockbuster", specifier = "~=1.5.18" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8,<1.0" },
     { name = "langchain-tests", directory = "libs/standard-tests" },
@@ -2610,7 +2606,7 @@ typing = [
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.6"
+version = "0.2.7"
 source = { editable = "libs/partners/mistralai" }
 dependencies = [
     { name = "httpx" },
@@ -2736,7 +2732,7 @@ typing = []
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.5"
+version = "0.3.7"
 source = { editable = "libs/partners/openai" }
 dependencies = [
     { name = "langchain-core" },
