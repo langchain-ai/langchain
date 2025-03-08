@@ -390,7 +390,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             messages = self._convert_input(input).to_messages()
             ls_structured_output_format = kwargs.pop(
                 "ls_structured_output_format", None
-            )
+            ) or kwargs.pop("structured_output_format", None)
             ls_structured_output_format_dict = _format_ls_structured_output(
                 ls_structured_output_format
             )
@@ -472,7 +472,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
 
-        ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
         ls_structured_output_format_dict = _format_ls_structured_output(
             ls_structured_output_format
         )
@@ -642,7 +644,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
         ls_structured_output_format_dict = _format_ls_structured_output(
             ls_structured_output_format
         )
@@ -738,7 +742,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        ls_structured_output_format = kwargs.pop("ls_structured_output_format", None)
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
         ls_structured_output_format_dict = _format_ls_structured_output(
             ls_structured_output_format
         )
