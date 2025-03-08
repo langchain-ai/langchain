@@ -312,8 +312,8 @@ jobs:
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
-  # Test core against select published packages
-  test-core-against-published-packages:
+  # Test select published packages against new core
+  test-published-packages-against-core:
     needs:
       - build
       # - release-notes
@@ -350,6 +350,9 @@ jobs:
 
       - name: Test against ${{ matrix.partner }}
         run: |
+          # Fetch the latest tags for the partner packages
+          git fetch --tags --force
+
           LATEST_PACKAGE_TAG=$(git tag --list "langchain-${{ matrix.partner }}*" | sort -Vr | head -n 1)
           LATEST_PACKAGE_COMMIT=$(git rev-list -n 1 $LATEST_PACKAGE_TAG)
           echo "Latest package tag: $LATEST_PACKAGE_TAG"
