@@ -538,6 +538,35 @@ def convert_to_openai_tool(
     return {"type": "function", "function": oai_function}
 
 
+def convert_to_json_schema(
+    schema: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    *,
+    strict: Optional[bool] = None,
+) -> dict[str, Any]:
+    """Convert a schema representation to a JSON schema."""
+    openai_tool = convert_to_openai_tool(schema, strict=strict)
+    if (
+        not isinstance(openai_tool, dict)
+        or "function" not in openai_tool
+        or "name" not in openai_tool["function"]
+    ):
+        error_message = "Input must be a valid OpenAI-format tool."
+        raise ValueError(error_message)
+
+    openai_function = openai_tool["function"]
+    json_schema = {}
+    json_schema["title"] = openai_function["name"]
+
+    if "description" in openai_function:
+        json_schema["description"] = openai_function["description"]
+
+    if "parameters" in openai_function:
+        parameters = openai_function["parameters"].copy()
+        json_schema.update(parameters)
+
+    return json_schema
+
+
 @beta()
 def tool_example_to_messages(
     input: str,
