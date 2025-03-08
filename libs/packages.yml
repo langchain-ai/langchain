@@ -483,3 +483,6 @@ packages:
   path: libs/python-sdk/ads4gpts-langchain
   repo: ADS4GPTs/ads4gpts
   downloads: 733
+- name: langchain-opengradient
+  path: .
+  repo: OpenGradient/og-langchain
