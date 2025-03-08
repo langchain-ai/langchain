@@ -108,7 +108,7 @@ class GalleryGridDirective(SphinxDirective):
 
         # Parse the template with Sphinx Design to create an output container
         # Prep the options for the template grid
-        class_ = "gallery-directive" + f' {self.options.get("class-container", "")}'
+        class_ = "gallery-directive" + f" {self.options.get('class-container', '')}"
         options = {"gutter": 2, "class-container": class_}
         options_str = "\n".join(f":{k}: {v}" for k, v in options.items())
 
