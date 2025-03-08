@@ -32,6 +32,7 @@ from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.control import ControlMessage, ControlMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -143,6 +144,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return SystemMessage(**message["data"])
     elif _type == "chat":
         return ChatMessage(**message["data"])
+    elif _type == "control":
+        return ControlMessage(**message["data"])
     elif _type == "function":
         return FunctionMessage(**message["data"])
     elif _type == "tool":
@@ -161,6 +164,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return SystemMessageChunk(**message["data"])
     elif _type == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
+    elif _type == "ControlMessageChunk":
+        return ControlMessageChunk(**message["data"])
     else:
         msg = f"Got unexpected message type: {_type}"
         raise ValueError(msg)
@@ -278,12 +283,15 @@ def _create_message_from_message_type(
     elif message_type == "tool":
         artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
         message = ToolMessage(content=content, artifact=artifact, **kwargs)
+    elif message_type == "control":
+        message = ControlMessage(content=content, **kwargs)
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
         msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', 'control'"
+            " or 'developer'."
         )
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
