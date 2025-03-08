@@ -46,7 +46,6 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         - Extracting unique opening component tags using regex
         - Creating separators list with extracted tags and JS separators
         - Splitting the text using the separators by calling the parent class method
-        - Handling chunk overlap if enabled
 
         Args:
             text: String containing code to split
@@ -95,22 +94,5 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
         self._separators = separators
-
-        # Split the text using the separators
         chunks = super().split_text(text)
-
-        # Handle chunk overlap
-        if self._chunk_overlap > 0:
-            # Create a new list to hold the final chunks with overlap
-            final_chunks = []
-            for i in range(len(chunks)):
-                if i == 0:
-                    final_chunks.append(chunks[i])
-                else:
-                    # Add the overlap from the previous chunk
-                    overlap_chunk = chunks[i - 1][-self._chunk_overlap :] + chunks[i]
-                    final_chunks.append(overlap_chunk)
-
-            return final_chunks
-
         return chunks
