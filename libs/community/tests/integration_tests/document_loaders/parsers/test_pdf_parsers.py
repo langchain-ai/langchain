@@ -119,6 +119,7 @@ class EmptyImageBlobParser(BaseImageBlobParser):
         ("PyPDFium2Parser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
         ("PyPDFParser", {"extraction_mode": "layout"}),
+        ("ZeroxPDFParser", {}),
     ],
 )
 @pytest.mark.requires("pillow")
@@ -128,6 +129,11 @@ def test_mode_and_extract_images_variations(
     mode: str,
     image_parser: BaseImageBlobParser,
 ) -> None:
+    if parser_factory == "ZeroxPDFParser":
+        try:
+            import pyzerox  # noqa: F401
+        except ImportError:
+            pytest.skip("pyzerox is valid only with Python +3.11")
     _test_matrix(
         parser_factory,
         params,
@@ -149,6 +155,7 @@ def test_mode_and_extract_images_variations(
         ("PyPDFium2Parser", {}),
         ("PyPDFParser", {"extraction_mode": "plain"}),
         ("PyPDFParser", {"extraction_mode": "layout"}),
+        ("ZeroxPDFParser", {}),
     ],
 )
 @pytest.mark.requires("pillow")
@@ -157,6 +164,11 @@ def test_mode_and_image_formats_variations(
     params: dict,
     images_inner_format: str,
 ) -> None:
+    if parser_factory == "ZeroxPDFParser":
+        try:
+            import pyzerox  # noqa: F401
+        except ImportError:
+            pytest.skip("pyzerox is valid only with Python +3.11")
     mode = "single"
     image_parser = EmptyImageBlobParser()
 
@@ -246,6 +258,7 @@ def _test_matrix(
     "parser_factory,params",
     [
         ("PyMuPDFParser", {}),
+        ("ZeroxPDFParser", {}),
     ],
 )
 def test_parser_with_table(
@@ -254,6 +267,12 @@ def test_parser_with_table(
     mode: str,
     extract_tables: str,
 ) -> None:
+    if parser_factory == "ZeroxPDFParser":
+        try:
+            import pyzerox  # noqa: F401
+        except ImportError:
+            pytest.skip("pyzerox is valid only with Python +3.11")
+
     from PIL.Image import Image
 
     from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
