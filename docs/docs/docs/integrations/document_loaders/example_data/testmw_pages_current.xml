@@ -1,0 +1,4758 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Test Wiki</sitename>
+    <dbname>testmw</dbname>
+    <base>http://testmw.fandom.com/wiki/Test_Wiki</base>
+    <generator>MediaWiki 1.37.4</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Test Wiki</namespace>
+      <namespace key="5" case="first-letter">Test Wiki talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="110" case="first-letter">Forum</namespace>
+      <namespace key="111" case="first-letter">Forum talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="500" case="first-letter">User blog</namespace>
+      <namespace key="501" case="first-letter">User blog comment</namespace>
+      <namespace key="502" case="first-letter">Blog</namespace>
+      <namespace key="503" case="first-letter">Blog talk</namespace>
+      <namespace key="710" case="first-letter">TimedText</namespace>
+      <namespace key="711" case="first-letter">TimedText talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="1200" case="first-letter">Message Wall</namespace>
+      <namespace key="1201" case="first-letter">Thread</namespace>
+      <namespace key="1202" case="first-letter">Message Wall Greeting</namespace>
+      <namespace key="2000" case="first-letter">Board</namespace>
+      <namespace key="2001" case="first-letter">Board Thread</namespace>
+      <namespace key="2002" case="first-letter">Topic</namespace>
+      <namespace key="2900" case="first-letter">Map</namespace>
+      <namespace key="2901" case="first-letter">Map talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Template:Album</title>
+    <ns>10</ns>
+    <id>2</id>
+    <revision>
+      <id>2</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>2</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="511" sha1="d8c01dbs4gl71i2k14z909cpaw785gs" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Album"&gt;
+	&lt;title source="title"/&gt;
+	&lt;image source="image"&gt;&lt;caption source="imagecaption"/&gt;&lt;/image&gt;
+	&lt;data source="artist"&gt;&lt;label&gt;Artist&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="released"&gt;&lt;label&gt;Released&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="recorded"&gt;&lt;label&gt;Recorded&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="length"&gt;&lt;label&gt;Length&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="label"&gt;&lt;label&gt;Label&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="producer"&gt;&lt;label&gt;Producer&lt;/label&gt;&lt;/data&gt;
+&lt;/infobox&gt;&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>d8c01dbs4gl71i2k14z909cpaw785gs</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Documentation</title>
+    <ns>10</ns>
+    <id>4</id>
+    <revision>
+      <id>4</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Remove aria complementary role because it's incorrect in this context; see: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/complementary_role</comment>
+      <origin>4</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="777" sha1="dqwutttr3pok2sitiet5ybs8fgrfmi5" xml:space="preserve">&lt;includeonly&gt;{| class="article-table plainlinks" style="width:100%;"
+|- style="font-size:18px;"
+! style="padding:0px;" | &lt;div style="width:100%; padding:3px 0px; text-align:center;" class="color1"&gt;Template documentation&lt;/div&gt;
+|-
+| ''Note: portions of the template sample may not be visible without values provided.''
+|-
+| View or edit [[{{{1|Template:{{PAGENAMEE}}/doc}}}|this documentation]]. ([[Template:Documentation|About template documentation]])
+|-
+| Editors can experiment in this template's [{{fullurl:{{FULLPAGENAMEE}}/sandbox|action=edit}} sandbox] and [{{fullurl:{{FULLPAGENAMEE}}/testcases}} test case] pages.
+|}
+&lt;div style="margin:0 1em;"&gt;
+{{{{{1|{{PAGENAME}}/doc}}}}}&lt;/div&gt;&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}[[Category:Documentation templates]]&lt;/noinclude&gt;</text>
+      <sha1>dqwutttr3pok2sitiet5ybs8fgrfmi5</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Documentation/doc</title>
+    <ns>10</ns>
+    <id>6</id>
+    <revision>
+      <id>6</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>6</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1974" sha1="addnotd3mz3fsq3ktjwhnxko5ey7kgn" xml:space="preserve">==Description==
+This template is used to insert descriptions on template pages.
+
+==Syntax==
+Add &lt;code&gt;&lt;nowiki&gt;&lt;noinclude&gt;&lt;/nowiki&gt;{{t|Documentation}}&lt;nowiki&gt;&lt;/noinclude&gt;&lt;/nowiki&gt;&lt;/code&gt; at the end of the template page.
+
+Add &lt;code&gt;&lt;nowiki&gt;&lt;noinclude&gt;&lt;/nowiki&gt;{{t|Documentation|documentation page}}&lt;nowiki&gt;&lt;/noinclude&gt;&lt;/nowiki&gt;&lt;/code&gt; to transclude an alternative page from the /doc subpage.
+
+==Usage==
+
+===On the Template page===
+This is the normal format when used:
+
+&lt;pre&gt;
+TEMPLATE CODE
+&lt;includeonly&gt;Any categories to be inserted into articles by the template&lt;/includeonly&gt;
+&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;
+&lt;/pre&gt;
+
+''If your template is not a completed div or table, you may need to close the tags just before &lt;code&gt;&lt;nowiki&gt;{{Documentation}}&lt;/nowiki&gt;&lt;/code&gt; is inserted (within the noinclude tags).''
+
+''A line break right before &lt;code&gt;&lt;nowiki&gt;{{Documentation}}&lt;/nowiki&gt;&lt;/code&gt; can also be useful as it helps prevent the documentation template "running into" previous code.''
+
+===On the documentation page===
+The documentation page is usually located on the /doc subpage for a template, but a different page can be specified with the first parameter of the template (see [[#Syntax|Syntax]]).
+
+Normally, you will want to write something like the following on the documentation page:
+
+&lt;pre&gt;
+==Description==
+This template is used to do something.
+
+==Syntax==
+Type &lt;code&gt;{{t|templatename}}&lt;/code&gt; somewhere.
+
+==Samples==
+&lt;code&gt;&amp;lt;nowiki&gt;{{templatename|input}}&amp;lt;/nowiki&gt;&lt;/code&gt; 
+
+results in...
+
+{{templatename|input}}
+
+&lt;includeonly&gt;Any categories for the template itself&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;
+&lt;/pre&gt;
+
+Use any or all of the above description/syntax/sample output sections. You may also want to add "see also" or other sections.
+
+Note that the above example also uses the [[Template:T]] template.
+
+&lt;includeonly&gt;[[Category:Documentation templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>addnotd3mz3fsq3ktjwhnxko5ey7kgn</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:T/doc</title>
+    <ns>10</ns>
+    <id>7</id>
+    <revision>
+      <id>7</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>7</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="595" sha1="d0o0c2pkih1xk8re8694zbwkjvqp9df" xml:space="preserve">;Description
+A template link with a variable number of parameters (0-20).
+
+;Syntax
+:{{t|t|parameter1|parameter2|parameter3|parameter4|...|parameter20}} &lt;!-- self-referential examples! --&gt;
+
+;Source
+:Improved version not needing t/piece subtemplate developed on [http://templates.fandom.com Templates wiki] see the [http://templates.fandom.com/index.php?title=Template:T&amp;action=history list of authors]. Copied here via CC-By-SA 3.0 license.
+
+;Example
+:{{t|t|param1|param2}}
+
+&lt;includeonly&gt;[[Category:General wiki templates]]&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>d0o0c2pkih1xk8re8694zbwkjvqp9df</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Character</title>
+    <ns>10</ns>
+    <id>8</id>
+    <revision>
+      <id>8</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>8</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1573" sha1="srgjce76bs6joqk2du0o4fubnivn1lm" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Character"&gt;
+	&lt;title source="name"/&gt;
+	&lt;image source="image"&gt;
+	    &lt;caption source="imagecaption" /&gt;
+	&lt;/image&gt;
+	&lt;group&gt;
+	    &lt;data source="aliases"&gt;&lt;label&gt;Aliases&lt;/label&gt;&lt;/data&gt;
+	    &lt;data source="relatives"&gt;&lt;label&gt;Relatives&lt;/label&gt;&lt;/data&gt;
+	    &lt;data source="affiliation"&gt;&lt;label&gt;Affiliation&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="occupation"&gt;&lt;label&gt;Occupation&lt;/label&gt;&lt;/data&gt;
+    &lt;/group&gt;
+    &lt;group&gt;
+        &lt;header&gt;Biographical information&lt;/header&gt;
+        &lt;data source="marital"&gt;&lt;label&gt;Marital status&lt;/label&gt;&lt;/data&gt;
+    	&lt;data source="birthDate"&gt;&lt;label&gt;Date of birth&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="birthPlace"&gt;&lt;label&gt;Place of birth&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="deathDate"&gt;&lt;label&gt;Date of death&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="deathPlace"&gt;&lt;label&gt;Place of death&lt;/label&gt;&lt;/data&gt;
+    &lt;/group&gt;
+    &lt;group&gt;
+        &lt;header&gt;Physical description&lt;/header&gt;
+        &lt;data source="species"&gt;&lt;label&gt;Species&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="gender"&gt;&lt;label&gt;Gender&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="height"&gt;&lt;label&gt;Height&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="weight"&gt;&lt;label&gt;Weight&lt;/label&gt;&lt;/data&gt;
+        &lt;data source="eyes"&gt;&lt;label&gt;Eye color&lt;/label&gt;&lt;/data&gt;
+	&lt;/group&gt;
+    &lt;group&gt;
+       &lt;header&gt;Appearances&lt;/header&gt;
+       &lt;data source="portrayedby"&gt;&lt;label&gt;Portrayed by&lt;/label&gt;&lt;/data&gt;
+       &lt;data source="appearsin"&gt;&lt;label&gt;Appears in&lt;/label&gt;&lt;/data&gt;
+       &lt;data source="debut"&gt;&lt;label&gt;Debut&lt;/label&gt;&lt;/data&gt;
+    &lt;/group&gt;
+&lt;/infobox&gt;{{#ifeq: {{NAMESPACENUMBER}} | 0 | [[Category:Characters]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>srgjce76bs6joqk2du0o4fubnivn1lm</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Book</title>
+    <ns>10</ns>
+    <id>10</id>
+    <revision>
+      <id>10</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>10</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="662" sha1="mzb8awsosjnazval60gjo4046r0nj0j" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Book"&gt;
+	&lt;title source="title"/&gt;
+	&lt;image source="image"&gt;&lt;caption source="imagecaption"/&gt;&lt;/image&gt;
+	&lt;data source="author"&gt;&lt;label&gt;Author&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="illustrator"&gt;&lt;label&gt;Illustrator&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="datePublished"&gt;&lt;label&gt;Published on&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="publisher"&gt;&lt;label&gt;Publisher&lt;/label&gt;&lt;/data&gt;
+	&lt;group layout="horizontal"&gt;
+		&lt;header&gt;Publication order&lt;/header&gt;
+		&lt;data source="previous"&gt;&lt;label&gt;Previous&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="next"&gt;&lt;label&gt;Next&lt;/label&gt;&lt;/data&gt;
+	&lt;/group&gt;
+&lt;/infobox&gt;{{#ifeq: {{NAMESPACENUMBER}} | 0 | [[Category:Books]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>mzb8awsosjnazval60gjo4046r0nj0j</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Event</title>
+    <ns>10</ns>
+    <id>14</id>
+    <revision>
+      <id>14</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>14</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="409" sha1="p1o6r7qz436p8kckwksns743rzbcs14" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Event"&gt;
+	&lt;title source="title"/&gt;
+	&lt;image source="image"&gt;&lt;caption source="imagecaption"/&gt;&lt;/image&gt;
+	&lt;data source="performers"&gt;&lt;label&gt;Performers&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="date"&gt;&lt;label&gt;Date&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="location"&gt;&lt;label&gt;Location&lt;/label&gt;&lt;/data&gt;
+&lt;/infobox&gt;{{#ifeq: {{NAMESPACENUMBER}} | 0 | [[Category:Events]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>p1o6r7qz436p8kckwksns743rzbcs14</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Item</title>
+    <ns>10</ns>
+    <id>16</id>
+    <revision>
+      <id>16</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>16</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="507" sha1="3bp6rnh53zg4rbxsepylnvzx6919rs6" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Item"&gt;
+	&lt;title source="title"/&gt;
+	&lt;image source="image"&gt;&lt;caption source="imagecaption"/&gt;&lt;/image&gt;
+	&lt;data source="type"&gt;&lt;label&gt;Type&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="effects"&gt;&lt;label&gt;Effects&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="source"&gt;&lt;label&gt;Source&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="buy"&gt;&lt;label&gt;Cost to buy&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="sell"&gt;&lt;label&gt;Cost to sell&lt;/label&gt;&lt;/data&gt;
+&lt;/infobox&gt;{{#ifeq: {{NAMESPACENUMBER}} | 0 | [[Category:Items]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>3bp6rnh53zg4rbxsepylnvzx6919rs6</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Location</title>
+    <ns>10</ns>
+    <id>18</id>
+    <revision>
+      <id>18</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>18</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="527" sha1="dmys3fguojqs0vgcao0nf80mt7lxlfk" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Location"&gt;
+	&lt;title source="title"/&gt;
+	&lt;image source="image"&gt;&lt;caption source="imagecaption"/&gt;&lt;/image&gt;
+	&lt;image source="map"&gt;&lt;caption source="mapcaption"/&gt;&lt;/image&gt;
+	&lt;data source="type"&gt;&lt;label&gt;Type&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="level"&gt;&lt;label&gt;Level&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="location"&gt;&lt;label&gt;Location&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="inhabitants"&gt;&lt;label&gt;Inhabitants&lt;/label&gt;&lt;/data&gt;
+&lt;/infobox&gt;{{#ifeq: {{NAMESPACENUMBER}} | 0 | [[Category:Locations]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>dmys3fguojqs0vgcao0nf80mt7lxlfk</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Navbox</title>
+    <ns>10</ns>
+    <id>20</id>
+    <revision>
+      <id>20</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>20</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="266" sha1="3xkfiaf5hr2cfvrz4dyzao8xl6lsfww" xml:space="preserve">{| style="width:100%; margin-top:1em; border:1px solid #999; font-size:90%; text-align:center;"
+|-
+! style="padding:0.2em 0.5em;" nowrap="nowrap" class="color1" | {{{header}}}
+|-
+| style="padding:0.2em 0.5em;" | {{{body}}}
+|}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>3xkfiaf5hr2cfvrz4dyzao8xl6lsfww</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Navbox/doc</title>
+    <ns>10</ns>
+    <id>21</id>
+    <revision>
+      <id>21</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <origin>21</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1761" sha1="8rthfey73ioyt2hbul3ikbrkasvxdza" xml:space="preserve">;Description
+:This template is used to create a basic navigation box. You can do so by calling the template, via the steps under "Syntax", but it is recommended to '''copy the code verbatim''' via the steps under "Navbox Creation".
+;Navbox Creation
+&lt;inputbox&gt;
+type=create
+prefix=Template:
+preload=Template:Navbox
+editintro=Template:Navbox/doc
+buttonlabel=Make your navbox!
+default = Navbox Foo
+&lt;/inputbox&gt;
+#Think of a name for your navbox, like "Navbox Foo". Type it in the above field, press the button, and save the page immediately. Be ready to return to ''this'' page to see the rest of the instructions.
+#Edit the resulting page in source mode.
+#Replace &lt;code&gt;{{{header}}}&lt;/code&gt; with the text you would like to appear in the header.
+#Replace &lt;code&gt;{{{body}}}&lt;/code&gt; with the text you would like to appear in the body.
+#To add another section, copy these four lines of code immediately below the lines in the existing code that they resemble:
+&lt;pre&gt;|-
+! style="padding:0.2em 0.5em;" nowrap="nowrap" class="color1" | {{{header}}}
+|-
+| style="padding:0.2em 0.5em;" | {{{body}}}&lt;/pre&gt;
+
+Save the page once you have added as many sections as you needed, and filled them with content. You may also want to create a /doc subpage explaining that to call the resulting template, one must only type &lt;code&gt;{&lt;nowiki/&gt;{Navbox Foo}}&lt;/code&gt;, or rather, whatever we decided to name the template in step 1.
+
+;Syntax
+
+&lt;pre&gt;{{navbox
+|header=Land of Bob
+|body=This &lt;nowiki&gt;[[place]]&lt;/nowiki&gt; and that &lt;nowiki&gt;[[place]]&lt;/nowiki&gt;.
+}}&lt;/pre&gt;
+
+:Results in...
+
+{{navbox
+|header=Land of Bob
+|body=This &lt;nowiki&gt;[[place]]&lt;/nowiki&gt; and that &lt;nowiki&gt;[[place]]&lt;/nowiki&gt;.
+}}
+
+&lt;includeonly&gt;[[Category:Navbox templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>8rthfey73ioyt2hbul3ikbrkasvxdza</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Quest</title>
+    <ns>10</ns>
+    <id>22</id>
+    <revision>
+      <id>22</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>22</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="755" sha1="1wq32wzitmbsx7r1kszdvl4xzbsoxrs" xml:space="preserve">&lt;includeonly&gt;&lt;infobox type="Quest"&gt;
+	&lt;title source="title"/&gt;
+	&lt;image source="image"&gt;&lt;caption source="imagecaption"/&gt;&lt;/image&gt;
+		&lt;data source="start"&gt;&lt;label&gt;Start&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="end"&gt;&lt;label&gt;End&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="prerequisites"&gt;&lt;label&gt;Prerequisites&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="level"&gt;&lt;label&gt;Level&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="location"&gt;&lt;label&gt;Location&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="rewards"&gt;&lt;label&gt;Rewards&lt;/label&gt;&lt;/data&gt;
+	&lt;group layout="horizontal"&gt;
+		&lt;header&gt;Quest progression&lt;/header&gt;
+		&lt;data source="previous"&gt;&lt;label&gt;Previous&lt;/label&gt;&lt;/data&gt;
+		&lt;data source="next"&gt;&lt;label&gt;Next&lt;/label&gt;&lt;/data&gt;
+	&lt;/group&gt;
+&lt;/infobox&gt;{{#ifeq: {{NAMESPACENUMBER}} | 0 | [[Category:Quests]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>1wq32wzitmbsx7r1kszdvl4xzbsoxrs</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:Wiki.png</title>
+    <ns>6</ns>
+    <id>24</id>
+    <revision>
+      <id>24</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>24</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="29" sha1="s1tuy95lheezaa36aijlw51ofpxeeif" xml:space="preserve">[[Category:Wiki skin images]]</text>
+      <sha1>s1tuy95lheezaa36aijlw51ofpxeeif</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Permission</title>
+    <ns>10</ns>
+    <id>25</id>
+    <revision>
+      <id>25</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>25</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="248" sha1="afbsq8hl1fz6a3o9cj42ft3ciqw6nek" xml:space="preserve">{{LicenseBox|text=''This file is copyrighted. The copyright holder has given permission for its use.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Files used with permission]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>afbsq8hl1fz6a3o9cj42ft3ciqw6nek</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Fairuse</title>
+    <ns>10</ns>
+    <id>26</id>
+    <revision>
+      <id>26</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>26</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="257" sha1="ay2vg6c14taepnarxeoo3fgxa0y15jw" xml:space="preserve">{{LicenseBox|text=''This file  is copyrighted. It will be used in a way that qualifies as fair use under US copyright law.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Fairuse files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>ay2vg6c14taepnarxeoo3fgxa0y15jw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Self</title>
+    <ns>10</ns>
+    <id>27</id>
+    <revision>
+      <id>27</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>27</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="239" sha1="mtfzk8wh9m1xkklm5tsc8xssf3f13uo" xml:space="preserve">{{LicenseBox|text=''This file was uploaded by the photographer or author.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Files uploaded by the photographer or author]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>mtfzk8wh9m1xkklm5tsc8xssf3f13uo</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:From Wikimedia</title>
+    <ns>10</ns>
+    <id>28</id>
+    <revision>
+      <id>28</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>28</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="247" sha1="dfku1bkresanalbi4wswxo9ij0otyto" xml:space="preserve">{{LicenseBox|text=''This file was originally uploaded on Wikipedia or another Wikimedia project.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Files from WikiMedia projects]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>dfku1bkresanalbi4wswxo9ij0otyto</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:CC-BY-SA</title>
+    <ns>10</ns>
+    <id>29</id>
+    <revision>
+      <id>29</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>29</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="286" sha1="lgwj65t48vqzqdrbelca7w544aiene9" xml:space="preserve">{{LicenseBox|text=''This file is licensed under the [http://creativecommons.org/licenses/by-sa/3.0/ Creative Commons Attribution-Share Alike License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:CC-BY-SA files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>lgwj65t48vqzqdrbelca7w544aiene9</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Other free</title>
+    <ns>10</ns>
+    <id>30</id>
+    <revision>
+      <id>30</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>30</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="206" sha1="isnvvvesl5tdosdu3haox75161mrf9p" xml:space="preserve">{{LicenseBox|text=''This file is licensed under a free license.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Freely licensed files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>isnvvvesl5tdosdu3haox75161mrf9p</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:PD</title>
+    <ns>10</ns>
+    <id>31</id>
+    <revision>
+      <id>31</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>31</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="194" sha1="pksid0xy9yd54147xfdt7940zncxkj4" xml:space="preserve">{{LicenseBox|text=''This file is in the public domain''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Public domain files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>pksid0xy9yd54147xfdt7940zncxkj4</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Permission/doc</title>
+    <ns>10</ns>
+    <id>32</id>
+    <revision>
+      <id>32</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>32</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="329" sha1="qiirgjuk0sqbpujxludk775ari84vzu" xml:space="preserve">;Description
+:This template is used to mark images as being copyrighted, but the copyright holder has given permission for its use.
+;Syntax
+:Type &lt;code&gt;{{t|permission}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>qiirgjuk0sqbpujxludk775ari84vzu</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Fairuse/doc</title>
+    <ns>10</ns>
+    <id>33</id>
+    <revision>
+      <id>33</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>33</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="258" sha1="irr7gavqcjulardpvgx6xr5ju1alpfj" xml:space="preserve">;Description
+:This template is used to mark images as fair use.
+;Syntax
+:Type &lt;code&gt;{{t|fairuse}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>irr7gavqcjulardpvgx6xr5ju1alpfj</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Self/doc</title>
+    <ns>10</ns>
+    <id>34</id>
+    <revision>
+      <id>34</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>34</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="297" sha1="gjte7fl6oinvvfp121cqix0835lgg0t" xml:space="preserve">;Description
+:This template is used to mark images as having been uploaded by the photographer or author.
+;Syntax
+:Type &lt;code&gt;{{t|self}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>gjte7fl6oinvvfp121cqix0835lgg0t</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:From Wikimedia/doc</title>
+    <ns>10</ns>
+    <id>35</id>
+    <revision>
+      <id>35</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>35</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="349" sha1="0vjbz61yw17p3ee4mkob45goeedwmr7" xml:space="preserve">;Description
+:This template is used to mark images as having been uploaded on [[wikipedia:|Wikipedia]] or another [[wikimedia:|Wikimedia]] project.
+;Syntax
+:Type &lt;code&gt;{{t|From Wikimedia}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>0vjbz61yw17p3ee4mkob45goeedwmr7</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:CC-BY-SA/doc</title>
+    <ns>10</ns>
+    <id>36</id>
+    <revision>
+      <id>36</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>36</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="273" sha1="9auynynkagj28207ydm7wy8qp97clt0" xml:space="preserve">;Description
+:This template is used to mark images with the CC-BY-SA license.
+;Syntax
+:Type &lt;code&gt;{{t|CC-BY-SA}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>9auynynkagj28207ydm7wy8qp97clt0</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Other free/doc</title>
+    <ns>10</ns>
+    <id>37</id>
+    <revision>
+      <id>37</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>37</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="306" sha1="skp93ud3u70qwut6lgwi19fn41rzrb8" xml:space="preserve">;Description
+:This template is used to mark images with a free license not covered by other image templates.
+;Syntax
+:Type &lt;code&gt;{{t|Other free}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>skp93ud3u70qwut6lgwi19fn41rzrb8</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:PD/doc</title>
+    <ns>10</ns>
+    <id>38</id>
+    <revision>
+      <id>38</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>38</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="271" sha1="mbiskdeicce7bwvi1r2rjgr2t1xjop8" xml:space="preserve">;Description
+:This template is used to mark images as being in the public domain.
+;Syntax
+:Type &lt;code&gt;{{t|PD}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>mbiskdeicce7bwvi1r2rjgr2t1xjop8</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Infobox templates</title>
+    <ns>14</ns>
+    <id>41</id>
+    <revision>
+      <id>41</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Templates]]"</comment>
+      <origin>41</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="22" sha1="0t5jiibdq6k1tam9oy4zt1yld5iz80u" xml:space="preserve">[[Category:Templates]]</text>
+      <sha1>0t5jiibdq6k1tam9oy4zt1yld5iz80u</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Templates</title>
+    <ns>14</ns>
+    <id>42</id>
+    <revision>
+      <id>42</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Maintenance]]"</comment>
+      <origin>42</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="24" sha1="it59vo5whwexpgslnlv8id1urubvc0x" xml:space="preserve">[[Category:Maintenance]]</text>
+      <sha1>it59vo5whwexpgslnlv8id1urubvc0x</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Image license templates</title>
+    <ns>14</ns>
+    <id>44</id>
+    <revision>
+      <id>44</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Templates]]"</comment>
+      <origin>44</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="22" sha1="0t5jiibdq6k1tam9oy4zt1yld5iz80u" xml:space="preserve">[[Category:Templates]]</text>
+      <sha1>0t5jiibdq6k1tam9oy4zt1yld5iz80u</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Navbox templates</title>
+    <ns>14</ns>
+    <id>45</id>
+    <revision>
+      <id>45</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Templates]]"</comment>
+      <origin>45</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="22" sha1="0t5jiibdq6k1tam9oy4zt1yld5iz80u" xml:space="preserve">[[Category:Templates]]</text>
+      <sha1>0t5jiibdq6k1tam9oy4zt1yld5iz80u</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:See also</title>
+    <ns>10</ns>
+    <id>50</id>
+    <revision>
+      <id>50</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>50</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="239" sha1="qfitoudiyhbuht5q6ubtn4tdlkmpxsw" xml:space="preserve">&lt;includeonly&gt;{{#invoke:Hatnote|seeAlso}}&lt;/includeonly&gt;
+&lt;noinclude&gt;{{Documentation|:Template:Hatnote/doc}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:Hatnote
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>qfitoudiyhbuht5q6ubtn4tdlkmpxsw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:About</title>
+    <ns>10</ns>
+    <id>51</id>
+    <revision>
+      <id>51</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>51</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="235" sha1="9gmzcdtgmflkfo5qc93fa7mrl4ubpjz" xml:space="preserve">&lt;includeonly&gt;{{#invoke:Hatnote|about}}&lt;/includeonly&gt;
+&lt;noinclude&gt;{{Documentation|:Template:Hatnote/doc}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:About
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>9gmzcdtgmflkfo5qc93fa7mrl4ubpjz</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:For</title>
+    <ns>10</ns>
+    <id>52</id>
+    <revision>
+      <id>52</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>52</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="235" sha1="cp15t28ftvv73lpvplpipwzfzgumdhw" xml:space="preserve">&lt;includeonly&gt;{{#invoke:Hatnote|For}}&lt;/includeonly&gt;
+&lt;noinclude&gt;{{Documentation|:Template:Hatnote/doc}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:Hatnote
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>cp15t28ftvv73lpvplpipwzfzgumdhw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Further</title>
+    <ns>10</ns>
+    <id>53</id>
+    <revision>
+      <id>53</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>53</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="239" sha1="51gw2l0zyayzfd9ckeol3rwxp1bxd9j" xml:space="preserve">&lt;includeonly&gt;{{#invoke:Hatnote|further}}&lt;/includeonly&gt;
+&lt;noinclude&gt;{{Documentation|:Template:Hatnote/doc}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:Hatnote
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>51gw2l0zyayzfd9ckeol3rwxp1bxd9j</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Hatnote</title>
+    <ns>10</ns>
+    <id>54</id>
+    <revision>
+      <id>54</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>54</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="94" sha1="8c89ie9gwiiclekqfed7iw8unob5335" xml:space="preserve">&lt;includeonly&gt;{{#invoke:Hatnote|hatnote}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>8c89ie9gwiiclekqfed7iw8unob5335</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Delete</title>
+    <ns>10</ns>
+    <id>55</id>
+    <revision>
+      <id>55</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>55</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="464" sha1="7n8l851xacjlbvn5izz6mrgnwm76q4a" xml:space="preserve">{{MessageBox
+|header  = Candidate for deletion
+|type    = delete
+|text    = This page has been nominated for removal from the wiki.
+|comment = Remember to check [[Special:Whatlinkshere/{{FULLPAGENAME}}|what links here]] and [{{fullurl:{{FULLPAGENAME}}|action=history}} the page history] before deletion.
+|class   = notice hidden plainlinks
+|id      = delete
+}}&lt;includeonly&gt;[[Category:Candidates for deletion]]&lt;/includeonly&gt;&lt;noinclude&gt;
+{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>7n8l851xacjlbvn5izz6mrgnwm76q4a</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Quote</title>
+    <ns>10</ns>
+    <id>56</id>
+    <revision>
+      <id>56</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>56</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="192" sha1="md0i39ajgk94zcbh4wi3wthdkal08v7" xml:space="preserve">{{#invoke:Quote|quote}}&lt;noinclude&gt;{{Documentation}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://starter.fandom.com/wiki/Template:Quote?oldid=4277
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>md0i39ajgk94zcbh4wi3wthdkal08v7</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:MessageBox</title>
+    <ns>10</ns>
+    <id>58</id>
+    <revision>
+      <id>58</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>58</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="181" sha1="tac00122hpvlg84q3c40iu0opt3mbqf" xml:space="preserve">{{#invoke:Mbox|main}}&lt;noinclude&gt;{{Documentation}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:Ambox
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>tac00122hpvlg84q3c40iu0opt3mbqf</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Dialogue</title>
+    <ns>10</ns>
+    <id>59</id>
+    <revision>
+      <id>59</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>59</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="263" sha1="7hb6ts8zhtguyow5o6nmcmsb57ai799" xml:space="preserve">&lt;includeonly&gt;&lt;blockquote data-format="dialogue"&gt;{{#invoke:Dialogue|main}}&lt;/blockquote&gt;&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:Dialogue
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>7hb6ts8zhtguyow5o6nmcmsb57ai799</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Namespace</title>
+    <ns>10</ns>
+    <id>60</id>
+    <revision>
+      <id>60</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>60</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="227" sha1="spa1w8qu0tci71xzw54lxvdgfor5ir3" xml:space="preserve">{{SAFESUBST:&lt;noinclude /&gt;#invoke:Namespace detect|main}}&lt;noinclude&gt;{{Documentation}}&lt;!--
+For a more traditional wikitext version of this template, see 
+https://templates.fandom.com/wiki/Template:Namespace_detect
+--&gt;&lt;/noinclude&gt;</text>
+      <sha1>spa1w8qu0tci71xzw54lxvdgfor5ir3</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Hatnote/doc</title>
+    <ns>10</ns>
+    <id>61</id>
+    <revision>
+      <id>61</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>61</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="7592" sha1="t1fxeq2w3f5fb8ffeajoi9akea4sz4i" xml:space="preserve">The hatnotes used for adding links between articles where more context is important.
+Broadly speaking, a hatnote should answer a readers' question: Am I on the right page?
+
+== Usage ==
+
+; Basic usage:
+ &amp;#123;{hatnote|''text''}}
+
+; All parameters:
+ &amp;#123;{hatnote|''text''|extraclasses=''extra classes''|selfref=''yes''|category=''no''}}
+
+== Parameters ==
+
+This template accepts the following parameters:
+* &lt;code&gt;1&lt;/code&gt; - the hatnote text (required)
+* &lt;code&gt;extraclasses&lt;/code&gt; - any extra CSS classes to be added.
+* &lt;code&gt;selfref&lt;/code&gt; - If set to "yes", "y", "true" or "1", adds the CSS class "selfref". This is used to denote self-references.
+* &lt;code&gt;category&lt;/code&gt; - If set to "no", "n", "false", or "0", suppresses the error tracking category ([[:Category:Hatnote templates with errors]]). This has an effect only if the leftmost parameter (the hatnote text) is omitted.
+
+== Example ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{hatnote|Example hatnote text}}&lt;/nowiki&gt;&lt;/code&gt; → {{hatnote|Example hatnote text}}
+
+== Typical types ==
+{{T|Main}}, {{T|Further}} are very similar, but indicate either the primary page for a topic or more detailed related topic. They have a nearly identical set of parameters.
+
+;{{T|Main}}: When an article is large, it often has a summary and a link to a main article. This template is used after the heading of the summary, to indicate a link to the subtopic article that has been summarized.
+;{{T|Further}}: Used to link to articles containing further information on this topic.
+;{{T|See also}}: Used to link to additional articles on related topics.
+
+:;{{T|Main|Main Page}}  →:{{Main|Main Page}}
+:;{{T|Main|Main Page|Main Page}}  →:{{Main|Main Page|Main Page}}
+
+:*&lt;code&gt;1&lt;/code&gt;, &lt;code&gt;2&lt;/code&gt;, &lt;code&gt;3&lt;/code&gt;, ... – the pages to link to. If no page names are specified, the current page name is used instead (without the namespace prefix). Categories and files are automatically escaped with the [[w:Help:Colon trick|colon trick]], and links to sections are automatically formatted as ''page § section'', rather than the MediaWiki default of ''page#section''.
+:*&lt;code&gt;l1&lt;/code&gt;, &lt;code&gt;l2&lt;/code&gt;, &lt;code&gt;l3&lt;/code&gt;, ... ''or''&lt;code&gt;label 1&lt;/code&gt;, &lt;code&gt;label 2&lt;/code&gt;, &lt;code&gt;label 3&lt;/code&gt;, ... – optional labels for each of the pages to link to (this is for articles where a piped link would be used). Note that the extra parameters use a lower case 'L', for example, &lt;code&gt;l1&lt;/code&gt;, &lt;u&gt;not&lt;/u&gt; &lt;code&gt;L1&lt;/code&gt;.
+:*&lt;code&gt;selfref&lt;/code&gt; – if set to "yes", "y", "true" or "1", adds the CSS class "selfref". This is used to denote self-references.
+
+
+== Disambiguation ==
+Templates such as {{T|About}} and {{T|For}} are to be used in cases where a disambiguation is not needed. In general, disambiguation pages should only be used for 4 or more titles that are mostly or entirely identical, except for a qualifier.
+;{{T|About}}: Links the reader to other articles with similar titles or concepts that they may have been seeking instead. The template has several formats, including:
+:;{{T|About|Use1}} →:{{About|}}
+:;{{T|About|Use1|&lt;nowiki/&gt;|Main Page}} →:{{About|Use1||Main Page}}
+:;{{T|About|Use1|&lt;nowiki/&gt;|Main Page|and|Main Page}} →:{{About|Use1||Main Page|and|Main Page}}
+:;{{T|About|Use1|Use2|Main Page}} →:{{About|Use1|Use2|Main Page}}
+:;{{T|About|Use1|Use2|Main Page|and|Main Page}} →:{{About|Use1|Use2|Main Page|and|Main Page}}
+:;{{T|About|Use1|Use2|Main Page|other uses}} →:{{About|Use1|Use2|Main Page|other uses}}
+
+Alternately, a &lt;code&gt;section=yes&lt;/code&gt; parameter can be added to the {{T|About}} template for use at the top of a section. When using this parameter, the wording in the template changes to specify that it is being used in a section:
+:;{{T|About|Use1|&lt;nowiki&gt;section=yes&lt;/nowiki&gt;}} →:{{About|Use1|section=yes}}
+:;{{T|About|Use1|&lt;nowiki/&gt;|Main Page|&lt;nowiki&gt;section=yes&lt;/nowiki&gt;}} →:{{About|Use1||Main Page|section=yes}}
+:;{{T|About|Use1|Use2|Main Page|&lt;nowiki&gt;section=yes&lt;/nowiki&gt;}} →:{{About|Use1|Use2|Main Page|section=yes}}
+:;{{T|About|Use1|Use2|Main Page|and|Main Page|&lt;nowiki&gt;section=yes&lt;/nowiki&gt;}} →:{{About|Use1|Use2|Main Page|and|Main Page|section=yes}}
+:;{{T|About|Use1|Use2|Main Page|other uses|&lt;nowiki&gt;section=yes&lt;/nowiki&gt;}} →:{{About|Use1|Use2|Main Page|other uses|section=yes}}
+
+A &lt;var&gt;text&lt;/var&gt; option adds text to the end; note that this should be only used when truly necessary, and the other hatnote templates listed below don't suffice. This template also supports &lt;var&gt;selfref&lt;/var&gt;.
+
+;{{T|For}}: Provides links to up to four articles or disambiguation pages. It accepts zero to five parameters. 
+
+:;If used without parameters on a page named ''Foo'', the result is
+::{{hatnote|For other uses, see [[:Foo (disambiguation)]].}}
+:;The first parameter changes the hatnote itself and should be plain text, e.g. {{T|For|similar terms}} yields
+::{{hatnote|For similar terms, see [[:Foo (disambiguation)]].}}
+:;The second parameter is used to change the resultant link, e.g. {{T|For|similar terms|Main Page}} yields
+::{{For|similar terms|Main Page}}
+:;The third, fourth and fifth parameters are used to give one, two, or three supplementary links:
+:*{{For|similar terms|Main Page|Main Page}}
+:*{{For|similar terms|Main Page|Main Page|Main Page}}
+:*{{For|similar terms|Main Page|Main Page|Main Page|Main Page}}
+:the last being produced by e.g. {{T|For|similar terms|Main Page|Main Page|Main Page|Main Page}}.
+
+== Errors ==
+
+If no hatnote text is supplied, the template will output the following message:
+* {{hatnote|category=no}}
+
+If you see this error message, it is for one of four reasons:
+# No parameters were specified (the template code was &lt;code&gt;&lt;nowiki&gt;{{hatnote}}&lt;/nowiki&gt;&lt;/code&gt;). Please use &lt;code&gt;&lt;nowiki&gt;{{hatnote|&lt;/nowiki&gt;''text''&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; instead.
+# Some parameters were specified, but the hatnote text wasn't included. For example, the template text &lt;code&gt;&lt;nowiki&gt;{{hatnote|extraclasses=seealso}}&lt;/nowiki&gt;&lt;/code&gt; will produce this error. Please use (for example) &lt;code&gt;&lt;nowiki&gt;{{hatnote|&lt;/nowiki&gt;''text''&lt;nowiki&gt;|extraclasses=seealso}}&lt;/nowiki&gt;&lt;/code&gt; instead.
+# The hatnote text was specified, but that text contains an equals sign ("="). The equals sign has a special meaning in template code, and because of this it cannot be used in template parameters that do not specify a parameter name. For example, the template code &lt;code&gt;&lt;nowiki&gt;{{hatnote|2+2=4}}&lt;/nowiki&gt;&lt;/code&gt; will produce this error. To work around this, you can specify the parameter name explicitly by using &lt;code&gt;1=&lt;/code&gt; before the hatnote text, like this: &lt;code&gt;&lt;nowiki&gt;{{hatnote|1=2+2=4}}&lt;/nowiki&gt;&lt;/code&gt;.
+# You tried to access [[Module:Hatnote]] directly by using &lt;code&gt;&lt;nowiki&gt;{{#invoke:hatnote|hatnote|&lt;/nowiki&gt;''text''&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt;. Use of #invoke in this way has been disabled for performance reasons. Please use &lt;code&gt;&lt;nowiki&gt;{{hatnote|&lt;/nowiki&gt;''text''&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; instead.
+
+Pages that contain this error message are tracked in [[:Category:Hatnote templates with errors]].
+
+
+== Technical details ==
+This template uses the [[w:Help:Lua|Lua templating language]], and more information can be found [[w:c:dev:Global_Lua_Modules/Hatnote|on the Global Lua Module page]]. '''For a traditional wikitext version of this template, see [[w:c:templates:Template:Hatnote|Hatnote on Templates Wiki]]'''.
+
+The HTML code produced by this template looks like this:
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;div role="note" class="hatnote"&gt;&lt;/nowiki&gt;''hatnote text''&lt;nowiki&gt;&lt;/div&gt;&lt;/nowiki&gt;&lt;/code&gt;
+
+&lt;includeonly&gt;[[Category:Notice templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>t1fxeq2w3f5fb8ffeajoi9akea4sz4i</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Quote/doc</title>
+    <ns>10</ns>
+    <id>63</id>
+    <revision>
+      <id>63</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>63</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1381" sha1="h3dzl96q5gu7dok39y0exrs3ci7anle" xml:space="preserve">==Description==
+To use this template, enter the following and fill in the appropriate fields. Most fields left blank will not show up.
+
+==Syntax==
+&lt;pre&gt;
+{{Quote
+ | quote   = 
+ | speaker = 
+ | source  = 
+}}
+&lt;/pre&gt;
+
+As an alternative, these can be placed in positional order. 
+==Samples==
+{{Quote
+ | quote   = When you play the game of thrones, you win or you die.
+ | speaker = [[w:c:gameofthrones:Cersei Lannister|Cersei Lannister]]
+ | source  = [[w:c:gameofthrones:You Win or You Die|"You Win or You Die"]]
+}}
+&lt;pre&gt;
+{{Quote
+ | quote   = When you play the game of thrones, you win or you die.
+ | speaker = [[w:c:gameofthrones:Cersei Lannister|Cersei Lannister]]
+ | source  = [[w:c:gameofthrones:You Win or You Die|"You Win or You Die"]]
+}}
+&lt;/pre&gt;
+or
+
+&lt;pre&gt;
+{{Quote
+ | When you play the game of thrones, you win or you die.
+ | [[w:c:gameofthrones:Cersei Lannister|Cersei Lannister]]
+ | [[w:c:gameofthrones:You Win or You Die|"You Win or You Die"]]
+}}
+&lt;/pre&gt;
+
+
+== Technical details ==
+This template uses the [[w:Help:Lua|Lua templating language]], and more information can be found [[w:c:dev:Global_Lua_Modules/Quote|on the Global Lua Module page]]. '''For a traditional wikitext version of this template, see [[w:c:templates:Template:Quote|Quote on Templates Wiki]]'''.
+&lt;includeonly&gt;[[Category:Quote templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>h3dzl96q5gu7dok39y0exrs3ci7anle</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Module:Hatnote</title>
+    <ns>828</ns>
+    <id>69</id>
+    <revision>
+      <id>69</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>69</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="483" sha1="owdyvs3cj9roi0zs62mvc6i1dlm6wcp" xml:space="preserve">-- This Module is used for making templates based in the Lua language.
+-- See more details about Lua in [[w:Help:Lua]].
+-- The Fandom Developer's Wiki hosts Global Lua Modules that can be imported and locally overridden.
+-- The next line imports the Hatnote module from the [[w:c:dev:Global Lua Modules]].
+local H = require('Dev:Hatnote')
+-- See more details about this module at [[w:c:dev:Global_Lua_Modules/Hatnote]]
+ 
+-- The last line produces the output for the template
+return H</text>
+      <sha1>owdyvs3cj9roi0zs62mvc6i1dlm6wcp</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Module:Mbox</title>
+    <ns>828</ns>
+    <id>70</id>
+    <revision>
+      <id>70</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>70</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4115" sha1="3a5vo8p1ejar3ie3yg2yuizbamwevr6" xml:space="preserve">-- This Module is used for making templates based in the Lua language.
+-- See more details about Lua in [[w:Help:Lua]].
+-- The Fandom Developer's Wiki hosts Global Lua Modules that can be imported and locally overridden.
+-- The next line imports the Mbox module from the [[w:c:dev:Global Lua Modules]].
+local Mbox = require('Dev:Mbox')
+-- See more details about this module at [[w:c:dev:Global_Lua_Modules/Mbox]]
+
+-- The imported Module is overwritten locally to include default styling.
+-- For a more flexible Mbox experience, delete the function below and import 
+-- https://dev.fandom.com/wiki/MediaWiki:Global_Lua_Modules/Mbox.css
+-- or paste (and modify as you like) its contents in your wiki's 
+-- [[MediaWiki:Wikia.css]] (see [[w:Help:Including_additional_CSS_and_JS]])
+-- or look at https://dev.fandom.com/wiki/Global_Lua_Modules/Mbox
+-- for more customization inspiration
+
+-- 
+-- BEGIN DELETION HERE
+--
+
+local getArgs = require('Dev:Arguments').getArgs
+local localCSS = mw.loadData('Module:Mbox/data').localStyle
+
+function Mbox.main(frame)
+    local args = getArgs(frame)
+
+    -- styles
+    local styles = {}
+    if args.bordercolor then
+        styles['border-left-color'] = args.bordercolor
+    elseif args.type then
+        styles['border-left-color'] = 'var(--type-' .. args.type .. ')'
+    end
+
+    if args.bgcolor then
+        styles['background-color'] = args.bgcolor
+    end
+
+    -- images
+    local image = args.image or ''
+    local imagewidth = args.imagewidth or '80px'
+    local imagelink = ''
+    if args.imagelink then
+        imagelink = '|link=' .. args.imagelink
+    end
+
+    local imagewikitext = ('%sFile:%s|%s%s' .. ']]'):format('[[', image, imagewidth, imagelink)
+
+    -- id for closure
+    local id = args.id or 'mbox'
+
+    local container = mw.html.create('div')
+        :addClass('mbox')
+        :addClass(args.class)
+        :css(styles)
+        :css(localCSS['mbox'])
+        :cssText(args.style)
+
+    local content = container:tag('div')
+        :addClass('mbox__content')
+        :css(localCSS['mbox__content'])
+
+    if args.image then
+        local image = content:tag('div')
+            :addClass('mbox__content__image')
+            :addClass('mw-collapsible')
+            :attr('id', 'mw-customcollapsible-' .. id)
+        :css(localCSS['mbox__content__image'])
+            :wikitext(imagewikitext)
+            if args.collapsed then
+                image:addClass('mw-collapsed')
+            end
+    end
+
+    local contentwrapper = content:tag('div')
+        :addClass('mbox__content__wrapper')
+        :css(localCSS['mbox__content__wrapper'])
+
+    if args.header then
+        contentwrapper:tag('div')
+            :addClass('mbox__content__header')
+            :css(localCSS['mbox__content__header'])
+            :wikitext(args.header)
+    end
+
+    if args.text then
+        local text = contentwrapper:tag('div')
+            :addClass('mbox__content__text')
+            :addClass('mw-collapsible')
+            :attr('id', 'mw-customcollapsible-' .. id)
+            :css(localCSS['mbox__content__text'])
+            :wikitext(args.text)
+            if args.collapsed then
+                text:addClass('mw-collapsed')
+            end
+
+        if args.comment then
+            text:tag('div')
+                :addClass('mbox__content__text__comment')
+                :css(localCSS['mbox__content__text__comment'])
+                :wikitext(args.comment)
+        end
+    end
+
+    contentwrapper:tag('span')
+        :addClass('mbox__close')
+        :addClass('mw-customtoggle-' .. id)
+        :css(localCSS['mbox__close'])
+        :attr('title', 'Dismiss')
+
+    if args.aside then
+        local aside = content:tag('div')
+            :addClass('mbox__content__aside')
+            :addClass('mw-collapsible')
+            :attr('id', 'mw-customcollapsible-' .. id)
+            :css(localCSS['mbox__content__aside'])
+            :wikitext(args.aside)
+            if args.collapsed then
+                aside:addClass('mw-collapsed')
+            end
+    end
+
+    return container
+end
+
+-- 
+-- END DELETION HERE
+--
+
+-- The last line produces the output for the template
+return Mbox</text>
+      <sha1>3a5vo8p1ejar3ie3yg2yuizbamwevr6</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Module:Mbox/data</title>
+    <ns>828</ns>
+    <id>71</id>
+    <revision>
+      <id>71</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>71</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1724" sha1="ed7bc6e22pux37qujbn0t5j7fechrz0" xml:space="preserve">local localStyle = {
+    ['mbox'] = {
+        ['display'] = 'flex',
+        ['position'] = 'relative',
+        ['border'] = '1px solid #d6d6d6',
+        ['border-left-width'] = '8px',
+        ['border-left-color'] = '#d6d6d6',
+        ['border-radius'] = '3px',
+        ['margin-bottom'] = '5px',
+        ['min-height'] = '32px'
+    },
+    ['mbox__content'] = {
+        ['display'] = 'table',
+        ['box-sizing'] = 'border-box',
+        ['width'] = '100%',
+        ['padding'] = '8px 15px'
+    },
+    ['mbox__content__image'] = {
+        ['display'] = 'table-cell',
+        ['width'] = '40px',
+        ['height'] = '100%',
+        ['text-align'] = 'center',
+        ['vertical-align'] = 'middle',
+        ['padding-right'] = '15px'
+    },
+    ['mbox__content__wrapper'] = {
+        ['display'] = 'table-cell',
+        ['vertical-align'] = 'middle'
+    },
+    ['mbox__content__header'] = {
+        ['display'] = 'block',
+        ['font-weight'] = 'bold'
+    },
+    ['mbox__content__text'] = {
+        ['display'] = 'block'
+    },
+    ['mbox__content__text__comment'] = {
+        ['font-size'] = 'small'
+    },
+    ['mbox__content__aside'] = {
+        ['display'] = 'table-cell',
+        ['width'] = '100px',
+        ['vertical-align'] = 'middle',
+        ['text-align'] = 'center',
+        ['padding-left'] = '15px',
+        ['border-left'] = '1px solid #d6d6d6'
+    },
+    ['mbox__close'] = {
+        ['position'] = 'absolute',
+        ['right'] = '0',
+        ['top'] = '0',
+        ['padding'] = '2px 7px',
+        ['font-weight'] = 'bold',
+        ['font-size'] = '16px',
+        ['color'] = '#bbb',
+        ['cursor'] = 'pointer',
+        ['transition'] = 'all .15s ease-in'
+    }
+}
+return { localStyle = localStyle }</text>
+      <sha1>ed7bc6e22pux37qujbn0t5j7fechrz0</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Module:Navbox</title>
+    <ns>828</ns>
+    <id>75</id>
+    <revision>
+      <id>75</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>fixed broken help link</comment>
+      <origin>75</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="479" sha1="eiz127jgrsxnzryvcbyig40mttporiz" xml:space="preserve">-- This Module is used for making templates based in the Lua language.
+-- See more details about Lua in [[w:Help:Lua]].
+-- The Fandom Developer's Wiki hosts Global Lua Modules that can be imported and locally overridden.
+-- The next line imports the Navbox module from the [[w:c:dev:Global Lua Modules]].
+local N = require('Dev:Navbox')
+-- See more details about this module at [[w:c:dev:Global_Lua_Modules/Navbox]]
+
+-- The last line produces the output for the template
+return N</text>
+      <sha1>eiz127jgrsxnzryvcbyig40mttporiz</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Module:Quote</title>
+    <ns>828</ns>
+    <id>76</id>
+    <revision>
+      <id>76</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>76</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="484" sha1="c9yao8bgr81k5du7sexrz7eye5k8wsr" xml:space="preserve">-- This Module is used for making templates based in the Lua language.
+-- See more details about Lua in [[w:Help:Lua]].
+-- The Fandom Developer's Wiki hosts Global Lua Modules that can be imported and locally overridden.
+-- The next line imports the Quote module from the [[w:c:dev:Global Lua Modules]].
+local Quote = require('Dev:Quote')
+-- See more details about this module at [[w:c:dev:Global_Lua_Modules/Quote]]
+
+-- The last line produces the output for the template
+return Quote</text>
+      <sha1>c9yao8bgr81k5du7sexrz7eye5k8wsr</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:=</title>
+    <ns>10</ns>
+    <id>81</id>
+    <revision>
+      <id>81</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "&lt;includeonly&gt;=&lt;/includeonly&gt;&lt;noinclude&gt;  {{documentation}}&lt;noinclude&gt;"</comment>
+      <origin>81</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="68" sha1="grxf2n8jtcx5oqwmazrz36ttmgr5gs9" xml:space="preserve">&lt;includeonly&gt;=&lt;/includeonly&gt;&lt;noinclude&gt;
+{{documentation}}&lt;noinclude&gt;</text>
+      <sha1>grxf2n8jtcx5oqwmazrz36ttmgr5gs9</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Cols</title>
+    <ns>10</ns>
+    <id>84</id>
+    <revision>
+      <id>84</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Modern and supported browsers no longer need vendor-specific prefixes for column-count</comment>
+      <origin>84</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="117" sha1="eqzt6uz2f5l9jmrjacpcsqfcvb8mtr0" xml:space="preserve">&lt;includeonly&gt;&lt;div style="column-count: {{{1}}};"&gt;{{{2}}}&lt;/div&gt;&lt;/includeonly&gt;&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>eqzt6uz2f5l9jmrjacpcsqfcvb8mtr0</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Tocright</title>
+    <ns>10</ns>
+    <id>86</id>
+    <revision>
+      <id>86</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>86</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="219" sha1="q7ewsmm9ejqw78mjfmlio6gshpnjjuq" xml:space="preserve">&lt;includeonly&gt;&lt;div style="float:right; clear:{{{clear|right}}}; margin-bottom:.5em; padding:.5em 0 .8em 1.4em; background:transparent; max-width:20em;"&gt;__TOC__&lt;/div&gt;&lt;/includeonly&gt;&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>q7ewsmm9ejqw78mjfmlio6gshpnjjuq</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:Example.jpg</title>
+    <ns>6</ns>
+    <id>93</id>
+    <revision>
+      <id>93</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>{{PD}}
+
+[[Category:Images]]</comment>
+      <origin>93</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="41" sha1="l2ff27u16hj8hs69djd7dzymypdesff" xml:space="preserve">== Summary ==
+{{PD}}
+
+[[Category:Images]]</text>
+      <sha1>l2ff27u16hj8hs69djd7dzymypdesff</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Game</title>
+    <ns>10</ns>
+    <id>96</id>
+    <revision>
+      <id>96</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>96</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="896" sha1="bl2zb0jphi0kk3cv0kyvyih18et63ho" xml:space="preserve">&lt;includeonly&gt;&lt;infobox&gt;
+  &lt;title source="title"&gt;
+    &lt;default&gt;{{PAGENAME}}&lt;/default&gt;
+  &lt;/title&gt;
+  &lt;image source="image"&gt;
+    &lt;caption source="caption"/&gt;
+  &lt;/image&gt;
+  &lt;data source="developer"&gt;&lt;label&gt;Developer&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="publisher"&gt;&lt;label&gt;Publisher&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="engine"&gt;&lt;label&gt;Engine&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="version"&gt;&lt;label&gt;Version&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="platform"&gt;&lt;label&gt;Platform&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="releasedate"&gt;&lt;label&gt;Release date&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="genre"&gt;&lt;label&gt;Genre&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="mode"&gt;&lt;label&gt;Mode&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="rating"&gt;&lt;label&gt;Rating&lt;/label&gt;&lt;/data&gt;
+  &lt;data source="media"&gt;&lt;label&gt;Media&lt;/label&gt;&lt;/data&gt;
+  &lt;group collapse="open"&gt;
+    &lt;header&gt;System requirements&lt;/header&gt;
+    &lt;data source="requirements"&gt;&lt;/data&gt;
+  &lt;/group&gt;
+&lt;/infobox&gt;&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>bl2zb0jphi0kk3cv0kyvyih18et63ho</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:LicenseBox</title>
+    <ns>10</ns>
+    <id>98</id>
+    <revision>
+      <id>98</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>98</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="614" sha1="0ru93k1kuuec7jssti4318k2sy4jq6c" xml:space="preserve">&lt;includeonly&gt;&lt;div style="border-collapse: collapse; border-color: #d6d6d6; border-radius: 3px; border-style: solid; border-left-width: 8px; border-bottom-width: 1px; border-right-width: 1px; border-top-width: 1px; display: flex; margin: 0 auto 5px auto; min-height: 32px; padding: 0.25em 0.5em; {{{style|}}}" class="article-table plainlinks {{{class|}}}"&gt;
+{{#if:{{{image|}}} | &lt;span style="padding: 2px 0px 2px 0.5em; text-align: center; width: 60px;"&gt;[[File:{{{image}}}{{!}}48px{!}}alt{{=}}]]&lt;/span&gt;}}
+{{{text|''Your license text is not specified''}}}
+&lt;/div&gt;&lt;/includeonly&gt;&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>0ru93k1kuuec7jssti4318k2sy4jq6c</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:LicenseBox/doc</title>
+    <ns>10</ns>
+    <id>99</id>
+    <revision>
+      <id>99</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>99</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="855" sha1="ijm6cse7h24leor9748azzauemfvmrx" xml:space="preserve">
+;Description
+:This template is used to create the box used by the various image license templates. The default styling is currently geared to a light-themed wiki. If your wiki has a dark theme and this template is too bright relative to the other elements on your wiki, simply change the following style parameters:
+
+:&lt;code&gt;background-color:&lt;/code&gt; This is the color of the background and is currently set to: &lt;code&gt;#fefefe&lt;/code&gt;
+:&lt;code&gt;border-color:&lt;/code&gt; This is the color of the borders and is currently set to: &lt;code&gt;#d6d6d6&lt;/code&gt;
+:&lt;code&gt;color:&lt;/code&gt; This is the color of the text and is currently set to: &lt;code&gt;#333&lt;/code&gt;
+
+;Syntax
+:Type &lt;code&gt;{{t|LicenseBox|text{{=}}License text}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates| ]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>ijm6cse7h24leor9748azzauemfvmrx</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:-</title>
+    <ns>10</ns>
+    <id>100</id>
+    <redirect title="Template:Clear" />
+    <revision>
+      <id>100</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Redirected page to [[Template:Clear]]</comment>
+      <origin>100</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="28" sha1="321aaofzzzl6ha5uj7sf2v4753r6ydi" xml:space="preserve">#REDIRECT [[Template:Clear]]</text>
+      <sha1>321aaofzzzl6ha5uj7sf2v4753r6ydi</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Stub</title>
+    <ns>10</ns>
+    <id>101</id>
+    <revision>
+      <id>101</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "{{MessageBox  |header  = Stub  |type    = stub  |text    = ''This article is a [[:Category:Stubs|stub]]. You can help {{SITENAME}} by [{{fullurl:{{FULLPAGENAME}}|action=edit}}..."</comment>
+      <origin>101</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="342" sha1="bcxslpn9zg20lvouccy581nvx3ukjl2" xml:space="preserve">{{MessageBox
+|header  = Stub
+|type    = stub
+|text    = ''This article is a [[:Category:Stubs|stub]]. You can help {{SITENAME}} by [{{fullurl:{{FULLPAGENAME}}|action=edit}} expanding it].''
+|comment = 
+|class   = notice hidden plainlinks
+|id      = stub
+}}&lt;includeonly&gt;[[Category:Stubs]]&lt;/includeonly&gt;&lt;noinclude&gt;
+{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>bcxslpn9zg20lvouccy581nvx3ukjl2</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Stubs</title>
+    <ns>14</ns>
+    <id>102</id>
+    <revision>
+      <id>102</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>102</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="147" sha1="1q6hsyyz5mwcs1fgok461xwllatvekz" xml:space="preserve">__EXPECTUNUSEDCATEGORY__
+This category contains articles that are incomplete and are tagged with the {{T|Stub}} template.
+
+[[Category:Maintenance]]</text>
+      <sha1>1q6hsyyz5mwcs1fgok461xwllatvekz</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Stub/doc</title>
+    <ns>10</ns>
+    <id>103</id>
+    <revision>
+      <id>103</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "  ;Description  :This template is used to identify a stub. Any pages using this template will be automatically placed in the [[:Category:Stubs|Stubs]] category.    &lt;includeonl..."</comment>
+      <origin>103</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="274" sha1="tqq0kivah8rgixdbvf3nkjsaeam37y0" xml:space="preserve">
+;Description
+:This template is used to identify a stub. Any pages using this template will be automatically placed in the [[:Category:Stubs|Stubs]] category.
+
+&lt;includeonly&gt;[[Category:Notice templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>tqq0kivah8rgixdbvf3nkjsaeam37y0</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:MIT</title>
+    <ns>10</ns>
+    <id>104</id>
+    <revision>
+      <id>104</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "{{LicenseBox|text=''This work is licensed under the [https://opensource.org/licenses/MIT MIT License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;Category:MIT license..."</comment>
+      <origin>104</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="241" sha1="t8of9xuajsdd99s5o7jcw9k5y6jynvd" xml:space="preserve">{{LicenseBox|text=''This work is licensed under the [https://opensource.org/licenses/MIT MIT License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:MIT license files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>t8of9xuajsdd99s5o7jcw9k5y6jynvd</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:LGPL</title>
+    <ns>10</ns>
+    <id>105</id>
+    <revision>
+      <id>105</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "  {{LicenseBox|text=''This work is licensed under the [https://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;incl..."</comment>
+      <origin>105</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="262" sha1="0qzsm4f1ocsie2hr35es1lan49cupzc" xml:space="preserve">
+{{LicenseBox|text=''This work is licensed under the [https://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License].''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:LGPL files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>0qzsm4f1ocsie2hr35es1lan49cupzc</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:GFDL</title>
+    <ns>10</ns>
+    <id>106</id>
+    <revision>
+      <id>106</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "  {{LicenseBox|text=''This file is licensed under the GFDL. Permission is granted to copy, distribute and/or modify this image under the terms of the '''Wikipedia:Text of th..."</comment>
+      <origin>106</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="526" sha1="kzxnmbzjwwqimyletjfnw58px4paxhf" xml:space="preserve">
+{{LicenseBox|text=''This file is licensed under the GFDL. Permission is granted to copy, distribute and/or modify this image under the terms of the '''[[Wikipedia:Text of the GNU Free Documentation License|GNU Free Documentation License]]''', Version 1.2 or any later version published by the Free Software Foundation; with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:GFDL files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>kzxnmbzjwwqimyletjfnw58px4paxhf</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:MIT/doc</title>
+    <ns>10</ns>
+    <id>107</id>
+    <revision>
+      <id>107</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with ";Description  :This template is used to mark images using the MIT license.  ;Syntax  :Type &lt;code&gt;{{t|MIT}}&lt;/code&gt; on the image information page.    &lt;includeonly&gt;Category:Ima..."</comment>
+      <origin>107</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="264" sha1="sarwfd1zwrc7us73yrclr3nzy5fj5hg" xml:space="preserve">;Description
+:This template is used to mark images using the MIT license.
+;Syntax
+:Type &lt;code&gt;{{t|MIT}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>sarwfd1zwrc7us73yrclr3nzy5fj5hg</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:LGPL/doc</title>
+    <ns>10</ns>
+    <id>108</id>
+    <revision>
+      <id>108</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with ";Description  :This template is used to mark images using the LGPL.  ;Syntax  :Type &lt;code&gt;{{t|LGPL}}&lt;/code&gt; on the image information page.    &lt;includeonly&gt;Category:Image lic..."</comment>
+      <origin>108</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="258" sha1="itwsnq23ws886mqrbxa0anl8h52ocvl" xml:space="preserve">;Description
+:This template is used to mark images using the LGPL.
+;Syntax
+:Type &lt;code&gt;{{t|LGPL}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>itwsnq23ws886mqrbxa0anl8h52ocvl</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:GFDL/doc</title>
+    <ns>10</ns>
+    <id>109</id>
+    <revision>
+      <id>109</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with ";Description  :This template is used to mark images using the GFDL.  ;Syntax  :Type &lt;code&gt;{{t|GFDL}}&lt;/code&gt; on the image information page.    &lt;includeonly&gt;Category:Image lic..."</comment>
+      <origin>109</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="258" sha1="ns0lpadw81kl216wq3027c36s7rdg83" xml:space="preserve">;Description
+:This template is used to mark images using the GFDL.
+;Syntax
+:Type &lt;code&gt;{{t|GFDL}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>ns0lpadw81kl216wq3027c36s7rdg83</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Nolicense</title>
+    <ns>10</ns>
+    <id>110</id>
+    <revision>
+      <id>110</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "{{LicenseBox|text=''This file does not have information on its copyright status.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Unattributed files]]&lt;/includeonl..."</comment>
+      <origin>110</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="220" sha1="jt2acaxsu7qhgeban7fo1thrapdy7zg" xml:space="preserve">{{LicenseBox|text=''This file does not have information on its copyright status.''}}{{#ifeq: {{NAMESPACENUMBER}} | 0 | &lt;includeonly&gt;[[Category:Unattributed files]]&lt;/includeonly&gt;}}&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>jt2acaxsu7qhgeban7fo1thrapdy7zg</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Unattributed files</title>
+    <ns>14</ns>
+    <id>111</id>
+    <revision>
+      <id>111</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>111</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="433" sha1="tohx5e1fs2fk5dgb7ahyfzg5h2hf2pr" xml:space="preserve">__EXPECTUNUSEDCATEGORY__
+The files in this category do not have an appropriate license selected and are tagged with the {{t|nolicense}} template. 
+
+Administrators should review files in this category and either:
+* Update the file page with an appropriate if one can be easily determined.
+* Delete the image, though it is good idea to give the uploader a chance to select a license first.
+
+[[Category:Images]]
+[[Category:Maintenance]]</text>
+      <sha1>tohx5e1fs2fk5dgb7ahyfzg5h2hf2pr</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Nolicense/doc</title>
+    <ns>10</ns>
+    <id>112</id>
+    <revision>
+      <id>112</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with ";Description  :This template is used to mark images where the copyright status is not known. It automatically adds the images to the :Category:Unattributed files|Unattribute..."</comment>
+      <origin>112</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="411" sha1="64h2cunmvylmovdexrd37067qv9vqkg" xml:space="preserve">;Description
+:This template is used to mark images where the copyright status is not known. It automatically adds the images to the [[:Category:Unattributed files|Unattributed files]] category for later maintenance
+;Syntax
+:Type &lt;code&gt;{{t|Nolicense}}&lt;/code&gt; on the image information page.
+
+&lt;includeonly&gt;[[Category:Image license templates]]&lt;/includeonly&gt;&lt;noinclude&gt;[[Category:Template documentation]]&lt;/noinclude&gt;</text>
+      <sha1>64h2cunmvylmovdexrd37067qv9vqkg</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:Favicon.ico</title>
+    <ns>6</ns>
+    <id>113</id>
+    <revision>
+      <id>113</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>113</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="60" sha1="92e41nih3a0rma422nts1sloutvxxm9" xml:space="preserve">== Licensing ==
+{{CC-BY-SA}}
+
+
+[[Category:Wiki skin images]]</text>
+      <sha1>92e41nih3a0rma422nts1sloutvxxm9</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Series</title>
+    <ns>10</ns>
+    <id>124</id>
+    <revision>
+      <id>124</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "&lt;includeonly&gt;&lt;infobox&gt;  	&lt;title source="title"&gt;&lt;default&gt;'' {{#explode:{{PAGENAME}}|(}} ''&lt;/default&gt;&lt;/title&gt;  	&lt;image source="image"&gt;&lt;caption source="caption" /&gt;&lt;/image&gt;  	&lt;dat..."</comment>
+      <origin>124</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1201" sha1="sdc7m8guodktft7ht36mmiw9pn2vb71" xml:space="preserve">&lt;includeonly&gt;&lt;infobox&gt;
+	&lt;title source="title"&gt;&lt;default&gt;'' {{#explode:{{PAGENAME}}|(}} ''&lt;/default&gt;&lt;/title&gt;
+	&lt;image source="image"&gt;&lt;caption source="caption" /&gt;&lt;/image&gt;
+	&lt;data source="release"&gt;&lt;label&gt;First released&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="seasons"&gt;&lt;label&gt;Seasons&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="episodes"&gt;&lt;label&gt;Episodes&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="runtime"&gt;&lt;label&gt;Run time&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="genre"&gt;&lt;label&gt;Genre&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="network"&gt;&lt;label&gt;Network&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="distrib"&gt;&lt;label&gt;Distributor&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="creator"&gt;&lt;label&gt;Created by&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="writer"&gt;&lt;label&gt;Written by&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="director"&gt;&lt;label&gt;Directed by&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="composer"&gt;&lt;label&gt;Composer&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="based on"&gt;&lt;label&gt;Based on&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="exec prod"&gt;&lt;label&gt;Executive producer&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="producer"&gt;&lt;label&gt;Producer&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="prod co"&gt;&lt;label&gt;Production company&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="country"&gt;&lt;label&gt;Country&lt;/label&gt;&lt;/data&gt;
+	&lt;data source="language"&gt;&lt;label&gt;Language&lt;/label&gt;&lt;/data&gt;
+&lt;/infobox&gt;&lt;/includeonly&gt;&lt;noinclude&gt;{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>sdc7m8guodktft7ht36mmiw9pn2vb71</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Film</title>
+    <ns>10</ns>
+    <id>126</id>
+    <revision>
+      <id>126</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "&lt;includeonly&gt;&lt;infobox&gt;    &lt;title source="title"&gt;&lt;default&gt;'' {{#explode:{{PAGENAME}}|(}} ''&lt;/default&gt;&lt;/title&gt;    &lt;image source="image"&gt;&lt;caption source="caption"/&gt;&lt;/image&gt;    &lt;g..."</comment>
+      <origin>126</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1060" sha1="h4xozdv46v2hsj19erkl35jaf3faodc" xml:space="preserve">&lt;includeonly&gt;&lt;infobox&gt;
+  &lt;title source="title"&gt;&lt;default&gt;'' {{#explode:{{PAGENAME}}|(}} ''&lt;/default&gt;&lt;/title&gt;
+  &lt;image source="image"&gt;&lt;caption source="caption"/&gt;&lt;/image&gt;
+  &lt;group&gt;
+    &lt;data source="premiere"&gt;&lt;label&gt;Premiere date&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="genre"&gt;&lt;label&gt;Genre&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="rating"&gt;&lt;label&gt;Rating&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="runtime"&gt;&lt;label&gt;Runtime&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="director"&gt;&lt;label&gt;Directed by&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="writer"&gt;&lt;label&gt;Written by&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="music"&gt;&lt;label&gt;Music by&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="producer"&gt;&lt;label&gt;Produced by&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="budget"&gt;&lt;label&gt;Budget&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="earned"&gt;&lt;label&gt;Box Office&lt;/label&gt;&lt;/data&gt;
+  &lt;/group&gt;
+  &lt;group layout="horizontal"&gt;
+    &lt;header&gt;Series&lt;/header&gt;
+    &lt;data source="previous"&gt;&lt;label&gt;← Previous&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="next"&gt;&lt;label&gt;Next  →&lt;/label&gt;&lt;/data&gt;
+  &lt;/group&gt;
+&lt;/infobox&gt;{{Namespace|main=[[Category:Films]]}}&lt;/includeonly&gt;&lt;noinclude&gt;{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>h4xozdv46v2hsj19erkl35jaf3faodc</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Cast</title>
+    <ns>10</ns>
+    <id>130</id>
+    <revision>
+      <id>130</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "&lt;includeonly&gt;&lt;infobox&gt;      &lt;title source="name"&gt;&lt;default&gt;{{PAGENAME}}&lt;/default&gt;&lt;/title&gt;      &lt;image source="image"&gt;&lt;caption source="caption" /&gt;&lt;/image&gt;      &lt;data&gt;&lt;label&gt;Born..."</comment>
+      <origin>130</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1168" sha1="ks2nb28z0brdb39n4g9n4a4fu01kpe1" xml:space="preserve">&lt;includeonly&gt;&lt;infobox&gt;
+    &lt;title source="name"&gt;&lt;default&gt;{{PAGENAME}}&lt;/default&gt;&lt;/title&gt;
+    &lt;image source="image"&gt;&lt;caption source="caption" /&gt;&lt;/image&gt;
+    &lt;data&gt;&lt;label&gt;Born&lt;/label&gt;
+        &lt;default&gt;{{#if: {{{birthname|}}} | {{{birthname|}}} }}{{#if: {{{birthdate|}}} | {{#if: {{{birthname|}}} | &lt;br /&gt;}}{{{birthdate|}}}{{#if: {{{birthplace|}}} | &lt;br /&gt;}} }}{{#if: {{{birthplace|}}} | {{#if: {{{birthdate|}}} || {{#if: {{{birthname|}}}|&lt;br /&gt;}} }}{{{birthplace|}}} }}&lt;/default&gt;
+    &lt;/data&gt;
+    &lt;data&gt;&lt;label&gt;Died&lt;/label&gt;
+        &lt;default&gt;{{#if: {{{deathdate|}}} | {{{deathdate|}}} }}{{#if: {{{deathplace|}}} | {{#if: {{{deathdate|}}} | &lt;br /&gt;}}{{{deathplace|}}} }}&lt;/default&gt;
+    &lt;/data&gt;
+    &lt;data source="gender"&gt;&lt;label&gt;Gender&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="height"&gt;&lt;label&gt;Height&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="occupation"&gt;&lt;label&gt;Occupation&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="appears in"&gt;&lt;label&gt;Appears in&lt;/label&gt;&lt;/data&gt;
+    &lt;data source="portrays"&gt;&lt;label&gt;Portrays&lt;/label&gt;&lt;/data&gt;
+&lt;/infobox&gt;{{Namespace|main=[[Category:Cast]]&lt;!--
+
+--&gt;{{#if: {{#pos:{{{appears in|}}} | TITLE}} | [[Category:TITLE cast]] }}&lt;!--
+
+--&gt;}}&lt;/includeonly&gt;&lt;noinclude&gt;{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>ks2nb28z0brdb39n4g9n4a4fu01kpe1</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Cite web</title>
+    <ns>10</ns>
+    <id>132</id>
+    <revision>
+      <id>132</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>132</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="2591" sha1="0pd9iyowzhv4yx30hp56e2hqik3zgyu" xml:space="preserve">&lt;includeonly&gt;{{
+#if: {{#if: {{{url|}}} | {{#if: {{{title|}}} |1}}}}
+  ||Error on call to [[Template:cite web]]: Parameters '''url''' and '''title''' must be specified
+}}{{
+#if: {{{archiveurl|}}}{{{archivedate|}}} 
+  | {{#if: {{#if: {{{archiveurl|}}}| {{#if: {{{archivedate|}}} |1}}}}
+    ||Error on call to [[template:cite web]]: Parameters '''archiveurl''' and '''archivedate''' must be both specified or both omitted
+}}
+}}{{#if: {{{author|}}}{{{last|}}}
+  | {{#if: {{{authorlink|}}}
+    | [[{{{authorlink}}}|{{#if: {{{last|}}}
+      | {{{last}}}{{#if: {{{first|}}} | , {{{first}}} }}
+      | {{{author}}}
+    }}]]
+    | {{#if: {{{last|}}}
+      | {{{last}}}{{#if: {{{first|}}} | , {{{first}}} }}
+      | {{{author}}}
+    }}
+  }}
+}}{{#if: {{{author|}}}{{{last|}}}
+  | {{#if: {{{coauthors|}}}| &lt;nowiki&gt;;&lt;/nowiki&gt;&amp;#32;{{{coauthors}}} }}
+}}{{#if: {{{author|}}}{{{last|}}}|
+    {{#if: {{{date|}}}
+    | &amp;#32;({{{date}}})
+    | {{#if: {{{year|}}}
+      | {{#if: {{{month|}}}
+        | &amp;#32;({{{month}}} {{{year}}})
+        | &amp;#32;({{{year}}})
+      }}
+    }}
+  |}}
+}}{{#if: {{{last|}}}{{{author|}}}
+  | .&amp;#32;}}{{
+  #if: {{{editor|}}}
+  | &amp;#32;{{{editor}}}: 
+}}{{#if: {{{archiveurl|}}}
+    | {{#if: {{{archiveurl|}}} | {{#if: {{{title|}}} | [{{{archiveurl}}} {{{title}}}] }}}}
+    | {{#if: {{{url|}}} | {{#if: {{{title|}}} | [{{{url}}} {{{title}}}] }}}}
+}}{{#if: {{{language|}}} | &amp;#32;&lt;span style="font-size: 0.95em; font-weight: bold; color:#555; position: relative;"&gt;({{{language}}})&lt;/span&gt; 
+}}{{#if: {{{format|}}}
+  | &amp;#32;({{{format|}}})
+}}{{#if: {{{work|}}}
+  | .&amp;#32;''{{{work}}}''
+}}{{#if: {{{pages|}}}
+  | &amp;#32;{{{pages}}}
+}}{{#if: {{{publisher|}}}
+  | .&amp;#32;{{{publisher}}}{{#if: {{{author|}}}{{{last|}}}
+    | 
+    | {{#if: {{{date|}}}{{{year|}}}{{{month|}}} || }}
+  }}
+}}{{#if: {{{author|}}}{{{last|}}}
+  ||{{#if: {{{date|}}}
+    | &amp;#32;({{{date}}})
+    | {{#if: {{{year|}}}
+      | {{#if: {{{month|}}}
+        | &amp;#32;({{{month}}} {{{year}}})
+        | &amp;#32;({{{year}}})
+      }}
+    }}
+  }}
+}}.{{#if: {{{archivedate|}}}
+  | &amp;#32;Archived from [{{{url}}} the original] on {{#time:F j, Y|{{{archivedate}}}}}{{#if: {{{archiveyear|}}} | , {{{archiveyear}}} }}.
+}}{{#if: {{{accessdate|}}}
+  | &amp;#32;Retrieved on {{#time:F j, Y|{{{accessdate}}}}}{{#if: {{{accessyear|}}} | , {{{accessyear}}} }}.
+}}{{#if: {{{accessmonthday|}}}
+  | &amp;#32;Retrieved on {{{accessmonthday}}}, {{{accessyear}}}.
+}}{{#if: {{{accessdaymonth|}}}
+  | &amp;#32;Retrieved on {{{accessdaymonth}}} {{{accessyear}}}.
+}}{{#if: {{{quote|}}} 
+  | &amp;nbsp;“{{{quote}}}”
+}}&lt;/includeonly&gt;&lt;noinclude&gt;{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>0pd9iyowzhv4yx30hp56e2hqik3zgyu</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Wiki:Wiki rules</title>
+    <ns>4</ns>
+    <id>134</id>
+    <revision>
+      <id>134</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <origin>134</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1455" sha1="rzvuyx34wyc7lh7islb9yd9s6dd9zld" xml:space="preserve">Below is a suggested set of rules to follow when editing this wiki. Administrators of this wiki should read these rules and adapt them as necessary.
+
+
+# '''Keep it civil''': Do not make personal attacks on other people. If you need to criticize another user’s argument, do so without attacking them as a person. Do not use bigoted language, including slurs which degrade another person or group of people based on gender, race, sexual orientation, nationality, religion, etc.
+# '''Be a productive member of the wiki''': Contribute to the wiki in line with the established processes and conventions. Need help? Ask an [[Special:ListUsers/sysop|administrator]]! Disrupting the wiki with “edit warring” over differing opinions of a topic with another user or group of users is not productive.
+# '''Do not engage in excessive self-promotion''': The wiki is a collaborative community resource for the topic at hand. It is NOT a free place to advertise your related website, YouTube channel, blog, social media account, etc. Have a question about whether your link would be welcome? Ask an administrator!
+# '''Do not harass other users''': If somebody asks you to stop posting certain content on their wall, respect their wishes. It is their wall.
+# '''Do follow community guidelines for formatting''': When a community has established formatting, it’s important to adhere to that, especially when spoiler content is involved.
+
+[[Category:{{SITENAME}}]]</text>
+      <sha1>rzvuyx34wyc7lh7islb9yd9s6dd9zld</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Pages with broken file links</title>
+    <ns>14</ns>
+    <id>138</id>
+    <revision>
+      <id>138</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Maintenance]]"</comment>
+      <origin>138</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="24" sha1="it59vo5whwexpgslnlv8id1urubvc0x" xml:space="preserve">[[Category:Maintenance]]</text>
+      <sha1>it59vo5whwexpgslnlv8id1urubvc0x</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Videos</title>
+    <ns>14</ns>
+    <id>139</id>
+    <revision>
+      <id>139</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Media]]"</comment>
+      <origin>139</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="18" sha1="kpegwc3ncet7t0vit1niu7o1gph15bl" xml:space="preserve">[[Category:Media]]</text>
+      <sha1>kpegwc3ncet7t0vit1niu7o1gph15bl</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Screenshots</title>
+    <ns>14</ns>
+    <id>140</id>
+    <revision>
+      <id>140</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Images]]"</comment>
+      <origin>140</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="19" sha1="fwg0enol6185yz0jt2jpw8aer9m6squ" xml:space="preserve">[[Category:Images]]</text>
+      <sha1>fwg0enol6185yz0jt2jpw8aer9m6squ</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:Wiki skin images</title>
+    <ns>14</ns>
+    <id>141</id>
+    <revision>
+      <id>141</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>Created page with "[[Category:Images]]"</comment>
+      <origin>141</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="19" sha1="fwg0enol6185yz0jt2jpw8aer9m6squ" xml:space="preserve">[[Category:Images]]</text>
+      <sha1>fwg0enol6185yz0jt2jpw8aer9m6squ</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Mainpage</title>
+    <ns>8</ns>
+    <id>142</id>
+    <revision>
+      <id>145</id>
+      <parentid>142</parentid>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <minor/>
+      <comment>SEO</comment>
+      <origin>145</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9" sha1="atenr9pomieg3zzuoebe7xpdtnu6y57" xml:space="preserve">Test Wiki</text>
+      <sha1>atenr9pomieg3zzuoebe7xpdtnu6y57</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Main Page</title>
+    <ns>0</ns>
+    <id>143</id>
+    <redirect title="Test Wiki" />
+    <revision>
+      <id>144</id>
+      <timestamp>2022-06-27T17:10:18Z</timestamp>
+      <contributor>
+        <username>FANDOM</username>
+        <id>32769624</id>
+      </contributor>
+      <comment>FANDOM moved page [[Main Page]] to [[Test Wiki]]: SEO</comment>
+      <origin>144</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="23" sha1="o781218pkwrwx1bzbl5dzhkwlio18nq" xml:space="preserve">#REDIRECT [[Test Wiki]]</text>
+      <sha1>o781218pkwrwx1bzbl5dzhkwlio18nq</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Wiki</title>
+    <ns>0</ns>
+    <id>144</id>
+    <revision>
+      <id>348</id>
+      <parentid>319</parentid>
+      <timestamp>2022-07-17T02:36:31Z</timestamp>
+      <contributor>
+        <username>ApexAgunomu19</username>
+        <id>51543884</id>
+      </contributor>
+      <origin>348</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="154" sha1="rwi2ul105s7b5ikqszb0lg6gox7nx38" xml:space="preserve">Welcome to Test Wiki!
+
+* [[Test Wiki:Request permissions|Request permissions]]
+* [[Test Wiki:Policy|Policy]]
+* [[Test_Wiki:Wiki_rules|General Wiki Rules]]</text>
+      <sha1>rwi2ul105s7b5ikqszb0lg6gox7nx38</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Wiki-description-site-meta</title>
+    <ns>8</ns>
+    <id>145</id>
+    <revision>
+      <id>148</id>
+      <timestamp>2022-06-27T18:33:50Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "$1"</comment>
+      <origin>148</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="2" sha1="rq0hjs7fpmzgl4u73gupx0a4684l5e2" xml:space="preserve">$1</text>
+      <sha1>rq0hjs7fpmzgl4u73gupx0a4684l5e2</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Request permissions header</title>
+    <ns>10</ns>
+    <id>146</id>
+    <revision>
+      <id>182</id>
+      <parentid>178</parentid>
+      <timestamp>2022-07-14T15:52:51Z</timestamp>
+      <contributor>
+        <username>AlDPa</username>
+        <id>51079472</id>
+      </contributor>
+      <minor/>
+      <origin>182</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1416" sha1="gvpjcksikgp5sxovifwcwwb2wtyyskw" xml:space="preserve">&lt;div style="text-align: left !important; width: calc(100% - 80px); padding: 32px 32px 32px 32px; background: #FFFFF; color: #000000; border-radius: 2px; box-shadow: 0 2px 2px .5px rgba(0, 0, 0, 0.3); font-family: Roboto, helvetica neue, sans-serif !important; font-weight: 400 !important; margin: 8px 8px 8px 8px;"&gt;
+
+&lt;span style="font-variant-numeric: proportional-nums lining-nums !important; font-weight: 300; font-size: 36px;"&gt;Request permissions&lt;/span&gt;
+
+&lt;div style="text-align: center !important; width: 240px; min-height: 1px; padding: 16px 16px 16px 16px; background: #11111; color: #000000; border-radius: 2px; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3); font-family: Roboto, helvetica neue, sans-serif !important; font-weight: 500 !important; margin: 8px 8px 8px 8px; letter-spacing: 1px; float: right;"&gt;[https://testmw.fandom.com/wiki/Test_Wiki:Request_permissions?action=edit&amp;section=new REQUEST PERMISSIONS]
+&lt;/div&gt;
+You can request permissions for  moderator and adminship.
+
+For adminship, you must be at least '''7 days''' old and make at least '''10 edits'''.
+
+Check users '''cannot''' be granted due to access to private information.
+
+'''How to request permissions'''
+
+Add the following:
+&lt;pre&gt;
+*{{RfP|Pending reply|}}
+*'''Requested group:''' &lt;!--Select the permission: moderator or admin---&gt;
+*'''Reason for requesting:''' &lt;!--Example on what you've requesting.---&gt;
+~~~~
+&lt;/pre&gt;
+to the new section.
+&lt;/div&gt;</text>
+      <sha1>gvpjcksikgp5sxovifwcwwb2wtyyskw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Wiki:Request permissions</title>
+    <ns>4</ns>
+    <id>147</id>
+    <revision>
+      <id>397</id>
+      <parentid>395</parentid>
+      <timestamp>2022-07-25T10:16:46Z</timestamp>
+      <contributor>
+        <username>AlDPa</username>
+        <id>51079472</id>
+      </contributor>
+      <minor/>
+      <comment>Fix requests</comment>
+      <origin>397</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1865" sha1="c5p7ykd9cp6l09se602dyvzo9ycat1m" xml:space="preserve">{{Request permissions header}}
+__NEWSECTIONLINK__
+==AlDPa==
+*{{RfP|Done|LisafBia}}
+*'''Requested group:''' moderator
+*'''Reason for requesting:''' For testing
+[[User:AlDPa|AlDPa]] ([[User talk:AlDPa|talk]]) 15:39, 14 July 2022 (UTC)&lt;br&gt;
+{{done}} [[User:LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) 07:14, 16 July 2022 (UTC)
+
+==ApexAgunomu19==
+'''Requested group:''' Moderator
+*'''Reason for requesting:''' Testing
+[[User:ApexAgunomu19|ApexAgunomu19]] ([[User talk:ApexAgunomu19|talk]]) 16:52, 16 July 2022 (UTC)&lt;br&gt;
+{{done}} [[User:LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) 17:20, 16 July 2022 (UTC)
+[[Category:Non-test pages]]
+
+*{{RfP|Not done|LisafBia}}
+*'''Requested group:''' admin
+*'''Reason for requesting:''' I know my account is less than 7 days old but I have plenty of edits here and would really like to test admin powers here on Fandom.
+[[User:ApexAgunomu19|ApexAgunomu19]] ([[User talk:ApexAgunomu19|talk]]) 20:48, 17 July 2022 (UTC)&lt;br&gt;
+{{Not done}} [[User:LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) 05:49, 18 July 2022 (UTC)
+==AlDPa==
+*{{RfP|Done|LisafBia}}
+
+*'''Requested group:''' admin
+*'''Reason for requesting:''' For testing
+[[User:AlDPa|AlPaD]] ([[User talk:AlDPa|talk]]) 10:26, 21 July 2022 (UTC)
+
+==ApexAgunomu19==
+*{{RfP|Done|[[User:LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) 14:28, 24 July 2022 (UTC)}}
+*'''Requested group:''' admin
+*'''Reason for requesting:''' Testing
+[[User:ApexAgunomu19|ApexAgunomu19]] ([[User talk:ApexAgunomu19|talk]]) 19:03, 23 July 2022 (UTC)
+
+==Kingdbx==
+=== {{RfP|Done|LisafBia}} === 
+*'''Requested group: moderator'''
+*'''Reason for requesting: Just in case I become admin on other wiki''' [[User:Kingdbx|KingDBX]] ([[User talk:Kingdbx|talk]]) 12:22, 24 July 2022 (UTC)
+{{done}} granted in moderator. [[User:LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) 13:42, 24 July 2022 (UTC)</text>
+      <sha1>c5p7ykd9cp6l09se602dyvzo9ycat1m</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Wiki-navigation</title>
+    <ns>8</ns>
+    <id>148</id>
+    <revision>
+      <id>365</id>
+      <parentid>186</parentid>
+      <timestamp>2022-07-18T07:55:05Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <origin>365</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="139" sha1="gxrrc9xjhbfft1yy5z0hc8puhp4vrj4" xml:space="preserve">*#|Wiki
+**[[Request permissions]]
+**#category1#
+**#category2#
+*#|Testing
+**Help:Contents|Help
+**Deletion test
+**Protect test
+**Comment test</text>
+      <sha1>gxrrc9xjhbfft1yy5z0hc8puhp4vrj4</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Deletion test</title>
+    <ns>0</ns>
+    <id>149</id>
+    <revision>
+      <id>168</id>
+      <parentid>158</parentid>
+      <timestamp>2022-06-28T10:26:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Adding categories</comment>
+      <origin>168</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="90" sha1="a80z2yz7dubpqfoft10r3lzmzqz487f" xml:space="preserve">You can delete the page.
+
+Please not forget undo the page!
+[[Category:List of test pages]]</text>
+      <sha1>a80z2yz7dubpqfoft10r3lzmzqz487f</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Deletereason-dropdown</title>
+    <ns>8</ns>
+    <id>150</id>
+    <revision>
+      <id>160</id>
+      <parentid>159</parentid>
+      <timestamp>2022-06-27T21:52:15Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <origin>160</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="247" sha1="7jzs9uvcr9iokm9b4sghyiwd2uo8a3b" xml:space="preserve">*Testing
+** Test
+** Test done
+*Vandalism and problems
+** Copyright violation
+** Spam
+** Vandalism
+*Maintenance
+** Author request
+** Housekeeping
+** Marked for deletion
+*Redirects
+** Broken redirect
+** Unused redirect
+** Redirect left from pagemove</text>
+      <sha1>7jzs9uvcr9iokm9b4sghyiwd2uo8a3b</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Ipbreason-dropdown</title>
+    <ns>8</ns>
+    <id>151</id>
+    <revision>
+      <id>162</id>
+      <parentid>161</parentid>
+      <timestamp>2022-06-27T22:19:26Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <origin>162</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="260" sha1="hsh2412sk27jnkcey2d4vgkgg2b0ycj" xml:space="preserve">
+*Common block reasons
+**Test
+** Inserting false information
+** Removing content from pages
+** Spamming links to external sites
+** Inserting nonsense/gibberish into pages
+** Intimidating behavior/harassment
+** Abusing multiple accounts
+** Unacceptable username</text>
+      <sha1>hsh2412sk27jnkcey2d4vgkgg2b0ycj</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Communitypage-tasks-header-welcome</title>
+    <ns>8</ns>
+    <id>152</id>
+    <revision>
+      <id>163</id>
+      <timestamp>2022-06-28T00:49:29Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "Welcome to $1!"</comment>
+      <origin>163</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="14" sha1="7ywmjkpkcb20soan1d92lorzb2h5t9c" xml:space="preserve">Welcome to $1!</text>
+      <sha1>7ywmjkpkcb20soan1d92lorzb2h5t9c</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Protect test</title>
+    <ns>0</ns>
+    <id>153</id>
+    <revision>
+      <id>394</id>
+      <parentid>393</parentid>
+      <timestamp>2022-07-25T05:57:25Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Protect test]]" ([Commenting=Allow only administrators] (indefinite))</comment>
+      <origin>385</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="81" sha1="2d3vxfx6io59bqktchgz41fwdfenu62" xml:space="preserve">You can protect the page.
+
+Remember to unprotect!
+[[Category:List of test pages]]</text>
+      <sha1>2d3vxfx6io59bqktchgz41fwdfenu62</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:RfP</title>
+    <ns>10</ns>
+    <id>154</id>
+    <revision>
+      <id>171</id>
+      <parentid>170</parentid>
+      <timestamp>2022-06-28T10:34:13Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>170</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="289" sha1="6b11ewsgapv8dieyrbf4px1154k2kkn" xml:space="preserve">&lt;div style="float: left; width: 24px; height: 16px; margin: 0 4px 0 4px; background: {{#ifeq:{{{1}}}|Done|#4CAF50|{{#ifeq:{{{1}}}|Not done|#F44336|{{#ifeq:{{{1}}}|On hold|#FF9800|#FAFAFA}}}}}}; border-radius: 2px; box-shadow: 0 2px 2.5px 0 rgba(0,0,0,0.3);"&gt;&lt;/div&gt; '''{{{1}}}''' by {{{2}}}</text>
+      <sha1>6b11ewsgapv8dieyrbf4px1154k2kkn</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User:LisafBia</title>
+    <ns>2</ns>
+    <id>155</id>
+    <revision>
+      <id>172</id>
+      <timestamp>2022-06-28T11:05:21Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "Hi!"</comment>
+      <origin>172</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3" sha1="mi1dbxhkrqdan17x2qp4xqqtwl9h89d" xml:space="preserve">Hi!</text>
+      <sha1>mi1dbxhkrqdan17x2qp4xqqtwl9h89d</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Request permissions</title>
+    <ns>0</ns>
+    <id>156</id>
+    <redirect title="Test Wiki:Request permissions" />
+    <revision>
+      <id>181</id>
+      <parentid>175</parentid>
+      <timestamp>2022-07-14T15:51:45Z</timestamp>
+      <contributor>
+        <username>AlDPa</username>
+        <id>51079472</id>
+      </contributor>
+      <minor/>
+      <comment>Redirected page to [[Test Wiki:Request permissions]]</comment>
+      <origin>181</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="216" sha1="p18wh6ghqu4t61b43lwo437ma9j1c75" xml:space="preserve">#REDIRECT[[Test Wiki:Request permissions]]
+*{{RfP|Pending reply|}}
+*'''Requested group:''' moderator
+*'''Reason for requesting:''' For testing
+[[User:AlDPa|AlDPa]] ([[User talk:AlDPa|talk]]) 15:39, 14 July 2022 (UTC)</text>
+      <sha1>p18wh6ghqu4t61b43lwo437ma9j1c75</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User talk:AlDPa</title>
+    <ns>3</ns>
+    <id>158</id>
+    <revision>
+      <id>377</id>
+      <parentid>185</parentid>
+      <timestamp>2022-07-22T11:40:34Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>/* Hi */ new section</comment>
+      <origin>377</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="176" sha1="29p8f7zj3e8daf9anvz6e8we1j1hiqo" xml:space="preserve">== Welcome ==
+Welcome to Test Wiki!
+Test pages: [[:Category:List of test pages]]
+
+== Hi ==
+
+Your admin request has been accepted. Please review [[Test Wiki:policy|our policy]].</text>
+      <sha1>29p8f7zj3e8daf9anvz6e8we1j1hiqo</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:Test.jpg</title>
+    <ns>6</ns>
+    <id>159</id>
+    <revision>
+      <id>187</id>
+      <timestamp>2022-07-15T20:56:01Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <origin>187</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="35" sha1="oeoxvuv33haffccevc2zo58q7cfgbas" xml:space="preserve">
+== Licensing ==
+{{From Wikimedia}}</text>
+      <sha1>oeoxvuv33haffccevc2zo58q7cfgbas</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:Yes check.svg</title>
+    <ns>6</ns>
+    <id>160</id>
+    <revision>
+      <id>190</id>
+      <timestamp>2022-07-16T07:05:06Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <origin>190</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="35" sha1="oeoxvuv33haffccevc2zo58q7cfgbas" xml:space="preserve">
+== Licensing ==
+{{From Wikimedia}}</text>
+      <sha1>oeoxvuv33haffccevc2zo58q7cfgbas</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Done</title>
+    <ns>10</ns>
+    <id>162</id>
+    <revision>
+      <id>193</id>
+      <parentid>192</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>192</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="247" sha1="tpie10klkknpn9hpmeab71azjfb5r5o" xml:space="preserve">&lt;span class="nowrap"&gt;[[File:Yes check.svg|18px|link=|alt=]]&amp;nbsp;'''{{{1|Done}}}'''&lt;/span&gt;{{{{{|safesubst:}}}#if:{{{2|{{{note|{{{reason|}}}}}}}}}|&amp;#58; {{{2|{{{note|{{{reason}}}}}}}}}}}&lt;!--template:done--&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>tpie10klkknpn9hpmeab71azjfb5r5o</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Not done</title>
+    <ns>10</ns>
+    <id>163</id>
+    <revision>
+      <id>195</id>
+      <parentid>194</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>194</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="157" sha1="mewrinem1wsnu7j2smmmbkgp6p2glbh" xml:space="preserve">&lt;span class="nowrap"&gt;[[File:X mark.svg|18px|link=|alt=]]&amp;nbsp;'''{{{1|Not done}}}'''&lt;/span&gt;&lt;!--template:not done--&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>mewrinem1wsnu7j2smmmbkgp6p2glbh</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:On hold</title>
+    <ns>10</ns>
+    <id>164</id>
+    <revision>
+      <id>197</id>
+      <parentid>196</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>196</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="186" sha1="ecm74ldp3rbqq2ucyg82hocd64grvwq" xml:space="preserve">[[File:Symbol wait.svg|16px|link=|alt=]] '''{{{1|On hold}}}'''&lt;noinclude&gt;{{documentation|content=
+==See also==
+{{done/See also}}
+
+[[Category:Image with comment templates]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>ecm74ldp3rbqq2ucyg82hocd64grvwq</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:(n)</title>
+    <ns>10</ns>
+    <id>165</id>
+    <revision>
+      <id>199</id>
+      <parentid>198</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>198</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="81" sha1="cm8c3jwlcmkgi2op7i38d37xj7aewec" xml:space="preserve">&amp;#x1F44E;{{#if:{{{1|}}}|&amp;nbsp;'''{{{1|&amp;zwj;}}}'''}}&lt;noinclude&gt;{{doc}}&lt;/noinclude&gt;</text>
+      <sha1>cm8c3jwlcmkgi2op7i38d37xj7aewec</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:(y)</title>
+    <ns>10</ns>
+    <id>166</id>
+    <revision>
+      <id>201</id>
+      <parentid>200</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>200</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="76" sha1="9yj270t3j6upmkqq9mx1opc6rqouk40" xml:space="preserve">&amp;#x1F44D;{{#if:{{{1|}}}|&amp;nbsp;'''{{{1|}}}'''}}&lt;noinclude&gt;{{doc}}&lt;/noinclude&gt;</text>
+      <sha1>9yj270t3j6upmkqq9mx1opc6rqouk40</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:8ball</title>
+    <ns>10</ns>
+    <id>167</id>
+    <revision>
+      <id>203</id>
+      <parentid>202</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>202</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="169" sha1="m036xpg2cxm2qus5s8aytxp0nlqk26y" xml:space="preserve">[[File:8 ball icon.svg|17px|alt=magic eight ball]]&amp;nbsp;'''The {{{1|CheckUser}}} [[WP:MAGIC8BALL|Magic 8-Ball]] says:''' {{{2|}}}&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>m036xpg2cxm2qus5s8aytxp0nlqk26y</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:A note</title>
+    <ns>10</ns>
+    <id>168</id>
+    <revision>
+      <id>205</id>
+      <parentid>204</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>204</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="145" sha1="npsloclsiu7o24jhcbrsmivqrxr9iah" xml:space="preserve">[[File:Pictogram voting info.svg|16px|link=|alt=]] '''{{ucfirst:{{{1|Note:}}}}}'''&lt;!--template:A note--&gt;&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>npsloclsiu7o24jhcbrsmivqrxr9iah</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Accepted</title>
+    <ns>10</ns>
+    <id>169</id>
+    <revision>
+      <id>207</id>
+      <parentid>206</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>206</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="206" sha1="l5v9sry0akhc12uf1rrggxs4g4yam2b" xml:space="preserve">[[Image:Symbol confirmed.svg|20px|link=|alt=]] '''{{{1|Accepted}}}'''&lt;noinclude&gt;{{documentation|content={{Template:Resolved mark/doc|type=checkmark}}}}
+&lt;!--Categories go on the /doc subpage --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>l5v9sry0akhc12uf1rrggxs4g4yam2b</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Action and close</title>
+    <ns>10</ns>
+    <id>170</id>
+    <revision>
+      <id>209</id>
+      <parentid>208</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>208</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="145" sha1="i82m8f1poc8tha73d4ytpxup5e5l3yb" xml:space="preserve">[[File:Artículo bueno-blue.svg|16px|link=|alt=]]&amp;nbsp;'''{{{1|Requested actions completed, closing}}}'''&lt;noinclude&gt;{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>i82m8f1poc8tha73d4ytpxup5e5l3yb</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Added</title>
+    <ns>10</ns>
+    <id>171</id>
+    <revision>
+      <id>211</id>
+      <parentid>210</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>210</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="147" sha1="38ueoxtu2ezvsv1bmatvvvdu5ifherp" xml:space="preserve">[[File:Crystal Clear action edit add.png|16px|alt=plus]] '''{{{{{|safesubst:}}}ucfirst:{{{1|Added}}}}}'''&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>38ueoxtu2ezvsv1bmatvvvdu5ifherp</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Administrator note</title>
+    <ns>10</ns>
+    <id>172</id>
+    <revision>
+      <id>213</id>
+      <parentid>212</parentid>
+      <timestamp>2022-07-16T07:10:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>212</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="178" sha1="8kfwwr9ebzxtmnzldwllwcta7rs32vs" xml:space="preserve">{{{{{|safesubst:}}}A note|Administrator note}}&lt;noinclude&gt;
+{{Documentation}}
+&lt;!-- PLEASE ADD THIS TEMPLATE'S CATEGORIES AND INTERWIKIS TO THE /doc SUBPAGE, THANKS --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>8kfwwr9ebzxtmnzldwllwcta7rs32vs</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Agree</title>
+    <ns>10</ns>
+    <id>173</id>
+    <revision>
+      <id>215</id>
+      <parentid>214</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>214</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="654" sha1="38afsqr6ybzoxv3nwj4kv90izut6c0j" xml:space="preserve">[[File:Symbol confirmed.svg|20px|link=|alt=]] '''{{{1|Agree}}}''' &lt;noinclude&gt;
+{{Documentation|content={{Resolved mark/doc |type=checkmark|where=at [[WP:Requests for adminship]], [[WP:In the news/Candidates]], [[WP:Featured article candidates]], various [[WP:Noticeboards]] and other formal processes; it should {{em|not}} be used in [[WP:RFC]]s, [[WP:XFD]]s, or other consensus discussions, which are not votes|novoting=y|para=The template accepts a single parameter (unnamed or given as {{para|1}}) that changes the word "Agree" to the text specified in the parameter, e.g. "Tentatively agree".}}}}
+&lt;!--Categories go on the /doc subpage --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>38afsqr6ybzoxv3nwj4kv90izut6c0j</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Align</title>
+    <ns>10</ns>
+    <id>174</id>
+    <revision>
+      <id>217</id>
+      <parentid>216</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>216</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="381" sha1="1plbguw1t83gyc2qfl0bopluygsjpnw" xml:space="preserve">{{#switch: {{lc:{{{1|center}}}}}
+|left = &lt;div style="float: left;{{#if: {{{style|}}} | {{{style}}};}}"&gt;{{{2}}}&lt;/div&gt;
+|right = &lt;div style="float: right;{{#if: {{{style|}}} | {{{style}}};}}"&gt;{{{2}}}&lt;/div&gt;
+|center = {{center|{{{2}}}|style={{{style|}}} }}
+|#default = Error in [[Template:Align]]: the alignment setting "{{{1}}}" is invalid.
+}}&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>1plbguw1t83gyc2qfl0bopluygsjpnw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Aligned table</title>
+    <ns>10</ns>
+    <id>175</id>
+    <revision>
+      <id>219</id>
+      <parentid>218</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>218</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="188" sha1="atstqes86pjj6hoiczcmfvhjlawblhx" xml:space="preserve">{{&lt;includeonly&gt;safesubst:&lt;/includeonly&gt;#invoke:aligned table|table}}&lt;noinclude&gt;
+{{documentation}}
+&lt;!-- Add categories to the /doc subpage, interwikis to Wikidata, not here --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>atstqes86pjj6hoiczcmfvhjlawblhx</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Already declined</title>
+    <ns>10</ns>
+    <id>176</id>
+    <revision>
+      <id>221</id>
+      <parentid>220</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>220</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="399" sha1="3rkyql00ubhknd77984lqyl77ikwsx4" xml:space="preserve">[[File:Pictogram voting delete.svg|20px|link=|alt=]] '''{{ucfirst:{{{1|Already declined}}}}}'''&lt;!--template:already declined--&gt;&lt;noinclude&gt;{{documentation|content=
+==Usage==
+:You may either use {{tlx|Already declined}} by itself for the default message or you may add a custom message as an optional parameter.
+
+==See also==
+{{done/See also}}
+
+[[Category:Image with comment templates]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>3rkyql00ubhknd77984lqyl77ikwsx4</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Already done</title>
+    <ns>10</ns>
+    <id>177</id>
+    <revision>
+      <id>223</id>
+      <parentid>222</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>222</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="132" sha1="55st7n7tqd1r73ch0nma7duf8n3zbix" xml:space="preserve">[[File:U2713.svg|18px|link=|alt=]] '''{{{{{|safesubst:}}}ucfirst:{{{1|Already done}}}}}'''&lt;noinclude&gt;
+{{Documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>55st7n7tqd1r73ch0nma7duf8n3zbix</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Approved</title>
+    <ns>10</ns>
+    <id>178</id>
+    <revision>
+      <id>225</id>
+      <parentid>224</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>224</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="136" sha1="dnvkbtsbfvcv0siulxv9kc7pszwfbcj" xml:space="preserve">{{{{{|safesubst:}}}ns0||[[File:Symbol confirmed.svg|20px|link=|alt=]] '''{{{1|Approved}}}'''}}&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>dnvkbtsbfvcv0siulxv9kc7pszwfbcj</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Archive now</title>
+    <ns>10</ns>
+    <id>179</id>
+    <revision>
+      <id>227</id>
+      <parentid>226</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>226</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="142" sha1="7w6qtp15yqcfqt2nz3l20590ed2mqtq" xml:space="preserve">[[File:Pictogram voting comment.svg|20px|link=|alt=]] ''{{grey|Requesting immediate archiving...}}''&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>7w6qtp15yqcfqt2nz3l20590ed2mqtq</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Audio</title>
+    <ns>10</ns>
+    <id>180</id>
+    <revision>
+      <id>229</id>
+      <parentid>228</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>228</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="880" sha1="qcorin8f88efg7r5oufpzcztskyv5gt" xml:space="preserve">&lt;includeonly&gt;{{#if:{{{1|}}}|{{#ifexist:Media:{{{1}}}|&lt;span class="unicode haudio"&gt;&lt;span class="fn"&gt;&lt;span style="white-space:nowrap;margin-right:.25em;"&gt;[[File:Loudspeaker.svg|11px|link=File:{{{1}}}|About this sound|alt=]]&lt;/span&gt;[[:Media:{{{1|}}}|{{{2|{{{1|}}}}}}]]&lt;/span&gt;{{#ifeq:{{{help|}}}|no||&amp;nbsp;&lt;small class="metadata audiolinkinfo" style="cursor:help;"&gt;([[Wikipedia:Media help|&lt;span style="cursor:help;"&gt;help&lt;/span&gt;]]·[[:File:{{{1|}}}|&lt;span style="cursor:help;"&gt;info&lt;/span&gt;]])&lt;/small&gt;}}{{main other|[[Category:Articles with hAudio microformats]]}}&lt;/span&gt;|{{error{{main other||-small}}|Audio file "{{{1}}}" not found}}&lt;!-- tracking category begin --&gt;{{Category handler|[[Category:Pages linking to missing files]]}}&lt;!-- tracking category end --&gt;}}}}&lt;/includeonly&gt;&lt;noinclude&gt;
+{{documentation}}&lt;!-- Add categories and interwikis to the /doc subpage, not here! --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>qcorin8f88efg7r5oufpzcztskyv5gt</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Autp</title>
+    <ns>10</ns>
+    <id>181</id>
+    <revision>
+      <id>231</id>
+      <parentid>230</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>230</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="155" sha1="n4wu7ile9hjdtbwrcqj6pxsrkc3ujzz" xml:space="preserve">[[File:Yes check.svg|20px|link=|alt=]] '''{{ucfirst:{{{1|Answered on user's talk page.}}}}}'''&lt;!--template:autp--&gt;&lt;noinclude&gt;
+{{documentation}}&lt;/noinclude&gt;</text>
+      <sha1>n4wu7ile9hjdtbwrcqj6pxsrkc3ujzz</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Await</title>
+    <ns>10</ns>
+    <id>182</id>
+    <revision>
+      <id>233</id>
+      <parentid>232</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>232</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="178" sha1="ta3o4rbwz4dhg4gcg2vxlmls9gg21fc" xml:space="preserve">[[File:Pictogram voting wait.svg|{{#if:{{{1|}}}|{{{1}}}|20}}px|alt=Clock|link=]]&lt;span style="display:none"&gt;C&lt;/span&gt;&lt;!--template:await--&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>ta3o4rbwz4dhg4gcg2vxlmls9gg21fc</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Awaiting</title>
+    <ns>10</ns>
+    <id>183</id>
+    <revision>
+      <id>235</id>
+      <parentid>234</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>234</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="110" sha1="s50tjo3flv4hw0fian8e601xytcjfv9" xml:space="preserve">&lt;b style="color: #FB1; font-size: 1.8em;"&gt;ω&lt;/b&gt;&amp;nbsp;'''Awaiting'''&lt;noinclude&gt;
+{{Documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>s50tjo3flv4hw0fian8e601xytcjfv9</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Awaiting admin</title>
+    <ns>10</ns>
+    <id>184</id>
+    <revision>
+      <id>237</id>
+      <parentid>236</parentid>
+      <timestamp>2022-07-16T07:10:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>236</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="252" sha1="iyq8gg4qnhrdectpleiug4yn1n2yweo" xml:space="preserve">&lt;span class="nowrap"&gt;[[File:Pictogram voting wait violet.svg|20px|link=|alt=]] '''Awaiting'''&lt;/span&gt;''' administrative action'''&lt;noinclude&gt;{{documentation|content=
+==See also==
+{{done/See also}}
+
+[[Category:Image with comment templates]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>iyq8gg4qnhrdectpleiug4yn1n2yweo</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Awaitingadmin</title>
+    <ns>10</ns>
+    <id>185</id>
+    <redirect title="Template:Awaiting admin" />
+    <revision>
+      <id>239</id>
+      <parentid>238</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>238</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="84" sha1="6dcwxs4mf96c7vqtjdg3chjpzkqlhr7" xml:space="preserve">#REDIRECT [[Template:Awaiting admin]]
+
+{{Redirect category shell|
+{{R from move}}
+}}</text>
+      <sha1>6dcwxs4mf96c7vqtjdg3chjpzkqlhr7</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Aye</title>
+    <ns>10</ns>
+    <id>186</id>
+    <revision>
+      <id>241</id>
+      <parentid>240</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>240</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="131" sha1="5gycadl77izrbytpnok054pl5fozou2" xml:space="preserve">&lt;onlyinclude&gt;[[File:Green check.svg|13px|alt=Green tick|link=]]&lt;SPAN STYLE="display:none"&gt;Y&lt;/SPAN&gt;&lt;/onlyinclude&gt;
+
+{{documentation}}</text>
+      <sha1>5gycadl77izrbytpnok054pl5fozou2</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bang</title>
+    <ns>10</ns>
+    <id>187</id>
+    <revision>
+      <id>243</id>
+      <parentid>242</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>242</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="113" sha1="52dwwz42i23vg7rn2mnnhvcpmmklz24" xml:space="preserve">[[Image:Symbol opinion vote.svg|20px|link=|alt=exclamation mark]]&amp;nbsp;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>52dwwz42i23vg7rn2mnnhvcpmmklz24</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Behaviour</title>
+    <ns>10</ns>
+    <id>188</id>
+    <revision>
+      <id>245</id>
+      <parentid>244</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>244</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="459" sha1="kd80d91a5sht03w0do6wr0gc24xi71g" xml:space="preserve">[[File:Symbol rename vote.svg|19px|link=|alt=]]&amp;nbsp;'''Behavioural evidence needs evaluation{{#if:{{{1|}}}|&amp;nbsp;{{{1}}}:|}}'''&lt;noinclude&gt;{{Documentation|content=&lt;!----&gt;
+{{shortcut|Template:Behav|Template:Behavior}}
+
+{{tlx|behav}} produces:
+
+:{{behav}}
+
+{{tlx|behav|2=before blocks are issued}} produces:
+
+:{{behav|before blocks are issued}}
+
+==See also==
+{{Done/See also}}
+}}
+
+[[Category:Image with comment templates]]
+[[Category:SPI templates]]&lt;/noinclude&gt;</text>
+      <sha1>kd80d91a5sht03w0do6wr0gc24xi71g</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Big</title>
+    <ns>10</ns>
+    <id>189</id>
+    <revision>
+      <id>247</id>
+      <parentid>246</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>246</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="177" sha1="h2e0f82fasmre1wg7mmooho2xrnyw8f" xml:space="preserve">&lt;span style="font-size: 120%;"&gt;{{{1}}}&lt;/span&gt;&lt;noinclude&gt;
+{{Documentation}}
+&lt;!-- Please add categories to the /doc subpage; interwikis go to Wikidata, thank you. --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>h2e0f82fasmre1wg7mmooho2xrnyw8f</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Blockedandtagged</title>
+    <ns>10</ns>
+    <id>190</id>
+    <revision>
+      <id>249</id>
+      <parentid>248</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>248</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="157" sha1="93r64kyi845in3nssan7fru1v3drq87" xml:space="preserve">&lt;span class="nowrap"&gt;[[File:Artículo bueno-blue.svg|16px|link=|alt=]]&amp;nbsp;'''{{{1|Blocked and tagged}}}'''&lt;/span&gt;&lt;noinclude&gt;
+{{Documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>93r64kyi845in3nssan7fru1v3drq87</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Blockedtaggedclosing</title>
+    <ns>10</ns>
+    <id>191</id>
+    <revision>
+      <id>251</id>
+      <parentid>250</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>250</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="337" sha1="pd6xavwqri5omoe95q06fp5uhbn86za" xml:space="preserve">&lt;span class="nowrap"&gt;[[File:Artículo bueno-blue.svg|16px|link=|alt=]]&amp;nbsp;&lt;/span&gt;'''{{{1|Blocked and tagged. Closing.}}}'''&lt;noinclude&gt;{{documentation|content=
+==See also==
+{{done/See also}}
+
+[[Category:Wikipedia administration templates]]
+[[Category:Image with comment templates|{{PAGENAME}}]]
+[[Category:SPI templates]]}}
+&lt;/noinclude&gt;</text>
+      <sha1>pd6xavwqri5omoe95q06fp5uhbn86za</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Blockedwithouttags</title>
+    <ns>10</ns>
+    <id>192</id>
+    <revision>
+      <id>253</id>
+      <parentid>252</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>252</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="136" sha1="5c86li6iwuo0kp8296g43x70eriyrus" xml:space="preserve">[[File:Candidato-Artículo bueno-blue.svg|16px|link=|alt=]] '''{{{1|Blocked without tags}}}'''&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>5c86li6iwuo0kp8296g43x70eriyrus</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:BotComment</title>
+    <ns>10</ns>
+    <id>193</id>
+    <revision>
+      <id>255</id>
+      <parentid>254</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>254</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="215" sha1="e9asamqnlzlfqpz5pntnnilimdvoey5" xml:space="preserve">[[File:Symbol dot dot dot.svg|20px|alt=|link=]]&amp;nbsp;'''Comment.'''&lt;noinclude&gt;{{documentation|content=
+{{BAG Admin Tools}}
+
+==See also==
+{{Done/See also}}
+
+[[Category:Wikipedia bot-related templates]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>e9asamqnlzlfqpz5pntnnilimdvoey5</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:BugFixed</title>
+    <ns>10</ns>
+    <id>194</id>
+    <revision>
+      <id>257</id>
+      <parentid>256</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>256</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1023" sha1="ku78y04snqugmfurwzex8napcdksvhb" xml:space="preserve">[[File:Green bug and broom.svg|28px|alt=]] &amp;nbsp; {{#switch:{{{1|}}}
+| NAB = '''Not a bug'''{{#if:{{{2|}}}| &amp;nbsp; ({{{2}}})}}
+| onetime = '''One-time bug'''{{#if:{{{2|}}}| &amp;nbsp; ({{{2}}})}}
+| dupe = '''Duplicate bug report'''{{#if:{{{2|}}}| &amp;nbsp; ({{{2}}})}}
+| cannot = '''Rare unfixable corner-case'''{{#if:{{{2|}}}| &amp;nbsp; ({{{2}}})}}
+| = '''Bug fixed'''
+| #default = '''Bug fixed''' &amp;nbsp; ({{{1}}})
+}}&lt;noinclude&gt;{{documentation|content=
+==Usage==
+*&lt;kbd&gt;&lt;nowiki&gt;{{BugFixed}}&lt;/nowiki&gt;&lt;/kbd&gt; → {{BugFixed}}
+*&lt;kbd&gt;&lt;nowiki&gt;{{BugFixed|NAB}}&lt;/nowiki&gt;&lt;/kbd&gt; → {{BugFixed|NAB}}
+*&lt;kbd&gt;&lt;nowiki&gt;{{BugFixed|onetime}}&lt;/nowiki&gt;&lt;/kbd&gt; → {{BugFixed|onetime}}
+*&lt;kbd&gt;&lt;nowiki&gt;{{BugFixed|dupe}}&lt;/nowiki&gt;&lt;/kbd&gt; → {{BugFixed|dupe}}
+*&lt;kbd&gt;&lt;nowiki&gt;{{BugFixed|cannot}}&lt;/nowiki&gt;&lt;/kbd&gt; → {{BugFixed|cannot}}
+*&lt;kbd&gt;&lt;nowiki&gt;{{BugFixed|custom text}}&lt;/nowiki&gt;&lt;/kbd&gt; → {{BugFixed|custom text}}
+
+==See also==
+{{Done/See also}}
+
+[[Category:Image with comment templates|{{PAGENAME}}]]
+[[Category:Wikipedia article alerts|Τ]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>ku78y04snqugmfurwzex8napcdksvhb</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug acknowledged</title>
+    <ns>10</ns>
+    <id>195</id>
+    <revision>
+      <id>259</id>
+      <parentid>258</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>258</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="158" sha1="624kzipxez845186hfwmq547zxu455u" xml:space="preserve">&lt;span style="background-color: Gold"&gt;[[File:Pictogram voting comment.svg|18px|link=|alt=]] '''Acknowledged'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>624kzipxez845186hfwmq547zxu455u</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug assigned</title>
+    <ns>10</ns>
+    <id>196</id>
+    <revision>
+      <id>261</id>
+      <parentid>260</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>260</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="161" sha1="ptnixf44p3aoqw5vel060ym2b2a2v0v" xml:space="preserve">&lt;span style="background-color: LightSteelBlue"&gt;[[File:Pictogram voting info.svg|18px|link=|alt=]] '''Assigned'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>ptnixf44p3aoqw5vel060ym2b2a2v0v</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug closed</title>
+    <ns>10</ns>
+    <id>197</id>
+    <revision>
+      <id>263</id>
+      <parentid>262</parentid>
+      <timestamp>2022-07-16T07:10:43Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>262</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="157" sha1="n95g1vjqbbhepm46nx6i2kp2o8pb5rd" xml:space="preserve">&lt;span style="background-color: Gainsboro"&gt;[[File:Pictogram voting neutral.svg|18px|link=|alt=]] '''Closed'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>n95g1vjqbbhepm46nx6i2kp2o8pb5rd</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug confirmed</title>
+    <ns>10</ns>
+    <id>198</id>
+    <revision>
+      <id>265</id>
+      <parentid>264</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>264</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="156" sha1="kwuzkutbz8oplzx2t3gtjecadrlyxo2" xml:space="preserve">&lt;span style="background-color: Khaki"&gt;[[File:Pictogram voting comment.svg|18px|link=|alt=]] '''Confirmed'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>kwuzkutbz8oplzx2t3gtjecadrlyxo2</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug dupe</title>
+    <ns>10</ns>
+    <id>199</id>
+    <revision>
+      <id>267</id>
+      <parentid>266</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>266</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="107" sha1="szxxf4ihd86a8n81niiz88tqh56e2l1" xml:space="preserve">[[File:Symbol redirect vote2.svg|18px|alt=arrow]]&amp;nbsp;'''Dupe'''&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>szxxf4ihd86a8n81niiz88tqh56e2l1</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug feedback</title>
+    <ns>10</ns>
+    <id>200</id>
+    <revision>
+      <id>269</id>
+      <parentid>268</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>268</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="164" sha1="jy3xa2ap8ndod04rrp7s82mxus7c7l8" xml:space="preserve">&lt;span style="background-color: #fac"&gt;[[File:Pictogram voting question.svg|18px|link=|alt=]] '''Feedback required'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>jy3xa2ap8ndod04rrp7s82mxus7c7l8</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug new</title>
+    <ns>10</ns>
+    <id>201</id>
+    <revision>
+      <id>271</id>
+      <parentid>270</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>270</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="149" sha1="psp6qexwrqi2zjw96il33nliffin67q" xml:space="preserve">&lt;span style="background-color: #fb8"&gt;[[File:Pictogram voting neutral.svg|18px|link=|alt=]] '''New'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>psp6qexwrqi2zjw96il33nliffin67q</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug pending</title>
+    <ns>10</ns>
+    <id>202</id>
+    <revision>
+      <id>273</id>
+      <parentid>272</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>272</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="180" sha1="p6jz27pwk5fbtzrbkt79mdoy7egbtwf" xml:space="preserve">&lt;span style="background-color: LightGreen; color: Fuchsia"&gt;[[File:Pictogram voting keep.svg|18px|link=|alt=]] '''{{{1|Pending}}}'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>p6jz27pwk5fbtzrbkt79mdoy7egbtwf</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bug resolved</title>
+    <ns>10</ns>
+    <id>203</id>
+    <revision>
+      <id>275</id>
+      <parentid>274</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>274</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="157" sha1="stmvfko885wifdii0uxq1oytz0x0lps" xml:space="preserve">&lt;span style="background-color: LightGreen"&gt;[[File:Pictogram voting keep.svg|18px|link=|alt=]] '''Resolved'''&lt;/span&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>stmvfko885wifdii0uxq1oytz0x0lps</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bulb</title>
+    <ns>10</ns>
+    <id>204</id>
+    <revision>
+      <id>277</id>
+      <parentid>276</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>276</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="170" sha1="s2v75dodqs2krd7n0df73evnh8977ua" xml:space="preserve">[[File:Dialog-information on.svg|{{{1|20}}}px|alt=Light bulb icon|link=]]&lt;span style="display:none"&gt;B&lt;/span&gt;&lt;!--template:bulb--&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>s2v75dodqs2krd7n0df73evnh8977ua</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bulb2</title>
+    <ns>10</ns>
+    <id>205</id>
+    <revision>
+      <id>279</id>
+      <parentid>278</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>278</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="162" sha1="jxk29sa4yvorr7wp877dx8ihvzvnas2" xml:space="preserve">[[File:BulbgraphOnOff.gif|{{{1|20}}}px|alt=Flashing bulb|link=]]&lt;span style="display:none"&gt;B&lt;/span&gt;&lt;!--template:bulb2--&gt;&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>jxk29sa4yvorr7wp877dx8ihvzvnas2</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Bureaucrat note</title>
+    <ns>10</ns>
+    <id>206</id>
+    <revision>
+      <id>281</id>
+      <parentid>280</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>280</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="134" sha1="rgtuywn6j68p8lpvbxizm8k9bn563gs" xml:space="preserve">[[File:Pictogram voting comment.svg|link=|alt=|20px]] '''Bureaucrat note{{{1|}}}{{{2|:}}}'''&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>rgtuywn6j68p8lpvbxizm8k9bn563gs</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Buttinsky</title>
+    <ns>10</ns>
+    <id>207</id>
+    <revision>
+      <id>283</id>
+      <parentid>282</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>282</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="227" sha1="f7rxcqbhog2ibwcf6ibwng604aimvxv" xml:space="preserve">&lt;sup&gt;([[File:SMirC-ass.svg|x20px|(_*_)|alt=orange butt icon]] [[Wikipedia:Talk page stalker|Buttinsky]])&lt;/sup&gt;&lt;noinclude&gt;
+{{Documentation}}
+&lt;!-- Categories go on the /doc subpage, and interwikis go on Wikidata. --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>f7rxcqbhog2ibwcf6ibwng604aimvxv</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:CUnote</title>
+    <ns>10</ns>
+    <id>208</id>
+    <revision>
+      <id>285</id>
+      <parentid>284</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>284</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="122" sha1="5vsuha48gp94wyt21b2tafys3chypp6" xml:space="preserve">[[File:Pictogram voting comment.svg|link=|alt=|20px]]&amp;nbsp;'''Checkuser note:'''&lt;noinclude&gt;
+{{Documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>5vsuha48gp94wyt21b2tafys3chypp6</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Cancelled</title>
+    <ns>10</ns>
+    <id>209</id>
+    <revision>
+      <id>287</id>
+      <parentid>286</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>286</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="168" sha1="f3rbkalbei9xz28fur66zwyncbiyzj1" xml:space="preserve">[[File:Cancelled cross.svg|{{{imagesize|15}}}px|link=|alt=]] '''{{{1|Cancelled}}}'''&lt;noinclude&gt;
+{{documentation}}
+[[Category:Image with comment templates]]
+&lt;/noinclude&gt;</text>
+      <sha1>f3rbkalbei9xz28fur66zwyncbiyzj1</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Check mark-n</title>
+    <ns>10</ns>
+    <id>210</id>
+    <revision>
+      <id>289</id>
+      <parentid>288</parentid>
+      <timestamp>2022-07-16T07:10:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>288</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="144" sha1="spd536uj0m3wo2n3hlsxd8dksyrypws" xml:space="preserve">[[Image:Check mark 23x20 04.svg|23x20px|Check mark|alt=Yes|link=]]&lt;SPAN STYLE="display:none"&gt;Y&lt;/SPAN&gt;&lt;noinclude&gt;
+
+{{Documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>spd536uj0m3wo2n3hlsxd8dksyrypws</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Checked</title>
+    <ns>10</ns>
+    <id>211</id>
+    <revision>
+      <id>291</id>
+      <parentid>290</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>290</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="97" sha1="fu4jsxowberwpr1du4ydsm2uostkh3i" xml:space="preserve">[[File:Check mark 23x20 02.svg|12px|alt=Checked|link=]]&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>fu4jsxowberwpr1du4ydsm2uostkh3i</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Checked2</title>
+    <ns>10</ns>
+    <id>212</id>
+    <revision>
+      <id>293</id>
+      <parentid>292</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>292</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="435" sha1="8cyjmtumb0yvs1vdmib9ex1vc75b57b" xml:space="preserve">[[File:Symbol confirmed.svg|20px|link=|alt=]] '''{{{1|Checked}}}'''&lt;noinclude&gt;
+{{Documentation|content={{Resolved mark/doc|type=checkmark|where=at [[Wikipedia:Copyright problems]]|para=The template accepts a single parameter (unnamed or given as {{para|1}}) that changes the word "Checked" to the text specified in the parameter, e.g. "Checked to the extent possible".|admin=y}}}}
+&lt;!--Categories go on the /doc subpage --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>8cyjmtumb0yvs1vdmib9ex1vc75b57b</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Checked box</title>
+    <ns>10</ns>
+    <id>213</id>
+    <revision>
+      <id>295</id>
+      <parentid>294</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>294</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="141" sha1="gh9q9dw84astp6ugr5n7ziaj4ywfm7f" xml:space="preserve">&lt;noinclude&gt;{{confused|Template:Checkbox}}
+&lt;/noinclude&gt;[[File:Check mark.svg|alt=checked box|link=]]&lt;noinclude&gt;
+{{documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>gh9q9dw84astp6ugr5n7ziaj4ywfm7f</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Checking</title>
+    <ns>10</ns>
+    <id>214</id>
+    <revision>
+      <id>297</id>
+      <parentid>296</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>296</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="200" sha1="0qioh6zxqy78s6rq1ut04ibqqnk0he6" xml:space="preserve">[[File:Pictogram voting wait blue.svg|16px|link=|alt=]] '''Checking...'''&lt;noinclude&gt;
+{{Documentation}}
+&lt;!--Please add this template's categories to the /doc subpage, not here - thanks!--&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>0qioh6zxqy78s6rq1ut04ibqqnk0he6</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Clerk-Note</title>
+    <ns>10</ns>
+    <id>215</id>
+    <revision>
+      <id>299</id>
+      <parentid>298</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>298</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="215" sha1="9pcc9099mwzitcs9xd91cp8hlu5aalw" xml:space="preserve">[[File:Symbol comment vote.svg|16px|link=|alt=]]&amp;nbsp;'''Cler{{{3|k}}} note{{{1|}}}{{{2|:}}}'''&lt;noinclude&gt;
+{{Documentation}}
+&lt;!-- Add categories to the /doc subpage, interwikis to Wikidata, not here --&gt;
+&lt;/noinclude&gt;</text>
+      <sha1>9pcc9099mwzitcs9xd91cp8hlu5aalw</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Clerk-Note-bot</title>
+    <ns>10</ns>
+    <id>216</id>
+    <revision>
+      <id>301</id>
+      <parentid>300</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>300</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="135" sha1="heud9xa5mfxgjkvjrmb7am3830bv66h" xml:space="preserve">[[File:Symbol comment vote.svg|17px|link=|alt=]]&amp;nbsp;'''Robot clerk note{{{1|}}}{{{2|:}}}'''&lt;noinclude&gt;
+{{Documentation}}
+&lt;/noinclude&gt;</text>
+      <sha1>heud9xa5mfxgjkvjrmb7am3830bv66h</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Clerk-Note-merged</title>
+    <ns>10</ns>
+    <id>217</id>
+    <revision>
+      <id>303</id>
+      <parentid>302</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>302</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="89" sha1="111jkchgmp6lpek0sbv3zgrrjwpg4z5" xml:space="preserve">[[File:Mergefrom.svg|16px|link=|alt=]] '''{{{1|Merged}}}'''&lt;noinclude&gt;{{doc}}&lt;/noinclude&gt;</text>
+      <sha1>111jkchgmp6lpek0sbv3zgrrjwpg4z5</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Clerk Request</title>
+    <ns>10</ns>
+    <id>218</id>
+    <revision>
+      <id>305</id>
+      <parentid>304</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>304</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="209" sha1="6vpuhisjrbddl42fdvjyi3lqr2ytmtx" xml:space="preserve">[[File:Symbol merge vote.svg|16px|alt=|link=]]&amp;nbsp;'''Clerk assistance requested:'''&lt;noinclude&gt;{{documentation|content=
+==See also==
+{{done/See also}}
+
+[[Category:Image with comment templates]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>6vpuhisjrbddl42fdvjyi3lqr2ytmtx</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Close</title>
+    <ns>10</ns>
+    <id>219</id>
+    <revision>
+      <id>307</id>
+      <parentid>306</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>306</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="190" sha1="3pu6ip32l3liapmyqtw1hxmon9phmnn" xml:space="preserve">[[File:Symbol_declined.svg|20px|alt=no]]&amp;nbsp;'''{{{1|Closed}}}'''&lt;noinclude&gt;{{documentation|content=
+==See also==
+{{done/See also}}
+
+[[Category:Image with comment templates]]
+}}&lt;/noinclude&gt;</text>
+      <sha1>3pu6ip32l3liapmyqtw1hxmon9phmnn</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Closing without action</title>
+    <ns>10</ns>
+    <id>220</id>
+    <revision>
+      <id>309</id>
+      <parentid>308</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>308</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="513" sha1="hp9qxy8nhjfn1ce6d9bpa5cnqqj4ibn" xml:space="preserve">[[File:Symbol declined.svg|16px|alt=no]] '''{{{1|Closing without action}}}'''&lt;noinclude&gt;{{documentation|content={{Template:Resolved mark/doc |type=checkmark|where=at [[Wikipedia:Sockpuppet investigations]] to indicate that a case has been reviewed and determined to not be actionable. |para=The template accepts a single parameter (unnamed or given as {{para|1}}) that changes the phrase "Closing without action" to the text specified in the parameter. {{pb}}{{tlx|cwa}} may be used as a shortcut.}}}}&lt;/noinclude&gt;</text>
+      <sha1>hp9qxy8nhjfn1ce6d9bpa5cnqqj4ibn</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Col-float</title>
+    <ns>10</ns>
+    <id>221</id>
+    <revision>
+      <id>311</id>
+      <parentid>310</parentid>
+      <timestamp>2022-07-16T07:10:45Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>310</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="568" sha1="6l6iruc2ju0f8a2x0duqwgkocxti2hj" xml:space="preserve">&lt;includeonly&gt;&lt;templatestyles src="Col-float/styles.css" /&gt;&lt;div class="multicol-float {{{class|}}}" style="{{#if:{{{nextcol|{{{firstcol|{{{width|}}}}}}}}}|min-width: {{{nextcol|{{{firstcol|{{{width|}}}}}}}}};}}{{{style|}}}"&gt;{{{{{|safesubst:}}}#if:{{{1|}}}|{{{{{|safesubst:}}}#invoke:separated entries|main|separator=
+&lt;/div&gt;&lt;div class="multicol-float {{{class|}}}" style="min-width: {{{nextcol|{{{width|30.0em}}}}}};{{{style|}}}"&gt;}}
+&lt;/div&gt;&lt;div class="multicol-float-clear {{{class|}}}" style="{{{style|}}}" &gt;&lt;/div&gt;}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation}}&lt;/noinclude&gt;</text>
+      <sha1>6l6iruc2ju0f8a2x0duqwgkocxti2hj</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Col-float-break</title>
+    <ns>10</ns>
+    <id>222</id>
+    <revision>
+      <id>313</id>
+      <parentid>312</parentid>
+      <timestamp>2022-07-16T07:10:46Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>312</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="226" sha1="73k6ws7ar40jrkidjoxhegdos053zo0" xml:space="preserve">&lt;includeonly&gt;&lt;/div&gt;{{Col-float |width={{#if:{{{nextcol|{{{width|}}}}}}|{{{nextcol|{{{width|}}}}}}}} |class={{{class|}}} |style={{{style|}}}}}&lt;/includeonly&gt;&lt;noinclude&gt;{{Documentation|{{ns:Template}}:Col-float/doc}}
+&lt;/noinclude&gt;</text>
+      <sha1>73k6ws7ar40jrkidjoxhegdos053zo0</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Col-float-end</title>
+    <ns>10</ns>
+    <id>223</id>
+    <revision>
+      <id>315</id>
+      <parentid>314</parentid>
+      <timestamp>2022-07-16T07:10:46Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: include the enwiki template</comment>
+      <origin>314</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="180" sha1="t8tu7gc0jal2i3takswo4otfo0ablpa" xml:space="preserve">&lt;includeonly&gt;&lt;/div&gt;&lt;div class="multicol-float-clear {{{class|}}}" style="{{{style|}}}" &gt;&lt;/div&gt;&lt;/includeonly&gt;&lt;noinclude&gt;
+{{Documentation|{{Ns:Template}}:Col-float/doc}}
+&lt;/noinclude&gt;</text>
+      <sha1>t8tu7gc0jal2i3takswo4otfo0ablpa</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>File:X mark.svg</title>
+    <ns>6</ns>
+    <id>224</id>
+    <revision>
+      <id>316</id>
+      <timestamp>2022-07-16T07:13:09Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <origin>316</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="35" sha1="oeoxvuv33haffccevc2zo58q7cfgbas" xml:space="preserve">
+== Licensing ==
+{{From Wikimedia}}</text>
+      <sha1>oeoxvuv33haffccevc2zo58q7cfgbas</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Wiki:Policy</title>
+    <ns>4</ns>
+    <id>225</id>
+    <revision>
+      <id>346</id>
+      <parentid>320</parentid>
+      <timestamp>2022-07-16T23:08:53Z</timestamp>
+      <contributor>
+        <username>ApexAgunomu19</username>
+        <id>51543884</id>
+      </contributor>
+      <origin>346</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="431" sha1="gvtgcixsto61hvcciriigbo9ybazn5x" xml:space="preserve">Welcome to the Test Wiki. This wiki is a place to test MediaWiki and Fandom tools. But there are rules that must be followed here.
+
+== Ban policy ==
+Please do not block users for more than 2 hours for testing purposes
+
+== Revert policy ==
+Please revert all of your tests when you are done with them.
+
+== Inactivity policy ==
+People who are inactive for 3 months will have their rights removed. They may re-request them at any time.</text>
+      <sha1>gvtgcixsto61hvcciriigbo9ybazn5x</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:ImportJS</title>
+    <ns>8</ns>
+    <id>227</id>
+    <revision>
+      <id>322</id>
+      <timestamp>2022-07-16T09:23:42Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "dev:Nuke/code.js"</comment>
+      <origin>322</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="16" sha1="fob1s2ut5yay3iegpc7t555zb20mk13" xml:space="preserve">dev:Nuke/code.js</text>
+      <sha1>fob1s2ut5yay3iegpc7t555zb20mk13</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User:AlDPa</title>
+    <ns>2</ns>
+    <id>228</id>
+    <revision>
+      <id>325</id>
+      <timestamp>2022-07-16T12:14:46Z</timestamp>
+      <contributor>
+        <username>AlDPa</username>
+        <id>51079472</id>
+      </contributor>
+      <comment>Create</comment>
+      <origin>325</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="79" sha1="qtlke0dwm4cl4ho8e1bppbwe5w4s3cl" xml:space="preserve">See my userpage on [https://publictestwiki.com/wiki/User:AlPaD Public TestWiki]</text>
+      <sha1>qtlke0dwm4cl4ho8e1bppbwe5w4s3cl</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Comment test</title>
+    <ns>0</ns>
+    <id>229</id>
+    <revision>
+      <id>355</id>
+      <parentid>353</parentid>
+      <timestamp>2022-07-17T14:49:58Z</timestamp>
+      <contributor>
+        <username>ApexAgunomu19</username>
+        <id>51543884</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contributions/LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) to last revision by [[User:ApexAgunomu19|ApexAgunomu19]]</comment>
+      <origin>334</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="166" sha1="s72h1tna2u1ceia2zvr2v6vq6y2ff25" xml:space="preserve">You can add comment the page.
+Help why can't I comment on this page? [[User:ApexAgunomu19|ApexAgunomu19]] ([[User talk:ApexAgunomu19|talk]]) 16:58, 16 July 2022 (UTC)</text>
+      <sha1>s72h1tna2u1ceia2zvr2v6vq6y2ff25</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Rollback test</title>
+    <ns>0</ns>
+    <id>230</id>
+    <revision>
+      <id>372</id>
+      <parentid>369</parentid>
+      <timestamp>2022-07-19T14:23:43Z</timestamp>
+      <contributor>
+        <username>AlDPa</username>
+        <id>51079472</id>
+      </contributor>
+      <minor/>
+      <comment>Removed protection from "[[Rollback test]]"</comment>
+      <origin>330</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="64" sha1="4ojgky1ufdvgjclyn4gqq9ab5bs4f6q" xml:space="preserve">You can undo these page changes.
+[[Category:List of test pages]]</text>
+      <sha1>4ojgky1ufdvgjclyn4gqq9ab5bs4f6q</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>AbuseFilter test</title>
+    <ns>0</ns>
+    <id>231</id>
+    <revision>
+      <id>331</id>
+      <timestamp>2022-07-16T12:41:28Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "You can test AbuseFilter on this page. (for administrators only)"</comment>
+      <origin>331</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="64" sha1="3hwif7ffxpmrwavecayzl8kaztz64ir" xml:space="preserve">You can test AbuseFilter on this page. (for administrators only)</text>
+      <sha1>3hwif7ffxpmrwavecayzl8kaztz64ir</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User:ApexAgunomu19</title>
+    <ns>2</ns>
+    <id>233</id>
+    <revision>
+      <id>335</id>
+      <timestamp>2022-07-16T17:01:52Z</timestamp>
+      <contributor>
+        <username>ApexAgunomu19</username>
+        <id>51543884</id>
+      </contributor>
+      <comment>Created page with "Hello everyone, I am ApexAgunomu19, but you can call me Apex for short. I am ApexAgunomu on Miraheze, though currently on a wikibreak there. I'm here to test admin tools."</comment>
+      <origin>335</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="170" sha1="4kqx11bxizuskj2tb9z9n82x9ocpmch" xml:space="preserve">Hello everyone, I am ApexAgunomu19, but you can call me Apex for short. I am ApexAgunomu on Miraheze, though currently on a wikibreak there. I'm here to test admin tools.</text>
+      <sha1>4kqx11bxizuskj2tb9z9n82x9ocpmch</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User talk:ApexAgunomu19</title>
+    <ns>3</ns>
+    <id>234</id>
+    <revision>
+      <id>338</id>
+      <timestamp>2022-07-16T17:24:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "== Hello == Yout request appovred. Please read the [[Test Wiki:policy|policy]]."</comment>
+      <origin>338</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="79" sha1="qwyhyk7s9ep7zbyzrgn1i20ntda6ocl" xml:space="preserve">== Hello ==
+Yout request appovred. Please read the [[Test Wiki:policy|policy]].</text>
+      <sha1>qwyhyk7s9ep7zbyzrgn1i20ntda6ocl</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Wiki:Inactivity policy</title>
+    <ns>4</ns>
+    <id>235</id>
+    <revision>
+      <id>339</id>
+      <timestamp>2022-07-16T17:49:15Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "The inactivity policy on the Test Wiki is 3 months. Inactive users are authorized within 3 months."</comment>
+      <origin>339</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="98" sha1="ep8yarq0t3jpdm4ilsgozq26s3vk0dd" xml:space="preserve">The inactivity policy on the Test Wiki is 3 months. Inactive users are authorized within 3 months.</text>
+      <sha1>ep8yarq0t3jpdm4ilsgozq26s3vk0dd</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Category:List of test pages</title>
+    <ns>14</ns>
+    <id>240</id>
+    <revision>
+      <id>345</id>
+      <timestamp>2022-07-16T23:05:35Z</timestamp>
+      <contributor>
+        <username>ApexAgunomu19</username>
+        <id>51543884</id>
+      </contributor>
+      <comment>Created page with "These are all the pages you can test on here."</comment>
+      <origin>345</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="45" sha1="aqrrcee85pyq2btz8du8e00mtht6jsa" xml:space="preserve">These are all the pages you can test on here.</text>
+      <sha1>aqrrcee85pyq2btz8du8e00mtht6jsa</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Page model test</title>
+    <ns>0</ns>
+    <id>243</id>
+    <revision>
+      <id>356</id>
+      <timestamp>2022-07-17T15:01:44Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "You can change the page's model."</comment>
+      <origin>356</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="32" sha1="lsdok4z8ph3dqmm068f98zkxwavxt7u" xml:space="preserve">You can change the page's model.</text>
+      <sha1>lsdok4z8ph3dqmm068f98zkxwavxt7u</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Anonnotice</title>
+    <ns>8</ns>
+    <id>244</id>
+    <revision>
+      <id>357</id>
+      <timestamp>2022-07-17T15:05:31Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with "Please [[Special:CreateAccount|create a account.]]"</comment>
+      <origin>357</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="50" sha1="ixw48tyol4edrv85gmh7fiysc6dnuqf" xml:space="preserve">Please [[Special:CreateAccount|create a account.]]</text>
+      <sha1>ixw48tyol4edrv85gmh7fiysc6dnuqf</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Wiki:Community portal</title>
+    <ns>4</ns>
+    <id>247</id>
+    <revision>
+      <id>361</id>
+      <parentid>360</parentid>
+      <timestamp>2022-07-17T20:35:06Z</timestamp>
+      <contributor>
+        <username>ApexAgunomu19</username>
+        <id>51543884</id>
+      </contributor>
+      <minor/>
+      <origin>361</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="80" sha1="0jrgssw4honbiflefy8k19uhnhiqc67" xml:space="preserve">Welcome to Community portal! You can make a community request on this page.
+----</text>
+      <sha1>0jrgssw4honbiflefy8k19uhnhiqc67</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User:Kingdbx</title>
+    <ns>2</ns>
+    <id>249</id>
+    <revision>
+      <id>384</id>
+      <parentid>383</parentid>
+      <timestamp>2022-07-24T12:35:11Z</timestamp>
+      <contributor>
+        <username>Kingdbx</username>
+        <id>51054435</id>
+      </contributor>
+      <origin>384</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="350" sha1="bjjk4hgoc2v4nqcz4bv6h8gvn2ls5i7" xml:space="preserve">= HI =
+
+== HI ==
+
+=== HI ===
+
+==== HI ====
+
+===== HI =====
+
+====== HI ======
+====== HI ======
+====== HI ======
+HI
+
+====== HI ======
+====== HI ======
+
+
+
+HI
+
+====== HI ======
+====== HI ======
+====== HI ======
+
+
+====== HI ======
+====== HI ======
+====== HI ======
+
+
+
+====== HI ======
+====== HI ======
+
+
+
+====== HI ======
+====== HI ======
+====== HI ======</text>
+      <sha1>bjjk4hgoc2v4nqcz4bv6h8gvn2ls5i7</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User talk:Kingdbx</title>
+    <ns>3</ns>
+    <id>250</id>
+    <revision>
+      <id>387</id>
+      <timestamp>2022-07-24T13:44:41Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>/* Hi */ new section</comment>
+      <origin>387</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="37" sha1="8m5vskhetsackudy4p9r1lz7rpf4rel" xml:space="preserve">== Hi ==
+
+Please read the [[policy]]!</text>
+      <sha1>8m5vskhetsackudy4p9r1lz7rpf4rel</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Policy</title>
+    <ns>0</ns>
+    <id>251</id>
+    <redirect title="Test Wiki:Policy" />
+    <revision>
+      <id>388</id>
+      <timestamp>2022-07-24T13:46:01Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Redirected page to [[Test Wiki:Policy]]</comment>
+      <origin>388</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="30" sha1="p5q3drpf79xlg6jvsc3cwrw17edz2wr" xml:space="preserve">#REDIRECT [[Test Wiki:Policy]]</text>
+      <sha1>p5q3drpf79xlg6jvsc3cwrw17edz2wr</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>User talk:LisafBia</title>
+    <ns>3</ns>
+    <id>252</id>
+    <revision>
+      <id>390</id>
+      <parentid>389</parentid>
+      <timestamp>2022-07-24T14:26:36Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <origin>390</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="349" sha1="5f8r85acgttay3iwfddheip7dod9kct" xml:space="preserve">hi, I put in a request for admin since my account is a week old now. Can I be an admin here now? [[User:ApexAgunomu19|ApexAgunomu19]] ([[User talk:ApexAgunomu19|talk]]) 14:23, 24 July 2022 (UTC)
+::Hello, you have been added to the Admin group. [[User:ApexAgunomu19]] [[User:LisafBia|LisafBia]] ([[User talk:LisafBia|talk]]) 14:26, 24 July 2022 (UTC)</text>
+      <sha1>5f8r85acgttay3iwfddheip7dod9kct</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>MediaWiki:Sidebar</title>
+    <ns>8</ns>
+    <id>253</id>
+    <revision>
+      <id>396</id>
+      <timestamp>2022-07-25T07:43:31Z</timestamp>
+      <contributor>
+        <username>LisafBia</username>
+        <id>51452174</id>
+      </contributor>
+      <comment>Created page with " * navigation ** mainpage|mainpage-description ** recentchanges-url|recentchanges ** randompage-url|randompage ** helppage|help-mediawiki * SEARCH * TOOLBOX"</comment>
+      <origin>396</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="156" sha1="qqsu3aocmn2qji3pfn56y3pizazd8jv" xml:space="preserve">
+* navigation
+** mainpage|mainpage-description
+** recentchanges-url|recentchanges
+** randompage-url|randompage
+** helppage|help-mediawiki
+* SEARCH
+* TOOLBOX</text>
+      <sha1>qqsu3aocmn2qji3pfn56y3pizazd8jv</sha1>
+    </revision>
+  </page>
+</mediawiki>

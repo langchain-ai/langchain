@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<factbook>
+  <country>
+    <name>United States</name>
+    <capital>Washington, DC</capital>
+    <leader>Joe Biden</leader>
+    <sport>Baseball</sport>
+  </country>
+  <country>
+    <name>Canada</name>
+    <capital>Ottawa</capital>
+    <leader>Justin Trudeau</leader>
+    <sport>Hockey</sport>
+  </country>
+  <country>
+    <name>France</name>
+    <capital>Paris</capital>
+    <leader>Emmanuel Macron</leader>
+    <sport>Soccer</sport>
+  </country>
+  <country>
+    <name>Trinidad &amp; Tobado</name>
+    <capital>Port of Spain</capital>
+    <leader>Keith Rowley</leader>
+    <sport>Track &amp; Field</sport>
+  </country>
+</factbook>

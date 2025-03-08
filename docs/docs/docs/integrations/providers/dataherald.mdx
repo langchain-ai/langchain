@@ -1,0 +1,64 @@
+# Dataherald
+
+>[Dataherald](https://www.dataherald.com) is a natural language-to-SQL.
+
+This page covers how to use the `Dataherald API` within LangChain.
+
+## Installation and Setup
+- Install requirements with 
+```bash
+pip install dataherald
+```
+- Go to dataherald and sign up [here](https://www.dataherald.com)
+- Create an app and get your `API KEY`
+- Set your `API KEY` as an environment variable `DATAHERALD_API_KEY`
+
+
+## Wrappers
+
+### Utility
+
+There exists a DataheraldAPIWrapper utility which wraps this API. To import this utility:
+
+```python
+from langchain_community.utilities.dataherald import DataheraldAPIWrapper
+```
+
+For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/dataherald).
+
+### Tool
+
+You can use the tool in an agent like this:
+```python
+from langchain_community.utilities.dataherald import DataheraldAPIWrapper
+from langchain_community.tools.dataherald.tool import DataheraldTextToSQL
+from langchain_openai import ChatOpenAI
+from langchain import hub
+from langchain.agents import AgentExecutor, create_react_agent, load_tools
+
+api_wrapper = DataheraldAPIWrapper(db_connection_id="<db_connection_id>")
+tool = DataheraldTextToSQL(api_wrapper=api_wrapper)
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+prompt = hub.pull("hwchase17/react")
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+agent_executor.invoke({"input":"Return the sql for this question: How many employees are in the company?"})
+```
+
+Output
+```shell
+> Entering new AgentExecutor chain...
+I need to use a tool that can convert this question into SQL.
+Action: dataherald
+Action Input: How many employees are in the company?Answer: SELECT
+    COUNT(*) FROM employeesI now know the final answer
+Final Answer: SELECT
+    COUNT(*)
+FROM
+    employees
+
+> Finished chain.
+{'input': 'Return the sql for this question: How many employees are in the company?', 'output': "SELECT \n    COUNT(*)\nFROM \n    employees"}
+```
+
+For more information on tools, see [this page](/docs/how_to/tools_builtin).

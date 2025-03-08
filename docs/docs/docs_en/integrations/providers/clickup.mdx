@@ -1,0 +1,20 @@
+# ClickUp
+
+>[ClickUp](https://clickup.com/) is an all-in-one productivity platform that provides small and large teams across industries with flexible and customizable work management solutions, tools, and functions.
+>
+>It is a cloud-based project management solution for businesses of all sizes featuring communication and collaboration tools to help achieve organizational goals.
+
+## Installation and Setup
+
+1. Create a [ClickUp App](https://help.clickup.com/hc/en-us/articles/6303422883095-Create-your-own-app-with-the-ClickUp-API)
+2. Follow [these steps](https://clickup.com/api/developer-portal/authentication/) to get your client_id and client_secret.
+
+## Toolkits
+
+```python
+from langchain_community.agent_toolkits.clickup.toolkit import ClickupToolkit
+from langchain_community.utilities.clickup import ClickupAPIWrapper
+```
+
+See a [usage example](/docs/integrations/tools/clickup).
+

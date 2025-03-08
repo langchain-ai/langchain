@@ -1,0 +1,108 @@
+# Elasticsearch
+
+> [Elasticsearch](https://www.elastic.co/elasticsearch/) is a distributed, RESTful search and analytics engine.
+> It provides a distributed, multi-tenant-capable full-text search engine with an HTTP web interface and schema-free
+> JSON documents.
+
+## Installation and Setup
+
+### Setup Elasticsearch
+
+There are two ways to get started with Elasticsearch:
+
+#### Install Elasticsearch on your local machine via Docker
+
+Example: Run a single-node Elasticsearch instance with security disabled. 
+This is not recommended for production use.
+
+```bash
+    docker run -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" -e "xpack.security.http.ssl.enabled=false" docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+```
+
+#### Deploy Elasticsearch on Elastic Cloud
+
+`Elastic Cloud` is a managed Elasticsearch service. Signup for a [free trial](https://cloud.elastic.co/registration?utm_source=langchain&utm_content=documentation).
+
+### Install Client
+
+```bash
+pip install elasticsearch
+pip install langchain-elasticsearch
+```
+
+## Embedding models
+
+See a [usage example](/docs/integrations/text_embedding/elasticsearch).
+
+```python
+from langchain_elasticsearch import ElasticsearchEmbeddings
+```
+
+## Vector store
+
+See a [usage example](/docs/integrations/vectorstores/elasticsearch).
+
+```python
+from langchain_elasticsearch import ElasticsearchStore
+```
+
+### Third-party integrations
+
+#### EcloudESVectorStore
+
+```python
+from langchain_community.vectorstores.ecloud_vector_search import EcloudESVectorStore
+```
+
+## Retrievers
+
+### ElasticsearchRetriever
+
+The `ElasticsearchRetriever` enables flexible access to all Elasticsearch features 
+through the Query DSL. 
+
+See a [usage example](/docs/integrations/retrievers/elasticsearch_retriever).
+
+```python
+from langchain_elasticsearch import ElasticsearchRetriever
+```
+
+### BM25
+
+See a [usage example](/docs/integrations/retrievers/elastic_search_bm25).
+
+```python
+from langchain_community.retrievers import ElasticSearchBM25Retriever
+```
+## Memory
+
+See a [usage example](/docs/integrations/memory/elasticsearch_chat_message_history).
+
+```python
+from langchain_elasticsearch import ElasticsearchChatMessageHistory
+```
+
+## LLM cache
+
+See a [usage example](/docs/integrations/llm_caching/#elasticsearch-caches).
+
+```python
+from langchain_elasticsearch import ElasticsearchCache
+```
+
+## Byte Store
+
+See a [usage example](/docs/integrations/stores/elasticsearch).
+
+```python
+from langchain_elasticsearch import ElasticsearchEmbeddingsCache
+```
+
+## Chain
+
+It is a chain for interacting with Elasticsearch Database.
+
+```python
+from langchain.chains.elasticsearch_database import ElasticsearchDatabaseChain
+```
+
