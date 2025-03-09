@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import ssl
 import uuid
 from operator import itemgetter
 from typing import (
@@ -24,6 +25,7 @@ from typing import (
     cast,
 )
 
+import certifi
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core.callbacks import (
@@ -85,6 +87,11 @@ logger = logging.getLogger(__name__)
 
 # Mistral enforces a specific pattern for tool call IDs
 TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
+
+
+# This SSL context is equivelent to the default `verify=True`.
+# https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
+global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def _create_retry_decorator(
@@ -518,6 +525,7 @@ class ChatMistralAI(BaseChatModel):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                verify=global_ssl_context,
             )
         # todo: handle retries and max_concurrency
         if not self.async_client:
@@ -529,6 +537,7 @@ class ChatMistralAI(BaseChatModel):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                verify=global_ssl_context,
             )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
