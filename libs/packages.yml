@@ -483,3 +483,7 @@ packages:
   path: libs/python-sdk/ads4gpts-langchain
   repo: ADS4GPTs/ads4gpts
   downloads: 733
+- name: langchain-contextual
+  name_title: Contextual AI
+  path: langchain-contextual
+  repo: ContextualAI//langchain-contextual
