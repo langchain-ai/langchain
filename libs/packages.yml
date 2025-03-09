@@ -495,7 +495,14 @@ packages:
   downloads_updated_at: '2025-03-09T00:14:26.697616+00:00'
 - name: ads4gpts-langchain
   name_title: ADS4GPTs
+  provider_page: ads4gpts
   path: libs/python-sdk/ads4gpts-langchain
   repo: ADS4GPTs/ads4gpts
   downloads: 733
   downloads_updated_at: '2025-03-09T00:15:16.651181+00:00'
+- name: langchain-contextual
+  name_title: Contextual AI
+  path: langchain-contextual
+  repo: ContextualAI//langchain-contextual
+  downloads: 432
+  downloads_updated_at: '2025-03-09T01:40:49.430540+00:00'
