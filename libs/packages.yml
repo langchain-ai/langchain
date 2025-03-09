@@ -510,3 +510,6 @@ packages:
   name_title: Valthera
   path: .
   repo: valthera/langchain-valthera
+- name: langchain-opengradient
+  path: .
+  repo: OpenGradient/og-langchain
