@@ -154,7 +154,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             name=name,
             id=id_,
             tool_calls=tool_calls,
-            invalid_tool_calls=invalid_tool_calls
+            invalid_tool_calls=invalid_tool_calls,
         )
     elif role in ("system", "developer"):
         if role == "developer":
