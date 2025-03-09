@@ -130,6 +130,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         reasoning_content = _dict.get("reasoning_content") or ""
+        if reasoning_content != "":
+            content = content[:] + reasoning_content[:]
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
@@ -152,8 +154,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             name=name,
             id=id_,
             tool_calls=tool_calls,
-            invalid_tool_calls=invalid_tool_calls,
-            reasoning_content = reasoning_content
+            invalid_tool_calls=invalid_tool_calls
         )
     elif role in ("system", "developer"):
         if role == "developer":
