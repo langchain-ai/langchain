@@ -12,6 +12,7 @@ from nbconvert.preprocessors import Preprocessor
 HIDE_IN_NB_MAGIC_OPEN = "<!-- HIDE_IN_NB"
 HIDE_IN_NB_MAGIC_CLOSE = "HIDE_IN_NB -->"
 
+
 class EscapePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, index):
         if cell.cell_type == "markdown":
@@ -118,12 +119,12 @@ class CustomRegexRemovePreprocessor(Preprocessor):
 
         return nb, resources
 
+
 class UnHidePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, index):
         cell.source = cell.source.replace(HIDE_IN_NB_MAGIC_OPEN, "")
         cell.source = cell.source.replace(HIDE_IN_NB_MAGIC_CLOSE, "")
         return cell, resources
-                                   
 
 
 exporter = MarkdownExporter(
