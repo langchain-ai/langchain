@@ -158,7 +158,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
 
             def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.encode(text))
+                return len(tokenizer.tokenize(text))
 
         except ImportError:
             raise ValueError(
