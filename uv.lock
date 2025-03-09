@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -2153,7 +2152,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.20"
+version = "0.3.19"
 source = { editable = "libs/langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2192,7 +2191,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -2261,7 +2259,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.9"
+version = "0.3.8"
 source = { editable = "libs/partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2362,7 +2360,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.19"
+version = "0.3.18"
 source = { editable = "libs/community" }
 dependencies = [
     { name = "aiohttp" },
@@ -2387,7 +2385,8 @@ requires-dist = [
     { name = "langchain", editable = "libs/langchain" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "langsmith", specifier = ">=0.1.125,<0.4" },
-    { name = "numpy", specifier = ">=1.26.2,<3" },
+    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
+    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pydantic-settings", specifier = ">=2.4.0,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
@@ -2451,7 +2450,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.42"
+version = "0.3.40"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2733,7 +2732,7 @@ typing = []
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.8"
+version = "0.3.7"
 source = { editable = "libs/partners/openai" }
 dependencies = [
     { name = "langchain-core" },
