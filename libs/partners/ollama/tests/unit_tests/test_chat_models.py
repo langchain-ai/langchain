@@ -18,9 +18,7 @@ class TestChatOllama(ChatModelUnitTests):
 
 
 def test__parse_arguments_from_tool_call() -> None:
-    raw_response = """{"model":"sample-model","message":{"role":"assistant",\
-        "content":""\,"tool_calls":[{"function":{"name":"get_profile_details","arguments":\
-            {"arg_1":"12345678901234567890123456"}}}]},"done":false}"""
+    raw_response = '{"model":"sample-model","message":{"role":"assistant","content":"","tool_calls":[{"function":{"name":"get_profile_details","arguments":{"arg_1":"12345678901234567890123456"}}}]},"done":false}' # type: ignore
     raw_tool_calls = json.loads(raw_response)["message"]["tool_calls"]
     response = _parse_arguments_from_tool_call(raw_tool_calls[0])
     assert response is not None
