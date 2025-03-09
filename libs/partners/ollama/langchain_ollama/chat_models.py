@@ -486,7 +486,7 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: List = []
         for message in messages:
-            role: Literal["user", "assistant", "system", "tool"] | str
+            role: Union[Literal["user", "assistant", "system", "tool"], str]
             tool_call_id: Optional[str] = None
             tool_calls: Optional[List[Dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
