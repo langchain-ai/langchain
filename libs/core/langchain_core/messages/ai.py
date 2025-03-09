@@ -164,6 +164,11 @@ class AIMessage(BaseMessage):
     This is a standard representation of token usage that is consistent across models.
     """
 
+    """
+    reasoning message space for reasoning message like deepseek / o3-mini etc. 
+    """
+    reasoning_message:str = None 
+
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
