@@ -2,6 +2,7 @@
 
 import json
 import os
+import warnings
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -156,7 +157,7 @@ def mock_completion() -> dict:
 
 
 def test_groq_invoke(mock_completion: dict) -> None:
-    llm = ChatGroq()  # type: ignore[call-arg]
+    llm = ChatGroq(model="foo")
     mock_client = MagicMock()
     completed = False
 
@@ -178,7 +179,7 @@ def test_groq_invoke(mock_completion: dict) -> None:
 
 
 async def test_groq_ainvoke(mock_completion: dict) -> None:
-    llm = ChatGroq()  # type: ignore[call-arg]
+    llm = ChatGroq(model="foo")
     mock_client = AsyncMock()
     completed = False
 
@@ -203,7 +204,7 @@ def test_chat_groq_extra_kwargs() -> None:
     """Test extra kwargs to chat groq."""
     # Check that foo is saved in extra_kwargs.
     with pytest.warns(UserWarning) as record:
-        llm = ChatGroq(foo=3, max_tokens=10)  # type: ignore[call-arg]
+        llm = ChatGroq(model="foo", foo=3, max_tokens=10)  # type: ignore[call-arg]
         assert llm.max_tokens == 10
         assert llm.model_kwargs == {"foo": 3}
     assert len(record) == 1
@@ -212,7 +213,7 @@ def test_chat_groq_extra_kwargs() -> None:
 
     # Test that if extra_kwargs are provided, they are added to it.
     with pytest.warns(UserWarning) as record:
-        llm = ChatGroq(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+        llm = ChatGroq(model="foo", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
         assert llm.model_kwargs == {"foo": 3, "bar": 2}
     assert len(record) == 1
     assert type(record[0].message) is UserWarning
@@ -220,21 +221,22 @@ def test_chat_groq_extra_kwargs() -> None:
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
-        ChatGroq(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+        ChatGroq(model="foo", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):
-        ChatGroq(model_kwargs={"temperature": 0.2})  # type: ignore[call-arg]
+        ChatGroq(model="foo", model_kwargs={"temperature": 0.2})
 
     # Test that "model" cannot be specified in kwargs
     with pytest.raises(ValueError):
-        ChatGroq(model_kwargs={"model": "test-model"})  # type: ignore[call-arg]
+        ChatGroq(model="foo", model_kwargs={"model": "test-model"})
 
 
 def test_chat_groq_invalid_streaming_params() -> None:
     """Test that an error is raised if streaming is invoked with n>1."""
     with pytest.raises(ValueError):
-        ChatGroq(  # type: ignore[call-arg]
+        ChatGroq(
+            model="foo",
             max_tokens=10,
             streaming=True,
             temperature=0,
@@ -246,7 +248,7 @@ def test_chat_groq_secret() -> None:
     """Test that secret is not printed"""
     secret = "secretKey"
     not_secret = "safe"
-    llm = ChatGroq(api_key=secret, model_kwargs={"not_secret": not_secret})  # type: ignore[call-arg, arg-type]
+    llm = ChatGroq(model="foo", api_key=secret, model_kwargs={"not_secret": not_secret})  # type: ignore[call-arg, arg-type]
     stringified = str(llm)
     assert not_secret in stringified
     assert secret not in stringified
@@ -257,7 +259,7 @@ def test_groq_serialization() -> None:
     """Test that ChatGroq can be successfully serialized and deserialized"""
     api_key1 = "top secret"
     api_key2 = "topest secret"
-    llm = ChatGroq(api_key=api_key1, temperature=0.5)  # type: ignore[call-arg, arg-type]
+    llm = ChatGroq(model="foo", api_key=api_key1, temperature=0.5)  # type: ignore[call-arg, arg-type]
     dump = lc_load.dumps(llm)
     llm2 = lc_load.loads(
         dump,
@@ -278,3 +280,23 @@ def test_groq_serialization() -> None:
 
     # Ensure a None was preserved
     assert llm.groq_api_base == llm2.groq_api_base
+
+
+def test_groq_warns_default_model() -> None:
+    """Test that a warning is raised if a default model is used."""
+
+    # Delete this test in 0.3 release, when the default model is removed.
+
+    # Test no warning if model is specified
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        ChatGroq(model="foo")
+
+    # Test warns if default model is used
+    with pytest.warns(match="default model"):
+        ChatGroq()
+
+    # Test only warns once
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        ChatGroq()
