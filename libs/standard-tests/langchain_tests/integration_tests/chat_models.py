@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
+from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
@@ -204,12 +205,11 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        Some tests for tool calling features attempt to force tool calling via a
-        `tool_choice` parameter. A common value for this parameter is "any". Defaults
-        to `None`.
-
-        Note: if the value is set to "tool_name", the name of the tool used in each
-        test will be set as the value for `tool_choice`.
+        .. warning:: Deprecated since version 0.3.15:
+           This property will be removed in version 0.3.20. When a single tool is
+           bound, all models should accept ``tool_choice="any"``. If a model does not
+           support forcing tool calling, override the ``has_tool_choice`` property to
+           return ``False``.
 
         Example:
 
@@ -218,6 +218,25 @@ class ChatModelIntegrationTests(ChatModelTests):
             @property
             def tool_choice_value(self) -> Optional[str]:
                 return "any"
+
+    .. dropdown:: has_tool_choice
+
+        Boolean property indicating whether the chat model supports forcing tool
+        calling via a ``tool_choice`` parameter.
+
+        By default, this is determined by whether the parameter is included in the
+        signature for the corresponding ``bind_tools`` method.
+
+        If ``True``, the minimum requirement for this feature is that when one tool is
+        bound, specifying ``tool_choice="any"`` should force that tool to be called.
+
+        Example override:
+
+        .. code-block:: python
+
+            @property
+            def has_tool_choice(self) -> bool:
+                return False
 
     .. dropdown:: has_structured_output
 
@@ -989,16 +1008,29 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def test_tool_calling(self, model: BaseChatModel) -> None:
                     super().test_tool_calling(model)
 
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
+            Otherwise, in the case that only one tool is bound, ensure that
+            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "magic_function"
+        if not self.has_tool_choice:
+            tool_choice_value = None
         else:
-            tool_choice = self.tool_choice_value
-        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
+            tool_choice_value = "any"
+        # Emit warning if tool_choice_value property is overridden
+        if self.tool_choice_value is not ChatModelIntegrationTests.tool_choice_value:
+            warn_deprecated(
+                "0.3.15",
+                message=(
+                    "This property will be removed in version 0.3.20. When a single "
+                    'tool is bound, all models should accept `tool_choice="any"`. If '
+                    "the model does not support ``tool_choice``, override the "
+                    "``supports_tool_choice`` property to return ``False``."
+                ),
+            )
+        model_with_tools = model.bind_tools(
+            [magic_function], tool_choice=tool_choice_value
+        )
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -1048,16 +1080,18 @@ class ChatModelIntegrationTests(ChatModelTests):
                 async def test_tool_calling_async(self, model: BaseChatModel) -> None:
                     await super().test_tool_calling_async(model)
 
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
+            Otherwise, in the case that only one tool is bound, ensure that
+            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "magic_function"
+        if not self.has_tool_choice:
+            tool_choice_value = None
         else:
-            tool_choice = self.tool_choice_value
-        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
+            tool_choice_value = "any"
+        model_with_tools = model.bind_tools(
+            [magic_function], tool_choice=tool_choice_value
+        )
 
         # Test ainvoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -1109,18 +1143,17 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
                     super().test_tool_calling_with_no_arguments(model)
 
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
+            Otherwise, in the case that only one tool is bound, ensure that
+            ``tool_choice`` supports the string ``"any"`` to force calling that tool.
         """  # noqa: E501
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "magic_function_no_args"
+        if not self.has_tool_choice:
+            tool_choice_value = None
         else:
-            tool_choice = self.tool_choice_value
+            tool_choice_value = "any"
         model_with_tools = model.bind_tools(
-            [magic_function_no_args], tool_choice=tool_choice
+            [magic_function], tool_choice=tool_choice_value
         )
         query = "What is the value of magic_function_no_args()? Use the tool."
         result = model_with_tools.invoke(query)
@@ -1184,10 +1217,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        if self.tool_choice_value == "tool_name":
-            tool_choice: Optional[str] = "greeting_generator"
+        if not self.has_tool_choice:
+            tool_choice: Optional[str] = "any"
         else:
-            tool_choice = self.tool_choice_value
+            tool_choice = None
         model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
         query = "Using the tool, generate a Pirate greeting."
         result = model_with_tools.invoke(query)
@@ -2086,9 +2119,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that the ``status`` field on ``ToolMessage``
             objects is either ignored or passed to the model appropriately.
-
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
-            specified on the test class.
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
