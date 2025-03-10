@@ -23,7 +23,7 @@ class RemoveMessage(BaseMessage):
             msg = "RemoveMessage does not support 'content' field."
             raise ValueError(msg)
 
-        return super().__init__("", id=id, **kwargs)
+        super().__init__("", id=id, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
