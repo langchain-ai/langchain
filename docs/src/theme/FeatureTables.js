@@ -638,6 +638,22 @@ const FEATURE_TABLES = {
             },
         ]
     },
+    on_prem_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Description", formatter: (item) => item.source}
+        ],
+        items: [
+            {
+                name: "Dell PowerScale",
+                link: "powerscale",
+                source: "Efficiently load any data from PowerScale and skip files already processed"
+            }
+        ]
+    },
     messaging_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
