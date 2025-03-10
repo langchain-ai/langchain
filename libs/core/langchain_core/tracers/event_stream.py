@@ -730,7 +730,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
 async def _astream_events_implementation_v1(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     include_names: Optional[Sequence[str]] = None,
@@ -781,7 +781,7 @@ async def _astream_events_implementation_v1(
     # This arises because many of the argument types are unions
     async for log in _astream_log_implementation(  # type: ignore[misc]
         runnable,
-        input,
+        value,
         config=config,
         stream=stream,
         diff=True,
@@ -802,7 +802,7 @@ async def _astream_events_implementation_v1(
                 tags=root_tags,
                 metadata=root_metadata,
                 data={
-                    "input": input,
+                    "input": value,
                 },
                 parent_ids=[],  # Not supported in v1
             )
@@ -916,7 +916,7 @@ async def _astream_events_implementation_v1(
 
 async def _astream_events_implementation_v2(
     runnable: Runnable[Input, Output],
-    input: Any,
+    value: Any,
     config: Optional[RunnableConfig] = None,
     *,
     include_names: Optional[Sequence[str]] = None,
@@ -964,7 +964,7 @@ async def _astream_events_implementation_v2(
     async def consume_astream() -> None:
         try:
             # if astream also calls tap_output_aiter this will be a no-op
-            async with aclosing(runnable.astream(input, config, **kwargs)) as stream:
+            async with aclosing(runnable.astream(value, config, **kwargs)) as stream:
                 async for _ in event_streamer.tap_output_aiter(run_id, stream):
                     # All the content will be picked up
                     pass
@@ -985,7 +985,7 @@ async def _astream_events_implementation_v2(
                 # chain are not available until the entire input is consumed.
                 # As a temporary solution, we'll modify the input to be the input
                 # that was passed into the chain.
-                event["data"]["input"] = input
+                event["data"]["input"] = value
                 first_event_run_id = event["run_id"]
                 yield event
                 continue

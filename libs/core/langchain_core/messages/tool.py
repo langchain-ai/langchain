@@ -209,7 +209,12 @@ class ToolCall(TypedDict):
     type: NotRequired[Literal["tool_call"]]
 
 
-def tool_call(*, name: str, args: dict[str, Any], id: Optional[str]) -> ToolCall:
+def tool_call(
+    *,
+    name: str,
+    args: dict[str, Any],
+    id: Optional[str],  # noqa: A002
+) -> ToolCall:
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
@@ -248,7 +253,7 @@ def tool_call_chunk(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,
+    id: Optional[str] = None,  # noqa: A002
     index: Optional[int] = None,
 ) -> ToolCallChunk:
     return ToolCallChunk(
@@ -278,7 +283,7 @@ def invalid_tool_call(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,
+    id: Optional[str] = None,  # noqa: A002
     error: Optional[str] = None,
 ) -> InvalidToolCall:
     return InvalidToolCall(

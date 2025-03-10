@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import pytest
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_core.runnables import (
     ConfigurableField,
@@ -32,6 +32,7 @@ class MyRunnable(RunnableSerializable[str, str]):
         self._my_hidden_property = self.my_property
         return self
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
@@ -54,6 +55,7 @@ class MyRunnable(RunnableSerializable[str, str]):
 class MyOtherRunnable(RunnableSerializable[str, str]):
     my_other_property: str
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:

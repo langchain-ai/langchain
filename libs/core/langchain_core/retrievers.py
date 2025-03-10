@@ -27,7 +27,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
-from typing_extensions import Self, TypedDict
+from typing_extensions import Self, TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -210,6 +210,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         ls_params = LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
         return ls_params
 
+    @override
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> list[Document]:
@@ -270,6 +271,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             )
             return result
 
+    @override
     async def ainvoke(
         self,
         input: str,
