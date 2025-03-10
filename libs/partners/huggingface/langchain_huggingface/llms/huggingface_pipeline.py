@@ -9,6 +9,7 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
 
+from ..hpu_utils import use_hpu_model_device, get_gaudi_auto_model_for_causal_lm, get_gaudi_auto_model_for_seq2seq_lm
 from ..utils.import_utils import (
     IMPORT_ERROR,
     is_ipex_available,
@@ -136,6 +137,76 @@ class HuggingFacePipeline(BaseLLM):
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
+        if use_hpu_model_device(_model_kwargs):
+            if backend == "openvino":
+                raise ValueError(
+                    "Cannot specify `model_kwargs{'device': 'hpu'}` and `backend=openvino` at the same time. "
+                    "Please remove `hpu` from `model_kwargs['device']` or set `backend=default`."
+                )
+            # setting the `backend` to `HPU` to avoid the error caused by attempting to move the model
+            # that was already loaded on the HPU using the Accelerate module to the same or another device.
+            backend = "HPU"
+
+        try:
+            if task == "text-generation":
+                if backend == "openvino":
+                    try:
+                        from optimum.intel.openvino import (  # type: ignore[import]
+                            OVModelForCausalLM,
+                        )
+
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install 'optimum[openvino,nncf]' "
+                        )
+                    try:
+                        # use local model
+                        model = OVModelForCausalLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
+
+                    except Exception:
+                        # use remote model
+                        model = OVModelForCausalLM.from_pretrained(
+                            model_id, export=True, **_model_kwargs
+                        )
+                elif use_hpu_model_device(_model_kwargs):
+                    model = get_gaudi_auto_model_for_causal_lm(model_id)
+                else:
+                    model = AutoModelForCausalLM.from_pretrained(
+                        model_id, **_model_kwargs
+                    )
+            elif task in ("text2text-generation", "summarization", "translation"):
+                if backend == "openvino":
+                    try:
+                        from optimum.intel.openvino import OVModelForSeq2SeqLM
+
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install 'optimum[openvino,nncf]' "
+                        )
+                    try:
+                        # use local model
+                        model = OVModelForSeq2SeqLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
+
+                    except Exception:
+                        # use remote model
+                        model = OVModelForSeq2SeqLM.from_pretrained(
+                            model_id, export=True, **_model_kwargs
+                        )
+                elif use_hpu_model_device(_model_kwargs):
+                    model = get_gaudi_auto_model_for_seq2seq_lm(model_id)
+                else:
+                    model = AutoModelForSeq2SeqLM.from_pretrained(
+                        model_id, **_model_kwargs
+                    )
+            else:
         if backend in {"openvino", "ipex"}:
             if task not in VALID_TASKS:
                 raise ValueError(
