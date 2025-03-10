@@ -1,3 +1,5 @@
+"""Runnable that can fallback to other Runnables if it fails."""
+
 import asyncio
 import inspect
 import typing
@@ -116,17 +118,20 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def OutputType(self) -> type[Output]:
         return self.runnable.OutputType
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec
@@ -135,19 +140,26 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
     @classmethod
+    @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Defaults to ["langchain", "schema", "runnable"].
+        """
         return ["langchain", "schema", "runnable"]
 
     @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
+        """Iterator over the Runnable and its fallbacks."""
         yield self.runnable
         yield from self.fallbacks
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -198,6 +210,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_manager.on_chain_error(first_error)
         raise first_error
 
+    @override
     async def ainvoke(
         self,
         input: Input,
@@ -251,6 +264,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_error(first_error)
         raise first_error
 
+    @override
     def batch(
         self,
         inputs: list[Input],
@@ -344,6 +358,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return.update(handled_exceptions)
         return [output for _, output in sorted(to_return.items())]
 
+    @override
     async def abatch(
         self,
         inputs: list[Input],
@@ -445,13 +460,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return.update(handled_exceptions)
         return [output for _, output in sorted(to_return.items())]  # type: ignore
 
+    @override
     def stream(
         self,
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """"""
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
                 "If 'exception_key' is specified then input must be a dictionary."
@@ -510,6 +525,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(output)
 
+    @override
     async def astream(
         self,
         input: Input,

@@ -1,4 +1,6 @@
-"""This file contains a mapping between the lc_namespace path for a given
+"""Serialization mapping.
+
+This file contains a mapping between the lc_namespace path for a given
 subclass that implements from Serializable to the namespace
 where that class is actually located.
 
