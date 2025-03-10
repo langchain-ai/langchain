@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
-    convert_to_openai_tool,
+    convert_to_json_schema,
     tool_example_to_messages,
 )
 from pydantic import BaseModel, Field
@@ -72,21 +72,21 @@ def _get_joke_class(
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    metadatas: list[Optional[dict]]
+    options: list[Optional[dict]]
 
     def __init__(self) -> None:
         super().__init__()
-        self.metadatas = []
+        self.options = []
 
     def on_chat_model_start(
         self,
         serialized: Any,
         messages: Any,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        options: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        self.metadatas.append(metadata)
+        self.options.append(options)
 
 
 class _MagicFunctionSchema(BaseModel):
@@ -1243,16 +1243,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(invoke_callback.metadatas) == 1, (
+        assert len(invoke_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(invoke_callback.metadatas[0], dict)
+        assert isinstance(invoke_callback.options[0], dict)
         assert isinstance(
-            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            invoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert invoke_callback.metadatas[0]["structured_output_format"][
+        assert invoke_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
         stream_callback = _TestCallbackHandler()
 
@@ -1262,16 +1262,16 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(stream_callback.metadatas) == 1, (
+        assert len(stream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(stream_callback.metadatas[0], dict)
+        assert isinstance(stream_callback.options[0], dict)
         assert isinstance(
-            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            stream_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert stream_callback.metadatas[0]["structured_output_format"][
+        assert stream_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
@@ -1319,16 +1319,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(ainvoke_callback.metadatas) == 1, (
+        assert len(ainvoke_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(ainvoke_callback.metadatas[0], dict)
+        assert isinstance(ainvoke_callback.options[0], dict)
         assert isinstance(
-            ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            ainvoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert ainvoke_callback.metadatas[0]["structured_output_format"][
+        assert ainvoke_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
         astream_callback = _TestCallbackHandler()
 
@@ -1338,17 +1338,17 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(astream_callback.metadatas) == 1, (
+        assert len(astream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
 
-        assert isinstance(astream_callback.metadatas[0], dict)
+        assert isinstance(astream_callback.options[0], dict)
         assert isinstance(
-            astream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            astream_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert astream_callback.metadatas[0]["structured_output_format"][
+        assert astream_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
