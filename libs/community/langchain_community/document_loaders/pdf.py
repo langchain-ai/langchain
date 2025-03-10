@@ -1477,12 +1477,6 @@ class ZeroxPDFLoader(BasePDFLoader):
                 Note - Refer: https://docs.litellm.ai/docs/providers to pass correct
                 model name as according to provider it might be different from
                 actual name.
-            output_dir:
-                The directory to save the markdown output, defaults to None
-            temp_dir:
-                The directory to store temporary files, defaults to some named folder
-                in system's temp directory. If already exists, the contents will be
-                deleted for zerox uses it.
             custom_system_prompt:
                 The system prompt to use for the model, this overrides the default
                 system prompt of zerox. Generally it is not required unless you want
