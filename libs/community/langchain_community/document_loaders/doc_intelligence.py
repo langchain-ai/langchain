@@ -124,3 +124,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             yield from self.parser.parse_bytes(self.bytes_source)
         else:
             raise ValueError("No data source provided.")
+
+    @property
+    def document_analysis_result(self):
+        return self.parser.document_analysis_result
