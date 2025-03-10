@@ -1027,6 +1027,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "the model does not support ``tool_choice``, override the "
                     "``supports_tool_choice`` property to return ``False``."
                 ),
+                removal="0.3.20",
             )
         model_with_tools = model.bind_tools(
             [magic_function], tool_choice=tool_choice_value
@@ -1153,7 +1154,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         else:
             tool_choice_value = "any"
         model_with_tools = model.bind_tools(
-            [magic_function], tool_choice=tool_choice_value
+            [magic_function_no_args], tool_choice=tool_choice_value
         )
         query = "What is the value of magic_function_no_args()? Use the tool."
         result = model_with_tools.invoke(query)
