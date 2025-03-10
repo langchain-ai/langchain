@@ -1003,37 +1003,6 @@ def test_tool_name_handler_sanitize_tool_call() -> None:
     assert handler.restore(sanitized_tool_call["name"]) == "test-tool"
 
 
-def test_tool_name_handler_restore_message_tool_names() -> None:
-    """Test restoration of tool names in AIMessage."""
-    handler = ToolNameHandler()
-
-    # First sanitize a name to create the mapping
-    original_name = "test-tool"
-    sanitized_name = handler.sanitize(original_name)
-
-    # Create an AIMessage with tool calls using the sanitized name
-    message = AIMessage(
-        content="",
-        additional_kwargs={
-            "tool_calls": [
-                {
-                    "id": "123",
-                    "function": {
-                        "name": sanitized_name,
-                        "arguments": '{"arg1": "value1"}',
-                    },
-                    "type": "function",
-                }
-            ]
-        },
-    )
-
-    # Test restoration
-    handler.restore_message_tool_names(message)
-    restored_name = message.additional_kwargs["tool_calls"][0]["function"]["name"]
-    assert restored_name == original_name
-
-
 @pytest.mark.xfail(reason="Restoring a name that hasn't been sanitized should fail")
 def test_tool_name_handler_restore_unsanitized_name() -> None:
     """Test restoration of a name that hasn't been sanitized."""

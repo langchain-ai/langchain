@@ -150,17 +150,6 @@ class ToolNameHandler:
             name, name
         )  # Return original if stored, else unchanged
 
-    def restore_message_tool_names(self, response: AIMessage) -> None:
-        """Iterate over the message and restore the tool names."""
-        if "tool_calls" in response.additional_kwargs:
-            for tool_call in response.additional_kwargs["tool_calls"]:
-                original_name = self.restore(tool_call["function"]["name"])
-                tool_call["function"]["name"] = original_name
-        if "tool_calls" in response.lc_attributes:
-            for tool_call in response.lc_attributes["tool_calls"]:
-                original_name = self.restore(tool_call["name"])
-                tool_call["name"] = original_name
-
     def _is_standard(self, name: str) -> bool:
         """Check if a name is valid as an OpenAI function name."""
         return bool(re.fullmatch(r"[\w\d_]+", name))
