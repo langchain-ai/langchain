@@ -1093,7 +1093,7 @@ class ChatOllama(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice=tool_name,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": formatted_tool,
                 },
@@ -1110,7 +1110,7 @@ class ChatOllama(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(
                 format="json",
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": schema,
                 },
@@ -1130,7 +1130,7 @@ class ChatOllama(BaseChatModel):
                 schema = cast(TypeBaseModel, schema)
                 llm = self.bind(
                     format=schema.model_json_schema(),
-                    structured_output_format={
+                    ls_structured_output_format={
                         "kwargs": {"method": method},
                         "schema": schema,
                     },
@@ -1151,7 +1151,7 @@ class ChatOllama(BaseChatModel):
                     response_format = schema
                 llm = self.bind(
                     format=response_format,
-                    structured_output_format={
+                    ls_structured_output_format={
                         "kwargs": {"method": method},
                         "schema": response_format,
                     },
