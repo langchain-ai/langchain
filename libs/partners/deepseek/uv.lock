@@ -367,7 +367,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.35"
+version = "0.3.43"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -399,7 +399,7 @@ dev = [
 ]
 lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
 test = [
-    { name = "blockbuster", specifier = "~=1.5.11" },
+    { name = "blockbuster", specifier = "~=1.5.18" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8,<1.0" },
     { name = "langchain-tests", directory = "../../standard-tests" },
@@ -464,7 +464,7 @@ dev = []
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "langchain-openai", editable = "../openai" },
-    { name = "langchain-tests", specifier = ">=0.3.5,<1.0.0" },
+    { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "pytest", specifier = ">=7.4.3,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.2,<1.0.0" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
@@ -476,7 +476,7 @@ typing = [{ name = "mypy", specifier = ">=1.10,<2.0" }]
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.5"
+version = "0.3.8"
 source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -524,8 +524,8 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.10"
-source = { registry = "https://pypi.org/simple" }
+version = "0.3.14"
+source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },
@@ -536,9 +536,26 @@ dependencies = [
     { name = "pytest-socket" },
     { name = "syrupy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/24/b1ef0d74222d04c4196e673e3ae8bac9f89481c17c4e6a72c67f61b403c7/langchain_tests-0.3.10.tar.gz", hash = "sha256:ba0ce038cb633e906961efc85591dd86b28d5c84a7880e7e0cd4dcb833d604a8", size = 31022 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/c3/2f2f2e919bbb9f8608389ac926c6cf8f717c3965956f0e5f139372742fb9/langchain_tests-0.3.10-py3-none-any.whl", hash = "sha256:393e15990b9d1d12b52ee832257e874beb4299891d98ec7682b7fba12c0f8fe1", size = 37521 },
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.25.0,<1" },
+    { name = "langchain-core", editable = "../../core" },
+    { name = "numpy", specifier = ">=1.26.2,<3" },
+    { name = "pytest", specifier = ">=7,<9" },
+    { name = "pytest-asyncio", specifier = ">=0.20,<1" },
+    { name = "pytest-socket", specifier = ">=0.6.0,<1" },
+    { name = "syrupy", specifier = ">=4,<5" },
+]
+
+[package.metadata.requires-dev]
+codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
+lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
+test = [{ name = "langchain-core", editable = "../../core" }]
+test-integration = []
+typing = [
+    { name = "langchain-core", editable = "../../core" },
+    { name = "mypy", specifier = ">=1,<2" },
 ]
 
 [[package]]
