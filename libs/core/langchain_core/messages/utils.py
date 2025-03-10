@@ -273,6 +273,9 @@ def _create_message_from_message_type(
             kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
             kwargs["additional_kwargs"]["__openai_role__"] = "developer"
         message = SystemMessage(content=content, **kwargs)
+    elif message_type == "chat":
+        kwargs["role"] = additional_kwargs.get("role", None)
+        message = ChatMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
@@ -321,21 +324,10 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         _message = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
-        try:
-            try:
-                msg_type = msg_kwargs.pop("role")
-            except KeyError:
-                msg_type = msg_kwargs.pop("type")
-            # None msg content is not allowed
-            msg_content = msg_kwargs.pop("content") or ""
-        except KeyError as e:
-            msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
-            msg = create_message(
-                message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
-            )
-            raise ValueError(msg) from e
+        msg_type = msg_kwargs.pop("type", "chat")
+        msg_content = msg_kwargs.pop("content", "")
         _message = _create_message_from_message_type(
-            msg_type, msg_content, **msg_kwargs
+            message_type=msg_type, content=msg_content, **msg_kwargs
         )
     else:
         msg = f"Unsupported message type: {type(message)}"
