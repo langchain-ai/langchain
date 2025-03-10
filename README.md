@@ -26,6 +26,8 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 
 ```bash
 pip install langchain
+# or
+conda install langchain -c conda-forge
 ```
 
 If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
