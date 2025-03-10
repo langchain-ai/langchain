@@ -8,6 +8,7 @@ import io
 import logging
 import threading
 import warnings
+from asyncio import AbstractEventLoop
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
@@ -1542,6 +1543,12 @@ class ZeroxPDFParser(BaseBlobParser):
         "Do not exclude any content from the page. "
     )
 
+    @staticmethod
+    def _run_async_from_thread(coro, loop):
+        future = asyncio.run_coroutine_threadsafe(coro,
+                                                  loop)  # Lancer la coroutine dans la boucle existante
+        return future.result()  # Bloque en attendant le résultat
+
     def __init__(
         self,
         mode: Literal["single", "page"] = "page",
@@ -1659,14 +1666,7 @@ class ZeroxPDFParser(BaseBlobParser):
             )
         temp_file = None
         try:
-            if not ZeroxPDFParser._is_valid_url(str(blob.path)):
-                temp_file = NamedTemporaryFile()
-                with open(temp_file.name, "wb") as f:
-                    f.write(blob.as_bytes())
-                file_path = temp_file.name
-            else:
-                file_path = str(blob.path)
-
+            file_path = str(blob.path)
             with blob.as_bytes_io() as pdf_file_obj:
                 doc_metadata = _purge_metadata(self._get_metadata(pdf_file_obj))
 
@@ -1686,8 +1686,11 @@ class ZeroxPDFParser(BaseBlobParser):
                 zerox_prompt = PromptTemplate.from_template(
                     self.custom_system_prompt
                 ).format(prompt_tables=prompt_tables, prompt_images=prompt_images)
-            zerox_output = asyncio.run(
-                zerox(
+                # async def toto():
+                #     await asyncio.sleep(0)
+                #     return "hello"
+                # coro=toto()
+                coro=zerox(
                     file_path=str(file_path),
                     model=self.model,
                     cleanup=self.cleanup,
@@ -1697,7 +1700,16 @@ class ZeroxPDFParser(BaseBlobParser):
                     select_pages=self.select_pages,
                     **self.zerox_kwargs,
                 )
-            )
+                try:
+                    loop = asyncio.get_running_loop()
+
+                    from multiprocessing.pool import ThreadPool
+                    pool = ThreadPool(processes=1)
+                    zerox_output = pool.apply_async(
+                        lambda : loop.run_until_complete(coro)).get()  # tuple of args for foo
+
+                except RuntimeError:
+                    zerox_output = asyncio.run(coro)
 
             # Convert zerox output to Document instances and yield them
             if len(zerox_output.pages) > 0:
@@ -1716,7 +1728,7 @@ class ZeroxPDFParser(BaseBlobParser):
                 single_texts = []
                 for page in zerox_output.pages:
                     text_from_page = page.content
-                    images_from_page = ""  # FIXME
+                    images_from_page = ""
                     all_text = _merge_text_and_extras(
                         [images_from_page], text_from_page
                     )

@@ -2,37 +2,48 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterator
 
 import pytest
+from typing import TYPE_CHECKING, Iterator
 
-import langchain_community.document_loaders.parsers as pdf_parsers
+from langchain_community.document_loaders import PDFMinerLoader, PDFPlumberLoader, \
+    PyMuPDFLoader, PyPDFium2Loader, PyPDFLoader
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
     BaseImageBlobParser,
     PDFPlumberParser,
 )
+from langchain_community.document_loaders.parsers.pdf import ZeroxPDFParser, \
+    PyMuPDFParser, PDFMinerParser, PyPDFium2Parser, PyPDFParser
 
 if TYPE_CHECKING:
     from PIL.Image import Image
 
+_map_parser = {
+    'PDFMinerParser': PDFMinerParser,
+    'PDFPlumberParser': PDFPlumberParser,
+    'PyMuPDFParser': PyMuPDFParser,
+    'PyPDFium2Parser': PyPDFium2Parser,
+    'PyPDFParser': PyPDFParser,
+    'ZeroxPDFParser': ZeroxPDFParser,
+}
 
 # PDFs to test parsers on.
 HELLO_PDF = Path(__file__).parent.parent.parent / "examples" / "hello.pdf"
 
 LAYOUT_PARSER_PAPER_PDF = (
-    Path(__file__).parent.parent.parent / "examples" / "layout-parser-paper.pdf"
+        Path(__file__).parent.parent.parent / "examples" / "layout-parser-paper.pdf"
 )
 
 LAYOUT_PARSER_PAPER_PASSWORD_PDF = (
-    Path(__file__).parent.parent.parent
-    / "examples"
-    / "layout-parser-paper-password.pdf"
+        Path(__file__).parent.parent.parent
+        / "examples"
+        / "layout-parser-paper-password.pdf"
 )
 
 DUPLICATE_CHARS = (
-    Path(__file__).parent.parent.parent / "examples" / "duplicate-chars.pdf"
+        Path(__file__).parent.parent.parent / "examples" / "duplicate-chars.pdf"
 )
 
 
@@ -124,16 +135,16 @@ class EmptyImageBlobParser(BaseImageBlobParser):
 )
 @pytest.mark.requires("pillow")
 def test_mode_and_extract_images_variations(
-    parser_factory: str,
-    params: dict,
-    mode: str,
-    image_parser: BaseImageBlobParser,
+        parser_factory: str,
+        params: dict,
+        mode: str,
+        image_parser: BaseImageBlobParser,
 ) -> None:
     if parser_factory == "ZeroxPDFParser":
         try:
             import pyzerox  # noqa: F401
         except ImportError:
-            pytest.skip("pyzerox is valid only with Python +3.11")
+            pytest.skip("py-zerox is valid only with Python +3.11")
     _test_matrix(
         parser_factory,
         params,
@@ -160,15 +171,15 @@ def test_mode_and_extract_images_variations(
 )
 @pytest.mark.requires("pillow")
 def test_mode_and_image_formats_variations(
-    parser_factory: str,
-    params: dict,
-    images_inner_format: str,
+        parser_factory: str,
+        params: dict,
+        images_inner_format: str,
 ) -> None:
     if parser_factory == "ZeroxPDFParser":
         try:
             import pyzerox  # noqa: F401
         except ImportError:
-            pytest.skip("pyzerox is valid only with Python +3.11")
+            pytest.skip("py-zerox is valid only with Python +3.11")
     mode = "single"
     image_parser = EmptyImageBlobParser()
 
@@ -182,11 +193,11 @@ def test_mode_and_image_formats_variations(
 
 
 def _test_matrix(
-    parser_factory: str,
-    params: dict,
-    mode: str,
-    image_parser: BaseImageBlobParser,
-    images_inner_format: str,
+        parser_factory: str,
+        params: dict,
+        mode: str,
+        image_parser: BaseImageBlobParser,
+        images_inner_format: str,
 ) -> None:
     """Apply the same test for all *standard* PDF parsers.
 
@@ -234,7 +245,7 @@ def _test_matrix(
             assert len(docs)
             parser.password = old_password
 
-    parser_class = getattr(pdf_parsers, parser_factory)
+    parser_class = _map_parser[parser_factory]
 
     parser = parser_class(
         mode=mode,
@@ -258,20 +269,20 @@ def _test_matrix(
     "parser_factory,params",
     [
         ("PyMuPDFParser", {}),
-        ("ZeroxPDFParser", {}),
+        ("ZeroxPDFParser", {"model": "gpt-4o-mini"}),
     ],
 )
 def test_parser_with_table(
-    parser_factory: str,
-    params: dict,
-    mode: str,
-    extract_tables: str,
+        parser_factory: str,
+        params: dict,
+        mode: str,
+        extract_tables: str,
 ) -> None:
     if parser_factory == "ZeroxPDFParser":
         try:
             import pyzerox  # noqa: F401
         except ImportError:
-            pytest.skip("pyzerox is valid only with Python +3.11")
+            pytest.skip("py-zerox is valid only with Python +3.11")
 
     from PIL.Image import Image
 
@@ -322,7 +333,7 @@ def test_parser_with_table(
         def _analyze_image(self, img: Image) -> str:
             return "![image](.)"
 
-    parser_class = getattr(pdf_parsers, parser_factory)
+    parser_class = _map_parser[parser_factory]
 
     parser = parser_class(
         mode=mode,
