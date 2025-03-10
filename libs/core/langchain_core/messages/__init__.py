@@ -4,8 +4,8 @@
 
 .. code-block::
 
-    BaseMessage --> SystemMessage, AIMessage, HumanMessage, ChatMessage, FunctionMessage, ToolMessage
-                --> BaseMessageChunk --> SystemMessageChunk, AIMessageChunk, HumanMessageChunk, ChatMessageChunk, FunctionMessageChunk, ToolMessageChunk
+    BaseMessage --> SystemMessage, AIMessage, HumanMessage, ChatMessage, FunctionMessage, ToolMessage, ControlMessage
+                --> BaseMessageChunk --> SystemMessageChunk, AIMessageChunk, HumanMessageChunk, ChatMessageChunk, FunctionMessageChunk, ToolMessageChunk, ControlMessageChunk
 
 **Main helpers:**
 
@@ -27,6 +27,7 @@ from langchain_core.messages.base import (
     messages_to_dict,
 )
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.control import ControlMessage, ControlMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -60,6 +61,8 @@ __all__ = [
     "BaseMessageChunk",
     "ChatMessage",
     "ChatMessageChunk",
+    "ControlMessage",
+    "ControlMessageChunk",
     "FunctionMessage",
     "FunctionMessageChunk",
     "HumanMessage",
