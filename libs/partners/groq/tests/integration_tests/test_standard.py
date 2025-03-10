@@ -41,10 +41,5 @@ class TestGroqLlama(BaseTestGroq):
         }
 
     @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
-        return "any"
-
-    @property
     def supports_json_mode(self) -> bool:
         return False  # Not supported in streaming mode

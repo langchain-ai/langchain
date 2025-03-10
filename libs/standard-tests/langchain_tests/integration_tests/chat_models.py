@@ -1049,6 +1049,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
+        if self.has_tool_choice:
+            result = model_with_tools.invoke("Hello!")
+            assert result.tool_calls
+
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls. This test is skipped if the
         ``has_tool_calling`` property on the test class is set to False.
