@@ -1022,10 +1022,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             warn_deprecated(
                 "0.3.15",
                 message=(
-                    "This property will be removed in version 0.3.20. When a single "
-                    'tool is bound, all models should accept `tool_choice="any"`. If '
-                    "the model does not support ``tool_choice``, override the "
-                    "``supports_tool_choice`` property to return ``False``."
+                    "``tool_choice_value`` will be removed in version 0.3.20. When a "
+                    "single tool is bound, all models should accept "
+                    '``tool_choice="any"``. If the model does not support '
+                    "``tool_choice``, override the ``supports_tool_choice`` property "
+                    "to return ``False``."
                 ),
                 removal="0.3.20",
             )
