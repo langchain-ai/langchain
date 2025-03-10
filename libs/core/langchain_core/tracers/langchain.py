@@ -50,8 +50,8 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
-        rt._CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None:
+        rt._CLIENT.flush()
 
 
 def get_client() -> Client:
@@ -319,5 +319,5 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        if self.client is not None and self.client.tracing_queue is not None:
-            self.client.tracing_queue.join()
+        if self.client is not None:
+            self.client.flush()
