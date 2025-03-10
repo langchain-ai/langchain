@@ -111,6 +111,70 @@ logger = logging.getLogger(__name__)
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
+class ToolNameHandler:
+    """Handles conversion of non-standard tool names while maintaining mappings."""
+
+    def __init__(self) -> None:
+        """Initialize the handler with an empty mapping."""
+        self._name_map: Dict[str, str] = {}  # Stores sanitized name → original name
+        self._INVALID_NAME_PATTERN = re.compile(
+            r"[^\w\d_]"
+        )  # Allows only letters, numbers, and underscores
+
+    def sanitize(self, name: str) -> str:
+        """Convert a non-standard name to a valid OpenAI-compatible name."""
+        if self._is_standard(name):
+            return name  # If already valid, return unchanged
+
+        sanitized_name = re.sub(
+            self._INVALID_NAME_PATTERN, "_", name
+        )  # Replace invalid characters
+        self._name_map[sanitized_name] = name  # Store original for restoration
+        return sanitized_name
+
+    def sanitize_tool_name(self, tool: BaseTool) -> BaseTool:
+        """Sanitize the name of a tool."""
+        if tool.name:
+            tool.name = self.sanitize(tool.name)
+        return tool
+
+    def sanitize_tool_call_name(self, tool_call: ToolCall) -> ToolCall:
+        """Sanitize the name of a tool call."""
+        if "name" in tool_call:
+            tool_call["name"] = self.sanitize(tool_call["name"])
+        return tool_call
+
+    def restore(self, name: str) -> str:
+        """Restore a sanitized name to its original form."""
+        return self._name_map.get(
+            name, name
+        )  # Return original if stored, else unchanged
+
+    def restore_message_tool_names(self, response: AIMessage) -> None:
+        """Iterate over the message and restore the tool names."""
+        if "tool_calls" in response.additional_kwargs:
+            for tool_call in response.additional_kwargs["tool_calls"]:
+                original_name = self.restore(tool_call["function"]["name"])
+                tool_call["function"]["name"] = original_name
+        if "tool_calls" in response.lc_attributes:
+            for tool_call in response.lc_attributes["tool_calls"]:
+                original_name = self.restore(tool_call["name"])
+                tool_call["name"] = original_name
+
+    def _is_standard(self, name: str) -> bool:
+        """Check if a name is valid as an OpenAI function name."""
+        return bool(re.fullmatch(r"[\w\d_]+", name))
+
+    def sanitize_tool_dict(self, tool_dict: dict) -> dict:
+        """Sanitize the name in a tool dictionary."""
+        if "function" in tool_dict and "name" in tool_dict["function"]:
+            tool_dict["function"]["name"] = self.sanitize(tool_dict["function"]["name"])
+        return tool_dict
+
+
+tool_name_handler = ToolNameHandler()
+
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
 
@@ -138,6 +202,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
+                    if "function" in raw_tool_call:
+                        raw_tool_call["function"]["name"] = tool_name_handler.restore(
+                            raw_tool_call["function"]["name"]
+                        )
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
                     invalid_tool_calls.append(
@@ -261,6 +329,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             message_dict["tool_calls"] = [
                 {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
                 for tool_call in message_dict["tool_calls"]
+            ]
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
             ]
         else:
             pass
@@ -1256,7 +1330,10 @@ class BaseChatOpenAI(BaseChatModel):
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
-            convert_to_openai_tool(tool, strict=strict) for tool in tools
+            tool_name_handler.sanitize_tool_dict(
+                convert_to_openai_tool(tool, strict=strict)
+            )
+            for tool in tools
         ]
         if tool_choice:
             if isinstance(tool_choice, str):
@@ -1264,7 +1341,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice not in ("auto", "none", "any", "required"):
                     tool_choice = {
                         "type": "function",
-                        "function": {"name": tool_choice},
+                        "function": {"name": tool_name_handler.sanitize(tool_choice)},
                     }
                 # 'any' is not natively supported by OpenAI API.
                 # We support 'any' since other models use this instead of 'required'.
@@ -2428,7 +2505,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
         "type": "function",
         "id": tool_call["id"],
         "function": {
-            "name": tool_call["name"],
+            "name": tool_name_handler.sanitize(tool_call["name"]),
             "arguments": json.dumps(tool_call["args"]),
         },
     }
@@ -2437,11 +2514,12 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
+    name = invalid_tool_call["name"] or ""
     return {
         "type": "function",
         "id": invalid_tool_call["id"],
         "function": {
-            "name": invalid_tool_call["name"],
+            "name": tool_name_handler.sanitize(name),
             "arguments": invalid_tool_call["args"],
         },
     }
