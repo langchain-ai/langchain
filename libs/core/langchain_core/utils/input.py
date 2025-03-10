@@ -26,8 +26,7 @@ def get_color_mapping(
     colors = list(_TEXT_COLOR_MAPPING.keys())
     if excluded_colors is not None:
         colors = [c for c in colors if c not in excluded_colors]
-    color_mapping = {item: colors[i % len(colors)] for i, item in enumerate(items)}
-    return color_mapping
+    return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 
 def get_colored_text(text: str, color: str) -> str:

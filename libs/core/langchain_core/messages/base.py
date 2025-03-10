@@ -62,8 +62,7 @@ class BaseMessage(Serializable):
     def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
         if id_value is not None:
             return str(id_value)
-        else:
-            return id_value
+        return id_value
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -229,7 +228,7 @@ class BaseMessageChunk(BaseMessage):
                     self.response_metadata, other.response_metadata
                 ),
             )
-        elif isinstance(other, list) and all(
+        if isinstance(other, list) and all(
             isinstance(o, BaseMessageChunk) for o in other
         ):
             content = merge_content(self.content, *(o.content for o in other))
@@ -245,13 +244,12 @@ class BaseMessageChunk(BaseMessage):
                 additional_kwargs=additional_kwargs,
                 response_metadata=response_metadata,
             )
-        else:
-            msg = (
-                'unsupported operand type(s) for +: "'
-                f"{self.__class__.__name__}"
-                f'" and "{other.__class__.__name__}"'
-            )
-            raise TypeError(msg)
+        msg = (
+            'unsupported operand type(s) for +: "'
+            f"{self.__class__.__name__}"
+            f'" and "{other.__class__.__name__}"'
+        )
+        raise TypeError(msg)
 
 
 def message_to_dict(message: BaseMessage) -> dict:
