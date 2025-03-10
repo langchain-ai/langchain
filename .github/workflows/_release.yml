@@ -386,12 +386,13 @@ jobs:
       - pre-release-checks
       - test-prior-published-packages-against-new-core
     if: >
-      (
-        startsWith(inputs.working-directory, 'libs/core')
-        && needs.test-prior-published-packages-against-new-core.result == 'success'
-      )
-      || (
-        !startsWith(inputs.working-directory, 'libs/core')
+      always() &&
+      needs.build.result == 'success' &&
+      needs.release-notes.result == 'success' &&
+      needs.test-pypi-publish.result == 'success' &&
+      needs.pre-release-checks.result == 'success' && (
+        (startsWith(inputs.working-directory, 'libs/core') && needs.test-prior-published-packages-against-new-core.result == 'success')
+        || (!startsWith(inputs.working-directory, 'libs/core'))
       )
     runs-on: ubuntu-latest
     permissions:
