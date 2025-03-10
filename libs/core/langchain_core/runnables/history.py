@@ -11,7 +11,8 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
+from pydantic_core import PydanticUndefined
 from typing_extensions import override
 
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -235,6 +236,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
     history_factory_config: Sequence[ConfigurableFieldSpec]
+    _underlying_runnable: Runnable
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
@@ -363,6 +365,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             **kwargs,
         )
         self._history_chain = history_chain
+        self._underlying_runnable = runnable
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -390,6 +393,32 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 module_name=self.__class__.__module__,
                 root=(Sequence[BaseMessage], ...),
             )
+
+        underlying_input_schema = self._underlying_runnable.get_input_schema()
+        if issubclass(underlying_input_schema, RootModel):
+            return create_model_v2(  # type: ignore[call-overload]
+                "RunnableWithChatHistoryInput",
+                field_definitions=fields,
+                module_name=self.__class__.__module__,
+            )
+
+        for (
+            field_name,
+            field_info,
+        ) in underlying_input_schema.model_fields.items():
+            if field_info.is_required():
+                if (
+                    field_name != self.input_messages_key
+                    and field_name != self.history_messages_key
+                ):
+                    fields[field_name] = (field_info.annotation, ...)
+            else:
+                if field_info.default is not PydanticUndefined:
+                    fields[field_name] = (field_info.annotation, field_info.default)
+                else:  # Default factory
+                    # We'll skip supporting this for now
+                    continue
+
         return create_model_v2(  # type: ignore[call-overload]
             "RunnableWithChatHistoryInput",
             field_definitions=fields,
