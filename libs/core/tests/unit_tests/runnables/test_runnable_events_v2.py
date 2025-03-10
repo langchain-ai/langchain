@@ -80,7 +80,7 @@ async def _as_async_iterator(iterable: list) -> AsyncIterator:
 
 
 async def _collect_events(
-    events: AsyncIterator[StreamEvent], with_nulled_ids: bool = True
+    events: AsyncIterator[StreamEvent], *, with_nulled_ids: bool = True
 ) -> list[StreamEvent]:
     """Collect the events and remove the run ids."""
     materialized_events = [event async for event in events]
