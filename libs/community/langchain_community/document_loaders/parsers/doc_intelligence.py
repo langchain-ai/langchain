@@ -71,6 +71,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         )
         self.api_model = api_model
         self.mode = mode
+        self.document_analysis_result = None
         assert self.mode in ["single", "page", "markdown"]
 
     def _generate_docs_page(self, result: Any) -> Iterator[Document]:
@@ -98,12 +99,12 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
                 content_type="application/octet-stream",
                 output_content_format="markdown" if self.mode == "markdown" else "text",
             )
-            result = poller.result()
+            self.document_analysis_result = poller.result()
 
             if self.mode in ["single", "markdown"]:
-                yield from self._generate_docs_single(result)
+                yield from self._generate_docs_single(self.document_analysis_result)
             elif self.mode in ["page"]:
-                yield from self._generate_docs_page(result)
+                yield from self._generate_docs_page(self.document_analysis_result)
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
@@ -115,12 +116,12 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             body=AnalyzeDocumentRequest(url_source=url),
             output_content_format="markdown" if self.mode == "markdown" else "text",
         )
-        result = poller.result()
+        self.document_analysis_result = poller.result()
 
         if self.mode in ["single", "markdown"]:
-            yield from self._generate_docs_single(result)
+            yield from self._generate_docs_single(self.document_analysis_result)
         elif self.mode in ["page"]:
-            yield from self._generate_docs_page(result)
+            yield from self._generate_docs_page(self.document_analysis_result)
         else:
             raise ValueError(f"Invalid mode: {self.mode}")
 
@@ -132,11 +133,11 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             body=AnalyzeDocumentRequest(bytes_source=bytes_source),
             output_content_format="markdown" if self.mode == "markdown" else "text",
         )
-        result = poller.result()
+        self.document_analysis_result = poller.result()
 
         if self.mode in ["single", "markdown"]:
-            yield from self._generate_docs_single(result)
+            yield from self._generate_docs_single(self.document_analysis_result)
         elif self.mode in ["page"]:
-            yield from self._generate_docs_page(result)
+            yield from self._generate_docs_page(self.document_analysis_result)
         else:
             raise ValueError(f"Invalid mode: {self.mode}")

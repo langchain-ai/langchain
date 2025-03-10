@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -124,3 +124,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             yield from self.parser.parse_bytes(self.bytes_source)
         else:
             raise ValueError("No data source provided.")
+
+    @property
+    def document_analysis_result(self) -> Any:
+        return self.parser.document_analysis_result
