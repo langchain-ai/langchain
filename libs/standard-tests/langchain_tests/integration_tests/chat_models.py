@@ -1,4 +1,5 @@
 import base64
+import inspect
 import json
 from typing import Any, List, Literal, Optional, cast
 from unittest.mock import MagicMock
@@ -1018,7 +1019,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         else:
             tool_choice_value = "any"
         # Emit warning if tool_choice_value property is overridden
-        if self.tool_choice_value is not ChatModelIntegrationTests.tool_choice_value:
+        if inspect.getattr_static(
+            self, "tool_choice_value"
+        ) is not inspect.getattr_static(ChatModelIntegrationTests, "tool_choice_value"):
             warn_deprecated(
                 "0.3.15",
                 message=(
