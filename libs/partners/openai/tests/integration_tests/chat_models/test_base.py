@@ -1306,6 +1306,7 @@ async def test_web_search_async() -> None:
 
 
 def test_file_search() -> None:
+    pytest.skip()  # TODO: set up infra
     llm = ChatOpenAI(model="gpt-4o")
     tool = {
         "type": "file_search",
