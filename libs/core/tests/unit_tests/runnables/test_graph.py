@@ -451,7 +451,9 @@ def test_triple_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
 def test_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     empty_data = BaseModel
     nodes = {
-        "__start__": Node(id="__start__", name="__start__", data=empty_data, metadata=None),
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
         "sub:meow": Node(id="sub:meow", name="meow", data=empty_data, metadata=None),
         "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
     }

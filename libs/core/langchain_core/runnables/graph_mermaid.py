@@ -57,8 +57,8 @@ def draw_mermaid(
         else "graph TD;\n"
     )
     # Group nodes by subgraph
-    subgraph_nodes = {}
-    regular_nodes = {}
+    subgraph_nodes: dict[str, dict[str, Node]] = {}
+    regular_nodes: dict[str, Node] = {}
 
     for key, node in nodes.items():
         if ":" in key:
