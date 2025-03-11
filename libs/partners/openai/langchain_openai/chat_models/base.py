@@ -416,11 +416,7 @@ def _is_builtin_tool(tool: dict) -> bool:
 def _transform_payload_for_responses(payload: dict) -> dict:
     updated_payload = payload.copy()
     if messages := updated_payload.pop("messages"):
-        last_user_message = next(
-            (m for m in reversed(messages) if m.get("role") == "user"), None
-        )
-        if last_user_message:
-            updated_payload["input"] = last_user_message["content"]
+        updated_payload["input"] = messages
 
     return updated_payload
 
