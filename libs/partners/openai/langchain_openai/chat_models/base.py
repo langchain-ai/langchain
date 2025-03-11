@@ -991,16 +991,25 @@ class BaseChatOpenAI(BaseChatModel):
 
         token_usage = response.usage.model_dump() if response.usage else {}
         generation_info = {}
+        content_blocks = []
         for output in response.output:
             if output.type == "message":
-                joined = "".join(
-                    content.text
-                    for content in output.content
-                    if content.type == "output_text"
-                )
+                for content in output.content:
+                    if content.type == "output_text":
+                        block = {
+                            "type": "text",
+                            "text": content.text,
+                            "annotations": [
+                                annotation.model_dump()
+                                for annotation in content.annotations
+                            ],
+                        }
+                        content_blocks.append(block)
                 usage_metadata = _create_usage_metadata_responses(token_usage)
                 message = AIMessage(
-                    content=joined, id=output.id, usage_metadata=usage_metadata
+                    content=content_blocks,  # type: ignore[arg-type]
+                    id=output.id,
+                    usage_metadata=usage_metadata,
                 )
                 if output.status:
                     generation_info["status"] = output.status
