@@ -111,22 +111,26 @@ async def test_stream_error_callback() -> None:
         else:
             assert llm_result.generations[0][0].text == message[:i]
 
-    for i in range(2):
+    for i in range(len(message)):
         llm = FakeListChatModel(
             responses=[message],
             error_on_chunk_number=i,
         )
+        cb_async = FakeAsyncCallbackHandler()
+        llm_astream = llm.astream("Dummy message", config={"callbacks": [cb_async]})
+        for _ in range(i):
+            await llm_astream.__anext__()
         with pytest.raises(FakeListChatModelError):
-            cb_async = FakeAsyncCallbackHandler()
-            async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
-                pass
-            eval_response(cb_async, i)
+            await llm_astream.__anext__()
+        eval_response(cb_async, i)
 
-            cb_sync = FakeCallbackHandler()
-            for _ in llm.stream("Dumy message", callbacks=[cb_sync]):
-                pass
-
-            eval_response(cb_sync, i)
+        cb_sync = FakeCallbackHandler()
+        llm_stream = llm.stream("Dumy message", config={"callbacks": [cb_sync]})
+        for _ in range(i):
+            next(llm_stream)
+        with pytest.raises(FakeListChatModelError):
+            next(llm_stream)
+        eval_response(cb_sync, i)
 
 
 async def test_astream_fallback_to_ainvoke() -> None:

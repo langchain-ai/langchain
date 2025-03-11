@@ -83,9 +83,6 @@ class FakeStreamingListLLM(FakeListLLM):
     chunks in a streaming implementation.
     """
 
-    error_on_chunk_number: Optional[int] = None
-    """If set, will raise an exception on the specified chunk number."""
-
     def stream(
         self,
         input: LanguageModelInput,
@@ -95,15 +92,9 @@ class FakeStreamingListLLM(FakeListLLM):
         **kwargs: Any,
     ) -> Iterator[str]:
         result = self.invoke(input, config)
-        for i_c, c in enumerate(result):
+        for c in result:
             if self.sleep is not None:
                 time.sleep(self.sleep)
-
-            if (
-                self.error_on_chunk_number is not None
-                and i_c == self.error_on_chunk_number
-            ):
-                raise FakeListLLMError
             yield c
 
     async def astream(
@@ -115,13 +106,7 @@ class FakeStreamingListLLM(FakeListLLM):
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         result = await self.ainvoke(input, config)
-        for i_c, c in enumerate(result):
+        for c in result:
             if self.sleep is not None:
                 await asyncio.sleep(self.sleep)
-
-            if (
-                self.error_on_chunk_number is not None
-                and i_c == self.error_on_chunk_number
-            ):
-                raise FakeListLLMError
             yield c
