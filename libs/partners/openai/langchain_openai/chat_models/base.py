@@ -1025,6 +1025,12 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_info["status"] = output.status
                 gen = ChatGeneration(message=message, generation_info=generation_info)
                 generations.append(gen)
+            else:
+                tool_output = output.model_dump()
+                if "tool_outputs" in generation_info:
+                    generation_info["tool_outputs"].append(tool_output)
+                else:
+                    generation_info["tool_outputs"] = [tool_output]
         llm_output = {"model_name": response.model}
 
         return ChatResult(generations=generations, llm_output=llm_output)

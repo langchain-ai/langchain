@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
@@ -1248,6 +1249,10 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
+    for tool_output in response.response_metadata["tool_outputs"]:
+        assert tool_output["id"]
+        assert tool_output["status"]
+        assert tool_output["type"]
 
 
 def test_web_search() -> None:
@@ -1279,6 +1284,7 @@ async def test_web_search_async() -> None:
     _check_response(response)
     assert response.response_metadata["status"]
 
+    # Test streaming
     full: Optional[BaseMessageChunk] = None
     async for chunk in llm.astream(
         "What was a positive news story from today?",
@@ -1287,4 +1293,4 @@ async def test_web_search_async() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    _check_response(response)
+    _check_response(full)
