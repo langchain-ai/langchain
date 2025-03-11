@@ -1238,6 +1238,7 @@ def test_web_search() -> None:
     )
     assert isinstance(response, AIMessage)
     assert response.content
+    assert response.usage_metadata
     assert response.usage_metadata["input_tokens"] > 0
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
@@ -1253,6 +1254,7 @@ async def test_web_search_async() -> None:
     )
     assert isinstance(response, AIMessage)
     assert response.content
+    assert response.usage_metadata
     assert response.usage_metadata["input_tokens"] > 0
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
