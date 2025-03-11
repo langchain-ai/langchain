@@ -102,7 +102,8 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
     )
     args_schema: Type[BaseModel] = TavilyInput
     """The tool response format."""
-
+    topic: Literal["general", "news", "finance"] = "general"
+    """The topic of the search. It can be "general", "news", or "finance"."""
     max_results: int = 5
     """Max search results to return, default is 5"""
     search_depth: str = "advanced"
@@ -159,6 +160,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         try:
             raw_results = self.api_wrapper.raw_results(
                 query,
+                self.topic,
                 self.max_results,
                 self.search_depth,
                 self.include_domains,
@@ -180,6 +182,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         try:
             raw_results = await self.api_wrapper.raw_results_async(
                 query,
+                self.topic,
                 self.max_results,
                 self.search_depth,
                 self.include_domains,
