@@ -49,6 +49,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             keep_separator: Whether to keep the separator and where to place it
                             in each corresponding chunk (True='start')
             add_start_index: If `True`, includes chunk's start index in metadata
+            add_chunk_position: If `True`, includes chunk's position in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
         """
@@ -81,7 +82,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunks = self.split_text(text)
             for j, chunk in enumerate(chunks):
                 metadata = copy.deepcopy(_metadatas[i])
-                if self._add_chunk_position:    
+                if self._add_chunk_position:
                     metadata = copy.deepcopy(_metadatas[i])
                     metadata["chunk_position"] = f"{j + 1}/{len(chunks)}"
                 if self._add_start_index:

@@ -109,14 +109,14 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 if not new_separators:
                     if self._strict_chunk_size:
                         while len(s) > self._chunk_size:
-                            if " " in s[:self._chunk_size]:
-                                old_s = s[:self._chunk_size].rsplit(" ", 1)[0]
+                            if " " in s[: self._chunk_size]:
+                                old_s = s[: self._chunk_size].rsplit(" ", 1)[0]
                             final_chunks.append(old_s)
                         else:
-                            old_s = s[:self._chunk_size]
-                            final_chunks.append(old_s)                        
+                            old_s = s[: self._chunk_size]
+                            final_chunks.append(old_s)
                         char_count = len(old_s)
-                        s = s[:self._chunk_overlap] + s[char_count:]
+                        s = s[: self._chunk_overlap] + s[char_count:]
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)
