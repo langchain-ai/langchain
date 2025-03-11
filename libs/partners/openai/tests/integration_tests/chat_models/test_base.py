@@ -1245,6 +1245,18 @@ def test_web_search() -> None:
     assert response.response_metadata["model_name"]
     assert response.response_metadata["status"]
 
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content
+    assert full.usage_metadata
+
 
 async def test_web_search_async() -> None:
     llm = ChatOpenAI(model="gpt-4o")
@@ -1260,3 +1272,14 @@ async def test_web_search_async() -> None:
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
     assert response.response_metadata["status"]
+
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content
+    assert full.usage_metadata
