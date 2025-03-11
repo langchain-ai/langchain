@@ -130,7 +130,7 @@ def draw_mermaid(
             mermaid_graph += f"\tsubgraph {subgraph}\n"
 
             # Add nodes that belong to this subgraph
-            if prefix in subgraph_nodes:
+            if with_styles and prefix in subgraph_nodes:
                 for key, node in subgraph_nodes[prefix].items():
                     mermaid_graph += render_node(key, node)
 
