@@ -364,6 +364,13 @@ def _convert_responses_chunk_to_generation_chunk(
     usage_metadata = None
     if chunk.type == "response.output_text.delta":
         content += [{"type": "text", "text": chunk.delta, "index": chunk.content_index}]
+    elif chunk.type == "response.output_text.annotation.added":
+        content += [
+            {
+                "annotations": [chunk.annotation.model_dump()],
+                "index": chunk.content_index,
+            }
+        ]
     elif chunk.type == "response.completed":
         token_usage = chunk.response.usage.model_dump() if chunk.response.usage else {}
         usage_metadata = _create_usage_metadata_responses(token_usage)
