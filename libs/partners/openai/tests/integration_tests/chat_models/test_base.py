@@ -2,7 +2,6 @@
 
 import base64
 import json
-import os
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast

@@ -375,6 +375,18 @@ def _convert_responses_chunk_to_generation_chunk(
         token_usage = chunk.response.usage.model_dump() if chunk.response.usage else {}
         usage_metadata = _create_usage_metadata_responses(token_usage)
         generation_info = {"model_name": chunk.response.model}
+    elif chunk.type in (
+        "response.web_search_call.completed",
+        "response.file_search_call.completed",
+    ):
+        tool_output = chunk.model_dump()
+        if "item_id" in tool_output:
+            tool_output["id"] = tool_output.pop("item_id")
+        tool_output["type"] = (
+            tool_output["type"].replace("response.", "").replace(".completed", "")
+        )
+        tool_output["status"] = "completed"
+        generation_info = {"tool_outputs": [tool_output]}
     else:
         return None
 
