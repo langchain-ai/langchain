@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
@@ -1238,8 +1239,17 @@ def _check_response(response: Optional[BaseMessage]) -> None:
         if block["type"] == "text":
             assert isinstance(block["text"], str)
             for annotation in block["annotations"]:
-                for key in ["end_index", "start_index", "title", "type", "url"]:
-                    assert key in annotation
+                if annotation["type"] == "file_citation":
+                    assert all(
+                        key in annotation
+                        for key in ["file_id", "filename", "index", "type"]
+                    )
+                elif annotation["type"] == "web_search":
+                    assert all(
+                        key in annotation
+                        for key in ["end_index", "start_index", "title", "type", "url"]
+                    )
+
     text_content = response.text()
     assert isinstance(text_content, str)
     assert text_content
@@ -1289,6 +1299,23 @@ async def test_web_search_async() -> None:
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
     ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _check_response(full)
+
+
+def test_file_search() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    tool = {
+        "type": "file_search",
+        "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
+    }
+    response = llm.invoke("What is deep research by OpenAI?", tools=[tool])
+    _check_response(response)
+
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("What is deep research by OpenAI?", tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
