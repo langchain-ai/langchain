@@ -37,6 +37,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         length_function: Callable[[str], int] = len,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
         add_start_index: bool = False,
+        add_chunk_position: bool = False,
         strip_whitespace: bool = True,
     ) -> None:
         """Create a new TextSplitter.
@@ -61,6 +62,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
+        self._add_chunk_position = add_chunk_position
         self._strip_whitespace = strip_whitespace
 
     @abstractmethod
@@ -76,8 +78,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
-            for chunk in self.split_text(text):
+            chunks = self.split_text(text)
+            for j, chunk in enumerate(chunks):
                 metadata = copy.deepcopy(_metadatas[i])
+                if self._add_chunk_position:    
+                    metadata = copy.deepcopy(_metadatas[i])
+                    metadata["chunk_position"] = f"{j + 1}/{len(chunks)}"
                 if self._add_start_index:
                     offset = index + previous_chunk_len - self._chunk_overlap
                     index = text.find(chunk, max(0, offset))

@@ -67,12 +67,14 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         separators: Optional[List[str]] = None,
         keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
+        strict_chunk_size: bool = False,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(keep_separator=keep_separator, **kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
         self._is_separator_regex = is_separator_regex
+        self._strict_chunk_size = strict_chunk_size
 
     def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""
@@ -105,6 +107,16 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                     final_chunks.extend(merged_text)
                     _good_splits = []
                 if not new_separators:
+                    if self._strict_chunk_size:
+                        while len(s) > self._chunk_size:
+                            if " " in s[:self._chunk_size]:
+                                old_s = s[:self._chunk_size].rsplit(" ", 1)[0]
+                            final_chunks.append(old_s)
+                        else:
+                            old_s = s[:self._chunk_size]
+                            final_chunks.append(old_s)                        
+                        char_count = len(old_s)
+                        s = s[:self._chunk_overlap] + s[char_count:]
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)

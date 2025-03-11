@@ -3234,3 +3234,72 @@ def test_html_splitter_with_media_preservation() -> None:
     ]
 
     assert documents == expected
+
+
+@pytest.mark.parametrize("chunk_size", [10, 50])
+def test_recursive_character_text_splitter_strict_chunk_size(chunk_size):
+    """Ensure strict_chunk_size enforces exact chunk size limits."""
+    text = "This is a long test document that should be split correctly without exceeding limits."
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=5, strict_chunk_size=True
+    )
+    chunks = splitter.split_text(text)
+
+    assert all(len(chunk) <= chunk_size for chunk in chunks), "Chunk exceeds chunk_size!"
+
+
+def test_recursive_character_text_splitter_strict_chunk_size_long_word():
+    """Ensure strict_chunk_size enforces chunking even when no separators exist."""
+    text = "Supercalifragilisticexpialidocious" * 5
+    splitter = RecursiveCharacterTextSplitter(chunk_size=20, chunk_overlap=5, strict_chunk_size=True)
+    chunks = splitter.split_text(text)
+
+    assert all(len(chunk) <= 20 for chunk in chunks), "Chunks exceed strict chunk size!"
+
+
+
+@pytest.mark.parametrize("add_chunk_position", [True, False])
+def test_recursive_character_text_splitter_chunk_position(add_chunk_position):
+    """Ensure chunk_position metadata is correctly assigned when enabled."""
+    text = "This is a test document."
+    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=2)
+    
+    # Manually set the flag for testing
+    splitter._add_chunk_position = add_chunk_position  
+    docs = splitter.create_documents([text])
+
+    # Determine expected chunk positions dynamically
+    expected_positions = [f"{i+1}/{len(docs)}" for i in range(len(docs))]
+
+    for i, doc in enumerate(docs):
+        if add_chunk_position:
+            assert doc.metadata.get("chunk_position") == expected_positions[i], \
+                f"Metadata key chunk_position incorrect! Expected {expected_positions[i]}, got {doc.metadata.get('chunk_position')}"
+        else:
+            assert "chunk_position" not in doc.metadata, "chunk_position should not exist when disabled!"
+
+
+
+def test_recursive_character_text_splitter_default_behavior():
+    """Ensure strict_chunk_size=False does not change existing behavior."""
+    text = "This is a test text that should follow normal recursive splitting."
+    splitter = RecursiveCharacterTextSplitter(chunk_size=15, chunk_overlap=3, separators=["\n\n"], strict_chunk_size=False)
+    chunks = splitter.split_text(text)
+
+    assert any(len(chunk) > 15 for chunk in chunks), "Default behavior was altered!"
+
+
+def test_recursive_character_text_splitter_split_documents():
+    """Ensure split_documents properly assigns chunk_position metadata when enabled."""
+    docs = [
+        Document(page_content="LangChain is great for LLM applications."),
+        Document(page_content="Testing is crucial."),
+    ]
+    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=2)
+
+    # Enable chunk_position
+    splitter._add_chunk_position = True  
+    split_docs = splitter.split_documents(docs)
+
+    for doc in split_docs:
+        assert "chunk_position" in doc.metadata, "chunk_position missing in metadata!"
