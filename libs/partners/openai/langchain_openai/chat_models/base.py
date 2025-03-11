@@ -100,6 +100,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from openai.types.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
@@ -405,6 +406,22 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         raise
 
 
+def _is_builtin_tool(tool: dict) -> bool:
+    return set(tool.keys()) == {"type"}
+
+
+def _transform_payload_for_responses(payload: dict) -> dict:
+    updated_payload = payload.copy()
+    if messages := updated_payload.pop("messages"):
+        last_user_message = next(
+            (m for m in reversed(messages) if m.get("role") == "user"), None
+        )
+        if last_user_message:
+            updated_payload["input"] = last_user_message["content"]
+
+    return updated_payload
+
+
 class _FunctionCall(TypedDict):
     name: str
 
@@ -654,7 +671,7 @@ class BaseChatOpenAI(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output.get("token_usage")
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if v is None:
@@ -820,7 +837,14 @@ class BaseChatOpenAI(BaseChatModel):
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         else:
-            response = self.client.create(**payload)
+            if "tools" in payload and any(
+                _is_builtin_tool(tool) for tool in payload["tools"]
+            ):
+                responses_payload = _transform_payload_for_responses(payload)
+                response = self.root_client.responses.create(**responses_payload)
+                return self._create_chat_result_responses(response, generation_info)
+            else:
+                response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
 
     def _get_request_payload(
@@ -886,6 +910,31 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+
+        return ChatResult(generations=generations, llm_output=llm_output)
+
+    def _create_chat_result_responses(
+        self, response: Response, generation_info: Optional[Dict] = None
+    ) -> ChatResult:
+        generations = []
+
+        if error := response.error:
+            raise ValueError(error)
+
+        token_usage = response.usage.model_dump()
+        generation_info = {}
+        for output in response.output:
+            if output.type == "message":
+                joined = "".join(content.text for content in output.content)
+                usage_metadata = _create_usage_metadata_responses(token_usage)
+                message = AIMessage(
+                    content=joined, id=output.id, usage_metadata=usage_metadata
+                )
+                if output.status:
+                    generation_info["status"] = output.status
+                gen = ChatGeneration(message=message, generation_info=generation_info)
+                generations.append(gen)
+        llm_output = {"model_name": response.model}
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -2613,6 +2662,29 @@ def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
         input_token_details=InputTokenDetails(
             **{k: v for k, v in input_token_details.items() if v is not None}
         ),
+        output_token_details=OutputTokenDetails(
+            **{k: v for k, v in output_token_details.items() if v is not None}
+        ),
+    )
+
+
+def _create_usage_metadata_responses(oai_token_usage: dict) -> UsageMetadata:
+    input_tokens = oai_token_usage.get("input_tokens", 0)
+    output_tokens = oai_token_usage.get("output_tokens", 0)
+    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+
+    output_token_details: dict = {
+        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
+            "audio_tokens"
+        ),
+        "reasoning": (oai_token_usage.get("output_token_details") or {}).get(
+            "reasoning_tokens"
+        ),
+    }
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
         output_token_details=OutputTokenDetails(
             **{k: v for k, v in output_token_details.items() if v is not None}
         ),
