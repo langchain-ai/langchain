@@ -115,8 +115,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                         else:
                             old_s = s[: self._chunk_size]
                             final_chunks.append(old_s)
-                        char_count = len(old_s)
-                        s = s[: self._chunk_overlap] + s[char_count:]
+                        s = s[len(old_s) - self._chunk_overlap:]
                     final_chunks.append(s)
                 else:
                     other_info = self._split_text(s, new_separators)
