@@ -6,12 +6,12 @@ https://docs.tavily.com/docs/tavily-api/introduction
 
 import json
 from typing import Any, Dict, List, Optional
-from typing_extensions import Literal
 
 import aiohttp
 import requests
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
+from typing_extensions import Literal
 
 TAVILY_API_URL = "https://api.tavily.com"
 
