@@ -1230,12 +1230,7 @@ def test_structured_output_and_tools() -> None:
     assert tool_call["name"] == "GenerateUsername"
 
 
-def test_web_search() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
-    response = llm.invoke(
-        "What was a positive news story from today?",
-        tools=[{"type": "web_search_preview"}],
-    )
+def _check_response(response: Optional[BaseMessage]) -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     for block in response.content:
@@ -1253,19 +1248,26 @@ def test_web_search() -> None:
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
+
+
+def test_web_search() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    response = llm.invoke(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    )
+    _check_response(response)
     assert response.response_metadata["status"]
 
     # Test streaming
-    # full: Optional[BaseMessageChunk] = None
-    # for chunk in llm.stream(
-    #     "What was a positive news story from today?",
-    #     tools=[{"type": "web_search_preview"}],
-    # ):
-    #     assert isinstance(chunk, AIMessageChunk)
-    #     full = chunk if full is None else full + chunk
-    # assert isinstance(full, AIMessageChunk)
-    # assert full.content
-    # assert full.usage_metadata
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    _check_response(full)
 
 
 async def test_web_search_async() -> None:
@@ -1274,32 +1276,15 @@ async def test_web_search_async() -> None:
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
     )
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.content, list)
-    for block in response.content:
-        assert isinstance(block, dict)
-        if block["type"] == "text":
-            assert isinstance(block["text"], str)
-            for annotation in block["annotations"]:
-                for key in ["end_index", "start_index", "title", "type", "url"]:
-                    assert key in annotation
-    text_content = response.text()
-    assert isinstance(text_content, str)
-    assert text_content
-    assert response.usage_metadata
-    assert response.usage_metadata["input_tokens"] > 0
-    assert response.usage_metadata["output_tokens"] > 0
-    assert response.usage_metadata["total_tokens"] > 0
-    assert response.response_metadata["model_name"]
+    _check_response(response)
     assert response.response_metadata["status"]
 
-    # full: Optional[BaseMessageChunk] = None
-    # async for chunk in llm.astream(
-    #     "What was a positive news story from today?",
-    #     tools=[{"type": "web_search_preview"}],
-    # ):
-    #     assert isinstance(chunk, AIMessageChunk)
-    #     full = chunk if full is None else full + chunk
-    # assert isinstance(full, AIMessageChunk)
-    # assert full.content
-    # assert full.usage_metadata
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _check_response(response)

@@ -359,11 +359,11 @@ def _convert_delta_to_message_chunk(
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
 ) -> Optional[ChatGenerationChunk]:
-    content = ""
+    content = []
     generation_info = None
     usage_metadata = None
     if chunk.type == "response.output_text.delta":
-        content = chunk.delta
+        content += [{"type": "text", "text": chunk.delta, "index": chunk.content_index}]
     elif chunk.type == "response.completed":
         token_usage = chunk.response.usage.model_dump() if chunk.response.usage else {}
         usage_metadata = _create_usage_metadata_responses(token_usage)
@@ -372,7 +372,10 @@ def _convert_responses_chunk_to_generation_chunk(
         return None
 
     return ChatGenerationChunk(
-        message=AIMessageChunk(content=content, usage_metadata=usage_metadata),
+        message=AIMessageChunk(
+            content=content,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,
+        ),
         generation_info=generation_info,
     )
 
