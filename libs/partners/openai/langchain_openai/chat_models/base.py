@@ -1039,7 +1039,16 @@ class BaseChatOpenAI(BaseChatModel):
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         else:
-            response = await self.async_client.create(**payload)
+            if "tools" in payload and any(
+                _is_builtin_tool(tool) for tool in payload["tools"]
+            ):
+                responses_payload = _transform_payload_for_responses(payload)
+                response = await self.root_async_client.responses.create(
+                    **responses_payload
+                )
+                return self._create_chat_result_responses(response, generation_info)
+            else:
+                response = await self.async_client.create(**payload)
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )

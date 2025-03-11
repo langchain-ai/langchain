@@ -1228,3 +1228,33 @@ def test_structured_output_and_tools() -> None:
     assert len(full.tool_calls) == 1
     tool_call = full.tool_calls[0]
     assert tool_call["name"] == "GenerateUsername"
+
+
+def test_web_search() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    response = llm.invoke(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    )
+    assert isinstance(response, AIMessage)
+    assert response.content
+    assert response.usage_metadata["input_tokens"] > 0
+    assert response.usage_metadata["output_tokens"] > 0
+    assert response.usage_metadata["total_tokens"] > 0
+    assert response.response_metadata["model_name"]
+    assert response.response_metadata["status"]
+
+
+async def test_web_search_async() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    response = await llm.ainvoke(
+        "What was a positive news story from today?",
+        tools=[{"type": "web_search_preview"}],
+    )
+    assert isinstance(response, AIMessage)
+    assert response.content
+    assert response.usage_metadata["input_tokens"] > 0
+    assert response.usage_metadata["output_tokens"] > 0
+    assert response.usage_metadata["total_tokens"] > 0
+    assert response.response_metadata["model_name"]
+    assert response.response_metadata["status"]
