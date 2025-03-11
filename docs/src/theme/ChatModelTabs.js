@@ -194,10 +194,11 @@ ${llmVarName} = AzureChatOpenAI(
     {
       value: "ibm",
       label: "IBM watsonx",
-      text: `from langchain_ibm import ChatWatsonx
+      text: `from langchain.chat_models import init_chat_model
 
-${llmVarName} = ChatWatsonx(
-    model_id="ibm/granite-34b-code-instruct", 
+${llmVarName} = init_chat_model(
+    "ibm/granite-34b-code-instruct", 
+    model_provider="ibm",
     url="https://us-south.ml.cloud.ibm.com", 
     project_id="<WATSONX PROJECT_ID>"
 )`,
@@ -207,7 +208,11 @@ ${llmVarName} = ChatWatsonx(
     {
       value: "databricks",
       label: "Databricks",
-      text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(endpoint="databricks-meta-llama-3-1-70b-instruct")`,
+      text: `from langchain.chat_models import init_chat_model
+
+os.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"
+
+${llmVarName} = init_chat_model("databricks-meta-llama-3-1-70b-instruct", model_provider="databricks")`,
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
     },
@@ -248,21 +253,25 @@ if not os.environ.get("${selectedTabItem.apiKeyName}"):
 
 ${llmVarName} = init_chat_model("${selectedTabItem.model}", model_provider="${selectedTabItem.value}"${selectedTabItem?.kwargs ? `, ${selectedTabItem.kwargs}` : ""})`;
 
+  const installText = `%pip install --upgrade --quiet ${selectedTabItem.packageName}`;
+
+  const codeText = `${installText}
+
+${apiKeyText}
+
+${initModelText}`;
+
   return (
     <div>
-      <CustomDropdown 
-        selectedOption={selectedTabItem}
+      <CustomDropdown
+        selectedOption={modelOptions.find(
+          (option) => option.value === selectedModel
+        )}
         options={modelOptions}
         onSelect={setSelectedModel}
         modelType="chat"
       />
-
-      <CodeBlock language="bash">
-        {`pip install -qU "${selectedTabItem.packageName}"`}
-      </CodeBlock>
-      <CodeBlock language="python">
-        {apiKeyText ? apiKeyText + "\n\n" + initModelText : initModelText}
-      </CodeBlock>
+      <CodeBlock language="python">{codeText}</CodeBlock>
     </div>
   );
 }
