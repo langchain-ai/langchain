@@ -2033,10 +2033,9 @@ def test_haskell_code_splitter() -> None:
 
 
 @pytest.fixture
-@pytest.mark.requires("bs4")
-def html_header_splitter_splitter_factory() -> (
-    Callable[[List[Tuple[str, str]]], HTMLHeaderTextSplitter]
-):
+def html_header_splitter_splitter_factory() -> Callable[
+    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
+]:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
     This factory allows dynamic creation of splitters with different headers.
@@ -3237,7 +3236,7 @@ def test_html_splitter_with_media_preservation() -> None:
 
 
 @pytest.mark.parametrize("chunk_size", [10, 50])
-def test_recursive_character_text_splitter_strict_chunk_size(chunk_size):
+def test_recursive_character_text_splitter_strict_chunk_size(chunk_size: int) -> None:
     """Ensure strict_chunk_size enforces exact chunk size limits."""
     text = """This is a long test document that should be split correctly 
     without exceeding limits."""
@@ -3251,7 +3250,7 @@ def test_recursive_character_text_splitter_strict_chunk_size(chunk_size):
     )
 
 
-def test_recursive_character_text_splitter_strict_chunk_size_long_word():
+def test_recursive_character_text_splitter_strict_chunk_size_long_word() -> None:
     """Ensure strict_chunk_size enforces chunking even when no separators exist."""
     text = "Supercalifragilisticexpialidocious" * 5
     splitter = RecursiveCharacterTextSplitter(
@@ -3263,7 +3262,9 @@ def test_recursive_character_text_splitter_strict_chunk_size_long_word():
 
 
 @pytest.mark.parametrize("add_chunk_position", [True, False])
-def test_recursive_character_text_splitter_chunk_position(add_chunk_position):
+def test_recursive_character_text_splitter_chunk_position(
+    add_chunk_position: bool,
+) -> None:
     """Ensure chunk_position metadata is correctly assigned when enabled."""
     text = "This is a test document."
     splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=2)
@@ -3288,7 +3289,7 @@ def test_recursive_character_text_splitter_chunk_position(add_chunk_position):
             )
 
 
-def test_recursive_character_text_splitter_default_behavior():
+def test_recursive_character_text_splitter_default_behavior() -> None:
     """Ensure strict_chunk_size=False does not change existing behavior."""
     text = "This is a test text that should follow normal recursive splitting."
     splitter = RecursiveCharacterTextSplitter(
@@ -3299,7 +3300,7 @@ def test_recursive_character_text_splitter_default_behavior():
     assert any(len(chunk) > 15 for chunk in chunks), "Default behavior was altered!"
 
 
-def test_recursive_character_text_splitter_split_documents():
+def test_recursive_character_text_splitter_split_documents() -> None:
     """Ensure split_documents properly assigns chunk_position metadata when enabled."""
     docs = [
         Document(page_content="LangChain is great for LLM applications."),
