@@ -150,7 +150,7 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
     "AgentQL Toolkit": {
         "link": "/docs/integrations/tools/agentql",
         "interactions": True,
-        "pricing": "???",
+        "pricing": "Free trial, with pay-as-you-go and flat rate plans after",
     },
 }
 
