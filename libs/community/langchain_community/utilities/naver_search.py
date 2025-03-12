@@ -6,6 +6,7 @@ https://developers.naver.com/docs/serviceapi/search/news/news.md
 
 import json
 from typing import Any, Dict, List, Optional
+from typing_extensions import Literal
 import urllib.request
 import urllib.parse
 
@@ -48,11 +49,11 @@ class NaverSearchAPIWrapper(BaseModel):
         search_type: str = "news",
         display: Optional[int] = 10,
         start: Optional[int] = 1,
-        sort: Optional[str] = "sim",  # sim (similarity) or date
+        sort: Literal["sim", "date"] = "sim",  # sim (similarity) or date
     ) -> Dict:
         """Get raw results from the Naver Search API."""
-        enc_text = urllib.parse.quote(query)
-        url = f"{NAVER_API_URL}/{search_type}?query={enc_text}&display={display}&start={start}&sort={sort}"
+        enc_text = urllib.parse.quote(query, encoding="utf-8")
+        url = f"{NAVER_API_URL}/{search_type}.json?query={enc_text}&display={display}&start={start}&sort={sort}"
         
         request = urllib.request.Request(url)
         request.add_header("X-Naver-Client-Id", self.naver_client_id.get_secret_value())
@@ -73,7 +74,7 @@ class NaverSearchAPIWrapper(BaseModel):
         search_type: str = "news",
         display: Optional[int] = 10,
         start: Optional[int] = 1,
-        sort: Optional[str] = "sim",
+        sort: Literal["sim", "date"] = "sim",
     ) -> List[Dict]:
         """Run query through Naver Search and return cleaned results.
 
@@ -102,11 +103,11 @@ class NaverSearchAPIWrapper(BaseModel):
         search_type: str = "news",
         display: Optional[int] = 10,
         start: Optional[int] = 1,
-        sort: Optional[str] = "sim",
+        sort: Literal["sim", "date"] = "sim",
     ) -> Dict:
         """Get results from the Naver Search API asynchronously."""
         enc_text = urllib.parse.quote(query)
-        url = f"{NAVER_API_URL}/{search_type}?query={enc_text}&display={display}&start={start}&sort={sort}"
+        url = f"{NAVER_API_URL}/{search_type}.json?query={enc_text}&display={display}&start={start}&sort={sort}"
 
         async def fetch() -> str:
             headers = {
@@ -131,7 +132,7 @@ class NaverSearchAPIWrapper(BaseModel):
         search_type: str = "news",
         display: Optional[int] = 10,
         start: Optional[int] = 1,
-        sort: Optional[str] = "sim",
+        sort: Literal["sim", "date"] = "sim",
     ) -> List[Dict]:
         """Get cleaned results from Naver Search API asynchronously."""
         results_json = await self.raw_results_async(

@@ -1,6 +1,7 @@
 """Tool for the Naver search API."""
 
 from typing import Dict, List, Optional, Type, Union
+from typing_extensions import Literal
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -59,7 +60,7 @@ class NaverSearchResults(BaseTool):
     search_type: str = "news"
     display: int = 10
     start: int = 1
-    sort: str = "sim"
+    sort: Literal["sim", "date"] = "sim"
 
     api_wrapper: NaverSearchAPIWrapper = Field(default_factory=NaverSearchAPIWrapper)
 
