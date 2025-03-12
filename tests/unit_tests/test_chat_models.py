@@ -1,7 +1,5 @@
-"""Test chat model integration."""
-
-from typing import Any, Dict, Literal, Type
-from unittest.mock import MagicMock
+from typing import Any, Dict, Literal
+from typing_extensions import TypeAlias
 
 from langchain_core.messages import AIMessageChunk
 from langchain_tests.unit_tests import ChatModelUnitTests
@@ -9,34 +7,23 @@ from openai import BaseModel
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 from pydantic import SecretStr
+from pydantic.fields import FieldInfo
+from unittest.mock import MagicMock
 
 from langchain_deepseek.chat_models import ChatDeepSeek
 
+IncEx: TypeAlias = "set[int] | set[str] | dict[int, Any] | dict[str, Any] | None"
 
-class MockOpenAIResponse(BaseModel):
-    choices: list
-    error: None = None
+class MockOpenAIResponse:
+    def __init__(self, choices: list, error: None = None):
+        self.choices = choices
+        self.error = error
 
-    def model_dump(
-        self,
-        *,
-        mode: Literal["json", "python"] | str = "python",
-        include: Any = None,
-        exclude: Any = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        round_trip: bool = False,
-        warnings: Literal["none", "warn", "error"] | bool = True,
-        context: Dict[str, Any] | None = None,
-        serialize_as_any: bool = False,
-    ) -> Dict[str, Any]:
-        choices_list = []
+    def model_dump(self) -> Dict[str, Any]:
+        choices_list: list[dict[str, Any]] = []
         for choice in self.choices:
             if isinstance(choice.message, ChatCompletionMessage):
                 message_dict = choice.message.model_dump()
-                # Ensure model_extra fields are at top level
                 if "model_extra" in message_dict:
                     message_dict.update(message_dict["model_extra"])
             else:
@@ -44,10 +31,8 @@ class MockOpenAIResponse(BaseModel):
                     "role": "assistant",
                     "content": choice.message.content,
                 }
-                # Add reasoning_content if present
                 if hasattr(choice.message, "reasoning_content"):
                     message_dict["reasoning_content"] = choice.message.reasoning_content
-                # Add model_extra fields at the top level if present
                 if hasattr(choice.message, "model_extra"):
                     message_dict.update(choice.message.model_extra)
                     message_dict["model_extra"] = choice.message.model_extra
@@ -79,15 +64,10 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        # These should be parameters used to initialize your integration for testing
         return {
             "model": "deepseek-chat",
             "api_key": "api_key",
         }
-
-    def get_chat_model(self) -> ChatDeepSeek:
-        """Get a chat model instance for testing."""
-        return ChatDeepSeek(**self.chat_model_params)
 
 
 class TestChatDeepSeekCustomUnit:
@@ -113,17 +93,19 @@ class TestChatDeepSeekCustomUnit:
     def test_create_chat_result_with_model_extra_reasoning(self) -> None:
         """Test that reasoning is properly extracted from model_extra."""
         chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
-        mock_message = MagicMock(spec=ChatCompletionMessage)  # Use the real message class as spec
-        mock_message.content = "Main content"
-        mock_message.role = "assistant"
-        mock_message.model_dump.return_value = {
-            "role": "assistant",
-            "content": "Main content",
-            "model_extra": {"reasoning": "This is the reasoning"}
-        }
-        mock_choice = MagicMock(spec=Choice)
-        mock_choice.message = mock_message
-        mock_response = MockOpenAIResponse(choices=[mock_choice], error=None)
+        message = ChatCompletionMessage(
+            role="assistant", 
+            content="Main content",
+            model_extra={"reasoning": "This is the reasoning"}
+        )
+        choice = Choice(message=message, finish_reason="stop", index=0)
+        mock_response = ChatCompletion(
+            id="test",
+            choices=[choice],
+            created=1234567890,
+            model="deepseek-chat",
+            object="chat.completion",
+        )
 
         result = chat_model._create_chat_result(mock_response)
         assert (
@@ -148,8 +130,7 @@ class TestChatDeepSeekCustomUnit:
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
             chunk, AIMessageChunk, None
         )
-        if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+        assert chunk_result is not None
         assert (
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning content"
@@ -172,8 +153,7 @@ class TestChatDeepSeekCustomUnit:
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
             chunk, AIMessageChunk, None
         )
-        if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+        assert chunk_result is not None
         assert (
             chunk_result.message.additional_kwargs.get("reasoning")
             == "Streaming reasoning"
@@ -187,8 +167,7 @@ class TestChatDeepSeekCustomUnit:
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
             chunk, AIMessageChunk, None
         )
-        if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+        assert chunk_result is not None
         assert chunk_result.message.additional_kwargs.get("reasoning") is None
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
 
@@ -200,7 +179,6 @@ class TestChatDeepSeekCustomUnit:
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
             chunk, AIMessageChunk, None
         )
-        if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+        assert chunk_result is not None
         assert chunk_result.message.additional_kwargs.get("reasoning") is None
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
