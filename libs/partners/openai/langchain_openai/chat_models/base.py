@@ -532,7 +532,7 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
-    _convert_dict_to_message:Any = _convert_dict_to_message
+    _convert_dict_to_message: Any = _convert_dict_to_message
 
     @model_validator(mode="before")
     @classmethod
