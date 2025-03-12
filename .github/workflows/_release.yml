@@ -100,15 +100,32 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
+          # Handle regular versions and pre-release versions differently
+          if [[ "$VERSION" == *"-"* ]]; then
+            # This is a pre-release version (contains a hyphen)
+            # Extract the base version without the pre-release suffix
+            BASE_VERSION=${VERSION%%-*}
+            # Look for the latest release of the same base version
+            REGEX="^$PKG_NAME==$BASE_VERSION\$"
+            PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
+            
+            # If no exact base version match, look for the latest release of any kind
+            if [ -z "$PREV_TAG" ]; then
+              REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+              PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
+            fi
+          else
+            # Regular version handling
+            PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
 
-          # backup case if releasing e.g. 0.3.0, looks up last release
-          # note if last release (chronologically) was e.g. 0.1.47 it will get 
-          # that instead of the last 0.2 release
-          if [ -z "$PREV_TAG" ]; then
-            REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
-            echo $REGEX
-            PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
+            # backup case if releasing e.g. 0.3.0, looks up last release
+            # note if last release (chronologically) was e.g. 0.1.47 it will get 
+            # that instead of the last 0.2 release
+            if [ -z "$PREV_TAG" ]; then
+              REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+              echo $REGEX
+              PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
+            fi
           fi
 
           # if PREV_TAG is empty, let it be empty
@@ -363,10 +380,9 @@ jobs:
           # Shallow-fetch just that single tag
           git fetch --depth=1 origin tag "$LATEST_PACKAGE_TAG"
 
-          # Navigate to the partner directory
-          cd $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}
-
           # Checkout the latest package files
+          rm -rf $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}/*
+          cd $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}
           git checkout "$LATEST_PACKAGE_TAG" -- .
 
           # Print as a sanity check
