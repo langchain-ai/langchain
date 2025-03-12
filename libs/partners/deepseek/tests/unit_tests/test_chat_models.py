@@ -6,8 +6,7 @@ from unittest.mock import MagicMock
 from langchain_core.messages import AIMessageChunk
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
-from openai.types.chat import ChatCompletion, ChatCompletionMessage
-from openai.types.chat.chat_completion import Choice
+from openai.types.chat import ChatCompletionMessage
 from pydantic import SecretStr
 
 from langchain_deepseek.chat_models import ChatDeepSeek
@@ -113,15 +112,16 @@ class TestChatDeepSeekCustomUnit:
     def test_create_chat_result_with_model_extra_reasoning(self) -> None:
         """Test that reasoning is properly extracted from model_extra."""
         chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
-        mock_message = MagicMock(spec=ChatCompletionMessage)  # Use the real message class as spec
+        mock_message = MagicMock(spec=ChatCompletionMessage)
         mock_message.content = "Main content"
         mock_message.role = "assistant"
+        mock_message.model_extra = {"reasoning": "This is the reasoning"}
         mock_message.model_dump.return_value = {
             "role": "assistant",
             "content": "Main content",
-            "model_extra": {"reasoning": "This is the reasoning"}
+            "model_extra": {"reasoning": "This is the reasoning"},
         }
-        mock_choice = MagicMock(spec=Choice)
+        mock_choice = MagicMock()
         mock_choice.message = mock_message
         mock_response = MockOpenAIResponse(choices=[mock_choice], error=None)
 
