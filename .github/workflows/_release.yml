@@ -138,6 +138,7 @@ jobs:
               echo "Previous tag $PREV_TAG not found in git repo"
               exit 1
             fi
+          fi
 
 
           TAG="${PKG_NAME}==${VERSION}"
