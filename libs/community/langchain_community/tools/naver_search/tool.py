@@ -19,7 +19,7 @@ class NaverInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class NaverSearchResults(BaseTool):
+class NaverSearchResults(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Naver Search API and gets back json.
 
     Setup:
@@ -48,8 +48,8 @@ class NaverSearchResults(BaseTool):
 
         .. code-block:: python
 
-            tool.invoke({'query': '최신 한국 뉴스'})  # For Korean news
-    """
+            tool.invoke({'query': 'langchain'})  # For Korean news
+    """  # noqa: E501
 
     name: str = "naver_search_results_json"
     description: str = (
@@ -100,7 +100,7 @@ class NaverSearchResults(BaseTool):
             return repr(e)
 
 
-class NaverNewsSearch(NaverSearchResults):
+class NaverNewsSearch(NaverSearchResults):  # type: ignore[override, override]
     """Tool specialized for Naver News search."""
 
     name: str = "naver_news_search"
@@ -112,7 +112,7 @@ class NaverNewsSearch(NaverSearchResults):
     search_type: str = "news"
 
 
-class NaverBlogSearch(NaverSearchResults):
+class NaverBlogSearch(NaverSearchResults):  # type: ignore[override, override]
     """Tool specialized for Naver Blog search."""
 
     name: str = "naver_blog_search"
@@ -124,7 +124,7 @@ class NaverBlogSearch(NaverSearchResults):
     search_type: str = "blog"
 
 
-class NaverWebSearch(NaverSearchResults):
+class NaverWebSearch(NaverSearchResults):  # type: ignore[override, override]
     """Tool specialized for Naver Web search."""
 
     name: str = "naver_web_search"
