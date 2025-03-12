@@ -13,6 +13,8 @@ from langchain_core.messages import (
 
 from langchain_openai import ChatOpenAI
 
+MODEL_NAME = "gpt-4o-mini"
+
 
 def _check_response(response: Optional[BaseMessage]) -> None:
     assert isinstance(response, AIMessage)
@@ -48,7 +50,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
 
 
 def test_web_search() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -94,7 +96,7 @@ def test_web_search() -> None:
 
 
 async def test_web_search_async() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     response = await llm.ainvoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -119,7 +121,7 @@ def test_function_calling() -> None:
         """return x * y"""
         return x * y
 
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     bound_llm = llm.bind_tools([multiply, {"type": "web_search_preview"}])
     ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
     assert len(ai_msg.tool_calls) == 1
@@ -139,7 +141,7 @@ def test_function_calling() -> None:
 
 
 def test_stateful_api() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini", use_responses_api=True)
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")
     assert "id" in response.response_metadata
 
@@ -152,7 +154,7 @@ def test_stateful_api() -> None:
 
 def test_file_search() -> None:
     pytest.skip()  # TODO: set up infra
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     tool = {
         "type": "file_search",
         "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
