@@ -1286,7 +1286,7 @@ def test_web_search() -> None:
     llm.invoke(
         "what about a negative one",
         tools=[{"type": "web_search_preview"}],
-        response_id=response.response_metadata["id"]
+        response_id=response.response_metadata["id"],
     )
     _check_response(response)
 

@@ -2833,13 +2833,13 @@ def _construct_lc_result_from_response_api(response: Response) -> ChatResult:
         )
     }
     # for compatibility with chat completion calls.
-    response_metadata["model_name"] = response.get("model")
+    response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
         usage_metadata = _create_usage_metadata_responses(response.usage.model_dump())
     else:
         usage_metadata = None
 
-    content_blocks = []
+    content_blocks: list = []
     tool_calls = []
     invalid_tool_calls = []
     additional_kwargs: dict = {}
@@ -2898,7 +2898,7 @@ def _construct_lc_result_from_response_api(response: Response) -> ChatResult:
             else:
                 additional_kwargs["tool_outputs"] = [tool_output]
     message = AIMessage(
-        content=content_blocks or None,  # type: ignore[arg-type]
+        content=content_blocks,
         id=msg_id,
         usage_metadata=usage_metadata,
         response_metadata=response_metadata,

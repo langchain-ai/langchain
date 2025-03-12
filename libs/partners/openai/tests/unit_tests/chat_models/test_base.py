@@ -3,7 +3,7 @@
 import json
 from functools import partial
 from types import TracebackType
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,13 +19,29 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.outputs import ChatGeneration
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
+from openai.types.responses import ResponseOutputMessage
+from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response_error import ResponseError
+from openai.types.responses.response_file_search_tool_call import (
+    ResponseFileSearchToolCall,
+    Result,
+)
+from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
+from openai.types.responses.response_function_web_search import (
+    ResponseFunctionWebSearch,
+)
+from openai.types.responses.response_output_refusal import ResponseOutputRefusal
+from openai.types.responses.response_output_text import ResponseOutputText
+from openai.types.responses.response_usage import OutputTokensDetails
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
+    _FUNCTION_CALL_IDS_MAP_KEY,
+    _construct_lc_result_from_response_api,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -862,7 +878,7 @@ def test_nested_structured_output_strict() -> None:
 
         setup: str
         punchline: str
-        self_evaluation: SelfEvaluation
+        _evaluation: SelfEvaluation
 
     llm.with_structured_output(JokeWithEvaluation, method="json_schema")
 
@@ -936,3 +952,497 @@ def test_structured_outputs_parser() -> None:
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(deserialized.message)
     assert result == parsed_response
+
+
+def test__construct_lc_result_from_response_api_error_handling() -> None:
+    """Test that errors in the response are properly raised."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        error=ResponseError(message="Test error", code="server_error"),
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[],
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        _construct_lc_result_from_response_api(response)
+
+    assert "Test error" in str(excinfo.value)
+
+
+def test__construct_lc_result_from_response_api_basic_text_response() -> None:
+    """Test a basic text response with no tools or special features."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hello, world!", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+        usage=ResponseUsage(
+            input_tokens=10,
+            output_tokens=3,
+            total_tokens=13,
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+        ),
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    assert isinstance(result, ChatResult)
+    assert len(result.generations) == 1
+    assert isinstance(result.generations[0], ChatGeneration)
+    assert isinstance(result.generations[0].message, AIMessage)
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "Hello, world!", "annotations": []}
+    ]
+    assert result.generations[0].message.id == "msg_123"
+    assert result.generations[0].message.usage_metadata
+    assert result.generations[0].message.usage_metadata["input_tokens"] == 10
+    assert result.generations[0].message.usage_metadata["output_tokens"] == 3
+    assert result.generations[0].message.usage_metadata["total_tokens"] == 13
+    assert result.generations[0].message.response_metadata["id"] == "resp_123"
+    assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
+
+
+def test__construct_lc_result_from_response_api_multiple_text_blocks() -> None:
+    """Test a response with multiple text blocks."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="First part", annotations=[]
+                    ),
+                    ResponseOutputText(
+                        type="output_text", text="Second part", annotations=[]
+                    ),
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    assert len(result.generations[0].message.content) == 2
+    assert result.generations[0].message.content[0]["text"] == "First part"  # type: ignore
+    assert result.generations[0].message.content[1]["text"] == "Second part"  # type: ignore
+
+
+def test__construct_lc_result_from_response_api_refusal_response() -> None:
+    """Test a response with a refusal."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputRefusal(
+                        type="refusal", refusal="I cannot assist with that request."
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    assert result.generations[0].message.content == []
+    assert (
+        result.generations[0].message.additional_kwargs["refusal"]
+        == "I cannot assist with that request."
+    )
+
+
+def test__construct_lc_result_from_response_api_function_call_valid_json() -> None:
+    """Test a response with a valid function call."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York", "unit": "celsius"}',
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["type"] == "tool_call"
+    assert msg.tool_calls[0]["name"] == "get_weather"
+    assert msg.tool_calls[0]["id"] == "call_123"
+    assert msg.tool_calls[0]["args"] == {"location": "New York", "unit": "celsius"}
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+    assert (
+        result.generations[0].message.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][
+            "call_123"
+        ]
+        == "func_123"
+    )
+
+
+def test__construct_lc_result_from_response_api_function_call_invalid_json() -> None:
+    """Test a response with an invalid JSON function call."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York", "unit": "celsius"',
+                # Missing closing brace
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.invalid_tool_calls) == 1
+    assert msg.invalid_tool_calls[0]["type"] == "invalid_tool_call"
+    assert msg.invalid_tool_calls[0]["name"] == "get_weather"
+    assert msg.invalid_tool_calls[0]["id"] == "call_123"
+    assert (
+        msg.invalid_tool_calls[0]["args"]
+        == '{"location": "New York", "unit": "celsius"'
+    )
+    assert "error" in msg.invalid_tool_calls[0]
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+
+
+def test__construct_lc_result_from_response_api_complex_response() -> None:
+    """Test a complex response with multiple output types."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Here's the information you requested:",
+                        annotations=[],
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York"}',
+            ),
+        ],
+        metadata=dict(key1="value1", key2="value2"),
+        incomplete_details=IncompleteDetails(reason="max_output_tokens"),
+        status="completed",
+        user="user_123",
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    # Check message content
+    assert result.generations[0].message.content == [
+        {
+            "type": "text",
+            "text": "Here's the information you requested:",
+            "annotations": [],
+        }
+    ]
+
+    # Check tool calls
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["name"] == "get_weather"
+
+    # Check metadata
+    assert result.generations[0].message.response_metadata["id"] == "resp_123"
+    assert result.generations[0].message.response_metadata["metadata"] == {
+        "key1": "value1",
+        "key2": "value2",
+    }
+    assert result.generations[0].message.response_metadata["incomplete_details"] == {
+        "reason": "max_output_tokens"
+    }
+    assert result.generations[0].message.response_metadata["status"] == "completed"
+    assert result.generations[0].message.response_metadata["user"] == "user_123"
+
+
+def test__construct_lc_result_from_response_api_no_usage_metadata() -> None:
+    """Test a response without usage metadata."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hello, world!", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+        # No usage field
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    assert cast(AIMessage, result.generations[0].message).usage_metadata is None
+
+
+def test__construct_lc_result_from_response_api_web_search_response() -> None:
+    """Test a response with web search output."""
+    from openai.types.responses.response_function_web_search import (
+        ResponseFunctionWebSearch,
+    )
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionWebSearch(
+                id="websearch_123", type="web_search_call", status="completed"
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
+        == "web_search_call"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
+        == "websearch_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
+        == "completed"
+    )
+
+
+def test__construct_lc_result_from_response_api_file_search_response() -> None:
+    """Test a response with file search output."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFileSearchToolCall(
+                id="filesearch_123",
+                type="file_search_call",
+                status="completed",
+                queries=["python code", "langchain"],
+                results=[
+                    Result(
+                        file_id="file_123",
+                        filename="example.py",
+                        score=0.95,
+                        text="def hello_world() -> None:\n    print('Hello, world!')",
+                        attributes={"language": "python", "size": 42},
+                    )
+                ],
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
+        == "file_search_call"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
+        == "filesearch_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
+        == "completed"
+    )
+    assert result.generations[0].message.additional_kwargs["tool_outputs"][0][
+        "queries"
+    ] == ["python code", "langchain"]
+    assert (
+        len(
+            result.generations[0].message.additional_kwargs["tool_outputs"][0][
+                "results"
+            ]
+        )
+        == 1
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
+            0
+        ]["file_id"]
+        == "file_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
+            0
+        ]["score"]
+        == 0.95
+    )
+
+
+def test__construct_lc_result_from_response_api_mixed_search_responses() -> None:
+    """Test a response with both web search and file search outputs."""
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Here's what I found:", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+            ResponseFunctionWebSearch(
+                id="websearch_123", type="web_search_call", status="completed"
+            ),
+            ResponseFileSearchToolCall(
+                id="filesearch_123",
+                type="file_search_call",
+                status="completed",
+                queries=["python code"],
+                results=[
+                    Result(
+                        file_id="file_123",
+                        filename="example.py",
+                        score=0.95,
+                        text="def hello_world() -> None:\n    print('Hello, world!')",
+                    )
+                ],
+            ),
+        ],
+    )
+
+    result = _construct_lc_result_from_response_api(response)
+
+    # Check message content
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "Here's what I found:", "annotations": []}
+    ]
+
+    # Check tool outputs
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 2
+
+    # Check web search output
+    web_search = next(
+        output
+        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
+        if output["type"] == "web_search_call"
+    )
+    assert web_search["id"] == "websearch_123"
+    assert web_search["status"] == "completed"
+
+    # Check file search output
+    file_search = next(
+        output
+        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
+        if output["type"] == "file_search_call"
+    )
+    assert file_search["id"] == "filesearch_123"
+    assert file_search["queries"] == ["python code"]
+    assert file_search["results"][0]["filename"] == "example.py"
