@@ -593,7 +593,7 @@ def test_chat_message_partial_composition() -> None:
     res = (prompt + appendix).format_messages(y="2", z="3")
     expected = [
         SystemMessage(content="Prompt 1 2"),
-        SystemMessage(content="Appendix 3")
+        SystemMessage(content="Appendix 3"),
     ]
 
     assert res == expected
