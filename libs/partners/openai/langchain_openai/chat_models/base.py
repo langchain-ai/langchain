@@ -935,6 +935,7 @@ class BaseChatOpenAI(BaseChatModel):
         payload = {**self._default_params, **kwargs}
         if _use_response_api(payload):
             payload["input"] = _construct_response_api_input(messages)
+
         else:
             payload["messages"] = [_convert_message_to_dict(m) for m in messages]
         return payload
@@ -2803,37 +2804,51 @@ def _construct_response_api_input(messages: Sequence[BaseMessage]) -> list:
                             "annotations": [],
                         }
                     ]
-                msg["content"].append(
+                msg["content"] = msg["content"] + [
                     {"type": "refusal", "refusal": lc_msg.additional_kwargs["refusal"]}
-                )
+                ]
             if isinstance(msg["content"], list):
+                new_blocks = []
                 for block in msg["content"]:
                     # chat api: {"type": "text", "text": "..."}
                     # response api: {"type": "output_text", "text": "...", "annotations": [...]}  # noqa: E501
                     if block["type"] == "text":
-                        block["type"] = "output_text"
-                        block["annotations"] = block.get("annotations") or []
+                        new_blocks.append(
+                            {
+                                "type": "output_text",
+                                "text": block["text"],
+                                "annotations": block.get("annotations") or [],
+                            }
+                        )
+                    else:
+                        new_blocks.append(block)
+                msg["content"] = new_blocks
             if msg["content"]:
                 input_.append(msg)
             input_.extend(function_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
+                new_blocks = []
                 for block in msg["content"]:
                     # chat api: {"type": "text", "text": "..."}
                     # response api: {"type": "input_text", "text": "..."}
                     if block["type"] == "text":
-                        block["type"] = "input_text"
+                        new_blocks.append({"type": "input_text", "text": block["text"]})
                     # chat api: {"type": "image_url", "image_url": {"url": "...", "detail": "..."}}  # noqa: E501
                     # response api: {"type": "image_url", "image_url": "...", "detail": "...", "file_id": "..."}  # noqa: E501
                     elif block["type"] == "image_url":
-                        block["type"] = "input_image"
-                        if isinstance(block.get("image_url"), dict):
-                            image_url = block.pop("image_url")
-                            block["image_url"] = image_url["url"]
-                            if image_url.get("detail"):
-                                block["detail"] = image_url["detail"]
+                        new_block = {
+                            "type": "input_image",
+                            "image_url": block["image_url"]["url"],
+                        }
+                        if block["image_url"].get("detail"):
+                            new_block["detail"] = block["image_url"]["detail"]
+                        new_blocks.append(new_block)
+                    elif block["type"] in ("input_text", "input_image", "input_file"):
+                        new_blocks.append(block)
                     else:
                         pass
+                msg["content"] = new_blocks
             input_.append(msg)
         else:
             input_.append(msg)

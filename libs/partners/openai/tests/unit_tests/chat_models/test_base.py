@@ -1635,6 +1635,7 @@ def test__construct_response_api_input_multiple_message_types() -> None:
             ]
         ),
     ]
+    messages_copy = [m.copy(deep=True) for m in messages]
 
     result = _construct_response_api_input(messages)
 
@@ -1675,3 +1676,6 @@ def test__construct_response_api_input_multiple_message_types() -> None:
             "annotations": [],
         }
     ]
+
+    # assert no mutation has occurred
+    assert messages_copy == messages
