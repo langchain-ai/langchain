@@ -2760,7 +2760,7 @@ def _use_response_api(payload: dict) -> bool:
     )
 
 
-def _construct_response_api_input(messages: list[BaseMessage]) -> list:
+def _construct_response_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
@@ -2772,6 +2772,8 @@ def _construct_response_api_input(messages: list[BaseMessage]) -> list:
             }
             input_.append(function_call_output)
         elif msg["role"] == "assistant":
+            if msg.get("content"):
+                input_.append(msg)
             if tool_calls := msg.pop("tool_calls", None):
                 if not lc_msg.additional_kwargs.get(_FUNCTION_CALL_IDS_MAP_KEY):
                     raise ValueError(...)
@@ -2779,14 +2781,12 @@ def _construct_response_api_input(messages: list[BaseMessage]) -> list:
                 for tool_call in tool_calls:
                     function_call = {
                         "type": "function_call",
-                        "name": tool_call["name"],
-                        "arguments": tool_call["arguments"],
+                        "name": tool_call["function"]["name"],
+                        "arguments": tool_call["function"]["arguments"],
                         "call_id": tool_call["id"],
                         "id": function_call_ids[tool_call["id"]],
                     }
                     input_.append(function_call)
-            if msg.get("content"):
-                input_.append(msg)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 for block in msg["content"]:
