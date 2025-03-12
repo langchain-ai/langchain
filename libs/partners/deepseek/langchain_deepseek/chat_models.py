@@ -1,21 +1,95 @@
 """DeepSeek chat models."""
 
 from json import JSONDecodeError
-from typing import Any, Dict, Iterator, List, Optional, Type, Union
+from typing import Any, Dict, Iterator, List, Optional, Type, Union, cast
 
 import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, HumanMessage, AIMessage, SystemMessage ,FunctionMessage, ToolMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from typing_extensions import Self
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+
+    Args:
+        _dict: The dictionary.
+
+    Returns:
+        The LangChain message.
+    """
+    role = _dict.get("role")
+    name = _dict.get("name")
+    id_ = _dict.get("id")
+    if role == "user":
+        return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
+    elif role == "assistant":
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "") or ""
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        if audio := _dict.get("audio"):
+            additional_kwargs["audio"] = audio
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
+    elif role in ("system", "developer"):
+        if role == "developer":
+            additional_kwargs = {"__openai_role__": role}
+        else:
+            additional_kwargs = {}
+        return SystemMessage(
+            content=_dict.get("content", ""),
+            name=name,
+            id=id_,
+            additional_kwargs=additional_kwargs,
+        )
+    elif role == "function":
+        return FunctionMessage(
+            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
+        )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=_dict.get("content", ""),
+            tool_call_id=cast(str, _dict.get("tool_call_id")),
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+        )
+    else:
+        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
@@ -271,6 +345,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> ChatResult:
         try:
+            ChatDeepSeek._convert_dict_to_message = _convert_dict_to_message
             return super()._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )

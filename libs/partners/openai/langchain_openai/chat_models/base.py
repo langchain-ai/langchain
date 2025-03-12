@@ -129,7 +129,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
+        reasoning_content = _dict.get("reasoning_content") or ""
         additional_kwargs: Dict = {}
+        if reasoning_content != "":
+            additional_kwargs["reasoning_content"] = reasoning_content
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -529,6 +532,7 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+    _convert_dict_to_message:Any = _convert_dict_to_message
 
     @model_validator(mode="before")
     @classmethod
@@ -859,7 +863,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         token_usage = response_dict.get("usage")
         for res in response_dict["choices"]:
-            message = _convert_dict_to_message(res["message"])
+            message = BaseChatOpenAI._convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = generation_info or {}
