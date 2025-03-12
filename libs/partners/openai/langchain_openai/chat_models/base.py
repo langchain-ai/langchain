@@ -1642,6 +1642,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
             streaming (``{"include_usage": True}``).
+        use_responses_api: Optional[bool]
+            Whether to use the responses API.
 
         See full list of supported init args and their descriptions in the params section.
 
@@ -1884,6 +1886,79 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         setting ``model_kwargs``.
 
         See ``ChatOpenAI.bind_tools()`` method for more.
+
+    .. dropdown:: Built-in tools
+
+        .. versionadded:: 0.3.9
+
+        You can access `built-in tools <https://platform.openai.com/docs/guides/tools?api-mode=responses>`_
+        supported by the OpenAI Responses API. See LangChain
+        `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
+        detail.
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="gpt-4o-mini")
+
+            tool = {"type": "web_search_preview"}
+            llm_with_tools = llm.bind_tools([tool])
+
+            response = llm_with_tools.invoke("What was a positive news story from today?")
+            response.content
+
+        .. code-block:: python
+
+            [
+                {
+                    "type": "text",
+                    "text": "Today, a heartwarming story emerged from ...",
+                    "annotations": [
+                        {
+                            "end_index": 778,
+                            "start_index": 682,
+                            "title": "Title of story",
+                            "type": "url_citation",
+                            "url": "<url of story>",
+                        }
+                    ],
+                }
+            ]
+
+    .. dropdown:: Managing conversation state
+
+        .. versionadded:: 0.3.9
+
+        OpenAI's Responses API supports management of
+        `conversation state <https://platform.openai.com/docs/guides/conversation-state?api-mode=responses>`_.
+        Passing in response IDs from previous messages will continue a conversational
+        thread. See LangChain
+        `docs <https://python.langchain.com/docs/integrations/chat/openai/>`_ for more
+        detail.
+
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="gpt-4o-mini", use_responses_api=True)
+            response = llm.invoke("Hi, I'm Bob.")
+            response.text()
+
+        .. code-block:: python
+
+            "Hi Bob! How can I assist you today?"
+
+        .. code-block:: python
+
+            second_response = llm.invoke(
+                "What is my name?", previous_response_id=response.response_metadata["id"]
+            )
+            second_response.text()
+
+        .. code-block:: python
+
+            "Your name is Bob. How can I help you today, Bob?"
 
     .. dropdown:: Structured output
 
