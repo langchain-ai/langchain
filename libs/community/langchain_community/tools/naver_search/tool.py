@@ -1,7 +1,6 @@
 """Tool for the Naver search API."""
 
 from typing import Dict, List, Optional, Type, Union
-from typing_extensions import Literal
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -9,12 +8,14 @@ from langchain_core.callbacks import (
 )
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
+from typing_extensions import Literal
 
 from langchain_community.utilities.naver_search import NaverSearchAPIWrapper
 
 
 class NaverInput(BaseModel):
     """Input for the Naver search tool."""
+
     query: str = Field(description="search query to look up")
 
 
@@ -53,8 +54,8 @@ class NaverSearchResults(BaseTool):
     name: str = "naver_search_results_json"
     description: str = (
         "A search engine for Korean content using Naver's search API. "
-        "Useful for when you need to answer questions about Korean topics, news, blogs, etc. "
-        "Input should be a search query in Korean or English."
+        "Useful for when you need to answer questions about Korean topics, "
+        "news, blogs, etc. Input should be a search query in Korean or English."
     )
     args_schema: Type[BaseModel] = NaverInput
     search_type: str = "news"
@@ -62,7 +63,7 @@ class NaverSearchResults(BaseTool):
     start: int = 1
     sort: Literal["sim", "date"] = "sim"
 
-    api_wrapper: NaverSearchAPIWrapper = Field(default_factory=NaverSearchAPIWrapper)
+    api_wrapper: NaverSearchAPIWrapper = Field(default_factory=NaverSearchAPIWrapper)  # type: ignore[arg-type]
 
     def _run(
         self,
@@ -101,7 +102,7 @@ class NaverSearchResults(BaseTool):
 
 class NaverNewsSearch(NaverSearchResults):
     """Tool specialized for Naver News search."""
-    
+
     name: str = "naver_news_search"
     description: str = (
         "A search engine for Korean news using Naver's search API. "
@@ -113,19 +114,19 @@ class NaverNewsSearch(NaverSearchResults):
 
 class NaverBlogSearch(NaverSearchResults):
     """Tool specialized for Naver Blog search."""
-    
+
     name: str = "naver_blog_search"
     description: str = (
         "A search engine for Korean blogs using Naver's search API. "
-        "Useful for when you need to answer questions about Korean opinions, recipes, lifestyle, etc. "
-        "Input should be a search query in Korean or English."
+        "Useful for when you need to answer questions about Korean opinions, "
+        "recipes, lifestyle, etc. Input should be a search query in Korean or English."
     )
     search_type: str = "blog"
 
 
 class NaverWebSearch(NaverSearchResults):
     """Tool specialized for Naver Web search."""
-    
+
     name: str = "naver_web_search"
     description: str = (
         "A general web search engine for Korean websites using Naver's search API. "
