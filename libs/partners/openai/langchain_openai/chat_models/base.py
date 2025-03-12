@@ -360,49 +360,6 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content, id=id_)  # type: ignore
 
 
-def _convert_responses_chunk_to_generation_chunk(
-    chunk: Any,
-) -> Optional[ChatGenerationChunk]:
-    content = []
-    generation_info = None
-    usage_metadata = None
-    if chunk.type == "response.output_text.delta":
-        content += [{"type": "text", "text": chunk.delta, "index": chunk.content_index}]
-    elif chunk.type == "response.output_text.annotation.added":
-        content += [
-            {
-                "annotations": [chunk.annotation.model_dump()],
-                "index": chunk.content_index,
-            }
-        ]
-    elif chunk.type == "response.completed":
-        token_usage = chunk.response.usage.model_dump() if chunk.response.usage else {}
-        usage_metadata = _create_usage_metadata_responses(token_usage)
-        generation_info = {"model_name": chunk.response.model}
-    elif chunk.type in (
-        "response.web_search_call.completed",
-        "response.file_search_call.completed",
-    ):
-        tool_output = chunk.model_dump()
-        if "item_id" in tool_output:
-            tool_output["id"] = tool_output.pop("item_id")
-        tool_output["type"] = (
-            tool_output["type"].replace("response.", "").replace(".completed", "")
-        )
-        tool_output["status"] = "completed"
-        generation_info = {"tool_outputs": [tool_output]}
-    else:
-        return None
-
-    return ChatGenerationChunk(
-        message=AIMessageChunk(
-            content=content,  # type: ignore[arg-type]
-            usage_metadata=usage_metadata,
-        ),
-        generation_info=generation_info,
-    )
-
-
 def _update_token_usage(
     overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
 ) -> Union[int, dict]:
@@ -2996,3 +2953,90 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
         invalid_tool_calls=invalid_tool_calls,
     )
     return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+def _convert_responses_chunk_to_generation_chunk(
+    chunk: Any,
+) -> Optional[ChatGenerationChunk]:
+    content = []
+    tool_call_chunks: list = []
+    additional_kwargs: dict = {}
+    response_metadata = {}
+    usage_metadata = None
+    id = None
+    if chunk.type == "response.output_text.delta":
+        content.append(
+            {"type": "text", "text": chunk.delta, "index": chunk.content_index}
+        )
+    elif chunk.type == "response.output_text.annotation.added":
+        content.append(
+            {
+                "annotations": [
+                    chunk.annotation.model_dump(exclude_none=True, mode="json")
+                ],
+                "index": chunk.content_index,
+            }
+        )
+    elif chunk.type == "response.created":
+        response_metadata["id"] = chunk.response.id
+    elif chunk.type == "response.completed":
+        msg = cast(
+            AIMessage,
+            (
+                _construct_lc_result_from_responses_api(chunk.response)
+                .generations[0]
+                .message
+            ),
+        )
+        usage_metadata = msg.usage_metadata
+        response_metadata = {
+            k: v for k, v in msg.response_metadata.items() if k != "id"
+        }
+    elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
+        id = chunk.item.id
+    elif (
+        chunk.type == "response.output_item.added"
+        and chunk.item.type == "function_call"
+    ):
+        tool_call_chunks.append(
+            {
+                "type": "tool_call_chunk",
+                "name": chunk.item.name,
+                "args": chunk.item.arguments,
+                "id": chunk.item.call_id,
+                "index": chunk.output_index,
+            }
+        )
+        additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY] = {
+            chunk.item.call_id: chunk.item.id
+        }
+    elif chunk.type == "response.output_item.done" and chunk.item.type in (
+        "web_search_call",
+        "file_search_call",
+    ):
+        additional_kwargs["tool_outputs"] = [
+            chunk.item.model_dump(exclude_none=True, mode="json")
+        ]
+    elif chunk.type == "response.function_call_arguments.delta":
+        tool_call_chunks.append(
+            {
+                "type": "tool_call_chunk",
+                "args": chunk.delta,
+                "index": chunk.output_index,
+            }
+        )
+    elif chunk.type == "response.refusal.done":
+        additional_kwargs["refusal"] = chunk.refusal
+    else:
+        return None
+
+    return ChatGenerationChunk(
+        message=AIMessageChunk(
+            content=content,  # type: ignore[arg-type]
+            tool_call_chunks=tool_call_chunks,
+            usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
+            additional_kwargs=additional_kwargs,
+            id=id,
+        )
+    )
