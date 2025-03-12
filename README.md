@@ -9,7 +9,7 @@
 </div>
 
 > [!NOTE]
-> Looking for the JS/TS library? [LangChain.js](https://github.com/langchain-ai/langchainjs).
+> Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
 LangChain is a framework for building LLM-powered applications. It helps you chain
 together interoperable components and third-party integrations to simplify AI
