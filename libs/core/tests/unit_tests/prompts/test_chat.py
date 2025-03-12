@@ -583,18 +583,18 @@ def test_chat_message_partial() -> None:
 
 
 def test_chat_message_partial_composition() -> None:
-    """"""
+    """Test composition of partially initialized messages."""
     prompt = ChatPromptTemplate.from_messages(
         [
-            ('system', 'Prompt {x} {y}')
+            ("system", "Prompt {x} {y}")
         ]
-    ).partial(x='1')
+    ).partial(x="1")
 
-    appendix = ChatPromptTemplate.from_messages([('system', 'Appendix {z}')])
+    appendix = ChatPromptTemplate.from_messages([("system", "Appendix {z}")])
 
-    res = (prompt + appendix).format_messages(y='2', z='3')
-    expected = [SystemMessage(content='Prompt 1 2'),
-                SystemMessage(content='Appendix 3')]
+    res = (prompt + appendix).format_messages(y="2", z="3")
+    expected = [SystemMessage(content="Prompt 1 2"),
+                SystemMessage(content="Appendix 3")]
 
     assert res == expected
 
