@@ -7,7 +7,7 @@ import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.messages import AIMessageChunk, BaseMessage, HumanMessage, AIMessage, SystemMessage ,FunctionMessage, ToolMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, HumanMessage, AIMessage, SystemMessage ,FunctionMessage, ToolMessage, ChatMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
