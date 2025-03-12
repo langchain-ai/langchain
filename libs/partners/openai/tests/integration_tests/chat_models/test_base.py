@@ -1258,14 +1258,14 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
-    for tool_output in response.response_metadata["tool_outputs"]:
+    for tool_output in response.additional_kwargs["tool_outputs"]:
         assert tool_output["id"]
         assert tool_output["status"]
         assert tool_output["type"]
 
 
 def test_web_search() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model="gpt-4o-mini")
     response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -1283,9 +1283,16 @@ def test_web_search() -> None:
         full = chunk if full is None else full + chunk
     _check_response(full)
 
+    llm.invoke(
+        "what about a negative one",
+        tools=[{"type": "web_search_preview"}],
+        response_id=response.response_metadata["id"]
+    )
+    _check_response(response)
+
 
 async def test_web_search_async() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model="gpt-4o-mini")
     response = await llm.ainvoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -1307,7 +1314,7 @@ async def test_web_search_async() -> None:
 
 def test_file_search() -> None:
     pytest.skip()  # TODO: set up infra
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model="gpt-4o-mini")
     tool = {
         "type": "file_search",
         "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
