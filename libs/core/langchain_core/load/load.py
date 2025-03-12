@@ -95,11 +95,10 @@ class Reviver:
             [key] = value["id"]
             if key in self.secrets_map:
                 return self.secrets_map[key]
-            else:
-                if self.secrets_from_env and key in os.environ and os.environ[key]:
-                    return os.environ[key]
-                msg = f'Missing key "{key}" in load(secrets_map)'
-                raise KeyError(msg)
+            if self.secrets_from_env and key in os.environ and os.environ[key]:
+                return os.environ[key]
+            msg = f'Missing key "{key}" in load(secrets_map)'
+            raise KeyError(msg)
 
         if (
             value.get("lc") == 1
@@ -128,7 +127,7 @@ class Reviver:
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
             # Has explicit import path.
-            elif mapping_key in self.import_mappings:
+            if mapping_key in self.import_mappings:
                 import_path = self.import_mappings[mapping_key]
                 # Split into module and name
                 import_dir, name = import_path[:-1], import_path[-1]
