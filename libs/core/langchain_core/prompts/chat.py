@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
@@ -1041,17 +1042,17 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             Combined prompt template.
         """
         partials = {**self.partial_variables}
+        with contextlib.suppress(AttributeError):
+            partials = {**partials, **other.partial_variables}
 
         # Allow for easy combining
         if isinstance(other, ChatPromptTemplate):
-            partials = {**partials, **other.partial_variables}
             return ChatPromptTemplate(messages=self.messages + other.messages).partial(
                 **partials
             )  # type: ignore[call-arg]
         elif isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            partials = {**partials, **other.partial_variables}
             return ChatPromptTemplate(messages=self.messages + [other]).partial(
                 **partials
             )  # type: ignore[call-arg]
