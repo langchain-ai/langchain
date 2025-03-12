@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="docs/static/img/logo-dark.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/logo-light.svg">
-  <img alt="LangChain Logo" src="docs/static/img/logo-dark.svg">
+  <img alt="LangChain Logo" src="docs/static/img/logo-dark.svg" width="80%">
 </picture>
 
 <div>
