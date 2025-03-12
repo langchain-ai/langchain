@@ -1,5 +1,6 @@
 """Test Responses API usage."""
 
+import json
 import os
 from typing import Any, Optional, cast
 
@@ -10,6 +11,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
 )
+from pydantic import BaseModel
 
 from langchain_openai import ChatOpenAI
 
@@ -138,6 +140,18 @@ def test_function_calling() -> None:
 
     response = bound_llm.invoke("whats some good news from today")
     _check_response(response)
+
+
+class Foo(BaseModel):
+    response: str
+
+
+def test_response_format() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = llm.invoke("how are ya", response_format=Foo.model_json_schema())
+    parsed = json.loads(response.text())
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
 
 
 def test_stateful_api() -> None:

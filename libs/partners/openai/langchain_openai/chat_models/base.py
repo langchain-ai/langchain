@@ -2837,17 +2837,20 @@ def _construct_responses_api_payload(
             payload["tool_choice"] = {"type": "function", **tool_choice["function"]}
         else:
             payload["tool_choice"] = tool_choice
-    if response_format := payload.pop("response_format", None):
+    if schema := payload.pop("response_format", None):
         if payload.get("text"):
             text = payload["text"]
             raise ValueError(
                 "Can specify at most one of 'response_format' or 'text', received both:"
-                f"\n{response_format=}\n{text=}"
+                f"\n{schema=}\n{text=}"
             )
         # chat api: {"type": "json_schema, "json_schema": {"schema": {...}, "name": "...", "description": "...", "strict": ...}}  # noqa: E501
         # responses api: {"type": "json_schema, "schema": {...}, "name": "...", "description": "...", "strict": ...}  # noqa: E501
+        response_format = _convert_to_openai_response_format(schema)
         if response_format["type"] == "json_schema":
-            payload["text"] = {"type": "json_schema", **response_format["json_schema"]}
+            payload["text"] = {
+                "format": {"type": "json_schema", **response_format["json_schema"]}
+            }
         else:
             payload["text"] = response_format
     return payload
@@ -3034,6 +3037,13 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
                 additional_kwargs["tool_outputs"].append(tool_output)
             else:
                 additional_kwargs["tool_outputs"] = [tool_output]
+    # parsed
+    if (
+        (text_config := response.text.model_dump())
+        and (format_ := text_config.get("format", {}))
+        and (format_.get("type") == "json_schema")
+    ):
+        additional_kwargs["parsed"] = json.loads(response.output_text)
     message = AIMessage(
         content=content_blocks,
         id=msg_id,
