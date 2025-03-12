@@ -41,8 +41,8 @@ from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _FUNCTION_CALL_IDS_MAP_KEY,
-    _construct_lc_result_from_response_api,
-    _construct_response_api_input,
+    _construct_lc_result_from_responses_api,
+    _construct_responses_api_input,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -955,7 +955,7 @@ def test_structured_outputs_parser() -> None:
     assert result == parsed_response
 
 
-def test__construct_lc_result_from_response_api_error_handling() -> None:
+def test__construct_lc_result_from_responses_api_error_handling() -> None:
     """Test that errors in the response are properly raised."""
     response = Response(
         id="resp_123",
@@ -970,12 +970,12 @@ def test__construct_lc_result_from_response_api_error_handling() -> None:
     )
 
     with pytest.raises(ValueError) as excinfo:
-        _construct_lc_result_from_response_api(response)
+        _construct_lc_result_from_responses_api(response)
 
     assert "Test error" in str(excinfo.value)
 
 
-def test__construct_lc_result_from_response_api_basic_text_response() -> None:
+def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     """Test a basic text response with no tools or special features."""
     response = Response(
         id="resp_123",
@@ -1006,7 +1006,7 @@ def test__construct_lc_result_from_response_api_basic_text_response() -> None:
         ),
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     assert isinstance(result, ChatResult)
     assert len(result.generations) == 1
@@ -1024,7 +1024,7 @@ def test__construct_lc_result_from_response_api_basic_text_response() -> None:
     assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
 
 
-def test__construct_lc_result_from_response_api_multiple_text_blocks() -> None:
+def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
     """Test a response with multiple text blocks."""
     response = Response(
         id="resp_123",
@@ -1052,14 +1052,14 @@ def test__construct_lc_result_from_response_api_multiple_text_blocks() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     assert len(result.generations[0].message.content) == 2
     assert result.generations[0].message.content[0]["text"] == "First part"  # type: ignore
     assert result.generations[0].message.content[1]["text"] == "Second part"  # type: ignore
 
 
-def test__construct_lc_result_from_response_api_refusal_response() -> None:
+def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     """Test a response with a refusal."""
     response = Response(
         id="resp_123",
@@ -1084,7 +1084,7 @@ def test__construct_lc_result_from_response_api_refusal_response() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == []
     assert (
@@ -1093,7 +1093,7 @@ def test__construct_lc_result_from_response_api_refusal_response() -> None:
     )
 
 
-def test__construct_lc_result_from_response_api_function_call_valid_json() -> None:
+def test__construct_lc_result_from_responses_api_function_call_valid_json() -> None:
     """Test a response with a valid function call."""
     response = Response(
         id="resp_123",
@@ -1114,7 +1114,7 @@ def test__construct_lc_result_from_response_api_function_call_valid_json() -> No
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.tool_calls) == 1
@@ -1131,7 +1131,7 @@ def test__construct_lc_result_from_response_api_function_call_valid_json() -> No
     )
 
 
-def test__construct_lc_result_from_response_api_function_call_invalid_json() -> None:
+def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
     """Test a response with an invalid JSON function call."""
     response = Response(
         id="resp_123",
@@ -1153,7 +1153,7 @@ def test__construct_lc_result_from_response_api_function_call_invalid_json() -> 
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.invalid_tool_calls) == 1
@@ -1168,7 +1168,7 @@ def test__construct_lc_result_from_response_api_function_call_invalid_json() -> 
     assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
 
 
-def test__construct_lc_result_from_response_api_complex_response() -> None:
+def test__construct_lc_result_from_responses_api_complex_response() -> None:
     """Test a complex response with multiple output types."""
     response = Response(
         id="resp_123",
@@ -1206,7 +1206,7 @@ def test__construct_lc_result_from_response_api_complex_response() -> None:
         user="user_123",
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1235,7 +1235,7 @@ def test__construct_lc_result_from_response_api_complex_response() -> None:
     assert result.generations[0].message.response_metadata["user"] == "user_123"
 
 
-def test__construct_lc_result_from_response_api_no_usage_metadata() -> None:
+def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
     """Test a response without usage metadata."""
     response = Response(
         id="resp_123",
@@ -1261,12 +1261,12 @@ def test__construct_lc_result_from_response_api_no_usage_metadata() -> None:
         # No usage field
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     assert cast(AIMessage, result.generations[0].message).usage_metadata is None
 
 
-def test__construct_lc_result_from_response_api_web_search_response() -> None:
+def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     """Test a response with web search output."""
     from openai.types.responses.response_function_web_search import (
         ResponseFunctionWebSearch,
@@ -1287,7 +1287,7 @@ def test__construct_lc_result_from_response_api_web_search_response() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1305,7 +1305,7 @@ def test__construct_lc_result_from_response_api_web_search_response() -> None:
     )
 
 
-def test__construct_lc_result_from_response_api_file_search_response() -> None:
+def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     """Test a response with file search output."""
     response = Response(
         id="resp_123",
@@ -1334,7 +1334,7 @@ def test__construct_lc_result_from_response_api_file_search_response() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1375,7 +1375,7 @@ def test__construct_lc_result_from_response_api_file_search_response() -> None:
     )
 
 
-def test__construct_lc_result_from_response_api_mixed_search_responses() -> None:
+def test__construct_lc_result_from_responses_api_mixed_search_responses() -> None:
     """Test a response with both web search and file search outputs."""
 
     response = Response(
@@ -1418,7 +1418,7 @@ def test__construct_lc_result_from_response_api_mixed_search_responses() -> None
         ],
     )
 
-    result = _construct_lc_result_from_response_api(response)
+    result = _construct_lc_result_from_responses_api(response)
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1449,14 +1449,14 @@ def test__construct_lc_result_from_response_api_mixed_search_responses() -> None
     assert file_search["results"][0]["filename"] == "example.py"
 
 
-def test__construct_response_api_input_human_message_with_text_blocks_conversion() -> (
+def test__construct_responses_api_input_human_message_with_text_blocks_conversion() -> (
     None
 ):
     """Test that human messages with text blocks are properly converted."""
     messages: list = [
         HumanMessage(content=[{"type": "text", "text": "What's in this image?"}])
     ]
-    result = _construct_response_api_input(messages)
+    result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
     assert result[0]["role"] == "user"
@@ -1466,7 +1466,7 @@ def test__construct_response_api_input_human_message_with_text_blocks_conversion
     assert result[0]["content"][0]["text"] == "What's in this image?"
 
 
-def test__construct_response_api_input_human_message_with_image_url_conversion() -> (
+def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
     """Test that human messages with image_url blocks are properly converted."""
@@ -1484,7 +1484,7 @@ def test__construct_response_api_input_human_message_with_image_url_conversion()
             ]
         )
     ]
-    result = _construct_response_api_input(messages)
+    result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
     assert result[0]["role"] == "user"
@@ -1501,7 +1501,7 @@ def test__construct_response_api_input_human_message_with_image_url_conversion()
     assert result[0]["content"][1]["detail"] == "high"
 
 
-def test__construct_response_api_input_ai_message_with_tool_calls() -> None:
+def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     """Test that AI messages with tool calls are properly converted."""
     tool_calls = [
         {
@@ -1521,7 +1521,7 @@ def test__construct_response_api_input_ai_message_with_tool_calls() -> None:
         additional_kwargs={_FUNCTION_CALL_IDS_MAP_KEY: function_call_ids},
     )
 
-    result = _construct_response_api_input([ai_message])
+    result = _construct_responses_api_input([ai_message])
 
     assert len(result) == 1
     assert result[0]["type"] == "function_call"
@@ -1531,7 +1531,9 @@ def test__construct_response_api_input_ai_message_with_tool_calls() -> None:
     assert result[0]["id"] == "func_456"
 
 
-def test__construct_response_api_input_ai_message_with_tool_calls_and_content() -> None:
+def test__construct_responses_api_input_ai_message_with_tool_calls_and_content() -> (
+    None
+):
     """Test that AI messages with both tool calls and content are properly converted."""
     tool_calls = [
         {
@@ -1551,7 +1553,7 @@ def test__construct_response_api_input_ai_message_with_tool_calls_and_content() 
         additional_kwargs={_FUNCTION_CALL_IDS_MAP_KEY: function_call_ids},
     )
 
-    result = _construct_response_api_input([ai_message])
+    result = _construct_responses_api_input([ai_message])
 
     assert len(result) == 2
 
@@ -1567,7 +1569,7 @@ def test__construct_response_api_input_ai_message_with_tool_calls_and_content() 
     assert result[1]["id"] == "func_456"
 
 
-def test__construct_response_api_input_missing_function_call_ids() -> None:
+def test__construct_responses_api_input_missing_function_call_ids() -> None:
     """Test AI messages with tool calls but missing function call IDs raise an error."""
     tool_calls = [
         {
@@ -1581,10 +1583,10 @@ def test__construct_response_api_input_missing_function_call_ids() -> None:
     ai_message = AIMessage(content="", tool_calls=tool_calls)
 
     with pytest.raises(ValueError):
-        _construct_response_api_input([ai_message])
+        _construct_responses_api_input([ai_message])
 
 
-def test__construct_response_api_input_tool_message_conversion() -> None:
+def test__construct_responses_api_input_tool_message_conversion() -> None:
     """Test that tool messages are properly converted to function_call_output."""
     messages = [
         ToolMessage(
@@ -1593,7 +1595,7 @@ def test__construct_response_api_input_tool_message_conversion() -> None:
         )
     ]
 
-    result = _construct_response_api_input(messages)
+    result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
     assert result[0]["type"] == "function_call_output"
@@ -1601,7 +1603,7 @@ def test__construct_response_api_input_tool_message_conversion() -> None:
     assert result[0]["call_id"] == "call_123"
 
 
-def test__construct_response_api_input_multiple_message_types() -> None:
+def test__construct_responses_api_input_multiple_message_types() -> None:
     """Test conversion of a conversation with multiple message types."""
     messages = [
         SystemMessage(content="You are a helpful assistant."),
@@ -1637,7 +1639,7 @@ def test__construct_response_api_input_multiple_message_types() -> None:
     ]
     messages_copy = [m.copy(deep=True) for m in messages]
 
-    result = _construct_response_api_input(messages)
+    result = _construct_responses_api_input(messages)
 
     assert len(result) == len(messages)
 

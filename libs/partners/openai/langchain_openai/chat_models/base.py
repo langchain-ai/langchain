@@ -914,9 +914,9 @@ class BaseChatOpenAI(BaseChatModel):
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
-        elif _use_response_api(payload):
+        elif _use_responses_api(payload):
             response = self.root_client.responses.create(**payload)
-            return _construct_lc_result_from_response_api(response)
+            return _construct_lc_result_from_responses_api(response)
         else:
             response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
@@ -933,8 +933,8 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
-        if _use_response_api(payload):
-            payload = _construct_response_api_payload(messages, payload)
+        if _use_responses_api(payload):
+            payload = _construct_responses_api_payload(messages, payload)
         else:
             payload["messages"] = [_convert_message_to_dict(m) for m in messages]
         return payload
@@ -1088,9 +1088,9 @@ class BaseChatOpenAI(BaseChatModel):
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
-        elif _use_response_api(payload):
+        elif _use_responses_api(payload):
             response = await self.root_async_client.responses.create(**payload)
-            return _construct_lc_result_from_response_api(response)
+            return _construct_lc_result_from_responses_api(response)
         else:
             response = await self.async_client.create(**payload)
         return await run_in_executor(
@@ -2189,7 +2189,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
-        if _use_response_api(kwargs):
+        if _use_responses_api(kwargs):
             return super()._stream_responses(*args, **kwargs)
         else:
             stream_usage = self._should_stream_usage(stream_usage, **kwargs)
@@ -2207,7 +2207,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
-        if _use_response_api(kwargs):
+        if _use_responses_api(kwargs):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
         else:
@@ -2760,16 +2760,18 @@ def _is_builtin_tool(tool: dict) -> bool:
     return "type" in tool and tool["type"] != "function"
 
 
-def _use_response_api(payload: dict) -> bool:
-    return "tools" in payload and any(
+def _use_responses_api(payload: dict) -> bool:
+    uses_builtin_tools = "tools" in payload and any(
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
+    responses_only_args = {"previous_response_id", "text", "truncation", "include"}
+    return bool(uses_builtin_tools or responses_only_args.intersection(payload))
 
 
-def _construct_response_api_payload(
+def _construct_responses_api_payload(
     messages: Sequence[BaseMessage], payload: dict
 ) -> dict:
-    payload["input"] = _construct_response_api_input(messages)
+    payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):
         new_tools: list = []
         for tool in tools:
@@ -2803,7 +2805,7 @@ def _construct_response_api_payload(
     return payload
 
 
-def _construct_response_api_input(messages: Sequence[BaseMessage]) -> list:
+def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
@@ -2899,7 +2901,7 @@ def _construct_response_api_input(messages: Sequence[BaseMessage]) -> list:
     return input_
 
 
-def _construct_lc_result_from_response_api(response: Response) -> ChatResult:
+def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
         raise ValueError(response.error)
