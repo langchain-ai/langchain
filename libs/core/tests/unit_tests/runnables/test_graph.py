@@ -448,6 +448,23 @@ def test_triple_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
+def test_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "sub:meow": Node(id="sub:meow", name="meow", data=empty_data, metadata=None),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(source="__start__", target="sub:meow", data=None, conditional=False),
+        Edge(source="sub:meow", target="__end__", data=None, conditional=False),
+    ]
+    graph = Graph(nodes, edges)
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
 def test_runnable_get_graph_with_invalid_input_type() -> None:
     """Test that error isn't raised when getting graph with invalid input type."""
 
