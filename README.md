@@ -1,7 +1,15 @@
-# 🦜️🔗 LangChain
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/static/img/logo-dark.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/logo-light.svg">
+  <img alt="LangChain Logo" src="docs/static/img/logo-dark.svg" width="80%">
+</picture>
 
-Looking for the JS/TS library? Check out
-[LangChain.js](https://github.com/langchain-ai/langchainjs).
+<div>
+<br>
+</div>
+
+> [!NOTE]
+> Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
 LangChain is a framework for building LLM-powered applications. It helps you chain
 together interoperable components and third-party integrations to simplify AI
