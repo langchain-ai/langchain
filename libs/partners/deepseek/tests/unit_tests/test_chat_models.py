@@ -1,6 +1,6 @@
 """Test chat model integration."""
 
-from typing import Any, Dict, Literal, Type
+from typing import Any, Dict, Literal, Type, Union
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk
@@ -19,7 +19,7 @@ class MockOpenAIResponse(BaseModel):
     def model_dump(
         self,
         *,
-        mode: Literal["json", "python"] | str = "python",
+        mode: Union[Literal["json", "python"], str] = "python",
         include: Any = None,
         exclude: Any = None,
         by_alias: bool = False,
@@ -27,8 +27,8 @@ class MockOpenAIResponse(BaseModel):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: Literal["none", "warn", "error"] | bool = True,
-        context: Dict[str, Any] | None = None,
+        warnings: Union[Literal["none", "warn", "error"], bool] = True,
+        context: Union[Dict[str, Any], None] = None,
         serialize_as_any: bool = False,
     ) -> Dict[str, Any]:
         choices_list = []
