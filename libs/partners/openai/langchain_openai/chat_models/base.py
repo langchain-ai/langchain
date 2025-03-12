@@ -91,6 +91,7 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
+from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -2765,18 +2766,22 @@ def _construct_response_api_input(messages: Sequence[BaseMessage]) -> list:
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
         if msg["role"] == "tool":
+            tool_output = msg["content"]
+            if not isinstance(tool_output, str):
+                tool_output = _stringify(tool_output)
             function_call_output = {
                 "type": "function_call_output",
-                "output": msg["content"],
+                "output": tool_output,
                 "call_id": msg["tool_call_id"],
             }
             input_.append(function_call_output)
         elif msg["role"] == "assistant":
-            if msg.get("content"):
-                input_.append(msg)
+            function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
+                # TODO: should you be able to preserve the function call object id on
+                #  the langchain tool calls themselves?
                 if not lc_msg.additional_kwargs.get(_FUNCTION_CALL_IDS_MAP_KEY):
-                    raise ValueError(...)
+                    raise ValueError("")
                 function_call_ids = lc_msg.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY]
                 for tool_call in tool_calls:
                     function_call = {
@@ -2786,7 +2791,31 @@ def _construct_response_api_input(messages: Sequence[BaseMessage]) -> list:
                         "call_id": tool_call["id"],
                         "id": function_call_ids[tool_call["id"]],
                     }
-                    input_.append(function_call)
+                    function_calls.append(function_call)
+
+            msg["content"] = msg.get("content") or []
+            if lc_msg.additional_kwargs.get("refusal"):
+                if isinstance(msg["content"], str):
+                    msg["content"] = [
+                        {
+                            "type": "output_text",
+                            "text": msg["content"],
+                            "annotations": [],
+                        }
+                    ]
+                msg["content"].append(
+                    {"type": "refusal", "refusal": lc_msg.additional_kwargs["refusal"]}
+                )
+            if isinstance(msg["content"], list):
+                for block in msg["content"]:
+                    # chat api: {"type": "text", "text": "..."}
+                    # response api: {"type": "output_text", "text": "...", "annotations": [...]}  # noqa: E501
+                    if block["type"] == "text":
+                        block["type"] = "output_text"
+                        block["annotations"] = block.get("annotations") or []
+            if msg["content"]:
+                input_.append(msg)
+            input_.extend(function_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 for block in msg["content"]:

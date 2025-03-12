@@ -1606,6 +1606,9 @@ def test__construct_response_api_input_multiple_message_types() -> None:
     messages = [
         SystemMessage(content="You are a helpful assistant."),
         HumanMessage(content="What's the weather in San Francisco?"),
+        HumanMessage(
+            content=[{"type": "text", "text": "What's the weather in San Francisco?"}]
+        ),
         AIMessage(
             content="",
             tool_calls=[
@@ -1623,11 +1626,19 @@ def test__construct_response_api_input_multiple_message_types() -> None:
             tool_call_id="call_123",
         ),
         AIMessage(content="The weather in San Francisco is 72°F and sunny."),
+        AIMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "The weather in San Francisco is 72°F and sunny.",
+                }
+            ]
+        ),
     ]
 
     result = _construct_response_api_input(messages)
 
-    assert len(result) == 5
+    assert len(result) == len(messages)
 
     # Check system message
     assert result[0]["role"] == "system"
@@ -1636,19 +1647,31 @@ def test__construct_response_api_input_multiple_message_types() -> None:
     # Check human message
     assert result[1]["role"] == "user"
     assert result[1]["content"] == "What's the weather in San Francisco?"
+    assert result[2]["role"] == "user"
+    assert result[2]["content"] == [
+        {"type": "input_text", "text": "What's the weather in San Francisco?"}
+    ]
 
     # Check function call
-    assert result[2]["type"] == "function_call"
-    assert result[2]["name"] == "get_weather"
-    assert result[2]["arguments"] == '{"location": "San Francisco"}'
-    assert result[2]["call_id"] == "call_123"
-    assert result[2]["id"] == "func_456"
+    assert result[3]["type"] == "function_call"
+    assert result[3]["name"] == "get_weather"
+    assert result[3]["arguments"] == '{"location": "San Francisco"}'
+    assert result[3]["call_id"] == "call_123"
+    assert result[3]["id"] == "func_456"
 
     # Check function call output
-    assert result[3]["type"] == "function_call_output"
-    assert result[3]["output"] == '{"temperature": 72, "conditions": "sunny"}'
-    assert result[3]["call_id"] == "call_123"
+    assert result[4]["type"] == "function_call_output"
+    assert result[4]["output"] == '{"temperature": 72, "conditions": "sunny"}'
+    assert result[4]["call_id"] == "call_123"
 
-    # Check final AI message
-    assert result[4]["role"] == "assistant"
-    assert result[4]["content"] == "The weather in San Francisco is 72°F and sunny."
+    assert result[5]["role"] == "assistant"
+    assert result[5]["content"] == "The weather in San Francisco is 72°F and sunny."
+
+    assert result[6]["role"] == "assistant"
+    assert result[6]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
+        }
+    ]
