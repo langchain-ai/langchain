@@ -538,7 +538,7 @@ def convert_to_openai_tool(
         any dict with "type" in "file_search", "function", "computer_use_preview",
         "web_search_preview".
     """
-    if isinstance(tool, dict) :
+    if isinstance(tool, dict):
         if tool.get("type") in ("function", "file_search", "computer_use_preview"):
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
