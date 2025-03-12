@@ -1,7 +1,7 @@
 """DeepSeek chat models."""
 
 from json import JSONDecodeError
-from typing import Any, Dict, Iterator, List, Optional, Type, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Type, Union, cast, Mapping
 
 import openai
 from langchain_core.callbacks import (
@@ -19,7 +19,10 @@ from langchain_core.output_parsers.openai_tools import (
 from typing_extensions import Self
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
-
+""" 
+    This function was adapted from OpenAI Chat with minor modifications. 
+    Since it describes two separate events, it should be split into two distinct functions rather than being organized into a class.
+"""
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
 
