@@ -1203,9 +1203,11 @@ class Neo4jVector(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=dict_to_yaml_str(result["text"])
-                    if isinstance(result["text"], dict)
-                    else result["text"],
+                    page_content=(
+                        dict_to_yaml_str(result["text"])
+                        if isinstance(result["text"], dict)
+                        else result["text"]
+                    ),
                     metadata={
                         k: v for k, v in result["metadata"].items() if v is not None
                     },

@@ -160,7 +160,8 @@ class LlamaEdgeChatService(BaseChatModel):
                 for i in range(len(positions) - 1):
                     chunk = json.loads(
                         json_string[
-                            positions[i] + len(substring) : positions[i + 1]
+                            positions[i]
+                            + len(substring) : positions[i + 1]
                             + len(substring)
                         ]
                     )

@@ -65,9 +65,11 @@ class GremlinGraph(GraphStore):
             traversal_source=traversal_source,
             username=get_from_env("username", "GREMLIN_USERNAME", username),
             password=get_from_env("password", "GREMLIN_PASSWORD", password),
-            message_serializer=message_serializer
-            if message_serializer
-            else serializer.GraphSONSerializersV2d0(),
+            message_serializer=(
+                message_serializer
+                if message_serializer
+                else serializer.GraphSONSerializersV2d0()
+            ),
         )
         self.schema: str = ""
 
@@ -185,7 +187,11 @@ class GremlinGraph(GraphStore):
                 __.identity(),
                 __.addE('{relationship.type}').from('a').to('b')
             )        
-            """.replace("\n", "").replace("\t", "")
+            """.replace(
+            "\n", ""
+        ).replace(
+            "\t", ""
+        )
         for key, value in relationship.properties.items():
             base_query += f".property('{key}', '{value}')"
 

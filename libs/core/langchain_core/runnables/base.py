@@ -972,9 +972,11 @@ class Runnable(Generic[Input, Output], ABC):
             return (i, out)
 
         coros = [
-            gated_coro(semaphore, ainvoke_task(i, input, config))
-            if semaphore
-            else ainvoke_task(i, input, config)
+            (
+                gated_coro(semaphore, ainvoke_task(i, input, config))
+                if semaphore
+                else ainvoke_task(i, input, config)
+            )
             for i, (input, config) in enumerate(zip(inputs, configs))
         ]
 

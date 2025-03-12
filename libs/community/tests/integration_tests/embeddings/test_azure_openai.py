@@ -107,7 +107,11 @@ def test_azure_openai_embedding_with_empty_string() -> None:
     assert len(output[0]) == 1536
     expected_output = openai.Embedding.create(input="", model="text-embedding-ada-002")[  # type: ignore[attr-defined]
         "data"
-    ][0]["embedding"]
+    ][
+        0
+    ][
+        "embedding"
+    ]
     assert np.allclose(output[0], expected_output)
     assert len(output[1]) == 1536
 

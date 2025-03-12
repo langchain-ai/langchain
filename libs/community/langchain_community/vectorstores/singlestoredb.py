@@ -713,7 +713,9 @@ class SingleStoreDB(VectorStore):
         ):
             raise ValueError(
                 """Search strategy {} is not supported
-                when use_full_text_search is False""".format(search_strategy)
+                when use_full_text_search is False""".format(
+                    search_strategy
+                )
             )
 
         if (
@@ -752,9 +754,11 @@ class SingleStoreDB(VectorStore):
 
             if search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR:
                 condition = "{}({}, JSON_ARRAY_PACK(%s)) ".format(
-                    self.distance_strategy.name
-                    if isinstance(self.distance_strategy, DistanceStrategy)
-                    else self.distance_strategy,
+                    (
+                        self.distance_strategy.name
+                        if isinstance(self.distance_strategy, DistanceStrategy)
+                        else self.distance_strategy
+                    ),
                     self.vector_field,
                 )
                 if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
@@ -811,9 +815,11 @@ class SingleStoreDB(VectorStore):
                         FROM {} {} ORDER BY __score {}{} LIMIT %s""".format(
                             self.content_field,
                             self.metadata_field,
-                            self.distance_strategy.name
-                            if isinstance(self.distance_strategy, DistanceStrategy)
-                            else self.distance_strategy,
+                            (
+                                self.distance_strategy.name
+                                if isinstance(self.distance_strategy, DistanceStrategy)
+                                else self.distance_strategy
+                            ),
                             self.vector_field,
                             self.table_name,
                             where_clause,
@@ -857,9 +863,11 @@ class SingleStoreDB(VectorStore):
                             self.table_name,
                             where_clause,
                             self.id_field,
-                            self.distance_strategy.name
-                            if isinstance(self.distance_strategy, DistanceStrategy)
-                            else self.distance_strategy,
+                            (
+                                self.distance_strategy.name
+                                if isinstance(self.distance_strategy, DistanceStrategy)
+                                else self.distance_strategy
+                            ),
                             self.vector_field,
                             self.table_name,
                             where_clause,

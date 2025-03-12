@@ -221,9 +221,11 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
         consumer_config = {
             BOOTSTRAP_SERVERS_CONFIG: self.bootstrap_servers,
             "group.id": self.session_id,
-            "auto.offset.reset": "latest"
-            if consume_start_pos == ConsumeStartPosition.LATEST
-            else "earliest",
+            "auto.offset.reset": (
+                "latest"
+                if consume_start_pos == ConsumeStartPosition.LATEST
+                else "earliest"
+            ),
         }
 
         def assign_beginning(

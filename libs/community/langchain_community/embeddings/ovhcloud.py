@@ -104,7 +104,7 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
                         """Rate limit reset time has passed, retry immediately"""
                         continue
                 if response.status_code == 401:
-                    """ Unauthorized, retry with new token """
+                    """Unauthorized, retry with new token"""
                     raise ValueError("Unauthorized, retry with new token")
                 """ Handle other non-200 status codes """
                 raise ValueError(

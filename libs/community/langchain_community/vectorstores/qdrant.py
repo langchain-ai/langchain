@@ -1049,9 +1049,11 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
+            (
+                result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+                if self.vector_name is not None
+                else result.vector
+            )
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
@@ -1124,9 +1126,11 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
+            (
+                result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+                if self.vector_name is not None
+                else result.vector
+            )
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
@@ -2167,9 +2171,11 @@ class Qdrant(VectorStore):
             points = [
                 rest.PointStruct(
                     id=point_id,
-                    vector=vector
-                    if self.vector_name is None
-                    else {self.vector_name: vector},
+                    vector=(
+                        vector
+                        if self.vector_name is None
+                        else {self.vector_name: vector}
+                    ),
                     payload=payload,
                 )
                 for point_id, vector, payload in zip(
@@ -2209,9 +2215,11 @@ class Qdrant(VectorStore):
             points = [
                 rest.PointStruct(
                     id=point_id,
-                    vector=vector
-                    if self.vector_name is None
-                    else {self.vector_name: vector},
+                    vector=(
+                        vector
+                        if self.vector_name is None
+                        else {self.vector_name: vector}
+                    ),
                     payload=payload,
                 )
                 for point_id, vector, payload in zip(

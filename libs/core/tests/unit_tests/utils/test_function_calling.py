@@ -180,7 +180,9 @@ def dummy_typing_typed_dict() -> type:
         """Dummy function."""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
+        arg2: TypingAnnotated[
+            Literal["bar", "baz"], ..., "one of 'bar', 'baz'"
+        ]  # noqa: F722
 
     return dummy_function
 
@@ -749,7 +751,9 @@ def test__convert_typed_dict_to_openai_function(
     class SubTool(typed_dict):
         """Subtool docstring."""
 
-        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
+        args: annotated[
+            dict[str, Any], {}, "this does bar"
+        ]  # noqa: F722  # type: ignore
 
     class Tool(typed_dict):
         """Docstring.

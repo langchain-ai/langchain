@@ -320,9 +320,9 @@ class CohereProvider(Provider):
                 ),
                 parameter_definitions={
                     p_name: self.oci_tool_param(
-                        description=p_def.get("description")
-                        if "description" in p_def
-                        else "",
+                        description=(
+                            p_def.get("description") if "description" in p_def else ""
+                        ),
                         type=JSON_TO_PYTHON_TYPES.get(
                             p_def.get("type"), p_def.get("type", "any")
                         ),

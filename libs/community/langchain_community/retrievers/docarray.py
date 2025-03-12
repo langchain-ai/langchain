@@ -153,9 +153,11 @@ class DocArrayRetriever(BaseRetriever):
         mmr_selected = maximal_marginal_relevance(
             query_emb,
             [
-                doc[self.search_field]
-                if isinstance(doc, dict)
-                else getattr(doc, self.search_field)
+                (
+                    doc[self.search_field]
+                    if isinstance(doc, dict)
+                    else getattr(doc, self.search_field)
+                )
                 for doc in docs
             ],
             k=self.top_k,
@@ -192,9 +194,11 @@ class DocArrayRetriever(BaseRetriever):
                 f"Document does not contain the content field - {self.content_field}."
             )
         lc_doc = Document(
-            page_content=doc[self.content_field]
-            if isinstance(doc, dict)
-            else getattr(doc, self.content_field)
+            page_content=(
+                doc[self.content_field]
+                if isinstance(doc, dict)
+                else getattr(doc, self.content_field)
+            )
         )
 
         for name in fields:

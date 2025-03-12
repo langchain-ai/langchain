@@ -89,9 +89,9 @@ class PowerBIToolkit(BaseToolkit):
         if isinstance(self.llm, BaseLanguageModel):
             return LLMChain(
                 llm=self.llm,
-                callback_manager=self.callback_manager
-                if self.callback_manager
-                else None,
+                callback_manager=(
+                    self.callback_manager if self.callback_manager else None
+                ),
                 prompt=PromptTemplate(
                     template=SINGLE_QUESTION_TO_QUERY,
                     input_variables=["tool_input", "tables", "schemas", "examples"],

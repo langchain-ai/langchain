@@ -157,11 +157,13 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=AIMessage(content=choice["message"]["content"].strip())
-                if choice["message"]["role"] == "assistant"
-                else BaseMessage(
-                    content=choice["message"]["content"].strip(),
-                    type=choice["message"]["role"],
+                message=(
+                    AIMessage(content=choice["message"]["content"].strip())
+                    if choice["message"]["role"] == "assistant"
+                    else BaseMessage(
+                        content=choice["message"]["content"].strip(),
+                        type=choice["message"]["role"],
+                    )
                 ),
                 generation_info=dict(
                     finish_reason=choice.get("finish_reason"),

@@ -229,13 +229,15 @@ class DuckDB(VectorStore):
         return [
             Document(
                 page_content=docs[self._text_key][idx],
-                metadata={
-                    **json.loads(docs["metadata"][idx]),
-                    # using underscore prefix to avoid conflicts with user metadata keys
-                    f"_{SIMILARITY_ALIAS}": docs[SIMILARITY_ALIAS][idx],
-                }
-                if docs["metadata"][idx]
-                else {},
+                metadata=(
+                    {
+                        **json.loads(docs["metadata"][idx]),
+                        # using underscore prefix to avoid conflicts with user metadata keys
+                        f"_{SIMILARITY_ALIAS}": docs[SIMILARITY_ALIAS][idx],
+                    }
+                    if docs["metadata"][idx]
+                    else {}
+                ),
             )
             for idx in range(len(docs))
         ]

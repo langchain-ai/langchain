@@ -217,9 +217,9 @@ class AzureOpenAIWhisperParser(BaseBlobParser):
             raise
 
         yield Document(
-            page_content=transcript.text
-            if not isinstance(transcript, str)
-            else transcript,
+            page_content=(
+                transcript.text if not isinstance(transcript, str) else transcript
+            ),
             metadata={"source": blob.source},
         )
 
@@ -333,16 +333,18 @@ class OpenAIWhisperParser(BaseBlobParser):
                     break
                 except Exception as e:
                     attempts += 1
-                    print(f"Attempt {attempts} failed. Exception: {str(e)}")  # noqa: T201
+                    print(
+                        f"Attempt {attempts} failed. Exception: {str(e)}"
+                    )  # noqa: T201
                     time.sleep(5)
             else:
                 print("Failed to transcribe after 3 attempts.")  # noqa: T201
                 continue
 
             yield Document(
-                page_content=transcript.text
-                if not isinstance(transcript, str)
-                else transcript,
+                page_content=(
+                    transcript.text if not isinstance(transcript, str) else transcript
+                ),
                 metadata={"source": blob.source, "chunk": split_number},
             )
 

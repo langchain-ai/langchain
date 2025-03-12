@@ -99,7 +99,9 @@ class AGEGraph(GraphStore):
                 if create:
                     create_statement = """
                         SELECT ag_catalog.create_graph('{}');
-                    """.format(graph_name)
+                    """.format(
+                        graph_name
+                    )
 
                     try:
                         curs.execute(create_statement)

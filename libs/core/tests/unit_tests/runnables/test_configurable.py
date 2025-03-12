@@ -189,8 +189,7 @@ def test_config_passthrough_nested() -> None:
     assert (
         configurable_runnable.with_config(
             configurable={"my_property": "b"}
-        ).my_custom_function_w_config(  # type: ignore[attr-defined]
-        )
+        ).my_custom_function_w_config()  # type: ignore[attr-defined]
         == "b"
     ), "func with config arg can be called w bound config without config"
     assert (
@@ -204,8 +203,7 @@ def test_config_passthrough_nested() -> None:
     assert (
         configurable_runnable.with_config(
             configurable={"my_property": "b"}
-        ).my_custom_function_w_kw_config(  # type: ignore[attr-defined]
-        )
+        ).my_custom_function_w_kw_config()  # type: ignore[attr-defined]
         == "b"
     ), "function with config kwarg can be called w bound config w/out config"
     assert (
@@ -225,8 +223,7 @@ def test_config_passthrough_nested() -> None:
     assert (
         configurable_runnable.with_config(configurable={"my_property": "b"})
         .with_types()
-        .my_custom_function_w_config(  # type: ignore[attr-defined]
-        )
+        .my_custom_function_w_config()  # type: ignore[attr-defined]
         == "b"
     ), "func with config arg can be called w bound config without config"
     assert (
@@ -240,8 +237,7 @@ def test_config_passthrough_nested() -> None:
     assert (
         configurable_runnable.with_config(configurable={"my_property": "b"})
         .with_types()
-        .my_custom_function_w_kw_config(  # type: ignore[attr-defined]
-        )
+        .my_custom_function_w_kw_config()  # type: ignore[attr-defined]
         == "b"
     ), "function with config kwarg can be called w bound config w/out config"
     assert (

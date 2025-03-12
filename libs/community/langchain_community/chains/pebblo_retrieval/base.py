@@ -366,14 +366,16 @@ class PebbloRetrievalQA(Chain):
                 vector_dbs=[
                     VectorDB(
                         name=kwargs["retriever"].vectorstore.__class__.__name__,
-                        embedding_model=str(
-                            kwargs["retriever"].vectorstore._embeddings.model
-                        )
-                        if hasattr(kwargs["retriever"].vectorstore, "_embeddings")
-                        else (
-                            str(kwargs["retriever"].vectorstore._embedding.model)
-                            if hasattr(kwargs["retriever"].vectorstore, "_embedding")
-                            else None
+                        embedding_model=(
+                            str(kwargs["retriever"].vectorstore._embeddings.model)
+                            if hasattr(kwargs["retriever"].vectorstore, "_embeddings")
+                            else (
+                                str(kwargs["retriever"].vectorstore._embedding.model)
+                                if hasattr(
+                                    kwargs["retriever"].vectorstore, "_embedding"
+                                )
+                                else None
+                            )
                         ),
                     )
                 ],

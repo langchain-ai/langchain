@@ -168,9 +168,9 @@ class LanceDB(VectorStore):
                 (
                     Document(
                         page_content=results[self._text_key][idx].as_py(),
-                        metadata=results["metadata"][idx].as_py()
-                        if has_metadata
-                        else {},
+                        metadata=(
+                            results["metadata"][idx].as_py() if has_metadata else {}
+                        ),
                     ),
                     results[score_col][idx].as_py(),
                 )

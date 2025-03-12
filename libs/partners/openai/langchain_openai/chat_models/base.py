@@ -1398,9 +1398,9 @@ class BaseChatOpenAI(BaseChatModel):
 
         if method == "json_schema":
             # Check for Pydantic BaseModel V1
-            if (
-                is_pydantic_schema and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
-            ):
+            if is_pydantic_schema and issubclass(
+                schema, BaseModelV1
+            ):  # type: ignore[arg-type]
                 warnings.warn(
                     "Received a Pydantic BaseModel V1 schema. This is not supported by "
                     'method="json_schema". Please use method="function_calling" '

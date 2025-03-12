@@ -96,7 +96,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @pre_init
-    def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
+    def validate_environment(
+        cls, values: Dict
+    ) -> Dict:  # pylint: disable=no-self-argument
         """Validate that OCI config and python package exists in environment."""
 
         # Skip creating new client if passed in constructor

@@ -7,7 +7,16 @@ import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.messages import AIMessageChunk, BaseMessage, HumanMessage, AIMessage, SystemMessage ,FunctionMessage, ToolMessage, ChatMessage
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    AIMessage,
+    SystemMessage,
+    FunctionMessage,
+    ToolMessage,
+    ChatMessage,
+)
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
@@ -23,6 +32,8 @@ DEFAULT_API_BASE = "https://api.deepseek.com/v1"
     This function was adapted from OpenAI Chat with minor modifications. 
     Since it describes two separate events, it should be split into two distinct functions rather than being organized into a class.
 """
+
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
 
@@ -93,6 +104,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         )
     else:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
+
 
 class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.

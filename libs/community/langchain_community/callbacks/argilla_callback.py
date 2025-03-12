@@ -54,7 +54,9 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     REPO_URL: str = "https://github.com/argilla-io/argilla"
     ISSUES_URL: str = f"{REPO_URL}/issues"
-    BLOG_URL: str = "https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html"
+    BLOG_URL: str = (
+        "https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html"
+    )
 
     DEFAULT_API_URL: str = "http://localhost:6900"
 

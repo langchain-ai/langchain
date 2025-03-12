@@ -47,9 +47,9 @@ def test_message_init() -> None:
 def test_message_chunks() -> None:
     assert AIMessageChunk(content="I am", id="ai3") + AIMessageChunk(
         content=" indeed."
-    ) == AIMessageChunk(content="I am indeed.", id="ai3"), (
-        "MessageChunk + MessageChunk should be a MessageChunk"
-    )
+    ) == AIMessageChunk(
+        content="I am indeed.", id="ai3"
+    ), "MessageChunk + MessageChunk should be a MessageChunk"
 
     assert AIMessageChunk(content="I am", id="ai2") + HumanMessageChunk(
         content=" indeed.", id="human1"
@@ -180,9 +180,9 @@ def test_message_chunks() -> None:
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."
-    ) == ChatMessageChunk(id="ai4", role="User", content="I am indeed."), (
-        "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
-    )
+    ) == ChatMessageChunk(
+        id="ai4", role="User", content="I am indeed."
+    ), "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
 
     with pytest.raises(ValueError):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
@@ -207,15 +207,15 @@ def test_chat_message_chunks() -> None:
 def test_complex_ai_message_chunks() -> None:
     assert AIMessageChunk(content=["I am"], id="ai4") + AIMessageChunk(
         content=[" indeed."]
-    ) == AIMessageChunk(id="ai4", content=["I am", " indeed."]), (
-        "Content concatenation with arrays of strings should naively combine"
-    )
+    ) == AIMessageChunk(
+        id="ai4", content=["I am", " indeed."]
+    ), "Content concatenation with arrays of strings should naively combine"
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=" indeed."
-    ) == AIMessageChunk(content=[{"index": 0, "text": "I am"}, " indeed."]), (
-        "Concatenating mixed content arrays should naively combine them"
-    )
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, " indeed."]
+    ), "Concatenating mixed content arrays should naively combine them"
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"index": 0, "text": " indeed."}]
@@ -226,9 +226,9 @@ def test_complex_ai_message_chunks() -> None:
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"text": " indeed."}]
-    ) == AIMessageChunk(content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]), (
-        "Concatenating when one chunk is missing an index should not merge or throw"
-    )
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
+    ), "Concatenating when one chunk is missing an index should not merge or throw"
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"index": 2, "text": " indeed."}]
@@ -299,9 +299,9 @@ def test_function_message_chunks() -> None:
 def test_ai_message_chunks() -> None:
     assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
         example=True, content=" indeed."
-    ) == AIMessageChunk(example=True, content="I am indeed."), (
-        "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
-    )
+    ) == AIMessageChunk(
+        example=True, content="I am indeed."
+    ), "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
 
     with pytest.raises(ValueError):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(

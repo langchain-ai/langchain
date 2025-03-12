@@ -112,9 +112,11 @@ class TrubricsCallbackHandler(BaseCallbackHandler):
         for generation in response.generations:
             self.trubrics.log_prompt(
                 config_model={
-                    "model": response.llm_output.get("model_name")
-                    if response.llm_output
-                    else "NA"
+                    "model": (
+                        response.llm_output.get("model_name")
+                        if response.llm_output
+                        else "NA"
+                    )
                 },
                 prompt=self.prompt,
                 generation=generation[0].text,

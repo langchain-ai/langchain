@@ -341,9 +341,9 @@ class TestRunnableSequenceParallelTraceNesting:
                 if prev_dotted_order is not None and not str(
                     expected_parents[name]
                 ).startswith("RunnableParallel"):
-                    assert dotted_order > prev_dotted_order, (
-                        f"{name} not after {name_order[i - 1]}"
-                    )
+                    assert (
+                        dotted_order > prev_dotted_order
+                    ), f"{name} not after {name_order[i - 1]}"
                 prev_dotted_order = dotted_order
                 if name in dotted_order_map:
                     msg = f"Duplicate name {name}"
@@ -358,9 +358,9 @@ class TestRunnableSequenceParallelTraceNesting:
             dotted_order = dotted_order_map[name]
             if parent_ is not None:
                 parent_dotted_order = dotted_order_map[parent_]
-                assert dotted_order.startswith(parent_dotted_order), (
-                    f"{name}, {parent_dotted_order} not in {dotted_order}"
-                )
+                assert dotted_order.startswith(
+                    parent_dotted_order
+                ), f"{name}, {parent_dotted_order} not in {dotted_order}"
                 assert str(parent_id_map[name]) == str(id_map[parent_])
             else:
                 assert dotted_order.split(".")[0] == dotted_order

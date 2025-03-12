@@ -176,7 +176,9 @@ class QdrantVectorStore(VectorStore):
 
     CONTENT_KEY: str = "page_content"
     METADATA_KEY: str = "metadata"
-    VECTOR_NAME: str = ""  # The default/unnamed vector - https://qdrant.tech/documentation/concepts/collections/#create-a-collection
+    VECTOR_NAME: str = (
+        ""  # The default/unnamed vector - https://qdrant.tech/documentation/concepts/collections/#create-a-collection
+    )
     SPARSE_VECTOR_NAME: str = "langchain-sparse"
 
     def __init__(
@@ -759,9 +761,11 @@ class QdrantVectorStore(VectorStore):
         ).points
 
         embeddings = [
-            result.vector
-            if isinstance(result.vector, list)
-            else result.vector.get(self.vector_name)  # type: ignore
+            (
+                result.vector
+                if isinstance(result.vector, list)
+                else result.vector.get(self.vector_name)
+            )  # type: ignore
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(

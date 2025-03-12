@@ -468,12 +468,16 @@ class WandbTracer(BaseTracer):
                     name=run.name,
                     kind=run_type,
                     status_code="error" if run.error else "success",
-                    start_time_ms=int(run.start_time.timestamp() * 1000)
-                    if run.start_time is not None
-                    else None,
-                    end_time_ms=int(run.end_time.timestamp() * 1000)
-                    if run.end_time is not None
-                    else None,
+                    start_time_ms=(
+                        int(run.start_time.timestamp() * 1000)
+                        if run.start_time is not None
+                        else None
+                    ),
+                    end_time_ms=(
+                        int(run.end_time.timestamp() * 1000)
+                        if run.end_time is not None
+                        else None
+                    ),
                     metadata=metadata,
                     inputs=self._io_serializer(run.inputs),
                     outputs=self._io_serializer(run.outputs),

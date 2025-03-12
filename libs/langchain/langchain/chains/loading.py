@@ -46,9 +46,7 @@ except ImportError:
             "You can install it with `pip install langchain_community`"
         )
 
-    def load_llm_from_config(  # type: ignore
-        *args: Any, **kwargs: Any
-    ) -> None:
+    def load_llm_from_config(*args: Any, **kwargs: Any) -> None:  # type: ignore
         raise ImportError(
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "

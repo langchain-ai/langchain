@@ -2311,7 +2311,9 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+    ) == ToolMessage(
+        0, tool_call_id="bar"
+    )  # type: ignore
 
     with pytest.raises(ValueError):
         assert foo.invoke({"x": 0})
@@ -2328,7 +2330,9 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+    ) == ToolMessage(
+        0, tool_call_id="bar"
+    )  # type: ignore
 
 
 def test_tool_uninjected_tool_call_id() -> None:
@@ -2347,7 +2351,9 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore
+    ) == ToolMessage(
+        0, tool_call_id="zap"
+    )  # type: ignore
 
 
 def test_tool_return_output_mixin() -> None:

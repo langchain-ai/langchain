@@ -110,9 +110,11 @@ class RocksetLoader(BaseLoader):
                     page_content=self.content_columns_joiner(
                         [(col, doc[col]) for col in self.content_keys]
                     ),
-                    metadata={col: doc[col] for col in self.metadata_keys}
-                    if self.metadata_keys is not None
-                    else doc,
+                    metadata=(
+                        {col: doc[col] for col in self.metadata_keys}
+                        if self.metadata_keys is not None
+                        else doc
+                    ),
                 )  # try to yield the Document
             except (
                 KeyError

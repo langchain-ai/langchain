@@ -108,7 +108,9 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):  # type: ignore[overri
     """Tool for getting tables names."""
 
     name: str = "sql_db_list_tables"
-    description: str = "Input is an empty string, output is a comma-separated list of tables in the database."
+    description: str = (
+        "Input is an empty string, output is a comma-separated list of tables in the database."
+    )
     args_schema: Type[BaseModel] = _ListSQLDatabaseToolInput
 
     def _run(

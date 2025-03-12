@@ -252,7 +252,9 @@ class ListPowerBITool(BaseTool):  # type: ignore[override]
     """Tool for getting tables names."""
 
     name: str = "list_tables_powerbi"
-    description: str = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
+    description: str = (
+        "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
+    )
     powerbi: PowerBIDataset = Field(exclude=True)
 
     model_config = ConfigDict(

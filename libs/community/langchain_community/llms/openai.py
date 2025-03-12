@@ -373,9 +373,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
             yield chunk
 
@@ -399,9 +401,11 @@ class BaseOpenAI(BaseLLM):
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
-                    logprobs=chunk.generation_info["logprobs"]
-                    if chunk.generation_info
-                    else None,
+                    logprobs=(
+                        chunk.generation_info["logprobs"]
+                        if chunk.generation_info
+                        else None
+                    ),
                 )
             yield chunk
 
@@ -451,12 +455,16 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
@@ -514,12 +522,16 @@ class BaseOpenAI(BaseLLM):
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:

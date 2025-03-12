@@ -135,9 +135,11 @@ class AskNewsRetriever(BaseRetriever):
                 page_content=matches[i].strip(),
                 metadata={
                     "title": sr.as_dicts[i].title,
-                    "source": str(sr.as_dicts[i].article_url)
-                    if sr.as_dicts[i].article_url
-                    else None,
+                    "source": (
+                        str(sr.as_dicts[i].article_url)
+                        if sr.as_dicts[i].article_url
+                        else None
+                    ),
                     "images": sr.as_dicts[i].image_url,
                 },
             )

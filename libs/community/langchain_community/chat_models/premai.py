@@ -339,9 +339,11 @@ class ChatPremAI(BaseChatModel, BaseModel):
                 values, "premai_api_key", "PREMAI_API_KEY"
             )
             values["client"] = Prem(
-                api_key=premai_api_key
-                if isinstance(premai_api_key, str)
-                else premai_api_key._secret_value
+                api_key=(
+                    premai_api_key
+                    if isinstance(premai_api_key, str)
+                    else premai_api_key._secret_value
+                )
             )
         except Exception as error:
             raise ValueError("Your API Key is incorrect. Please try again.") from error

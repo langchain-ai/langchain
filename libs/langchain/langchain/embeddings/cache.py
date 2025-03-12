@@ -154,9 +154,9 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        vectors: List[
-            Union[List[float], None]
-        ] = await self.document_embedding_store.amget(texts)
+        vectors: List[Union[List[float], None]] = (
+            await self.document_embedding_store.amget(texts)
+        )
         all_missing_indices: List[int] = [
             i for i, vector in enumerate(vectors) if vector is None
         ]

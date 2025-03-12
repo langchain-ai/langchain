@@ -48,7 +48,7 @@ class TestGitbookLoader:
         result = loader.load()
         assert len(result) == expected_number_results
 
-    @pytest.mark.parametrize("web_page", [("https://platform-docs.opentargets.org/")])
+    @pytest.mark.parametrize("web_page", ["https://platform-docs.opentargets.org/"])
     def test_load_multiple_pages(self, web_page: str) -> None:
         loader = GitbookLoader(web_page, load_all_paths=True)
         result = loader.load()

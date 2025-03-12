@@ -1192,9 +1192,9 @@ class ChatAnthropic(BaseChatModel):
         if parallel_tool_calls is not None:
             disable_parallel_tool_use = not parallel_tool_calls
             if "tool_choice" in kwargs:
-                kwargs["tool_choice"]["disable_parallel_tool_use"] = (
-                    disable_parallel_tool_use
-                )
+                kwargs["tool_choice"][
+                    "disable_parallel_tool_use"
+                ] = disable_parallel_tool_use
             else:
                 kwargs["tool_choice"] = {
                     "type": "auto",

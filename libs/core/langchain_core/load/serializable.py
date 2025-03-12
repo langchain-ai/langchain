@@ -263,9 +263,9 @@ class Serializable(BaseModel, ABC):
             "lc": 1,
             "type": "constructor",
             "id": self.lc_id(),
-            "kwargs": lc_kwargs
-            if not secrets
-            else _replace_secrets(lc_kwargs, secrets),
+            "kwargs": (
+                lc_kwargs if not secrets else _replace_secrets(lc_kwargs, secrets)
+            ),
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:

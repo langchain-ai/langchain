@@ -534,9 +534,11 @@ class PebbloRetrievalAPIWrapper(BaseModel):
             response=Prompt(data=answer),
             prompt_time=prompt_time,
             user=auth_context.user_id if auth_context else "unknown",
-            user_identities=auth_context.user_auth
-            if auth_context and hasattr(auth_context, "user_auth")
-            else [],
+            user_identities=(
+                auth_context.user_auth
+                if auth_context and hasattr(auth_context, "user_auth")
+                else []
+            ),
             classifier_location=self.classifier_location,
         )
         return qa.dict(exclude_unset=True)

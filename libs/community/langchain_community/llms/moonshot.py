@@ -92,9 +92,11 @@ class MoonshotCommon(BaseModel):
 
         values["client"] = _MoonshotClient(
             api_key=values["moonshot_api_key"],
-            base_url=values["base_url"]
-            if "base_url" in values
-            else MOONSHOT_SERVICE_URL_BASE,
+            base_url=(
+                values["base_url"]
+                if "base_url" in values
+                else MOONSHOT_SERVICE_URL_BASE
+            ),
         )
         return values
 

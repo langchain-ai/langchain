@@ -457,12 +457,12 @@ class Databricks(LLM):
             pass
 
         if model_kwargs := values.get("model_kwargs"):
-            assert "prompt" not in model_kwargs, (
-                "model_kwargs must not contain key 'prompt'"
-            )
-            assert "stop" not in model_kwargs, (
-                "model_kwargs must not contain key 'stop'"
-            )
+            assert (
+                "prompt" not in model_kwargs
+            ), "model_kwargs must not contain key 'prompt'"
+            assert (
+                "stop" not in model_kwargs
+            ), "model_kwargs must not contain key 'stop'"
         return values
 
     def __init__(self, **data: Any):
@@ -528,12 +528,16 @@ class Databricks(LLM):
             "max_tokens": self.max_tokens,
             "extra_params": self.extra_params,
             "task": self.task,
-            "transform_input_fn": None
-            if self.transform_input_fn is None
-            else _pickle_fn_to_hex_string(self.transform_input_fn),
-            "transform_output_fn": None
-            if self.transform_output_fn is None
-            else _pickle_fn_to_hex_string(self.transform_output_fn),
+            "transform_input_fn": (
+                None
+                if self.transform_input_fn is None
+                else _pickle_fn_to_hex_string(self.transform_input_fn)
+            ),
+            "transform_output_fn": (
+                None
+                if self.transform_output_fn is None
+                else _pickle_fn_to_hex_string(self.transform_output_fn)
+            ),
         }
 
     @property

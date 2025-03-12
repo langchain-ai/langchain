@@ -41,14 +41,16 @@ def test_lazy_load(mock_get: Any) -> None:
     assert results[0].page_content == "Test content"
 
     # Test bs4 kwargs
-    mock_html = dedent("""
+    mock_html = dedent(
+        """
         <html>
         <body>
             <p>Test content</p>
             <div class="special-class">This is a div with a special class</div>
         </body>
         </html>
-        """)
+        """
+    )
     mock_response = MagicMock()
     mock_response.text = mock_html
     mock_get.return_value = mock_response
@@ -84,14 +86,16 @@ async def test_alazy_load(mock_get: Any) -> None:
 
     # Test bs4 kwargs
     async def mock_text_bs4() -> str:
-        return dedent("""
+        return dedent(
+            """
             <html>
             <body>
                 <p>Test content</p>
                 <div class="special-class">This is a div with a special class</div>
             </body>
             </html>
-            """)
+            """
+        )
 
     mock_response = MagicMock()
     mock_response.text = mock_text_bs4

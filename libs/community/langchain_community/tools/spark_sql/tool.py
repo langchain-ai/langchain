@@ -69,7 +69,9 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):  # type: ignore[override]
     """Tool for getting tables names."""
 
     name: str = "list_tables_sql_db"
-    description: str = "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
+    description: str = (
+        "Input is an empty string, output is a comma separated list of tables in the Spark SQL."
+    )
 
     def _run(
         self,

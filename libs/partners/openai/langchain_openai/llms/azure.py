@@ -142,12 +142,12 @@ class AzureOpenAI(BaseOpenAI):
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.deployment_name,
-            "api_key": self.openai_api_key.get_secret_value()
-            if self.openai_api_key
-            else None,
-            "azure_ad_token": self.azure_ad_token.get_secret_value()
-            if self.azure_ad_token
-            else None,
+            "api_key": (
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
+            ),
+            "azure_ad_token": (
+                self.azure_ad_token.get_secret_value() if self.azure_ad_token else None
+            ),
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,

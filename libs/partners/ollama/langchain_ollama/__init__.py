@@ -3,7 +3,6 @@
 It provides infrastructure for interacting with the Ollama service.
 """
 
-
 from importlib import metadata
 
 from langchain_ollama.chat_models import ChatOllama

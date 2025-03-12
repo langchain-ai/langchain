@@ -313,9 +313,7 @@ class Crawler:
             ancestor_node_key = (
                 None
                 if not ancestor_exception
-                else str(anchor_id)
-                if is_ancestor_of_anchor
-                else str(button_id)
+                else str(anchor_id) if is_ancestor_of_anchor else str(button_id)
             )
             ancestor_node = (
                 None

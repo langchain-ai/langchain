@@ -261,16 +261,18 @@ class TestConfluenceLoader:
             },
             **(
                 {
-                    "metadata": {
-                        "labels": {
-                            "results": [
-                                {"prefix": "global", "name": "l1", "id": "111"},
-                                {"prefix": "global", "name": "l2", "id": "222"},
-                            ]
+                    "metadata": (
+                        {
+                            "labels": {
+                                "results": [
+                                    {"prefix": "global", "name": "l1", "id": "111"},
+                                    {"prefix": "global", "name": "l2", "id": "222"},
+                                ]
+                            }
                         }
-                    }
-                    if include_labels
-                    else {},
+                        if include_labels
+                        else {}
+                    ),
                 }
             ),
             "status": "current",

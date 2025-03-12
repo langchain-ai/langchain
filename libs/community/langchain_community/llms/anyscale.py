@@ -223,12 +223,16 @@ class Anyscale(BaseOpenAI):  # type: ignore[override]
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:
@@ -290,12 +294,16 @@ class Anyscale(BaseOpenAI):  # type: ignore[override]
                 choices.append(
                     {
                         "text": generation.text,
-                        "finish_reason": generation.generation_info.get("finish_reason")
-                        if generation.generation_info
-                        else None,
-                        "logprobs": generation.generation_info.get("logprobs")
-                        if generation.generation_info
-                        else None,
+                        "finish_reason": (
+                            generation.generation_info.get("finish_reason")
+                            if generation.generation_info
+                            else None
+                        ),
+                        "logprobs": (
+                            generation.generation_info.get("logprobs")
+                            if generation.generation_info
+                            else None
+                        ),
                     }
                 )
             else:

@@ -95,9 +95,9 @@ def convert_to_reka_messages(messages: List[BaseMessage]) -> List[Dict[str, Any]
                     and processed_content[0].get("type") == "text"
                     and "text" in processed_content[0]
                 ):
-                    processed_content[0]["text"] = (
-                        f"{system_message}\n{processed_content[0]['text']}"
-                    )
+                    processed_content[0][
+                        "text"
+                    ] = f"{system_message}\n{processed_content[0]['text']}"
                 else:
                     processed_content.insert(
                         0, {"type": "text", "text": system_message}

@@ -177,8 +177,10 @@ class Clarifai(LLM):
                     for id, inp in enumerate(batch)
                 ]
                 (
-                    inference_params := {}
-                ) if inference_params is None else inference_params
+                    (inference_params := {})
+                    if inference_params is None
+                    else inference_params
+                )
                 predict_response = self.model.predict(
                     inputs=input_batch, inference_params=inference_params
                 )
