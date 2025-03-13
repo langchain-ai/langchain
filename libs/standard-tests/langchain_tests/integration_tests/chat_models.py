@@ -23,7 +23,6 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     tool_example_to_messages,
 )
-from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
@@ -2187,14 +2186,23 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Call to surf the web."""
             return "It's sunny."
 
-        agent = create_react_agent(model, tools=[get_weather])
-        result = agent.invoke({"messages": "What is the weather in San Francisco, CA?"})
-        messages = result["messages"]
-        assert len(messages) == 4
-        assert isinstance(messages[0], HumanMessage)
-        assert isinstance(messages[1], AIMessage) and messages[1].tool_calls
-        assert isinstance(messages[2], ToolMessage)
-        assert isinstance(messages[3], AIMessage)
+        llm_with_tools = model.bind_tools([get_weather])
+        input_message = HumanMessage("What is the weather in San Francisco, CA?")
+        tool_call_message = llm_with_tools.invoke([input_message])
+        assert isinstance(tool_call_message, AIMessage)
+        tool_calls = tool_call_message.tool_calls
+        assert len(tool_calls) == 1
+        tool_call = tool_calls[0]
+        tool_message = get_weather.invoke(tool_call)
+        assert isinstance(tool_message, ToolMessage)
+        response = llm_with_tools.invoke(
+            [
+                input_message,
+                tool_call_message,
+                tool_message,
+            ]
+        )
+        assert isinstance(response, AIMessage)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
