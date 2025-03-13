@@ -12,6 +12,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
 )
 from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 
@@ -146,9 +147,39 @@ class Foo(BaseModel):
     response: str
 
 
-def test_response_format() -> None:
+class FooDict(TypedDict):
+    response: str
+
+
+def test_parsed_pydantic_schema() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
-    response = llm.invoke("how are ya", response_format=Foo.model_json_schema())
+    response = llm.invoke("how are ya", response_format=Foo)
+    parsed = Foo(**json.loads(response.text()))
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+
+async def test_parsed_pydantic_schema_async() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = await llm.ainvoke("how are ya", response_format=Foo)
+    parsed = Foo(**json.loads(response.text()))
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+
+@pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
+def test_parsed_dict_schema(schema: Any) -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = llm.invoke("how are ya", response_format=schema)
+    parsed = json.loads(response.text())
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
+
+@pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
+async def test_parsed_dict_schema_async(schema: Any) -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = await llm.ainvoke("how are ya", response_format=schema)
     parsed = json.loads(response.text())
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)

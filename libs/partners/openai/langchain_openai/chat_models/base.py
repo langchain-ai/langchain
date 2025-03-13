@@ -881,7 +881,10 @@ class BaseChatOpenAI(BaseChatModel):
             generation_info = {"headers": dict(raw_response.headers)}
         elif self._use_responses_api(payload):
             response = self.root_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(response)
+            original_schema_obj = kwargs.get("response_format")
+            return _construct_lc_result_from_responses_api(
+                response, schema=original_schema_obj
+            )
         else:
             response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
@@ -1063,7 +1066,10 @@ class BaseChatOpenAI(BaseChatModel):
             generation_info = {"headers": dict(raw_response.headers)}
         elif self._use_responses_api(payload):
             response = await self.root_async_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(response)
+            original_schema_obj = kwargs.get("response_format")
+            return _construct_lc_result_from_responses_api(
+                response, schema=original_schema_obj
+            )
         else:
             response = await self.async_client.create(**payload)
         return await run_in_executor(
@@ -2846,8 +2852,16 @@ def _construct_responses_api_payload(
             )
         # chat api: {"type": "json_schema, "json_schema": {"schema": {...}, "name": "...", "description": "...", "strict": ...}}  # noqa: E501
         # responses api: {"type": "json_schema, "schema": {...}, "name": "...", "description": "...", "strict": ...}  # noqa: E501
-        response_format = _convert_to_openai_response_format(schema)
-        if response_format["type"] == "json_schema":
+        if _is_pydantic_class(schema):
+            # Responses API does not take Pydantic directly
+            schema_dict = schema.model_json_schema()
+        else:
+            schema_dict = schema
+        if (
+            (response_format := _convert_to_openai_response_format(schema_dict))
+            and (isinstance(response_format, dict))
+            and (response_format["type"] == "json_schema")
+        ):
             payload["text"] = {
                 "format": {"type": "json_schema", **response_format["json_schema"]}
             }
@@ -2952,7 +2966,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     return input_
 
 
-def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
+def _construct_lc_result_from_responses_api(
+    response: Response, schema: Optional[Type[_BM]] = None
+) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
         raise ValueError(response.error)
@@ -3039,11 +3055,21 @@ def _construct_lc_result_from_responses_api(response: Response) -> ChatResult:
                 additional_kwargs["tool_outputs"] = [tool_output]
     # parsed
     if (
-        (text_config := response.text.model_dump())
+        response.text
+        and (text_config := response.text.model_dump())
         and (format_ := text_config.get("format", {}))
         and (format_.get("type") == "json_schema")
     ):
-        additional_kwargs["parsed"] = json.loads(response.output_text)
+        # Propagating schema to _construct_lc_result_from_responses_api is needed
+        # to support returning a parsed Pydantic BaseModel in
+        # additional_kwargs["parsed"] (it is not required to support Pydantic schemas
+        # in with_structured_output)
+        parsed_dict = json.loads(response.output_text)
+        if schema and _is_pydantic_class(schema):
+            parsed = schema(**parsed_dict)
+        else:
+            parsed = parsed_dict
+        additional_kwargs["parsed"] = parsed
     message = AIMessage(
         content=content_blocks,
         id=msg_id,
