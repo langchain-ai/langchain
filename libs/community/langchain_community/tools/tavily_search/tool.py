@@ -82,7 +82,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                 max_results=5,
                 topic="general",
                 include_answer=False,
-                include_raw_content=True,          
+                include_raw_content=True,
                 # include_domains=[],
                 # exclude_domains=[],
                 # search_depth="advanced"

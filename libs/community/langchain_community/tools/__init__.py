@@ -313,9 +313,6 @@ if TYPE_CHECKING:
     from langchain_community.tools.steamship_image_generation import (
         SteamshipImageGenerationTool,
     )
-    from langchain_community.tools.tavily_extract import (
-        TavilyExtract,
-    )
     from langchain_community.tools.tavily_search import (
         TavilyAnswer,
         TavilySearchResults,
@@ -642,7 +639,6 @@ _module_lookup = {
     "StructuredTool": "langchain_core.tools",
     "TavilyAnswer": "langchain_community.tools.tavily_search",
     "TavilySearchResults": "langchain_community.tools.tavily_search",
-    "TavilyExtract": "langchain_community.tools.tavily_extract",
     "Tool": "langchain_core.tools",
     "VectorStoreQATool": "langchain_community.tools.vectorstore.tool",
     "VectorStoreQAWithSourcesTool": "langchain_community.tools.vectorstore.tool",
