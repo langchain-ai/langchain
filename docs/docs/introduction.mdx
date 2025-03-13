@@ -1,7 +1,3 @@
----
-sidebar_position: 0
-sidebar_class_name: hidden
----
 
 # Introduction
 
@@ -13,25 +9,11 @@ Use [LangGraph](/docs/concepts/architecture/#langgraph) to build stateful agents
 - **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your applications, so that you can continuously optimize and deploy with confidence.
 - **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Platform](https://langchain-ai.github.io/langgraph/cloud/).
 
-import ThemedImage from '@theme/ThemedImage';
-import useBaseUrl from '@docusaurus/useBaseUrl';
-
-<ThemedImage
-  alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
-  sources={{
-    light: useBaseUrl('/svg/langchain_stack_112024.svg'),
-    dark: useBaseUrl('/svg/langchain_stack_112024_dark.svg'),
-  }}
-  style={{ width: "100%" }}
-  title="LangChain Framework Overview"
-/>
-
 LangChain implements a standard interface for large language models and related
 technologies, such as embedding models and vector stores, and integrates with
 hundreds of providers. See the [integrations](/docs/integrations/providers/) page for
 more.
 
-import ChatModelTabs from "@theme/ChatModelTabs";
 
 <ChatModelTabs/>
 
@@ -39,11 +21,11 @@ import ChatModelTabs from "@theme/ChatModelTabs";
 model.invoke("Hello, world!")
 ```
 
-:::note
+
 
 These docs focus on the Python LangChain library. [Head here](https://js.langchain.com) for docs on the JavaScript LangChain library.
 
-:::
+
 
 ## Architecture
 
