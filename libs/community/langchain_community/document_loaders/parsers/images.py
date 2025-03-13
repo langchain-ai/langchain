@@ -48,7 +48,8 @@ class BaseImageBlobParser(BaseBlobParser):
 
             with blob.as_bytes_io() as buf:
                 if blob.mimetype == "application/x-npy":
-                    img = Img.fromarray(numpy.load(buf))
+                    array = numpy.load(buf)
+                    img = Img.fromarray(numpy.squeeze(array))
                 else:
                     img = Img.open(buf)
                 content = self._analyze_image(img)
