@@ -158,12 +158,32 @@ def test_parsed_pydantic_schema() -> None:
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("how are ya", response_format=Foo):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = Foo(**json.loads(full.text()))
+    assert parsed == full.additional_kwargs["parsed"]
+    assert parsed.response
+
 
 async def test_parsed_pydantic_schema_async() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = await llm.ainvoke("how are ya", response_format=Foo)
     parsed = Foo(**json.loads(response.text()))
     assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("how are ya", response_format=Foo):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = Foo(**json.loads(full.text()))
+    assert parsed == full.additional_kwargs["parsed"]
     assert parsed.response
 
 
@@ -175,6 +195,16 @@ def test_parsed_dict_schema(schema: Any) -> None:
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("how are ya", response_format=schema):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = json.loads(full.text())
+    assert parsed == full.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
 
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 async def test_parsed_dict_schema_async(schema: Any) -> None:
@@ -182,6 +212,16 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     response = await llm.ainvoke("how are ya", response_format=schema)
     parsed = json.loads(response.text())
     assert parsed == response.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("how are ya", response_format=schema):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = json.loads(full.text())
+    assert parsed == full.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
 

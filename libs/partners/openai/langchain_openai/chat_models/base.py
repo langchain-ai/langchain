@@ -751,11 +751,12 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         context_manager = self.root_client.responses.create(**payload)
+        original_schema_obj = kwargs.get("response_format")
 
         with context_manager as response:
             for chunk in response:
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk
+                    chunk, schema=original_schema_obj
                 ):
                     if run_manager:
                         run_manager.on_llm_new_token(
@@ -773,11 +774,12 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         context_manager = await self.root_async_client.responses.create(**payload)
+        original_schema_obj = kwargs.get("response_format")
 
         async with context_manager as response:
             async for chunk in response:
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk
+                    chunk, schema=original_schema_obj
                 ):
                     if run_manager:
                         await run_manager.on_llm_new_token(
@@ -3083,7 +3085,7 @@ def _construct_lc_result_from_responses_api(
 
 
 def _convert_responses_chunk_to_generation_chunk(
-    chunk: Any,
+    chunk: Any, schema: Optional[Type[_BM]] = None
 ) -> Optional[ChatGenerationChunk]:
     content = []
     tool_call_chunks: list = []
@@ -3110,11 +3112,13 @@ def _convert_responses_chunk_to_generation_chunk(
         msg = cast(
             AIMessage,
             (
-                _construct_lc_result_from_responses_api(chunk.response)
+                _construct_lc_result_from_responses_api(chunk.response, schema=schema)
                 .generations[0]
                 .message
             ),
         )
+        if parsed := msg.additional_kwargs.get("parsed"):
+            additional_kwargs["parsed"] = parsed
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
