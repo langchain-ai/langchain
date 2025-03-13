@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
-    convert_to_openai_tool,
+    convert_to_json_schema,
     tool_example_to_messages,
 )
 from pydantic import BaseModel, Field
@@ -72,21 +72,21 @@ def _get_joke_class(
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    metadatas: list[Optional[dict]]
+    options: list[Optional[dict]]
 
     def __init__(self) -> None:
         super().__init__()
-        self.metadatas = []
+        self.options = []
 
     def on_chat_model_start(
         self,
         serialized: Any,
         messages: Any,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        options: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        self.metadatas.append(metadata)
+        self.options.append(options)
 
 
 class _MagicFunctionSchema(BaseModel):
@@ -1243,16 +1243,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(invoke_callback.metadatas) == 1, (
+        assert len(invoke_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(invoke_callback.metadatas[0], dict)
+        assert isinstance(invoke_callback.options[0], dict)
         assert isinstance(
-            invoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            invoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert invoke_callback.metadatas[0]["structured_output_format"][
+        assert invoke_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
         stream_callback = _TestCallbackHandler()
 
@@ -1262,16 +1262,16 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(stream_callback.metadatas) == 1, (
+        assert len(stream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(stream_callback.metadatas[0], dict)
+        assert isinstance(stream_callback.options[0], dict)
         assert isinstance(
-            stream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            stream_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert stream_callback.metadatas[0]["structured_output_format"][
+        assert stream_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
@@ -1319,16 +1319,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         validation_function(result)
 
-        assert len(ainvoke_callback.metadatas) == 1, (
+        assert len(ainvoke_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
-        assert isinstance(ainvoke_callback.metadatas[0], dict)
+        assert isinstance(ainvoke_callback.options[0], dict)
         assert isinstance(
-            ainvoke_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            ainvoke_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert ainvoke_callback.metadatas[0]["structured_output_format"][
+        assert ainvoke_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
         astream_callback = _TestCallbackHandler()
 
@@ -1338,17 +1338,17 @@ class ChatModelIntegrationTests(ChatModelTests):
             validation_function(chunk)
         assert chunk
 
-        assert len(astream_callback.metadatas) == 1, (
+        assert len(astream_callback.options) == 1, (
             "Expected on_chat_model_start to be called once"
         )
 
-        assert isinstance(astream_callback.metadatas[0], dict)
+        assert isinstance(astream_callback.options[0], dict)
         assert isinstance(
-            astream_callback.metadatas[0]["structured_output_format"]["schema"], dict
+            astream_callback.options[0]["ls_structured_output_format"]["schema"], dict
         )
-        assert astream_callback.metadatas[0]["structured_output_format"][
+        assert astream_callback.options[0]["ls_structured_output_format"][
             "schema"
-        ] == convert_to_openai_tool(schema)
+        ] == convert_to_json_schema(schema)
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
@@ -1757,7 +1757,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         function_result = json.dumps({"result": 3})
 
         tool_schema = my_adder_tool.args_schema
-        assert tool_schema is not None
+        assert isinstance(tool_schema, type) and issubclass(tool_schema, BaseModel)
         few_shot_messages = tool_example_to_messages(
             "What is 1 + 2",
             [tool_schema(a=1, b=2)],
@@ -1960,7 +1960,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             set the ``supports_anthropic_inputs`` property to False.
         """  # noqa: E501
         if not self.supports_anthropic_inputs:
-            return
+            pytest.skip("Model does not explicitly support Anthropic inputs.")
 
         class color_picker(BaseModelV1):
             """Input your fav color and get a random fact about it."""
@@ -1998,26 +1998,55 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "id": "foo",
                         "name": "color_picker",
                     },
+                ],
+                tool_calls=[
+                    {
+                        "name": "color_picker",
+                        "args": {"fav_color": "green"},
+                        "id": "foo",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+            ToolMessage("That's a great pick!", tool_call_id="foo"),
+        ]
+        response = model.bind_tools([color_picker]).invoke(messages)
+        assert isinstance(response, AIMessage)
+
+        # Test thinking blocks
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Hello",
+                    },
+                ]
+            ),
+            AIMessage(
+                [
+                    {
+                        "type": "thinking",
+                        "thinking": "I'm thinking...",
+                        "signature": "abc123",
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, how are you?",
+                    },
                 ]
             ),
             HumanMessage(
                 [
                     {
-                        "type": "tool_result",
-                        "tool_use_id": "foo",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
-                            }
-                        ],
-                        "is_error": False,
+                        "type": "text",
+                        "text": "Well, thanks.",
                     },
-                    {"type": "text", "text": "what's my sister's favorite color"},
                 ]
             ),
         ]
-        model.bind_tools([color_picker]).invoke(messages)
+        response = model.invoke(messages)
+        assert isinstance(response, AIMessage)
 
     def test_tool_message_error_status(
         self, model: BaseChatModel, my_adder_tool: BaseTool

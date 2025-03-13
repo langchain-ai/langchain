@@ -4,6 +4,7 @@ import json
 from base64 import b64encode
 from typing import List, Optional
 
+import httpx
 import pytest
 import requests
 from anthropic import BadRequestError
@@ -768,3 +769,64 @@ def test_structured_output_thinking_force_tool_use() -> None:
     )
     with pytest.raises(BadRequestError):
         llm.invoke("Generate a username for Sally with green hair")
+
+
+def test_image_tool_calling() -> None:
+    """Test tool calling with image inputs."""
+
+    class color_picker(BaseModel):
+        """Input your fav color and get a random fact about it."""
+
+        fav_color: str
+
+    human_content: List[dict] = [
+        {
+            "type": "text",
+            "text": "what's your favorite color in this image",
+        },
+    ]
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_data = b64encode(httpx.get(image_url).content).decode("utf-8")
+    human_content.append(
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": image_data,
+            },
+        }
+    )
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage(human_content),  # type: ignore[arg-type]
+        AIMessage(
+            [
+                {"type": "text", "text": "Hmm let me think about that"},
+                {
+                    "type": "tool_use",
+                    "input": {"fav_color": "green"},
+                    "id": "foo",
+                    "name": "color_picker",
+                },
+            ]
+        ),
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "foo",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                        }
+                    ],
+                    "is_error": False,
+                },
+                {"type": "text", "text": "what's my sister's favorite color"},
+            ]
+        ),
+    ]
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm.bind_tools([color_picker]).invoke(messages)
