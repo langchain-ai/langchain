@@ -2841,7 +2841,11 @@ def _construct_responses_api_payload(
     if tool_choice := payload.pop("tool_choice", None):
         # chat api: {"type": "function", "function": {"name": "..."}}
         # responses api: {"type": "function", "name": "..."}
-        if tool_choice["type"] == "function" and "function" in tool_choice:
+        if (
+            isinstance(tool_choice, dict)
+            and tool_choice["type"] == "function"
+            and "function" in tool_choice
+        ):
             payload["tool_choice"] = {"type": "function", **tool_choice["function"]}
         else:
             payload["tool_choice"] = tool_choice
@@ -2896,17 +2900,25 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             if tool_calls := msg.pop("tool_calls", None):
                 # TODO: should you be able to preserve the function call object id on
                 #  the langchain tool calls themselves?
-                if not lc_msg.additional_kwargs.get(_FUNCTION_CALL_IDS_MAP_KEY):
-                    raise ValueError("")
-                function_call_ids = lc_msg.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY]
+                function_call_ids = lc_msg.additional_kwargs.get(
+                    _FUNCTION_CALL_IDS_MAP_KEY
+                )
                 for tool_call in tool_calls:
-                    function_call = {
-                        "type": "function_call",
-                        "name": tool_call["function"]["name"],
-                        "arguments": tool_call["function"]["arguments"],
-                        "call_id": tool_call["id"],
-                        "id": function_call_ids[tool_call["id"]],
-                    }
+                    if function_call_ids is None:
+                        function_call = {
+                            "type": "function_call",
+                            "name": tool_call["function"]["name"],
+                            "arguments": tool_call["function"]["arguments"],
+                            "call_id": tool_call["id"],
+                        }
+                    else:
+                        function_call = {
+                            "type": "function_call",
+                            "name": tool_call["function"]["name"],
+                            "arguments": tool_call["function"]["arguments"],
+                            "call_id": tool_call["id"],
+                            "id": function_call_ids[tool_call["id"]],
+                        }
                     function_calls.append(function_call)
 
             msg["content"] = msg.get("content") or []
