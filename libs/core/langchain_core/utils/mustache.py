@@ -8,6 +8,7 @@ import logging
 from collections.abc import Iterator, Mapping, Sequence
 from types import MappingProxyType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     Optional,
@@ -15,7 +16,8 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias
+if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
 

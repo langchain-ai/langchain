@@ -328,7 +328,7 @@ html[data-theme=dark] .MathJax_SVG * {
 }
 
 .bd-sidebar-primary {
-    width: 22%;  /* Adjust this value to your preference */
+    width: max-content;  /* Adjust this value to your preference */
     line-height: 1.4;
 }
 

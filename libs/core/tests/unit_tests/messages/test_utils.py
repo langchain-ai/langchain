@@ -832,6 +832,18 @@ def test_convert_to_openai_messages_anthropic() -> None:
     ]
     assert result == expected
 
+    # Test thinking blocks (pass through)
+    thinking_block = {
+        "signature": "abc123",
+        "thinking": "Thinking text.",
+        "type": "thinking",
+    }
+    text_block = {"text": "Response text.", "type": "text"}
+    messages = [AIMessage([thinking_block, text_block])]
+    result = convert_to_openai_messages(messages)
+    expected = [{"role": "assistant", "content": [thinking_block, text_block]}]
+    assert result == expected
+
 
 def test_convert_to_openai_messages_bedrock_converse_image() -> None:
     image_data = create_image_data()

@@ -970,7 +970,7 @@ class ChatFireworks(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice=tool_name,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
                     "schema": formatted_tool,
                 },
@@ -987,7 +987,7 @@ class ChatFireworks(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "json_mode"},
                     "schema": schema,
                 },

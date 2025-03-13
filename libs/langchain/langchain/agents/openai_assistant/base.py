@@ -114,7 +114,7 @@ def _is_assistants_builtin_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> bool:
     """Determine if tool corresponds to OpenAI Assistants built-in."""
-    assistants_builtin_tools = ("code_interpreter", "retrieval")
+    assistants_builtin_tools = ("code_interpreter", "file_search")
     return (
         isinstance(tool, dict)
         and ("type" in tool)
@@ -128,7 +128,7 @@ def _get_assistants_tool(
     """Convert a raw function/class to an OpenAI tool.
 
     Note that OpenAI assistants supports several built-in tools,
-    such as "code_interpreter" and "retrieval."
+    such as "code_interpreter" and "file_search".
     """
     if _is_assistants_builtin_tool(tool):
         return tool  # type: ignore
@@ -300,6 +300,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 max_completion_tokens: Allow setting max_completion_tokens for this run.
                 max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
+                attachments: A list of files attached to the message, and the
+                    tools they should be added to.
             config: Runnable config. Defaults to None.
 
         Return:
@@ -333,6 +335,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                             "role": "user",
                             "content": input["content"],
                             "metadata": input.get("message_metadata"),
+                            "attachments": input.get("attachments"),
                         }
                     ],
                     "metadata": input.get("thread_metadata"),

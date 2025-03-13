@@ -21,6 +21,8 @@ from tests.unit_tests.fake.callbacks import (
     FakeCallbackHandlerWithChatStart,
 )
 
+MODEL_NAME = "llama-3.3-70b-versatile"
+
 
 #
 # Smoke test Runnable interface
@@ -28,7 +30,8 @@ from tests.unit_tests.fake.callbacks import (
 @pytest.mark.scheduled
 def test_invoke() -> None:
     """Test Chat wrapper."""
-    chat = ChatGroq(  # type: ignore[call-arg]
+    chat = ChatGroq(
+        model=MODEL_NAME,
         temperature=0.7,
         base_url=None,
         groq_proxy=None,
@@ -49,7 +52,7 @@ def test_invoke() -> None:
 @pytest.mark.scheduled
 async def test_ainvoke() -> None:
     """Test ainvoke tokens from ChatGroq."""
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
 
     result = await chat.ainvoke("Welcome to the Groqetship!", config={"tags": ["foo"]})
     assert isinstance(result, BaseMessage)
@@ -59,7 +62,7 @@ async def test_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_batch() -> None:
     """Test batch tokens from ChatGroq."""
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
 
     result = chat.batch(["Hello!", "Welcome to the Groqetship!"])
     for token in result:
@@ -70,7 +73,7 @@ def test_batch() -> None:
 @pytest.mark.scheduled
 async def test_abatch() -> None:
     """Test abatch tokens from ChatGroq."""
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
 
     result = await chat.abatch(["Hello!", "Welcome to the Groqetship!"])
     for token in result:
@@ -81,7 +84,7 @@ async def test_abatch() -> None:
 @pytest.mark.scheduled
 async def test_stream() -> None:
     """Test streaming tokens from Groq."""
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
 
     for token in chat.stream("Welcome to the Groqetship!"):
         assert isinstance(token, BaseMessageChunk)
@@ -91,7 +94,7 @@ async def test_stream() -> None:
 @pytest.mark.scheduled
 async def test_astream() -> None:
     """Test streaming tokens from Groq."""
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
@@ -124,7 +127,7 @@ async def test_astream() -> None:
 def test_generate() -> None:
     """Test sync generate."""
     n = 1
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
     message = HumanMessage(content="Hello", n=1)
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -143,7 +146,7 @@ def test_generate() -> None:
 async def test_agenerate() -> None:
     """Test async generation."""
     n = 1
-    chat = ChatGroq(max_tokens=10, n=1)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10, n=1)
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -165,7 +168,8 @@ async def test_agenerate() -> None:
 def test_invoke_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
-    chat = ChatGroq(  # type: ignore[call-arg]
+    chat = ChatGroq(
+        model=MODEL_NAME,
         max_tokens=2,
         streaming=True,
         temperature=0,
@@ -181,7 +185,8 @@ def test_invoke_streaming() -> None:
 async def test_agenerate_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandlerWithChatStart()
-    chat = ChatGroq(  # type: ignore[call-arg]
+    chat = ChatGroq(
+        model=MODEL_NAME,
         max_tokens=10,
         streaming=True,
         temperature=0,
@@ -220,7 +225,8 @@ def test_streaming_generation_info() -> None:
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
-    chat = ChatGroq(  # type: ignore[call-arg]
+    chat = ChatGroq(
+        model=MODEL_NAME,
         max_tokens=2,
         temperature=0,
         callbacks=[callback],
@@ -234,7 +240,7 @@ def test_streaming_generation_info() -> None:
 
 def test_system_message() -> None:
     """Test ChatGroq wrapper with system message."""
-    chat = ChatGroq(max_tokens=10)  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -242,10 +248,9 @@ def test_system_message() -> None:
     assert isinstance(response.content, str)
 
 
-@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq()  # type: ignore[call-arg]
+    llm = ChatGroq(model=MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -273,10 +278,9 @@ def test_tool_choice() -> None:
     assert tool_call["args"] == {"name": "Erick", "age": 27}
 
 
-@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
-    llm = ChatGroq()  # type: ignore[call-arg]
+    llm = ChatGroq(model=MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -301,7 +305,7 @@ def test_tool_choice_bool() -> None:
 @pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_streaming_tool_call() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq()  # type: ignore[call-arg]
+    llm = ChatGroq(model=MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -339,7 +343,7 @@ def test_streaming_tool_call() -> None:
 @pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 async def test_astreaming_tool_call() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq()  # type: ignore[call-arg]
+    llm = ChatGroq(model=MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -384,7 +388,7 @@ def test_json_mode_structured_output() -> None:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    chat = ChatGroq().with_structured_output(Joke, method="json_mode")  # type: ignore[call-arg]
+    chat = ChatGroq(model=MODEL_NAME).with_structured_output(Joke, method="json_mode")
     result = chat.invoke(
         "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
     )

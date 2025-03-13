@@ -95,7 +95,7 @@ class SQLiteVec(VectorStore):
         )
         self._connection.execute(
             f"""
-                CREATE TRIGGER IF NOT EXISTS embed_text 
+                CREATE TRIGGER IF NOT EXISTS {self._table}_embed_text 
                 AFTER INSERT ON {self._table}
                 BEGIN
                     INSERT INTO {self._table}_vec(rowid, text_embedding)

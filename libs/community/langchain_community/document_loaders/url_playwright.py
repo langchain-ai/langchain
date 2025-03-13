@@ -177,6 +177,8 @@ class PlaywrightURLLoader(BaseLoader):
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
 
+                    page.wait_for_load_state("load")
+
                     text = self.evaluator.evaluate(page, browser, response)
                     metadata = {"source": url}
                     yield Document(page_content=text, metadata=metadata)
@@ -215,6 +217,8 @@ class PlaywrightURLLoader(BaseLoader):
                     response = await page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
+
+                    await page.wait_for_load_state("load")
 
                     text = await self.evaluator.evaluate_async(page, browser, response)
                     metadata = {"source": url}

@@ -443,6 +443,11 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
+    id = None
+    for id_ in [left.id] + [o.id for o in others]:
+        if id_:
+            id = id_
+            break
     return left.__class__(
         example=left.example,
         content=content,
@@ -450,7 +455,7 @@ def add_ai_message_chunks(
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
-        id=left.id,
+        id=id,
     )
 
 

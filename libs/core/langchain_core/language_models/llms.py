@@ -7,12 +7,12 @@ import functools
 import inspect
 import json
 import logging
-import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -60,6 +60,9 @@ from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunIn
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
+
+if TYPE_CHECKING:
+    import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -1399,7 +1402,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm.save(file_path="path/llm.yaml")
         """
         # Convert file to Path object.
-        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+        save_path = Path(file_path)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -1408,10 +1411,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

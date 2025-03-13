@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, TextIO, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.utils.input import print_text
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
 
 
 class FileCallbackHandler(BaseCallbackHandler):
@@ -28,7 +31,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             mode: The mode to open the file in. Defaults to "a".
             color: The color to use for the text. Defaults to None.
         """
-        self.file = cast(TextIO, open(filename, mode, encoding="utf-8"))  # noqa: SIM115
+        self.file = cast(TextIO, Path(filename).open(mode, encoding="utf-8"))  # noqa: SIM115
         self.color = color
 
     def __del__(self) -> None:
@@ -45,9 +48,15 @@ class FileCallbackHandler(BaseCallbackHandler):
             inputs (Dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
-        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+        if "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+            else:
+                name = "<unknown>"
         print_text(
-            f"\n\n\033[1m> Entering new {class_name} chain...\033[0m",
+            f"\n\n\033[1m> Entering new {name} chain...\033[0m",
             end="\n",
             file=self.file,
         )
