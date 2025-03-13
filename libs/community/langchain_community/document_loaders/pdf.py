@@ -1044,6 +1044,7 @@ class PDFPlumberLoader(BasePDFLoader):
                 # extract_tables_settings = None,
                 # text_kwargs = {"use_text_flow": False, "keep_blank_chars": False},
                 # dedupe = False,
+                metadata_format="standard",
             )
 
         Lazy load documents:
@@ -1082,6 +1083,7 @@ class PDFPlumberLoader(BasePDFLoader):
         pages_delimiter: str = _DEFAULT_PAGES_DELIMITER,
         extract_tables: Optional[Literal["csv", "markdown", "html"]] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
+        metadata_format: Literal["legacy", "standard"] = "legacy",
     ) -> None:
         """Initialize with a file path.
 
@@ -1108,6 +1110,8 @@ class PDFPlumberLoader(BasePDFLoader):
                 table extraction.
             text_kwargs: Keyword arguments to pass to ``pdfplumber.Page.extract_text()``
             dedupe:  Avoiding the error of duplicate characters if `dedupe=True`
+            metadata_format: Use CamelCase keys with 'legacy'
+            and lower keys with 'standard'.
 
         Returns:
             This method does not directly return data. Use the `load`, `lazy_load`,
@@ -1129,6 +1133,7 @@ class PDFPlumberLoader(BasePDFLoader):
             text_kwargs=text_kwargs,
             extract_tables_settings=extract_tables_settings,
             dedupe=dedupe,
+            metadata_format=metadata_format,
         )
 
     def lazy_load(

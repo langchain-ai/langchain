@@ -2,19 +2,18 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, Type
 
 import pytest
 
-import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
     BaseImageBlobParser,
-    PDFPlumberParser,
 )
 from langchain_community.document_loaders.parsers.pdf import (
     PDFMinerParser,
+    PDFPlumberParser,
     PyMuPDFParser,
     PyPDFium2Parser,
     PyPDFParser,
@@ -114,7 +113,7 @@ class EmptyImageBlobParser(BaseImageBlobParser):
     "parser_class,params",
     [
         (PDFMinerParser, {}),
-        (PDFPlumberParser, {}),
+        (PDFPlumberParser, {"metadata_format": "standard"}),
         (PyMuPDFParser, {}),
         (PyPDFium2Parser, {}),
         (PyPDFParser, {"extraction_mode": "plain"}),
@@ -145,7 +144,7 @@ def test_mode_and_extract_images_variations(
     "parser_class,params",
     [
         (PDFMinerParser, {}),
-        (PDFPlumberParser, {}),
+        (PDFPlumberParser, {"metadata_format": "standard"}),
         (PyMuPDFParser, {}),
         (PyPDFium2Parser, {}),
         (PyPDFParser, {"extraction_mode": "plain"}),
@@ -254,52 +253,50 @@ def test_parser_with_table(
     mode: str,
     extract_tables: str,
 ) -> None:
-    parser_class = getattr(pdf_parsers, parser_factory)
-
     from PIL.Image import Image
 
     from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
 
     def _std_assert_with_parser(parser: BaseBlobParser) -> None:
-    """Standard tests to verify that the given parser works.
+        """Standard tests to verify that the given parser works.
 
-    Args:
-        parser (BaseBlobParser): The parser to test.
-    """
-    blob = Blob.from_path(LAYOUT_PARSER_PAPER_PDF)
-    doc_generator = parser.lazy_parse(blob)
-    docs = list(doc_generator)
-    tables = []
-    for doc in docs:
-        if extract_tables == "markdown":
-            pattern = (
-                r"(?s)("
-                r"(?:(?:[^\n]*\|)\n)"
-                r"(?:\|(?:\s?:?---*:?\s?\|)+)\n"
-                r"(?:(?:[^\n]*\|)\n)+"
-                r")"
-            )
-        elif extract_tables == "html":
-            pattern = r"(?s)(<table[^>]*>(?:.*?)<\/table>)"
-        elif extract_tables == "csv":
-            pattern = (
-                r"((?:(?:"
-                r'(?:"(?:[^"]*(?:""[^"]*)*)"'
-                r"|[^\n,]*),){2,}"
-                r"(?:"
-                r'(?:"(?:[^"]*(?:""[^"]*)*)"'
-                r"|[^\n]*))\n){2,})"
-            )
+        Args:
+            parser (BaseBlobParser): The parser to test.
+        """
+        blob = Blob.from_path(LAYOUT_PARSER_PAPER_PDF)
+        doc_generator = parser.lazy_parse(blob)
+        docs = list(doc_generator)
+        tables = []
+        for doc in docs:
+            if extract_tables == "markdown":
+                pattern = (
+                    r"(?s)("
+                    r"(?:(?:[^\n]*\|)\n)"
+                    r"(?:\|(?:\s?:?---*:?\s?\|)+)\n"
+                    r"(?:(?:[^\n]*\|)\n)+"
+                    r")"
+                )
+            elif extract_tables == "html":
+                pattern = r"(?s)(<table[^>]*>(?:.*?)<\/table>)"
+            elif extract_tables == "csv":
+                pattern = (
+                    r"((?:(?:"
+                    r'(?:"(?:[^"]*(?:""[^"]*)*)"'
+                    r"|[^\n,]*),){2,}"
+                    r"(?:"
+                    r'(?:"(?:[^"]*(?:""[^"]*)*)"'
+                    r"|[^\n]*))\n){2,})"
+                )
+            else:
+                pattern = None
+            if pattern:
+                matches = re.findall(pattern, doc.page_content)
+                if matches:
+                    tables.extend(matches)
+        if extract_tables:
+            assert len(tables) >= 1
         else:
-            pattern = None
-        if pattern:
-            matches = re.findall(pattern, doc.page_content)
-            if matches:
-                tables.extend(matches)
-    if extract_tables:
-        assert len(tables) >= 1
-    else:
-        assert not len(tables)
+            assert not len(tables)
 
     class EmptyImageBlobParser(BaseImageBlobParser):
         def _analyze_image(self, img: Image) -> str:

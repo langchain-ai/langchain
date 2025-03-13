@@ -454,9 +454,7 @@ class PyPDFParser(BaseBlobParser):
                     image_bytes = io.BytesIO()
                     Image.fromarray(np_image).save(image_bytes, format="PNG")
                     blob = Blob.from_data(image_bytes.getvalue(), mime_type="image/png")
-                    image_text = next(
-                        self.images_parser.lazy_parse(blob)  # type: ignore
-                    ).page_content
+                    image_text = next(self.images_parser.lazy_parse(blob)).page_content
                     images.append(
                         _format_inner_image(blob, image_text, self.images_inner_format)
                     )
@@ -751,7 +749,7 @@ class PDFMinerParser(BaseBlobParser):
                                 blob = Blob.from_path(Path(tempdir) / filename)
                                 blob.metadata["source"] = "#"
                                 image_text = next(
-                                    self.images_parser.lazy_parse(blob)  # type: ignore
+                                    self.images_parser.lazy_parse(blob)
                                 ).page_content
 
                                 text_io.write(
@@ -1104,9 +1102,7 @@ class PyMuPDFParser(BaseBlobParser):
                 blob = Blob.from_data(
                     image_bytes.getvalue(), mime_type="application/x-npy"
                 )
-                image_text = next(
-                    self.images_parser.lazy_parse(blob)  # type: ignore
-                ).page_content
+                image_text = next(self.images_parser.lazy_parse(blob)).page_content
 
                 images.append(
                     _format_inner_image(blob, image_text, self.images_inner_format)
@@ -1196,6 +1192,8 @@ class PyPDFium2Parser(BaseBlobParser):
                 # password=None,
                 mode="page",
                 pages_delimiter="\n\f",
+                # extract_images = True,
+                # images_to_text = convert_images_to_text_with_tesseract(),
             )
 
         Lazily parse the blob:
@@ -1365,9 +1363,7 @@ class PyPDFium2Parser(BaseBlobParser):
                 continue
             numpy.save(image_bytes, image.get_bitmap().to_numpy())
             blob = Blob.from_data(image_bytes.getvalue(), mime_type="application/x-npy")
-            text_from_image = next(
-                self.images_parser.lazy_parse(blob)  # type: ignore
-            ).page_content
+            text_from_image = next(self.images_parser.lazy_parse(blob)).page_content
             str_images.append(
                 _format_inner_image(blob, text_from_image, self.images_inner_format)
             )
@@ -1410,6 +1406,7 @@ class PDFPlumberParser(BaseBlobParser):
                 mode = "single",
                 pages_delimiter = "\n\f",
                 # extract_tables="markdown",
+                metadata_format="standard",
             )
 
         Lazily parse the blob:
@@ -1438,6 +1435,7 @@ class PDFPlumberParser(BaseBlobParser):
         images_inner_format: Literal["text", "markdown-img", "html-img"] = "text",
         extract_tables: Optional[Literal["csv", "markdown", "html"]] = None,
         extract_tables_settings: Optional[dict[str, Any]] = None,
+        metadata_format: Literal["legacy", "standard"] = "legacy",
     ) -> None:
         """Initialize the parser.
 
@@ -1461,6 +1459,8 @@ class PDFPlumberParser(BaseBlobParser):
             dedupe:  Avoiding the error of duplicate characters if `dedupe=True`
             extract_tables_settings: Optional dictionary of settings for customizing
             table extraction.
+            metadata_format: Use CamelCase keys with 'legacy'
+            and lower keys with 'standard'.
 
         Returns:
             This method does not directly return data. Use the `parse` or `lazy_parse`
@@ -1492,6 +1492,19 @@ class PDFPlumberParser(BaseBlobParser):
             "snap_y_tolerance": 5,
             "intersection_x_tolerance": 15,
         }
+        if metadata_format == "legacy":
+            warnings.warn(
+                "The default value 'legacy' use some CamelCase keys. "
+                "It's will be deprecated in the next major version."
+            )
+
+        self.metadata_format = metadata_format
+
+    def _validate_metadata(self, metadata: dict[str, Any]) -> dict[str, Any]:
+        if self.metadata_format == "legacy":
+            return metadata
+        else:
+            return _validate_metadata(metadata)
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob.
@@ -1520,18 +1533,17 @@ class PDFPlumberParser(BaseBlobParser):
             contents = []
             # The legacy version, use CreationDate, Creator, etc.
             # The new 'standard' version must use lower case key.
-            # This next line, merge the legecy keys and standard keys
-            # in the same dictionary.
-            # - The CreationDate is duplicate to `creationdate` with iso format.
-            # - The Creator is duplicate to 'creator', etc.
-            # With this strategy, the legacy code can continue to use CreationDate
-            # or Creator. The new code, can use `creationdate` or `creator`.
-            # _purge_metadata() convert and normalize the name and format of
-            # the metadatas.
-
-            doc_metadata = (
-                doc.metadata  # Legacy metdata with...
-                | _purge_metadata(
+            if self.metadata_format == "legacy":
+                doc_metadata = (
+                    doc.metadata  # Add parser metdata
+                    | {  # with more keys
+                        "source": blob.source,
+                        "file_path": blob.source,
+                        "total_pages": len(doc.pages),
+                    }
+                )
+            else:
+                doc_metadata = _purge_metadata(
                     (
                         doc.metadata  # Add parser metdata
                         | {  # with more keys
@@ -1541,7 +1553,6 @@ class PDFPlumberParser(BaseBlobParser):
                         }
                     )
                 )
-            )
 
             for page in doc.pages:
                 tables_bbox: list[tuple[float, float, float, float]] = (
@@ -1596,7 +1607,7 @@ class PDFPlumberParser(BaseBlobParser):
                         all_text += "\n"
                     yield Document(
                         page_content=all_text,
-                        metadata=_validate_metadata(
+                        metadata=self._validate_metadata(
                             doc_metadata
                             | {
                                 "page": page.page_number - 1,
@@ -1608,7 +1619,7 @@ class PDFPlumberParser(BaseBlobParser):
             if self.mode == "single":
                 yield Document(
                     page_content=self.pages_delimiter.join(contents),
-                    metadata=_validate_metadata(doc_metadata),
+                    metadata=self._validate_metadata(doc_metadata),
                 )
 
     def _process_page_content(self, page: pdfplumber.page.Page) -> str:
