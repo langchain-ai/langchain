@@ -94,10 +94,15 @@ class AnthropicTool(TypedDict):
 
 
 def _is_builtin_tool(tool: Any) -> bool:
+    _builtin_tool_prefixes = [
+        "text_editor_",
+        "computer_",
+        "bash_",
+    ]
     return (
         isinstance(tool, dict)
         and "type" in tool
-        and tool["type"].startswith("text_editor_")
+        and any(tool["type"].startswith(prefix) for prefix in _builtin_tool_prefixes)
     )
 
 
