@@ -20,7 +20,7 @@ test_watch:
 
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest $(TEST_FILE) -k agent
+	uv run --group test --group test_integration pytest $(TEST_FILE)
 
 
 ######################
