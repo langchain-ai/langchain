@@ -131,7 +131,6 @@ EXPECTED_ALL = [
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "TavilyAnswer",
-    "TavilyExtract",
     "TavilySearchResults",
     "Tool",
     "VectorStoreQATool",

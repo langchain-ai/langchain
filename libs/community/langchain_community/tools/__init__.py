@@ -482,7 +482,6 @@ __all__ = [
     "SteamshipImageGenerationTool",
     "TavilyAnswer",
     "TavilySearchResults",
-    "TavilyExtract",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
