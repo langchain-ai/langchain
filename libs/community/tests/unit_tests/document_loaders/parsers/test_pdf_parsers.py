@@ -77,23 +77,24 @@ def _assert_with_parser(parser: BaseBlobParser, *, splits_by_page: bool = True) 
 
 
 @pytest.mark.parametrize(
-    "parser_class,require,params",
+    "parser_class,require,ctr_params,params",
     [
-        (PDFMinerParser, "pdfminer", {"splits_by_page": False}),
-        (PyMuPDFParser, "pymupdf", {}),
-        (PyPDFParser, "pypdf", {}),
-        (PyPDFium2Parser, "pypdfium2", {}),
+        (PDFMinerParser, "pdfminer", {}, {"splits_by_page": False}),
+        (PyMuPDFParser, "pymupdf", {}, {}),
+        (PyPDFParser, "pypdf", {}, {}),
+        (PyPDFium2Parser, "pypdfium2", {}, {}),
     ],
 )
 def test_parsers(
     parser_class: Type,
     require: str,
+    ctr_params: dict[str, Any],
     params: dict[str, Any],
 ) -> None:
     try:
         require = require.replace("-", "")
         importlib.import_module(require, package=None)
-        parser = parser_class()
+        parser = parser_class(**ctr_params)
         _assert_with_parser(parser, **params)
     except ModuleNotFoundError:
         pytest.skip(f"{parser_class} skiped. Require '{require}'")
