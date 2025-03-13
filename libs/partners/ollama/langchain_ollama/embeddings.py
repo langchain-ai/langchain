@@ -250,10 +250,11 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = (await self._async_client.embed(self.model, texts,
-            keep_alive=self.keep_alive))[
-            "embeddings"
-        ]
+        embedded_docs = (
+            await self._async_client.embed(
+                self.model, texts, keep_alive=self.keep_alive
+            )
+        )["embeddings"]
         return embedded_docs
 
     async def aembed_query(self, text: str) -> List[float]:
