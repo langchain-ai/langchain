@@ -469,6 +469,17 @@ def test_tool_use() -> None:
     assert len(chunks) > 1
 
 
+def test_builtin_tools() -> None:
+    llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+    tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+    llm_with_tools = llm.bind_tools([tool])
+    response = llm_with_tools.invoke(
+        "There's a syntax error in my primes.py file. Can you help me fix it?"
+    )
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+
+
 class GenerateUsername(BaseModel):
     "Get a username based on someone's name and hair color."
 

@@ -93,6 +93,14 @@ class AnthropicTool(TypedDict):
     cache_control: NotRequired[Dict[str, str]]
 
 
+def _is_builtin_tool(tool: Any) -> bool:
+    return (
+        isinstance(tool, dict)
+        and "type" in tool
+        and tool["type"].startswith("text_editor_")
+    )
+
+
 def _format_image(image_url: str) -> Dict:
     """
     Formats an image of format data:image/jpeg;base64,{b64_string}
@@ -1187,7 +1195,10 @@ class ChatAnthropic(BaseChatModel):
                 AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 
         """  # noqa: E501
-        formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
+        formatted_tools = [
+            tool if _is_builtin_tool(tool) else convert_to_anthropic_tool(tool)
+            for tool in tools
+        ]
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
