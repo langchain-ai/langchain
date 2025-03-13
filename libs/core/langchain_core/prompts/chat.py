@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Optional,
@@ -46,6 +46,9 @@ from langchain_core.prompts.string import (
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
@@ -596,8 +599,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        with open(str(template_file)) as f:
-            template = f.read()
+        template = Path(template_file).read_text()
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:

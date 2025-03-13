@@ -123,7 +123,7 @@ class TavilySearchAPIRetriever(BaseRetriever):
             Document(
                 page_content=result.get("content", "")
                 if not self.include_raw_content
-                else result.get("raw_content", ""),
+                else (result.get("raw_content") or ""),
                 metadata={
                     "title": result.get("title", ""),
                     "source": result.get("url", ""),

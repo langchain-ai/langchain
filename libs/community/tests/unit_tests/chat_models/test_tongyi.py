@@ -65,6 +65,13 @@ def test__convert_dict_to_message_function_call() -> None:
     assert result == expected_output
 
 
+def test__convert_dict_to_message_partial_mode() -> None:
+    message_dict = {"role": "assistant", "content": "foo", "partial": True}
+    result = convert_dict_to_message(message_dict)
+    expected_output = AIMessage(content="foo", additional_kwargs={"partial": True})
+    assert result == expected_output
+
+
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
     result = convert_message_to_dict(message)
@@ -76,6 +83,13 @@ def test__convert_message_to_dict_ai() -> None:
     message = AIMessage(content="foo")
     result = convert_message_to_dict(message)
     expected_output = {"role": "assistant", "content": "foo"}
+    assert result == expected_output
+
+
+def test__convert_message_to_dict_ai_partial_mode() -> None:
+    message = AIMessage(content="foo", additional_kwargs={"partial": True})
+    result = convert_message_to_dict(message)
+    expected_output = {"role": "assistant", "content": "foo", "partial": True}
     assert result == expected_output
 
 

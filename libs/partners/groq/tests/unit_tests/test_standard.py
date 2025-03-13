@@ -14,3 +14,7 @@ class TestGroqStandard(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatGroq
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "llama-3.1-8b-instant"}

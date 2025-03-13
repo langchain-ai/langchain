@@ -30,6 +30,10 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def supports_anthropic_inputs(self) -> bool:
+        return True
+
+    @property
     def supported_usage_metadata_details(
         self,
     ) -> Dict[

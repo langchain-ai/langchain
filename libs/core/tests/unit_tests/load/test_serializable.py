@@ -1,7 +1,9 @@
-from pydantic import ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration
 
 
 class NonBoolObj:
@@ -203,3 +205,21 @@ def test_str() -> None:
         non_bool=NonBoolObj(),
     )
     assert str(foo) == "content='str' non_bool=NonBoolObj"
+
+
+def test_serialization_with_pydantic() -> None:
+    class MyModel(BaseModel):
+        x: int
+        y: str
+
+    my_model = MyModel(x=1, y="hello")
+    llm_response = ChatGeneration(
+        message=AIMessage(
+            content='{"x": 1, "y": "hello"}', additional_kwargs={"parsed": my_model}
+        )
+    )
+    ser = dumpd(llm_response)
+    deser = load(ser)
+    assert isinstance(deser, ChatGeneration)
+    assert deser.message.content
+    assert deser.message.additional_kwargs["parsed"] == my_model.model_dump()

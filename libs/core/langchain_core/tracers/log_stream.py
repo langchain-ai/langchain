@@ -5,8 +5,8 @@ import contextlib
 import copy
 import threading
 from collections import defaultdict
-from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     Optional,
@@ -14,7 +14,6 @@ from typing import (
     Union,
     overload,
 )
-from uuid import UUID
 
 import jsonpatch  # type: ignore[import]
 from typing_extensions import NotRequired, TypedDict
@@ -23,11 +22,16 @@ from langchain_core.load import dumps
 from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
-from langchain_core.runnables.utils import Input, Output
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.memory_stream import _MemoryStream
-from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator, Sequence
+    from uuid import UUID
+
+    from langchain_core.runnables.utils import Input, Output
+    from langchain_core.tracers.schemas import Run
 
 
 class LogEntry(TypedDict):

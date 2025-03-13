@@ -531,11 +531,50 @@ def convert_to_openai_tool(
 
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
+
+    .. versionchanged:: 0.3.44
+
+        Return OpenAI Responses API-style tools unchanged. This includes
+        any dict with "type" in "file_search", "function", "computer_use_preview",
+        "web_search_preview".
     """
-    if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
-        return tool
+    if isinstance(tool, dict):
+        if tool.get("type") in ("function", "file_search", "computer_use_preview"):
+            return tool
+        # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
+        if (tool.get("type") or "").startswith("web_search_preview"):
+            return tool
     oai_function = convert_to_openai_function(tool, strict=strict)
     return {"type": "function", "function": oai_function}
+
+
+def convert_to_json_schema(
+    schema: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    *,
+    strict: Optional[bool] = None,
+) -> dict[str, Any]:
+    """Convert a schema representation to a JSON schema."""
+    openai_tool = convert_to_openai_tool(schema, strict=strict)
+    if (
+        not isinstance(openai_tool, dict)
+        or "function" not in openai_tool
+        or "name" not in openai_tool["function"]
+    ):
+        error_message = "Input must be a valid OpenAI-format tool."
+        raise ValueError(error_message)
+
+    openai_function = openai_tool["function"]
+    json_schema = {}
+    json_schema["title"] = openai_function["name"]
+
+    if "description" in openai_function:
+        json_schema["description"] = openai_function["description"]
+
+    if "parameters" in openai_function:
+        parameters = openai_function["parameters"].copy()
+        json_schema.update(parameters)
+
+    return json_schema
 
 
 @beta()

@@ -211,6 +211,13 @@ ${llmVarName} = ChatWatsonx(
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
     },
+    {
+      value: "xai",
+      label: "xAI",
+      model: "grok-2",
+      apiKeyName: "XAI_API_KEY",
+      packageName: "langchain-xai",
+    },
   ].map((item) => ({
     ...item,
     ...overrideParams?.[item.value],
