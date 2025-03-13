@@ -2139,6 +2139,71 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
+    def test_agent_loop(self, model: BaseChatModel) -> None:
+        """Test that the model supports a simple ReAct agent loop. This test is skipped
+        if the ``has_tool_calling`` property on the test class is set to False.
+
+        This test is optional and should be skipped if the model does not support
+        tool calling (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_calling(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that ``bind_tools`` is implemented to correctly
+            translate LangChain tool objects into the appropriate schema for your
+            chat model.
+
+            Check also that all required information (e.g., tool calling identifiers)
+            from AIMessage objects is propagated correctly to model payloads.
+
+            This test may fail if the chat model does not consistently generate tool
+            calls in response to an appropriate query. In these cases you can ``xfail``
+            the test:
+
+            .. code-block:: python
+
+                @pytest.mark.xfail(reason=("Does not support tool_choice."))
+                def test_agent_loop(self, model: BaseChatModel) -> None:
+                    super().test_agent_loop(model)
+
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        @tool
+        def get_weather(location: str) -> str:
+            """Call to surf the web."""
+            return "It's sunny."
+
+        llm_with_tools = model.bind_tools([get_weather])
+        input_message = HumanMessage("What is the weather in San Francisco, CA?")
+        tool_call_message = llm_with_tools.invoke([input_message])
+        assert isinstance(tool_call_message, AIMessage)
+        tool_calls = tool_call_message.tool_calls
+        assert len(tool_calls) == 1
+        tool_call = tool_calls[0]
+        tool_message = get_weather.invoke(tool_call)
+        assert isinstance(tool_message, ToolMessage)
+        response = llm_with_tools.invoke(
+            [
+                input_message,
+                tool_call_message,
+                tool_message,
+            ]
+        )
+        assert isinstance(response, AIMessage)
+
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
         raise NotImplementedError()
