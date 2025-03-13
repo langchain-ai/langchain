@@ -40,7 +40,7 @@ langchain-gigachat — партнерский пакет популярного 
 
 Для работы с библиотеками langchain-gigachat и gigachat вам понадобятся:
 
-* Python версии 3.9 и выше для работы библиотеками Python.
+* Python версии 3.9 и выше для работы с библиотеками Python.
 * Node.js версии 16 и выше для работы с библиотеками JavaScript.
 * Ключ авторизации для работы с API. О том, как получить ключ авторизации — в [документации GigaChat API](https://developers.sber.ru/docs/ru/gigachat/quickstart/ind-using-api#poluchenie-avtorizatsionnyh-dannyh).
 * [Сертификаты НУЦ Минцифры](https://developers.sber.ru/docs/ru/gigachat/certificates).
