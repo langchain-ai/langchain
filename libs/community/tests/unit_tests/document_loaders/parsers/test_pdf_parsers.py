@@ -10,6 +10,10 @@ import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.pdf import (
+    PDFMinerParser,
+    PyMuPDFParser,
+    PyPDFium2Parser,
+    PyPDFParser,
     _merge_text_and_extras,
 )
 
@@ -74,25 +78,24 @@ def _assert_with_parser(parser: BaseBlobParser, *, splits_by_page: bool = True) 
 
 
 @pytest.mark.parametrize(
-    "parser_factory,require,params",
+    "parser_class,require,params",
     [
-        ("PDFMinerParser", "pdfminer", {"splits_by_page": False}),
-        ("PDFPlumberParser", "pdfplumber", {}),
-        ("PyMuPDFParser", "pymupdf", {}),
-        ("PyPDFParser", "pypdf", {}),
-        ("PyPDFium2Parser", "pypdfium2", {}),
+        (PDFMinerParser, "pdfminer", {"splits_by_page": False}),
+        (PDFPlumberParser, "pdfplumber", {}),
+        (PyMuPDFParser, "pymupdf", {}),
+        (PyPDFParser, "pypdf", {}),
+        (PyPDFium2Parser, "pypdfium2", {}),
     ],
 )
 def test_parsers(
-    parser_factory: str,
+    parser_class: Type,
     require: str,
     params: dict[str, Any],
 ) -> None:
     try:
         require = require.replace("-", "")
         importlib.import_module(require, package=None)
-        parser_class = getattr(pdf_parsers, parser_factory)
         parser = parser_class()
         _assert_with_parser(parser, **params)
     except ModuleNotFoundError:
-        pytest.skip(f"{parser_factory} skiped. Require '{require}'")
+        pytest.skip(f"{parser_class} skiped. Require '{require}'")

@@ -8,7 +8,11 @@ import langchain_community.document_loaders as pdf_loaders
 from langchain_community.document_loaders import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
+    PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PyMuPDFLoader,
+    PyPDFium2Loader,
+    PyPDFLoader,
     UnstructuredPDFLoader,
 )
 
@@ -164,20 +168,19 @@ def test_amazontextract_loader_failures() -> None:
 
 
 @pytest.mark.parametrize(
-    "parser_factory,params",
+    "loader_class,params",
     [
-        ("PDFMinerLoader", {}),
-        ("PDFPlumberLoader", {}),
-        ("PyMuPDFLoader", {}),
-        ("PyPDFium2Loader", {}),
-        ("PyPDFLoader", {}),
+        (PDFMinerLoader, {}),
+        (PDFPlumberLoader, {}),
+        (PyMuPDFLoader, {}),
+        (PyPDFium2Loader, {}),
+        (PyPDFLoader, {}),
     ],
 )
 def test_standard_parameters(
-    parser_factory: str,
+    loader_class: Type,
     params: dict,
 ) -> None:
-    loader_class = getattr(pdf_loaders, parser_factory)
 
     file_path = Path(__file__).parent.parent / "examples/hello.pdf"
     loader = loader_class(file_path)

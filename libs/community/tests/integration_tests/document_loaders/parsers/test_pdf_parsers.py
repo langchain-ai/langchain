@@ -9,7 +9,16 @@ import pytest
 import langchain_community.document_loaders.parsers as pdf_parsers
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import BaseImageBlobParser
+from langchain_community.document_loaders.parsers import (
+    BaseImageBlobParser,
+    PDFPlumberParser,
+)
+from langchain_community.document_loaders.parsers.pdf import (
+    PDFMinerParser,
+    PyMuPDFParser,
+    PyPDFium2Parser,
+    PyPDFParser,
+)
 
 if TYPE_CHECKING:
     from PIL.Image import Image
@@ -102,25 +111,25 @@ class EmptyImageBlobParser(BaseImageBlobParser):
     [("single", EmptyImageBlobParser()), ("page", None)],
 )
 @pytest.mark.parametrize(
-    "parser_factory,params",
+    "parser_class,params",
     [
-        ("PDFMinerParser", {}),
-        ("PDFPlumberParser", {}),
-        ("PyMuPDFParser", {}),
-        ("PyPDFium2Parser", {}),
-        ("PyPDFParser", {"extraction_mode": "plain"}),
-        ("PyPDFParser", {"extraction_mode": "layout"}),
+        (PDFMinerParser, {}),
+        (PDFPlumberParser, {}),
+        (PyMuPDFParser, {}),
+        (PyPDFium2Parser, {}),
+        (PyPDFParser, {"extraction_mode": "plain"}),
+        (PyPDFParser, {"extraction_mode": "layout"}),
     ],
 )
 @pytest.mark.requires("pillow")
 def test_mode_and_extract_images_variations(
-    parser_factory: str,
+    parser_class: Type,
     params: dict,
     mode: str,
     image_parser: BaseImageBlobParser,
 ) -> None:
     _test_matrix(
-        parser_factory,
+        parser_class,
         params,
         mode,
         image_parser,
@@ -133,19 +142,19 @@ def test_mode_and_extract_images_variations(
     ["text", "markdown-img", "html-img"],
 )
 @pytest.mark.parametrize(
-    "parser_factory,params",
+    "parser_class,params",
     [
-        ("PDFMinerParser", {}),
-        ("PDFPlumberParser", {}),
-        ("PyMuPDFParser", {}),
-        ("PyPDFium2Parser", {}),
-        ("PyPDFParser", {"extraction_mode": "plain"}),
-        ("PyPDFParser", {"extraction_mode": "layout"}),
+        (PDFMinerParser, {}),
+        (PDFPlumberParser, {}),
+        (PyMuPDFParser, {}),
+        (PyPDFium2Parser, {}),
+        (PyPDFParser, {"extraction_mode": "plain"}),
+        (PyPDFParser, {"extraction_mode": "layout"}),
     ],
 )
 @pytest.mark.requires("pillow")
 def test_mode_and_image_formats_variations(
-    parser_factory: str,
+    parser_class: Type,
     params: dict,
     images_inner_format: str,
 ) -> None:
@@ -153,7 +162,7 @@ def test_mode_and_image_formats_variations(
     image_parser = EmptyImageBlobParser()
 
     _test_matrix(
-        parser_factory,
+        parser_class,
         params,
         mode,
         image_parser,
@@ -162,7 +171,7 @@ def test_mode_and_image_formats_variations(
 
 
 def _test_matrix(
-    parser_factory: str,
+    parser_class: Type,
     params: dict,
     mode: str,
     image_parser: BaseImageBlobParser,
@@ -214,8 +223,6 @@ def _test_matrix(
             assert len(docs)
             parser.password = old_password
 
-    parser_class = getattr(pdf_parsers, parser_factory)
-
     parser = parser_class(
         mode=mode,
         images_parser=image_parser,
@@ -235,30 +242,25 @@ def _test_matrix(
     ["markdown", "html", "csv", None],
 )
 @pytest.mark.parametrize(
-    "parser_factory,params",
+    "parser_class,params",
     [
-        ("PDFPlumberParser", {}),
-        ("PyMuPDFParser", {}),
+        (PDFPlumberParser, {}),
+        (PyMuPDFParser, {}),
     ],
 )
 def test_parser_with_table(
-    parser_factory: str,
+    parser_class: Type,
     params: dict,
     mode: str,
     extract_tables: str,
 ) -> None:
     parser_class = getattr(pdf_parsers, parser_factory)
 
-    parser = parser_class(
-        mode=mode,
-        extract_tables=extract_tables,
-        images_parser=EmptyImageBlobParser(),
-        **params,
-    )
-    _std_assert_table_with_parser(extract_tables, parser)
+    from PIL.Image import Image
 
+    from langchain_community.document_loaders.parsers.images import BaseImageBlobParser
 
-def _std_assert_table_with_parser(extract_tables: str, parser: BaseBlobParser) -> None:
+    def _std_assert_with_parser(parser: BaseBlobParser) -> None:
     """Standard tests to verify that the given parser works.
 
     Args:
@@ -298,3 +300,15 @@ def _std_assert_table_with_parser(extract_tables: str, parser: BaseBlobParser) -
         assert len(tables) >= 1
     else:
         assert not len(tables)
+
+    class EmptyImageBlobParser(BaseImageBlobParser):
+        def _analyze_image(self, img: Image) -> str:
+            return "![image](.)"
+
+    parser = parser_class(
+        mode=mode,
+        extract_tables=extract_tables,
+        images_parser=EmptyImageBlobParser(),
+        **params,
+    )
+    _std_assert_with_parser(parser)
