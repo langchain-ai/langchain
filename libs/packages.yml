@@ -513,3 +513,6 @@ packages:
 - name: langchain-opengradient
   path: .
   repo: OpenGradient/og-langchain
+- name: langchain-agentql
+  path: langchain
+  repo: tinyfish-io/agentql-integrations
