@@ -23,6 +23,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     tool_example_to_messages,
 )
+from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
@@ -2138,6 +2139,62 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
+
+    def test_agent_loop(self, model: BaseChatModel) -> None:
+        """Test that the model supports a simple ReAct agent loop. This test is skipped
+        if the ``has_tool_calling`` property on the test class is set to False.
+
+        This test is optional and should be skipped if the model does not support
+        tool calling (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def has_tool_calling(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that ``bind_tools`` is implemented to correctly
+            translate LangChain tool objects into the appropriate schema for your
+            chat model.
+
+            Check also that all required information (e.g., tool calling identifiers)
+            from AIMessage objects is propagated correctly to model payloads.
+
+            This test may fail if the chat model does not consistently generate tool
+            calls in response to an appropriate query. In these cases you can ``xfail``
+            the test:
+
+            .. code-block:: python
+
+                @pytest.mark.xfail(reason=("Does not support tool_choice."))
+                def test_agent_loop(self, model: BaseChatModel) -> None:
+                    super().test_agent_loop(model)
+
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        @tool
+        def get_weather(location: str) -> str:
+            """Call to surf the web."""
+            return "It's sunny."
+
+        agent = create_react_agent(model, tools=[get_weather])
+        result = agent.invoke({"messages": "What is the weather in San Francisco, CA?"})
+        messages = result["messages"]
+        assert len(messages) == 4
+        assert isinstance(messages[0], HumanMessage)
+        assert isinstance(messages[1], AIMessage) and messages[1].tool_calls
+        assert isinstance(messages[2], ToolMessage)
+        assert isinstance(messages[3], AIMessage)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
         """:private:"""
