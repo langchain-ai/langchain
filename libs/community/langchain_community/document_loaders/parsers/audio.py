@@ -298,9 +298,16 @@ class OpenAIWhisperParser(BaseBlobParser):
             if self.base_url:
                 openai.api_base = self.base_url
 
-        # Audio file from disk
+        # get the audio
+        if isinstance(blob.data, bytes):
+            # blob contains the audio
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            # Audio file from disk
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
 
-        audio = AudioSegment.from_file(blob.path)
         # Define the duration of each chunk in minutes
         # Need to meet 25MB size limit for Whisper API
         chunk_duration = 20
@@ -466,8 +473,15 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 "`pip install librosa`"
             )
 
-        # Audio file from disk
-        audio = AudioSegment.from_file(blob.path)
+        # get the audio
+        if isinstance(blob.data, bytes):
+            # blob contains the audio
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            # Audio file from disk
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
 
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
@@ -545,7 +559,15 @@ class YandexSTTParser(BaseBlobParser):
                 yandex_credentials=creds.YandexCredentials(iam_token=self.iam_token)
             )
 
-        audio = AudioSegment.from_file(blob.path)
+        # get the audio
+        if isinstance(blob.data, bytes):
+            # blob contains the audio
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            # Audio file from disk
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
 
         model = model_repository.recognition_model()
 
