@@ -340,7 +340,7 @@ def _handle_field_filter(
                 f"keys are: {list(value.keys())[:3]}"
             )
         operator, filter_value = list(value.items())[0]
-        # Verify that that operator is an operator
+        # Verify that operator is an operator
         if operator not in SUPPORTED_OPERATORS:
             raise ValueError(
                 f"Invalid operator: {operator}. Expected one of {SUPPORTED_OPERATORS}"
