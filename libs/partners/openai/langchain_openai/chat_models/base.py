@@ -882,8 +882,11 @@ class BaseChatOpenAI(BaseChatModel):
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         elif self._use_responses_api(payload):
-            response = self.root_client.responses.create(**payload)
             original_schema_obj = kwargs.get("response_format")
+            if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                response = self.root_client.responses.parse(**payload)
+            else:
+                response = self.root_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
                 response, schema=original_schema_obj
             )
@@ -1067,11 +1070,15 @@ class BaseChatOpenAI(BaseChatModel):
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         elif self._use_responses_api(payload):
-            response = await self.root_async_client.responses.create(**payload)
             original_schema_obj = kwargs.get("response_format")
+            if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                response = await self.root_async_client.responses.parse(**payload)
+            else:
+                response = await self.root_async_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
                 response, schema=original_schema_obj
             )
+
         else:
             response = await self.async_client.create(**payload)
         return await run_in_executor(
@@ -2849,6 +2856,8 @@ def _construct_responses_api_payload(
             payload["tool_choice"] = {"type": "function", **tool_choice["function"]}
         else:
             payload["tool_choice"] = tool_choice
+
+    # Structured output
     if schema := payload.pop("response_format", None):
         if payload.get("text"):
             text = payload["text"]
@@ -2856,25 +2865,28 @@ def _construct_responses_api_payload(
                 "Can specify at most one of 'response_format' or 'text', received both:"
                 f"\n{schema=}\n{text=}"
             )
-        # chat api: {"type": "json_schema, "json_schema": {"schema": {...}, "name": "...", "description": "...", "strict": ...}}  # noqa: E501
-        # responses api: {"type": "json_schema, "schema": {...}, "name": "...", "description": "...", "strict": ...}  # noqa: E501
-        if _is_pydantic_class(schema):
-            # Responses API does not take Pydantic directly
-            schema_dict = schema.model_json_schema()
+
+        # For pydantic + non-streaming case, we use responses.parse.
+        # Otherwise, we use responses.create.
+        if not payload.get("stream") and _is_pydantic_class(schema):
+            payload["text_format"] = schema
         else:
-            schema_dict = schema
-        if schema_dict == {"type": "json_object"}:  # JSON mode
-            payload["text"] = {"format": {"type": "json_object"}}
-        elif (
-            (response_format := _convert_to_openai_response_format(schema_dict))
-            and (isinstance(response_format, dict))
-            and (response_format["type"] == "json_schema")
-        ):
-            payload["text"] = {
-                "format": {"type": "json_schema", **response_format["json_schema"]}
-            }
-        else:
-            payload["text"] = response_format
+            if _is_pydantic_class(schema):
+                schema_dict = schema.model_json_schema()
+            else:
+                schema_dict = schema
+            if schema_dict == {"type": "json_object"}:  # JSON mode
+                payload["text"] = {"format": {"type": "json_object"}}
+            elif (
+                (response_format := _convert_to_openai_response_format(schema_dict))
+                and (isinstance(response_format, dict))
+                and (response_format["type"] == "json_schema")
+            ):
+                payload["text"] = {
+                    "format": {"type": "json_schema", **response_format["json_schema"]}
+                }
+            else:
+                pass
     return payload
 
 
@@ -3032,6 +3044,8 @@ def _construct_lc_result_from_responses_api(
                         ],
                     }
                     content_blocks.append(block)
+                    if hasattr(content, "parsed"):
+                        additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
                     additional_kwargs["refusal"] = content.refusal
             msg_id = output.id
@@ -3072,17 +3086,29 @@ def _construct_lc_result_from_responses_api(
                 additional_kwargs["tool_outputs"].append(tool_output)
             else:
                 additional_kwargs["tool_outputs"] = [tool_output]
-    # parsed
+    # Workaround for parsing structured output in the streaming case.
+    #    from openai import OpenAI
+    #    from pydantic import BaseModel
+
+    #    class Foo(BaseModel):
+    #        response: str
+
+    #    client = OpenAI()
+
+    #    client.responses.parse(
+    #        model="gpt-4o-mini",
+    #        input=[{"content": "how are ya", "role": "user"}],
+    #        text_format=Foo,
+    #        stream=True,  # <-- errors
+    #    )
     if (
-        response.text
+        schema is not None
+        and "parsed" not in additional_kwargs
+        and response.text
         and (text_config := response.text.model_dump())
         and (format_ := text_config.get("format", {}))
         and (format_.get("type") == "json_schema")
     ):
-        # Propagating schema to _construct_lc_result_from_responses_api is needed
-        # to support returning a parsed Pydantic BaseModel in
-        # additional_kwargs["parsed"] (it is not required to support Pydantic schemas
-        # in with_structured_output)
         parsed_dict = json.loads(response.output_text)
         if schema and _is_pydantic_class(schema):
             parsed = schema(**parsed_dict)
