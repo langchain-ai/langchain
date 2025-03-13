@@ -2876,6 +2876,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
         msg = _convert_message_to_dict(lc_msg)
+        # "name" parameter unsupported
+        if "name" in msg:
+            msg.pop("name")
         if msg["role"] == "tool":
             tool_output = msg["content"]
             if not isinstance(tool_output, str):
