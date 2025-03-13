@@ -39,7 +39,7 @@ class TavilySearchAPIWrapper(BaseModel):
         self,
         query: str,
         max_results: Optional[int] = 5,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        search_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
         include_answer: Optional[bool] = False,
@@ -86,13 +86,37 @@ class TavilySearchAPIWrapper(BaseModel):
         self,
         query: str,
         max_results: Optional[int] = 5,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        search_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_domains: Optional[List[str]] = [],
         exclude_domains: Optional[List[str]] = [],
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
     ) -> List[Dict]:
+        """Run query through Tavily Search and return metadata.
+
+        Args:
+            query: The query to search for.
+            max_results: The maximum number of results to return.
+            search_depth: The depth of the search. Can be "basic" or "advanced".
+            include_domains: A list of domains to include in the search.
+            exclude_domains: A list of domains to exclude from the search.
+            include_answer: Whether to include the answer in the results.
+            include_raw_content: Whether to include the raw content in the results.
+            include_images: Whether to include images in the results.
+        Returns:
+            query: The query that was searched for.
+            follow_up_questions: A list of follow up questions.
+            response_time: The response time of the query.
+            answer: The answer to the query.
+            images: A list of images.
+            results: A list of dictionaries containing the results:
+                title: The title of the result.
+                url: The url of the result.
+                content: The content of the result.
+                score: The score of the result.
+                raw_content: The raw content of the result.
+        """
         raw_search_results = self.raw_results(
             query,
             max_results=max_results,
@@ -109,7 +133,7 @@ class TavilySearchAPIWrapper(BaseModel):
         self,
         query: str,
         max_results: Optional[int] = 5,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        search_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
         include_answer: Optional[bool] = False,
@@ -158,7 +182,7 @@ class TavilySearchAPIWrapper(BaseModel):
         self,
         query: str,
         max_results: Optional[int] = 5,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        search_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_domains: Optional[List[str]] = [],
         exclude_domains: Optional[List[str]] = [],
         include_answer: Optional[bool] = False,

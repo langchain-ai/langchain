@@ -25,7 +25,7 @@ class TavilyInput(BaseModel):
         description="A list of domains to specifically exclude from the search results",
     )
     search_depth: Optional[Literal["basic", "advanced"]] = Field(
-        default="basic",
+        default="advanced",
         description="The depth of the search. It can be 'basic' or 'advanced'",
     )
     include_images: Optional[bool] = Field(
@@ -53,7 +53,7 @@ def _generate_suggestions(params: dict) -> list:
         suggestions.append("Remove include_domains argument")
     elif exclude_domains:
         suggestions.append("Remove exclude_domains argument")
-    elif search_depth == "basic":
+    elif search_depth == "advanced":
         suggestions.append("Try a more detailed search using 'advanced' search_depth")
     else:
         suggestions.append("Try alternative search terms")
@@ -82,10 +82,10 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
                 max_results=5,
                 topic="general",
                 include_answer=False,
-                include_raw_content=True,           # including raw content may lead to hitting context length limits
+                include_raw_content=True,          
                 # include_domains=[],
                 # exclude_domains=[],
-                # search_depth="basic"
+                # search_depth="advanced"
                 # include_images=True,
                 # include_image_descriptions=True
                 # time_range="day",
@@ -172,10 +172,10 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
 
     default is None
     """
-    search_depth: Optional[Literal["basic", "advanced"]] = "basic"
-    """The depth of the search. It can be 'basic' or 'advanced'
+    search_depth: Optional[Literal["basic", "advanced"]] = "advanced"
+    """The depth of the search. It can be "basic" or "advanced"
     
-    default is "basic"
+    default is "advanced"
     """
     include_images: Optional[bool] = False
     """Include a list of query related images in the response
@@ -229,7 +229,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         query: str,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        search_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_images: Optional[bool] = False,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
@@ -286,7 +286,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         query: str,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
-        search_depth: Optional[Literal["basic", "advanced"]] = "basic",
+        search_depth: Optional[Literal["basic", "advanced"]] = "advanced",
         include_images: Optional[bool] = False,
         time_range: Optional[Literal["day", "week", "month", "year"]] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
