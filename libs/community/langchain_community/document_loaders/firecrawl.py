@@ -255,7 +255,8 @@ class FireCrawlLoader(BaseLoader):
             )
         if mode not in ("crawl", "scrape", "search", "map", "extract"):
             raise ValueError(
-                f"Invalid mode '{mode}'. Allowed: 'crawl', 'scrape', 'search', 'map', 'extract'."
+                f"""Invalid mode '{mode}'.
+                Allowed: 'crawl', 'scrape', 'search', 'map', 'extract'."""
             )
 
         if not url:
@@ -297,7 +298,8 @@ class FireCrawlLoader(BaseLoader):
             )
         else:
             raise ValueError(
-                f"Invalid mode '{self.mode}'. Allowed: 'crawl', 'scrape', 'map', 'extract'."
+                f"""Invalid mode '{self.mode}'.
+                Allowed: 'crawl', 'scrape', 'map', 'extract'."""
             )
         for doc in firecrawl_docs:
             if self.mode == "map" or self.mode == "extract":
