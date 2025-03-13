@@ -8,10 +8,10 @@ import io
 import logging
 import threading
 import warnings
-from asyncio import AbstractEventLoop
 from datetime import datetime
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1471,6 +1471,7 @@ class PDFPlumberParser(BaseBlobParser):
 
         return extract_from_images_with_rapidocr(images)
 
+
 _map_extract_tables: Dict[Literal["markdown", "html", None], str] = {
     "markdown": "",
     "html": "But, use html syntax for convert all tables. ",
@@ -1482,6 +1483,7 @@ _map_extract_images = {
     "diagram or other illustration, "
     "describe it. ",
 }
+
 
 class ZeroxPDFParser(BaseBlobParser):
     """Parse a blob from a PDF using `py-zerox` library.
@@ -1532,6 +1534,9 @@ class ZeroxPDFParser(BaseBlobParser):
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
     """
+
+    _pool = ThreadPool()
+
     _warn_images_to_text = False
     _warn_creator = False
     _prompt = (
@@ -1542,12 +1547,6 @@ class ZeroxPDFParser(BaseBlobParser):
         "Return only the markdown with no explanation text. "
         "Do not exclude any content from the page. "
     )
-
-    @staticmethod
-    def _run_async_from_thread(coro, loop):
-        future = asyncio.run_coroutine_threadsafe(coro,
-                                                  loop)  # Lancer la coroutine dans la boucle existante
-        return future.result()  # Bloque en attendant le résultat
 
     def __init__(
         self,
@@ -1686,11 +1685,7 @@ class ZeroxPDFParser(BaseBlobParser):
                 zerox_prompt = PromptTemplate.from_template(
                     self.custom_system_prompt
                 ).format(prompt_tables=prompt_tables, prompt_images=prompt_images)
-                # async def toto():
-                #     await asyncio.sleep(0)
-                #     return "hello"
-                # coro=toto()
-                coro=zerox(
+                coro = zerox(
                     file_path=str(file_path),
                     model=self.model,
                     cleanup=self.cleanup,
@@ -1703,10 +1698,9 @@ class ZeroxPDFParser(BaseBlobParser):
                 try:
                     loop = asyncio.get_running_loop()
 
-                    from multiprocessing.pool import ThreadPool
-                    pool = ThreadPool(processes=1)
-                    zerox_output = pool.apply_async(
-                        lambda : loop.run_until_complete(coro)).get()  # tuple of args for foo
+                    zerox_output = ZeroxPDFParser._pool.apply_async(
+                        lambda: loop.run_until_complete(coro)
+                    ).get()  # tuple of args for foo
 
                 except RuntimeError:
                     zerox_output = asyncio.run(coro)

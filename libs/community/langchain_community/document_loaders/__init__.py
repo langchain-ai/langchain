@@ -360,7 +360,6 @@ if TYPE_CHECKING:
         PyPDFium2Loader,
         PyPDFLoader,
         UnstructuredPDFLoader,
-        ZeroxPDFLoader,
     )
     from langchain_community.document_loaders.pebblo import (
         PebbloSafeLoader,
@@ -733,7 +732,6 @@ _module_lookup = {
     "YoutubeAudioLoader": "langchain_community.document_loaders.blob_loaders",
     "YoutubeLoader": "langchain_community.document_loaders.youtube",
     "YuqueLoader": "langchain_community.document_loaders.yuque",
-    "ZeroxPDFLoader": "langchain_community.document_loaders.pdf",
 }
 
 
@@ -942,5 +940,4 @@ __all__ = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
-    "ZeroxPDFLoader",
 ]
