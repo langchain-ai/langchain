@@ -513,3 +513,6 @@ packages:
 - name: langchain-opengradient
   path: .
   repo: OpenGradient/og-langchain
+- name: langchain-zotero-retriever
+  path: .
+  repo: TimBMK/langchain-zotero-retriever
