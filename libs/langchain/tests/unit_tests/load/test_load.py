@@ -17,14 +17,6 @@ from langchain_community.llms.openai import (  # noqa: E402 # ignore: community-
 )
 
 
-@pytest.fixture(autouse=True)
-def clear_openai_api_key():
-    """Clear OPENAI_API_KEY environment variable before each test."""
-    if "OPENAI_API_KEY" in os.environ:
-        del os.environ["OPENAI_API_KEY"]
-    yield
-
-
 class NotSerializable:
     pass
 
