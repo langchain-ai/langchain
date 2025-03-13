@@ -225,6 +225,26 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     assert parsed["response"] and isinstance(parsed["response"], str)
 
 
+def test_function_calling_and_structured_output() -> None:
+    def multiply(x: int, y: int) -> int:
+        """return x * y"""
+        return x * y
+
+    llm = ChatOpenAI(model=MODEL_NAME)
+    bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
+    # Test structured output
+    response = llm.invoke("how are ya", response_format=Foo)
+    parsed = Foo(**json.loads(response.text()))
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+    # Test function calling
+    ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
+    assert len(ai_msg.tool_calls) == 1
+    assert ai_msg.tool_calls[0]["name"] == "multiply"
+    assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
+
+
 def test_stateful_api() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")
