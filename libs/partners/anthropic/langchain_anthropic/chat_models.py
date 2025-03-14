@@ -682,6 +682,105 @@ class ChatAnthropic(BaseChatModel):
         These can be disabled by setting ``stream_usage=False`` in the stream method,
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
+    Prompt caching:
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Below is some long context:",
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{long_text}",
+                            "cache_control": {"type": "ephemeral"},
+                        },
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": "What's that about?",
+                },
+            ]
+
+            response = llm.invoke(messages)
+            response.usage_metadata["input_token_details"]
+
+        .. code-block:: python
+
+            {'cache_read': 0, 'cache_creation': 1458}
+    
+    Token-efficient tool use (beta):
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.tools import tool
+
+            llm = ChatAnthropic(
+                model="claude-3-7-sonnet-20250219",
+                temperature=0,
+            )
+
+            @tool
+            def get_weather(location: str) -> str:
+                \"\"\"Get the weather at a location.\"\"\"
+                return "It's sunny."
+
+            llm_with_tools = llm.bind_tools([get_weather])
+            response = llm_with_tools.invoke(
+                "What's the weather in San Francisco?",
+                betas=["token-efficient-tools-2025-02-19"],
+            )
+            print(response.tool_calls)
+            print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
+
+        .. code-block:: none
+
+            [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
+
+            Total tokens: 408
+    
+    Built-in tools:
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+            tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+            llm_with_tools = llm.bind_tools([tool])
+
+            response = llm_with_tools.invoke(
+                "There's a syntax error in my primes.py file. Can you help me fix it?"
+            )
+            print(response.text())
+            response.tool_calls
+
+        .. code-block:: none
+
+            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+
+            [{'name': 'str_replace_editor',
+            'args': {'command': 'view', 'path': '/repo/primes.py'},
+            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+            'type': 'tool_call'}]
+
     Response metadata
         .. code-block:: python
 
@@ -1182,7 +1281,6 @@ class ChatAnthropic(BaseChatModel):
                 llm = ChatAnthropic(
                     model="claude-3-5-sonnet-20240620",
                     temperature=0,
-                    extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
