@@ -175,24 +175,20 @@ class PlaywrightURLLoader(BaseLoader):
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless, proxy=self.proxy)
+            context = None
+
+            if self.browser_session:
+                if os.path.exists(self.browser_session):
+                    context = browser.new_context(storage_state=self.browser_session)
+                else:
+                    logger.warning(f"Session file not found: {self.browser_session}")
+
+            if context is None:
+                context = browser.new_context()
+
             for url in self.urls:
                 try:
-                    page = None
-
-                    if self.browser_session:
-                        if os.path.exists(self.browser_session):
-                            context_options = {}
-                            context_options["storage_state"] = self.browser_session
-                            context = browser.new_context(**context_options)
-                            page = context.new_page()
-                        else:
-                            logger.warning(
-                                f"Session file not found: {self.browser_session}"
-                            )
-
-                    if page is None:
-                        page = browser.new_page()
-
+                    page = context.new_page()
                     response = page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
@@ -200,6 +196,7 @@ class PlaywrightURLLoader(BaseLoader):
                     page.wait_for_load_state("load")
 
                     text = self.evaluator.evaluate(page, browser, response)
+                    page.close()
                     metadata = {"source": url}
                     yield Document(page_content=text, metadata=metadata)
                 except Exception as e:
@@ -231,24 +228,22 @@ class PlaywrightURLLoader(BaseLoader):
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless, proxy=self.proxy)
+            context = None
+
+            if self.browser_session:
+                if os.path.exists(self.browser_session):
+                    context = await browser.new_context(
+                        storage_state=self.browser_session
+                    )
+                else:
+                    logger.warning(f"Session file not found: {self.browser_session}")
+
+            if context is None:
+                context = await browser.new_context()
+
             for url in self.urls:
                 try:
-                    page = None
-
-                    if self.browser_session:
-                        if os.path.exists(self.browser_session):
-                            context_options = {}
-                            context_options["storage_state"] = self.browser_session
-                            context = await browser.new_context(**context_options)
-                            page = await context.new_page()
-                        else:
-                            logger.warning(
-                                f"Session file not found: {self.browser_session}"
-                            )
-
-                    if page is None:
-                        page = await browser.new_page()
-
+                    page = await context.new_page()
                     response = await page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
@@ -256,6 +251,7 @@ class PlaywrightURLLoader(BaseLoader):
                     await page.wait_for_load_state("load")
 
                     text = await self.evaluator.evaluate_async(page, browser, response)
+                    await page.close()
                     metadata = {"source": url}
                     yield Document(page_content=text, metadata=metadata)
                 except Exception as e:
