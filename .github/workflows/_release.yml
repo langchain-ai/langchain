@@ -336,7 +336,6 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
-    if: ${{ startsWith(inputs.working-directory, 'libs/core') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -355,17 +354,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # We implement this conditional as Github Actions does not have good support
+      # for conditionally needing steps. https://github.com/actions/runner/issues/491
+      - name: Check if libs/core
+        run: |
+          if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
+            echo "Not in libs/core. Exiting successfully."
+            exit 0
+          fi
+
       - name: Set up Python + uv
+        if: startsWith(inputs.working-directory, 'libs/core')
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - uses: actions/download-artifact@v4
+        if: startsWith(inputs.working-directory, 'libs/core')
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Test against ${{ matrix.partner }}
+        if: startsWith(inputs.working-directory, 'libs/core')
         run: |
           # Identify latest tag
           LATEST_PACKAGE_TAG="$(
@@ -401,15 +412,6 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
       - test-prior-published-packages-against-new-core
-    if: >
-      always() &&
-      needs.build.result == 'success' &&
-      needs.release-notes.result == 'success' &&
-      needs.test-pypi-publish.result == 'success' &&
-      needs.pre-release-checks.result == 'success' && (
-        (startsWith(inputs.working-directory, 'libs/core') && needs.test-prior-published-packages-against-new-core.result == 'success')
-        || (!startsWith(inputs.working-directory, 'libs/core'))
-      )
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:

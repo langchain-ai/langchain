@@ -53,7 +53,7 @@ class CubeSemanticLoader(BaseLoader):
 
         These values can be used to achieve a more accurate filtering.
         """
-        logger.info("Loading dimension values for: {dimension_name}...")
+        logger.info("Loading dimension values for: %s ...", dimension_name)
 
         headers = {
             "Content-Type": "application/json",
@@ -122,13 +122,13 @@ class CubeSemanticLoader(BaseLoader):
             "Authorization": self.cube_api_token,
         }
 
-        logger.info(f"Loading metadata from {self.cube_api_url}...")
+        logger.info("Loading metadata from %s ...", self.cube_api_url)
         response = requests.get(f"{self.cube_api_url}/meta", headers=headers)
         response.raise_for_status()
         raw_meta_json = response.json()
         cube_data_objects = raw_meta_json.get("cubes", [])
 
-        logger.info(f"Found {len(cube_data_objects)} cube data objects in metadata.")
+        logger.info("Found %s cube data objects in metadata.", len(cube_data_objects))
 
         if not cube_data_objects:
             raise ValueError("No cubes found in metadata.")
@@ -140,10 +140,10 @@ class CubeSemanticLoader(BaseLoader):
             measures = cube_data_obj.get("measures", [])
             dimensions = cube_data_obj.get("dimensions", [])
 
-            logger.info(f"Processing {cube_data_obj_name}...")
+            logger.info("Processing %s ...", cube_data_obj_name)
 
             if not cube_data_obj_is_public:
-                logger.info(f"Skipping {cube_data_obj_name} because it is not public.")
+                logger.info("Skipping %s because it is not public.", cube_data_obj_name)
                 continue
 
             for item in measures + dimensions:
@@ -151,6 +151,11 @@ class CubeSemanticLoader(BaseLoader):
                 dimension_values = []
                 item_name = str(item.get("name"))
                 item_type = str(item.get("type"))
+
+                is_public = bool(item.get("public"))
+                if not is_public:
+                    logger.info("Skipping %s because it is not public.", item_name)
+                    continue
 
                 if (
                     self.load_dimension_values

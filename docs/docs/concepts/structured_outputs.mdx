@@ -99,20 +99,10 @@ Here is an example of how to use JSON mode with OpenAI:
 
 ```python
 from langchain_openai import ChatOpenAI
-model = ChatOpenAI(model="gpt-4o", model_kwargs={ "response_format": { "type": "json_object" } })
+model = ChatOpenAI(model="gpt-4o").with_structured_output(method="json_mode")
 ai_msg = model.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
-ai_msg.content
-'\n{\n  "random_ints": [23, 47, 89, 15, 34, 76, 58, 3, 62, 91]\n}'
-```
-
-One important point to flag: the model *still* returns a string, which needs to be parsed into a JSON object.
-This can, of course, simply use the `json` library or a JSON output parser if you need more advanced functionality.
-See this [how-to guide on the JSON output parser](/docs/how_to/output_parser_json) for more details.
-
-```python
-import json
-json_object = json.loads(ai_msg.content)
-{'random_ints': [23, 47, 89, 15, 34, 76, 58, 3, 62, 91]}
+ai_msg
+{'random_ints': [45, 67, 12, 34, 89, 23, 78, 56, 90, 11]}
 ```
 
 ## Structured output method 

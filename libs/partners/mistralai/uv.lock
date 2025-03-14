@@ -332,7 +332,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.37"
+version = "0.3.45rc1"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -390,7 +390,7 @@ typing = [
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.7"
+version = "0.2.8"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -450,7 +450,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.12"
+version = "0.3.14"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -467,8 +467,7 @@ dependencies = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
     { name = "langchain-core", editable = "../../core" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
+    { name = "numpy", specifier = ">=1.26.2,<3" },
     { name = "pytest", specifier = ">=7,<9" },
     { name = "pytest-asyncio", specifier = ">=0.20,<1" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1" },

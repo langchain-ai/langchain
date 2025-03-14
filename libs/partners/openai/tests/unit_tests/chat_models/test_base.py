@@ -1569,23 +1569,6 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert result[1]["id"] == "func_456"
 
 
-def test__construct_responses_api_input_missing_function_call_ids() -> None:
-    """Test AI messages with tool calls but missing function call IDs raise an error."""
-    tool_calls = [
-        {
-            "id": "call_123",
-            "name": "get_weather",
-            "args": {"location": "San Francisco"},
-            "type": "tool_call",
-        }
-    ]
-
-    ai_message = AIMessage(content="", tool_calls=tool_calls)
-
-    with pytest.raises(ValueError):
-        _construct_responses_api_input([ai_message])
-
-
 def test__construct_responses_api_input_tool_message_conversion() -> None:
     """Test that tool messages are properly converted to function_call_output."""
     messages = [

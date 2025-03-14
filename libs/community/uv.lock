@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12.4' and platform_python_implementation == 'PyPy'",
@@ -1538,6 +1539,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
     { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10" },
 ]
+provides-extras = ["community", "anthropic", "openai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
