@@ -66,7 +66,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
         self.assertEqual(len(documents), 1)
         self.assertEqual(documents[0].page_content, "Test Title, Test Description")
         self.assertEqual(documents[0].metadata["column_values"], ["value1", "value2"])
-        self.assertIn('Skipping hidden_dimension because it is not public.', cm.output)
+        self.assertIn('INFO:langchain_community.document_loaders.cube_semantic:Skipping hidden_dimension because it is not public.', cm.output)
 
 
 if __name__ == "__main__":
