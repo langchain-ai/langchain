@@ -2916,21 +2916,16 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     _FUNCTION_CALL_IDS_MAP_KEY
                 )
                 for tool_call in tool_calls:
-                    if function_call_ids is None:
-                        function_call = {
-                            "type": "function_call",
-                            "name": tool_call["function"]["name"],
-                            "arguments": tool_call["function"]["arguments"],
-                            "call_id": tool_call["id"],
-                        }
-                    else:
-                        function_call = {
-                            "type": "function_call",
-                            "name": tool_call["function"]["name"],
-                            "arguments": tool_call["function"]["arguments"],
-                            "call_id": tool_call["id"],
-                            "id": function_call_ids[tool_call["id"]],
-                        }
+                    function_call = {
+                        "type": "function_call",
+                        "name": tool_call["function"]["name"],
+                        "arguments": tool_call["function"]["arguments"],
+                        "call_id": tool_call["id"],
+                    }
+                    if function_call_ids is not None and (
+                        _id := function_call_ids.get(tool_call["id"])
+                    ):
+                        function_call["id"] = _id
                     function_calls.append(function_call)
 
             msg["content"] = msg.get("content") or []
