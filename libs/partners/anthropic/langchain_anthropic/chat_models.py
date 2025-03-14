@@ -94,17 +94,19 @@ class AnthropicTool(TypedDict):
 
 
 def _is_builtin_tool(tool: Any) -> bool:
+    if not isinstance(tool, dict):
+        return False
+
+    tool_type = tool.get("type")
+    if not tool_type or not isinstance(tool_type, str):
+        return False
+
     _builtin_tool_prefixes = [
         "text_editor_",
         "computer_",
         "bash_",
     ]
-    return (
-        isinstance(tool, dict)
-        and (tool_type := tool.get("type"))
-        and isinstance(tool_type, str)
-        and any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
-    )
+    return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
 
 def _format_image(image_url: str) -> Dict:
