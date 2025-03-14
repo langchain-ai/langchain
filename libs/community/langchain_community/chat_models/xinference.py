@@ -1,4 +1,14 @@
-from typing import Any, Dict, Iterator, List, Optional, Union, cast, TYPE_CHECKING
+from __future__ import annotations
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+    cast,
+)
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
