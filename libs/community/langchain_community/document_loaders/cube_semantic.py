@@ -152,6 +152,11 @@ class CubeSemanticLoader(BaseLoader):
                 item_name = str(item.get("name"))
                 item_type = str(item.get("type"))
 
+                is_public = bool(item.get("public"))
+                if not is_public:
+                    logger.info("Skipping %s because it is not public.", item_name)
+                    continue
+
                 if (
                     self.load_dimension_values
                     and column_member_type == "dimension"
