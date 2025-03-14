@@ -384,18 +384,15 @@ def test_tool_use() -> None:
         model="claude-3-7-sonnet-20250219",
         temperature=0,
     )
-    llm_with_tools = llm.bind_tools(
-        [
-            {
-                "name": "get_weather",
-                "description": "Get weather report for a city",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {"location": {"type": "string"}},
-                },
-            }
-        ]
-    )
+    tool_definition = {
+        "name": "get_weather",
+        "description": "Get weather report for a city",
+        "input_schema": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+        },
+    }
+    llm_with_tools = llm.bind_tools([tool_definition])
     query = "how are you? what's the weather in san francisco, ca"
     response = llm_with_tools.invoke(query)
     assert isinstance(response, AIMessage)
@@ -408,11 +405,18 @@ def test_tool_use() -> None:
     assert "location" in tool_call["args"]
 
     # Test streaming
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-20250219",
+        temperature=0,
+        # Add extra headers to also test token-efficient tools
+        model_kwargs={
+            "extra_headers": {"anthropic-beta": "token-efficient-tools-2025-02-19"}
+        },
+    )
+    llm_with_tools = llm.bind_tools([tool_definition])
     first = True
     chunks = []  # type: ignore
-    for chunk in llm_with_tools.stream(
-        query, betas=["token-efficient-tools-2025-02-19"]
-    ):
+    for chunk in llm_with_tools.stream(query):
         chunks = chunks + [chunk]
         if first:
             gathered = chunk

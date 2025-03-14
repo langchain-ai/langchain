@@ -101,8 +101,9 @@ def _is_builtin_tool(tool: Any) -> bool:
     ]
     return (
         isinstance(tool, dict)
-        and "type" in tool
-        and any(tool["type"].startswith(prefix) for prefix in _builtin_tool_prefixes)
+        and (tool_type := tool.get("type"))
+        and isinstance(tool_type, str)
+        and any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
     )
 
 
@@ -719,7 +720,7 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             {'cache_read': 0, 'cache_creation': 1458}
-    
+
     Token-efficient tool use (beta):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
         for more detail.
@@ -732,6 +733,11 @@ class ChatAnthropic(BaseChatModel):
             llm = ChatAnthropic(
                 model="claude-3-7-sonnet-20250219",
                 temperature=0,
+                model_kwargs={
+                    "extra_headers": {
+                        "anthropic-beta": "token-efficient-tools-2025-02-19"
+                    }
+                }
             )
 
             @tool
@@ -741,8 +747,7 @@ class ChatAnthropic(BaseChatModel):
 
             llm_with_tools = llm.bind_tools([get_weather])
             response = llm_with_tools.invoke(
-                "What's the weather in San Francisco?",
-                betas=["token-efficient-tools-2025-02-19"],
+                "What's the weather in San Francisco?"
             )
             print(response.tool_calls)
             print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
@@ -752,7 +757,7 @@ class ChatAnthropic(BaseChatModel):
             [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
 
             Total tokens: 408
-    
+
     Built-in tools:
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
         for more detail.
@@ -972,18 +977,6 @@ class ChatAnthropic(BaseChatModel):
             payload["thinking"] = self.thinking
         return {k: v for k, v in payload.items() if v is not None}
 
-    def _create(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return self._client.beta.messages.create(**payload)
-        else:
-            return self._client.messages.create(**payload)
-
-    async def _acreate(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return await self._async_client.beta.messages.create(**payload)
-        else:
-            return await self._async_client.messages.create(**payload)
-
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -997,7 +990,7 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = self._create(payload)
+        stream = self._client.messages.create(**payload)
         coerce_content_to_string = (
             not _tools_in_params(payload)
             and not _documents_in_params(payload)
@@ -1028,7 +1021,6 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = await self._acreate(payload)
         stream = await self._async_client.messages.create(**payload)
         coerce_content_to_string = (
             not _tools_in_params(payload)
@@ -1105,7 +1097,7 @@ class ChatAnthropic(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = self._create(payload)
+        data = self._client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -1121,7 +1113,7 @@ class ChatAnthropic(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = await self._acreate(payload)
+        data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
