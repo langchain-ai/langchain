@@ -97,7 +97,7 @@ class BiliBiliLoader(BaseLoader):
         cid = 0
         page_match = PAGE_INDEX_PATTERN.search(url)
         if page_match:
-            cid = video_info["pages"][int(page_match.group()) - 1][
+            cid = video_info["pages"][int(page_match.group(1)) - 1][
                 "cid"
             ]  # Bilibili page index starts from 1
         else:
