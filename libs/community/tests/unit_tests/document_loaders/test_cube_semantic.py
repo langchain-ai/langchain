@@ -51,7 +51,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
                             "title": "Hidden",
                             "description": "Hidden",
                             "public": False,
-                        }
+                        },
                     ],
                 }
             ]
