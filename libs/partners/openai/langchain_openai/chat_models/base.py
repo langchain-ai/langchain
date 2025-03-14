@@ -2834,6 +2834,11 @@ def _use_responses_api(payload: dict) -> bool:
 def _construct_responses_api_payload(
     messages: Sequence[BaseMessage], payload: dict
 ) -> dict:
+    # Rename legacy parameters
+    for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
+        if legacy_token_param in payload:
+            payload["max_output_tokens"] = payload.pop(legacy_token_param)
+
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):
         new_tools: list = []
