@@ -60,7 +60,7 @@ class TestCubeSemanticLoader(unittest.TestCase):
 
         mock_get_dimension_values.return_value = ["value1", "value2"]
 
-        with self.assertLogs(level='INFO') as cm:
+        with self.assertLogs(level="INFO") as cm:
             documents = self.loader.load()
 
         self.assertEqual(len(documents), 1)
