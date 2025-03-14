@@ -833,7 +833,7 @@ class ChatOllama(BaseChatModel):
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
-        ] = "json_schema",
+        ] = "json_mode",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
