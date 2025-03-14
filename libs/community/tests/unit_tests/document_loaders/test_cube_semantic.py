@@ -1,4 +1,3 @@
-import logging
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
@@ -26,10 +25,8 @@ class TestCubeSemanticLoader(unittest.TestCase):
     @patch("requests.get")
     @patch(f"{MODULE_PATH}._get_dimension_values")
     def test_load(
-        self, mock_get_dimension_values: MagicMock, mock_get: MagicMock, caplog,
+        self, mock_get_dimension_values: MagicMock, mock_get: MagicMock
     ) -> None:
-        caplog.set_level(logging.INFO)
-
         # Mocking the response
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
@@ -63,11 +60,13 @@ class TestCubeSemanticLoader(unittest.TestCase):
 
         mock_get_dimension_values.return_value = ["value1", "value2"]
 
-        documents = self.loader.load()
+        with self.assertLogs(level='INFO') as cm:
+            documents = self.loader.load()
+
         self.assertEqual(len(documents), 1)
         self.assertEqual(documents[0].page_content, "Test Title, Test Description")
         self.assertEqual(documents[0].metadata["column_values"], ["value1", "value2"])
-        self.assertIn('Skipping hidden_dimension because it is not public.')
+        self.assertIn('Skipping hidden_dimension because it is not public.', cm.output)
 
 
 if __name__ == "__main__":
