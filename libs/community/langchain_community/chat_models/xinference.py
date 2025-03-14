@@ -14,7 +14,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
-    from xinference.client import RESTfulChatModelHandle, RESTfulGenerateModelHandle
+    from xinference.client import RESTfulChatModelHandle
     from xinference.model.llm.core import LlamaCppGenerateConfig
 
 
