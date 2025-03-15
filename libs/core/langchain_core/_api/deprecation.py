@@ -109,6 +109,8 @@ def deprecated(
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
+        alternative_import: str, optional
+            An alternative import that the user may use instead.
         pending : bool, optional
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
@@ -121,6 +123,8 @@ def deprecated(
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
+        package: str, optional
+            The package of the deprecated object.
 
     Examples:
 
@@ -434,6 +438,8 @@ def warn_deprecated(
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
+        alternative_import: str, optional
+            An alternative import that the user may use instead.
         pending : bool, optional
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
@@ -446,6 +452,8 @@ def warn_deprecated(
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
+        package: str, optional
+            The package of the deprecated object.
     """
     if not pending:
         if not removal:

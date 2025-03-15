@@ -907,6 +907,8 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_tags (Optional[List[str]]): The inheritable tags.
                 Default is None.
             metadata (Optional[Dict[str, Any]]): The metadata. Default is None.
+            inheritable_metadata (Optional[Dict[str, Any]]): The inheritable metadata.
+                Default is None.
         """
         self.handlers: list[BaseCallbackHandler] = handlers
         self.inheritable_handlers: list[BaseCallbackHandler] = (

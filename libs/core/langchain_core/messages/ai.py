@@ -1,9 +1,11 @@
+"""AI message."""
+
 import json
 import operator
 from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -178,16 +180,6 @@ class AIMessage(BaseMessage):
         """
         super().__init__(content=content, **kwargs)
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-
-        Returns:
-            The namespace of the langchain object.
-            Defaults to ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
     @property
     def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
@@ -306,16 +298,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-
-        Returns:
-            The namespace of the langchain object.
-            Defaults to ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
     @property
     def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
@@ -393,6 +375,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         self.invalid_tool_calls = invalid_tool_calls
         return self
 
+    @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)

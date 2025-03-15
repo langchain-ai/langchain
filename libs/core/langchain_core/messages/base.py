@@ -1,3 +1,5 @@
+"""Base message."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
@@ -60,6 +62,7 @@ class BaseMessage(Serializable):
 
     @field_validator("id", mode="before")
     def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        """Coerce the id field to a string."""
         if id_value is not None:
             return str(id_value)
         else:
@@ -72,23 +75,22 @@ class BaseMessage(Serializable):
 
         Args:
             content: The string contents of the message.
-            kwargs: Additional fields to pass to the
         """
         super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable. This is used to determine
-        whether the class should be included in the langchain schema.
+        """BaseMessage is serializable.
 
         Returns:
-            True if the class is serializable, False otherwise.
+            True
         """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         Default is ["langchain", "schema", "messages"].
         """
         return ["langchain", "schema", "messages"]
@@ -138,6 +140,7 @@ class BaseMessage(Serializable):
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
+        """Print a pretty representation of the message."""
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
@@ -184,13 +187,6 @@ def merge_content(
 
 class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         """Message chunks support concatenation with other message chunks.

@@ -1,3 +1,5 @@
+"""Output parsers using Pydantic."""
+
 import json
 from typing import Annotated, Generic, Optional
 
