@@ -2,7 +2,7 @@
 import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as ExtensionsAnnotated
+from typing import Annotated as TypingAnnotated
 from typing import (
     Any,
     Callable,
@@ -13,18 +13,13 @@ from typing import (
 from typing import TypedDict as TypingTypedDict
 
 import pytest
+from pydantic import BaseModel, Field
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
+from typing_extensions import Annotated as ExtensionsAnnotated  # noqa: UP035
 from typing_extensions import (
     TypedDict as ExtensionsTypedDict,
 )
-
-try:
-    from typing import Annotated as TypingAnnotated  # type: ignore[attr-defined]
-except ImportError:
-    TypingAnnotated = ExtensionsAnnotated
-
-from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -179,8 +174,8 @@ def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
 
-        arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
+        arg1: TypingAnnotated[int, ..., "foo"]
+        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]
 
     return dummy_function
 
@@ -744,7 +739,7 @@ def test__convert_typed_dict_to_openai_function(
     use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
     typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
-    annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
+    annotated = ExtensionsAnnotated if use_extension_annotated else TypingAnnotated
 
     class SubTool(typed_dict):
         """Subtool docstring."""
