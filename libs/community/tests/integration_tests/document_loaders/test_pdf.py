@@ -1,15 +1,19 @@
 import os
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Sequence, Type, Union
 
 import pytest
 
-import langchain_community.document_loaders as pdf_loaders
-from langchain_community.document_loaders import (
+from langchain_community.document_loaders.pdf import (
     AmazonTextractPDFLoader,
     MathpixPDFLoader,
+    PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
+    PyMuPDFLoader,
+    PyPDFium2Loader,
+    PyPDFLoader,
     UnstructuredPDFLoader,
+    ZeroxPDFLoader,
 )
 
 
@@ -164,19 +168,24 @@ def test_amazontextract_loader_failures() -> None:
 
 
 @pytest.mark.parametrize(
-    "parser_factory,params",
+    "loader_class,params",
     [
-        ("PDFMinerLoader", {}),
-        ("PyMuPDFLoader", {}),
-        ("PyPDFium2Loader", {}),
-        ("PyPDFLoader", {}),
+        (PDFMinerLoader, {}),
+        (PyMuPDFLoader, {}),
+        (PyPDFium2Loader, {}),
+        (PyPDFLoader, {}),
+        (ZeroxPDFLoader, {}),
     ],
 )
 def test_standard_parameters(
-    parser_factory: str,
+    loader_class: Type,
     params: dict,
 ) -> None:
-    loader_class = getattr(pdf_loaders, parser_factory)
+    if loader_class == ZeroxPDFLoader:
+        try:
+            import pyzerox  # noqa: F401
+        except ImportError:
+            pytest.skip("pyzerox is valid only with Python +3.11")
 
     file_path = Path(__file__).parent.parent / "examples/hello.pdf"
     loader = loader_class(file_path)
