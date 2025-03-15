@@ -22,7 +22,7 @@ def try_to_import(module_name: str) -> tuple[int, str]:
         getattr(module, cls_)
 
     result = subprocess.run(
-        ["python", "-c", f"import langchain_core.{module_name}"],
+        ["python", "-c", f"import langchain_core.{module_name}"], check=True
     )
     return result.returncode, module_name
 
