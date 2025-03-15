@@ -23,6 +23,7 @@ from langchain_text_splitters.html import (
     HTMLSemanticPreservingSplitter,
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
     MarkdownHeaderTextSplitter,
@@ -411,6 +412,144 @@ def test_python_text_splitter() -> None:
     split_3 = """def bar():"""
     expected_splits = [split_0, split_1, split_2, split_3]
     assert splits == expected_splits
+
+
+FAKE_JSX_TEXT = """
+import React from 'react';
+import OtherComponent from './OtherComponent';
+
+function MyComponent() {
+  const [count, setCount] = React.useState(0);
+
+  const handleClick = () => {
+    setCount(count + 1);
+  };
+
+  return (
+    <div>
+      <h1>Counter: {count}</h1>
+      <button onClick={handleClick}>
+        Increment
+      </button>
+      <OtherComponent />
+    </div>
+  );
+}
+
+export default MyComponent;
+"""
+
+
+def test_jsx_text_splitter() -> None:
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_JSX_TEXT)
+
+    expected_splits = [
+        "\nimport React from 'react';\n"
+        "import OtherComponent from './OtherComponent';\n",
+        "\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);",
+        "\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };",
+        "return (",
+        "<div>",
+        "<h1>Counter: {count}</h1>\n      ",
+        "<button onClick={handleClick}>\n        Increment\n      </button>\n      ",
+        "<OtherComponent />\n    </div>\n  );\n}\n",
+        "export default MyComponent;",
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
+
+
+FAKE_VUE_TEXT = """
+<template>
+  <div>
+    <h1>{{ title }}</h1>
+    <button @click="increment">
+      Count is: {{ count }}
+    </button>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      title: 'Counter App',
+      count: 0
+    }
+  },
+  methods: {
+    increment() {
+      this.count++
+    }
+  }
+}
+</script>
+
+<style>
+button {
+  color: blue;
+}
+</style>
+"""
+
+
+def test_vue_text_splitter() -> None:
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_VUE_TEXT)
+
+    expected_splits = [
+        "<template>",
+        "<div>",
+        "<h1>{{ title }}</h1>",
+        '<button @click="increment">\n      Count is: {{ count }}\n'
+        "    </button>\n  </div>\n</template>",
+        "<script>",
+        "export",
+        " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
+        "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
+        "this.count++\n    }\n  }\n}\n</script>",
+        "<style>\nbutton {\n  color: blue;\n}\n</style>",
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
+
+
+FAKE_SVELTE_TEXT = """
+<script>
+  let count = 0
+
+  function increment() {
+    count += 1
+  }
+</script>
+
+<main>
+  <h1>Counter App</h1>
+  <button on:click={increment}>
+    Count is: {count}
+  </button>
+</main>
+
+<style>
+  button {
+    color: blue;
+  }
+</style>
+"""
+
+
+def test_svelte_text_splitter() -> None:
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+    splits = splitter.split_text(FAKE_SVELTE_TEXT)
+
+    expected_splits = [
+        "<script>\n  let count = 0",
+        "\n\n  function increment() {\n    count += 1\n  }\n</script>",
+        "<main>",
+        "<h1>Counter App</h1>",
+        "<button on:click={increment}>\n    Count is: {count}\n  </button>\n</main>",
+        "<style>\n  button {\n    color: blue;\n  }\n</style>",
+    ]
+    assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
 
 
 CHUNK_SIZE = 16
