@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
+    "OpenSearchStore"
 ]
 
 
