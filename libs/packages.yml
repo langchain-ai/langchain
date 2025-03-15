@@ -516,3 +516,6 @@ packages:
 - name: langchain-agentql
   path: langchain
   repo: tinyfish-io/agentql-integrations
+- name: langchain-runpod
+  repo: max4c/langchain-runpod
+  path: .
