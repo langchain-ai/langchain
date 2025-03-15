@@ -129,7 +129,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         else:
             pass
 
-        tool_call_id = values["tool_call_id"]
+        tool_call_id = values.get("tool_call_id")
         if isinstance(tool_call_id, (UUID, int, float)):
             values["tool_call_id"] = str(tool_call_id)
         return values
