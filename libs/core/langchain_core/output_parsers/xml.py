@@ -1,3 +1,4 @@
+# noqa: A005
 import contextlib
 import re
 import xml
@@ -5,6 +6,8 @@ import xml.etree.ElementTree as ET  # noqa: N817
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Literal, Optional, Union
 from xml.etree.ElementTree import TreeBuilder
+
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
@@ -232,6 +235,7 @@ class XMLOutputParser(BaseTransformOutputParser):
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
+    @override
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[AddableDict]:
@@ -240,6 +244,7 @@ class XMLOutputParser(BaseTransformOutputParser):
             yield from streaming_parser.parse(chunk)
         streaming_parser.close()
 
+    @override
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
