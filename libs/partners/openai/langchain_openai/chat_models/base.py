@@ -2912,17 +2912,23 @@ def _construct_responses_api_payload(
 
         # For pydantic + non-streaming case, we use responses.parse.
         # Otherwise, we use responses.create.
+        strict = payload.pop("strict", None)
         if not payload.get("stream") and _is_pydantic_class(schema):
             payload["text_format"] = schema
         else:
             if _is_pydantic_class(schema):
                 schema_dict = schema.model_json_schema()
+                strict = True
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
                 payload["text"] = {"format": {"type": "json_object"}}
             elif (
-                (response_format := _convert_to_openai_response_format(schema_dict))
+                (
+                    response_format := _convert_to_openai_response_format(
+                        schema_dict, strict=strict
+                    )
+                )
                 and (isinstance(response_format, dict))
                 and (response_format["type"] == "json_schema")
             ):

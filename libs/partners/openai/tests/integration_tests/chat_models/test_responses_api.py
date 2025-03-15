@@ -4,6 +4,7 @@ import json
 import os
 from typing import Any, Optional, cast
 
+import openai
 import pytest
 from langchain_core.messages import (
     AIMessage,
@@ -12,7 +13,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
 )
 from pydantic import BaseModel
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
 from langchain_openai import ChatOpenAI
 
@@ -204,6 +205,31 @@ def test_parsed_dict_schema(schema: Any) -> None:
     parsed = json.loads(full.text())
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
+
+
+def test_parsed_strict() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+
+    class InvalidJoke(TypedDict):
+        setup: Annotated[str, ..., "The setup of the joke"]
+        punchline: Annotated[str, None, "The punchline of the joke"]
+
+    # Test not strict
+    response = llm.invoke("Tell me a joke", response_format=InvalidJoke)
+    parsed = json.loads(response.text())
+    assert parsed == response.additional_kwargs["parsed"]
+
+    # Test strict
+    with pytest.raises(openai.BadRequestError):
+        llm.invoke(
+            "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+        )
+    with pytest.raises(openai.BadRequestError):
+        next(
+            llm.stream(
+                "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+            )
+        )
 
 
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
