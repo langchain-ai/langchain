@@ -76,6 +76,7 @@ def _log_error_once(msg: str) -> None:
 def create_base_retry_decorator(
     error_types: list[type[BaseException]],
     max_retries: int = 1,
+    non_retry_error_types: Optional[list[type[BaseException]]] = None,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
@@ -86,6 +87,7 @@ def create_base_retry_decorator(
     Args:
         error_types: List of error types to retry on.
         max_retries: Number of retries. Default is 1.
+        non_retry_error_types : List of error types that should never be retried
         run_manager: Callback manager for the run. Default is None.
 
     Returns:
@@ -119,6 +121,28 @@ def create_base_retry_decorator(
     retry_instance: retry_base = retry_if_exception_type(error_types[0])
     for error in error_types[1:]:
         retry_instance = retry_instance | retry_if_exception_type(error)
+
+    # return a custom retry , if the non_retry_error_types provided
+    if non_retry_error_types:
+
+        def should_retry(retry_state: RetryCallState) -> bool:
+            if retry_state.outcome and retry_state.outcome.failed:
+                exception = retry_state.outcome.exception()
+                if any(
+                    isinstance(exception, err_type)
+                    for err_type in non_retry_error_types
+                ):
+                    return False
+            return retry_instance(retry_state)
+
+        return retry(
+            reraise=True,
+            stop=stop_after_attempt(max_retries),
+            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+            retry=should_retry,
+            before_sleep=_before_sleep,
+        )
+    # Use original retry condition, if no exclusions
     return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
