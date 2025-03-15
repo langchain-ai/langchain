@@ -403,6 +403,7 @@ def filter_messages(
     exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
+    exclude_tool_call_ids: Optional[Sequence[str] | bool] = None,
 ) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
@@ -418,6 +419,11 @@ def filter_messages(
             SystemMessage, HumanMessage, AIMessage, ...). Default is None.
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
+        exclude_tool_calls_id: Tool call IDs to exclude. Default is None.
+            If `True`, all messages with tool calls will be excluded.
+            It filters pairs of AIMessage with the invocation
+            and the corresponding ToolMessage with the response.
+            If all tool_calls are filtered from an AIMessage the whole message is filtered.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -465,6 +471,27 @@ def filter_messages(
             continue
         else:
             pass
+
+        if exclude_tool_call_ids is True and (
+            (isinstance(msg, AIMessage) and msg.tool_calls)
+            or isinstance(msg, ToolMessage)
+        ):
+            continue
+        if isinstance(exclude_tool_call_ids, list):
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                tool_calls = [
+                    tool_call
+                    for tool_call in msg.tool_calls
+                    if tool_call["id"] not in exclude_tool_call_ids
+                ]
+                if not tool_calls:
+                    continue
+                msg = msg.model_copy(update={"tool_calls": tool_calls})
+            elif (
+                isinstance(msg, ToolMessage)
+                and msg.tool_call_id in exclude_tool_call_ids
+            ):
+                continue
 
         # default to inclusion when no inclusion criteria given.
         if (
