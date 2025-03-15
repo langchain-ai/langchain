@@ -750,18 +750,29 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        context_manager = self.root_client.responses.create(**payload)
+        if self.include_response_headers:
+            raw_context_manager = self.root_client.with_raw_response.responses.create(
+                **payload
+            )
+            context_manager = raw_context_manager.parse()
+            headers = {"headers": dict(raw_context_manager.headers)}
+        else:
+            context_manager = self.root_client.responses.create(**payload)
+            headers = {}
         original_schema_obj = kwargs.get("response_format")
 
         with context_manager as response:
+            is_first_chunk = True
             for chunk in response:
+                metadata = headers if is_first_chunk else {}
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk, schema=original_schema_obj
+                    chunk, schema=original_schema_obj, metadata=metadata
                 ):
                     if run_manager:
                         run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
+                    is_first_chunk = False
                     yield generation_chunk
 
     async def _astream_responses(
@@ -773,18 +784,31 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        context_manager = await self.root_async_client.responses.create(**payload)
+        if self.include_response_headers:
+            raw_context_manager = (
+                await self.root_async_client.with_raw_response.responses.create(
+                    **payload
+                )
+            )
+            context_manager = raw_context_manager.parse()
+            headers = {"headers": dict(raw_context_manager.headers)}
+        else:
+            context_manager = await self.root_async_client.responses.create(**payload)
+            headers = {}
         original_schema_obj = kwargs.get("response_format")
 
         async with context_manager as response:
+            is_first_chunk = True
             async for chunk in response:
+                metadata = headers if is_first_chunk else {}
                 if generation_chunk := _convert_responses_chunk_to_generation_chunk(
-                    chunk, schema=original_schema_obj
+                    chunk, schema=original_schema_obj, metadata=metadata
                 ):
                     if run_manager:
                         await run_manager.on_llm_new_token(
                             generation_chunk.text, chunk=generation_chunk
                         )
+                    is_first_chunk = False
                     yield generation_chunk
 
     def _stream(
@@ -877,19 +901,26 @@ class BaseChatOpenAI(BaseChatModel):
                 response = self.root_client.beta.chat.completions.parse(**payload)
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
-        elif self.include_response_headers:
-            raw_response = self.client.with_raw_response.create(**payload)
-            response = raw_response.parse()
-            generation_info = {"headers": dict(raw_response.headers)}
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
             if original_schema_obj and _is_pydantic_class(original_schema_obj):
                 response = self.root_client.responses.parse(**payload)
             else:
-                response = self.root_client.responses.create(**payload)
+                if self.include_response_headers:
+                    raw_response = self.root_client.with_raw_response.responses.create(
+                        **payload
+                    )
+                    response = raw_response.parse()
+                    generation_info = {"headers": dict(raw_response.headers)}
+                else:
+                    response = self.root_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj
+                response, schema=original_schema_obj, metadata=generation_info
             )
+        elif self.include_response_headers:
+            raw_response = self.client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
         else:
             response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
@@ -1065,20 +1096,28 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
-        elif self.include_response_headers:
-            raw_response = await self.async_client.with_raw_response.create(**payload)
-            response = raw_response.parse()
-            generation_info = {"headers": dict(raw_response.headers)}
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
             if original_schema_obj and _is_pydantic_class(original_schema_obj):
                 response = await self.root_async_client.responses.parse(**payload)
             else:
-                response = await self.root_async_client.responses.create(**payload)
+                if self.include_response_headers:
+                    raw_response = (
+                        await self.root_async_client.with_raw_response.responses.create(
+                            **payload
+                        )
+                    )
+                    response = raw_response.parse()
+                    generation_info = {"headers": dict(raw_response.headers)}
+                else:
+                    response = await self.root_async_client.responses.create(**payload)
             return _construct_lc_result_from_responses_api(
-                response, schema=original_schema_obj
+                response, schema=original_schema_obj, metadata=generation_info
             )
-
+        elif self.include_response_headers:
+            raw_response = await self.async_client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
         else:
             response = await self.async_client.create(**payload)
         return await run_in_executor(
@@ -2998,7 +3037,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
 
 
 def _construct_lc_result_from_responses_api(
-    response: Response, schema: Optional[Type[_BM]] = None
+    response: Response,
+    schema: Optional[Type[_BM]] = None,
+    metadata: Optional[dict] = None,
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3019,6 +3060,8 @@ def _construct_lc_result_from_responses_api(
             "model",
         )
     }
+    if metadata:
+        response_metadata.update(metadata)
     # for compatibility with chat completion calls.
     response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
@@ -3128,12 +3171,15 @@ def _construct_lc_result_from_responses_api(
 
 
 def _convert_responses_chunk_to_generation_chunk(
-    chunk: Any, schema: Optional[Type[_BM]] = None
+    chunk: Any, schema: Optional[Type[_BM]] = None, metadata: Optional[dict] = None
 ) -> Optional[ChatGenerationChunk]:
     content = []
     tool_call_chunks: list = []
     additional_kwargs: dict = {}
-    response_metadata = {}
+    if metadata:
+        response_metadata = metadata
+    else:
+        response_metadata = {}
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
