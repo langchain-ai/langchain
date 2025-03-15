@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: test_double_nested_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  %%{init: {"flowchart": {"curve": "linear"}}}%%
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	parent_1(parent_1)
@@ -28,7 +28,7 @@
 # ---
 # name: test_triple_nested_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  %%{init: {"flowchart": {"curve": "linear"}}}%%
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	parent_1(parent_1)
@@ -104,7 +104,7 @@
 # ---
 # name: test_graph_sequence[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  %%{init: {"flowchart": {"curve": "linear"}}}%%
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
@@ -1927,7 +1927,7 @@
 # ---
 # name: test_graph_sequence_map[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  %%{init: {"flowchart": {"curve": "linear"}}}%%
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
@@ -1977,7 +1977,7 @@
 # ---
 # name: test_graph_single_runnable[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  %%{init: {"flowchart": {"curve": "linear"}}}%%
   graph TD;
   	StrOutputParserInput([StrOutputParserInput]):::first
   	StrOutputParser(StrOutputParser)
@@ -1992,7 +1992,7 @@
 # ---
 # name: test_parallel_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  %%{init: {"flowchart": {"curve": "linear"}}}%%
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	outer_1(outer_1)

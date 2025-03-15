@@ -1,9 +1,10 @@
 import asyncio
 import base64
+import json
 import re
 from dataclasses import asdict
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from langchain_core.runnables.graph import (
     CurveStyle,
@@ -26,6 +27,7 @@ def draw_mermaid(
     curve_style: CurveStyle = CurveStyle.LINEAR,
     node_styles: Optional[NodeStyles] = None,
     wrap_label_n_words: int = 9,
+    init_directive: Optional[dict[str, Any]] = None,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data.
 
@@ -43,16 +45,20 @@ def draw_mermaid(
             Defaults to NodeStyles().
         wrap_label_n_words (int, optional): Words to wrap the edge labels.
             Defaults to 9.
+        init_directive (dict[str, Any], optional): Mermaid init directive.
+            Can be used to customize theme and and styles. Defaults to None.
 
     Returns:
         str: Mermaid graph syntax.
     """
     # Initialize Mermaid graph configuration
+    init_directive = init_directive or {}
+    init_directive["flowchart"] = {
+        **init_directive.get("flowchart", {}),
+        "curve": curve_style.value,
+    }
     mermaid_graph = (
-        (
-            f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
-            f"}}}}}}%%\ngraph TD;\n"
-        )
+        (f"%%{{init: {json.dumps(init_directive)}}}%%\ngraph TD;\n")
         if with_styles
         else "graph TD;\n"
     )
