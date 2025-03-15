@@ -266,6 +266,7 @@ giga
   * [Агент с текстовым поиском на основе Yandex Search API](/cookbook/yandex_search/tool.ipynb)
   * [Дебаты агентов с разными ролями](/cookbook/agent_debates/README.md)
   * [Агент для получения рекомендаций Spotify](/cookbook/playlists.ipynb)
+  * [Агент выполняющий код](/cookbook/repl_graph/repl.ipynb)
 * [Извлечение структурированной информации](/cookbook/extraction.ipynb)
 * Работа с изображениями:
   * [Распознавание изображения](/cookbook/gigachat_vision/gigachat_vision_simple.ipynb)
