@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
@@ -1040,19 +1041,31 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             Combined prompt template.
         """
+        partials = {**self.partial_variables}
+        with contextlib.suppress(AttributeError):
+            partials = {**partials, **other.partial_variables}
+
         # Allow for easy combining
         if isinstance(other, ChatPromptTemplate):
-            return ChatPromptTemplate(messages=self.messages + other.messages)  # type: ignore[call-arg]
+            return ChatPromptTemplate(messages=self.messages + other.messages).partial(
+                **partials
+            )  # type: ignore[call-arg]
         elif isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other])  # type: ignore[call-arg]
+            return ChatPromptTemplate(messages=self.messages + [other]).partial(
+                **partials
+            )  # type: ignore[call-arg]
         elif isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
-            return ChatPromptTemplate(messages=self.messages + _other.messages)  # type: ignore[call-arg]
+            return ChatPromptTemplate(messages=self.messages + _other.messages).partial(
+                **partials
+            )  # type: ignore[call-arg]
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt])  # type: ignore[call-arg]
+            return ChatPromptTemplate(messages=self.messages + [prompt]).partial(
+                **partials
+            )  # type: ignore[call-arg]
         else:
             msg = f"Unsupported operand type for +: {type(other)}"
             raise NotImplementedError(msg)
