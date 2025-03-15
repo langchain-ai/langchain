@@ -1,8 +1,9 @@
 """Loader that uses Playwright to load a page, then uses unstructured to parse html."""
 
 import logging
+import os
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -113,6 +114,8 @@ class PlaywrightURLLoader(BaseLoader):
         headless (bool): If True, the browser will run in headless mode.
         proxy (Optional[Dict[str, str]]): If set, the browser will access URLs
             through the specified proxy.
+        browser_session (Optional[Union[str, os.PathLike[str]]]): Path to a file with
+            browser session data that can be used to restore the browser session.
 
     Example:
         .. code-block:: python
@@ -137,6 +140,7 @@ class PlaywrightURLLoader(BaseLoader):
         remove_selectors: Optional[List[str]] = None,
         evaluator: Optional[PlaywrightEvaluator] = None,
         proxy: Optional[Dict[str, str]] = None,
+        browser_session: Optional[Union[str, os.PathLike[str]]] = None,
     ):
         """Load a list of URLs using Playwright."""
         try:
@@ -151,6 +155,7 @@ class PlaywrightURLLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.headless = headless
         self.proxy = proxy
+        self.browser_session = browser_session
 
         if remove_selectors and evaluator:
             raise ValueError(
@@ -170,9 +175,20 @@ class PlaywrightURLLoader(BaseLoader):
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless, proxy=self.proxy)
+            context = None
+
+            if self.browser_session:
+                if os.path.exists(self.browser_session):
+                    context = browser.new_context(storage_state=self.browser_session)
+                else:
+                    logger.warning(f"Session file not found: {self.browser_session}")
+
+            if context is None:
+                context = browser.new_context()
+
             for url in self.urls:
                 try:
-                    page = browser.new_page()
+                    page = context.new_page()
                     response = page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
@@ -180,6 +196,7 @@ class PlaywrightURLLoader(BaseLoader):
                     page.wait_for_load_state("load")
 
                     text = self.evaluator.evaluate(page, browser, response)
+                    page.close()
                     metadata = {"source": url}
                     yield Document(page_content=text, metadata=metadata)
                 except Exception as e:
@@ -211,9 +228,22 @@ class PlaywrightURLLoader(BaseLoader):
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless, proxy=self.proxy)
+            context = None
+
+            if self.browser_session:
+                if os.path.exists(self.browser_session):
+                    context = await browser.new_context(
+                        storage_state=self.browser_session
+                    )
+                else:
+                    logger.warning(f"Session file not found: {self.browser_session}")
+
+            if context is None:
+                context = await browser.new_context()
+
             for url in self.urls:
                 try:
-                    page = await browser.new_page()
+                    page = await context.new_page()
                     response = await page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
@@ -221,6 +251,7 @@ class PlaywrightURLLoader(BaseLoader):
                     await page.wait_for_load_state("load")
 
                     text = await self.evaluator.evaluate_async(page, browser, response)
+                    await page.close()
                     metadata = {"source": url}
                     yield Document(page_content=text, metadata=metadata)
                 except Exception as e:
