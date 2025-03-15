@@ -147,6 +147,9 @@ class BasePromptTemplate(
         )
 
     def _validate_input(self, inner_input: Any) -> dict:
+        if isinstance(inner_input, BaseModel):
+            inner_input = inner_input.model_dump()
+
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
