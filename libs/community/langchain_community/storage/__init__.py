@@ -36,6 +36,9 @@ if TYPE_CHECKING:
         UpstashRedisByteStore,
         UpstashRedisStore,
     )
+    from langchain_community.storage.opensearch import (
+        OpenSearchStore
+    )
 
 __all__ = [
     "AstraDBByteStore",
@@ -47,6 +50,7 @@ __all__ = [
     "SQLStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
+    "OpenSearchStore"
 ]
 
 _module_lookup = {
@@ -59,6 +63,7 @@ _module_lookup = {
     "SQLStore": "langchain_community.storage.sql",
     "UpstashRedisByteStore": "langchain_community.storage.upstash_redis",
     "UpstashRedisStore": "langchain_community.storage.upstash_redis",
+    "OpenSearchStore": "langchain_community.storage.opensearch",
 }
 
 
