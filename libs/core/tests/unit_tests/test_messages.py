@@ -184,7 +184,9 @@ def test_chat_message_chunks() -> None:
         "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Cannot concatenate ChatMessageChunks with different roles."
+    ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
         )
@@ -290,7 +292,10 @@ def test_function_message_chunks() -> None:
         id="ai5", name="hello", content="I am indeed."
     ), "FunctionMessageChunk + FunctionMessageChunk should be a FunctionMessageChunk"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Cannot concatenate FunctionMessageChunks with different names.",
+    ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
         )
@@ -303,7 +308,10 @@ def test_ai_message_chunks() -> None:
         "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Cannot concatenate AIMessageChunks with different example values.",
+    ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
         )
@@ -320,30 +328,21 @@ class TestGetBufferString(unittest.TestCase):
         self.tool_calls_msg = AIMessage(content="tool")
 
     def test_empty_input(self) -> None:
-        self.assertEqual(get_buffer_string([]), "")
+        assert get_buffer_string([]) == ""
 
     def test_valid_single_message(self) -> None:
         expected_output = f"Human: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg]),
-            expected_output,
-        )
+        assert get_buffer_string([self.human_msg]) == expected_output
 
     def test_custom_human_prefix(self) -> None:
         prefix = "H"
         expected_output = f"{prefix}: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg], human_prefix="H"),
-            expected_output,
-        )
+        assert get_buffer_string([self.human_msg], human_prefix="H") == expected_output
 
     def test_custom_ai_prefix(self) -> None:
         prefix = "A"
         expected_output = f"{prefix}: {self.ai_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.ai_msg], ai_prefix="A"),
-            expected_output,
-        )
+        assert get_buffer_string([self.ai_msg], ai_prefix="A") == expected_output
 
     def test_multiple_msg(self) -> None:
         msgs = [
@@ -366,10 +365,7 @@ class TestGetBufferString(unittest.TestCase):
                 "AI: tool",
             ]
         )
-        self.assertEqual(
-            get_buffer_string(msgs),
-            expected_output,
-        )
+        assert get_buffer_string(msgs) == expected_output
 
 
 def test_multiple_msg() -> None:
@@ -991,7 +987,7 @@ def test_tool_message_str() -> None:
 
 
 @pytest.mark.parametrize(
-    ["first", "others", "expected"],
+    ("first", "others", "expected"),
     [
         ("", [""], ""),
         ("", [[]], [""]),

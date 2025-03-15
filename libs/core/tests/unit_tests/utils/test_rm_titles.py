@@ -192,7 +192,7 @@ schema4 = {
 
 
 @pytest.mark.parametrize(
-    "schema, output",
+    ("schema", "output"),
     [(schema1, output1), (schema2, output2), (schema3, output3), (schema4, output4)],
 )
 def test_rm_titles(schema: dict, output: dict) -> None:

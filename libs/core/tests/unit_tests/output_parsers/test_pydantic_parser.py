@@ -157,9 +157,10 @@ def test_pydantic_output_parser_fail() -> None:
         pydantic_object=TestModel
     )
 
-    with pytest.raises(OutputParserException) as e:
+    with pytest.raises(
+        OutputParserException, match="Failed to parse TestModel from completion"
+    ):
         pydantic_parser.parse(DEF_RESULT_FAIL)
-        assert "Failed to parse TestModel from completion" in str(e)
 
 
 def test_pydantic_output_parser_type_inference() -> None:
