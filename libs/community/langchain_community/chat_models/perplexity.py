@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 import logging
+from operator import itemgetter
 from typing import (
     Any,
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -34,15 +38,37 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
+from langchain_core.messages.ai import UsageMetadata
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils.pydantic import (
+    is_basemodel_subclass,
 )
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from typing_extensions import Self
 
+_BM = TypeVar("_BM", bound=BaseModel)
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
+_DictOrPydantic = Union[Dict, _BM]
+
 logger = logging.getLogger(__name__)
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
+
+
+def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+    input_tokens = token_usage.get("prompt_tokens", 0)
+    output_tokens = token_usage.get("completion_tokens", 0)
+    total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+    )
 
 
 class ChatPerplexity(BaseChatModel):
@@ -148,7 +174,6 @@ class ChatPerplexity(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling PerplexityChat API."""
         return {
-            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "temperature": self.temperature,
@@ -218,21 +243,47 @@ class ChatPerplexity(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
-
+        params.pop("stream", None)
         if stop:
             params["stop_sequences"] = stop
         stream_resp = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts, stream=True
+            messages=message_dicts, stream=True, **params
         )
+        first_chunk = True
+        prev_total_usage: Optional[UsageMetadata] = None
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
+            # Collect standard usage metadata (transform from aggregate to delta)
+            if total_usage := chunk.get("usage"):
+                lc_total_usage = _create_usage_metadata(total_usage)
+                if prev_total_usage:
+                    usage_metadata: Optional[UsageMetadata] = {
+                        "input_tokens": lc_total_usage["input_tokens"]
+                        - prev_total_usage["input_tokens"],
+                        "output_tokens": lc_total_usage["output_tokens"]
+                        - prev_total_usage["output_tokens"],
+                        "total_tokens": lc_total_usage["total_tokens"]
+                        - prev_total_usage["total_tokens"],
+                    }
+                else:
+                    usage_metadata = lc_total_usage
+                prev_total_usage = lc_total_usage
+            else:
+                usage_metadata = None
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            citations = chunk.get("citations", [])
+
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
+            if isinstance(chunk, AIMessageChunk) and usage_metadata:
+                chunk.usage_metadata = usage_metadata
+            if first_chunk:
+                chunk.additional_kwargs |= {"citations": citations}
+                first_chunk = False
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
@@ -258,18 +309,23 @@ class ChatPerplexity(BaseChatModel):
                 return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts
+        response = self.client.chat.completions.create(messages=message_dicts, **params)
+        if usage := getattr(response, "usage", None):
+            usage_metadata = _create_usage_metadata(usage.model_dump())
+        else:
+            usage_metadata = None
+
+        message = AIMessage(
+            content=response.choices[0].message.content,
+            additional_kwargs={"citations": response.citations},
+            usage_metadata=usage_metadata,
         )
-        message = AIMessage(content=response.choices[0].message.content)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
         pplx_creds: Dict[str, Any] = {
-            "api_key": self.pplx_api_key,
-            "api_base": "https://api.perplexity.ai",
             "model": self.model,
         }
         return {**pplx_creds, **self._default_params}
@@ -278,3 +334,99 @@ class ChatPerplexity(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "perplexitychat"
+
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal["json_schema"] = "json_schema",
+        include_raw: bool = False,
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
+        Currently, Preplexity only supports "json_schema" method for structured output
+        as per their official documentation: https://docs.perplexity.ai/guides/structured-outputs
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+
+                - a JSON Schema,
+                - a TypedDict class,
+                - or a Pydantic class
+
+            method: The method for steering model generation, currently only support:
+
+                - "json_schema": Use the JSON Schema to parse the model output
+
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+            kwargs: Additional keyword args aren't supported.
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
+
+        """  # noqa: E501
+        if method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_schema'. "
+                    "Received None."
+                )
+            is_pydantic_schema = _is_pydantic_class(schema)
+            if is_pydantic_schema and hasattr(
+                schema, "model_json_schema"
+            ):  # accounting for pydantic v1 and v2
+                response_format = schema.model_json_schema()  # type: ignore[union-attr]
+            elif is_pydantic_schema:
+                response_format = schema.schema()  # type: ignore[union-attr]
+            elif isinstance(schema, dict):
+                response_format = schema
+            elif type(schema).__name__ == "_TypedDictMeta":
+                adapter = TypeAdapter(schema)  # if use passes typeddict
+                response_format = adapter.json_schema()
+
+            llm = self.bind(
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {"schema": response_format},
+                }
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected 'json_schema' Received:\
+                    '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser

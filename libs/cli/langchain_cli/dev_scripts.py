@@ -1,3 +1,4 @@
+# type: ignore
 """
 Development Scripts for template packages
 """

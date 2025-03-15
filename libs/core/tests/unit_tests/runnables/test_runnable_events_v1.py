@@ -1,8 +1,10 @@
 """Module that contains tests for runnable.astream_events API."""
 
+import asyncio
 import sys
+from collections.abc import AsyncIterator, Sequence
 from itertools import cycle
-from typing import Any, AsyncIterator, Dict, List, Sequence, cast
+from typing import Any, cast
 from typing import Optional as Optional
 
 import pytest
@@ -31,25 +33,25 @@ from langchain_core.runnables import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
-from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
+from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
-def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
+def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     """Removes the run ids from events."""
     for event in events:
         assert "parent_ids" in event, "Parent ids should be present in the event."
         assert event["parent_ids"] == [], "Parent ids should be empty."
 
-    return cast(List[StreamEvent], [{**event, "run_id": ""} for event in events])
+    return cast(list[StreamEvent], [{**event, "run_id": ""} for event in events])
 
 
-async def _as_async_iterator(iterable: List) -> AsyncIterator:
+async def _as_async_iterator(iterable: list) -> AsyncIterator:
     """Converts an iterable into an async iterator."""
     for item in iterable:
         yield item
 
 
-async def _collect_events(events: AsyncIterator[StreamEvent]) -> List[StreamEvent]:
+async def _collect_events(events: AsyncIterator[StreamEvent]) -> list[StreamEvent]:
     """Collect the events and remove the run ids."""
     materialized_events = [event async for event in events]
     events_ = _with_nulled_run_id(materialized_events)
@@ -58,7 +60,7 @@ async def _collect_events(events: AsyncIterator[StreamEvent]) -> List[StreamEven
     return events_
 
 
-def _assert_events_equal_allow_superset_metadata(events: List, expected: List) -> None:
+def _assert_events_equal_allow_superset_metadata(events: list, expected: list) -> None:
     """Assert that the events are equal."""
     assert len(events) == len(expected)
     for i, (event, expected_event) in enumerate(zip(events, expected)):
@@ -79,15 +81,15 @@ def _assert_events_equal_allow_superset_metadata(events: List, expected: List) -
 
 
 async def test_event_stream_with_simple_function_tool() -> None:
-    """Test the event stream with a function and tool"""
+    """Test the event stream with a function and tool."""
 
     def foo(x: int) -> dict:
-        """Foo"""
+        """Foo."""
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> List[Document]:
-        """Hello Doc"""
+    def get_docs(x: int) -> list[Document]:
+        """Hello Doc."""
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -344,7 +346,7 @@ async def test_event_stream_with_triple_lambda() -> None:
 
 
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
-    """Test filtering based on tags / names"""
+    """Test filtering based on tags / names."""
 
     def reverse(s: str) -> str:
         """Reverse a string."""
@@ -502,7 +504,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
+                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
                 "event": "on_chat_model_stream",
                 "metadata": {"a": "b"},
                 "name": "my_model",
@@ -511,7 +513,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
+                "data": {"chunk": _any_id_ai_message_chunk(content=" ")},
                 "event": "on_chat_model_stream",
                 "metadata": {"a": "b"},
                 "name": "my_model",
@@ -520,7 +522,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
+                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
                 "event": "on_chat_model_stream",
                 "metadata": {"a": "b"},
                 "name": "my_model",
@@ -529,7 +531,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"output": _AnyIdAIMessageChunk(content="hello world!")},
+                "data": {"output": _any_id_ai_message_chunk(content="hello world!")},
                 "event": "on_chat_model_end",
                 "metadata": {"a": "b"},
                 "name": "my_model",
@@ -574,7 +576,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
+                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -587,7 +589,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
+                "data": {"chunk": _any_id_ai_message_chunk(content=" ")},
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -600,7 +602,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
+                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -620,7 +622,9 @@ async def test_astream_events_from_model() -> None:
                             [
                                 {
                                     "generation_info": None,
-                                    "message": _AnyIdAIMessage(content="hello world!"),
+                                    "message": _any_id_ai_message(
+                                        content="hello world!"
+                                    ),
                                     "text": "hello world!",
                                     "type": "ChatGeneration",
                                 }
@@ -643,7 +647,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessage(content="hello world!")},
+                "data": {"chunk": _any_id_ai_message(content="hello world!")},
                 "event": "on_chain_stream",
                 "metadata": {},
                 "name": "i_dont_stream",
@@ -652,7 +656,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": _AnyIdAIMessage(content="hello world!")},
+                "data": {"output": _any_id_ai_message(content="hello world!")},
                 "event": "on_chain_end",
                 "metadata": {},
                 "name": "i_dont_stream",
@@ -697,7 +701,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
+                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -710,7 +714,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
+                "data": {"chunk": _any_id_ai_message_chunk(content=" ")},
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -723,7 +727,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
+                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -743,7 +747,9 @@ async def test_astream_events_from_model() -> None:
                             [
                                 {
                                     "generation_info": None,
-                                    "message": _AnyIdAIMessage(content="hello world!"),
+                                    "message": _any_id_ai_message(
+                                        content="hello world!"
+                                    ),
                                     "text": "hello world!",
                                     "type": "ChatGeneration",
                                 }
@@ -766,7 +772,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _AnyIdAIMessage(content="hello world!")},
+                "data": {"chunk": _any_id_ai_message(content="hello world!")},
                 "event": "on_chain_stream",
                 "metadata": {},
                 "name": "ai_dont_stream",
@@ -775,7 +781,7 @@ async def test_astream_events_from_model() -> None:
                 "tags": [],
             },
             {
-                "data": {"output": _AnyIdAIMessage(content="hello world!")},
+                "data": {"output": _any_id_ai_message(content="hello world!")},
                 "event": "on_chain_end",
                 "metadata": {},
                 "name": "ai_dont_stream",
@@ -790,7 +796,10 @@ async def test_astream_events_from_model() -> None:
 async def test_event_stream_with_simple_chain() -> None:
     """Test as event stream."""
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
     infinite_cycle = cycle(
@@ -1172,11 +1181,11 @@ async def test_event_streaming_with_tools() -> None:
 
 
 class HardCodedRetriever(BaseRetriever):
-    documents: List[Document]
+    documents: list[Document]
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
+    ) -> list[Document]:
         return self.documents
 
 
@@ -1265,7 +1274,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         ]
     )
 
-    def format_docs(docs: List[Document]) -> str:
+    def format_docs(docs: list[Document]) -> str:
         """Format the docs."""
         return ", ".join([doc.page_content for doc in docs])
 
@@ -1591,7 +1600,8 @@ async def test_event_stream_with_retry() -> None:
 
     def fail(inputs: str) -> None:
         """Simple func."""
-        raise Exception("fail")
+        msg = "fail"
+        raise ValueError(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1675,7 +1685,10 @@ async def test_event_stream_with_retry() -> None:
 async def test_with_llm() -> None:
     """Test with regular llm."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
     llm = FakeStreamingListLLM(responses=["abc"])
 
@@ -1724,7 +1737,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     }
                 },
                 "event": "on_llm_start",
@@ -1737,7 +1750,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     },
                     "output": {
                         "generations": [
@@ -1816,7 +1829,7 @@ async def test_runnable_each() -> None:
 
 
 async def test_events_astream_config() -> None:
-    """Test that astream events support accepting config"""
+    """Test that astream events support accepting config."""
     infinite_cycle = cycle([AIMessage(content="hello world!", id="ai1")])
     good_world_on_repeat = cycle([AIMessage(content="Goodbye world", id="ai2")])
     model = GenericFakeChatModel(messages=infinite_cycle).configurable_fields(
@@ -1903,16 +1916,19 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store: Dict = {}
+    store: dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
-        """Get a chat message history"""
+        """Get a chat message history."""
         if session_id not in store:
             store[session_id] = []
         return InMemoryHistory(messages=store[session_id])
 
     infinite_cycle = cycle(
-        [AIMessage(content="hello", id="ai3"), AIMessage(content="world", id="ai4")]
+        [
+            AIMessage(content="hello", id="ai3"),
+            AIMessage(content="world", id="ai4"),
+        ]
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -1942,9 +1958,12 @@ async def test_runnable_with_message_history() -> None:
         ]
     }
 
-    with_message_history.with_config(
-        {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "meow"})
+    await asyncio.to_thread(
+        with_message_history.with_config(
+            {"configurable": {"session_id": "session-123"}}
+        ).invoke,
+        {"question": "meow"},
+    )
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
@@ -2028,7 +2047,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
 
     async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
         streaming = add_one.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
@@ -2073,7 +2092,7 @@ async def test_sync_in_sync_lambdas() -> None:
     def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
         streaming = add_one_.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy_ = RunnableLambda(add_one_proxy)

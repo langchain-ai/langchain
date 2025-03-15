@@ -167,7 +167,7 @@ class FalkorDBGraph(GraphStore):
             data = self._graph.query(query, params)
             return data.result_set
         except Exception as e:
-            raise ValueError("Generated Cypher Statement is not valid\n" f"{e}")
+            raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
 
     def add_graph_documents(
         self, graph_documents: List[GraphDocument], include_source: bool = False

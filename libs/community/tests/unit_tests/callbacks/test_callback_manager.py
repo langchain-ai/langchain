@@ -121,4 +121,4 @@ def test_callback_manager_configure_context_vars(
                     assert cb.completion_tokens == 1
                     assert cb.total_cost > 0
             wait_for_all_tracers()
-            assert LangChainTracer._persist_run_single.call_count == 1  # type: ignore
+            assert LangChainTracer._persist_run_single.call_count == 4  # type: ignore

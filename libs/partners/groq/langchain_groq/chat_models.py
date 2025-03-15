@@ -23,6 +23,7 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -85,6 +86,10 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_groq.version import __version__
+
+WARNED_DEFAULT_MODEL = False
+
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -106,7 +111,7 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use. E.g. "mixtral-8x7b-32768".
+            Name of Groq model to use. E.g. "llama-3.1-8b-instant".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
@@ -137,7 +142,7 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             llm = ChatGroq(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",
                 temperature=0.0,
                 max_retries=2,
                 # other params...
@@ -161,7 +166,7 @@ class ChatGroq(BaseChatModel):
             response_metadata={'token_usage': {'completion_tokens': 38,
             'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
             0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
+            'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
@@ -169,7 +174,7 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -219,7 +224,7 @@ class ChatGroq(BaseChatModel):
            response_metadata={'token_usage': {'completion_tokens': 53,
            'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
            0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768',
+           'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
 
@@ -292,7 +297,7 @@ class ChatGroq(BaseChatModel):
             'prompt_time': 0.007518279,
             'queue_time': None,
             'total_time': 0.11947467},
-            'model_name': 'mixtral-8x7b-32768',
+            'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
@@ -304,7 +309,7 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
-    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -350,6 +355,27 @@ class ChatGroq(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
+    def warn_default_model(cls, values: Dict[str, Any]) -> Any:
+        """Warning anticipating removal of default model."""
+        # TODO(ccurme): remove this warning in 0.3.0 when default model is removed
+        global WARNED_DEFAULT_MODEL
+        if (
+            "model" not in values
+            and "model_name" not in values
+            and not WARNED_DEFAULT_MODEL
+        ):
+            warnings.warn(
+                "Groq is retiring the default model for ChatGroq, mixtral-8x7b-32768, "
+                "on March 20, 2025. Requests with the default model will start failing "
+                "on that date. Version 0.3.0 of langchain-groq will remove the "
+                "default. Please specify `model` explicitly, e.g., "
+                "`model='mistral-saba-24b'` or `model='llama-3.3-70b-versatile'`.",
+            )
+            WARNED_DEFAULT_MODEL = True
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
@@ -385,6 +411,10 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
+        default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
+            self.default_headers or {}
+        )
+
         client_params: Dict[str, Any] = {
             "api_key": (
                 self.groq_api_key.get_secret_value() if self.groq_api_key else None
@@ -392,7 +422,7 @@ class ChatGroq(BaseChatModel):
             "base_url": self.groq_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": default_headers,
             "default_query": self.default_query,
         }
 
@@ -650,6 +680,11 @@ class ChatGroq(BaseChatModel):
             combined["system_fingerprint"] = system_fingerprint
         return combined
 
+    @deprecated(
+        since="0.2.1",
+        alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
+        removal="1.0.0",
+    )
     def bind_functions(
         self,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -674,8 +709,8 @@ class ChatGroq(BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any).
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+            **kwargs: Any additional parameters to pass to
+                :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
         """
 
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
@@ -733,31 +768,11 @@ class ChatGroq(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
-                if len(tools) > 1:
-                    raise ValueError(
-                        f"Groq does not currently support {tool_choice=}. Should "
-                        f"be one of 'auto', 'none', or the name of the tool to call."
-                    )
-                else:
-                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+                tool_choice = "required"
             if isinstance(tool_choice, str) and (
-                tool_choice not in ("auto", "any", "none")
+                tool_choice not in ("auto", "none", "required")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            # TODO: Remove this update once 'any' is supported.
-            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
-            if isinstance(tool_choice, dict) and (
-                formatted_tools[0]["function"]["name"]
-                != tool_choice["function"]["name"]
-            ):
-                raise ValueError(
-                    f"Tool choice {tool_choice} was specified, but the only "
-                    f"provided tool was {formatted_tools[0]['function']['name']}."
-                )
             if isinstance(tool_choice, bool):
                 if len(tools) > 1:
                     raise ValueError(
@@ -1004,8 +1019,16 @@ class ChatGroq(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools([schema], tool_choice=tool_name)
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                ls_structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -1016,7 +1039,13 @@ class ChatGroq(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_mode"},
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema

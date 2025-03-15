@@ -1,9 +1,25 @@
-from typing import Dict
-
-from pydantic import ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_core.load import Serializable, dumpd, load
 from langchain_core.load.serializable import _is_field_useful
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration
+
+
+class NonBoolObj:
+    def __bool__(self) -> bool:
+        msg = "Truthiness can't be determined"
+        raise ValueError(msg)
+
+    def __eq__(self, other: object) -> bool:
+        msg = "Equality can't be determined"
+        raise ValueError(msg)
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
 
 
 def test_simple_serialization() -> None:
@@ -56,7 +72,7 @@ def test_simple_serialization_secret() -> None:
             return True
 
         @property
-        def lc_secrets(self) -> Dict[str, str]:
+        def lc_secrets(self) -> dict[str, str]:
             return {"secret": "MASKED_SECRET", "secret_2": "MASKED_SECRET_2"}
 
     foo = Foo(
@@ -78,17 +94,11 @@ def test_simple_serialization_secret() -> None:
 def test__is_field_useful() -> None:
     class ArrayObj:
         def __bool__(self) -> bool:
-            raise ValueError("Truthiness can't be determined")
+            msg = "Truthiness can't be determined"
+            raise ValueError(msg)
 
         def __eq__(self, other: object) -> bool:
             return self  # type: ignore[return-value]
-
-    class NonBoolObj:
-        def __bool__(self) -> bool:
-            raise ValueError("Truthiness can't be determined")
-
-        def __eq__(self, other: object) -> bool:
-            raise ValueError("Equality can't be determined")
 
     default_x = ArrayObj()
     default_y = NonBoolObj()
@@ -168,3 +178,48 @@ def test_simple_deserialization_with_additional_imports() -> None:
         },
     )
     assert isinstance(new_foo, Foo2)
+
+
+class Foo3(Serializable):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    content: str
+    non_bool: NonBoolObj
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+
+def test_repr() -> None:
+    foo = Foo3(
+        content="repr",
+        non_bool=NonBoolObj(),
+    )
+    assert repr(foo) == "Foo3(content='repr', non_bool=NonBoolObj)"
+
+
+def test_str() -> None:
+    foo = Foo3(
+        content="str",
+        non_bool=NonBoolObj(),
+    )
+    assert str(foo) == "content='str' non_bool=NonBoolObj"
+
+
+def test_serialization_with_pydantic() -> None:
+    class MyModel(BaseModel):
+        x: int
+        y: str
+
+    my_model = MyModel(x=1, y="hello")
+    llm_response = ChatGeneration(
+        message=AIMessage(
+            content='{"x": 1, "y": "hello"}', additional_kwargs={"parsed": my_model}
+        )
+    )
+    ser = dumpd(llm_response)
+    deser = load(ser)
+    assert isinstance(deser, ChatGeneration)
+    assert deser.message.content
+    assert deser.message.additional_kwargs["parsed"] == my_model.model_dump()

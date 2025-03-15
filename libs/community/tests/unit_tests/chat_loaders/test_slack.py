@@ -14,6 +14,6 @@ def test_slack_chat_loader() -> None:
 
     assert chat_sessions[1]["messages"], "Chat messages should not be empty"
 
-    assert (
-        "Example message" in chat_sessions[1]["messages"][0].content
-    ), "Chat content mismatch"
+    assert "Example message" in chat_sessions[1]["messages"][0].content, (
+        "Chat content mismatch"
+    )

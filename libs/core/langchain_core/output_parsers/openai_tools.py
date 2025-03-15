@@ -1,10 +1,9 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import SkipValidation, ValidationError
-from typing_extensions import Annotated
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
@@ -17,12 +16,12 @@ from langchain_core.utils.pydantic import TypeBaseModel
 
 
 def parse_tool_call(
-    raw_tool_call: Dict[str, Any],
+    raw_tool_call: dict[str, Any],
     *,
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Parse a single tool call.
 
     Args:
@@ -53,11 +52,12 @@ def parse_tool_call(
                 raw_tool_call["function"]["arguments"], strict=strict
             )
         except JSONDecodeError as e:
-            raise OutputParserException(
+            msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
                 f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
-            ) from e
+            )
+            raise OutputParserException(msg) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
@@ -69,7 +69,7 @@ def parse_tool_call(
 
 
 def make_invalid_tool_call(
-    raw_tool_call: Dict[str, Any],
+    raw_tool_call: dict[str, Any],
     error_msg: Optional[str],
 ) -> InvalidToolCall:
     """Create an InvalidToolCall from a raw tool call.
@@ -90,12 +90,12 @@ def make_invalid_tool_call(
 
 
 def parse_tool_calls(
-    raw_tool_calls: List[dict],
+    raw_tool_calls: list[dict],
     *,
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Parse a list of tool calls.
 
     Args:
@@ -111,7 +111,7 @@ def parse_tool_calls(
     Raises:
         OutputParserException: If any of the tool calls are not valid JSON.
     """
-    final_tools: List[Dict[str, Any]] = []
+    final_tools: list[dict[str, Any]] = []
     exceptions = []
     for tool_call in raw_tool_calls:
         try:
@@ -143,15 +143,15 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list 
+    If False, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
-    and the other tool calls will be ignored. 
-    If no tool calls are found, None will be returned. 
+    and the other tool calls will be ignored.
+    If no tool calls are found, None will be returned.
     """
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of tool calls.
 
         Args:
@@ -168,12 +168,10 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         if isinstance(message, AIMessage) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
@@ -208,7 +206,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed tool calls.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonOutputKeyToolsParser(JsonOutputToolsParser):
@@ -217,7 +215,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
     key_name: str
     """The type of tools to return."""
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of tool calls.
 
         Args:
@@ -254,12 +252,12 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: Annotated[List[TypeBaseModel], SkipValidation()]
+    tools: Annotated[list[TypeBaseModel], SkipValidation()]
     """The tools to parse."""
 
     # TODO: Support more granular streaming of objects. Currently only streams once all
     # Pydantic object fields are present.
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of Pydantic objects.
 
         Args:
@@ -284,18 +282,20 @@ class PydanticToolsParser(JsonOutputToolsParser):
         name_dict = {tool.__name__: tool for tool in self.tools}
         pydantic_objects = []
         for res in json_results:
-            try:
-                if not isinstance(res["args"], dict):
-                    raise ValueError(
-                        f"Tool arguments must be specified as a dict, received: "
-                        f"{res['args']}"
-                    )
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
-            except (ValidationError, ValueError) as e:
+            if not isinstance(res["args"], dict):
                 if partial:
                     continue
-                else:
-                    raise e
+                msg = (
+                    f"Tool arguments must be specified as a dict, received: "
+                    f"{res['args']}"
+                )
+                raise ValueError(msg)
+            try:
+                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+            except (ValidationError, ValueError):
+                if partial:
+                    continue
+                raise
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
         else:

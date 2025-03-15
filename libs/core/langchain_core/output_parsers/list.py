@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import csv
 import re
 from abc import abstractmethod
 from collections import deque
-from typing import AsyncIterator, Deque, Iterator, List, TypeVar, Union
+from io import StringIO
+from typing import TYPE_CHECKING, TypeVar, Union
 from typing import Optional as Optional
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
 
 T = TypeVar("T")
 
@@ -22,14 +27,14 @@ def droplastn(iter: Iterator[T], n: int) -> Iterator[T]:
     Yields:
         The elements of the iterator, except the last n elements.
     """
-    buffer: Deque[T] = deque()
+    buffer: deque[T] = deque()
     for item in iter:
         buffer.append(item)
         if len(buffer) > n:
             yield buffer.popleft()
 
 
-class ListOutputParser(BaseTransformOutputParser[List[str]]):
+class ListOutputParser(BaseTransformOutputParser[list[str]]):
     """Parse the output of an LLM call to a list."""
 
     @property
@@ -37,14 +42,14 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
         return "list"
 
     @abstractmethod
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:
             text: The output of an LLM call.
 
-            Returns:
-                A list of strings.
+        Returns:
+            A list of strings.
         """
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:
@@ -60,7 +65,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
 
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[List[str]]:
+    ) -> Iterator[list[str]]:
         buffer = ""
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -92,7 +97,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
 
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
-    ) -> AsyncIterator[List[str]]:
+    ) -> AsyncIterator[list[str]]:
         buffer = ""
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -132,11 +137,13 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Check if the langchain object is serializable.
-        Returns True."""
+
+        Returns True.
+        """
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         Returns:
@@ -152,7 +159,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
             "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:
@@ -161,7 +168,14 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return [part.strip() for part in text.split(",")]
+        try:
+            reader = csv.reader(
+                StringIO(text), quotechar='"', delimiter=",", skipinitialspace=True
+            )
+            return [item for sublist in reader for item in sublist]
+        except csv.Error:
+            # keep old logic for backup
+            return [part.strip() for part in text.split(",")]
 
     @property
     def _type(self) -> str:
@@ -180,7 +194,7 @@ class NumberedListOutputParser(ListOutputParser):
             "For example: \n\n1. foo\n\n2. bar\n\n3. baz"
         )
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:
@@ -215,9 +229,9 @@ class MarkdownListOutputParser(ListOutputParser):
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
 
-    def parse(self, text: str) -> List[str]:
+    def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
         Args:

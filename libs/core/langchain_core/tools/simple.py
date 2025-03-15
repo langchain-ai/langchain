@@ -1,30 +1,29 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    Dict,
     Optional,
-    Tuple,
-    Type,
     Union,
 )
-
-from pydantic import BaseModel
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    ArgsSchema,
     BaseTool,
     ToolException,
     _get_runnable_config_param,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class Tool(BaseTool):
@@ -40,7 +39,7 @@ class Tool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -60,22 +59,29 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            return self.args_schema.model_json_schema()["properties"]
+            if isinstance(self.args_schema, dict):
+                json_schema = self.args_schema
+            else:
+                json_schema = self.args_schema.model_json_schema()
+            return json_schema["properties"]
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> tuple[tuple, dict]:
         """Convert tool input to pydantic model."""
-        args, kwargs = super()._to_args_and_kwargs(tool_input)
+        args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
-            raise ToolException(
+            msg = (
                 f"""Too many arguments to single-input tool {self.name}.
                 Consider using StructuredTool instead."""
                 f" Args: {all_args}"
             )
+            raise ToolException(msg)
         return tuple(all_args), {}
 
     def _run(
@@ -92,7 +98,8 @@ class Tool(BaseTool):
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
-        raise NotImplementedError("Tool does not support sync invocation.")
+        msg = "Tool does not support sync invocation."
+        raise NotImplementedError(msg)
 
     async def _arun(
         self,
@@ -131,7 +138,7 @@ class Tool(BaseTool):
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,
-        args_schema: Optional[Type[BaseModel]] = None,
+        args_schema: Optional[ArgsSchema] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]
         ] = None,  # This is last for compatibility, but should be after func
@@ -155,7 +162,8 @@ class Tool(BaseTool):
             ValueError: If the function is not provided.
         """
         if func is None and coroutine is None:
-            raise ValueError("Function and/or coroutine must be provided")
+            msg = "Function and/or coroutine must be provided"
+            raise ValueError(msg)
         return cls(
             name=name,
             func=func,

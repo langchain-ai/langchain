@@ -1,6 +1,7 @@
 import logging
 import re
-from typing import List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ DEFAULT_LINK_REGEX = (
 
 def find_all_links(
     raw_html: str, *, pattern: Union[str, re.Pattern, None] = None
-) -> List[str]:
+) -> list[str]:
     """Extract all links from a raw HTML string.
 
     Args:
@@ -56,7 +57,7 @@ def extract_sub_links(
     prevent_outside: bool = True,
     exclude_prefixes: Sequence[str] = (),
     continue_on_failure: bool = False,
-) -> List[str]:
+) -> list[str]:
     """Extract all links from a raw HTML string and convert into absolute paths.
 
     Args:
@@ -69,6 +70,7 @@ def extract_sub_links(
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
         continue_on_failure: If True, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
+
     Returns:
         List[str]: sub links.
     """
@@ -95,8 +97,7 @@ def extract_sub_links(
             if continue_on_failure:
                 logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
                 continue
-            else:
-                raise e
+            raise
 
     results = []
     for path in absolute_paths:

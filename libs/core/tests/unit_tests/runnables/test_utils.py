@@ -1,5 +1,5 @@
 import sys
-from typing import Callable, Dict, Tuple
+from typing import Callable
 
 import pytest
 
@@ -19,11 +19,11 @@ from langchain_core.runnables.utils import (
     [
         (lambda x: x * 2, "lambda x: x * 2"),
         (lambda a, b: a + b, "lambda a, b: a + b"),
-        (lambda x: x if x > 0 else 0, "lambda x: x if x > 0 else 0"),
+        (lambda x: x if x > 0 else 0, "lambda x: x if x > 0 else 0"),  # noqa: FURB136
     ],
 )
 def test_get_lambda_source(func: Callable, expected_source: str) -> None:
-    """Test get_lambda_source function"""
+    """Test get_lambda_source function."""
     source = get_lambda_source(func)
     assert source == expected_source
 
@@ -36,7 +36,7 @@ def test_get_lambda_source(func: Callable, expected_source: str) -> None:
     ],
 )
 def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) -> None:
-    """Test indent_lines_after_first function"""
+    """Test indent_lines_after_first function."""
     indented_text = indent_lines_after_first(text, prefix)
     assert indented_text == expected_output
 
@@ -47,7 +47,7 @@ global_agent = RunnableLambda(lambda x: x * 3)
 def test_nonlocals() -> None:
     agent = RunnableLambda(lambda x: x * 2)
 
-    def my_func(input: str, agent: Dict[str, str]) -> str:
+    def my_func(input: str, agent: dict[str, str]) -> str:
         return agent.get("agent_name", input)
 
     def my_func2(input: str) -> str:
@@ -59,7 +59,7 @@ def test_nonlocals() -> None:
     def my_func4(input: str) -> str:
         return global_agent.invoke(input)
 
-    def my_func5() -> Tuple[Callable[[str], str], RunnableLambda]:
+    def my_func5() -> tuple[Callable[[str], str], RunnableLambda]:
         global_agent = RunnableLambda(lambda x: x * 3)
 
         def my_func6(input: str) -> str:

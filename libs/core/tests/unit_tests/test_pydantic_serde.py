@@ -25,7 +25,6 @@ from langchain_core.messages import (
 
 def test_serde_any_message() -> None:
     """Test AnyMessage() serder."""
-
     lc_objects = [
         HumanMessage(content="human"),
         HumanMessageChunk(content="human"),
@@ -51,14 +50,14 @@ def test_serde_any_message() -> None:
         ),
     ]
 
-    Model = RootModel[AnyMessage]
+    model = RootModel[AnyMessage]
 
     for lc_object in lc_objects:
         d = lc_object.model_dump()
         assert "type" in d, f"Missing key `type` for {type(lc_object)}"
-        obj1 = Model.model_validate(d)
+        obj1 = model.model_validate(d)
         assert type(obj1.root) is type(lc_object), f"failed for {type(lc_object)}"
 
     with pytest.raises((TypeError, ValidationError)):
         # Make sure that specifically validation error is raised
-        Model.model_validate({})
+        model.model_validate({})

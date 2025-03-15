@@ -1,8 +1,7 @@
+import contextlib
 from abc import ABC
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
     TypedDict,
@@ -11,6 +10,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from pydantic.fields import FieldInfo
 from typing_extensions import NotRequired
 
 
@@ -25,9 +25,9 @@ class BaseSerialized(TypedDict):
     """
 
     lc: int
-    id: List[str]
+    id: list[str]
     name: NotRequired[str]
-    graph: NotRequired[Dict[str, Any]]
+    graph: NotRequired[dict[str, Any]]
 
 
 class SerializedConstructor(BaseSerialized):
@@ -39,7 +39,7 @@ class SerializedConstructor(BaseSerialized):
     """
 
     type: Literal["constructor"]
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
@@ -78,10 +78,23 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Raises:
         Exception: If the key is not in the model.
     """
+    field = model.model_fields[key]
+    return _try_neq_default(value, field)
+
+
+def _try_neq_default(value: Any, field: FieldInfo) -> bool:
+    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
+    # Pandas DataFrames).
     try:
-        return model.model_fields[key].get_default() != value
-    except Exception:
-        return True
+        return bool(field.get_default() != value)
+    except Exception as _:
+        try:
+            return all(field.get_default() != value)
+        except Exception as _:
+            try:
+                return value is not field.default
+            except Exception as _:
+                return False
 
 
 class Serializable(BaseModel, ABC):
@@ -125,7 +138,7 @@ class Serializable(BaseModel, ABC):
         return False
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
@@ -134,16 +147,16 @@ class Serializable(BaseModel, ABC):
         return cls.__module__.split(".")
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
         For example,
             {"openai_api_key": "OPENAI_API_KEY"}
         """
-        return dict()
+        return {}
 
     @property
-    def lc_attributes(self) -> Dict:
+    def lc_attributes(self) -> dict:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
@@ -152,7 +165,7 @@ class Serializable(BaseModel, ABC):
         return {}
 
     @classmethod
-    def lc_id(cls) -> List[str]:
+    def lc_id(cls) -> list[str]:
         """A unique identifier for this class for serialization purposes.
 
         The unique identifier is a list of strings that describes the path
@@ -190,7 +203,7 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
-        secrets = dict()
+        secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
         for k, v in self:
@@ -216,11 +229,12 @@ class Serializable(BaseModel, ABC):
 
                 for attr in deprecated_attributes:
                     if hasattr(cls, attr):
-                        raise ValueError(
+                        msg = (
                             f"Class {self.__class__} has a deprecated "
                             f"attribute {attr}. Please use the corresponding "
                             f"classmethod instead."
                         )
+                        raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
@@ -240,7 +254,7 @@ class Serializable(BaseModel, ABC):
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
-        for key in secrets.keys():
+        for key in secrets:
             secret_value = getattr(self, key, None) or lc_kwargs.get(key)
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
@@ -297,26 +311,15 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     if field.default_factory is list and isinstance(value, list):
         return False
 
-    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
-    # Pandas DataFrames).
-    try:
-        value_neq_default = bool(field.get_default() != value)
-    except Exception as _:
-        try:
-            value_neq_default = all(field.get_default() != value)
-        except Exception as _:
-            try:
-                value_neq_default = value is not field.default
-            except Exception as _:
-                value_neq_default = False
+    value_neq_default = _try_neq_default(value, field)
 
     # If value is falsy and does not match the default
     return value_is_truthy or value_neq_default
 
 
 def _replace_secrets(
-    root: Dict[Any, Any], secrets_map: Dict[str, str]
-) -> Dict[Any, Any]:
+    root: dict[Any, Any], secrets_map: dict[str, str]
+) -> dict[Any, Any]:
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")
@@ -344,7 +347,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     Returns:
         SerializedNotImplemented
     """
-    _id: List[str] = []
+    _id: list[str] = []
     try:
         if hasattr(obj, "__name__"):
             _id = [*obj.__module__.split("."), obj.__name__]
@@ -359,8 +362,6 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         "id": _id,
         "repr": None,
     }
-    try:
+    with contextlib.suppress(Exception):
         result["repr"] = repr(obj)
-    except Exception:
-        pass
     return result

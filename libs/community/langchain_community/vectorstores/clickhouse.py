@@ -96,7 +96,10 @@ class ClickhouseSettings(BaseSettings):
         return getattr(self, item)
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", env_prefix="clickhouse_"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="clickhouse_",
+        extra="ignore",
     )
 
 
@@ -306,6 +309,14 @@ class Clickhouse(VectorStore):
             **kwargs,
         )
         # Enable JSON type
+        try:
+            self.client.command("SET allow_experimental_json_type=1")
+        except Exception as _:
+            logger.debug(
+                f"Clickhouse version={self.client.server_version} - "
+                "There is no allow_experimental_json_type parameter."
+            )
+
         self.client.command("SET allow_experimental_object_type=1")
         if self.config.index_type:
             # Enable index
@@ -330,27 +341,28 @@ class Clickhouse(VectorStore):
         if self.config.index_type:
             return f"""\
         CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-            {self.config.column_map['id']} Nullable(String),
-            {self.config.column_map['document']} Nullable(String),
-            {self.config.column_map['embedding']} Array(Float32),
-            {self.config.column_map['metadata']} JSON,
-            {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+            {self.config.column_map["id"]} Nullable(String),
+            {self.config.column_map["document"]} Nullable(String),
+            {self.config.column_map["embedding"]} Array(Float32),
+            {self.config.column_map["metadata"]} JSON,
+            {self.config.column_map["uuid"]} UUID DEFAULT generateUUIDv4(),
             CONSTRAINT cons_vec_len CHECK length(
-                {self.config.column_map['embedding']}) = {dim},
-            INDEX vec_idx {self.config.column_map['embedding']} TYPE \
+                {self.config.column_map["embedding"]}) = {dim},
+            INDEX vec_idx {self.config.column_map["embedding"]} TYPE \
         {self.config.index_type}({index_params}) GRANULARITY 1000
         ) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
         """
         else:
             return f"""\
                 CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                    {self.config.column_map['id']} Nullable(String),
-                    {self.config.column_map['document']} Nullable(String),
-                    {self.config.column_map['embedding']} Array(Float32),
-                    {self.config.column_map['metadata']} JSON,
-                    {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+                    {self.config.column_map["id"]} Nullable(String),
+                    {self.config.column_map["document"]} Nullable(String),
+                    {self.config.column_map["embedding"]} Array(Float32),
+                    {self.config.column_map["metadata"]} JSON,
+                    {self.config.column_map["uuid"]} UUID DEFAULT generateUUIDv4(),
                     CONSTRAINT cons_vec_len CHECK length({
-                        self.config.column_map['embedding']}) = {dim}
+                self.config.column_map["embedding"]
+            }) = {dim}
                 ) ENGINE = MergeTree ORDER BY uuid
                 """
 
@@ -407,7 +419,7 @@ class Clickhouse(VectorStore):
                 INSERT INTO TABLE 
                     {self.config.database}.{self.config.table}({ks})
                 VALUES
-                {','.join(_data)}
+                {",".join(_data)}
                 """
         return i_str
 
@@ -563,13 +575,13 @@ class Clickhouse(VectorStore):
             for k in self.config.index_query_params:
                 settings_strs.append(f"SETTING {k}={self.config.index_query_params[k]}")
         q_str = f"""
-            SELECT {self.config.column_map['document']}, 
-                {self.config.column_map['metadata']}, dist
+            SELECT {self.config.column_map["document"]}, 
+                {self.config.column_map["metadata"]}, dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY L2Distance({self.config.column_map['embedding']}, [{q_emb_str}]) 
+            ORDER BY L2Distance({self.config.column_map["embedding"]}, [{q_emb_str}]) 
                 AS dist {self.dist_order}
-            LIMIT {topk} {' '.join(settings_strs)}
+            LIMIT {topk} {" ".join(settings_strs)}
             """
         return q_str
 

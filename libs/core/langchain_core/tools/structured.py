@@ -1,42 +1,43 @@
 from __future__ import annotations
 
 import textwrap
+from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
+    Annotated,
     Any,
-    Awaitable,
     Callable,
-    Dict,
-    List,
     Literal,
     Optional,
-    Type,
     Union,
 )
 
-from pydantic import BaseModel, Field, SkipValidation
-from typing_extensions import Annotated
+from pydantic import Field, SkipValidation
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
+    ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.utils.pydantic import is_basemodel_subclass
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
+    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
@@ -50,7 +51,7 @@ class StructuredTool(BaseTool):
     # TODO: Is this needed?
     async def ainvoke(
         self,
-        input: Union[str, Dict, ToolCall],
+        input: Union[str, dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -65,7 +66,12 @@ class StructuredTool(BaseTool):
     @property
     def args(self) -> dict:
         """The tool's input arguments."""
-        return self.args_schema.model_json_schema()["properties"]
+        if isinstance(self.args_schema, dict):
+            json_schema = self.args_schema
+        else:
+            input_schema = self.get_input_schema()
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     def _run(
         self,
@@ -81,7 +87,8 @@ class StructuredTool(BaseTool):
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
             return self.func(*args, **kwargs)
-        raise NotImplementedError("StructuredTool does not support sync invocation.")
+        msg = "StructuredTool does not support sync invocation."
+        raise NotImplementedError(msg)
 
     async def _arun(
         self,
@@ -112,7 +119,7 @@ class StructuredTool(BaseTool):
         name: Optional[str] = None,
         description: Optional[str] = None,
         return_direct: bool = False,
-        args_schema: Optional[Type[BaseModel]] = None,
+        args_schema: Optional[ArgsSchema] = None,
         infer_schema: bool = True,
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
@@ -164,13 +171,13 @@ class StructuredTool(BaseTool):
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
         """
-
         if func is not None:
             source_function = func
         elif coroutine is not None:
             source_function = coroutine
         else:
-            raise ValueError("Function and/or coroutine must be provided")
+            msg = "Function and/or coroutine must be provided"
+            raise ValueError(msg)
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
             # schema name is appended within function
@@ -185,11 +192,19 @@ class StructuredTool(BaseTool):
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            description_ = args_schema.__doc__ or None
+            if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
+                description_ = args_schema.__doc__ or None
+            elif isinstance(args_schema, dict):
+                description_ = args_schema.get("description")
+            else:
+                msg = (
+                    "Invalid args_schema: expected BaseModel or dict, "
+                    f"got {args_schema}"
+                )
+                raise TypeError(msg)
         if description_ is None:
-            raise ValueError(
-                "Function must have a docstring if description not provided."
-            )
+            msg = "Function must have a docstring if description not provided."
+            raise ValueError(msg)
         if description is None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()
@@ -209,7 +224,7 @@ class StructuredTool(BaseTool):
         )
 
 
-def _filter_schema_args(func: Callable) -> List[str]:
+def _filter_schema_args(func: Callable) -> list[str]:
     filter_args = list(FILTERED_ARGS)
     if config_param := _get_runnable_config_param(func):
         filter_args.append(config_param)

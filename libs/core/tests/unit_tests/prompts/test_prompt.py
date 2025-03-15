@@ -1,6 +1,6 @@
 """Test functionality related to prompts."""
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 from unittest import mock
 
 import pydantic
@@ -8,6 +8,7 @@ import pytest
 from syrupy import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -219,7 +220,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
         yo
     
         hello
-    is a test."""
+    is a test."""  # noqa: W293
     )
     assert prompt.input_variables == ["foo"]
     if PYDANTIC_VERSION >= (2, 9):
@@ -347,12 +348,13 @@ def test_prompt_from_file() -> None:
 
 def test_prompt_from_file_with_partial_variables() -> None:
     """Test prompt can be successfully constructed from a file
-    with partial variables."""
+    with partial variables.
+    """
     # given
     template = "This is a {foo} test {bar}."
     partial_variables = {"bar": "baz"}
     # when
-    with mock.patch("builtins.open", mock.mock_open(read_data=template)):
+    with mock.patch("pathlib.Path.open", mock.mock_open(read_data=template)):
         prompt = PromptTemplate.from_file(
             "mock_file_name", partial_variables=partial_variables
         )
@@ -408,7 +410,7 @@ def test_prompt_from_jinja2_template() -> None:
     # Empty input variable.
     template = """Hello there
 There is no variable here {
-Will it get confused{ }? 
+Will it get confused{ }?
     """
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     expected_prompt = PromptTemplate(
@@ -610,7 +612,9 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 )
 @pytest.mark.parametrize("template_format", ["f-string", "mustache"])
 def test_prompt_falsy_vars(
-    template_format: str, value: Any, expected: Union[str, Dict[str, str]]
+    template_format: PromptTemplateFormat,
+    value: Any,
+    expected: Union[str, dict[str, str]],
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":
@@ -618,7 +622,8 @@ def test_prompt_falsy_vars(
     elif template_format == "mustache":
         template = "{{my_var}}"
     else:
-        raise ValueError(f"Invalid template format: {template_format}")
+        msg = f"Invalid template format: {template_format}"
+        raise ValueError(msg)
 
     prompt = PromptTemplate.from_template(template, template_format=template_format)
 
@@ -640,3 +645,22 @@ def test_prompt_missing_vars_error() -> None:
 
     # Check helper text has right number of braces
     assert "'{{goingtobemissing}}'" in str(e.value.args[0])
+
+
+def test_prompt_with_template_variable_name_fstring() -> None:
+    template = "This is a {template} test."
+    prompt = PromptTemplate.from_template(template, template_format="f-string")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+def test_prompt_with_template_variable_name_mustache() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+@pytest.mark.requires("jinja2")
+def test_prompt_with_template_variable_name_jinja2() -> None:
+    template = "This is a {{template}} test."
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."

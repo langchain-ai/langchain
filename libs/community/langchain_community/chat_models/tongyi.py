@@ -123,6 +123,8 @@ def convert_dict_to_message(
                             tool_calls.append(parsed_tool)
                     except Exception as e:
                         invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
+        elif "partial" in _dict and isinstance(_dict["partial"], bool):
+            additional_kwargs = {"partial": _dict["partial"]}
         else:
             additional_kwargs = {}
 
@@ -204,6 +206,9 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
         if "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        # support Partial Mode for text continuation
+        if "partial" in message.additional_kwargs:
+            message_dict["partial"] = message.additional_kwargs["partial"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
@@ -547,6 +552,19 @@ class ChatTongyi(BaseChatModel):
                 if _kwargs.get("stream") and not _kwargs.get(
                     "incremental_output", False
                 ):
+                    # inline fix response text logic
+                    resp_copy = json.loads(json.dumps(resp))
+                    if resp_copy.get("output") and resp_copy["output"].get("choices"):
+                        choice = resp_copy["output"]["choices"][0]
+                        message = choice["message"]
+                        if isinstance(message.get("content"), list):
+                            content_text = "".join(
+                                item.get("text", "")
+                                for item in message["content"]
+                                if isinstance(item, dict)
+                            )
+                            message["content"] = content_text
+                        resp = resp_copy
                     if prev_resp is None:
                         delta_resp = resp
                     else:
@@ -765,8 +783,6 @@ class ChatTongyi(BaseChatModel):
         ]
         if len(system_message_indices) == 1 and system_message_indices[0] != 0:
             raise ValueError("System message can only be the first message.")
-        elif len(system_message_indices) > 1:
-            raise ValueError("There can be only one system message at most.")
 
         params["messages"] = message_dicts
 

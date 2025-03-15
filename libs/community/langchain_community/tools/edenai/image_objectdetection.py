@@ -15,7 +15,7 @@ class ObjectDetectionInput(BaseModel):
     query: HttpUrl = Field(description="url of the image to analyze")
 
 
-class EdenAiObjectDetectionTool(EdenaiTool):
+class EdenAiObjectDetectionTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Object detection API.
 
     for api reference check edenai documentation:
@@ -53,7 +53,12 @@ class EdenAiObjectDetectionTool(EdenaiTool):
             y_min = found_obj.get("y_min")
             y_max = found_obj.get("y_max")
             if self.show_positions and all(
-                [x_min, x_max, y_min, y_max]
+                [
+                    x_min,
+                    x_max,
+                    y_min,
+                    y_max,
+                ]
             ):  # some providers don't return positions
                 label_str += f""",at the position x_min: {x_min}, x_max: {x_max}, 
                 y_min: {y_min}, y_max: {y_max}"""

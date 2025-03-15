@@ -40,7 +40,10 @@ def test_friendli_batch(friendli_chat: ChatFriendli) -> None:
 async def test_friendli_abatch(friendli_chat: ChatFriendli) -> None:
     """Test async batch."""
     outputs = await friendli_chat.abatch(
-        ["What is generative AI?", "What is generative AI?"]
+        [
+            "What is generative AI?",
+            "What is generative AI?",
+        ]
     )
     for output in outputs:
         assert isinstance(output, AIMessage)

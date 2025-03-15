@@ -1,7 +1,11 @@
 import os
-from typing import List
+from pathlib import Path
+from typing import Any, List, Union
 
-from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
+from langchain_community.document_loaders.unstructured import (
+    UnstructuredFileLoader,
+    validate_unstructured_version,
+)
 
 
 class UnstructuredPowerPointLoader(UnstructuredFileLoader):
@@ -29,36 +33,45 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
     https://unstructured-io.github.io/unstructured/bricks.html#partition-pptx
     """
 
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
+    ):
+        """
+
+        Args:
+            file_path: The path to the PowerPoint file to load.
+            mode: The mode to use when loading the file. Can be one of "single",
+                "multi", or "all". Default is "single".
+            **unstructured_kwargs: Any kwargs to pass to the unstructured.
+        """
+        file_path = str(file_path)
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
     def _get_elements(self) -> List:
-        from unstructured.__version__ import __version__ as __unstructured_version__
         from unstructured.file_utils.filetype import FileType, detect_filetype
 
-        unstructured_version = tuple(
-            [int(x) for x in __unstructured_version__.split(".")]
-        )
         # NOTE(MthwRobinson) - magic will raise an import error if the libmagic
         # system dependency isn't installed. If it's not installed, we'll just
         # check the file extension
         try:
             import magic  # noqa: F401
 
-            is_ppt = detect_filetype(self.file_path) == FileType.PPT
+            is_ppt = detect_filetype(self.file_path) == FileType.PPT  # type: ignore[arg-type]
         except ImportError:
             _, extension = os.path.splitext(str(self.file_path))
             is_ppt = extension == ".ppt"
 
-        if is_ppt and unstructured_version < (0, 4, 11):
-            raise ValueError(
-                f"You are on unstructured version {__unstructured_version__}. "
-                "Partitioning .ppt files is only supported in unstructured>=0.4.11. "
-                "Please upgrade the unstructured package and try again."
-            )
+        if is_ppt:
+            validate_unstructured_version("0.4.11")
 
         if is_ppt:
             from unstructured.partition.ppt import partition_ppt
 
-            return partition_ppt(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_ppt(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]
         else:
             from unstructured.partition.pptx import partition_pptx
 
-            return partition_pptx(filename=self.file_path, **self.unstructured_kwargs)
+            return partition_pptx(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

@@ -37,7 +37,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     message=(
         "This class is deprecated. Refer to this guide on retrieval and question "
         "answering with sources: "
-        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/"
+        "https://python.langchain.com/docs/how_to/qa_sources/"
     ),
 )
 class BaseQAWithSourcesChain(Chain, ABC):
@@ -216,7 +216,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
     message=(
         "This class is deprecated. Refer to this guide on retrieval and question "
         "answering with sources: "
-        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/"
+        "https://python.langchain.com/docs/how_to/qa_sources/"
     ),
 )
 class QAWithSourcesChain(BaseQAWithSourcesChain):

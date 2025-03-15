@@ -34,8 +34,8 @@ class ConfluenceLoader(BaseLoader):
     """Load `Confluence` pages.
 
     Port of https://llamahub.ai/l/confluence
-    This currently supports username/api_key, Oauth2 login or personal access token
-    authentication.
+    This currently supports username/api_key, Oauth2 login, personal access token
+    or cookies authentication.
 
     Specify a list page_ids and/or space_key to load in the corresponding pages into
     Document objects, if both are specified the union of both sets will be returned.
@@ -103,6 +103,8 @@ class ConfluenceLoader(BaseLoader):
     :type max_retry_seconds: Optional[int], optional
     :param confluence_kwargs: additional kwargs to initialize confluence with
     :type confluence_kwargs: dict, optional
+    :param cookies: _description_, defaults to {}
+    :type cookies: dict, optional
     :param space_key: Space key retrieved from a confluence URL, defaults to None
     :type space_key: Optional[str], optional
     :param page_ids: List of specific page IDs to load, defaults to None
@@ -118,6 +120,9 @@ class ConfluenceLoader(BaseLoader):
     :type include_archived_content: bool, optional
     :param include_attachments: defaults to False
     :type include_attachments: bool, optional
+    :param attachment_filter_func: A function that takes the attachment information
+                                   from Confluence and decides whether or not the
+                                   attachment is processed.
     :param include_comments: defaults to False
     :type include_comments: bool, optional
     :param content_format: Specify content format, defaults to
@@ -158,6 +163,7 @@ class ConfluenceLoader(BaseLoader):
         max_retry_seconds: Optional[int] = 10,
         confluence_kwargs: Optional[dict] = None,
         *,
+        cookies: Optional[dict] = None,
         space_key: Optional[str] = None,
         page_ids: Optional[List[str]] = None,
         label: Optional[str] = None,
@@ -166,12 +172,14 @@ class ConfluenceLoader(BaseLoader):
         include_archived_content: bool = False,
         include_attachments: bool = False,
         include_comments: bool = False,
+        include_labels: bool = False,
         content_format: ContentFormat = ContentFormat.STORAGE,
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
         keep_newlines: bool = False,
+        attachment_filter_func: Optional[Callable[[dict], bool]] = None,
     ):
         self.space_key = space_key
         self.page_ids = page_ids
@@ -181,12 +189,14 @@ class ConfluenceLoader(BaseLoader):
         self.include_archived_content = include_archived_content
         self.include_attachments = include_attachments
         self.include_comments = include_comments
+        self.include_labels = include_labels
         self.content_format = content_format
         self.limit = limit
         self.max_pages = max_pages
         self.ocr_languages = ocr_languages
         self.keep_markdown_format = keep_markdown_format
         self.keep_newlines = keep_newlines
+        self.attachment_filter_func = attachment_filter_func
 
         confluence_kwargs = confluence_kwargs or {}
         errors = ConfluenceLoader.validate_init_args(
@@ -195,6 +205,7 @@ class ConfluenceLoader(BaseLoader):
             username=username,
             session=session,
             oauth2=oauth2,
+            cookies=cookies,
             token=token,
         )
         if errors:
@@ -222,6 +233,10 @@ class ConfluenceLoader(BaseLoader):
             self.confluence = Confluence(
                 url=url, token=token, cloud=cloud, **confluence_kwargs
             )
+        elif cookies:
+            self.confluence = Confluence(
+                url=url, cookies=cookies, cloud=cloud, **confluence_kwargs
+            )
         else:
             self.confluence = Confluence(
                 url=url,
@@ -239,6 +254,7 @@ class ConfluenceLoader(BaseLoader):
         session: Optional[requests.Session] = None,
         oauth2: Optional[dict] = None,
         token: Optional[str] = None,
+        cookies: Optional[dict] = None,
     ) -> Union[List, None]:
         """Validates proper combinations of init arguments"""
 
@@ -253,10 +269,11 @@ class ConfluenceLoader(BaseLoader):
             )
 
         non_null_creds = list(
-            x is not None for x in ((api_key or username), session, oauth2, token)
+            x is not None
+            for x in ((api_key or username), session, oauth2, token, cookies)
         )
         if sum(non_null_creds) > 1:
-            all_names = ("(api_key, username)", "session", "oauth2", "token")
+            all_names = ("(api_key, username)", "session", "oauth2", "token", "cookies")
             provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
                 f"Cannot provide a value for more than one of: {all_names}. Received "
@@ -327,12 +344,20 @@ class ConfluenceLoader(BaseLoader):
         )
         include_attachments = self._resolve_param("include_attachments", kwargs)
         include_comments = self._resolve_param("include_comments", kwargs)
+        include_labels = self._resolve_param("include_labels", kwargs)
         content_format = self._resolve_param("content_format", kwargs)
         limit = self._resolve_param("limit", kwargs)
         max_pages = self._resolve_param("max_pages", kwargs)
         ocr_languages = self._resolve_param("ocr_languages", kwargs)
         keep_markdown_format = self._resolve_param("keep_markdown_format", kwargs)
         keep_newlines = self._resolve_param("keep_newlines", kwargs)
+        expand = ",".join(
+            [
+                content_format.value,
+                "version",
+                *(["metadata.labels"] if include_labels else []),
+            ]
+        )
 
         if not space_key and not page_ids and not label and not cql:
             raise ValueError(
@@ -347,13 +372,14 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 status="any" if include_archived_content else "current",
-                expand=f"{content_format.value},version",
+                expand=expand,
             )
             yield from self.process_pages(
                 pages,
                 include_restricted_content,
                 include_attachments,
                 include_comments,
+                include_labels,
                 content_format,
                 ocr_languages=ocr_languages,
                 keep_markdown_format=keep_markdown_format,
@@ -380,13 +406,14 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 include_archived_spaces=include_archived_content,
-                expand=f"{content_format.value},version",
+                expand=expand,
             )
             yield from self.process_pages(
                 pages,
                 include_restricted_content,
                 include_attachments,
                 include_comments,
+                include_labels,
                 content_format,
                 ocr_languages,
                 keep_markdown_format,
@@ -408,7 +435,8 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(
-                    page_id=page_id, expand=f"{content_format.value},version"
+                    page_id=page_id,
+                    expand=expand,
                 )
                 if not include_restricted_content and not self.is_public_page(page):
                     continue
@@ -416,6 +444,7 @@ class ConfluenceLoader(BaseLoader):
                     page,
                     include_attachments,
                     include_comments,
+                    include_labels,
                     content_format,
                     ocr_languages,
                     keep_markdown_format,
@@ -428,17 +457,25 @@ class ConfluenceLoader(BaseLoader):
         yield from self._lazy_load()
 
     def _search_content_by_cql(
-        self, cql: str, include_archived_spaces: Optional[bool] = None, **kwargs: Any
-    ) -> List[dict]:
-        url = "rest/api/content/search"
+        self,
+        cql: str,
+        include_archived_spaces: Optional[bool] = None,
+        next_url: str = "",
+        **kwargs: Any,
+    ) -> tuple[List[dict], str]:
+        if next_url:
+            response = self.confluence.get(next_url)
+        else:
+            url = "rest/api/content/search"
 
-        params: Dict[str, Any] = {"cql": cql}
-        params.update(kwargs)
-        if include_archived_spaces is not None:
-            params["includeArchivedSpaces"] = include_archived_spaces
+            params: Dict[str, Any] = {"cql": cql}
+            params.update(kwargs)
+            if include_archived_spaces is not None:
+                params["includeArchivedSpaces"] = include_archived_spaces
 
-        response = self.confluence.get(url, params=params)
-        return response.get("results", [])
+            response = self.confluence.get(url, params=params)
+
+        return response.get("results", []), response.get("_links", {}).get("next", "")
 
     def paginate_request(self, retrieval_method: Callable, **kwargs: Any) -> List:
         """Paginate the various methods to retrieve groups of pages.
@@ -463,6 +500,7 @@ class ConfluenceLoader(BaseLoader):
 
         max_pages = kwargs.pop("max_pages")
         docs: List[dict] = []
+        next_url: str = ""
         while len(docs) < max_pages:
             get_pages = retry(
                 reraise=True,
@@ -476,19 +514,28 @@ class ConfluenceLoader(BaseLoader):
                 ),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
             )(retrieval_method)
-            batch = get_pages(**kwargs, start=len(docs))
-            if not batch:
-                break
+            if self.cql:  # cursor pagination for CQL
+                batch, next_url = get_pages(**kwargs, next_url=next_url)
+                if not next_url:
+                    docs.extend(batch)
+                    break
+            else:
+                batch = get_pages(**kwargs, start=len(docs))
+                if not batch:
+                    break
             docs.extend(batch)
         return docs[:max_pages]
 
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
+
+        if page["status"] != "current":
+            return False
+
         restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
 
         return (
-            page["status"] == "current"
-            and not restrictions["read"]["restrictions"]["user"]["results"]
+            not restrictions["read"]["restrictions"]["user"]["results"]
             and not restrictions["read"]["restrictions"]["group"]["results"]
         )
 
@@ -498,6 +545,7 @@ class ConfluenceLoader(BaseLoader):
         include_restricted_content: bool,
         include_attachments: bool,
         include_comments: bool,
+        include_labels: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
@@ -511,6 +559,7 @@ class ConfluenceLoader(BaseLoader):
                 page,
                 include_attachments,
                 include_comments,
+                include_labels,
                 content_format,
                 ocr_languages=ocr_languages,
                 keep_markdown_format=keep_markdown_format,
@@ -522,6 +571,7 @@ class ConfluenceLoader(BaseLoader):
         page: dict,
         include_attachments: bool,
         include_comments: bool,
+        include_labels: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
@@ -575,10 +625,19 @@ class ConfluenceLoader(BaseLoader):
             ]
             text = text + "".join(comment_texts)
 
+        if include_labels:
+            labels = [
+                label["name"]
+                for label in page.get("metadata", {})
+                .get("labels", {})
+                .get("results", [])
+            ]
+
         metadata = {
             "title": page["title"],
             "id": page["id"],
             "source": self.base_url.strip("/") + page["_links"]["webui"],
+            **({"labels": labels} if include_labels else {}),
         }
 
         if "version" in page and "when" in page["version"]:
@@ -598,7 +657,7 @@ class ConfluenceLoader(BaseLoader):
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "`Pillow` package not found, " "please run `pip install Pillow`"
+                "`Pillow` package not found, please run `pip install Pillow`"
             )
 
         # depending on setup you may also need to set the correct path for
@@ -606,6 +665,11 @@ class ConfluenceLoader(BaseLoader):
         attachments = self.confluence.get_attachments_from_content(page_id)["results"]
         texts = []
         for attachment in attachments:
+            if self.attachment_filter_func and not self.attachment_filter_func(
+                attachment
+            ):
+                continue
+
             media_type = attachment["metadata"]["mediaType"]
             absolute_url = self.base_url + attachment["_links"]["download"]
             title = attachment["title"]
@@ -668,8 +732,11 @@ class ConfluenceLoader(BaseLoader):
             return text
 
         for i, image in enumerate(images):
-            image_text = pytesseract.image_to_string(image, lang=ocr_languages)
-            text += f"Page {i + 1}:\n{image_text}\n\n"
+            try:
+                image_text = pytesseract.image_to_string(image, lang=ocr_languages)
+                text += f"Page {i + 1}:\n{image_text}\n\n"
+            except pytesseract.TesseractError as ex:
+                logger.warning(f"TesseractError: {ex}")
 
         return text
 

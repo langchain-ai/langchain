@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Union
+from typing import Awaitable, Callable, Optional, Union
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
@@ -12,7 +12,7 @@ from typing_extensions import Self, cast
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
-class AzureOpenAIEmbeddings(OpenAIEmbeddings):
+class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """AzureOpenAI embedding model integration.
 
     Setup:
@@ -146,7 +146,13 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if `azure_ad_async_token_provider` is not provided.
+    """
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
     """
     openai_api_type: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
@@ -192,7 +198,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": {
+                **(self.default_headers or {}),
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
             "default_query": self.default_query,
         }
         if not self.client:
@@ -203,6 +212,12 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             ).embeddings
         if not self.async_client:
             async_specific: dict = {"http_client": self.http_async_client}
+
+            if self.azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = (
+                    self.azure_ad_async_token_provider
+                )
+
             self.async_client = openai.AsyncAzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
                 **async_specific,

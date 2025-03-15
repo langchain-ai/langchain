@@ -54,7 +54,7 @@ class NUASchema(BaseModel):
     )
 
 
-class NucliaUnderstandingAPI(BaseTool):
+class NucliaUnderstandingAPI(BaseTool):  # type: ignore[override, override]
     """Tool to process files with the Nuclia Understanding API."""
 
     name: str = "nuclia_understanding_api"
@@ -161,7 +161,7 @@ class NucliaUnderstandingAPI(BaseTool):
         )
         if response.status_code != 200:
             logger.info(
-                f"Error pushing field {id}:" f"{response.status_code} {response.text}"
+                f"Error pushing field {id}:{response.status_code} {response.text}"
             )
             raise ValueError("Error pushing field")
         else:
@@ -177,7 +177,7 @@ class NucliaUnderstandingAPI(BaseTool):
             logger.info(f"{id} not in queue")
             return ""
         elif result["status"] == "pending":
-            logger.info(f'Waiting for {result["uuid"]} to be processed')
+            logger.info(f"Waiting for {result['uuid']} to be processed")
             return ""
         else:
             return result["data"]

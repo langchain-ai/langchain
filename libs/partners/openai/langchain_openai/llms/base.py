@@ -27,7 +27,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_pydantic_field_names
-from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -113,7 +113,7 @@ class BaseOpenAI(BaseLLM):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
+    logit_bias: Optional[Dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -160,10 +160,7 @@ class BaseOpenAI(BaseLLM):
     def build_extra(cls, values: Dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @model_validator(mode="after")
@@ -208,10 +205,12 @@ class BaseOpenAI(BaseLLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "logit_bias": self.logit_bias,
             "seed": self.seed,
             "logprobs": self.logprobs,
         }
+
+        if self.logit_bias is not None:
+            normal_params["logit_bias"] = self.logit_bias
 
         if self.max_tokens is not None:
             normal_params["max_tokens"] = self.max_tokens
@@ -582,7 +581,7 @@ class BaseOpenAI(BaseLLM):
         Example:
             .. code-block:: python
 
-                max_tokens = openai.max_token_for_prompt("Tell me a joke.")
+                max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens

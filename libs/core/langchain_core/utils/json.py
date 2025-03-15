@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from langchain_core.exceptions import OutputParserException
 
@@ -18,11 +18,10 @@ def _replace_new_line(match: re.Match[str]) -> str:
 
 
 def _custom_parser(multiline_string: str) -> str:
-    """
-    The LLM response for `action_input` may be a multiline
+    """The LLM response for `action_input` may be a multiline
     string containing unescaped newlines, tabs or quotes. This function
     replaces those characters with their escaped counterparts.
-    (newlines in JSON must be double-escaped: `\\n`)
+    (newlines in JSON must be double-escaped: `\\n`).
     """
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
@@ -95,6 +94,8 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # If we're still inside a string at the end of processing,
     # we need to close the string.
     if is_inside_string:
+        if escaped:  # Remoe unterminated escape character
+            new_chars.pop()
         new_chars.append('"')
 
     # Reverse the stack to get the closing characters.
@@ -139,11 +140,8 @@ def parse_json_markdown(
         match = _json_markdown_re.search(json_string)
 
         # If no match found, assume the entire string is a JSON string
-        if match is None:
-            json_str = json_string
-        else:
-            # If match found, use the content within the backticks
-            json_str = match.group(2)
+        # Else, use the content within the backticks
+        json_str = json_string if match is None else match.group(2)
     return _parse_json(json_str, parser=parser)
 
 
@@ -163,9 +161,8 @@ def _parse_json(
     return parser(json_str)
 
 
-def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
-    """
-    Parse a JSON string from a Markdown string and check that it
+def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
+    """Parse a JSON string from a Markdown string and check that it
     contains the expected keys.
 
     Args:
@@ -182,11 +179,13 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
     try:
         json_obj = parse_json_markdown(text)
     except json.JSONDecodeError as e:
-        raise OutputParserException(f"Got invalid JSON object. Error: {e}") from e
+        msg = f"Got invalid JSON object. Error: {e}"
+        raise OutputParserException(msg) from e
     for key in expected_keys:
         if key not in json_obj:
-            raise OutputParserException(
+            msg = (
                 f"Got invalid return object. Expected key `{key}` "
                 f"to be present, but got {json_obj}"
             )
+            raise OutputParserException(msg)
     return json_obj

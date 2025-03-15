@@ -1,6 +1,6 @@
 import unittest
 import uuid
-from typing import List, Type, Union
+from typing import Optional, Union
 
 import pytest
 
@@ -10,6 +10,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -46,48 +47,47 @@ def test_message_init() -> None:
 def test_message_chunks() -> None:
     assert AIMessageChunk(content="I am", id="ai3") + AIMessageChunk(
         content=" indeed."
+    ) == AIMessageChunk(content="I am indeed.", id="ai3"), (
+        "MessageChunk + MessageChunk should be a MessageChunk"
+    )
+
+    assert AIMessageChunk(content="I am", id="ai2") + HumanMessageChunk(
+        content=" indeed.", id="human1"
+    ) == AIMessageChunk(content="I am indeed.", id="ai2"), (
+        "MessageChunk + MessageChunk should be a MessageChunk "
+        "of same class as the left side"
+    )
+
+    assert AIMessageChunk(
+        content="", additional_kwargs={"foo": "bar"}
+    ) + AIMessageChunk(content="", additional_kwargs={"baz": "foo"}) == AIMessageChunk(
+        content="", additional_kwargs={"foo": "bar", "baz": "foo"}
+    ), (
+        "MessageChunk + MessageChunk should be a MessageChunk "
+        "with merged additional_kwargs"
+    )
+
+    assert AIMessageChunk(
+        content="", additional_kwargs={"function_call": {"name": "web_search"}}
+    ) + AIMessageChunk(
+        content="", additional_kwargs={"function_call": {"arguments": None}}
+    ) + AIMessageChunk(
+        content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
+    ) + AIMessageChunk(
+        content="",
+        additional_kwargs={"function_call": {"arguments": '  "query": "turtles"\n}'}},
     ) == AIMessageChunk(
-        content="I am indeed.", id="ai3"
-    ), "MessageChunk + MessageChunk should be a MessageChunk"
-
-    assert (
-        AIMessageChunk(content="I am", id="ai2")
-        + HumanMessageChunk(content=" indeed.", id="human1")
-        == AIMessageChunk(content="I am indeed.", id="ai2")
-    ), "MessageChunk + MessageChunk should be a MessageChunk of same class as the left side"  # noqa: E501
-
-    assert (
-        AIMessageChunk(content="", additional_kwargs={"foo": "bar"})
-        + AIMessageChunk(content="", additional_kwargs={"baz": "foo"})
-        == AIMessageChunk(content="", additional_kwargs={"foo": "bar", "baz": "foo"})
-    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
-
-    assert (
-        AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"name": "web_search"}}
-        )
-        + AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"arguments": None}}
-        )
-        + AIMessageChunk(
-            content="", additional_kwargs={"function_call": {"arguments": "{\n"}}
-        )
-        + AIMessageChunk(
-            content="",
-            additional_kwargs={
-                "function_call": {"arguments": '  "query": "turtles"\n}'}
-            },
-        )
-        == AIMessageChunk(
-            content="",
-            additional_kwargs={
-                "function_call": {
-                    "name": "web_search",
-                    "arguments": '{\n  "query": "turtles"\n}',
-                }
-            },
-        )
-    ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
+        content="",
+        additional_kwargs={
+            "function_call": {
+                "name": "web_search",
+                "arguments": '{\n  "query": "turtles"\n}',
+            }
+        },
+    ), (
+        "MessageChunk + MessageChunk should be a MessageChunk "
+        "with merged additional_kwargs"
+    )
 
     # Test tool calls
     assert (
@@ -180,97 +180,107 @@ def test_message_chunks() -> None:
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."
-    ) == ChatMessageChunk(
-        id="ai4", role="User", content="I am indeed."
-    ), "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
+    ) == ChatMessageChunk(id="ai4", role="User", content="I am indeed."), (
+        "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
+    )
 
     with pytest.raises(ValueError):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
         )
 
-    assert (
-        ChatMessageChunk(role="User", content="I am")
-        + AIMessageChunk(content=" indeed.")
-        == ChatMessageChunk(role="User", content="I am indeed.")
-    ), "ChatMessageChunk + other MessageChunk should be a ChatMessageChunk with the left side's role"  # noqa: E501
+    assert ChatMessageChunk(role="User", content="I am") + AIMessageChunk(
+        content=" indeed."
+    ) == ChatMessageChunk(role="User", content="I am indeed."), (
+        "ChatMessageChunk + other MessageChunk should be a ChatMessageChunk "
+        "with the left side's role"
+    )
 
     assert AIMessageChunk(content="I am") + ChatMessageChunk(
         role="User", content=" indeed."
-    ) == AIMessageChunk(
-        content="I am indeed."
-    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"
+    ) == AIMessageChunk(content="I am indeed."), (
+        "Other MessageChunk + ChatMessageChunk should be a MessageChunk "
+        "as the left side"
+    )
 
 
 def test_complex_ai_message_chunks() -> None:
     assert AIMessageChunk(content=["I am"], id="ai4") + AIMessageChunk(
         content=[" indeed."]
-    ) == AIMessageChunk(
-        id="ai4", content=["I am", " indeed."]
-    ), "Content concatenation with arrays of strings should naively combine"
+    ) == AIMessageChunk(id="ai4", content=["I am", " indeed."]), (
+        "Content concatenation with arrays of strings should naively combine"
+    )
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=" indeed."
-    ) == AIMessageChunk(
-        content=[{"index": 0, "text": "I am"}, " indeed."]
-    ), "Concatenating mixed content arrays should naively combine them"
+    ) == AIMessageChunk(content=[{"index": 0, "text": "I am"}, " indeed."]), (
+        "Concatenating mixed content arrays should naively combine them"
+    )
 
-    assert (
-        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
-        + AIMessageChunk(content=[{"index": 0, "text": " indeed."}])
-        == AIMessageChunk(content=[{"index": 0, "text": "I am indeed."}])
-    ), "Concatenating when both content arrays are dicts with the same index should merge"  # noqa: E501
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"index": 0, "text": " indeed."}]
+    ) == AIMessageChunk(content=[{"index": 0, "text": "I am indeed."}]), (
+        "Concatenating when both content arrays are dicts with the same index "
+        "should merge"
+    )
 
     assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
         content=[{"text": " indeed."}]
+    ) == AIMessageChunk(content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]), (
+        "Concatenating when one chunk is missing an index should not merge or throw"
+    )
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"index": 2, "text": " indeed."}]
     ) == AIMessageChunk(
-        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
-    ), "Concatenating when one chunk is missing an index should not merge or throw"  # noqa: E501
+        content=[{"index": 0, "text": "I am"}, {"index": 2, "text": " indeed."}]
+    ), (
+        "Concatenating when both content arrays are dicts with a gap between indexes "
+        "should not result in a holey array"
+    )
 
-    assert (
-        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
-        + AIMessageChunk(content=[{"index": 2, "text": " indeed."}])
-        == AIMessageChunk(
-            content=[{"index": 0, "text": "I am"}, {"index": 2, "text": " indeed."}]
-        )
-    ), "Concatenating when both content arrays are dicts with a gap between indexes should not result in a holey array"  # noqa: E501
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"index": 1, "text": " indeed."}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]
+    ), (
+        "Concatenating when both content arrays are dicts with separate indexes "
+        "should not merge"
+    )
 
-    assert (
-        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
-        + AIMessageChunk(content=[{"index": 1, "text": " indeed."}])
-        == AIMessageChunk(
-            content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]
-        )
-    ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
+    assert AIMessageChunk(
+        content=[{"index": 0, "text": "I am", "type": "text_block"}]
+    ) + AIMessageChunk(
+        content=[{"index": 0, "text": " indeed.", "type": "text_block"}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+    ), (
+        "Concatenating when both content arrays are dicts with the same index and type "
+        "should merge"
+    )
 
-    assert (
-        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
-        + AIMessageChunk(
-            content=[{"index": 0, "text": " indeed.", "type": "text_block"}]
-        )
-        == AIMessageChunk(
-            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
-        )
-    ), "Concatenating when both content arrays are dicts with the same index and type should merge"  # noqa: E501
+    assert AIMessageChunk(
+        content=[{"index": 0, "text": "I am", "type": "text_block"}]
+    ) + AIMessageChunk(
+        content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+    ), (
+        "Concatenating when both content arrays are dicts with the same index "
+        "and different types should merge without updating type"
+    )
 
-    assert (
-        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
-        + AIMessageChunk(
-            content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
-        )
-        == AIMessageChunk(
-            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
-        )
-    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
-
-    assert (
-        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
-        + AIMessageChunk(content="", response_metadata={"extra": "value"})
-        == AIMessageChunk(
-            content=[{"index": 0, "text": "I am", "type": "text_block"}],
-            response_metadata={"extra": "value"},
-        )
-    ), "Concatenating when one content is an array and one is an empty string should not add a new item, but should concat other fields"  # noqa: E501
+    assert AIMessageChunk(
+        content=[{"index": 0, "text": "I am", "type": "text_block"}]
+    ) + AIMessageChunk(
+        content="", response_metadata={"extra": "value"}
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am", "type": "text_block"}],
+        response_metadata={"extra": "value"},
+    ), (
+        "Concatenating when one content is an array and one is an empty string "
+        "should not add a new item, but should concat other fields"
+    )
 
 
 def test_function_message_chunks() -> None:
@@ -289,9 +299,9 @@ def test_function_message_chunks() -> None:
 def test_ai_message_chunks() -> None:
     assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
         example=True, content=" indeed."
-    ) == AIMessageChunk(
-        example=True, content="I am indeed."
-    ), "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
+    ) == AIMessageChunk(example=True, content="I am indeed."), (
+        "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
+    )
 
     with pytest.raises(ValueError):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
@@ -345,7 +355,7 @@ class TestGetBufferString(unittest.TestCase):
             self.chat_msg,
             self.tool_calls_msg,
         ]
-        expected_output = "\n".join(
+        expected_output = "\n".join(  # noqa: FLY002
             [
                 "Human: human",
                 "AI: ai",
@@ -429,16 +439,12 @@ def test_message_chunk_to_message() -> None:
     expected = AIMessage(
         content="I am",
         tool_calls=[
-            create_tool_call(**{"name": "tool1", "args": {"a": 1}, "id": "1"}),  # type: ignore[arg-type]
-            create_tool_call(**{"name": "tool2", "args": {}, "id": "2"}),  # type: ignore[arg-type]
+            create_tool_call(name="tool1", args={"a": 1}, id="1"),  # type: ignore[arg-type]
+            create_tool_call(name="tool2", args={}, id="2"),  # type: ignore[arg-type]
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(
-                **{"name": "tool3", "args": None, "id": "3", "error": None}
-            ),
-            create_invalid_tool_call(
-                **{"name": "tool4", "args": "abc", "id": "4", "error": None}
-            ),
+            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
+            create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
     assert message_chunk_to_message(chunk) == expected
@@ -447,11 +453,11 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: List[dict] = [
-        dict(content=""),
-        dict(
-            content="",
-            additional_kwargs={
+    chunks: list[dict] = [
+        {"content": ""},
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -461,10 +467,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -474,10 +480,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -487,10 +493,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -500,10 +506,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -513,10 +519,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -526,10 +532,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 0,
@@ -539,10 +545,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -552,10 +558,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -565,10 +571,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -578,10 +584,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -591,10 +597,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -604,10 +610,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -617,10 +623,10 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(
-            content="",
-            additional_kwargs={
+        },
+        {
+            "content": "",
+            "additional_kwargs": {
                 "tool_calls": [
                     {
                         "index": 1,
@@ -630,18 +636,15 @@ def test_tool_calls_merge() -> None:
                     }
                 ]
             },
-        ),
-        dict(content=""),
+        },
+        {"content": ""},
     ]
 
-    final = None
+    final: Optional[BaseMessageChunk] = None
 
     for chunk in chunks:
         msg = AIMessageChunk(**chunk)
-        if final is None:
-            final = msg
-        else:
-            final = final + msg
+        final = msg if final is None else final + msg
 
     assert final == AIMessageChunk(
         content="",
@@ -735,6 +738,15 @@ def test_convert_to_messages() -> None:
                 "artifact": {"foo": 123},
             },
             {"role": "remove", "id": "message_to_remove", "content": ""},
+            {
+                "content": "Now the turn for Larry to ask a question about the book!",
+                "additional_kwargs": {"metadata": {"speaker_name": "Presenter"}},
+                "response_metadata": {},
+                "type": "human",
+                "name": None,
+                "id": "1",
+                "example": False,
+            },
         ]
     )
     expected = [
@@ -759,6 +771,13 @@ def test_convert_to_messages() -> None:
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
         ToolMessage(tool_call_id="tool_id2", content="Bye!", artifact={"foo": 123}),
         RemoveMessage(id="message_to_remove"),
+        HumanMessage(
+            content="Now the turn for Larry to ask a question about the book!",
+            additional_kwargs={"metadata": {"speaker_name": "Presenter"}},
+            response_metadata={},
+            id="1",
+            example=False,
+        ),
     ]
     assert expected == actual
 
@@ -781,7 +800,7 @@ def test_convert_to_messages() -> None:
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [
         AIMessage,
         AIMessageChunk,
@@ -790,39 +809,39 @@ def test_convert_to_messages() -> None:
         SystemMessage,
     ],
 )
-def test_message_name(MessageClass: Type) -> None:
-    msg = MessageClass(content="foo", name="bar")
+def test_message_name(message_class: type) -> None:
+    msg = message_class(content="foo", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", name=None)
+    msg2 = message_class(content="foo", name=None)
     assert msg2.name is None
 
-    msg3 = MessageClass(content="foo")
+    msg3 = message_class(content="foo")
     assert msg3.name is None
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [FunctionMessage, FunctionMessageChunk],
 )
-def test_message_name_function(MessageClass: Type) -> None:
+def test_message_name_function(message_class: type) -> None:
     # functionmessage doesn't support name=None
-    msg = MessageClass(name="foo", content="bar")
+    msg = message_class(name="foo", content="bar")
     assert msg.name == "foo"
 
 
 @pytest.mark.parametrize(
-    "MessageClass",
+    "message_class",
     [ChatMessage, ChatMessageChunk],
 )
-def test_message_name_chat(MessageClass: Type) -> None:
-    msg = MessageClass(content="foo", role="user", name="bar")
+def test_message_name_chat(message_class: type) -> None:
+    msg = message_class(content="foo", role="user", name="bar")
     assert msg.name == "bar"
 
-    msg2 = MessageClass(content="foo", role="user", name=None)
+    msg2 = message_class(content="foo", role="user", name=None)
     assert msg2.name is None
 
-    msg3 = MessageClass(content="foo", role="user")
+    msg3 = message_class(content="foo", role="user")
     assert msg3.name is None
 
 
@@ -1014,3 +1033,61 @@ def test_tool_message_tool_call_id() -> None:
     ToolMessage("foo", tool_call_id=uuid.uuid4())
     ToolMessage("foo", tool_call_id=1)
     ToolMessage("foo", tool_call_id=1.0)
+
+
+def test_message_text() -> None:
+    # partitions:
+    # message types: [ai], [human], [system], [tool]
+    # content types: [str], [list[str]], [list[dict]], [list[str | dict]]
+    # content: [empty], [single element], [multiple elements]
+    # content dict types: [text], [not text], [no type]
+
+    assert HumanMessage(content="foo").text() == "foo"
+    assert AIMessage(content=[]).text() == ""
+    assert AIMessage(content=["foo", "bar"]).text() == "foobar"
+    assert (
+        AIMessage(
+            content=[
+                {"type": "text", "text": "<thinking>thinking...</thinking>"},
+                {
+                    "type": "tool_use",
+                    "id": "toolu_01A09q90qw90lq917835lq9",
+                    "name": "get_weather",
+                    "input": {"location": "San Francisco, CA"},
+                },
+            ]
+        ).text()
+        == "<thinking>thinking...</thinking>"
+    )
+    assert (
+        SystemMessage(content=[{"type": "text", "text": "foo"}, "bar"]).text()
+        == "foobar"
+    )
+    assert (
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "15 degrees"},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "/9j/4AAQSkZJRg...",
+                    },
+                },
+            ],
+            tool_call_id="1",
+        ).text()
+        == "15 degrees"
+    )
+    assert (
+        AIMessage(content=[{"text": "hi there"}, "hi"]).text() == "hi"
+    )  # missing type: text
+    assert AIMessage(content=[{"type": "nottext", "text": "hi"}]).text() == ""
+    assert AIMessage(content=[]).text() == ""
+    assert (
+        AIMessage(
+            content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
+        ).text()
+        == ""
+    )

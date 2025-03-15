@@ -1,6 +1,7 @@
 """Test for some custom pydantic decorators."""
 
-from typing import Any, Dict, List, Optional
+import warnings
+from typing import Any, Optional
 
 import pytest
 from pydantic import ConfigDict
@@ -24,7 +25,7 @@ def test_pre_init_decorator() -> None:
         y: int
 
         @pre_init
-        def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def validator(cls, v: dict[str, Any]) -> dict[str, Any]:
             v["y"] = v["x"] + 1
             return v
 
@@ -45,7 +46,7 @@ def test_pre_init_decorator_with_more_defaults() -> None:
         d: int = Field(default_factory=lambda: 3)
 
         @pre_init
-        def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def validator(cls, v: dict[str, Any]) -> dict[str, Any]:
             assert v["a"] == 1
             assert v["b"] is None
             assert v["c"] == 2
@@ -69,7 +70,7 @@ def test_with_aliases() -> None:
         )
 
         @pre_init
-        def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        def validator(cls, v: dict[str, Any]) -> dict[str, Any]:
             v["z"] = v["x"]
             return v
 
@@ -106,7 +107,8 @@ def test_is_basemodel_subclass() -> None:
 
         assert is_basemodel_subclass(BaseModelV1)
     else:
-        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise ValueError(msg)
 
 
 def test_is_basemodel_instance() -> None:
@@ -132,17 +134,18 @@ def test_is_basemodel_instance() -> None:
 
         assert is_basemodel_instance(Bar(x=5))
     else:
-        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        raise ValueError(msg)
 
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_with_field_metadata() -> None:
-    """Test pydantic with field metadata"""
+    """Test pydantic with field metadata."""
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
 
     class Foo(BaseModelV2):
-        x: List[int] = FieldV2(
+        x: list[int] = FieldV2(
             description="List of integers", min_length=10, max_length=15
         )
 
@@ -199,28 +202,31 @@ def test_fields_pydantic_v1_from_2() -> None:
 
 def test_create_model_v2() -> None:
     """Test that create model v2 works as expected."""
-
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         foo = create_model_v2("Foo", field_definitions={"a": (int, None)})
         foo.model_json_schema()
 
     assert list(record) == []
 
     # schema is used by pydantic, but OK to re-use
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         foo = create_model_v2("Foo", field_definitions={"schema": (int, None)})
         foo.model_json_schema()
 
     assert list(record) == []
 
     # From protected namespaces, but definitely OK to use.
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         foo = create_model_v2("Foo", field_definitions={"model_id": (int, None)})
         foo.model_json_schema()
 
     assert list(record) == []
 
-    with pytest.warns(None) as record:  # type: ignore
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered
         # Verify that we can use non-English characters
         field_name = "もしもし"
         foo = create_model_v2("Foo", field_definitions={field_name: (int, None)})

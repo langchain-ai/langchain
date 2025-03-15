@@ -190,10 +190,10 @@ class DeepSparse(LLM):
         )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
-            yield chunk
 
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.text)
+            yield chunk
 
     async def _astream(
         self,
@@ -228,7 +228,7 @@ class DeepSparse(LLM):
         )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
-            yield chunk
 
             if run_manager:
                 await run_manager.on_llm_new_token(token=chunk.text)
+            yield chunk

@@ -7,23 +7,20 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
 )
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
+    from langchain_core.embeddings import Embeddings
     from langchain_core.indexing import UpsertResponse
 
 
@@ -62,6 +59,17 @@ class InMemoryVectorStore(VectorStore):
 
             documents = [document_1, document_2, document_3]
             vector_store.add_documents(documents=documents)
+
+    Inspect documents:
+        .. code-block:: python
+
+            top_n = 10
+            for index, (id, doc) in enumerate(vector_store.store.items()):
+                if index < top_n:
+                    # docs have keys 'id', 'vector', 'text', 'metadata'
+                    print(f"{id}: {doc['text']}")
+                else:
+                    break
 
     Delete Documents:
         .. code-block:: python
@@ -153,7 +161,7 @@ class InMemoryVectorStore(VectorStore):
         """
         # TODO: would be nice to change to
         # Dict[str, Document] at some point (will be a breaking change)
-        self.store: Dict[str, Dict[str, Any]] = {}
+        self.store: dict[str, dict[str, Any]] = {}
         self.embedding = embedding
 
     @property
@@ -170,19 +178,20 @@ class InMemoryVectorStore(VectorStore):
 
     def add_documents(
         self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
+        documents: list[Document],
+        ids: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
         if ids and len(ids) != len(texts):
-            raise ValueError(
+            msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
             )
+            raise ValueError(msg)
 
         id_iterator: Iterator[Optional[str]] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
@@ -192,7 +201,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -204,26 +213,27 @@ class InMemoryVectorStore(VectorStore):
         return ids_
 
     async def aadd_documents(
-        self, documents: List[Document], ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> List[str]:
+        self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
+    ) -> list[str]:
         """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 
         if ids and len(ids) != len(texts):
-            raise ValueError(
+            msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
             )
+            raise ValueError(msg)
 
         id_iterator: Iterator[Optional[str]] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
-        ids_: List[str] = []
+        ids_: list[str] = []
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -234,7 +244,7 @@ class InMemoryVectorStore(VectorStore):
 
         return ids_
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their ids.
 
         Args:
@@ -260,8 +270,7 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.add_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
@@ -270,7 +279,7 @@ class InMemoryVectorStore(VectorStore):
         vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
@@ -286,8 +295,7 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.aadd_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
@@ -300,7 +308,7 @@ class InMemoryVectorStore(VectorStore):
         )
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
@@ -313,7 +321,7 @@ class InMemoryVectorStore(VectorStore):
             "failed": [],
         }
 
-    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    async def aget_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Async get documents by their ids.
 
         Args:
@@ -326,36 +334,51 @@ class InMemoryVectorStore(VectorStore):
 
     def _similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float, List[float]]]:
-        result = []
-        for doc in self.store.values():
-            vector = doc["vector"]
-            similarity = float(cosine_similarity([embedding], [vector]).item(0))
-            result.append(
-                (
-                    Document(
-                        id=doc["id"], page_content=doc["text"], metadata=doc["metadata"]
-                    ),
-                    similarity,
-                    vector,
-                )
-            )
-        result.sort(key=lambda x: x[1], reverse=True)
+    ) -> list[tuple[Document, float, list[float]]]:
+        # get all docs with fixed order in list
+        docs = list(self.store.values())
+
         if filter is not None:
-            result = [r for r in result if filter(r[0])]
-        return result[:k]
+            docs = [
+                doc
+                for doc in docs
+                if filter(Document(page_content=doc["text"], metadata=doc["metadata"]))
+            ]
+
+        if not docs:
+            return []
+
+        similarity = cosine_similarity([embedding], [doc["vector"] for doc in docs])[0]
+
+        # get the indices ordered by similarity score
+        top_k_idx = similarity.argsort()[::-1][:k]
+
+        return [
+            (
+                Document(
+                    id=doc_dict["id"],
+                    page_content=doc_dict["text"],
+                    metadata=doc_dict["metadata"],
+                ),
+                float(similarity[idx].item()),
+                doc_dict["vector"],
+            )
+            for idx in top_k_idx
+            # Assign using walrus operator to avoid multiple lookups
+            if (doc_dict := docs[idx])
+        ]
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         return [
             (doc, similarity)
             for doc, similarity, _ in self._similarity_search_with_score_by_vector(
@@ -368,7 +391,7 @@ class InMemoryVectorStore(VectorStore):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding,
@@ -379,7 +402,7 @@ class InMemoryVectorStore(VectorStore):
 
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         embedding = await self.embedding.aembed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding,
@@ -390,10 +413,10 @@ class InMemoryVectorStore(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -402,18 +425,18 @@ class InMemoryVectorStore(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+        self, embedding: list[float], k: int = 4, **kwargs: Any
+    ) -> list[Document]:
         return self.similarity_search_by_vector(embedding, k, **kwargs)
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [doc for doc, _ in self.similarity_search_with_score(query, k, **kwargs)]
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score(query, k, **kwargs)
@@ -421,12 +444,12 @@ class InMemoryVectorStore(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         prefetch_hits = self._similarity_search_with_score_by_vector(
             embedding=embedding,
             k=fetch_k,
@@ -436,10 +459,11 @@ class InMemoryVectorStore(VectorStore):
         try:
             import numpy as np
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
-            ) from e
+            )
+            raise ImportError(msg) from e
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -456,7 +480,7 @@ class InMemoryVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         embedding_vector = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding_vector,
@@ -473,7 +497,7 @@ class InMemoryVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         embedding_vector = await self.embedding.aembed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding_vector,
@@ -486,9 +510,9 @@ class InMemoryVectorStore(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
         store = cls(
@@ -500,9 +524,9 @@ class InMemoryVectorStore(VectorStore):
     @classmethod
     async def afrom_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
         store = cls(

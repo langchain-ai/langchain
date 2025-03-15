@@ -2,7 +2,7 @@ import React from "react";
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 import {
   useDocById,
-} from '@docusaurus/theme-common/internal';
+} from '@docusaurus/plugin-content-docs/client';
 
 const FEATURE_TABLES = {
     chat: {
@@ -27,7 +27,6 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/anthropic/chat_models/langchain_anthropic.chat_models.ChatAnthropic.html"
-                
             },
             {
                 "name": "ChatMistralAI",
@@ -156,8 +155,8 @@ const FEATURE_TABLES = {
                 "link": "nvidia_ai_endpoints/",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false,
-                "multimodal": false,
+                "json_mode": true,
+                "multimodal": true,
                 "local": true,
                 "apiLink": "https://python.langchain.com/api_reference/nvidia_ai_endpoints/chat_models/langchain_nvidia_ai_endpoints.chat_models.ChatNVIDIA.html"
             },
@@ -200,22 +199,44 @@ const FEATURE_TABLES = {
                 "link": "upstage",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false, 
+                "json_mode": false,
                 "multimodal": false,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_upstage.chat_models.ChatUpstage.html"
             },
             {
                 "name": "ChatDatabricks",
-                "package": "langchain-databricks",
+                "package": "databricks-langchain",
                 "link": "databricks",
                 "structured_output": true,
                 "tool_calling": true,
-                "json_mode": false, 
+                "json_mode": false,
                 "multimodal": false,
                 "local": false,
-                "apiLink": "https://python.langchain.com/api_reference/upstage/chat_models/langchain_databricks.chat_models.ChatDatabricks.html"
-            }
+                "apiLink": "https://api-docs.databricks.com/python/databricks-ai-bridge/latest/databricks_langchain.html#databricks_langchain.ChatDatabricks"
+            },
+            {
+                "name": "ChatWatsonx",
+                "package": "langchain-ibm",
+                "link": "ibm_watsonx",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/ibm/chat_models/langchain_ibm.chat_models.ChatWatsonx.html"
+            },
+            {
+                "name": "ChatXAI",
+                "package": "langchain-xai",
+                "link": "xai",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/xai/chat_models/langchain_xai.chat_models.ChatXAI.html"
+            },
         ],
     },
     llms: {
@@ -289,6 +310,12 @@ const FEATURE_TABLES = {
                 package: "langchain-google_vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
             },
+            {
+                name: "NVIDIA",
+                link: "NVIDIA",
+                package: "langchain-nvidia",
+                apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/llm/langchain_nvidia_ai_endpoints.llm.NVIDIA.html"
+            },
         ],
     },
     text_embedding: {
@@ -354,15 +381,33 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Nomic",
-                link: "cohere",
+                link: "nomic",
                 package: "langchain-nomic",
                 apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html"
             },
             {
                 name: "Databricks",
                 link: "databricks",
-                package: "langchain-databricks",
-                apiLink: "https://python.langchain.com/api_reference/nomic/embeddings/langchain_databricks.embeddings.DatabricksEmbeddings.html"
+                package: "databricks-langchain",
+                apiLink: "https://api-docs.databricks.com/python/databricks-ai-bridge/latest/databricks_langchain.html#databricks_langchain.DatabricksEmbeddings"
+            },
+            {
+                name: "VoyageAI",
+                link: "voyageai",
+                package: "langchain-voyageai",
+                apiLink: "https://python.langchain.com/api_reference/voyageai/embeddings/langchain_voyageai.embeddings.VoyageAIEmbeddings.html"
+            },
+            {
+                name: "IBM",
+                link: "ibm_watsonx",
+                package: "langchain-ibm",
+                apiLink: "https://python.langchain.com/api_reference/ibm/embeddings/langchain_ibm.embeddings.WatsonxEmbeddings.html"
+            },
+            {
+                name: "NVIDIA",
+                link: "nvidia_ai_endpoints",
+                package: "langchain-nvidia",
+                apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
         ]
     },
@@ -574,7 +619,6 @@ const FEATURE_TABLES = {
                 partnerPackage: false,
                 loaderName: "SharePointLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.sharepoint.SharePointLoader.html"
-                
             },
             {
                 name: "Tencent COS Directory",
@@ -708,7 +752,6 @@ const FEATURE_TABLES = {
                 link: "twitter",
                 loaderName: "TwitterTweetLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.twitter.TwitterTweetLoader.html"
-                
             },
             {
                 name: "Reddit",
@@ -736,6 +779,13 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
             },
             {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
                 name: "RecursiveURL",
                 link: "recursive_url",
                 source: "Recursively scrapes all child links from a root URL",
@@ -755,6 +805,27 @@ const FEATURE_TABLES = {
                 source: "API service that can be deployed locally, hosted version has free credits.",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Uses Docling to load and parse web pages",
+                api: "Package",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
+            },
+            {
+                name: "Hyperbrowser",
+                link: "hyperbrowser",
+                source: "Platform for running and scaling headless browsers, can be used to scrape/crawl any site",
+                api: "API",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/hyperbrowser/"
+            },
+            {
+                name: "AgentQL",
+                link: "agentql",
+                source: "Web interaction and structured data extraction from any web page using an AgentQL query or a Natural Language prompt",
+                api: "API",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/agentql/"
             }
         ]
     },
@@ -792,7 +863,7 @@ const FEATURE_TABLES = {
             {
                 name: "MathPix",
                 link: "mathpix",
-                source: "Uses MathPix to laod PDFs",
+                source: "Uses MathPix to load PDFs",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
             },
@@ -818,13 +889,6 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PyPDFium2Loader.html"
             },
             {
-                name: "UnstructuredPDFLoader",
-                link: "unstructured_pdfloader",
-                source: "Load PDF files using Unstructured",
-                api: "Package",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.UnstructuredPDFLoader.html"
-            },
-            {
                 name: "PyMuPDF",
                 link: "pymupdf",
                 source: "Load PDF files using PyMuPDF",
@@ -832,11 +896,32 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PyMuPDFLoader.html"
             },
             {
+                name: "PyMuPDF4LLM",
+                link: "pymupdf4llm",
+                source: "Load PDF content to Markdown using PyMuPDF4LLM",
+                api: "Package",
+                apiLink: "https://github.com/lakinduboteju/langchain-pymupdf4llm"
+            },
+            {
                 name: "PDFMiner",
                 link: "pdfminer",
                 source: "Load PDF files using PDFMiner",
                 api: "Package",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.pdf.PDFMinerLoader.html"
+            },
+            {
+                name: "Upstage Document Parse Loader",
+                link: "upstage",
+                source: "Load PDF files using UpstageDocumentParseLoader",
+                api: "Package",
+                apiLink: "https://python.langchain.com/api_reference/upstage/document_parse/langchain_upstage.document_parse.UpstageDocumentParseLoader.html"
+            },
+            {
+                name: "Docling",
+                link: "docling",
+                source: "Load PDF files using Docling",
+                api: "Package",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
             }
         ]
     },
@@ -864,7 +949,7 @@ const FEATURE_TABLES = {
             {
                 name: "Unstructured",
                 link: "unstructured_file",
-                source: "All file types",
+                source: "Many file types (see https://docs.unstructured.io/platform/supported-file-types)",
                 apiLink: "https://python.langchain.com/api_reference/unstructured/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
             {
@@ -874,23 +959,17 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html"
             },
             {
-                name: "UnstructuredMarkdownLoader",
-                link: "unstructured_markdown",
-                source: "Markdown files",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.markdown.UnstructuredMarkdownLoader.html"
-            },
-            {
                 name: "BSHTMLLoader",
                 link: "bshtml",
                 source: "HTML files",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
             },
             {
-                name: "UnstrucutredXMLLoader",
-                link: "xml",
-                source: "XML files",
-                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.xml.UnstructuredXMLLoader.html"
-            }
+                name: "DoclingLoader",
+                link: "../../integrations/document_loaders/docling",
+                source: "Various file types (see https://ds4sd.github.io/docling/)",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
+            },
         ]
     },
     vectorstores: {
@@ -1032,8 +1111,8 @@ const FEATURE_TABLES = {
                 link: "mongodb_atlas",
                 deleteById: true,
                 filtering: true,
-                searchByVector: false,
-                searchWithScore: false,
+                searchByVector: true,
+                searchWithScore: true,
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
@@ -1091,7 +1170,33 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: false,
-            }
+            },
+            {
+                name: "Weaviate",
+                link: "weaviate",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: true,
+                local: true,
+                idsInAddDocuments: false,
+            },
+            {
+                name: "SQLServer",
+                link: "sqlserver",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: false,
+                idsInAddDocuments: false,
+            },
         ],
     }
 };
