@@ -3155,17 +3155,21 @@ def _construct_lc_result_from_responses_api(
     if (
         schema is not None
         and "parsed" not in additional_kwargs
+        and response.output_text  # tool calls can generate empty output text
         and response.text
         and (text_config := response.text.model_dump())
         and (format_ := text_config.get("format", {}))
         and (format_.get("type") == "json_schema")
     ):
-        parsed_dict = json.loads(response.output_text)
-        if schema and _is_pydantic_class(schema):
-            parsed = schema(**parsed_dict)
-        else:
-            parsed = parsed_dict
-        additional_kwargs["parsed"] = parsed
+        try:
+            parsed_dict = json.loads(response.output_text)
+            if schema and _is_pydantic_class(schema):
+                parsed = schema(**parsed_dict)
+            else:
+                parsed = parsed_dict
+            additional_kwargs["parsed"] = parsed
+        except json.JSONDecodeError:
+            pass
     message = AIMessage(
         content=content_blocks,
         id=msg_id,
