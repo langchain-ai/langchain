@@ -184,7 +184,7 @@ class SQLStore(BaseStore[str, bytes]):
                     LangchainKeyValueStores.namespace == self.namespace,
                 )
             )
-            results = session.execute(stmt).all()
+            results = await session.execute(stmt).all()
         return [result[0].value for result in results]
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
@@ -201,7 +201,7 @@ class SQLStore(BaseStore[str, bytes]):
     async def amset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         async with self._make_async_session() as session:
             await self._amdelete([key for key, _ in key_value_pairs], session)
-            session.add_all(
+            await session.add_all(
                 [
                     LangchainKeyValueStores(
                         namespace=self.namespace,
