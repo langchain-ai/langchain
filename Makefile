@@ -60,7 +60,9 @@ lint lint_package lint_tests: # Run linting on the project.
 	uv run --group lint ruff check docs cookbook
 	uv run --group lint ruff format docs cookbook cookbook --diff
 	uv run --group lint ruff check --select I docs cookbook
-	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && echo "Error: no importing langchain from root in docs, except for hub" && exit 1 || exit 0
+	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && \
+	echo "Error: no importing langchain from root in docs, except for hub" && \
+	exit 1 || exit 0
 
 	git --no-pager grep 'api.python.langchain.com' -- docs/docs ':!docs/docs/additional_resources/arxiv_references.mdx' ':!docs/docs/integrations/document_loaders/sitemap.ipynb' || exit 0 && \
 	echo "Error: you should link python.langchain.com/api_reference, not api.python.langchain.com in the docs" && \
