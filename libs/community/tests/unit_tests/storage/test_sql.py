@@ -78,6 +78,22 @@ def test_sample_sql_docstore(sql_store: SQLStore) -> None:
     assert [key for key in sql_store.yield_keys()] == ["key2"]
 
 
+@pytest.mark.xfail(is_sqlalchemy_v1, reason="SQLAlchemy 1.x issues")
+def test_sample_sql_docstore_with_document(sql_store: SQLStore) -> None:
+    # Set values for keys
+    sql_store.mset([("key1", Document("value1")), ("key2", Document("value2"))])
+
+    # Get values for keys
+    values = sql_store.mget(["key1", "key2"])  # Returns [b"value1", b"value2"]
+    assert values == [b"value1", b"value2"]
+    # Delete keys
+    sql_store.mdelete(["key1"])
+
+    # Iterate over keys
+    assert [key for key in sql_store.yield_keys()] == ["key2"]
+
+
+
 @pytest.mark.requires("aiosqlite")
 async def test_async_sample_sql_docstore(async_sql_store: SQLStore) -> None:
     # Set values for keys

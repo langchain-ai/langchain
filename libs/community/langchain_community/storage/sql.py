@@ -15,6 +15,7 @@ from typing import (
     cast,
 )
 
+from langchain_core.documents.base import Document
 from langchain_core.stores import BaseStore
 from sqlalchemy import (
     LargeBinary,
@@ -176,7 +177,6 @@ class SQLStore(BaseStore[str, bytes]):
 
     async def amget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         assert isinstance(self.engine, AsyncEngine)
-        result: Dict[str, bytes] = {}
         async with self._make_async_session() as session:
             stmt = select(LangchainKeyValueStores).filter(
                 and_(
@@ -188,8 +188,6 @@ class SQLStore(BaseStore[str, bytes]):
         return [result[0].value for result in results]
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
-        result = {}
-
         with self._make_sync_session() as session:
             stmt = select(LangchainKeyValueStores).filter(
                 and_(
@@ -200,28 +198,42 @@ class SQLStore(BaseStore[str, bytes]):
             results = session.execute(stmt).all()
         return [result[0].value for result in results]
 
-    async def amset(self, key_value_pairs: Sequence[Tuple[str, bytes]], encoding: str = 'utf8') -> None:
+    async def amset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         async with self._make_async_session() as session:
             await self._amdelete([key for key, _ in key_value_pairs], session)
             session.add_all(
                 [
-                    LangchainKeyValueStores(namespace=self.namespace, key=k, value=bytearray(v, encoding))
+                    LangchainKeyValueStores(
+                        namespace=self.namespace,
+                        key=k,
+                        value=self._bytes_or_document(v)
+                    )
                     for k, v in key_value_pairs
                 ]
             )
             await session.commit()
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]], , encoding: str = 'utf8') -> None:
+    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         values: Dict[str, bytes] = dict(key_value_pairs)
         with self._make_sync_session() as session:
             self._mdelete(list(values.keys()), session)
             session.add_all(
                 [
-                    LangchainKeyValueStores(namespace=self.namespace, key=k, value=bytearray(v, encoding))
+                    LangchainKeyValueStores(
+                        namespace=self.namespace,
+                        key=k,
+                        value=self._bytes_or_document(v)
+                    )
                     for k, v in values.items()
                 ]
             )
             session.commit()
+
+    def _bytes_or_document(self, v: Union[bytes, Document]) -> Union[bytes, bytearray]:
+        if type(v) is bytes:
+            return v
+        elif type(v) is Document:
+            return bytearray(v.page_content, 'utf8')
 
     def _mdelete(self, keys: Sequence[str], session: Session) -> None:
         stmt = delete(LangchainKeyValueStores).filter(
