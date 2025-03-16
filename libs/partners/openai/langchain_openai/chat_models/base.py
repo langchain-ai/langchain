@@ -2877,6 +2877,8 @@ def _construct_responses_api_payload(
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
         if legacy_token_param in payload:
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
+    if "reasoning_effort" in payload:
+        payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):

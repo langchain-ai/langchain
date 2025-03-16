@@ -271,6 +271,18 @@ def test_function_calling_and_structured_output() -> None:
     assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
 
 
+def test_reasoning() -> None:
+    llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
+    response = llm.invoke("Hello", reasoning={"effort": "low"})
+    assert isinstance(response, AIMessage)
+    assert response.additional_kwargs["reasoning"]
+
+    llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
+    response = llm.invoke("Hello")
+    assert isinstance(response, AIMessage)
+    assert response.additional_kwargs["reasoning"]
+
+
 def test_stateful_api() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")
