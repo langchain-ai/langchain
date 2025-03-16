@@ -3,35 +3,28 @@
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
 
-## help: Show this help info.
-help: Makefile
+help: Makefile # Show this help info.
 	@printf "\n\033[1mUsage: make <TARGETS> ...\033[0m\n\n\033[1mTargets:\033[0m\n\n"
 	@sed -n 's/^## //p' $< | awk -F':' '{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' | sort | sed -e 's/^/  /'
 
-## all: Default target, shows help.
-all: help
+all: help # Default target, shows help.
 
-## clean: Clean documentation and API documentation artifacts.
-clean: docs_clean api_docs_clean
+clean: docs_clean api_docs_clean # Clean documentation and API documentation artifacts.
 
-######################
+###############
 # DOCUMENTATION
-######################
+###############
 
-## docs_build: Build the documentation.
-docs_build:
+docs_build: # Build the documentation.
 	cd docs && make build
 
-## docs_clean: Clean the documentation build artifacts.
-docs_clean:
+docs_clean: # Clean the documentation build artifacts.
 	cd docs && make clean
 
-## docs_linkcheck: Run linkchecker on the documentation.
-docs_linkcheck:
+docs_linkcheck: # Run linkchecker on the documentation.
 	uv run --no-group test linkchecker _dist/docs/ --ignore-url node_modules
 
-## api_docs_build: Build the API Reference documentation.
-api_docs_build:
+api_docs_build: # Build the API Reference documentation.
 	uv run --no-group test python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && uv run --no-group test make html
 	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
@@ -44,42 +37,36 @@ api_docs_quick_preview:
 	uv run --no-group test python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/
 	open docs/api_reference/_build/html/reference.html
 
-## api_docs_clean: Clean the API Reference documentation build artifacts.
-api_docs_clean:
+api_docs_clean: # Clean the API Reference documentation build artifacts.
 	find ./docs/api_reference -name '*_api_reference.rst' -delete
 	git clean -fdX ./docs/api_reference
 	rm docs/api_reference/index.md
-	
 
-## api_docs_linkcheck: Run linkchecker on the API Reference documentation.
-api_docs_linkcheck:
+api_docs_linkcheck: # Run linkchecker on the API Reference documentation.
 	uv run --no-group test linkchecker docs/api_reference/_build/html/index.html
 
-## spell_check: Run codespell on the project.
-spell_check:
+spell_check: # Run codespell on the project.
 	uv run --no-group test codespell --toml pyproject.toml
 
-## spell_fix: Run codespell on the project and fix the errors.
-spell_fix:
+
+spell_fix: # Run codespell on the project and fix the errors.
 	uv run --no-group test codespell --toml pyproject.toml -w
 
-######################
+########################
 # LINTING AND FORMATTING
-######################
+########################
 
-## lint: Run linting on the project.
-lint lint_package lint_tests:
+lint lint_package lint_tests: # Run linting on the project.
 	uv run --group lint ruff check docs cookbook
 	uv run --group lint ruff format docs cookbook cookbook --diff
 	uv run --group lint ruff check --select I docs cookbook
 	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && echo "Error: no importing langchain from root in docs, except for hub" && exit 1 || exit 0
-	
+
 	git --no-pager grep 'api.python.langchain.com' -- docs/docs ':!docs/docs/additional_resources/arxiv_references.mdx' ':!docs/docs/integrations/document_loaders/sitemap.ipynb' || exit 0 && \
 	echo "Error: you should link python.langchain.com/api_reference, not api.python.langchain.com in the docs" && \
 	exit 1
 
-## format: Format the project files.
-format format_diff:
+format format_diff: # Format the project files.
 	uv run --group lint ruff format docs cookbook
 	uv run --group lint ruff check --select I --fix docs cookbook
 
