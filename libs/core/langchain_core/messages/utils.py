@@ -403,7 +403,7 @@ def filter_messages(
     exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
-    exclude_tool_call_ids: Optional[Sequence[str] | bool] = None,
+    exclude_tool_calls: Optional[Sequence[str] | bool] = None,
 ) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
@@ -419,10 +419,11 @@ def filter_messages(
             SystemMessage, HumanMessage, AIMessage, ...). Default is None.
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
-        exclude_tool_calls_id: Tool call IDs to exclude. Default is None.
-            If `True`, all messages with tool calls will be excluded.
+        exclude_tool_calls: Tool call IDs to exclude. Default is None.
+            If `True`, all AIMessages with tool calls and ToolMessages will be excluded.
             It filters pairs of AIMessage with the invocation
             and the corresponding ToolMessage with the response.
+            The `tool_calls` in the AIMessage is adjusted removing the filtered tool calls id.
             If all tool_calls are filtered from an AIMessage the whole message is filtered.
 
     Returns:
@@ -472,24 +473,37 @@ def filter_messages(
         else:
             pass
 
-        if exclude_tool_call_ids is True and (
+        if exclude_tool_calls is True and (
             (isinstance(msg, AIMessage) and msg.tool_calls)
             or isinstance(msg, ToolMessage)
         ):
             continue
-        if isinstance(exclude_tool_call_ids, list):
+        if isinstance(exclude_tool_calls, (list, tuple, set)):
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 tool_calls = [
                     tool_call
                     for tool_call in msg.tool_calls
-                    if tool_call["id"] not in exclude_tool_call_ids
+                    if tool_call["id"] not in exclude_tool_calls
                 ]
                 if not tool_calls:
                     continue
-                msg = msg.model_copy(update={"tool_calls": tool_calls})
+                content = msg.content
+                if isinstance(msg.content, list):
+                    content = [
+                        content_block
+                        for content_block in msg.content
+                        if (
+                            not isinstance(content_block, dict)
+                            or content_block.get("type") != "tool_use"
+                            or content_block.get("id") not in exclude_tool_calls
+                        )
+                    ]
+
+                msg = msg.model_copy(
+                    update={"tool_calls": tool_calls, "content": content}
+                )
             elif (
-                isinstance(msg, ToolMessage)
-                and msg.tool_call_id in exclude_tool_call_ids
+                isinstance(msg, ToolMessage) and msg.tool_call_id in exclude_tool_calls
             ):
                 continue
 
