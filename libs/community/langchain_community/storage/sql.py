@@ -184,8 +184,8 @@ class SQLStore(BaseStore[str, bytes]):
                     LangchainKeyValueStores.namespace == self.namespace,
                 )
             )
-            results = await session.execute(stmt).all()
-        return [result[0].value for result in results]
+            results = await session.execute(stmt)
+        return [result[0].value for result in results.all()]
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         with self._make_sync_session() as session:
@@ -206,7 +206,7 @@ class SQLStore(BaseStore[str, bytes]):
                     LangchainKeyValueStores(
                         namespace=self.namespace,
                         key=k,
-                        value=self._bytes_or_document(v)
+                        value=self._bytes_or_document(v),
                     )
                     for k, v in key_value_pairs
                 ]
@@ -222,18 +222,20 @@ class SQLStore(BaseStore[str, bytes]):
                     LangchainKeyValueStores(
                         namespace=self.namespace,
                         key=k,
-                        value=self._bytes_or_document(v)
+                        value=self._bytes_or_document(v),
                     )
                     for k, v in values.items()
                 ]
             )
             session.commit()
 
-    def _bytes_or_document(self, v: Union[bytes, Document]) -> Union[bytes, bytearray]:
+    def _bytes_or_document(self, v: Union[bytes, str, Document]) -> Union[bytes, bytearray]:
         if type(v) is bytes:
             return v
         elif type(v) is Document:
-            return bytearray(v.page_content, 'utf8')
+            return bytearray(v.page_content, "utf8")
+        else:
+            return bytes(v, "utf8")
 
     def _mdelete(self, keys: Sequence[str], session: Session) -> None:
         stmt = delete(LangchainKeyValueStores).filter(
