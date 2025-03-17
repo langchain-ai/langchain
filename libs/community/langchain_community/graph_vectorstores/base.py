@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta
+from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -34,7 +34,17 @@ def _has_next(iterator: Iterator) -> bool:
     return next(iterator, sentinel) is not sentinel
 
 
+DEPRECATION_ADDENDUM = (
+    "See https://datastax.github.io/graph-rag/guide/migration/"
+    "#from-langchain-graphvectorstore for migration instructions."
+)
+
+
 @beta()
+@deprecated(
+    since="0.3.20",
+    addendum=DEPRECATION_ADDENDUM,
+)
 class Node(Serializable):
     """Node in the GraphVectorStore.
 
@@ -120,6 +130,10 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
 
 
 @beta()
+@deprecated(
+    since="0.3.20",
+    addendum=DEPRECATION_ADDENDUM,
+)
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
     """Convert nodes to documents.
 
@@ -144,6 +158,10 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
 
 
 @beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
+@deprecated(
+    since="0.3.20",
+    addendum=DEPRECATION_ADDENDUM,
+)
 class GraphVectorStore(VectorStore):
     """A hybrid vector-and-graph graph store.
 
@@ -706,6 +724,10 @@ class GraphVectorStore(VectorStore):
 
 
 @beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
+@deprecated(
+    since="0.3.20",
+    addendum=DEPRECATION_ADDENDUM,
+)
 class GraphVectorStoreRetriever(VectorStoreRetriever):
     """Retriever for GraphVectorStore.
 
