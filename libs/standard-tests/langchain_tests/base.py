@@ -41,9 +41,6 @@ class BaseStandardTests(ABC):
         base_tests = set(
             [method for method in dir(comparison_class) if method.startswith("test_")]
         )
-        # allow subclasses to add new tests, don't do -
-        #  non_standard_tests = running_tests - base_tests
-        #  assert not non_standard_tests, f"Non-standard tests found: {non_standard_tests}"  # noqa: E501
         deleted_tests = base_tests - running_tests
         assert not deleted_tests, f"Standard tests deleted: {deleted_tests}"
 
