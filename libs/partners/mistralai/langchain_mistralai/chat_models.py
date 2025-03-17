@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import ssl
 import uuid
 from operator import itemgetter
 from typing import (
@@ -24,6 +25,7 @@ from typing import (
     cast,
 )
 
+import certifi
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core.callbacks import (
@@ -85,6 +87,11 @@ logger = logging.getLogger(__name__)
 
 # Mistral enforces a specific pattern for tool call IDs
 TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
+
+
+# This SSL context is equivelent to the default `verify=True`.
+# https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
+global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def _create_retry_decorator(
@@ -518,6 +525,7 @@ class ChatMistralAI(BaseChatModel):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                verify=global_ssl_context,
             )
         # todo: handle retries and max_concurrency
         if not self.async_client:
@@ -529,6 +537,7 @@ class ChatMistralAI(BaseChatModel):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                verify=global_ssl_context,
             )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
@@ -579,7 +588,11 @@ class ChatMistralAI(BaseChatModel):
             )
             generations.append(gen)
 
-        llm_output = {"token_usage": token_usage, "model": self.model}
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": self.model,
+            "model": self.model,  # Backwards compatability
+        }
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -946,7 +959,7 @@ class ChatMistralAI(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice="any",
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
                     "schema": schema,
                 },
@@ -964,7 +977,7 @@ class ChatMistralAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {
                         # this is correct - name difference with mistral api
                         "method": "json_mode"
@@ -986,7 +999,7 @@ class ChatMistralAI(BaseChatModel):
             response_format = _convert_to_openai_response_format(schema, strict=True)
             llm = self.bind(
                 response_format=response_format,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "json_schema"},
                     "schema": schema,
                 },

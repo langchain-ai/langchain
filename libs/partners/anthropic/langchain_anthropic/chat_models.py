@@ -26,6 +26,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -81,6 +82,31 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+
+class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
+    name: str
+    description: str
+    input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
+
+
+def _is_builtin_tool(tool: Any) -> bool:
+    if not isinstance(tool, dict):
+        return False
+
+    tool_type = tool.get("type")
+    if not tool_type or not isinstance(tool_type, str):
+        return False
+
+    _builtin_tool_prefixes = [
+        "text_editor_",
+        "computer_",
+        "bash_",
+    ]
+    return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
 
 def _format_image(image_url: str) -> Dict:
@@ -509,6 +535,128 @@ class ChatAnthropic(BaseChatModel):
 
             "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
 
+    PDF input:
+        .. code-block:: python
+
+            from base64 import b64encode
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.messages import HumanMessage
+            import requests
+
+            url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            data = b64encode(requests.get(url).content).decode()
+
+            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+            ai_msg = llm.invoke(
+                [
+                    HumanMessage(
+                        [
+                            "Summarize this document.",
+                            {
+                                "type": "document",
+                                "source": {
+                                    "type": "base64",
+                                    "data": data,
+                                    "media_type": "application/pdf",
+                                },
+                            },
+                        ]
+                    )
+                ]
+            )
+            ai_msg.content
+
+        .. code-block:: python
+
+            "This appears to be a simple document..."
+
+    Extended thinking:
+        Claude 3.7 Sonnet supports an
+        `extended thinking <https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking>`_
+        feature, which will output the step-by-step reasoning process that led to its
+        final answer.
+
+        To use it, specify the `thinking` parameter when initializing `ChatAnthropic`.
+        It can also be passed in as a kwarg during invocation.
+
+        You will need to specify a token budget to use this feature. See usage example:
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-3-7-sonnet-latest",
+                max_tokens=5000,
+                thinking={"type": "enabled", "budget_tokens": 2000},
+            )
+
+            response = llm.invoke("What is the cube root of 50.653?")
+            response.content
+
+        .. code-block:: python
+
+            [{'signature': '...', 'thinking': "To find the cube root of 50.653...", 'type': 'thinking'}, {'text': 'The cube root of 50.653 is ...', 'type': 'text'}]
+
+    Citations:
+        Anthropic supports a
+        `citations <https://docs.anthropic.com/en/docs/build-with-claude/citations>`_
+        feature that lets Claude attach context to its answers based on source
+        documents supplied by the user. When
+        `document content blocks <https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types>`_
+        with ``"citations": {"enabled": True}`` are included in a query, Claude may
+        generate citations in its response.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "text",
+                                "media_type": "text/plain",
+                                "data": "The grass is green. The sky is blue.",
+                            },
+                            "title": "My Document",
+                            "context": "This is a trustworthy document.",
+                            "citations": {"enabled": True},
+                        },
+                        {"type": "text", "text": "What color is the grass and sky?"},
+                    ],
+                }
+            ]
+            response = llm.invoke(messages)
+            response.content
+
+        .. code-block:: python
+
+            [{'text': 'Based on the document, ', 'type': 'text'},
+            {'text': 'the grass is green',
+            'type': 'text',
+            'citations': [{'type': 'char_location',
+                'cited_text': 'The grass is green. ',
+                'document_index': 0,
+                'document_title': 'My Document',
+                'start_char_index': 0,
+                'end_char_index': 20}]},
+            {'text': ', and ', 'type': 'text'},
+            {'text': 'the sky is blue',
+            'type': 'text',
+            'citations': [{'type': 'char_location',
+                'cited_text': 'The sky is blue.',
+                'document_index': 0,
+                'document_title': 'My Document',
+                'start_char_index': 20,
+                'end_char_index': 36}]},
+            {'text': '.', 'type': 'text'}]
+
     Token usage:
         .. code-block:: python
 
@@ -536,6 +684,109 @@ class ChatAnthropic(BaseChatModel):
 
         These can be disabled by setting ``stream_usage=False`` in the stream method,
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
+
+    Prompt caching:
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Below is some long context:",
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{long_text}",
+                            "cache_control": {"type": "ephemeral"},
+                        },
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": "What's that about?",
+                },
+            ]
+
+            response = llm.invoke(messages)
+            response.usage_metadata["input_token_details"]
+
+        .. code-block:: python
+
+            {'cache_read': 0, 'cache_creation': 1458}
+
+    Token-efficient tool use (beta):
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.tools import tool
+
+            llm = ChatAnthropic(
+                model="claude-3-7-sonnet-20250219",
+                temperature=0,
+                model_kwargs={
+                    "extra_headers": {
+                        "anthropic-beta": "token-efficient-tools-2025-02-19"
+                    }
+                }
+            )
+
+            @tool
+            def get_weather(location: str) -> str:
+                \"\"\"Get the weather at a location.\"\"\"
+                return "It's sunny."
+
+            llm_with_tools = llm.bind_tools([get_weather])
+            response = llm_with_tools.invoke(
+                "What's the weather in San Francisco?"
+            )
+            print(response.tool_calls)
+            print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
+
+        .. code-block:: none
+
+            [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
+
+            Total tokens: 408
+
+    Built-in tools:
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+            tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+            llm_with_tools = llm.bind_tools([tool])
+
+            response = llm_with_tools.invoke(
+                "There's a syntax error in my primes.py file. Can you help me fix it?"
+            )
+            print(response.text())
+            response.tool_calls
+
+        .. code-block:: none
+
+            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+
+            [{'name': 'str_replace_editor',
+            'args': {'command': 'view', 'path': '/repo/primes.py'},
+            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+            'type': 'tool_call'}]
 
     Response metadata
         .. code-block:: python
@@ -813,6 +1064,8 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        if "model" in llm_output and "model_name" not in llm_output:
+            llm_output["model_name"] = llm_output["model"]
         if (
             len(content) == 1
             and content[0]["type"] == "text"
@@ -864,6 +1117,34 @@ class ChatAnthropic(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
+
+    def _get_llm_for_structured_output_when_thinking_is_enabled(
+        self,
+        schema: Union[Dict, type],
+        formatted_tool: AnthropicTool,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        thinking_admonition = (
+            "Anthropic structured output relies on forced tool calling, "
+            "which is not supported when `thinking` is enabled. This method will raise "
+            "langchain_core.exceptions.OutputParserException if tool calls are not "
+            "generated. Consider disabling `thinking` or adjust your prompt to ensure "
+            "the tool is called."
+        )
+        warnings.warn(thinking_admonition)
+        llm = self.bind_tools(
+            [schema],
+            ls_structured_output_format={
+                "kwargs": {"method": "function_calling"},
+                "schema": formatted_tool,
+            },
+        )
+
+        def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
+            if not message.tool_calls:
+                raise OutputParserException(thinking_admonition)
+            return message
+
+        return llm | _raise_if_no_tool_calls
 
     def bind_tools(
         self,
@@ -994,7 +1275,6 @@ class ChatAnthropic(BaseChatModel):
                 llm = ChatAnthropic(
                     model="claude-3-5-sonnet-20240620",
                     temperature=0,
-                    extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
@@ -1012,7 +1292,10 @@ class ChatAnthropic(BaseChatModel):
                 AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 
         """  # noqa: E501
-        formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
+        formatted_tools = [
+            tool if _is_builtin_tool(tool) else convert_to_anthropic_tool(tool)
+            for tool in tools
+        ]
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -1162,11 +1445,20 @@ class ChatAnthropic(BaseChatModel):
         """  # noqa: E501
         formatted_tool = convert_to_anthropic_tool(schema)
         tool_name = formatted_tool["name"]
-        llm = self.bind_tools(
-            [schema],
-            tool_choice=tool_name,
-            structured_output_format={"kwargs": {}, "schema": formatted_tool},
-        )
+        if self.thinking is not None and self.thinking.get("type") == "enabled":
+            llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
+                schema, formatted_tool
+            )
+        else:
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                ls_structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
+                },
+            )
+
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
@@ -1269,15 +1561,6 @@ class ChatAnthropic(BaseChatModel):
         return response.input_tokens
 
 
-class AnthropicTool(TypedDict):
-    """Anthropic tool definition."""
-
-    name: str
-    description: str
-    input_schema: Dict[str, Any]
-    cache_control: NotRequired[Dict[str, str]]
-
-
 def convert_to_anthropic_tool(
     tool: Union[Dict[str, Any], Type, Callable, BaseTool],
 ) -> AnthropicTool:
@@ -1358,9 +1641,14 @@ def _make_message_chunk_from_anthropic_event(
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         usage_metadata = _create_usage_metadata(event.message.usage)
+        if hasattr(event.message, "model"):
+            response_metadata = {"model_name": event.message.model}
+        else:
+            response_metadata = {}
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
         )
     elif (
         event.type == "content_block_start"

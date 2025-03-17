@@ -99,7 +99,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
-  const [selectedModel, setSelectedModel] = useState("groq");
+  const [selectedModel, setSelectedModel] = useState("openai");
   const {
     overrideParams,
     customVarName,
@@ -108,13 +108,6 @@ export default function ChatModelTabs(props) {
   const llmVarName = customVarName ?? "model";
 
   const tabItems = [
-    {
-      value: "groq",
-      label: "Groq",
-      model: "llama3-8b-8192",
-      apiKeyName: "GROQ_API_KEY",
-      packageName: "langchain[groq]",
-    },
     {
       value: "openai",
       label: "OpenAI",
@@ -155,6 +148,13 @@ ${llmVarName} = AzureChatOpenAI(
       model: "anthropic.claude-3-5-sonnet-20240620-v1:0",
       apiKeyText: "# Ensure your AWS credentials are configured",
       packageName: "langchain[aws]",
+    },
+    {
+      value: "groq",
+      label: "Groq",
+      model: "llama3-8b-8192",
+      apiKeyName: "GROQ_API_KEY",
+      packageName: "langchain[groq]",
     },
     {
       value: "cohere",
@@ -210,6 +210,13 @@ ${llmVarName} = ChatWatsonx(
       text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(endpoint="databricks-meta-llama-3-1-70b-instruct")`,
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
+    },
+    {
+      value: "xai",
+      label: "xAI",
+      model: "grok-2",
+      apiKeyName: "XAI_API_KEY",
+      packageName: "langchain-xai",
     },
   ].map((item) => ({
     ...item,

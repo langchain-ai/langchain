@@ -673,9 +673,7 @@ class FasterWhisperParser(BaseBlobParser):
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        model = WhisperModel(
-            self.model_size, device=self.device, compute_type="float16"
-        )
+        model = WhisperModel(self.model_size, device=self.device)
 
         segments, info = model.transcribe(file_obj, beam_size=5)
 

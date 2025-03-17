@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import mimetypes
 from io import BufferedReader, BytesIO
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -151,8 +151,7 @@ class Blob(BaseMedia):
     def as_string(self) -> str:
         """Read data as a string."""
         if self.data is None and self.path:
-            with open(str(self.path), encoding=self.encoding) as f:
-                return f.read()
+            return Path(self.path).read_text(encoding=self.encoding)
         elif isinstance(self.data, bytes):
             return self.data.decode(self.encoding)
         elif isinstance(self.data, str):
@@ -168,8 +167,7 @@ class Blob(BaseMedia):
         elif isinstance(self.data, str):
             return self.data.encode(self.encoding)
         elif self.data is None and self.path:
-            with open(str(self.path), "rb") as f:
-                return f.read()
+            return Path(self.path).read_bytes()
         else:
             msg = f"Unable to get bytes for blob {self}"
             raise ValueError(msg)
@@ -180,7 +178,7 @@ class Blob(BaseMedia):
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
-            with open(str(self.path), "rb") as f:
+            with Path(self.path).open("rb") as f:
                 yield f
         else:
             msg = f"Unable to convert blob {self}"
