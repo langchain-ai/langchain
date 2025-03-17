@@ -1,8 +1,10 @@
 """Test Responses API usage."""
 
+import json
 import os
 from typing import Any, Optional, cast
 
+import openai
 import pytest
 from langchain_core.messages import (
     AIMessage,
@@ -10,8 +12,12 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
 )
+from pydantic import BaseModel
+from typing_extensions import Annotated, TypedDict
 
 from langchain_openai import ChatOpenAI
+
+MODEL_NAME = "gpt-4o-mini"
 
 
 def _check_response(response: Optional[BaseMessage]) -> None:
@@ -48,7 +54,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
 
 
 def test_web_search() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -76,6 +82,15 @@ def test_web_search() -> None:
     # Manually pass in chat history
     response = llm.invoke(
         [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "What was a positive news story from today?",
+                    }
+                ],
+            },
             first_response,
             {
                 "role": "user",
@@ -94,7 +109,7 @@ def test_web_search() -> None:
 
 
 async def test_web_search_async() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     response = await llm.ainvoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -119,7 +134,7 @@ def test_function_calling() -> None:
         """return x * y"""
         return x * y
 
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     bound_llm = llm.bind_tools([multiply, {"type": "web_search_preview"}])
     ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
     assert len(ai_msg.tool_calls) == 1
@@ -138,8 +153,147 @@ def test_function_calling() -> None:
     _check_response(response)
 
 
+class Foo(BaseModel):
+    response: str
+
+
+class FooDict(TypedDict):
+    response: str
+
+
+def test_parsed_pydantic_schema() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = llm.invoke("how are ya", response_format=Foo)
+    parsed = Foo(**json.loads(response.text()))
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("how are ya", response_format=Foo):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = Foo(**json.loads(full.text()))
+    assert parsed == full.additional_kwargs["parsed"]
+    assert parsed.response
+
+
+async def test_parsed_pydantic_schema_async() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = await llm.ainvoke("how are ya", response_format=Foo)
+    parsed = Foo(**json.loads(response.text()))
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("how are ya", response_format=Foo):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = Foo(**json.loads(full.text()))
+    assert parsed == full.additional_kwargs["parsed"]
+    assert parsed.response
+
+
+@pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
+def test_parsed_dict_schema(schema: Any) -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = llm.invoke("how are ya", response_format=schema)
+    parsed = json.loads(response.text())
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("how are ya", response_format=schema):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = json.loads(full.text())
+    assert parsed == full.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
+
+def test_parsed_strict() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+
+    class InvalidJoke(TypedDict):
+        setup: Annotated[str, ..., "The setup of the joke"]
+        punchline: Annotated[str, None, "The punchline of the joke"]
+
+    # Test not strict
+    response = llm.invoke("Tell me a joke", response_format=InvalidJoke)
+    parsed = json.loads(response.text())
+    assert parsed == response.additional_kwargs["parsed"]
+
+    # Test strict
+    with pytest.raises(openai.BadRequestError):
+        llm.invoke(
+            "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+        )
+    with pytest.raises(openai.BadRequestError):
+        next(
+            llm.stream(
+                "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+            )
+        )
+
+
+@pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
+async def test_parsed_dict_schema_async(schema: Any) -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    response = await llm.ainvoke("how are ya", response_format=schema)
+    parsed = json.loads(response.text())
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("how are ya", response_format=schema):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    parsed = json.loads(full.text())
+    assert parsed == full.additional_kwargs["parsed"]
+    assert parsed["response"] and isinstance(parsed["response"], str)
+
+
+def test_function_calling_and_structured_output() -> None:
+    def multiply(x: int, y: int) -> int:
+        """return x * y"""
+        return x * y
+
+    llm = ChatOpenAI(model=MODEL_NAME)
+    bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
+    # Test structured output
+    response = llm.invoke("how are ya", response_format=Foo)
+    parsed = Foo(**json.loads(response.text()))
+    assert parsed == response.additional_kwargs["parsed"]
+    assert parsed.response
+
+    # Test function calling
+    ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
+    assert len(ai_msg.tool_calls) == 1
+    assert ai_msg.tool_calls[0]["name"] == "multiply"
+    assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
+
+
+def test_reasoning() -> None:
+    llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
+    response = llm.invoke("Hello", reasoning={"effort": "low"})
+    assert isinstance(response, AIMessage)
+    assert response.additional_kwargs["reasoning"]
+
+    llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
+    response = llm.invoke("Hello")
+    assert isinstance(response, AIMessage)
+    assert response.additional_kwargs["reasoning"]
+
+
 def test_stateful_api() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini", use_responses_api=True)
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")
     assert "id" in response.response_metadata
 
@@ -152,7 +306,7 @@ def test_stateful_api() -> None:
 
 def test_file_search() -> None:
     pytest.skip()  # TODO: set up infra
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=MODEL_NAME)
     tool = {
         "type": "file_search",
         "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
