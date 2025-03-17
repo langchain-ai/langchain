@@ -93,7 +93,6 @@ def test_sample_sql_docstore_with_document(sql_store: SQLStore) -> None:
     assert [key for key in sql_store.yield_keys()] == ["key2"]
 
 
-
 @pytest.mark.requires("aiosqlite")
 async def test_async_sample_sql_docstore(async_sql_store: SQLStore) -> None:
     # Set values for keys
