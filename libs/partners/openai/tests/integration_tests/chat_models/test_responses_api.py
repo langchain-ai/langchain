@@ -82,6 +82,15 @@ def test_web_search() -> None:
     # Manually pass in chat history
     response = llm.invoke(
         [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "What was a positive news story from today?",
+                    }
+                ],
+            },
             first_response,
             {
                 "role": "user",
