@@ -201,7 +201,7 @@ class SQLStore(BaseStore[str, bytes]):
     async def amset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         async with self._make_async_session() as session:
             await self._amdelete([key for key, _ in key_value_pairs], session)
-            await session.add_all(
+            session.add_all(
                 [
                     LangchainKeyValueStores(
                         namespace=self.namespace,
@@ -213,8 +213,8 @@ class SQLStore(BaseStore[str, bytes]):
             )
             await session.commit()
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
-        values: Dict[str, bytes] = dict(key_value_pairs)
+    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes | Document]]) -> None:
+        values = dict(key_value_pairs)
         with self._make_sync_session() as session:
             self._mdelete(list(values.keys()), session)
             session.add_all(
@@ -229,13 +229,12 @@ class SQLStore(BaseStore[str, bytes]):
             )
             session.commit()
 
-    def _bytes_or_document(self, v: Union[bytes, str, Document]) -> Union[bytes, bytearray]:
+    def _bytes_or_document(self, v: Union[bytes, Document]) -> Union[bytes, bytearray]:
         if type(v) is bytes:
             return v
         elif type(v) is Document:
             return bytearray(v.page_content, "utf8")
-        else:
-            return bytes(v, "utf8")
+        raise ValueError("Expecting bytes or langchain Document")
 
     def _mdelete(self, keys: Sequence[str], session: Session) -> None:
         stmt = delete(LangchainKeyValueStores).filter(
