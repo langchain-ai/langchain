@@ -88,7 +88,6 @@ def convert_dict_to_message(
     """Convert a dict to a message."""
     role = _dict["role"]
     content = _dict["content"]
-
     if role == "user":
         return (
             HumanMessageChunk(content=content)
@@ -123,6 +122,8 @@ def convert_dict_to_message(
                             tool_calls.append(parsed_tool)
                     except Exception as e:
                         invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
+        elif "reasoning_content" in _dict:
+            additional_kwargs = {"reasoning_content": _dict["reasoning_content"]}
         elif "partial" in _dict and isinstance(_dict["partial"], bool):
             additional_kwargs = {"partial": _dict["partial"]}
         else:
@@ -486,11 +487,12 @@ class ChatTongyi(BaseChatModel):
                 "Please install it with `pip install dashscope --upgrade`."
             )
         dashscope_multimodal_models = [
-            "qwen-vl-v1",
-            "qwen-vl-chat-v1",
             "qwen-audio-turbo",
+            "qwen-audio-turbo-latest",
             "qwen-vl-plus",
+            "qwen-vl-plus-latest",
             "qwen-vl-max",
+            "qwen-vl-max-latest",
         ]
         if (
             values["model_name"] in dashscope_multimodal_models
@@ -729,6 +731,7 @@ class ChatTongyi(BaseChatModel):
             if (
                 choice["finish_reason"] == "null"
                 and message["content"] == ""
+                and message["reasoning_content"] == ""
                 and "tool_calls" not in message
             ):
                 continue
