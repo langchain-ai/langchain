@@ -823,23 +823,29 @@ def trim_messages(
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
     """  # noqa: E501
+    # Validate arguments
     if start_on and strategy == "first":
-        raise ValueError
+        raise ValueError("start_on parameter is only valid with strategy='last'")
     if include_system and strategy == "first":
-        raise ValueError
+        raise ValueError("include_system parameter is only valid with strategy='last'")
+
+    # Convert messages to BaseMessage objects
     messages = convert_to_messages(messages)
+
+    # Process token counter function
     if hasattr(token_counter, "get_num_tokens_from_messages"):
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
+        # Check if token_counter function takes a single message or a list of messages
         if (
             list(inspect.signature(token_counter).parameters.values())[0].annotation
             is BaseMessage
         ):
-
+            # Create a wrapper that applies the per-message function to a list
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
-
         else:
+            # Function already handles a list of messages
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
         msg = (
@@ -861,6 +867,7 @@ def trim_messages(
 
     text_splitter_fn = text_splitter_fn or _default_text_splitter
 
+    # Apply appropriate strategy
     if strategy == "first":
         return _first_max_tokens(
             messages,
@@ -1231,29 +1238,82 @@ def _first_max_tokens(
     messages = list(messages)
     if not messages:
         return messages
-    idx = 0
-    for i in range(len(messages)):
-        if token_counter(messages[:-i] if i else messages) <= max_tokens:
-            idx = len(messages) - i
-            break
-    if partial_strategy and (idx < len(messages) - 1 or idx == 0):
+
+    # Use binary search to find the maximum number of messages within token limit
+    left, right = 0, len(messages)
+    while left < right:
+        mid = (left + right + 1) // 2
+        if token_counter(messages[:mid]) <= max_tokens:
+            left = mid
+            idx = mid
+        else:
+            right = mid - 1
+
+    # idx now contains the maximum number of complete messages we can include
+    idx = left
+
+    # Handle partial message inclusion if requested
+    if partial_strategy and idx < len(messages):
+        excluded = messages[idx].model_copy(deep=True)
         included_partial = False
+
+        # Handle list content
         if isinstance(messages[idx].content, list):
-            excluded = messages[idx].model_copy(deep=True)
-            num_block = len(excluded.content)
+            # Store current messages to avoid repeated token counting on the same subset
+            base_messages = messages[:idx]
+
             if partial_strategy == "last":
+                # For last strategy, reverse content blocks to keep the last ones
                 excluded.content = list(reversed(excluded.content))
-            for _ in range(1, num_block):
-                excluded.content = excluded.content[:-1]
-                if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                    messages = messages[:idx] + [excluded]
+                num_block = len(excluded.content)
+
+                # Binary search for the maximum number of blocks we can include
+                left, right = 0, num_block
+                while left < right:
+                    mid = (left + right + 1) // 2
+                    excluded_with_blocks = excluded.model_copy(deep=True)
+                    excluded_with_blocks.content = excluded_with_blocks.content[:mid]
+                    if (
+                        token_counter(base_messages + [excluded_with_blocks])
+                        <= max_tokens
+                    ):
+                        left = mid
+                    else:
+                        right = mid - 1
+
+                if left > 0:
+                    excluded.content = excluded.content[:left]
+                    excluded.content = list(reversed(excluded.content))
+                    messages = base_messages + [excluded]
                     idx += 1
                     included_partial = True
-                    break
-            if included_partial and partial_strategy == "last":
-                excluded.content = list(reversed(excluded.content))
+            else:
+                # For first strategy, keep the first blocks
+                num_block = len(excluded.content)
+
+                # Binary search for maximum number of blocks
+                left, right = 0, num_block
+                while left < right:
+                    mid = (left + right + 1) // 2
+                    excluded_with_blocks = excluded.model_copy(deep=True)
+                    excluded_with_blocks.content = excluded_with_blocks.content[:mid]
+                    if (
+                        token_counter(base_messages + [excluded_with_blocks])
+                        <= max_tokens
+                    ):
+                        left = mid
+                    else:
+                        right = mid - 1
+
+                if left > 0:
+                    excluded.content = excluded.content[:left]
+                    messages = base_messages + [excluded]
+                    idx += 1
+                    included_partial = True
+
+        # Handle string content if no partial included yet
         if not included_partial:
-            excluded = messages[idx].model_copy(deep=True)
+            text = None
             if isinstance(excluded.content, list) and any(
                 isinstance(block, str) or block["type"] == "text"
                 for block in messages[idx].content
@@ -1268,23 +1328,34 @@ def _first_max_tokens(
                 )
             elif isinstance(excluded.content, str):
                 text = excluded.content
-            else:
-                text = None
+
             if text:
                 split_texts = text_splitter(text)
-                num_splits = len(split_texts)
+                base_messages = messages[:idx]
+
                 if partial_strategy == "last":
                     split_texts = list(reversed(split_texts))
-                for _ in range(num_splits - 1):
-                    split_texts.pop()
-                    excluded.content = "".join(split_texts)
-                    if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                        if partial_strategy == "last":
-                            excluded.content = "".join(reversed(split_texts))
-                        messages = messages[:idx] + [excluded]
-                        idx += 1
-                        break
 
+                # Binary search for the maximum number of splits we can include
+                left, right = 0, len(split_texts)
+                while left < right:
+                    mid = (left + right + 1) // 2
+                    excluded_copy = excluded.model_copy(deep=True)
+                    excluded_copy.content = "".join(split_texts[:mid])
+                    if token_counter(base_messages + [excluded_copy]) <= max_tokens:
+                        left = mid
+                    else:
+                        right = mid - 1
+
+                if left > 0:
+                    content_splits = split_texts[:left]
+                    if partial_strategy == "last":
+                        content_splits = list(reversed(content_splits))
+                    excluded.content = "".join(content_splits)
+                    messages = base_messages + [excluded]
+                    idx += 1
+
+    # Handle end_on filter
     if end_on:
         while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
             idx -= 1
@@ -1310,24 +1381,59 @@ def _last_max_tokens(
     messages = list(messages)
     if len(messages) == 0:
         return []
-    if end_on:
-        while messages and not _is_message_type(messages[-1], end_on):
-            messages.pop()
-    swapped_system = include_system and isinstance(messages[0], SystemMessage)
-    reversed_ = messages[:1] + messages[1:][::-1] if swapped_system else messages[::-1]
 
-    reversed_ = _first_max_tokens(
-        reversed_,
-        max_tokens=max_tokens,
+    # Filter out messages after end_on type
+    if end_on:
+        end_idx = len(messages)
+        for i in range(len(messages) - 1, -1, -1):
+            if _is_message_type(messages[i], end_on):
+                end_idx = i + 1
+                break
+        messages = messages[:end_idx]
+
+    # Handle system message preservation
+    system_message = None
+    if include_system and len(messages) > 0 and isinstance(messages[0], SystemMessage):
+        system_message = messages[0]
+        messages = messages[1:]
+
+    # Apply start_on filtering
+    if start_on:
+        # Find the first occurrence of the requested message type
+        start_idx = 0
+        for i, msg in enumerate(messages):
+            if _is_message_type(msg, start_on):
+                start_idx = i
+                break
+        messages = messages[start_idx:]
+
+    # Reverse messages to use _first_max_tokens with reversed logic
+    reversed_messages = messages[::-1]
+
+    # Get maximum tokens from the reversed messages
+    partial_strategy = "last" if allow_partial else None
+
+    # Calculate remaining tokens after accounting for system message if present
+    remaining_tokens = max_tokens
+    if system_message:
+        system_tokens = token_counter([system_message])
+        remaining_tokens = max(0, max_tokens - system_tokens)
+
+    reversed_result = _first_max_tokens(
+        reversed_messages,
+        max_tokens=remaining_tokens,
         token_counter=token_counter,
         text_splitter=text_splitter,
-        partial_strategy="last" if allow_partial else None,
-        end_on=start_on,
+        partial_strategy=partial_strategy,
+        end_on=None,  # We already handled end_on above
     )
-    if swapped_system:
-        return reversed_[:1] + reversed_[1:][::-1]
-    else:
-        return reversed_[::-1]
+
+    # Re-reverse the messages and add back the system message if needed
+    result = reversed_result[::-1]
+    if system_message:
+        result = [system_message] + result
+
+    return result
 
 
 _MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
