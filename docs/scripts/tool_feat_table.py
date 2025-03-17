@@ -147,6 +147,11 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": True,
         "pricing": "40 free requests/day",
     },
+    "AgentQL Toolkit": {
+        "link": "/docs/integrations/tools/agentql",
+        "interactions": True,
+        "pricing": "Free trial, with pay-as-you-go and flat rate plans after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
