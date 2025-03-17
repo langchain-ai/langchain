@@ -164,6 +164,36 @@ def test_filter_message(filters: dict) -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_tools() -> None:
+    tool_calls = [
+        ToolCall(name="foo", id="3", args={}, type="tool_call"),
+        ToolCall(name="bar", id="4", args={}, type="tool_call"),
+    ]
+    messages = [
+        SystemMessage("foo", name="blah", id="1"),
+        HumanMessage("bar", name="blur", id="2"),
+        AIMessage(
+            "baz",
+            tool_calls=tool_calls,
+        ),
+        ToolMessage("qux", tool_call_id="3"),
+        ToolMessage("quux", tool_call_id="4"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[0:2]
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+    expected = messages[0:4]
+    expected[2] = expected[2].model_copy(update={"tool_calls": [tool_calls[0]]})
+    actual = filter_messages(messages, exclude_tool_calls=["4"])
+    assert expected == actual
+    actual = filter_messages(messages, exclude_tool_calls={"4"})
+    assert expected == actual
+    actual = filter_messages(messages, exclude_tool_calls=("4",))
+    assert expected == actual
+    assert messages == messages_model_copy
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),
