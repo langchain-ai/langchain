@@ -523,3 +523,4 @@ packages:
   name_title: PowerScale RAG Connector
   path: .
   repo: dell/powerscale-rag-connector
+  provider_page: dell
