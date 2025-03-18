@@ -54,6 +54,7 @@ from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 
@@ -1123,8 +1124,12 @@ class ChatOllama(BaseChatModel):
                 )
             if is_pydantic_schema:
                 schema = cast(TypeBaseModel, schema)
+                if issubclass(schema, BaseModelV1):
+                    response_format = schema.schema()
+                else:
+                    response_format = schema.model_json_schema()
                 llm = self.bind(
-                    format=schema.model_json_schema(),
+                    format=response_format,
                     ls_structured_output_format={
                         "kwargs": {"method": method},
                         "schema": schema,
