@@ -519,4 +519,7 @@ packages:
 - name: langchain-xinference
   path: .
   repo: TheSongg/langchain-xinference
-  
+- name: powerscale-rag-connector
+  name_title: PowerScale RAG Connector
+  path: .
+  repo: dell/powerscale-rag-connector
