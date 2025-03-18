@@ -465,7 +465,7 @@ _SUPPORTED_PROVIDERS = {
     "openai",
     "anthropic",
     "azure_openai",
-    "azure_ai"
+    "azure_ai",
     "cohere",
     "google_vertexai",
     "google_genai",
