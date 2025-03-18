@@ -856,10 +856,10 @@ class ChatOllama(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
-                    Uses Ollama's tool-calling API
                 - "json_schema":
                     Uses Ollama's structured output API: https://ollama.com/blog/structured-outputs
+                - "function_calling":
+                    Uses Ollama's tool-calling API
                 - "json_mode":
                     Specifies ``format="json"``. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
@@ -890,7 +890,11 @@ class ChatOllama(BaseChatModel):
 
             Added support for structured output API via ``format`` parameter.
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
+        .. versionchanged:: 0.3.0
+
+            Updated default ``method`` to ``"json_schema"``.
+
+        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
 
             .. code-block:: python
 
@@ -923,7 +927,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=True
+        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
 
             .. code-block:: python
 
@@ -952,7 +956,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
 
             .. code-block:: python
 
@@ -973,7 +977,7 @@ class ChatOllama(BaseChatModel):
 
                 llm = ChatOllama(model="llama3.1", temperature=0)
                 structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, method="json_schema"
+                    AnswerWithJustification, method="function_calling"
                 )
 
                 structured_llm.invoke(
