@@ -221,6 +221,12 @@ class ChatDeepSeek(BaseChatOpenAI):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
                 response.choices[0].message.reasoning_content  # type: ignore
             )
+        elif hasattr(response.choices[0].message, "model_extra"):  # type: ignore
+            model_extra = response.choices[0].message.model_extra  # type: ignore
+            if "reasoning" in model_extra:
+                rtn.generations[0].message.additional_kwargs["reasoning"] = model_extra[
+                    "reasoning"
+                ]
 
         return rtn
 
@@ -237,11 +243,14 @@ class ChatDeepSeek(BaseChatOpenAI):
         )
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
-            if reasoning_content := top.get("delta", {}).get("reasoning_content"):
-                if isinstance(generation_chunk.message, AIMessageChunk):
+            if isinstance(generation_chunk.message, AIMessageChunk):
+                if reasoning_content := top.get("delta", {}).get("reasoning_content"):
                     generation_chunk.message.additional_kwargs["reasoning_content"] = (
                         reasoning_content
                     )
+                elif reasoning := top.get("delta", {}).get("reasoning"):
+                    generation_chunk.message.additional_kwargs["reasoning"] = reasoning
+
         return generation_chunk
 
     def _stream(
