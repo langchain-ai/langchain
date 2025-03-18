@@ -47,9 +47,9 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import (
-    _convert_any_typed_dicts_to_pydantic as convert_any_typed_dicts_to_pydantic,
+    convert_to_json_schema,
+    convert_to_openai_tool,
 )
-from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
 from pydantic import BaseModel, PrivateAttr, model_validator
@@ -1133,17 +1133,14 @@ class ChatOllama(BaseChatModel):
                 output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 if is_typeddict(schema):
-                    schema = cast(type, schema)
-                    response_format = convert_any_typed_dicts_to_pydantic(
-                        schema, visited={}
-                    ).schema()  # type: ignore[attr-defined]
+                    response_format = convert_to_json_schema(schema)
                     if "required" not in response_format:
                         response_format["required"] = list(
                             response_format["properties"].keys()
                         )
                 else:
                     # is JSON schema
-                    response_format = schema
+                    response_format = cast(dict, schema)
                 llm = self.bind(
                     format=response_format,
                     ls_structured_output_format={
