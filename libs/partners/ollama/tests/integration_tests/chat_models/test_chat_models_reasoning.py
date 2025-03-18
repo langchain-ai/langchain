@@ -138,6 +138,4 @@ def test_deepseek_messages_invoke_tuple(model: str) -> None:
 def test_deepseek_invalid(model: str) -> None:
     """Test deepseek model with reasoning raises ValidationError"""
     with pytest.raises(ValidationError):
-        model = ChatOllama(
-            model=model, extract_reasoning={"invalid": "data"}
-        )
+        model = ChatOllama(model=model, extract_reasoning={"invalid": "data"})
