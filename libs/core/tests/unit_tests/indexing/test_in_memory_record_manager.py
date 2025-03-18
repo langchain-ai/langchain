@@ -7,7 +7,7 @@ import pytest_asyncio
 from langchain_core.indexing import InMemoryRecordManager
 
 
-@pytest.fixture()
+@pytest.fixture
 def manager() -> InMemoryRecordManager:
     """Initialize the test database and yield the TimestampedSet instance."""
     # Initialize and yield the TimestampedSet instance
