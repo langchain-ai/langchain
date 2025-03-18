@@ -109,7 +109,7 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use. E.g. "mixtral-8x7b-32768".
+            Name of Groq model to use. E.g. "llama-3.1-8b-instant".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
@@ -140,7 +140,7 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             llm = ChatGroq(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",
                 temperature=0.0,
                 max_retries=2,
                 # other params...
@@ -164,7 +164,7 @@ class ChatGroq(BaseChatModel):
             response_metadata={'token_usage': {'completion_tokens': 38,
             'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
             0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
+            'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
 
@@ -172,7 +172,7 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
         .. code-block:: python
 
@@ -222,7 +222,7 @@ class ChatGroq(BaseChatModel):
            response_metadata={'token_usage': {'completion_tokens': 53,
            'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
            0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768',
+           'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
 
@@ -295,7 +295,7 @@ class ChatGroq(BaseChatModel):
             'prompt_time': 0.007518279,
             'queue_time': None,
             'total_time': 0.11947467},
-            'model_name': 'mixtral-8x7b-32768',
+            'model_name': 'llama-3.1-8b-instant',
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
@@ -303,7 +303,7 @@ class ChatGroq(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="mixtral-8x7b-32768", alias="model")
+    model_name: str = Field(alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -1001,7 +1001,7 @@ class ChatGroq(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice=tool_name,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
                     "schema": formatted_tool,
                 },
@@ -1018,7 +1018,7 @@ class ChatGroq(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "json_mode"},
                     "schema": schema,
                 },

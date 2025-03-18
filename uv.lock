@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -149,7 +150,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.45.2"
+version = "0.49.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -160,9 +161,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/15/74/2b2485fc120da834c0c5be07462541ec082e9fa8851d845f2587e480535a/anthropic-0.45.2.tar.gz", hash = "sha256:32a18b9ecd12c91b2be4cae6ca2ab46a06937b5aa01b21308d97a6d29794fb5e", size = 200901 }
+sdist = { url = "https://files.pythonhosted.org/packages/86/e3/a88c8494ce4d1a88252b9e053607e885f9b14d0a32273d47b727cbee4228/anthropic-0.49.0.tar.gz", hash = "sha256:c09e885b0f674b9119b4f296d8508907f6cff0009bc20d5cf6b35936c40b4398", size = 210016 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/86/e81814e542d1eaeec84d2312bec93a99b9ef1d78d9bfae1fc5dd74abdf15/anthropic-0.45.2-py3-none-any.whl", hash = "sha256:ecd746f7274451dfcb7e1180571ead624c7e1195d1d46cb7c70143d2aedb4d35", size = 222797 },
+    { url = "https://files.pythonhosted.org/packages/76/74/5d90ad14d55fbe3f9c474fdcb6e34b4bed99e3be8efac98734a5ddce88c1/anthropic-0.49.0-py3-none-any.whl", hash = "sha256:bbc17ad4e7094988d2fa86b87753ded8dce12498f4b85fe5810f208f454a8375", size = 243368 },
 ]
 
 [[package]]
@@ -2152,31 +2153,27 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.18rc1"
-source = { directory = "libs/langchain" }
+version = "0.3.20"
+source = { editable = "libs/langchain" }
 dependencies = [
-    { name = "aiohttp" },
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
     { name = "langsmith" },
-    { name = "numpy" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "sqlalchemy" },
-    { name = "tenacity" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.8.3,<4.0.0" },
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-cohere", marker = "extra == 'cohere'" },
     { name = "langchain-community", marker = "extra == 'community'" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
     { name = "langchain-fireworks", marker = "extra == 'fireworks'" },
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
@@ -2185,25 +2182,24 @@ requires-dist = [
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
-    { name = "langchain-openai", marker = "extra == 'openai'" },
-    { name = "langchain-text-splitters", specifier = ">=0.3.3,<1.0.0" },
+    { name = "langchain-openai", marker = "extra == 'openai'", editable = "libs/partners/openai" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
+    { name = "langchain-xai", marker = "extra == 'xai'" },
     { name = "langsmith", specifier = ">=0.1.17,<0.4" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
-    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10" },
 ]
+provides-extras = ["community", "anthropic", "openai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "langchain-core", directory = "../core" },
-    { name = "langchain-text-splitters", directory = "../text-splitters" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "playwright", specifier = ">=1.28.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
@@ -2213,15 +2209,17 @@ lint = [
     { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
 ]
 test = [
+    { name = "blockbuster", specifier = ">=1.5.18,<1.6" },
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "duckdb-engine", specifier = ">=0.9.2,<1.0.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../core" },
-    { name = "langchain-openai", directory = "../partners/openai" },
-    { name = "langchain-tests", directory = "../standard-tests" },
-    { name = "langchain-text-splitters", directory = "../text-splitters" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-openai", editable = "libs/partners/openai" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "lark", specifier = ">=1.1.5,<2.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "pandas", specifier = ">=2.0.0,<3.0.0" },
     { name = "pytest", specifier = ">=8,<9" },
@@ -2239,8 +2237,8 @@ test = [
 ]
 test-integration = [
     { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
-    { name = "langchain-core", directory = "../core" },
-    { name = "langchain-text-splitters", directory = "../text-splitters" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "pytest-vcr", specifier = ">=1.0.2,<2.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -2248,10 +2246,11 @@ test-integration = [
     { name = "wrapt", specifier = ">=1.15.0,<2.0.0" },
 ]
 typing = [
-    { name = "langchain-core", directory = "../core" },
-    { name = "langchain-text-splitters", directory = "../text-splitters" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
+    { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "types-chardet", specifier = ">=5.0.4.6,<6.0.0.0" },
     { name = "types-pytz", specifier = ">=2023.3.0.0,<2024.0.0.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
@@ -2262,8 +2261,8 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.6"
-source = { directory = "libs/partners/anthropic" }
+version = "0.3.9"
+source = { editable = "libs/partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
     { name = "langchain-core" },
@@ -2272,20 +2271,20 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.45.0,<1" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "anthropic", specifier = ">=0.47.0,<1" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "defusedxml", specifier = ">=0.7.1,<1.0.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -2295,11 +2294,11 @@ test = [
     { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
 ]
 test-integration = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "requests", specifier = ">=2.32.3,<3.0.0" },
 ]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-requests", specifier = ">=2.32.0.20241016,<3.0.0.0" },
 ]
@@ -2317,8 +2316,8 @@ dependencies = [
 
 [[package]]
 name = "langchain-chroma"
-version = "0.2.1"
-source = { directory = "libs/partners/chroma" }
+version = "0.2.2"
+source = { editable = "libs/partners/chroma" }
 dependencies = [
     { name = "chromadb" },
     { name = "langchain-core" },
@@ -2328,17 +2327,14 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "chromadb", specifier = ">=0.4.0,!=0.5.4,!=0.5.5,!=0.5.7,!=0.5.9,!=0.5.10,!=0.5.11,!=0.5.12,<0.7.0" },
-    { name = "langchain-core", specifier = ">=0.2.43,!=0.3.0,!=0.3.1,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,<0.4.0" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.22.4,<2.0.0" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<2.0.0" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [
-    { name = "langchain-core", marker = "python_full_version < '3.9'", specifier = ">=0.1.40,<0.3" },
-    { name = "langchain-core", marker = "python_full_version >= '3.9'", directory = "../../core" },
-]
+dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [
     { name = "onnxruntime", marker = "python_full_version < '3.10'", specifier = "<1.20" },
     { name = "onnxruntime", marker = "python_full_version >= '3.10'" },
@@ -2346,9 +2342,8 @@ lint = [
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", marker = "python_full_version < '3.9'", specifier = ">=0.1.40,<0.3" },
-    { name = "langchain-core", marker = "python_full_version >= '3.9'", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "onnxruntime", marker = "python_full_version < '3.10'", specifier = "<1.20" },
     { name = "onnxruntime", marker = "python_full_version >= '3.10'" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -2360,16 +2355,15 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-core", marker = "python_full_version < '3.9'", specifier = ">=0.1.40,<0.3" },
-    { name = "langchain-core", marker = "python_full_version >= '3.9'", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-requests", specifier = ">=2.31.0.20240406,<3.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-community"
-version = "0.3.17rc1"
-source = { directory = "libs/community" }
+version = "0.3.19"
+source = { editable = "libs/community" }
 dependencies = [
     { name = "aiohttp" },
     { name = "dataclasses-json" },
@@ -2390,11 +2384,10 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.3,<4.0.0" },
     { name = "dataclasses-json", specifier = ">=0.5.7,<0.7" },
     { name = "httpx-sse", specifier = ">=0.4.0,<1.0.0" },
-    { name = "langchain", specifier = ">=0.3.18rc1,<1.0.0" },
-    { name = "langchain-core", specifier = ">=0.3.34rc1,<1.0.0" },
+    { name = "langchain", editable = "libs/langchain" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "langsmith", specifier = ">=0.1.125,<0.4" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
+    { name = "numpy", specifier = ">=1.26.2,<3" },
     { name = "pydantic-settings", specifier = ">=2.4.0,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
@@ -2406,22 +2399,23 @@ requires-dist = [
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "langchain-core", directory = "../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
 lint = [
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
-    { name = "ruff", specifier = ">=0.5,<0.6" },
+    { name = "ruff", specifier = ">=0.9,<0.10" },
 ]
 test = [
+    { name = "blockbuster", specifier = ">=1.5.18,<1.6" },
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "duckdb-engine", specifier = ">=0.13.6,<1.0.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain", directory = "." },
-    { name = "langchain-core", directory = "../core" },
-    { name = "langchain-tests", directory = "../standard-tests" },
+    { name = "langchain", editable = "libs/langchain" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "lark", specifier = ">=1.1.5,<2.0.0" },
     { name = "pandas", specifier = ">=2.0.0,<3.0.0" },
     { name = "pytest", specifier = ">=7.4.4,<8.0.0" },
@@ -2442,9 +2436,9 @@ test-integration = [
     { name = "vcrpy", specifier = ">=6,<7" },
 ]
 typing = [
-    { name = "langchain", directory = "." },
-    { name = "langchain-core", directory = "../core" },
-    { name = "langchain-text-splitters", directory = "../text-splitters" },
+    { name = "langchain", editable = "libs/langchain" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "mypy", specifier = ">=1.12,<2.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<4.0.0" },
     { name = "types-chardet", specifier = ">=5.0.4.6,<6.0.0.0" },
@@ -2457,8 +2451,8 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.34rc1"
-source = { directory = "libs/core" }
+version = "0.3.43"
+source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langsmith" },
@@ -2489,7 +2483,7 @@ dev = [
 ]
 lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
 test = [
-    { name = "blockbuster", specifier = "~=1.5.11" },
+    { name = "blockbuster", specifier = "~=1.5.18" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8,<1.0" },
     { name = "langchain-tests", directory = "libs/standard-tests" },
@@ -2525,7 +2519,7 @@ dependencies = [
 [[package]]
 name = "langchain-fireworks"
 version = "0.2.7"
-source = { directory = "libs/partners/fireworks" }
+source = { editable = "libs/partners/fireworks" }
 dependencies = [
     { name = "aiohttp" },
     { name = "fireworks-ai" },
@@ -2538,19 +2532,19 @@ dependencies = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
     { name = "fireworks-ai", specifier = ">=0.13.0" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "openai", specifier = ">=1.10.0,<2.0.0" },
     { name = "requests", specifier = ">=2,<3" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -2560,7 +2554,7 @@ test = [
 ]
 test-integration = []
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-requests", specifier = ">=2,<3" },
 ]
@@ -2580,8 +2574,8 @@ dependencies = [
 
 [[package]]
 name = "langchain-groq"
-version = "0.2.4"
-source = { directory = "libs/partners/groq" }
+version = "0.2.5"
+source = { editable = "libs/partners/groq" }
 dependencies = [
     { name = "groq" },
     { name = "langchain-core" },
@@ -2590,31 +2584,31 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "groq", specifier = ">=0.4.1,<1" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "langchain-core", editable = "libs/core" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
 ]
-test-integration = [{ name = "langchain-core", directory = "../../core" }]
+test-integration = [{ name = "langchain-core", editable = "libs/core" }]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
 ]
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.6"
-source = { directory = "libs/partners/mistralai" }
+version = "0.2.7"
+source = { editable = "libs/partners/mistralai" }
 dependencies = [
     { name = "httpx" },
     { name = "httpx-sse" },
@@ -2627,25 +2621,25 @@ dependencies = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.2,<1" },
     { name = "httpx-sse", specifier = ">=0.3.1,<1" },
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "pydantic", specifier = ">=2,<3" },
     { name = "tokenizers", specifier = ">=0.15.1,<1" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
 ]
 test-integration = []
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
 ]
 
@@ -2702,11 +2696,11 @@ test = [
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 dev = [
     { name = "ipykernel", specifier = ">=6.29.2,<7.0.0" },
-    { name = "langchain", directory = "libs/langchain" },
-    { name = "langchain-community", directory = "libs/community" },
-    { name = "langchain-core", directory = "libs/core" },
-    { name = "langchain-openai", directory = "libs/partners/openai" },
-    { name = "langchain-text-splitters", directory = "libs/text-splitters" },
+    { name = "langchain", editable = "libs/langchain" },
+    { name = "langchain-community", editable = "libs/community" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-openai", editable = "libs/partners/openai" },
+    { name = "langchain-text-splitters", editable = "libs/text-splitters" },
 ]
 lint = [{ name = "ruff", specifier = ">=0.5.0,<1.0.0" }]
 test = [
@@ -2715,17 +2709,17 @@ test = [
     { name = "faiss-cpu", specifier = ">=1.7.4,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8,<1.0" },
     { name = "jupyter", specifier = ">=1.1.1,<2.0.0" },
-    { name = "langchain-anthropic", directory = "libs/partners/anthropic" },
+    { name = "langchain-anthropic", editable = "libs/partners/anthropic" },
     { name = "langchain-aws", git = "https://github.com/langchain-ai/langchain-aws.git?subdirectory=libs%2Faws" },
-    { name = "langchain-chroma", directory = "libs/partners/chroma" },
+    { name = "langchain-chroma", editable = "libs/partners/chroma" },
     { name = "langchain-experimental", git = "https://github.com/langchain-ai/langchain-experimental.git?subdirectory=libs%2Fexperimental" },
-    { name = "langchain-fireworks", directory = "libs/partners/fireworks" },
+    { name = "langchain-fireworks", editable = "libs/partners/fireworks" },
     { name = "langchain-google-vertexai", git = "https://github.com/langchain-ai/langchain-google.git?subdirectory=libs%2Fvertexai" },
-    { name = "langchain-groq", directory = "libs/partners/groq" },
-    { name = "langchain-mistralai", directory = "libs/partners/mistralai" },
+    { name = "langchain-groq", editable = "libs/partners/groq" },
+    { name = "langchain-mistralai", editable = "libs/partners/mistralai" },
     { name = "langchain-together", git = "https://github.com/langchain-ai/langchain-together.git?subdirectory=libs%2Ftogether" },
     { name = "langchain-unstructured", git = "https://github.com/langchain-ai/langchain-unstructured.git?subdirectory=libs%2Funstructured" },
-    { name = "langgraph", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph" },
+    { name = "langgraph" },
     { name = "lark", specifier = ">=1.1.9,<2.0.0" },
     { name = "pandas", specifier = ">=2,<3" },
     { name = "pypdf", specifier = ">=5.0.0,<6.0.0" },
@@ -2739,8 +2733,8 @@ typing = []
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.3"
-source = { directory = "libs/partners/openai" }
+version = "0.3.8"
+source = { editable = "libs/partners/openai" }
 dependencies = [
     { name = "langchain-core" },
     { name = "openai" },
@@ -2749,19 +2743,19 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-core", specifier = ">=0.3.33,<1.0.0" },
-    { name = "openai", specifier = ">=1.58.1,<2.0.0" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "openai", specifier = ">=1.66.0,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-dev = [{ name = "langchain-core", directory = "../../core" }]
+dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [{ name = "ruff", specifier = ">=0.5,<1.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../../core" },
-    { name = "langchain-tests", directory = "../../standard-tests" },
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "langchain-tests", editable = "libs/standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -2780,34 +2774,34 @@ test-integration = [
     { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
 ]
 typing = [
-    { name = "langchain-core", directory = "../../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.6rc1"
-source = { directory = "libs/text-splitters" }
+version = "0.3.6"
+source = { editable = "libs/text-splitters" }
 dependencies = [
     { name = "langchain-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", specifier = ">=0.3.34rc1,<1.0.0" }]
+requires-dist = [{ name = "langchain-core", editable = "libs/core" }]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "langchain-core", directory = "../core" },
+    { name = "langchain-core", editable = "libs/core" },
 ]
 lint = [
-    { name = "langchain-core", directory = "../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "ruff", specifier = ">=0.9.2,<1.0.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", directory = "../core" },
+    { name = "langchain-core", editable = "libs/core" },
     { name = "pytest", specifier = ">=8,<9" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -2862,11 +2856,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/0e/72/a3add0e4eec4eb9e2
 [[package]]
 name = "langgraph"
 version = "0.2.69"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph#04a044374270d1c101a65b0215a4f6ac8a17b17d" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
     { name = "langgraph-sdk" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9b/36/d75836c6c1b4a817bb22f591137dc533be02fdba171df4d80eac49e22043/langgraph-0.2.69.tar.gz", hash = "sha256:77bd6efd967b4f092ec31d2148b3e6ba3c31e202b4f3a975dbb082b19b5bb057", size = 128593 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/be/f3489ee7a67bb5bb3dc256b9e95d19a44c31e337f0345a38b443018355e3/langgraph-0.2.69-py3-none-any.whl", hash = "sha256:b64a5755fa2c7f2f67608ff4ce0ef8c168b30a0fb551a6c1d2e19bf1d2268ce4", size = 148716 },
 ]
 
 [[package]]
@@ -3633,7 +3631,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.61.1"
+version = "1.66.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -3645,9 +3643,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/cf/61e71ce64cf0a38f029da0f9a5f10c9fa0e69a7a977b537126dac50adfea/openai-1.61.1.tar.gz", hash = "sha256:ce1851507218209961f89f3520e06726c0aa7d0512386f0f977e3ac3e4f2472e", size = 350784 }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/e1/b3e1fda1aa32d4f40d4de744e91de4de65c854c3e53c63342e4b5f9c5995/openai-1.66.2.tar.gz", hash = "sha256:9b3a843c25f81ee09b6469d483d9fba779d5c6ea41861180772f043481b0598d", size = 397041 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/b6/2e2a011b2dc27a6711376808b4cd8c922c476ea0f1420b39892117fa8563/openai-1.61.1-py3-none-any.whl", hash = "sha256:72b0826240ce26026ac2cd17951691f046e5be82ad122d20a8e1b30ca18bd11e", size = 463126 },
+    { url = "https://files.pythonhosted.org/packages/2c/6f/3315b3583ffe3e31c55b446cb22d2a7c235e65ca191674fffae62deb3c11/openai-1.66.2-py3-none-any.whl", hash = "sha256:75194057ee6bb8b732526387b6041327a05656d976fc21c064e21c8ac6b07999", size = 567268 },
 ]
 
 [[package]]

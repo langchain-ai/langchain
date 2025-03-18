@@ -99,7 +99,7 @@ export const CustomDropdown = ({ selectedOption, options, onSelect, modelType })
  * @param {ChatModelTabsProps} props - Component props.
  */
 export default function ChatModelTabs(props) {
-  const [selectedModel, setSelectedModel] = useState("groq");
+  const [selectedModel, setSelectedModel] = useState("openai");
   const {
     overrideParams,
     customVarName,
@@ -108,13 +108,6 @@ export default function ChatModelTabs(props) {
   const llmVarName = customVarName ?? "model";
 
   const tabItems = [
-    {
-      value: "groq",
-      label: "Groq",
-      model: "llama3-8b-8192",
-      apiKeyName: "GROQ_API_KEY",
-      packageName: "langchain[groq]",
-    },
     {
       value: "openai",
       label: "OpenAI",
@@ -157,6 +150,13 @@ ${llmVarName} = AzureChatOpenAI(
       packageName: "langchain[aws]",
     },
     {
+      value: "groq",
+      label: "Groq",
+      model: "llama3-8b-8192",
+      apiKeyName: "GROQ_API_KEY",
+      packageName: "langchain[groq]",
+    },
+    {
       value: "cohere",
       label: "Cohere",
       model: "command-r-plus",
@@ -192,11 +192,31 @@ ${llmVarName} = AzureChatOpenAI(
       packageName: "langchain[together]",
     },
     {
+      value: "ibm",
+      label: "IBM watsonx",
+      text: `from langchain_ibm import ChatWatsonx
+
+${llmVarName} = ChatWatsonx(
+    model_id="ibm/granite-34b-code-instruct", 
+    url="https://us-south.ml.cloud.ibm.com", 
+    project_id="<WATSONX PROJECT_ID>"
+)`,
+      apiKeyName: "WATSONX_APIKEY",
+      packageName: "langchain-ibm",
+    },
+    {
       value: "databricks",
       label: "Databricks",
       text: `from databricks_langchain import ChatDatabricks\n\nos.environ["DATABRICKS_HOST"] = "https://example.staging.cloud.databricks.com/serving-endpoints"\n\n${llmVarName} = ChatDatabricks(endpoint="databricks-meta-llama-3-1-70b-instruct")`,
       apiKeyName: "DATABRICKS_TOKEN",
       packageName: "databricks-langchain",
+    },
+    {
+      value: "xai",
+      label: "xAI",
+      model: "grok-2",
+      apiKeyName: "XAI_API_KEY",
+      packageName: "langchain-xai",
     },
   ].map((item) => ({
     ...item,
