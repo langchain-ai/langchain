@@ -213,7 +213,9 @@ class SQLStore(BaseStore[str, bytes]):
             )
             await session.commit()
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes | Document]]) -> None:
+    def mset(
+        self, key_value_pairs: Sequence[Tuple[str, Union[bytes, Document]]]
+    ) -> None:
         values = dict(key_value_pairs)
         with self._make_sync_session() as session:
             self._mdelete(list(values.keys()), session)
