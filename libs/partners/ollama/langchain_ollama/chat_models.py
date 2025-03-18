@@ -197,7 +197,6 @@ def _filter_reasoning_content(
     end_token = end_token or DEFAULT_THINK_TOKEN_END
     filtered_content = content
     reasoning_content = ""
-
     if start_token in content or end_token in content:
         # Extract reasoning content between think tags
         if start_token in content and end_token in content:
@@ -208,8 +207,64 @@ def _filter_reasoning_content(
         else:
             reasoning_content = content
             filtered_content = ""
-
     return filtered_content, reasoning_content
+
+
+def _process_stream_response(
+    stream_resp: Union[Mapping[str, Any], str],
+    is_thinking: bool,
+    extract_reasoning: Optional[bool | tuple[str, str]],
+) -> tuple[Optional[ChatGenerationChunk], bool]:
+    """Process a single stream response and extract the chunk.
+
+    Args:
+        stream_resp: A single response from the stream
+        is_thinking: Whether we're currently in a "thinking" block
+        extract_reasoning: Configuration for reasoning extraction
+
+    Returns:
+        A tuple of (processed_chunk, is_still_thinking)
+    """
+    if isinstance(stream_resp, str):
+        return None, is_thinking
+    content = (
+        stream_resp["message"]["content"]
+        if "message" in stream_resp and "content" in stream_resp["message"]
+        else ""
+    )
+    # Handle reasoning content extraction based on configuration
+    if (
+        isinstance(extract_reasoning, bool)
+        and extract_reasoning
+        and DEFAULT_THINK_TOKEN_START in content
+    ):
+        is_thinking = True
+    elif isinstance(extract_reasoning, tuple) and extract_reasoning[0] in content:
+        is_thinking = True
+    # Create a chunk with appropriate content
+    chunk = ChatGenerationChunk(
+        message=AIMessageChunk(
+            content=content if not is_thinking else "",
+            usage_metadata=_get_usage_metadata_from_generation_info(stream_resp),
+            tool_calls=_get_tool_calls_from_response(stream_resp),
+            additional_kwargs={"reasoning_content": content if is_thinking else ""},
+        ),
+        generation_info=(
+            dict(stream_resp) if stream_resp.get("done") is True else None
+        ),
+    )
+    # Check if we should exit the thinking state
+    is_thinking = (
+        False
+        if (isinstance(extract_reasoning, tuple) and extract_reasoning[1] in content)
+        or (
+            isinstance(extract_reasoning, bool)
+            and extract_reasoning
+            and DEFAULT_THINK_TOKEN_END in content
+        )
+        else is_thinking
+    )
+    return chunk, is_thinking
 
 
 class ChatOllama(BaseChatModel):
@@ -557,7 +612,9 @@ class ChatOllama(BaseChatModel):
             chunk.message.additional_kwargs["reasoning_content"] = reasoning_content
         if filtered_content != content:
             chunk.message.content = filtered_content
-
+            chunk = chunk.model_validate(
+                chunk
+            )  # hacky way to update chunk.text, also sets self.message.content
         return chunk
 
     def _convert_messages_to_ollama_messages(
@@ -686,16 +743,6 @@ class ChatOllama(BaseChatModel):
                     if "message" in stream_resp and "content" in stream_resp["message"]
                     else ""
                 )
-
-                if self.extract_reasoning:
-                    filtered_content, reasoning_content = _filter_reasoning_content(
-                        content,
-                        *self.extract_reasoning
-                        if isinstance(self.extract_reasoning, tuple)
-                        else (None, None),
-                    )
-                    content = filtered_content
-
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
@@ -703,9 +750,7 @@ class ChatOllama(BaseChatModel):
                             stream_resp
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
-                        additional_kwargs={"reasoning_content": reasoning_content}
-                        if self.extract_reasoning and reasoning_content
-                        else {},
+                        additional_kwargs={},
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -723,7 +768,7 @@ class ChatOllama(BaseChatModel):
                     )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
-
+        final_chunk = self._process_chunk_for_reasoning(final_chunk)
         return final_chunk
 
     async def _achat_stream_with_aggregation(
@@ -742,16 +787,6 @@ class ChatOllama(BaseChatModel):
                     if "message" in stream_resp and "content" in stream_resp["message"]
                     else ""
                 )
-
-                if self.extract_reasoning:
-                    filtered_content, reasoning_content = _filter_reasoning_content(
-                        content,
-                        *self.extract_reasoning
-                        if isinstance(self.extract_reasoning, tuple)
-                        else (None, None),
-                    )
-                    content = filtered_content
-
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
@@ -759,9 +794,7 @@ class ChatOllama(BaseChatModel):
                             stream_resp
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
-                        additional_kwargs={"reasoning_content": reasoning_content}
-                        if self.extract_reasoning and reasoning_content
-                        else {},
+                        additional_kwargs={},
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -780,6 +813,7 @@ class ChatOllama(BaseChatModel):
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
+        final_chunk = self._process_chunk_for_reasoning(final_chunk)
         return final_chunk
 
     def _get_ls_params(
@@ -826,32 +860,22 @@ class ChatOllama(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        is_thinking = False
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
-            if not isinstance(stream_resp, str):
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
-                        usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
-                        ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
-                    ),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+            chunk_result = _process_stream_response(
+                stream_resp, is_thinking, self.extract_reasoning
+            )
+            if chunk_result is None:
+                continue
+
+            chunk, is_thinking = chunk_result
+
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
                 )
-                chunk = self._process_chunk_for_reasoning(chunk)
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
-                yield chunk
+            yield chunk
 
     async def _astream(
         self,
@@ -860,32 +884,22 @@ class ChatOllama(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        is_thinking = False
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
-            if not isinstance(stream_resp, str):
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
-                        usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
-                        ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
-                    ),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+            chunk_result = _process_stream_response(
+                stream_resp, is_thinking, self.extract_reasoning
+            )
+            if chunk_result is None:
+                continue
+
+            chunk, is_thinking = chunk_result
+
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
                 )
-                chunk = self._process_chunk_for_reasoning(chunk)
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
-                yield chunk
+            yield chunk
 
     async def _agenerate(
         self,
