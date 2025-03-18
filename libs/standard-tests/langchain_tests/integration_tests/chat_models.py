@@ -416,7 +416,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
@@ -448,7 +448,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     def test_stream(self, model: BaseChatModel) -> None:
@@ -542,7 +542,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.content, str)
+            assert isinstance(result.text(), str)
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
@@ -571,7 +571,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.content, str)
+            assert isinstance(result.text(), str)
             assert len(result.content) > 0
 
     def test_conversation(self, model: BaseChatModel) -> None:
@@ -600,7 +600,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
@@ -638,7 +638,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
@@ -2136,7 +2136,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke([HumanMessage("hello", name="example_user")])
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.content, str)
+        assert isinstance(result.text(), str)
         assert len(result.content) > 0
 
     def test_agent_loop(self, model: BaseChatModel) -> None:
