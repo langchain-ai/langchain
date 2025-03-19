@@ -10,6 +10,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import override
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -37,6 +39,7 @@ class Tool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],

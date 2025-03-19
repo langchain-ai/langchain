@@ -129,12 +129,14 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         self, config: Optional[RunnableConfig] = None
     ) -> tuple[Runnable[Input, Output], RunnableConfig]: ...
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         runnable, config = self.prepare(config)
         return runnable.invoke(input, config, **kwargs)
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -165,16 +167,16 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         def invoke(
             prepared: tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            value: Input,
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
                 try:
-                    return bound.invoke(input, config, **kwargs)
+                    return bound.invoke(value, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return bound.invoke(input, config, **kwargs)
+                return bound.invoke(value, config, **kwargs)
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
@@ -207,20 +209,21 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         async def ainvoke(
             prepared: tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            value: Input,
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
                 try:
-                    return await bound.ainvoke(input, config, **kwargs)
+                    return await bound.ainvoke(value, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return await bound.ainvoke(input, config, **kwargs)
+                return await bound.ainvoke(value, config, **kwargs)
 
         coros = map(ainvoke, prepared, inputs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
 
+    @override
     def stream(
         self,
         input: Input,
@@ -230,6 +233,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         runnable, config = self.prepare(config)
         return runnable.stream(input, config, **kwargs)
 
+    @override
     async def astream(
         self,
         input: Input,
@@ -240,6 +244,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         async for chunk in runnable.astream(input, config, **kwargs):
             yield chunk
 
+    @override
     def transform(
         self,
         input: Iterator[Input],
@@ -249,6 +254,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         runnable, config = self.prepare(config)
         return runnable.transform(input, config, **kwargs)
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[Input],

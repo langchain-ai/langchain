@@ -1,3 +1,4 @@
+# noqa: A005
 from langchain_core._api import warn_deprecated
 
 try:

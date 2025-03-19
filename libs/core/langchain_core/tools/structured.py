@@ -14,6 +14,7 @@ from typing import (
 )
 
 from pydantic import Field, SkipValidation
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -49,6 +50,7 @@ class StructuredTool(BaseTool):
     # --- Runnable ---
 
     # TODO: Is this needed?
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
