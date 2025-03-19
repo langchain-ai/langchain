@@ -516,3 +516,7 @@ packages:
 - name: langchain-agentql
   path: langchain
   repo: tinyfish-io/agentql-integrations
+- name: langchain-xinference
+  path: .
+  repo: TheSongg/langchain-xinference
+  
