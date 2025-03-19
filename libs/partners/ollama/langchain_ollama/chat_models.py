@@ -668,35 +668,17 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
-        for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
-            if not isinstance(stream_resp, str):
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
-                        usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
-                        ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
-                    ),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+        for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+            if final_chunk is None:
+                final_chunk = chunk
+            else:
+                final_chunk += chunk
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    chunk=chunk,
+                    verbose=verbose,
                 )
-                if final_chunk is None:
-                    final_chunk = chunk
-                else:
-                    final_chunk += chunk
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=verbose,
-                    )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
@@ -711,35 +693,17 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
-        async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
-            if not isinstance(stream_resp, str):
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
-                        usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
-                        ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
-                    ),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+        async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
+            if final_chunk is None:
+                final_chunk = chunk
+            else:
+                final_chunk += chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    chunk.text,
+                    chunk=chunk,
+                    verbose=verbose,
                 )
-                if final_chunk is None:
-                    final_chunk = chunk
-                else:
-                    final_chunk += chunk
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=verbose,
-                    )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
@@ -782,11 +746,10 @@ class ChatOllama(BaseChatModel):
         )
         return ChatResult(generations=[chat_generation])
 
-    def _stream(
+    def _iterate_over_stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
@@ -808,18 +771,27 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
                 yield chunk
 
-    async def _astream(
+    def _stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
+                )
+            yield chunk
+
+    async def _aiterate_over_stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
@@ -841,12 +813,22 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
                 yield chunk
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
+                )
+            yield chunk
 
     async def _agenerate(
         self,
