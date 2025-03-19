@@ -524,3 +524,6 @@ packages:
   path: .
   repo: dell/powerscale-rag-connector
   provider_page: dell
+- name: langchain-tavily
+  path: .
+  repo: tavily-ai/langchain-tavily
