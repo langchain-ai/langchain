@@ -516,3 +516,5 @@ packages:
 - name: langchain-zotero-retriever
   path: .
   repo: TimBMK/langchain-zotero-retriever
+  name_title: Zotero
+  provider_page: zotero
