@@ -707,7 +707,21 @@ class ChatMistralAI(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
-            kwargs["tool_choice"] = tool_choice
+            tool_names = []
+            for tool in formatted_tools:
+                if "function" in tool and (name := tool["function"].get("name")):
+                    tool_names.append(name)
+                elif name := tool.get("name"):
+                    tool_names.append(name)
+                else:
+                    pass
+            if tool_choice in tool_names:
+                kwargs["tool_choice"] = {
+                    "type": "function",
+                    "function": {"name": tool_choice},
+                }
+            else:
+                kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
