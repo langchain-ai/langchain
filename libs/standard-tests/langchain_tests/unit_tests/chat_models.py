@@ -283,10 +283,10 @@ class ChatModelUnitTests(ChatModelTests):
         Value to use for tool choice when used in tests.
 
         .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. When a single tool is
-           bound, all models should accept ``tool_choice="any"``. If a model does not
+           This property will be removed in version 0.3.20. If a model does not
            support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``.
+           return ``False``. Otherwise, models should accept values of ``"any"`` or
+           the name of a tool in ``tool_choice``.
 
         Example:
 
@@ -304,8 +304,9 @@ class ChatModelUnitTests(ChatModelTests):
         By default, this is determined by whether the parameter is included in the
         signature for the corresponding ``bind_tools`` method.
 
-        If ``True``, the minimum requirement for this feature is that when one tool is
-        bound, specifying ``tool_choice="any"`` should force that tool to be called.
+        If ``True``, the minimum requirement for this feature is that
+        ``tool_choice="any"`` will force a tool call, and ``tool_choice=<tool name>``
+        will force a call to a specific tool.
 
         Example override:
 

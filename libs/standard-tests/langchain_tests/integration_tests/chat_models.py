@@ -228,8 +228,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         By default, this is determined by whether the parameter is included in the
         signature for the corresponding ``bind_tools`` method.
 
-        If ``True``, the minimum requirement for this feature is that when one tool is
-        bound, specifying ``tool_choice="any"`` should force that tool to be called.
+        If ``True``, the minimum requirement for this feature is that
+        ``tool_choice="any"`` will force a tool call, and ``tool_choice=<tool name>``
+        will force a call to a specific tool.
 
         Example override:
 
