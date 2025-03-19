@@ -43,7 +43,15 @@ class TestCubeSemanticLoader(unittest.TestCase):
                             "type": "string",
                             "title": "Test Title",
                             "description": "Test Description",
-                        }
+                            "public": True,
+                        },
+                        {
+                            "name": "hidden_dimension",
+                            "type": "string",
+                            "title": "Hidden",
+                            "description": "Hidden",
+                            "public": False,
+                        },
                     ],
                 }
             ]
@@ -52,10 +60,17 @@ class TestCubeSemanticLoader(unittest.TestCase):
 
         mock_get_dimension_values.return_value = ["value1", "value2"]
 
-        documents = self.loader.load()
+        with self.assertLogs(level="INFO") as cm:
+            documents = self.loader.load()
+
         self.assertEqual(len(documents), 1)
         self.assertEqual(documents[0].page_content, "Test Title, Test Description")
         self.assertEqual(documents[0].metadata["column_values"], ["value1", "value2"])
+        self.assertIn(
+            "INFO:langchain_community.document_loaders.cube_semantic:"
+            "Skipping hidden_dimension because it is not public.",
+            cm.output,
+        )
 
 
 if __name__ == "__main__":

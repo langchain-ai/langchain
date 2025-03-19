@@ -513,3 +513,14 @@ packages:
 - name: langchain-opengradient
   path: .
   repo: OpenGradient/og-langchain
+- name: langchain-agentql
+  path: langchain
+  repo: tinyfish-io/agentql-integrations
+- name: langchain-xinference
+  path: .
+  repo: TheSongg/langchain-xinference
+- name: powerscale-rag-connector
+  name_title: PowerScale RAG Connector
+  path: .
+  repo: dell/powerscale-rag-connector
+  provider_page: dell
