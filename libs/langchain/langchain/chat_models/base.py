@@ -287,6 +287,18 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
 
+    .. dropdown:: Using fake chat model for testing purposes
+
+        .. code-block:: python
+
+            from langchain.chat_models import init_chat_model
+            from langchain_core.messages import HumanMessage
+
+            # ParrotFakeChatModel echoes back the last message
+            parrot = init_chat_model("fake:parrot")
+            result = parrot.invoke([HumanMessage(content="Hello")])
+            assert result.content == "Hello"
+
     .. versionadded:: 0.2.7
 
     .. versionchanged:: 0.2.8
@@ -453,6 +465,10 @@ def _init_chat_model_helper(
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
+    elif model_provider == "fake":
+        from langchain_core.language_models.fake_chat_models import ParrotFakeChatModel
+
+        return ParrotFakeChatModel(**kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -481,6 +497,7 @@ _SUPPORTED_PROVIDERS = {
     "deepseek",
     "ibm",
     "xai",
+    "fake",
 }
 
 
@@ -503,6 +520,8 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "deepseek"
     elif model_name.startswith("grok"):
         return "xai"
+    elif model_name.startswith("parrot"):
+        return "fake"
     else:
         return None
 

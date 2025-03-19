@@ -58,6 +58,21 @@ def test_init_unknown_provider() -> None:
         init_chat_model("foo", model_provider="bar")
 
 
+def test_init_fake_chat_model() -> None:
+    """Test initialization of fake chat model."""
+    from langchain_core.messages import HumanMessage
+
+    model1 = init_chat_model("parrot")
+    model2 = init_chat_model("parrot", model_provider="fake")
+    model3 = init_chat_model("fake:parrot")
+
+    # Verify models echo back the last message as expected
+    test_msg = [HumanMessage(content="Hello world!")]
+    assert model1.invoke(test_msg).content == "Hello world!"
+    assert model2.invoke(test_msg).content == "Hello world!"
+    assert model3.invoke(test_msg).content == "Hello world!"
+
+
 @pytest.mark.requires("langchain_openai")
 @mock.patch.dict(
     os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"}, clear=True
