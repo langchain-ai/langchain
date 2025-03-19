@@ -168,11 +168,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
-        from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            CONTEXT_CONFIG_SUFFIX_SET,
-        )
-
         specs = get_unique_config_specs(
             spec
             for step in (
@@ -182,13 +177,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             )
             for spec in step.config_specs
         )
-        if any(
-            s.id.startswith(CONTEXT_CONFIG_PREFIX)
-            and s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)
-            for s in specs
-        ):
-            msg = "RunnableBranch cannot contain context setters."
-            raise ValueError(msg)
         return specs
 
     def invoke(
