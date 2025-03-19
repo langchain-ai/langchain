@@ -45,22 +45,22 @@ class BaseImageBlobParser(BaseBlobParser):
         """
         try:
             from PIL import Image as Img
-
-            with blob.as_bytes_io() as buf:
-                if blob.mimetype == "application/x-npy":
-                    img = Img.fromarray(numpy.load(buf))
-                else:
-                    img = Img.open(buf)
-                content = self._analyze_image(img)
-                logger.debug("Image text: %s", content.replace("\n", "\\n"))
-                yield Document(
-                    page_content=content,
-                    metadata={**blob.metadata, **{"source": blob.source}},
-                )
         except ImportError:
             raise ImportError(
                 "`Pillow` package not found, please install it with "
                 "`pip install Pillow`"
+            )
+
+        with blob.as_bytes_io() as buf:
+            if blob.mimetype == "application/x-npy":
+                img = Img.fromarray(numpy.load(buf))
+            else:
+                img = Img.open(buf)
+            content = self._analyze_image(img)
+            logger.debug("Image text: %s", content.replace("\n", "\\n"))
+            yield Document(
+                page_content=content,
+                metadata={**blob.metadata, **{"source": blob.source}},
             )
 
 
