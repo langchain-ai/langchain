@@ -22,6 +22,7 @@ from typing import (
     Union,
     cast,
 )
+import warnings
 
 from fireworks.client import AsyncFireworks, Fireworks  # type: ignore
 from langchain_core._api import deprecated
@@ -739,6 +740,7 @@ class ChatFireworks(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -959,6 +961,12 @@ class ChatFireworks(BaseChatModel):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "json_schema":
+            warnings.warn(
+                "ChatFireworks does not support `method='json_schema'`. "
+                "Falling back to `method='function_calling'.",
+            )
+            method = "function_calling"
         if method == "function_calling":
             if schema is None:
                 raise ValueError(

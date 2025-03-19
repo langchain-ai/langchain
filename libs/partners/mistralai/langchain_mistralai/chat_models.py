@@ -715,6 +715,7 @@ class ChatMistralAI(BaseChatModel):
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
