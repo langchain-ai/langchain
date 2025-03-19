@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import inspect
 import json
+import math
 from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
@@ -1424,3 +1425,80 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
         }
         for tool_call in tool_calls
     ]
+
+
+def count_tokens_approximately(
+    messages: Iterable[MessageLikeRepresentation],
+    *,
+    chars_per_token: float = 4.0,
+    extra_tokens_per_message: float = 3.0,
+    count_name: bool = True,
+) -> int:
+    """Approximate the total number of tokens in messages.
+
+    The token count includes stringified message content, role, and (optionally) name.
+    - For AI messages, the token count also includes stringified tool calls.
+    - For tool messages, the token count also includes the tool call ID.
+
+    Args:
+        messages: List of messages to count tokens for.
+        chars_per_token: Number of characters per token to use for the approximation.
+            Default is 4 (one token corresponds to ~4 chars for common English text).
+            You can also specify float values for more fine-grained control.
+            See more here: https://platform.openai.com/tokenizer
+        extra_tokens_per_message: Number of extra tokens to add per message.
+            Default is 3 (special tokens, including beginning/end of message).
+            You can also specify float values for more fine-grained control.
+            See more here:
+            https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+        count_name: Whether to include message names in the count.
+            Enabled by default.
+
+    Returns:
+        Approximate number of tokens in the messages.
+
+    Note:
+        This is a simple approximation that may not match the exact token count
+        used by specific models. For accurate counts, use model-specific tokenizers.
+
+    .. versionadded:: 0.3.46
+    """
+    token_count = 0.0
+    for message in convert_to_messages(messages):
+        message_chars = 0
+        if isinstance(message.content, str):
+            message_chars += len(message.content)
+
+        # TODO: add support for approximate counting for image blocks
+        else:
+            content = repr(message.content)
+            message_chars += len(content)
+
+        if (
+            isinstance(message, AIMessage)
+            # exclude Anthropic format as tool calls are already included in the content
+            and not isinstance(message.content, list)
+            and message.tool_calls
+        ):
+            tool_calls_content = repr(message.tool_calls)
+            message_chars += len(tool_calls_content)
+
+        if isinstance(message, ToolMessage):
+            message_chars += len(message.tool_call_id)
+
+        role = _get_message_openai_role(message)
+        message_chars += len(role)
+
+        if message.name and count_name:
+            message_chars += len(message.name)
+
+        # NOTE: we're rounding up per message to ensure that
+        # individual message token counts add up to the total count
+        # for a list of messages
+        token_count += math.ceil(message_chars / chars_per_token)
+
+        # add extra tokens per message
+        token_count += extra_tokens_per_message
+
+    # round up once more time in case extra_tokens_per_message is a float
+    return math.ceil(token_count)
