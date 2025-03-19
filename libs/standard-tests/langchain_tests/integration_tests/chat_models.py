@@ -1807,7 +1807,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             images. Otherwise, set the ``supports_image_inputs`` property to False.
         """
         if not self.supports_image_inputs:
-            return
+            pytest.skip("Model does not support image message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
         message = HumanMessage(
@@ -1863,7 +1863,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             False.
         """
         if not self.supports_image_tool_message:
-            return
+            pytest.skip("Model does not support image tool message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
         messages = [
