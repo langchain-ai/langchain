@@ -110,7 +110,8 @@ def test_deepseek_messages_invoke_no_reasoning(model: str) -> None:
     result = model.invoke([message])
     assert result.content
     assert "<think>" in result.content and "</think>" in result.content
-    assert "reasoning_content" not in result.additional_kwargs
+    assert "reasoning_content" in result.additional_kwargs
+    assert len(result.additional_kwargs["reasoning_content"]) == 0
 
 
 @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
