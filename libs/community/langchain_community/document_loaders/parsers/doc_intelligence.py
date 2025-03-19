@@ -54,7 +54,9 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         )
         self.api_model = api_model
         self.mode = mode
-        self.features = [DocumentAnalysisFeature(feature) for feature in analysis_features]
+        self.features = [
+            DocumentAnalysisFeature(feature) for feature in analysis_features
+        ]
         assert self.mode in ["single", "page", "markdown"]
 
     def _generate_docs_page(self, result: Any) -> Iterator[Document]:
