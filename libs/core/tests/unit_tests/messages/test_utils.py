@@ -1001,7 +1001,7 @@ def test_count_tokens_approximately_with_names() -> None:
     assert count_tokens_approximately(messages) == 17
 
     # Without names
-    without_names = count_tokens_approximately(messages, include_name=False)
+    without_names = count_tokens_approximately(messages, count_name=False)
     assert without_names == 14
 
 
@@ -1051,8 +1051,8 @@ def test_count_tokens_approximately_custom_token_length() -> None:
         # 7 chars + 9 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3
         AIMessage(content="Testing"),
     ]
-    assert count_tokens_approximately(messages, token_length=4) == 14
-    assert count_tokens_approximately(messages, token_length=2) == 22
+    assert count_tokens_approximately(messages, chars_per_token=4) == 14
+    assert count_tokens_approximately(messages, chars_per_token=2) == 22
 
 
 def test_count_tokens_approximately_large_message_content() -> None:
@@ -1086,3 +1086,6 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
     # We should get a reasonable count without errors
     token_count = count_tokens_approximately(messages)
     assert token_count == 51
+
+    # Ensure that count is consistent if we do one message at a time
+    assert sum(count_tokens_approximately([m]) for m in messages) == token_count

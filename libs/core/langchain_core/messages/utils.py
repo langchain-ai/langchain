@@ -1427,17 +1427,14 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
     ]
 
 
-DEFAULT_APPROXIMATE_TOKEN_LENGTH = 4
-DEFAULT_EXTRA_TOKENS_PER_MESSAGE = 3
-
-
 def count_tokens_approximately(
     messages: list[BaseMessage],
-    token_length: int = DEFAULT_APPROXIMATE_TOKEN_LENGTH,
-    extra_tokens_per_message: int = DEFAULT_EXTRA_TOKENS_PER_MESSAGE,
-    include_name: bool = True,
+    *,
+    chars_per_token: float = 4,
+    extra_tokens_per_message: float = 3,
+    count_name: bool = True,
 ) -> int:
-    """Count the number of tokens in a list of messages using a simple approximation.
+    """Approximate the total number of tokens.
 
     Calculates the combined number of characters in the message content, role and name,
     as well as tool calls in AI messages and tool call IDs in tool messages, when applicable,
@@ -1445,10 +1442,10 @@ def count_tokens_approximately(
 
     Args:
         messages: List of messages to count tokens for.
-        token_length: Number of characters per token to use for the approximation.
+        chars_per_token: Number of characters per token to use for the approximation.
         extra_tokens_per_message: Number of extra tokens to add per message.
             See https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
-        include_name: Whether to include message names in the count.
+        count_name: Whether to include message names in the count.
 
     Returns:
         Approximate number of tokens in the messages.
@@ -1483,14 +1480,15 @@ def count_tokens_approximately(
         role = _get_message_openai_role(message)
         message_chars += len(role)
 
-        if message.name and include_name:
+        if message.name and count_name:
             message_chars += len(message.name)
 
         # NOTE: we're rounding up per message to ensure that the token counts
-        # are always consistent
-        token_count += math.ceil(message_chars / token_length)
+        # are consistent
+        token_count += math.ceil(message_chars / chars_per_token)
 
         # add extra tokens per message
         token_count += extra_tokens_per_message
 
-    return token_count
+    # round up once more time in case extra_tokens_per_message is a float
+    return math.ceil(token_count)
