@@ -227,7 +227,9 @@ class ChatDeepSeek(BaseChatOpenAI):
             if isinstance(model_extra, dict) and (
                 reasoning := model_extra.get("reasoning")
             ):
-                rtn.generations[0].message.additional_kwargs["reasoning"] = reasoning
+                rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
+                    reasoning
+                )
 
         return rtn
 
@@ -251,7 +253,9 @@ class ChatDeepSeek(BaseChatOpenAI):
                     )
                 # Handle use via OpenRouter
                 elif reasoning := top.get("delta", {}).get("reasoning"):
-                    generation_chunk.message.additional_kwargs["reasoning"] = reasoning
+                    generation_chunk.message.additional_kwargs["reasoning_content"] = (
+                        reasoning
+                    )
 
         return generation_chunk
 

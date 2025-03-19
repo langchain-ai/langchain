@@ -127,7 +127,7 @@ class TestChatDeepSeekCustomUnit:
 
         result = chat_model._create_chat_result(mock_response)
         assert (
-            result.generations[0].message.additional_kwargs.get("reasoning")
+            result.generations[0].message.additional_kwargs.get("reasoning_content")
             == "This is the reasoning"
         )
 
@@ -175,7 +175,7 @@ class TestChatDeepSeekCustomUnit:
         if chunk_result is None:
             raise AssertionError("Expected chunk_result not to be None")
         assert (
-            chunk_result.message.additional_kwargs.get("reasoning")
+            chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning"
         )
 
@@ -189,7 +189,6 @@ class TestChatDeepSeekCustomUnit:
         )
         if chunk_result is None:
             raise AssertionError("Expected chunk_result not to be None")
-        assert chunk_result.message.additional_kwargs.get("reasoning") is None
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
 
     def test_convert_chunk_with_empty_delta(self) -> None:
@@ -202,5 +201,4 @@ class TestChatDeepSeekCustomUnit:
         )
         if chunk_result is None:
             raise AssertionError("Expected chunk_result not to be None")
-        assert chunk_result.message.additional_kwargs.get("reasoning") is None
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
