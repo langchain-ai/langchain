@@ -1083,7 +1083,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             and (2) the string name of the tool to force calling that tool.
 
         """
-        if not self.has_tool_choice:
+        if not self.has_tool_choice or not self.has_tool_calling:
             pytest.skip("Test requires tool choice.")
 
         @tool
