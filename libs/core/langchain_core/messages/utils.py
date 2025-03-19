@@ -1430,8 +1430,8 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
 def count_tokens_approximately(
     messages: Iterable[MessageLikeRepresentation],
     *,
-    chars_per_token: float = 4,
-    extra_tokens_per_message: float = 3,
+    chars_per_token: float = 4.0,
+    extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
 ) -> int:
     """Approximate the total number of tokens in messages.
@@ -1444,9 +1444,11 @@ def count_tokens_approximately(
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
             Default is 4 (one token corresponds to ~4 chars for common English text).
+            You can also specify float values for more fine-grained control.
             See more here: https://platform.openai.com/tokenizer
         extra_tokens_per_message: Number of extra tokens to add per message.
             Default is 3 (special tokens, including beginning/end of message).
+            You can also specify float values for more fine-grained control.
             See more here:
             https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
         count_name: Whether to include message names in the count.
