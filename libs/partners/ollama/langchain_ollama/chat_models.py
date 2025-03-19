@@ -14,6 +14,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -31,6 +32,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolCall,
@@ -176,63 +178,6 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
-
-
-def _process_stream_response(
-    stream_resp: Union[Mapping[str, Any], str],
-    is_thinking: bool,
-    extract_reasoning: Optional[bool | tuple[str, str]],
-) -> tuple[Optional[ChatGenerationChunk], bool]:
-    """Process a single stream response and extract the chunk.
-
-    Args:
-        stream_resp: A single response from the stream
-        is_thinking: Whether we're currently in a "thinking" block
-        extract_reasoning: Configuration for reasoning extraction
-
-    Returns:
-        A tuple of (processed_chunk, is_still_thinking)
-    """
-    if isinstance(stream_resp, str):
-        return None, is_thinking
-    content = (
-        stream_resp["message"]["content"]
-        if "message" in stream_resp and "content" in stream_resp["message"]
-        else ""
-    )
-    # Handle reasoning content extraction based on configuration
-    if (
-        isinstance(extract_reasoning, bool)
-        and extract_reasoning
-        and DEFAULT_THINK_TOKEN_START in content
-    ):
-        is_thinking = True
-    elif isinstance(extract_reasoning, tuple) and extract_reasoning[0] in content:
-        is_thinking = True
-    # Create a chunk with appropriate content
-    chunk = ChatGenerationChunk(
-        message=AIMessageChunk(
-            content=content if not is_thinking else "",
-            usage_metadata=_get_usage_metadata_from_generation_info(stream_resp),
-            tool_calls=_get_tool_calls_from_response(stream_resp),
-            additional_kwargs={"reasoning_content": content if is_thinking else ""},
-        ),
-        generation_info=(
-            dict(stream_resp) if stream_resp.get("done") is True else None
-        ),
-    )
-    # Check if we should exit the thinking state
-    is_thinking = (
-        False
-        if (isinstance(extract_reasoning, tuple) and extract_reasoning[1] in content)
-        or (
-            isinstance(extract_reasoning, bool)
-            and extract_reasoning
-            and DEFAULT_THINK_TOKEN_END in content
-        )
-        else is_thinking
-    )
-    return chunk, is_thinking
 
 
 class ChatOllama(BaseChatModel):
@@ -392,7 +337,7 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
-    extract_reasoning: Optional[bool | tuple[str, str]] = True
+    extract_reasoning: Optional[bool | Tuple[str, str]] = False
     """Whether to extract the reasoning tokens in think blocks.
     Extracts `chunk.content` to `chunk.additional_kwargs.reasoning_content`.
     If a tuple is supplied, they are assumed to be the (start, end) tokens.
@@ -632,6 +577,28 @@ class ChatOllama(BaseChatModel):
 
         return ollama_messages
 
+    def _extract_reasoning(
+        self, message_chunk: BaseMessageChunk, is_thinking: bool
+    ) -> Tuple[BaseMessageChunk, bool]:
+        """Mutate a message chunk to extract reasoning content."""
+        if not self.extract_reasoning:  # False
+            return message_chunk, is_thinking
+        elif self.extract_reasoning is True:
+            start_token = DEFAULT_THINK_TOKEN_START
+            end_token = DEFAULT_THINK_TOKEN_END
+        else:
+            start_token, end_token = cast(tuple, self.extract_reasoning)
+        if start_token in message_chunk.content:
+            is_thinking = True
+        content = message_chunk.content
+        if is_thinking:
+            message_chunk.additional_kwargs["reasoning_content"] = content
+            message_chunk.content = ""
+        if end_token in content:
+            is_thinking = False
+
+        return message_chunk, is_thinking
+
     async def _acreate_chat_stream(
         self,
         messages: List[BaseMessage],
@@ -752,6 +719,7 @@ class ChatOllama(BaseChatModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        is_thinking = False
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
@@ -771,6 +739,11 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
+                if self.extract_reasoning is not False:
+                    message, is_thinking = self._extract_reasoning(
+                        chunk.message, is_thinking
+                    )
+                    chunk.message = message
                 yield chunk
 
     def _stream(
@@ -794,6 +767,7 @@ class ChatOllama(BaseChatModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        is_thinking = False
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
@@ -813,6 +787,11 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
+                if self.extract_reasoning is not False:
+                    message, is_thinking = self._extract_reasoning(
+                        chunk.message, is_thinking
+                    )
+                    chunk.message = message
                 yield chunk
 
     async def _astream(
