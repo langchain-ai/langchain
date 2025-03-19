@@ -516,4 +516,6 @@ packages:
 - name: langchain-netmind
   path: .
   repo: protagolabs/langchain-netmind
-
+- name: langchain-agentql
+  path: langchain
+  repo: tinyfish-io/agentql-integrations
