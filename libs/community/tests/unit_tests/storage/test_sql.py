@@ -84,7 +84,7 @@ def test_sample_sql_docstore_with_document(sql_store: SQLStore) -> None:
     sql_store.mset([("key1", Document("value1")), ("key2", Document("value2"))])
 
     # Get values for keys
-    values = sql_store.mget(["key1", "key2"])  # Returns [b"value1", b"value2"]
+    values = sql_store.mget(["key1", "key2"])
     assert values == [b"value1", b"value2"]
     # Delete keys
     sql_store.mdelete(["key1"])
