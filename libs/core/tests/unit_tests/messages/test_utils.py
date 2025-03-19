@@ -988,6 +988,7 @@ def test_count_tokens_approximately_empty_messages() -> None:
     # 4 role chars -> 1 + 3 = 4 tokens
     assert count_tokens_approximately(messages) == 4
 
+
 def test_count_tokens_approximately_with_names() -> None:
     messages = [
         # 5 chars + 4 role chars -> 3 + 3 = 6 tokens
@@ -996,6 +997,20 @@ def test_count_tokens_approximately_with_names() -> None:
         # 8 chars + 9 role chars -> 5 + 3 = 8 tokens
         # (with name: extra 9 name chars, so total = 7 + 3 = 10 tokens)
         AIMessage(content="Hi there", name="assistant"),
+    ]
+    # With names included (default)
+    assert count_tokens_approximately(messages) == 17
+
+    # Without names
+    without_names = count_tokens_approximately(messages, count_name=False)
+    assert without_names == 14
+
+
+def test_count_tokens_approximately_openai_format() -> None:
+    # same as test_count_tokens_approximately_with_names, but in OpenAI format
+    messages = [
+        {"role": "user", "content": "Hello", "name": "user"},
+        {"role": "assistant", "content": "Hi there", "name": "assistant"},
     ]
     # With names included (default)
     assert count_tokens_approximately(messages) == 17
@@ -1080,10 +1095,10 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
         HumanMessage(content=[{"foo": "bar"}]),
         # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
         AIMessage(content="", tool_calls=tool_calls),
-        # 13 chars + 4 role chars + 9 name chars + 1 tool call ID char -> 7 + 3 = 10 tokens
+        # 13 chars + 4 role chars + 9 name chars + 1 tool call ID char ->
+        # 7 + 3 = 10 tokens
         ToolMessage(content="Tool response", name="test_tool", tool_call_id="1"),
     ]
-    # We should get a reasonable count without errors
     token_count = count_tokens_approximately(messages)
     assert token_count == 51
 
