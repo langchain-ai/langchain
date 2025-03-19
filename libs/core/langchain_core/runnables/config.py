@@ -153,9 +153,7 @@ def _set_config_context(
 
 
 @contextmanager
-def set_config_context(
-    config: RunnableConfig, ctx: Optional[Context] = None
-) -> Generator[Context, None, None]:
+def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]:
     """Set the child Runnable config + tracing context.
 
     Args:
@@ -163,14 +161,23 @@ def set_config_context(
     """
     from langsmith.run_helpers import _set_tracing_context
 
-    ctx = ctx if ctx is not None else copy_context()
-    config_token, current_context = ctx.run(_set_config_context, config)
+    ctx = copy_context()
+    config_token, _ = ctx.run(_set_config_context, config)
     try:
         yield ctx
     finally:
         ctx.run(var_child_runnable_config.reset, config_token)
-        if current_context is not None:
-            ctx.run(_set_tracing_context, current_context)
+        ctx.run(
+            _set_tracing_context,
+            {
+                "parent": None,
+                "project_name": None,
+                "tags": None,
+                "metadata": None,
+                "enabled": None,
+                "client": None,
+            },
+        )
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
