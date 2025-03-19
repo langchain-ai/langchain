@@ -992,10 +992,8 @@ class ChatGroq(BaseChatModel):
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "json_schema":
-            warnings.warn(
-                "ChatFireworks does not support `method='json_schema'`. "
-                "Falling back to `method='function_calling'.",
-            )
+            # ChatGroq does not support `method='json_schema'`, so we fall back to
+            # `method='function_calling'."
             method = "function_calling"
         if method == "function_calling":
             if schema is None:
