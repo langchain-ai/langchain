@@ -527,7 +527,7 @@ class BaseChatOpenAI(BaseChatModel):
     used, or it's a list of disabled values for the parameter.
     
     For example, older models may not support the 'parallel_tool_calls' parameter at 
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can ben passed 
+    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed 
     in.
     
     If a parameter is disabled then it will not be used by default in any methods, e.g.

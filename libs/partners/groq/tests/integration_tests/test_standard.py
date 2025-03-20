@@ -42,4 +42,4 @@ class TestGroqLlama(BaseTestGroq):
 
     @property
     def supports_json_mode(self) -> bool:
-        return False  # Not supported in streaming mode
+        return True

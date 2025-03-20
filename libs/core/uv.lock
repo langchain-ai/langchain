@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12.4'",
@@ -935,7 +936,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.45"
+version = "0.3.46"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
@@ -1062,7 +1063,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.6"
+version = "0.3.7"
 source = { directory = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
