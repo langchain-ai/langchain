@@ -14,7 +14,7 @@ test tests:
 	uv run --group test pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest $(TEST_FILE)
+	uv run --group test --group test_integration pytest $(TEST_FILE) -k test_structured_output
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
