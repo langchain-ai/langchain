@@ -945,6 +945,7 @@ class ChatMistralAI(BaseChatModel):
                 # }
 
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)

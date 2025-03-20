@@ -460,6 +460,24 @@ class ChatGroq(BaseChatModel):
             ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
         return ls_params
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Determine if a given model call should hit the streaming API."""
+        base_should_stream = super()._should_stream(
+            async_api=async_api, run_manager=run_manager, **kwargs
+        )
+        if base_should_stream and ("response_format" in kwargs):
+            # Streaming not supported in JSON mode.
+            return kwargs["response_format"] != {"type": "json_object"}
+        return base_should_stream
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -987,9 +1005,14 @@ class ChatGroq(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "json_schema":
+            # Some applications require that incompatible parameters (e.g., unsupported
+            # methods) be handled.
+            method = "function_calling"
         if method == "function_calling":
             if schema is None:
                 raise ValueError(

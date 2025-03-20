@@ -626,6 +626,12 @@ class ChatModelUnitTests(ChatModelTests):
             return
 
         assert model.with_structured_output(schema) is not None
+        for method in ["json_schema", "function_calling", "json_mode"]:
+            strict_values = [None, False, True] if method != "json_mode" else [None]
+            for strict in strict_values:
+                assert model.with_structured_output(
+                    schema, method=method, strict=strict
+                )
 
     def test_standard_params(self, model: BaseChatModel) -> None:
         """Test that model properly generates standard parameters. These are used
