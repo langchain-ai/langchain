@@ -86,6 +86,11 @@ class ChatModelTests(BaseStandardTests):
         return {}
 
     @property
+    def image_model_params(self) -> dict:
+        """Initialization parameters for the image model."""
+        return self.chat_model_params
+
+    @property
     def standard_chat_model_params(self) -> dict:
         """:private:"""
         return {
@@ -103,6 +108,16 @@ class ChatModelTests(BaseStandardTests):
             **{
                 **self.standard_chat_model_params,
                 **self.chat_model_params,
+            }
+        )
+
+    @pytest.fixture
+    def image_model(self) -> BaseChatModel:
+        """:private:"""
+        return self.chat_model_class(
+            **{
+                **self.standard_chat_model_params,
+                **self.image_model_params,
             }
         )
 

@@ -294,6 +294,18 @@ class ChatModelIntegrationTests(ChatModelTests):
             def supports_image_inputs(self) -> bool:
                 return True
 
+        If the model that supports images requires special initialization, override
+        the image_model_params property. This may happen if you need to pass a different
+        model name.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def image_model_params(self) -> dict:
+                return {"model": "image-model-001"}
+
     .. dropdown:: supports_video_inputs
 
         Boolean property indicating whether the chat model supports image inputs.
@@ -1769,7 +1781,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
-    def test_image_inputs(self, model: BaseChatModel) -> None:
+    def test_image_inputs(self, image_model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
 
         This test should be skipped (see Configuration below) if the model does not
@@ -1805,6 +1817,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             If this test fails, check that the model can correctly handle messages
             with image content blocks in OpenAI format, including base64-encoded
             images. Otherwise, set the ``supports_image_inputs`` property to False.
+
+            If you need to control the model used for this test, you can override
+            the ``image_model_params`` property on the test class.
         """
         if not self.supports_image_inputs:
             pytest.skip("Model does not support image message.")
@@ -1819,7 +1834,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
             ],
         )
-        model.invoke([message])
+        image_model.invoke([message])
 
     def test_image_tool_message(self, model: BaseChatModel) -> None:
         """Test that the model can process ToolMessages with image inputs.
