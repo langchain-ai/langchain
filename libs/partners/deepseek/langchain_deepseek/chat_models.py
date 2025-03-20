@@ -325,6 +325,10 @@ class ChatDeepSeek(BaseChatOpenAI):
                 - "json_mode":
                     Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
 
+                .. versionchanged:: 0.1.3
+
+                    Added support for ``"json_mode"``.
+
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
