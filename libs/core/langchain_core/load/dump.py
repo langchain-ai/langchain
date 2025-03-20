@@ -1,3 +1,5 @@
+"""Dump objects to json."""
+
 import json
 from typing import Any
 
@@ -7,8 +9,7 @@ from langchain_core.load.serializable import Serializable, to_json_not_implement
 
 
 def default(obj: Any) -> Any:
-    """Return a default value for a Serializable object or
-    a SerializedNotImplemented object.
+    """Return a default value for an object.
 
     Args:
         obj: The object to serialize to json if it is a Serializable object.

@@ -1,3 +1,4 @@
+# noqa: D100
 # from langchain_core.runnables.base import RunnableBinding
 
 

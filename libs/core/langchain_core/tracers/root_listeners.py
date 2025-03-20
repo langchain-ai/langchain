@@ -1,3 +1,5 @@
+"""Tracers that call listeners."""
+
 from collections.abc import Awaitable
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
