@@ -27,7 +27,7 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
     @property
     def supports_json_mode(self) -> bool:
         """(bool) whether the chat model supports JSON mode."""
-        return False
+        return True
 
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_tool_message_histories_list_content(
