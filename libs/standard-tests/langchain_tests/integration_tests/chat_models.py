@@ -207,8 +207,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         Value to use for tool choice when used in tests.
 
         .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. When a single tool is
-           bound, all models should accept ``tool_choice="any"``. If a model does not
+           This property will be removed in version 0.3.20. If a model supports
+           ``tool_choice``, it should accept ``tool_choice="any"`` and
+           ``tool_choice=<string name of tool>``. If a model does not
            support forcing tool calling, override the ``has_tool_choice`` property to
            return ``False``.
 
@@ -1026,11 +1027,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             warn_deprecated(
                 "0.3.15",
                 message=(
-                    "``tool_choice_value`` will be removed in version 0.3.20. When a "
-                    "single tool is bound, all models should accept "
-                    '``tool_choice="any"``. If the model does not support '
-                    "``tool_choice``, override the ``supports_tool_choice`` property "
-                    "to return ``False``."
+                    "`tool_choice_value` will be removed in version 0.3.20. If a "
+                    "model supports `tool_choice`, it should accept `tool_choice='any' "
+                    "and `tool_choice=<string name of tool>`. If the model does not "
+                    "support `tool_choice`, override the `supports_tool_choice` "
+                    "property to return `False`."
                 ),
                 removal="0.3.20",
             )

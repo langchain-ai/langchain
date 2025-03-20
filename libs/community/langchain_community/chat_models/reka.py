@@ -425,7 +425,7 @@ class ChatReka(BaseChatModel):
         if tool_choice is None:
             tool_choice = "auto"
         if tool_choice == "any":
-            tool_choice = "auto"
+            tool_choice = "tool"
         if tool_choice not in ("auto", "none", "tool"):
             raise ValueError(
                 f"Invalid tool_choice '{tool_choice}' provided. "
