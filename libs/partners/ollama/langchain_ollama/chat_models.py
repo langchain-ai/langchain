@@ -132,7 +132,7 @@ def _parse_arguments_from_tool_call(
                     value, skip=True, raw_tool_call=raw_tool_call
                 )
                 if not isinstance(parsed_arguments[key], (dict, list)):
-                    parsed_arguments[key] = str(value)
+                    parsed_arguments[key] = str(value) if not value.isalnum() else value
             else:
                 parsed_arguments[key] = value
     else:
