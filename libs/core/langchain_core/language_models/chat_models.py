@@ -1282,6 +1282,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 Added support for TypedDict class.
         """  # noqa: E501
+        _ = kwargs.pop("method", None)
+        _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
