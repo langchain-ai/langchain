@@ -1275,7 +1275,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        if not self.has_tool_choice:
+        if self.has_tool_choice:
             tool_choice: Optional[str] = "any"
         else:
             tool_choice = None
