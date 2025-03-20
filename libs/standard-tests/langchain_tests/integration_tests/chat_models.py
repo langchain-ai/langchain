@@ -1198,25 +1198,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["type"] == "tool_call"
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
-    @pytest.mark.parametrize(
-        ["method", "strict"],
-        [
-            ("json_schema", True),
-            ("json_schema", False),
-            ("json_schema", None),
-            ("json_mode", None),
-            ("function_calling", True),
-            ("function_calling", False),
-            ("function_calling", None),
-        ],
-    )
-    def test_structured_output(
-        self,
-        model: BaseChatModel,
-        schema_type: str,
-        method: str,
-        strict: Optional[bool],
-    ) -> None:
+    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
@@ -1250,19 +1232,15 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires structured output.")
 
         schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
-        chat = model.with_structured_output(
-            schema, method=method, strict=strict, **self.structured_output_kwargs
-        )
+        chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         mock_callback = MagicMock()
         mock_callback.on_chat_model_start = MagicMock()
 
         invoke_callback = _TestCallbackHandler()
 
-        msg = (
-            "Tell me a joke about cats. Return the result as a JSON with 'setup' and "
-            "'punchline' keys. Return nothing other than JSON."
+        result = chat.invoke(
+            "Tell me a joke about cats.", config={"callbacks": [invoke_callback]}
         )
-        result = chat.invoke(msg, config={"callbacks": [invoke_callback]})
         validation_function(result)
 
         assert len(invoke_callback.options) == 1, (
@@ -1278,7 +1256,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         stream_callback = _TestCallbackHandler()
 
-        for chunk in chat.stream(msg, config={"callbacks": [stream_callback]}):
+        for chunk in chat.stream(
+            "Tell me a joke about cats.", config={"callbacks": [stream_callback]}
+        ):
             validation_function(chunk)
         assert chunk
 

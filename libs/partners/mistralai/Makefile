@@ -20,7 +20,7 @@ test_watch:
 
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest $(TEST_FILE) -k test_structured_output
+	uv run --group test --group test_integration pytest $(TEST_FILE)
 
 
 ######################
