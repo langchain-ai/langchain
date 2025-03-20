@@ -1,6 +1,6 @@
 """Standard LangChain interface tests"""
 
-from typing import Optional, Type
+from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -39,11 +39,6 @@ class TestGroqLlama(BaseTestGroq):
             "temperature": 0,
             "rate_limiter": rate_limiter,
         }
-
-    @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
-        return "any"
 
     @property
     def supports_json_mode(self) -> bool:
