@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from operator import itemgetter
 from typing import (
@@ -18,6 +19,7 @@ from typing import (
     Union,
 )
 
+import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
@@ -42,12 +44,23 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
-from typing_extensions import Self
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    TypeAdapter,
+    model_validator,
+)
 
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
@@ -90,18 +103,20 @@ class ChatPerplexity(BaseChatModel):
             )
     """
 
-    client: Any = None  #: :meta private:
     model: str = "llama-3.1-sonar-small-128k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[str] = Field(
+    pplx_api_key: Optional[SecretStr] = Field(
         default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
-    """Base URL path for API requests,
-    leave blank if not using a proxy or service emulator."""
+    """Perplexity API key."""
+    pplx_api_base: Optional[str] = Field(
+        default="https://api.perplexity.ai/chat/completions", alias="base_url"
+    )
+    """Base URL path for API requests."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
@@ -148,27 +163,14 @@ class ChatPerplexity(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @model_validator(mode="after")
-    def validate_environment(self) -> Self:
-        """Validate that api key and python package exists in environment."""
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
-        try:
-            self.client = openai.OpenAI(
-                api_key=self.pplx_api_key, base_url="https://api.perplexity.ai"
-            )
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
-        return self
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
+        """Validate that api key exists in environment."""
+        values["pplx_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, ["pplx_api_key", "api_key"], "PPLX_API_KEY")
+        )
+        return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -242,18 +244,38 @@ class ChatPerplexity(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        default_chunk_class = AIMessageChunk
         params.pop("stream", None)
         if stop:
             params["stop_sequences"] = stop
-        stream_resp = self.client.chat.completions.create(
-            messages=message_dicts, stream=True, **params
+        headers: Dict[str, str] = {
+            "Authorization": f"Bearer {self.pplx_api_key.get_secret_value()}",
+            "Content-Type": "application/json",
+        }
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "messages": message_dicts,
+            "stream": True,
+            **params,
+        }
+        stream_resp = requests.post(
+            url=self.pplx_api_base,
+            headers=headers,
+            json=payload,
+            timeout=self.request_timeout,
+            stream=True,
         )
+
         first_chunk = True
         prev_total_usage: Optional[UsageMetadata] = None
-        for chunk in stream_resp:
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+        default_chunk_class = AIMessageChunk
+        for chunk in stream_resp.iter_lines():
+            chunk = chunk.decode("utf-8").strip("\r\n")
+            chunks = chunk.split("data: ", 1)
+            chunk = chunks[1] if len(chunks) > 1 else None
+            if chunk is None:
+                continue
+            chunk = json.loads(chunk)
+
             # Collect standard usage metadata (transform from aggregate to delta)
             if total_usage := chunk.get("usage"):
                 lc_total_usage = _create_usage_metadata(total_usage)
@@ -309,15 +331,31 @@ class ChatPerplexity(BaseChatModel):
                 return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.client.chat.completions.create(messages=message_dicts, **params)
-        if usage := getattr(response, "usage", None):
-            usage_metadata = _create_usage_metadata(usage.model_dump())
+        headers: Dict[str, str] = {
+            "Authorization": f"Bearer {self.pplx_api_key.get_secret_value()}",
+            "Content-Type": "application/json",
+        }
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "messages": message_dicts,
+            **params,
+        }
+        response = requests.post(
+            url=self.pplx_api_base,
+            headers=headers,
+            json=payload,
+            timeout=self.request_timeout,
+        )
+        response.raise_for_status()
+        response = response.json()
+        if "usage" in response:
+            usage_metadata = _create_usage_metadata(response["usage"])
         else:
             usage_metadata = None
 
         message = AIMessage(
-            content=response.choices[0].message.content,
-            additional_kwargs={"citations": response.citations},
+            content=response["choices"][0]["message"]["content"],
+            additional_kwargs={"citations": response.get("citations", [])},
             usage_metadata=usage_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
