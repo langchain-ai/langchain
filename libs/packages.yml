@@ -532,3 +532,6 @@ packages:
   repo: TimBMK/langchain-zotero-retriever
   name_title: Zotero
   provider_page: zotero
+- name: langchain-naver-community
+  path: .
+  repo: e7217/langchain-naver-community
