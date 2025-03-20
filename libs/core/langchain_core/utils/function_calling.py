@@ -20,6 +20,7 @@ from typing import (
 )
 
 from pydantic import BaseModel
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import beta, deprecated
@@ -75,6 +76,40 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     return new_kv
 
 
+def _convert_json_schema_to_openai_function(
+    schema: dict,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    rm_titles: bool = True,
+) -> FunctionDescription:
+    """Converts a Pydantic model to a function description for the OpenAI API.
+
+    Args:
+        schema: The JSON schema to convert.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
+        rm_titles: Whether to remove titles from the schema. Defaults to True.
+
+    Returns:
+        The function description.
+    """
+    schema = dereference_refs(schema)
+    if "definitions" in schema:  # pydantic 1
+        schema.pop("definitions", None)
+    if "$defs" in schema:  # pydantic 2
+        schema.pop("$defs", None)
+    title = schema.pop("title", "")
+    default_description = schema.pop("description", "")
+    return {
+        "name": name or title,
+        "description": description or default_description,
+        "parameters": _rm_titles(schema) if rm_titles else schema,
+    }
+
+
 def _convert_pydantic_to_openai_function(
     model: type,
     *,
@@ -102,18 +137,9 @@ def _convert_pydantic_to_openai_function(
     else:
         msg = "Model must be a Pydantic model."
         raise TypeError(msg)
-    schema = dereference_refs(schema)
-    if "definitions" in schema:  # pydantic 1
-        schema.pop("definitions", None)
-    if "$defs" in schema:  # pydantic 2
-        schema.pop("$defs", None)
-    title = schema.pop("title", "")
-    default_description = schema.pop("description", "")
-    return {
-        "name": name or title,
-        "description": description or default_description,
-        "parameters": _rm_titles(schema) if rm_titles else schema,
-    }
+    return _convert_json_schema_to_openai_function(
+        schema, name=name, description=description, rm_titles=rm_titles
+    )
 
 
 convert_pydantic_to_openai_function = deprecated(
@@ -289,9 +315,20 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
     is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
-        return _convert_pydantic_to_openai_function(
-            tool.tool_call_schema, name=tool.name, description=tool.description
-        )
+        if isinstance(tool.tool_call_schema, dict):
+            return _convert_json_schema_to_openai_function(
+                tool.tool_call_schema, name=tool.name, description=tool.description
+            )
+        elif issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+            return _convert_pydantic_to_openai_function(
+                tool.tool_call_schema, name=tool.name, description=tool.description
+            )
+        else:
+            error_msg = (
+                f"Unsupported tool call schema: {tool.tool_call_schema}. "
+                "Tool call schema must be a JSON schema dict or a Pydantic model."
+            )
+            raise ValueError(error_msg)
     else:
         return {
             "name": tool.name,
@@ -494,11 +531,50 @@ def convert_to_openai_tool(
 
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
+
+    .. versionchanged:: 0.3.44
+
+        Return OpenAI Responses API-style tools unchanged. This includes
+        any dict with "type" in "file_search", "function", "computer_use_preview",
+        "web_search_preview".
     """
-    if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
-        return tool
+    if isinstance(tool, dict):
+        if tool.get("type") in ("function", "file_search", "computer_use_preview"):
+            return tool
+        # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
+        if (tool.get("type") or "").startswith("web_search_preview"):
+            return tool
     oai_function = convert_to_openai_function(tool, strict=strict)
     return {"type": "function", "function": oai_function}
+
+
+def convert_to_json_schema(
+    schema: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    *,
+    strict: Optional[bool] = None,
+) -> dict[str, Any]:
+    """Convert a schema representation to a JSON schema."""
+    openai_tool = convert_to_openai_tool(schema, strict=strict)
+    if (
+        not isinstance(openai_tool, dict)
+        or "function" not in openai_tool
+        or "name" not in openai_tool["function"]
+    ):
+        error_message = "Input must be a valid OpenAI-format tool."
+        raise ValueError(error_message)
+
+    openai_function = openai_tool["function"]
+    json_schema = {}
+    json_schema["title"] = openai_function["name"]
+
+    if "description" in openai_function:
+        json_schema["description"] = openai_function["description"]
+
+    if "parameters" in openai_function:
+        parameters = openai_function["parameters"].copy()
+        json_schema.update(parameters)
+
+    return json_schema
 
 
 @beta()

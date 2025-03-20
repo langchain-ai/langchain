@@ -7,21 +7,17 @@ authors = []
 license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.34",
-    "langchain-text-splitters<1.0.0,>=0.3.6",
+    "langchain-core<1.0.0,>=0.3.45",
+    "langchain-text-splitters<1.0.0,>=0.3.7",
     "langsmith<0.4,>=0.1.17",
     "pydantic<3.0.0,>=2.7.4",
     "SQLAlchemy<3,>=1.4",
     "requests<3,>=2",
     "PyYAML>=5.3",
-    "aiohttp<4.0.0,>=3.8.3",
-    "tenacity!=8.4.0,<10,>=8.1.0",
-    "numpy<2,>=1.26.4; python_version < \"3.12\"",
-    "numpy<3,>=1.26.2; python_version >= \"3.12\"",
     "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
 ]
 name = "langchain"
-version = "0.3.18"
+version = "0.3.21"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -29,6 +25,7 @@ readme = "README.md"
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
+azure-ai = ["langchain-azure-ai"]
 cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
@@ -40,6 +37,7 @@ huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
+xai = ["langchain-xai"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
@@ -75,6 +73,7 @@ test = [
     "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
+    "numpy<3,>=1.26.4",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
@@ -103,6 +102,7 @@ typing = [
     "mypy-protobuf<4.0.0,>=3.0.0",
     "langchain-core",
     "langchain-text-splitters",
+    "numpy<3,>=1.26.4",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",

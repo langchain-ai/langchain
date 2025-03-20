@@ -528,6 +528,16 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "structured",
         "StructuredPrompt",
     ),
+    ("langchain_sambanova", "chat_models", "ChatSambaNovaCloud"): (
+        "langchain_sambanova",
+        "chat_models",
+        "ChatSambaNovaCloud",
+    ),
+    ("langchain_sambanova", "chat_models", "ChatSambaStudio"): (
+        "langchain_sambanova",
+        "chat_models",
+        "ChatSambaStudio",
+    ),
 }
 
 # Needed for backwards compatibility for old versions of LangChain where things

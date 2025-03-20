@@ -22,12 +22,12 @@ from tenacity import (
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
@@ -50,8 +50,8 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
-        rt._CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None:
+        rt._CLIENT.flush()
 
 
 def get_client() -> Client:
@@ -173,7 +173,13 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        self.latest_run = run
+        # We want to free up more memory by avoiding keeping a reference to the
+        # whole nested run tree.
+        self.latest_run = Run.construct(
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            inputs=run.inputs,
+            outputs=run.outputs,
+        )
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.
@@ -319,5 +325,5 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        if self.client is not None and self.client.tracing_queue is not None:
-            self.client.tracing_queue.join()
+        if self.client is not None:
+            self.client.flush()

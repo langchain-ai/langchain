@@ -25,7 +25,6 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Iterator, Sequence
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
@@ -43,6 +42,8 @@ from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Iterator, Sequence
+
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,

@@ -160,6 +160,7 @@ class ChatMLX(BaseChatModel):
 
         try:
             import mlx.core as mx
+            from mlx_lm.sample_utils import make_logits_processors, make_sampler
             from mlx_lm.utils import generate_step
 
         except ImportError:
@@ -176,6 +177,9 @@ class ChatMLX(BaseChatModel):
         repetition_context_size: Optional[int] = model_kwargs.get(
             "repetition_context_size", None
         )
+        top_p: float = model_kwargs.get("top_p", 1.0)
+        min_p: float = model_kwargs.get("min_p", 0.0)
+        min_tokens_to_keep: int = model_kwargs.get("min_tokens_to_keep", 1)
 
         llm_input = self._to_chat_prompt(messages, tokenize=True, return_tensors="np")
 
@@ -183,13 +187,18 @@ class ChatMLX(BaseChatModel):
 
         eos_token_id = self.tokenizer.eos_token_id
 
+        sampler = make_sampler(temp or 0.0, top_p, min_p, min_tokens_to_keep)
+
+        logits_processors = make_logits_processors(
+            None, repetition_penalty, repetition_context_size
+        )
+
         for (token, prob), n in zip(
             generate_step(
                 prompt_tokens,
                 self.llm.model,
-                temp=temp,
-                repetition_penalty=repetition_penalty,
-                repetition_context_size=repetition_context_size,
+                sampler=sampler,
+                logits_processors=logits_processors,
             ),
             range(max_new_tokens),
         ):

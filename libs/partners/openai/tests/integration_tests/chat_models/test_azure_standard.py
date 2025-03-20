@@ -22,7 +22,7 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {
             "deployment_name": os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-            "model": "gpt-4o",
+            "model": "gpt-4o-mini",
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
         }
