@@ -198,6 +198,10 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "json_schema":
+            # Some applications require that incompatible parameters (e.g., unsupported
+            # methods) be handled.
+            method = "function_calling"
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
