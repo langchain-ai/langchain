@@ -46,7 +46,6 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import (
     convert_to_secret_str,
-    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -67,6 +66,8 @@ _DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
 _DictOrPydantic = Union[Dict, _BM]
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_API_BASE = "https://api.perplexity.ai/chat/completions"
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -109,13 +110,9 @@ class ChatPerplexity(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[SecretStr] = Field(
-        default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
-    )
+    pplx_api_key: SecretStr = Field(alias="api_key")
     """Perplexity API key."""
-    pplx_api_base: Optional[str] = Field(
-        default="https://api.perplexity.ai/chat/completions", alias="base_url"
-    )
+    pplx_api_base: str = Field(default=DEFAULT_API_BASE, alias="base_url")
     """Base URL path for API requests."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
@@ -247,16 +244,23 @@ class ChatPerplexity(BaseChatModel):
         params.pop("stream", None)
         if stop:
             params["stop_sequences"] = stop
+
+        api_key = ""
+        if self.pplx_api_key:
+            api_key = self.pplx_api_key.get_secret_value()
+
         headers: Dict[str, str] = {
-            "Authorization": f"Bearer {self.pplx_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
+
         payload: Dict[str, Any] = {
             "model": self.model,
             "messages": message_dicts,
             "stream": True,
             **params,
         }
+
         stream_resp = requests.post(
             url=self.pplx_api_base,
             headers=headers,
@@ -331,10 +335,16 @@ class ChatPerplexity(BaseChatModel):
                 return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
+
+        api_key = ""
+        if self.pplx_api_key:
+            api_key = self.pplx_api_key.get_secret_value()
+
         headers: Dict[str, str] = {
-            "Authorization": f"Bearer {self.pplx_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
+
         payload: Dict[str, Any] = {
             "model": self.model,
             "messages": message_dicts,
@@ -347,15 +357,15 @@ class ChatPerplexity(BaseChatModel):
             timeout=self.request_timeout,
         )
         response.raise_for_status()
-        response = response.json()
-        if "usage" in response:
-            usage_metadata = _create_usage_metadata(response["usage"])
+        response_json = response.json()
+        if "usage" in response_json:
+            usage_metadata = _create_usage_metadata(response_json["usage"])
         else:
             usage_metadata = None
 
         message = AIMessage(
-            content=response["choices"][0]["message"]["content"],
-            additional_kwargs={"citations": response.get("citations", [])},
+            content=response_json["choices"][0]["message"]["content"],
+            additional_kwargs={"citations": response_json.get("citations", [])},
             usage_metadata=usage_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])

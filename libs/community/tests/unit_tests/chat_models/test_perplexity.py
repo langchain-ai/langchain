@@ -2,10 +2,9 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 from unittest.mock import MagicMock
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -39,12 +38,14 @@ class TestPerplexityStandard(ChatModelUnitTests):
 
 
 def test_perplexity_model_name_param() -> None:
-    llm = ChatPerplexity(model="foo")  # type: ignore[call-arg]
+    llm = ChatPerplexity(model="foo", api_key=SecretStr("test"))  # type: ignore[call-arg]
     assert llm.model == "foo"
 
 
 def test_perplexity_model_kwargs() -> None:
-    llm = ChatPerplexity(model="test", model_kwargs={"foo": "bar"})  # type: ignore[call-arg]
+    llm = ChatPerplexity(
+        model="test", model_kwargs={"foo": "bar"}, api_key=SecretStr("test")
+    )  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -54,12 +55,16 @@ def test_perplexity_initialization() -> None:
     # as a parameter rather than an environment variable.
     for model in [
         ChatPerplexity(  # type: ignore[call-arg]
-            model="test", timeout=1, api_key="test", temperature=0.7, verbose=True
+            model="test",
+            timeout=1,
+            api_key=SecretStr("test"),
+            temperature=0.7,
+            verbose=True,
         ),
         ChatPerplexity(  # type: ignore[call-arg]
             model="test",
             request_timeout=1,
-            pplx_api_key="test",
+            pplx_api_key=SecretStr("test"),
             temperature=0.7,
             verbose=True,
         ),
@@ -70,12 +75,10 @@ def test_perplexity_initialization() -> None:
         assert model.verbose is True
 
 
-def test_perplexity_stream_includes_citations(mocker) -> None:
+def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
     """Test that the stream method includes citations in the additional_kwargs."""
     llm = ChatPerplexity(
-        model="test",
-        timeout=30,
-        verbose=True,
+        model="test", timeout=30, verbose=True, api_key=SecretStr("test")
     )
 
     mock_chunk_0 = {
@@ -97,6 +100,9 @@ def test_perplexity_stream_includes_citations(mocker) -> None:
         "citations": ["example.com", "example2.com"],
     }
 
+    mock_chunk_0_content = "Hello "
+    mock_chunk_1_content = "Perplexity"
+
     mock_response = MagicMock(spec=Response)
     mock_response.iter_lines.return_value = [
         f"data: {json.dumps(mock_chunk_0)}".encode("utf-8"),
@@ -109,10 +115,7 @@ def test_perplexity_stream_includes_citations(mocker) -> None:
     full: Optional[BaseMessageChunk] = None
     for i, chunk in enumerate(stream):
         full = chunk if full is None else full + chunk
-        assert (
-            chunk.content
-            == [mock_chunk_0, mock_chunk_1][i]["choices"][0]["delta"]["content"]
-        )
+        assert chunk.content == mock_chunk_0_content if i == 0 else mock_chunk_1_content
 
         if i == 0:
             assert chunk.additional_kwargs["citations"] == [
@@ -129,12 +132,10 @@ def test_perplexity_stream_includes_citations(mocker) -> None:
     mock_post.assert_called_once()
 
 
-def test_perplexity_generate(mocker) -> None:
+def test_perplexity_generate(mocker: MockerFixture) -> None:
     """Test the generate method."""
     llm = ChatPerplexity(
-        model="test",
-        timeout=30,
-        verbose=True,
+        model="test", timeout=30, verbose=True, api_key=SecretStr("test")
     )
 
     mock_response_data = {
@@ -172,6 +173,6 @@ def test_perplexity_generate(mocker) -> None:
     assert len(result.generations) == 1
     assert isinstance(result.generations[0], ChatGeneration)
     assert isinstance(result.generations[0].message, AIMessage)
-    assert result.generations[0].message.content.startswith("Hello Perplexity")
+    assert result.generations[0].message.content == "Hello Perplexity"
     assert "citations" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["citations"]) == 2
