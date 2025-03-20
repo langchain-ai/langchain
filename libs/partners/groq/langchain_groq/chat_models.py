@@ -771,7 +771,6 @@ class ChatGroq(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -988,12 +987,13 @@ class ChatGroq(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "json_schema":
-            # ChatGroq does not support `method='json_schema'`, so we fall back to
-            # `method='function_calling'."
+            # Some applications require that incompatible parameters (e.g., unsupported
+            # methods) be handled.
             method = "function_calling"
         if method == "function_calling":
             if schema is None:
