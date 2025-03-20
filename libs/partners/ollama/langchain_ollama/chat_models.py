@@ -125,13 +125,17 @@ def _parse_arguments_from_tool_call(
     if "function" not in raw_tool_call:
         return None
     arguments = raw_tool_call["function"]["arguments"]
-    parsed_arguments = {}
+    parsed_arguments: dict = {}
     if isinstance(arguments, dict):
         for key, value in arguments.items():
             if isinstance(value, str):
-                parsed_arguments[key] = _parse_json_string(
+                parsed_value = _parse_json_string(
                     value, skip=True, raw_tool_call=raw_tool_call
                 )
+                if isinstance(parsed_value, (dict, list)):
+                    parsed_arguments[key] = parsed_value
+                else:
+                    parsed_arguments[key] = value
             else:
                 parsed_arguments[key] = value
     else:
