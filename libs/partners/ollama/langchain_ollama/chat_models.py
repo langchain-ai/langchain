@@ -47,13 +47,14 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import (
-    _convert_any_typed_dicts_to_pydantic as convert_any_typed_dicts_to_pydantic,
+    convert_to_json_schema,
+    convert_to_openai_tool,
 )
-from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
+from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 
@@ -831,9 +832,7 @@ class ChatOllama(BaseChatModel):
         self,
         schema: Union[Dict, type],
         *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
+        method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
@@ -857,10 +856,10 @@ class ChatOllama(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
-                    Uses Ollama's tool-calling API
                 - "json_schema":
                     Uses Ollama's structured output API: https://ollama.com/blog/structured-outputs
+                - "function_calling":
+                    Uses Ollama's tool-calling API
                 - "json_mode":
                     Specifies ``format="json"``. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
@@ -891,7 +890,11 @@ class ChatOllama(BaseChatModel):
 
             Added support for structured output API via ``format`` parameter.
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
+        .. versionchanged:: 0.3.0
+
+            Updated default ``method`` to ``"json_schema"``.
+
+        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
 
             .. code-block:: python
 
@@ -924,7 +927,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=True
+        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
 
             .. code-block:: python
 
@@ -953,7 +956,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
 
             .. code-block:: python
 
@@ -974,7 +977,7 @@ class ChatOllama(BaseChatModel):
 
                 llm = ChatOllama(model="llama3.1", temperature=0)
                 structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, method="json_schema"
+                    AnswerWithJustification, method="function_calling"
                 )
 
                 structured_llm.invoke(
@@ -1125,8 +1128,12 @@ class ChatOllama(BaseChatModel):
                 )
             if is_pydantic_schema:
                 schema = cast(TypeBaseModel, schema)
+                if issubclass(schema, BaseModelV1):
+                    response_format = schema.schema()
+                else:
+                    response_format = schema.model_json_schema()
                 llm = self.bind(
-                    format=schema.model_json_schema(),
+                    format=response_format,
                     ls_structured_output_format={
                         "kwargs": {"method": method},
                         "schema": schema,
@@ -1135,17 +1142,14 @@ class ChatOllama(BaseChatModel):
                 output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 if is_typeddict(schema):
-                    schema = cast(type, schema)
-                    response_format = convert_any_typed_dicts_to_pydantic(
-                        schema, visited={}
-                    ).schema()  # type: ignore[attr-defined]
+                    response_format = convert_to_json_schema(schema)
                     if "required" not in response_format:
                         response_format["required"] = list(
                             response_format["properties"].keys()
                         )
                 else:
                     # is JSON schema
-                    response_format = schema
+                    response_format = cast(dict, schema)
                 llm = self.bind(
                     format=response_format,
                     ls_structured_output_format={
