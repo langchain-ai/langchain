@@ -418,6 +418,18 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
 
+            strict:
+
+                - True:
+                    Model output is guaranteed to exactly match the schema.
+                    The input schema will also be validated according to
+                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+                - False:
+                    Input schema will not be validated and model output will not be
+                    validated.
+                - None:
+                    ``strict`` argument will not be passed to the model.
+
             kwargs: Additional keyword args aren't supported.
 
         Returns:
