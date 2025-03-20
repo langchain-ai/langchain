@@ -274,7 +274,7 @@ class YoutubeLoader(BaseLoader):
         if isinstance(transcript_object, FetchedTranscript):
             transcript_pieces = [{"text": x.text} for x in transcript_object.snippets]
         else:
-            transcript_pieces: List[Dict[str, Any]] = transcript_object
+            transcript_pieces: List[Dict[str, Any]] = transcript_object  # type: ignore[no-redef]
 
         if self.transcript_format == TranscriptFormat.TEXT:
             transcript = " ".join(
