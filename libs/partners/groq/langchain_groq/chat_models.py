@@ -523,6 +523,10 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
+                generation_info["system_fingerprint"] = chunk.get(
+                    "system_fingerprint", ""
+                )
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -561,6 +565,10 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
+                generation_info["system_fingerprint"] = chunk.get(
+                    "system_fingerprint", ""
+                )
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -1131,7 +1139,6 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        response_metadata = {}
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1140,17 +1147,12 @@ def _convert_chunk_to_message_chunk(
                 "output_tokens": output_tokens,
                 "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
             }
-            response_metadata["model_name"] = chunk.get("model")
-            response_metadata["system_fingerprint"] = chunk.get(
-                "system_fingerprint", ""
-            )
         else:
             usage_metadata = None
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata=response_metadata,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
