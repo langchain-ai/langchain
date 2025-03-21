@@ -359,7 +359,7 @@ def _init_chat_model_helper(
         return AzureChatOpenAI(model=model, **kwargs)
     elif model_provider == "azure_ai":
         _check_pkg("langchain_azure_ai")
-        from langchain_azure_ai import AzureAIChatCompletionsModel
+        from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
         return AzureAIChatCompletionsModel(model=model, **kwargs)
     elif model_provider == "cohere":
