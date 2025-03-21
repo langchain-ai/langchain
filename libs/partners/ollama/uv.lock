@@ -287,7 +287,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.45"
+version = "0.3.47"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -379,7 +379,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "ollama", specifier = ">=0.4.4,<1" },
+    { name = "ollama", git = "https://github.com/ollama/ollama-python.git" },
 ]
 
 [package.metadata.requires-dev]
@@ -403,7 +403,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.14"
+version = "0.3.15"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -621,15 +621,11 @@ wheels = [
 
 [[package]]
 name = "ollama"
-version = "0.4.7"
-source = { registry = "https://pypi.org/simple" }
+version = "0.0.0"
+source = { git = "https://github.com/ollama/ollama-python.git#07eec6d517b95ef49fda672d8a533cb01a56b2fa" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/6d/dc77539c735bbed5d0c873fb029fb86aa9f0163df169b34152914331c369/ollama-0.4.7.tar.gz", hash = "sha256:891dcbe54f55397d82d289c459de0ea897e103b86a3f1fad0fdb1895922a75ff", size = 12843 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/83/c3ffac86906c10184c88c2e916460806b072a2cfe34cdcaf3a0c0e836d39/ollama-0.4.7-py3-none-any.whl", hash = "sha256:85505663cca67a83707be5fb3aeff0ea72e67846cea5985529d8eca4366564a1", size = 13210 },
 ]
 
 [[package]]
