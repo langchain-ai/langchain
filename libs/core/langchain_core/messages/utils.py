@@ -1529,6 +1529,9 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count
         used by specific models. For accurate counts, use model-specific tokenizers.
 
+    Warning:
+        This function does not currently support counting image tokens.
+
     .. versionadded:: 0.3.46
     """
     token_count = 0.0
