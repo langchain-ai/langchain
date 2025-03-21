@@ -825,9 +825,11 @@ def trim_messages(
     """  # noqa: E501
     # Validate arguments
     if start_on and strategy == "first":
-        raise ValueError("start_on parameter is only valid with strategy='last'")
+        msg = "start_on parameter is only valid with strategy='last'"
+        raise ValueError(msg)
     if include_system and strategy == "first":
-        raise ValueError("include_system parameter is only valid with strategy='last'")
+        msg = "include_system parameter is only valid with strategy='last'"
+        raise ValueError(msg)
 
     # Convert messages to BaseMessage objects
     messages = convert_to_messages(messages)
