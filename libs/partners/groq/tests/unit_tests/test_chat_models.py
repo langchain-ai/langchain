@@ -2,7 +2,6 @@
 
 import json
 import os
-import warnings
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -280,23 +279,3 @@ def test_groq_serialization() -> None:
 
     # Ensure a None was preserved
     assert llm.groq_api_base == llm2.groq_api_base
-
-
-def test_groq_warns_default_model() -> None:
-    """Test that a warning is raised if a default model is used."""
-
-    # Delete this test in 0.3 release, when the default model is removed.
-
-    # Test no warning if model is specified
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        ChatGroq(model="foo")
-
-    # Test warns if default model is used
-    with pytest.warns(match="default model"):
-        ChatGroq()
-
-    # Test only warns once
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        ChatGroq()

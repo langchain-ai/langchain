@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -2152,7 +2153,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.19"
+version = "0.3.20"
 source = { editable = "libs/langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2191,6 +2192,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
+provides-extras = ["community", "anthropic", "openai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -2259,7 +2261,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.8"
+version = "0.3.9"
 source = { editable = "libs/partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2360,7 +2362,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.18"
+version = "0.3.19"
 source = { editable = "libs/community" }
 dependencies = [
     { name = "aiohttp" },
@@ -2385,8 +2387,7 @@ requires-dist = [
     { name = "langchain", editable = "libs/langchain" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "langsmith", specifier = ">=0.1.125,<0.4" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.26.4,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
+    { name = "numpy", specifier = ">=1.26.2,<3" },
     { name = "pydantic-settings", specifier = ">=2.4.0,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
@@ -2450,7 +2451,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.40"
+version = "0.3.43"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2573,7 +2574,7 @@ dependencies = [
 
 [[package]]
 name = "langchain-groq"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "libs/partners/groq" }
 dependencies = [
     { name = "groq" },
@@ -2732,7 +2733,7 @@ typing = []
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.7"
+version = "0.3.8"
 source = { editable = "libs/partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2743,7 +2744,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "libs/core" },
-    { name = "openai", specifier = ">=1.58.1,<2.0.0" },
+    { name = "openai", specifier = ">=1.66.0,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
@@ -3630,7 +3631,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.61.1"
+version = "1.66.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -3642,9 +3643,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/cf/61e71ce64cf0a38f029da0f9a5f10c9fa0e69a7a977b537126dac50adfea/openai-1.61.1.tar.gz", hash = "sha256:ce1851507218209961f89f3520e06726c0aa7d0512386f0f977e3ac3e4f2472e", size = 350784 }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/e1/b3e1fda1aa32d4f40d4de744e91de4de65c854c3e53c63342e4b5f9c5995/openai-1.66.2.tar.gz", hash = "sha256:9b3a843c25f81ee09b6469d483d9fba779d5c6ea41861180772f043481b0598d", size = 397041 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/b6/2e2a011b2dc27a6711376808b4cd8c922c476ea0f1420b39892117fa8563/openai-1.61.1-py3-none-any.whl", hash = "sha256:72b0826240ce26026ac2cd17951691f046e5be82ad122d20a8e1b30ca18bd11e", size = 463126 },
+    { url = "https://files.pythonhosted.org/packages/2c/6f/3315b3583ffe3e31c55b446cb22d2a7c235e65ca191674fffae62deb3c11/openai-1.66.2-py3-none-any.whl", hash = "sha256:75194057ee6bb8b732526387b6041327a05656d976fc21c064e21c8ac6b07999", size = 567268 },
 ]
 
 [[package]]

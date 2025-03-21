@@ -12,6 +12,7 @@ on:
       working-directory:
         required: true
         type: string
+        description: "From which folder this pipeline executes"
         default: 'libs/langchain'
       dangerous-nonmaster-release:
         required: false
@@ -100,15 +101,32 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
+          # Handle regular versions and pre-release versions differently
+          if [[ "$VERSION" == *"-"* ]]; then
+            # This is a pre-release version (contains a hyphen)
+            # Extract the base version without the pre-release suffix
+            BASE_VERSION=${VERSION%%-*}
+            # Look for the latest release of the same base version
+            REGEX="^$PKG_NAME==$BASE_VERSION\$"
+            PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
+            
+            # If no exact base version match, look for the latest release of any kind
+            if [ -z "$PREV_TAG" ]; then
+              REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+              PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
+            fi
+          else
+            # Regular version handling
+            PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
 
-          # backup case if releasing e.g. 0.3.0, looks up last release
-          # note if last release (chronologically) was e.g. 0.1.47 it will get 
-          # that instead of the last 0.2 release
-          if [ -z "$PREV_TAG" ]; then
-            REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
-            echo $REGEX
-            PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
+            # backup case if releasing e.g. 0.3.0, looks up last release
+            # note if last release (chronologically) was e.g. 0.1.47 it will get 
+            # that instead of the last 0.2 release
+            if [ -z "$PREV_TAG" ]; then
+              REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+              echo $REGEX
+              PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
+            fi
           fi
 
           # if PREV_TAG is empty, let it be empty
@@ -312,12 +330,89 @@ jobs:
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
+  # Test select published packages against new core
+  test-prior-published-packages-against-new-core:
+    needs:
+      - build
+      - release-notes
+      - test-pypi-publish
+      - pre-release-checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        partner: [openai, anthropic]
+      fail-fast: false  # Continue testing other partners if one fails
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # We implement this conditional as Github Actions does not have good support
+      # for conditionally needing steps. https://github.com/actions/runner/issues/491
+      - name: Check if libs/core
+        run: |
+          if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
+            echo "Not in libs/core. Exiting successfully."
+            exit 0
+          fi
+
+      - name: Set up Python + uv
+        if: startsWith(inputs.working-directory, 'libs/core')
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        if: startsWith(inputs.working-directory, 'libs/core')
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Test against ${{ matrix.partner }}
+        if: startsWith(inputs.working-directory, 'libs/core')
+        run: |
+          # Identify latest tag
+          LATEST_PACKAGE_TAG="$(
+            git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
+            | awk '{print $2}' \
+            | sed 's|refs/tags/||' \
+            | sort -Vr \
+            | head -n 1
+          )"
+          echo "Latest package tag: $LATEST_PACKAGE_TAG"
+
+          # Shallow-fetch just that single tag
+          git fetch --depth=1 origin tag "$LATEST_PACKAGE_TAG"
+
+          # Checkout the latest package files
+          rm -rf $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}/*
+          cd $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}
+          git checkout "$LATEST_PACKAGE_TAG" -- .
+
+          # Print as a sanity check
+          echo "Version number from pyproject.toml: "
+          cat pyproject.toml | grep "version = "
+
+          # Run tests
+          uv sync --group test --group test_integration
+          uv pip install ../../core/dist/*.whl
+          make integration_tests
+
   publish:
     needs:
       - build
       - release-notes
       - test-pypi-publish
       - pre-release-checks
+      - test-prior-published-packages-against-new-core
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
