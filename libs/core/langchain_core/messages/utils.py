@@ -1359,7 +1359,6 @@ def _last_max_tokens(
     if len(messages) == 0:
         return []
 
-
     # Filter out messages after end_on type
     if end_on:
         for _ in range(len(messages)):
