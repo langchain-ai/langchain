@@ -3282,6 +3282,7 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "web_search_call",
         "file_search_call",
+        "computer_call",
     ):
         additional_kwargs["tool_outputs"] = [
             chunk.item.model_dump(exclude_none=True, mode="json")
