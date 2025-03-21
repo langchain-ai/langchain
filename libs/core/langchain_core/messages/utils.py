@@ -420,11 +420,12 @@ def filter_messages(
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
-            If `True`, all AIMessages with tool calls and ToolMessages will be excluded.
-            It filters pairs of AIMessage with the invocation
-            and the corresponding ToolMessage with the response.
-            The `tool_calls` in the AIMessage is adjusted removing the filtered tool calls id.
-            If all tool_calls are filtered from an AIMessage the whole message is filtered.
+            Can be one of the following:
+            - `True`: all AIMessages with tool calls and all ToolMessages will be excluded.
+            - a sequence of tool call IDs to exclude:
+              - ToolMessages with the corresponding tool call ID will be excluded.
+              - The `tool_calls` in the AIMessage will be updated to exclude matching tool calls.
+                If all tool_calls are filtered from an AIMessage, the whole message is excluded.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -478,6 +479,7 @@ def filter_messages(
             or isinstance(msg, ToolMessage)
         ):
             continue
+
         if isinstance(exclude_tool_calls, (list, tuple, set)):
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 tool_calls = [
@@ -487,7 +489,9 @@ def filter_messages(
                 ]
                 if not tool_calls:
                     continue
+
                 content = msg.content
+                # handle Anthropic content blocks
                 if isinstance(msg.content, list):
                     content = [
                         content_block
