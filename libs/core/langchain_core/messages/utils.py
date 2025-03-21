@@ -832,23 +832,19 @@ def trim_messages(
         msg = "include_system parameter is only valid with strategy='last'"
         raise ValueError(msg)
 
-    # Convert messages to BaseMessage objects
     messages = convert_to_messages(messages)
-
-    # Process token counter function
     if hasattr(token_counter, "get_num_tokens_from_messages"):
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
-        # Check if token_counter function takes a single message or a list of messages
         if (
             list(inspect.signature(token_counter).parameters.values())[0].annotation
             is BaseMessage
         ):
-            # Create a wrapper that applies the per-message function to a list
+
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+
         else:
-            # Function already handles a list of messages
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
         msg = (
@@ -870,7 +866,6 @@ def trim_messages(
 
     text_splitter_fn = text_splitter_fn or _default_text_splitter
 
-    # Apply appropriate strategy
     if strategy == "first":
         return _first_max_tokens(
             messages,
@@ -1261,7 +1256,7 @@ def _first_max_tokens(
         included_partial = False
 
         # Handle list content
-        if isinstance(messages[idx].content, list):
+        if isinstance(excluded.content, list):
             # Store current messages to avoid repeated token counting on the same subset
             base_messages = messages[:idx]
 
@@ -1316,7 +1311,6 @@ def _first_max_tokens(
 
         # Handle string content if no partial included yet
         if not included_partial:
-            text = None
             if isinstance(excluded.content, list) and any(
                 isinstance(block, str) or block["type"] == "text"
                 for block in messages[idx].content
@@ -1331,7 +1325,8 @@ def _first_max_tokens(
                 )
             elif isinstance(excluded.content, str):
                 text = excluded.content
-
+            else:
+                text = None
             if text:
                 split_texts = text_splitter(text)
                 base_messages = messages[:idx]
@@ -1387,12 +1382,8 @@ def _last_max_tokens(
 
     # Filter out messages after end_on type
     if end_on:
-        end_idx = len(messages)
-        for i in range(len(messages) - 1, -1, -1):
-            if _is_message_type(messages[i], end_on):
-                end_idx = i + 1
-                break
-        messages = messages[:end_idx]
+        while messages and not _is_message_type(messages[-1], end_on):
+            messages.pop()
 
     # Handle system message preservation
     system_message = None
@@ -1400,21 +1391,8 @@ def _last_max_tokens(
         system_message = messages[0]
         messages = messages[1:]
 
-    # Apply start_on filtering
-    if start_on:
-        # Find the first occurrence of the requested message type
-        start_idx = 0
-        for i, msg in enumerate(messages):
-            if _is_message_type(msg, start_on):
-                start_idx = i
-                break
-        messages = messages[start_idx:]
-
     # Reverse messages to use _first_max_tokens with reversed logic
     reversed_messages = messages[::-1]
-
-    # Get maximum tokens from the reversed messages
-    partial_strategy = "last" if allow_partial else None
 
     # Calculate remaining tokens after accounting for system message if present
     remaining_tokens = max_tokens
@@ -1427,8 +1405,8 @@ def _last_max_tokens(
         max_tokens=remaining_tokens,
         token_counter=token_counter,
         text_splitter=text_splitter,
-        partial_strategy=partial_strategy,
-        end_on=None,  # We already handled end_on above
+        partial_strategy="last" if allow_partial else None,
+        end_on=start_on,
     )
 
     # Re-reverse the messages and add back the system message if needed
