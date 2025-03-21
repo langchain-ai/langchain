@@ -2956,10 +2956,7 @@ def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
         )
     else:
         # string, assume image_url
-        output = {
-            "type": "input_image",
-            "image_url": message.content,
-        }
+        output = {"type": "input_image", "image_url": message.content}
     computer_call_output["output"] = output
     return computer_call_output
 
