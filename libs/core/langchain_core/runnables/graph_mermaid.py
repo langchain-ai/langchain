@@ -28,7 +28,7 @@ def draw_mermaid(
     curve_style: CurveStyle = CurveStyle.LINEAR,
     node_styles: Optional[NodeStyles] = None,
     wrap_label_n_words: int = 9,
-    frontmatter: Optional[dict[str, Any]] = None,
+    frontmatter_config: Optional[dict[str, Any]] = None,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data.
 
@@ -46,24 +46,43 @@ def draw_mermaid(
             Defaults to NodeStyles().
         wrap_label_n_words (int, optional): Words to wrap the edge labels.
             Defaults to 9.
-        frontmatter (dict[str, Any], optional): Mermaid frontmatter config.
-            Can be used to customize theme and and styles. Defaults to None.
+        frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+            Can be used to customize theme and styles. Will be converted to YAML and
+            added to the beginning of the mermaid graph. Defaults to None.
+
+            See more here: https://mermaid.js.org/config/configuration.html.
+
+            Example:
+            ```python
+            {
+                "config": {
+                    "theme": "neutral",
+                    "look": "handDrawn",
+                    "themeVariables": { "primaryColor": "#e2e2e2"},
+                }
+            }
+            ```
 
     Returns:
         str: Mermaid graph syntax.
     """
     # Initialize Mermaid graph configuration
-    frontmatter = frontmatter or {}
-    frontmatter["config"] = frontmatter.get("config", {})
-    frontmatter["config"]["flowchart"] = {
-        **frontmatter["config"].get("flowchart", {}),
-        "curve": curve_style.value,
+    original_frontmatter_config = frontmatter_config or {}
+    original_flowchart_config = original_frontmatter_config.get("config", {}).get(
+        "flowchart", {}
+    )
+    frontmatter_config = {
+        **original_frontmatter_config,
+        "config": {
+            **original_frontmatter_config.get("config", {}),
+            "flowchart": {**original_flowchart_config, "curve": curve_style.value},
+        },
     }
 
     mermaid_graph = (
         (
             "---\n"
-            + yaml.dump(frontmatter, default_flow_style=False)
+            + yaml.dump(frontmatter_config, default_flow_style=False)
             + "---\ngraph TD;\n"
         )
         if with_styles
