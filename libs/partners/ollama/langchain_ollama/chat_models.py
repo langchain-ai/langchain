@@ -743,7 +743,7 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
-                if self.extract_reasoning is not False:
+                if self.extract_reasoning:
                     message, is_thinking = self._extract_reasoning(
                         chunk.message, is_thinking
                     )
@@ -791,7 +791,7 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
-                if self.extract_reasoning is not False:
+                if self.extract_reasoning:
                     message, is_thinking = self._extract_reasoning(
                         chunk.message, is_thinking
                     )
