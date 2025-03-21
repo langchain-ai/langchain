@@ -165,6 +165,94 @@ def test_filter_message(filters: dict) -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_exclude_tool_calls() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            "bar-response",
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[:3]
+
+    # test excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+
+    # test explicitly excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls={"1", "2"})
+    assert expected == actual
+
+    # test excluding a specific tool call
+    expected = messages[:5]
+    expected[3] = expected[3].model_copy(update={"tool_calls": [tool_calls[0]]})
+    actual = filter_messages(messages, exclude_tool_calls=["2"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_tool_calls_content_blocks() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            [
+                {"text": "bar-response", "type": "text"},
+                {"name": "foo", "type": "tool_use", "id": "1"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[:3]
+
+    # test excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+
+    # test explicitly excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls={"1", "2"})
+    assert expected == actual
+
+    # test excluding a specific tool call
+    expected = messages[:4] + messages[-1:]
+    expected[3] = expected[3].model_copy(
+        update={
+            "tool_calls": [tool_calls[1]],
+            "content": [
+                {"text": "bar-response", "type": "text"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+        }
+    )
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),
