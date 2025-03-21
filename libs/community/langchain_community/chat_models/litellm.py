@@ -259,7 +259,7 @@ class ChatLiteLLM(BaseChatModel):
     organization: Optional[str] = None
     custom_llm_provider: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    temperature: Optional[float] = 1
+    temperature: Optional[float] = None
     """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -270,12 +270,12 @@ class ChatLiteLLM(BaseChatModel):
     top_k: Optional[int] = None
     """Decode using top-k sampling: consider the set of top_k most probable tokens.
        Must be positive."""
-    n: int = 1
+    n: Optional[int] = None
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
     max_tokens: Optional[int] = None
 
-    max_retries: int = 6
+    max_retries: int = 1
 
     @property
     def _default_params(self) -> Dict[str, Any]:

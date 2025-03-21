@@ -516,3 +516,19 @@ packages:
 - name: langchain-agentql
   path: langchain
   repo: tinyfish-io/agentql-integrations
+- name: langchain-xinference
+  path: .
+  repo: TheSongg/langchain-xinference
+- name: powerscale-rag-connector
+  name_title: PowerScale RAG Connector
+  path: .
+  repo: dell/powerscale-rag-connector
+  provider_page: dell
+- name: langchain-tavily
+  path: .
+  repo: tavily-ai/langchain-tavily
+- name: langchain-zotero-retriever
+  path: .
+  repo: TimBMK/langchain-zotero-retriever
+  name_title: Zotero
+  provider_page: zotero
