@@ -1263,48 +1263,42 @@ def _first_max_tokens(
             if partial_strategy == "last":
                 # For last strategy, reverse content blocks to keep the last ones
                 excluded.content = list(reversed(excluded.content))
-                num_block = len(excluded.content)
+                num_blocks_to_include = 0
 
-                # Binary search for the maximum number of blocks we can include
-                left, right = 0, num_block
-                while left < right:
-                    mid = (left + right + 1) // 2
-                    excluded_with_blocks = excluded.model_copy(deep=True)
-                    excluded_with_blocks.content = excluded_with_blocks.content[:mid]
+                # Linear search to find how many blocks we can include
+                for i in range(len(excluded.content)):
+                    excluded.content = excluded.content[: i + 1]
                     if (
-                        token_counter(base_messages + [excluded_with_blocks])
+                        token_counter(base_messages + [excluded])
                         <= max_tokens
                     ):
-                        left = mid
+                        num_blocks_to_include = i + 1
                     else:
-                        right = mid - 1
+                        break
 
-                if left > 0:
-                    excluded.content = excluded.content[:left]
+                if num_blocks_to_include > 0:
+                    excluded.content = excluded.content[:num_blocks_to_include]
                     excluded.content = list(reversed(excluded.content))
                     messages = base_messages + [excluded]
                     idx += 1
                     included_partial = True
             else:
                 # For first strategy, keep the first blocks
-                num_block = len(excluded.content)
+                num_blocks_to_include = 0
 
-                # Binary search for maximum number of blocks
-                left, right = 0, num_block
-                while left < right:
-                    mid = (left + right + 1) // 2
-                    excluded_with_blocks = excluded.model_copy(deep=True)
-                    excluded_with_blocks.content = excluded_with_blocks.content[:mid]
+                # Linear search for maximum number of blocks
+                for i in range(len(excluded.content)):
+                    excluded.content = excluded.content[: i + 1]
                     if (
-                        token_counter(base_messages + [excluded_with_blocks])
+                        token_counter(base_messages + [excluded])
                         <= max_tokens
                     ):
-                        left = mid
+                        num_blocks_to_include = i + 1
                     else:
-                        right = mid - 1
+                        break
 
-                if left > 0:
-                    excluded.content = excluded.content[:left]
+                if num_blocks_to_include > 0:
+                    excluded.content = excluded.content[:num_blocks_to_include]
                     messages = base_messages + [excluded]
                     idx += 1
                     included_partial = True
@@ -1334,19 +1328,18 @@ def _first_max_tokens(
                 if partial_strategy == "last":
                     split_texts = list(reversed(split_texts))
 
-                # Binary search for the maximum number of splits we can include
-                left, right = 0, len(split_texts)
-                while left < right:
-                    mid = (left + right + 1) // 2
+                # Linear search for the maximum number of splits we can include
+                num_splits_to_include = 0
+                for i in range(len(split_texts)):
                     excluded_copy = excluded.model_copy(deep=True)
-                    excluded_copy.content = "".join(split_texts[:mid])
+                    excluded_copy.content = "".join(split_texts[: i + 1])
                     if token_counter(base_messages + [excluded_copy]) <= max_tokens:
-                        left = mid
+                        num_splits_to_include = i + 1
                     else:
-                        right = mid - 1
+                        break
 
-                if left > 0:
-                    content_splits = split_texts[:left]
+                if num_splits_to_include > 0:
+                    content_splits = split_texts[:num_splits_to_include]
                     if partial_strategy == "last":
                         content_splits = list(reversed(content_splits))
                     excluded.content = "".join(content_splits)
