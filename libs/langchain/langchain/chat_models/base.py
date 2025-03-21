@@ -108,7 +108,7 @@ def init_chat_model(
             - 'openai'              -> langchain-openai
             - 'anthropic'           -> langchain-anthropic
             - 'azure_openai'        -> langchain-openai
-            - 'azure_ai             -> langchain-ai
+            - 'azure_ai'            -> langchain-azure-ai
             - 'google_vertexai'     -> langchain-google-vertexai
             - 'google_genai'        -> langchain-google-genai
             - 'bedrock'             -> langchain-aws
