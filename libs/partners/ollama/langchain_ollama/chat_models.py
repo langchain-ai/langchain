@@ -585,7 +585,7 @@ class ChatOllama(BaseChatModel):
         self, message_chunk: BaseMessageChunk, is_thinking: bool
     ) -> Tuple[BaseMessageChunk, bool]:
         """Mutate a message chunk to extract reasoning content."""
-        if not self.extract_reasoning:  # False
+        if not self.extract_reasoning:
             return message_chunk, is_thinking
         elif self.extract_reasoning is True:
             start_token = DEFAULT_THINK_TOKEN_START
