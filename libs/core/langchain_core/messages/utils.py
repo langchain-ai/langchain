@@ -1233,23 +1233,27 @@ def _first_max_tokens(
         Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
 ) -> list[BaseMessage]:
-    messages = list(messages)
     if not messages:
         return messages
 
+    messages = list(messages)
     # Check if all messages already fit within token limit
     if token_counter(messages) <= max_tokens:
         # When all messages fit, only apply end_on filtering if needed
         if end_on:
-            idx = len(messages)
-            while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
-                idx -= 1
-            return messages[:idx]
+            for _ in range(len(messages)):
+                if not _is_message_type(messages[-1], end_on):
+                    messages.pop()
+                else:
+                    break
         return messages
 
     # Use binary search to find the maximum number of messages within token limit
     left, right = 0, len(messages)
-    while left < right:
+    max_iterations = len(messages).bit_length()
+    for _ in range(max_iterations):
+        if left >= right:
+            break
         mid = (left + right + 1) // 2
         if token_counter(messages[:mid]) <= max_tokens:
             left = mid
@@ -1307,7 +1311,10 @@ def _first_max_tokens(
 
                 # Binary search for the maximum number of splits we can include
                 left, right = 0, len(split_texts)
-                while left < right:
+                max_iterations = len(split_texts).bit_length()
+                for _ in range(max_iterations):
+                    if left >= right:
+                        break
                     mid = (left + right + 1) // 2
                     excluded.content = "".join(split_texts[:mid])
                     if base_message_count + token_counter([excluded]) <= max_tokens:
@@ -1324,8 +1331,11 @@ def _first_max_tokens(
                     idx += 1
 
     if end_on:
-        while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
-            idx -= 1
+        for _ in range(idx):
+            if idx > 0 and not _is_message_type(messages[idx - 1], end_on):
+                idx -= 1
+            else:
+                break
 
     return messages[:idx]
 
@@ -1345,14 +1355,18 @@ def _last_max_tokens(
         Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
 ) -> list[BaseMessage]:
-    messages = list(messages)
     if len(messages) == 0:
         return []
 
+    messages = list(messages)
+
     # Filter out messages after end_on type
     if end_on:
-        while messages and not _is_message_type(messages[-1], end_on):
-            messages.pop()
+        for _ in range(len(messages)):
+            if not _is_message_type(messages[-1], end_on):
+                messages.pop()
+            else:
+                break
 
     # Handle system message preservation
     system_message = None
