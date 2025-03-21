@@ -1233,10 +1233,10 @@ def _first_max_tokens(
         Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
 ) -> list[BaseMessage]:
+    messages = list(messages)
     if not messages:
         return messages
 
-    messages = list(messages)
     # Check if all messages already fit within token limit
     if token_counter(messages) <= max_tokens:
         # When all messages fit, only apply end_on filtering if needed
@@ -1355,10 +1355,10 @@ def _last_max_tokens(
         Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
     ] = None,
 ) -> list[BaseMessage]:
+    messages = list(messages)
     if len(messages) == 0:
         return []
 
-    messages = list(messages)
 
     # Filter out messages after end_on type
     if end_on:
