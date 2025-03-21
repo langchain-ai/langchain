@@ -72,6 +72,19 @@ def _run_to_dict(run: Run, exclude_inputs: bool = False) -> dict:
     # run.model_dump
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+        if (
+            run.outputs
+            and run.outputs.get("generations")
+            and isinstance(run.outputs["generations"], list)
+            and run.outputs["generations"]
+            and isinstance(run.outputs["generations"][0], list)
+            and run.outputs["generations"][0]
+            and isinstance(run.outputs["generations"][0][0], dict)
+            and "text" in run.outputs["generations"][0][0]
+            and "message" in run.outputs["generations"][0][0]
+        ):
+            # Drop redundant text contents from trace
+            run.outputs["generations"][0][0]["text"] = None
 
         res = {
             **run.dict(exclude={"child_runs", "inputs", "outputs"}),
