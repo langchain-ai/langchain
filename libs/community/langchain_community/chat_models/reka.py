@@ -6,7 +6,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -383,7 +382,7 @@ class ChatReka(BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[str, Literal["any"]]] = "auto",
+        tool_choice: str = "auto",
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -422,10 +421,6 @@ class ChatReka(BaseChatModel):
         ]
 
         # Ensure tool_choice is one of the allowed options
-        if tool_choice is None:
-            tool_choice = "auto"
-        if tool_choice == "any":
-            tool_choice = "tool"
         if tool_choice not in ("auto", "none", "tool"):
             raise ValueError(
                 f"Invalid tool_choice '{tool_choice}' provided. "

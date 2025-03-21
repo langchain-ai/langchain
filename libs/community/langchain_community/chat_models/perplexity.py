@@ -383,8 +383,6 @@ class ChatPerplexity(BaseChatModel):
             - "parsing_error": Optional[BaseException]
 
         """  # noqa: E501
-        if method in ("function_calling", "json_mode"):
-            method = "json_schema"
         if method == "json_schema":
             if schema is None:
                 raise ValueError(

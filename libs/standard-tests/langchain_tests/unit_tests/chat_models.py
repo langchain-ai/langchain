@@ -2,7 +2,6 @@
 :autodoc-options: autoproperty
 """
 
-import inspect
 import os
 from abc import abstractmethod
 from typing import Any, Dict, List, Literal, Optional, Tuple, Type
@@ -127,14 +126,6 @@ class ChatModelTests(BaseStandardTests):
     def tool_choice_value(self) -> Optional[str]:
         """(None or str) to use for tool choice when used in tests."""
         return None
-
-    @property
-    def has_tool_choice(self) -> bool:
-        """(bool) whether the model supports tool calling."""
-        bind_tools_params = inspect.signature(
-            self.chat_model_class.bind_tools
-        ).parameters
-        return "tool_choice" in bind_tools_params
 
     @property
     def has_structured_output(self) -> bool:
@@ -282,11 +273,12 @@ class ChatModelUnitTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. If a model does not
-           support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``. Otherwise, models should accept values of ``"any"`` or
-           the name of a tool in ``tool_choice``.
+        Some tests for tool calling features attempt to force tool calling via a
+        `tool_choice` parameter. A common value for this parameter is "any". Defaults
+        to `None`.
+
+        Note: if the value is set to "tool_name", the name of the tool used in each
+        test will be set as the value for `tool_choice`.
 
         Example:
 
@@ -295,26 +287,6 @@ class ChatModelUnitTests(ChatModelTests):
             @property
             def tool_choice_value(self) -> Optional[str]:
                 return "any"
-
-    .. dropdown:: has_tool_choice
-
-        Boolean property indicating whether the chat model supports forcing tool
-        calling via a ``tool_choice`` parameter.
-
-        By default, this is determined by whether the parameter is included in the
-        signature for the corresponding ``bind_tools`` method.
-
-        If ``True``, the minimum requirement for this feature is that
-        ``tool_choice="any"`` will force a tool call, and ``tool_choice=<tool name>``
-        will force a call to a specific tool.
-
-        Example override:
-
-        .. code-block:: python
-
-            @property
-            def has_tool_choice(self) -> bool:
-                return False
 
     .. dropdown:: has_structured_output
 
@@ -654,12 +626,6 @@ class ChatModelUnitTests(ChatModelTests):
             return
 
         assert model.with_structured_output(schema) is not None
-        for method in ["json_schema", "function_calling", "json_mode"]:
-            strict_values = [None, False, True] if method != "json_mode" else [None]
-            for strict in strict_values:
-                assert model.with_structured_output(
-                    schema, method=method, strict=strict
-                )
 
     def test_standard_params(self, model: BaseChatModel) -> None:
         """Test that model properly generates standard parameters. These are used

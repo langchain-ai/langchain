@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from contextvars import Context, ContextVar, Token, copy_context
+from contextvars import ContextVar, copy_context
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
@@ -115,10 +115,7 @@ var_child_runnable_config: ContextVar[RunnableConfig | None] = ContextVar(
 )
 
 
-# This is imported and used in langgraph, so don't break.
-def _set_config_context(
-    config: RunnableConfig,
-) -> tuple[Token[Optional[RunnableConfig]], Optional[dict[str, Any]]]:
+def _set_config_context(config: RunnableConfig) -> None:
     """Set the child Runnable config + tracing context.
 
     Args:
@@ -126,8 +123,7 @@ def _set_config_context(
     """
     from langchain_core.tracers.langchain import LangChainTracer
 
-    config_token = var_child_runnable_config.set(config)
-    current_context = None
+    var_child_runnable_config.set(config)
     if (
         (callbacks := config.get("callbacks"))
         and (
@@ -145,39 +141,9 @@ def _set_config_context(
         )
         and (run := tracer.run_map.get(str(parent_run_id)))
     ):
-        from langsmith.run_helpers import _set_tracing_context, get_tracing_context
+        from langsmith.run_helpers import _set_tracing_context
 
-        current_context = get_tracing_context()
         _set_tracing_context({"parent": run})
-    return config_token, current_context
-
-
-@contextmanager
-def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]:
-    """Set the child Runnable config + tracing context.
-
-    Args:
-        config (RunnableConfig): The config to set.
-    """
-    from langsmith.run_helpers import _set_tracing_context
-
-    ctx = copy_context()
-    config_token, _ = ctx.run(_set_config_context, config)
-    try:
-        yield ctx
-    finally:
-        ctx.run(var_child_runnable_config.reset, config_token)
-        ctx.run(
-            _set_tracing_context,
-            {
-                "parent": None,
-                "project_name": None,
-                "tags": None,
-                "metadata": None,
-                "enabled": None,
-                "client": None,
-            },
-        )
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:

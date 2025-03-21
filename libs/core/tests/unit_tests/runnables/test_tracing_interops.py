@@ -99,6 +99,7 @@ def test_config_traceable_handoff() -> None:
         rt = get_current_run_tree()
         assert rt
         assert rt.session_name == "another-flippin-project"
+        assert rt.parent_run and rt.parent_run.name == "my_parent_function"
         return my_child_function(a)
 
     def my_parent_function(a: int) -> int:
@@ -445,12 +446,11 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         metadata={"some_foo": "some_bar"},
         tags=["afoo"],
     ):
-        collected: dict[str, RunTree] = {}  # noqa
-
-        def collect_run(run: RunTree) -> None:
-            collected[str(run.id)] = run
-
         if parent_type == "ls":
+            collected: dict[str, RunTree] = {}  # noqa
+
+            def collect_run(run: RunTree) -> None:
+                collected[str(run.id)] = run
 
             @traceable
             def parent() -> str:
@@ -460,6 +460,7 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
             )
             assert collected
+            run = collected.get(str(rid))
 
         else:
 
@@ -468,10 +469,8 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
-            tracer._persist_run = collect_run  # type: ignore
-
             assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
-    run = collected.get(str(rid))
+            run = tracer.latest_run
 
     assert run is not None
     assert run.name == "parent"

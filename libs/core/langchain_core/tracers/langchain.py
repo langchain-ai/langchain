@@ -173,13 +173,7 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        # We want to free up more memory by avoiding keeping a reference to the
-        # whole nested run tree.
-        self.latest_run = Run.construct(
-            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-            inputs=run.inputs,
-            outputs=run.outputs,
-        )
+        self.latest_run = run
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.

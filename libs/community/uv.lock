@@ -1491,7 +1491,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.21"
+version = "0.3.20"
 source = { editable = "../langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -1509,7 +1509,6 @@ requires-dist = [
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
-    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-cohere", marker = "extra == 'cohere'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
@@ -1599,7 +1598,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.20"
+version = "0.3.19"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1745,7 +1744,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.45"
+version = "0.3.41"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1803,7 +1802,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.14"
+version = "0.3.13"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -1839,7 +1838,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.7"
+version = "0.3.6"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },

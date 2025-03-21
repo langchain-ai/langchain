@@ -36,7 +36,6 @@ from langchain_text_splitters.html import (
     HTMLSemanticPreservingSplitter,
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
-from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (
@@ -61,7 +60,6 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
     "LatexTextSplitter",
-    "JSFrameworkTextSplitter",
     "PythonCodeTextSplitter",
     "KonlpyTextSplitter",
     "SpacyTextSplitter",

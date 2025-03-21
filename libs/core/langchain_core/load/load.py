@@ -98,7 +98,8 @@ class Reviver:
             else:
                 if self.secrets_from_env and key in os.environ and os.environ[key]:
                     return os.environ[key]
-                return None
+                msg = f'Missing key "{key}" in load(secrets_map)'
+                raise KeyError(msg)
 
         if (
             value.get("lc") == 1

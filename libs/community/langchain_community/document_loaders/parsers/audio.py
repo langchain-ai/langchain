@@ -281,8 +281,12 @@ class OpenAIWhisperParser(BaseBlobParser):
             raise ImportError(
                 "openai package not found, please install it with `pip install openai`"
             )
-
-        audio = _get_audio_from_blob(blob)
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
 
         if is_openai_v1():
             # api_key optional, defaults to `os.environ['OPENAI_API_KEY']`
@@ -294,6 +298,9 @@ class OpenAIWhisperParser(BaseBlobParser):
             if self.base_url:
                 openai.api_base = self.base_url
 
+        # Audio file from disk
+
+        audio = AudioSegment.from_file(blob.path)
         # Define the duration of each chunk in minutes
         # Need to meet 25MB size limit for Whisper API
         chunk_duration = 20
@@ -445,6 +452,13 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
         """Lazily parse the blob."""
 
         try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
+
+        try:
             import librosa
         except ImportError:
             raise ImportError(
@@ -452,7 +466,8 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 "`pip install librosa`"
             )
 
-        audio = _get_audio_from_blob(blob)
+        # Audio file from disk
+        audio = AudioSegment.from_file(blob.path)
 
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
@@ -514,8 +529,12 @@ class YandexSTTParser(BaseBlobParser):
                 "yandex-speechkit package not found, please install it with "
                 "`pip install yandex-speechkit`"
             )
-
-        audio = _get_audio_from_blob(blob)
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
 
         if self.api_key:
             configure_credentials(
@@ -525,6 +544,8 @@ class YandexSTTParser(BaseBlobParser):
             configure_credentials(
                 yandex_credentials=creds.YandexCredentials(iam_token=self.iam_token)
             )
+
+        audio = AudioSegment.from_file(blob.path)
 
         model = model_repository.recognition_model()
 
@@ -625,6 +646,13 @@ class FasterWhisperParser(BaseBlobParser):
         """Lazily parse the blob."""
 
         try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
+
+        try:
             from faster_whisper import WhisperModel
         except ImportError:
             raise ImportError(
@@ -632,12 +660,22 @@ class FasterWhisperParser(BaseBlobParser):
                 "`pip install faster-whisper`"
             )
 
-        audio = _get_audio_from_blob(blob)
+        # get the audio
+        if isinstance(blob.data, bytes):
+            # blob contains the audio
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            # Audio file from disk
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
 
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        model = WhisperModel(self.model_size, device=self.device)
+        model = WhisperModel(
+            self.model_size, device=self.device, compute_type="float16"
+        )
 
         segments, info = model.transcribe(file_obj, beam_size=5)
 
@@ -652,33 +690,3 @@ class FasterWhisperParser(BaseBlobParser):
                     **blob.metadata,
                 },
             )
-
-
-def _get_audio_from_blob(blob: Blob) -> Any:
-    """Get audio data from blob.
-
-    Args:
-        blob: Blob object containing the audio data.
-
-    Returns:
-        AudioSegment: Audio data from the blob.
-
-    Raises:
-        ImportError: If the required package `pydub` is not installed.
-        ValueError: If the audio data is not found in the blob
-    """
-    try:
-        from pydub import AudioSegment
-    except ImportError:
-        raise ImportError(
-            "pydub package not found, please install it with `pip install pydub`"
-        )
-
-    if isinstance(blob.data, bytes):
-        audio = AudioSegment.from_file(io.BytesIO(blob.data))
-    elif blob.data is None and blob.path:
-        audio = AudioSegment.from_file(blob.path)
-    else:
-        raise ValueError("Unable to get audio from blob")
-
-    return audio

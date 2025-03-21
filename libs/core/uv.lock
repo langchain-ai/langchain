@@ -935,7 +935,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.47"
+version = "0.3.43"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
@@ -1062,7 +1062,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.7"
+version = "0.3.6"
 source = { directory = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },

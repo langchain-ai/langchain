@@ -89,11 +89,11 @@ def tracing_v2_enabled(
         tags=tags,
         client=client,
     )
-    token = tracing_v2_callback_var.set(cb)
     try:
+        tracing_v2_callback_var.set(cb)
         yield cb
     finally:
-        tracing_v2_callback_var.reset(token)
+        tracing_v2_callback_var.set(None)
 
 
 @contextmanager
@@ -109,11 +109,9 @@ def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
                 run_id = runs_cb.traced_runs[0].id
     """
     cb = RunCollectorCallbackHandler()
-    token = run_collector_var.set(cb)
-    try:
-        yield cb
-    finally:
-        run_collector_var.reset(token)
+    run_collector_var.set(cb)
+    yield cb
+    run_collector_var.set(None)
 
 
 def _get_trace_callbacks(
