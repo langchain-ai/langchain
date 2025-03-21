@@ -841,6 +841,7 @@ class ChatOllama(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -879,6 +880,22 @@ class ChatOllama(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+
+            strict:
+                (This parameter is currently unsupported by Ollama and has been added for future compatibility)
+                - True:
+                    Model output is guaranteed to exactly match the schema.
+                - False:
+                    Input schema will not be validated and model output will not be
+                    validated.
+                - None:
+                    ``strict`` argument will not be passed to the model.
+
+                If schema is specified via TypedDict or JSON schema, ``strict`` is not
+                enabled by default. Pass ``strict=True`` to enable it.
+
+                Note: ``strict`` can only be non-null if ``method`` is
+                ``"json_schema"`` or ``"function_calling"``.
 
             kwargs: Additional keyword args aren't supported.
 
@@ -1104,6 +1121,7 @@ class ChatOllama(BaseChatModel):
                     "kwargs": {"method": method},
                     "schema": formatted_tool,
                 },
+                strict=strict,
             )
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
