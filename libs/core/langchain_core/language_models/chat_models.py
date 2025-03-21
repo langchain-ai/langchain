@@ -1167,6 +1167,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tools: Sequence[
             Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
+        *,
+        tool_choice: Optional[Union[str, Literal["any"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError
@@ -1280,6 +1282,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 Added support for TypedDict class.
         """  # noqa: E501
+        _ = kwargs.pop("method", None)
+        _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)

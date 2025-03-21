@@ -18,6 +18,7 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import (
     convert_to_messages,
     convert_to_openai_messages,
+    count_tokens_approximately,
     filter_messages,
     merge_message_runs,
     trim_messages,
@@ -450,6 +451,110 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
                 + default_msg_suffix_len
             )
     return count
+
+
+def test_trim_messages_partial_text_splitting() -> None:
+    messages = [HumanMessage(content="This is a long message that needs trimming")]
+
+    def count_characters(msgs: list[BaseMessage]) -> int:
+        return sum(len(m.content) if isinstance(m.content, str) else 0 for m in msgs)
+
+    # Return individual characters to test text splitting
+    def char_splitter(text: str) -> list[str]:
+        return list(text)
+
+    result = trim_messages(
+        messages,
+        max_tokens=10,  # Only allow 10 characters
+        token_counter=count_characters,
+        strategy="first",
+        allow_partial=True,
+        text_splitter=char_splitter,
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "This is a "  # First 10 characters
+
+
+def test_trim_messages_mixed_content_with_partial() -> None:
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "First part of text."},
+                {"type": "text", "text": "Second part that should be trimmed."},
+            ]
+        )
+    ]
+
+    # Count total length of all text parts
+    def count_text_length(msgs: list[BaseMessage]) -> int:
+        total = 0
+        for msg in msgs:
+            if isinstance(msg.content, list):
+                for block in msg.content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        total += len(block["text"])
+            elif isinstance(msg.content, str):
+                total += len(msg.content)
+        return total
+
+    result = trim_messages(
+        messages,
+        max_tokens=20,  # Only allow first text block
+        token_counter=count_text_length,
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert len(result) == 1
+    assert len(result[0].content) == 1
+    assert result[0].content[0]["text"] == "First part of text."
+
+
+def test_trim_messages_exact_token_boundary() -> None:
+    messages = [
+        SystemMessage(content="10 tokens exactly."),
+        HumanMessage(content="Another 10 tokens."),
+    ]
+
+    # First message only
+    result1 = trim_messages(
+        messages,
+        max_tokens=10,  # Exactly the size of first message
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result1) == 1
+    assert result1[0].content == "10 tokens exactly."
+
+    # Both messages exactly fit
+    result2 = trim_messages(
+        messages,
+        max_tokens=20,  # Exactly the size of both messages
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result2) == 2
+
+
+def test_trim_messages_start_on_with_allow_partial() -> None:
+    messages = [
+        HumanMessage(content="First human message"),
+        AIMessage(content="AI response"),
+        HumanMessage(content="Second human message"),
+    ]
+
+    result = trim_messages(
+        messages,
+        max_tokens=20,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        allow_partial=True,
+        start_on="human",
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "Second human message"
 
 
 class FakeTokenCountingModel(FakeChatModel):
@@ -976,3 +1081,130 @@ def test_convert_to_openai_messages_developer() -> None:
     ]
     result = convert_to_openai_messages(messages)
     assert result == [{"role": "developer", "content": "a"}] * 2
+
+
+def test_count_tokens_approximately_empty_messages() -> None:
+    # Test with empty message list
+    assert count_tokens_approximately([]) == 0
+
+    # Test with empty content
+    messages = [HumanMessage(content="")]
+    # 4 role chars -> 1 + 3 = 4 tokens
+    assert count_tokens_approximately(messages) == 4
+
+
+def test_count_tokens_approximately_with_names() -> None:
+    messages = [
+        # 5 chars + 4 role chars -> 3 + 3 = 6 tokens
+        # (with name: extra 4 name chars, so total = 4 + 3 = 7 tokens)
+        HumanMessage(content="Hello", name="user"),
+        # 8 chars + 9 role chars -> 5 + 3 = 8 tokens
+        # (with name: extra 9 name chars, so total = 7 + 3 = 10 tokens)
+        AIMessage(content="Hi there", name="assistant"),
+    ]
+    # With names included (default)
+    assert count_tokens_approximately(messages) == 17
+
+    # Without names
+    without_names = count_tokens_approximately(messages, count_name=False)
+    assert without_names == 14
+
+
+def test_count_tokens_approximately_openai_format() -> None:
+    # same as test_count_tokens_approximately_with_names, but in OpenAI format
+    messages = [
+        {"role": "user", "content": "Hello", "name": "user"},
+        {"role": "assistant", "content": "Hi there", "name": "assistant"},
+    ]
+    # With names included (default)
+    assert count_tokens_approximately(messages) == 17
+
+    # Without names
+    without_names = count_tokens_approximately(messages, count_name=False)
+    assert without_names == 14
+
+
+def test_count_tokens_approximately_string_content() -> None:
+    messages = [
+        # 5 chars + 4 role chars -> 3 + 3 = 6 tokens
+        HumanMessage(content="Hello"),
+        # 8 chars + 9 role chars -> 5 + 3 = 8 tokens
+        AIMessage(content="Hi there"),
+        # 12 chars + 4 role chars -> 4 + 3 = 7 tokens
+        HumanMessage(content="How are you?"),
+    ]
+    assert count_tokens_approximately(messages) == 21
+
+
+def test_count_tokens_approximately_list_content() -> None:
+    messages = [
+        # '[{"foo": "bar"}]' -> 16 chars + 4 role chars -> 5 + 3 = 8 tokens
+        HumanMessage(content=[{"foo": "bar"}]),
+        # '[{"test": 123}]' -> 15 chars + 9 role chars -> 6 + 3 = 9 tokens
+        AIMessage(content=[{"test": 123}]),
+    ]
+    assert count_tokens_approximately(messages) == 17
+
+
+def test_count_tokens_approximately_tool_calls() -> None:
+    tool_calls = [{"name": "test_tool", "args": {"foo": "bar"}, "id": "1"}]
+    messages = [
+        # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
+        AIMessage(content="", tool_calls=tool_calls),
+        # 15 chars + 4 role chars -> 5 + 3 = 8 tokens
+        HumanMessage(content="Regular message"),
+    ]
+    assert count_tokens_approximately(messages) == 33
+    # AI message w/ both content and tool calls
+    # 94 chars + 9 role chars -> 26 + 3 = 29 tokens
+    messages = [
+        AIMessage(content="Regular message", tool_calls=tool_calls),
+    ]
+    assert count_tokens_approximately(messages) == 29
+
+
+def test_count_tokens_approximately_custom_token_length() -> None:
+    messages = [
+        # 11 chars + 4 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3
+        HumanMessage(content="Hello world"),
+        # 7 chars + 9 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3
+        AIMessage(content="Testing"),
+    ]
+    assert count_tokens_approximately(messages, chars_per_token=4) == 14
+    assert count_tokens_approximately(messages, chars_per_token=2) == 22
+
+
+def test_count_tokens_approximately_large_message_content() -> None:
+    # Test with large content to ensure no issues
+    large_text = "x" * 10000
+    messages = [HumanMessage(content=large_text)]
+    # 10,000 chars + 4 role chars -> 2501 + 3 = 2504 tokens
+    assert count_tokens_approximately(messages) == 2504
+
+
+def test_count_tokens_approximately_large_number_of_messages() -> None:
+    # Test with large content to ensure no issues
+    messages = [HumanMessage(content="x")] * 1_000
+    # 1 chars + 4 role chars -> 2 + 3 = 5 tokens
+    assert count_tokens_approximately(messages) == 5_000
+
+
+def test_count_tokens_approximately_mixed_content_types() -> None:
+    # Test with a variety of content types in the same message list
+    tool_calls = [{"name": "test_tool", "args": {"foo": "bar"}, "id": "1"}]
+    messages = [
+        # 13 chars + 6 role chars -> 5 + 3 = 8 tokens
+        SystemMessage(content="System prompt"),
+        # '[{"foo": "bar"}]' -> 16 chars + 4 role chars -> 5 + 3 = 8 tokens
+        HumanMessage(content=[{"foo": "bar"}]),
+        # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
+        AIMessage(content="", tool_calls=tool_calls),
+        # 13 chars + 4 role chars + 9 name chars + 1 tool call ID char ->
+        # 7 + 3 = 10 tokens
+        ToolMessage(content="Tool response", name="test_tool", tool_call_id="1"),
+    ]
+    token_count = count_tokens_approximately(messages)
+    assert token_count == 51
+
+    # Ensure that count is consistent if we do one message at a time
+    assert sum(count_tokens_approximately([m]) for m in messages) == token_count
