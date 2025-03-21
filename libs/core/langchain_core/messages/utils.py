@@ -1237,6 +1237,16 @@ def _first_max_tokens(
     if not messages:
         return messages
 
+    # Check if all messages already fit within token limit
+    if token_counter(messages) <= max_tokens:
+        # When all messages fit, only apply end_on filtering if needed
+        if end_on:
+            idx = len(messages)
+            while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
+                idx -= 1
+            return messages[:idx]
+        return messages
+
     # Use binary search to find the maximum number of messages within token limit
     left, right = 0, len(messages)
     while left < right:
