@@ -453,6 +453,110 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
     return count
 
 
+def test_trim_messages_partial_text_splitting() -> None:
+    messages = [HumanMessage(content="This is a long message that needs trimming")]
+
+    def count_characters(msgs: list[BaseMessage]) -> int:
+        return sum(len(m.content) if isinstance(m.content, str) else 0 for m in msgs)
+
+    # Return individual characters to test text splitting
+    def char_splitter(text: str) -> list[str]:
+        return list(text)
+
+    result = trim_messages(
+        messages,
+        max_tokens=10,  # Only allow 10 characters
+        token_counter=count_characters,
+        strategy="first",
+        allow_partial=True,
+        text_splitter=char_splitter,
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "This is a "  # First 10 characters
+
+
+def test_trim_messages_mixed_content_with_partial() -> None:
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "First part of text."},
+                {"type": "text", "text": "Second part that should be trimmed."},
+            ]
+        )
+    ]
+
+    # Count total length of all text parts
+    def count_text_length(msgs: list[BaseMessage]) -> int:
+        total = 0
+        for msg in msgs:
+            if isinstance(msg.content, list):
+                for block in msg.content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        total += len(block["text"])
+            elif isinstance(msg.content, str):
+                total += len(msg.content)
+        return total
+
+    result = trim_messages(
+        messages,
+        max_tokens=20,  # Only allow first text block
+        token_counter=count_text_length,
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert len(result) == 1
+    assert len(result[0].content) == 1
+    assert result[0].content[0]["text"] == "First part of text."
+
+
+def test_trim_messages_exact_token_boundary() -> None:
+    messages = [
+        SystemMessage(content="10 tokens exactly."),
+        HumanMessage(content="Another 10 tokens."),
+    ]
+
+    # First message only
+    result1 = trim_messages(
+        messages,
+        max_tokens=10,  # Exactly the size of first message
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result1) == 1
+    assert result1[0].content == "10 tokens exactly."
+
+    # Both messages exactly fit
+    result2 = trim_messages(
+        messages,
+        max_tokens=20,  # Exactly the size of both messages
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result2) == 2
+
+
+def test_trim_messages_start_on_with_allow_partial() -> None:
+    messages = [
+        HumanMessage(content="First human message"),
+        AIMessage(content="AI response"),
+        HumanMessage(content="Second human message"),
+    ]
+
+    result = trim_messages(
+        messages,
+        max_tokens=20,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        allow_partial=True,
+        start_on="human",
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "Second human message"
+
+
 class FakeTokenCountingModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,

@@ -23,3 +23,7 @@ class TestChatOllama(ChatModelIntegrationTests):
     @property
     def supports_json_mode(self) -> bool:
         return True
+
+    @property
+    def has_tool_choice(self) -> bool:
+        return False
