@@ -4,10 +4,12 @@ You will need FIREWORKS_API_KEY set in your environment to run these tests.
 """
 
 import json
-from typing import Optional
+from typing import Any, Literal, Optional
 
+import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated, TypedDict
 
 from langchain_fireworks import ChatFireworks
 
@@ -161,3 +163,54 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+
+def _get_joke_class(
+    schema_type: Literal["pydantic", "typeddict", "json_schema"],
+) -> Any:
+    class Joke(BaseModel):
+        """Joke to tell user."""
+
+        setup: str = Field(description="question to set up a joke")
+        punchline: str = Field(description="answer to resolve the joke")
+
+    def validate_joke(result: Any) -> bool:
+        return isinstance(result, Joke)
+
+    class JokeDict(TypedDict):
+        """Joke to tell user."""
+
+        setup: Annotated[str, ..., "question to set up a joke"]
+        punchline: Annotated[str, ..., "answer to resolve the joke"]
+
+    def validate_joke_dict(result: Any) -> bool:
+        return all(key in ["setup", "punchline"] for key in result.keys())
+
+    if schema_type == "pydantic":
+        return Joke, validate_joke
+
+    elif schema_type == "typeddict":
+        return JokeDict, validate_joke_dict
+
+    elif schema_type == "json_schema":
+        return Joke.model_json_schema(), validate_joke_dict
+    else:
+        raise ValueError("Invalid schema type")
+
+
+@pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
+def test_structured_output_json_schema(schema_type: str) -> None:
+    llm = ChatFireworks(model="accounts/fireworks/models/llama-v3p1-70b-instruct")
+    schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
+    chat = llm.with_structured_output(schema, method="json_schema")
+
+    # Test invoke
+    result = chat.invoke("Tell me a joke about cats.")
+    validation_function(result)
+
+    # Test stream
+    chunks = []
+    for chunk in chat.stream("Tell me a joke about cats."):
+        validation_function(chunk)
+        chunks.append(chunk)
+    assert chunk
