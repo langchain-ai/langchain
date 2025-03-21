@@ -1,11 +1,11 @@
 """Chain that combines documents by stuffing into context."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.language_models import LanguageModelLike
+from langchain_core.language_models import LanguageModelInput, LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.runnables import Runnable, RunnablePassthrough
@@ -23,10 +23,12 @@ from langchain.chains.llm import LLMChain
 
 def create_stuff_documents_chain(
     llm: LanguageModelLike,
-    prompt: BasePromptTemplate,
+    prompt: Runnable[dict, LanguageModelInput],
     *,
     output_parser: Optional[BaseOutputParser] = None,
-    document_prompt: Optional[BasePromptTemplate] = None,
+    document_prompt: Optional[
+        Union[BasePromptTemplate, Runnable[Document, str]]
+    ] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     document_variable_name: str = DOCUMENTS_KEY,
 ) -> Runnable[Dict[str, Any], Any]:
@@ -36,6 +38,8 @@ def create_stuff_documents_chain(
         llm: Language model.
         prompt: Prompt template. Must contain input variable "context" (override by
             setting document_variable), which will be used for passing in the formatted documents.
+            Can also be a Runnable that takes a dictionary with the "context" key and returns
+            a valid language model input.
         output_parser: Output parser. Defaults to StrOutputParser.
         document_prompt: Prompt used for formatting each document into a string. Input
             variables can be "page_content" or any metadata keys that are in all
@@ -43,6 +47,7 @@ def create_stuff_documents_chain(
             `Document.page_content`, and all other inputs variables will be
             automatically retrieved from the `Document.metadata` dictionary. Default to
             a prompt that only contains `Document.page_content`.
+            Can also
         document_separator: String separator to use between formatted document strings.
         document_variable_name: Variable name to use for the formatted documents in the prompt.
             Defaults to "context".
@@ -83,6 +88,8 @@ def create_stuff_documents_chain(
     def format_docs(inputs: dict) -> str:
         return document_separator.join(
             format_document(doc, _document_prompt)
+            if isinstance(_document_prompt, BasePromptTemplate)
+            else _document_prompt.invoke(doc)
             for doc in inputs[document_variable_name]
         )
 
