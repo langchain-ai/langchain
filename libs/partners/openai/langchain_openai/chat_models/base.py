@@ -2942,6 +2942,28 @@ def _construct_responses_api_payload(
     return payload
 
 
+def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
+    computer_call_output: dict = {
+        "call_id": message.tool_call_id,
+        "type": "computer_call_output",
+    }
+    if isinstance(message.content, list):
+        # Use first input_image block
+        output = next(
+            block
+            for block in message.content
+            if cast(dict, block)["type"] == "input_image"
+        )
+    else:
+        # string, assume image_url
+        output = {
+            "type": "input_image",
+            "image_url": message.content,
+        }
+    computer_call_output["output"] = output
+    return computer_call_output
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     input_ = []
     for lc_msg in messages:
@@ -2951,15 +2973,26 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             msg.pop("name")
         if msg["role"] == "tool":
             tool_output = msg["content"]
-            if not isinstance(tool_output, str):
-                tool_output = _stringify(tool_output)
-            function_call_output = {
-                "type": "function_call_output",
-                "output": tool_output,
-                "call_id": msg["tool_call_id"],
-            }
-            input_.append(function_call_output)
+            if lc_msg.additional_kwargs.get("type") == "computer_call_output":
+                computer_call_output = _make_computer_call_output_from_message(
+                    cast(ToolMessage, lc_msg)
+                )
+                input_.append(computer_call_output)
+            else:
+                if not isinstance(tool_output, str):
+                    tool_output = _stringify(tool_output)
+                function_call_output = {
+                    "type": "function_call_output",
+                    "output": tool_output,
+                    "call_id": msg["tool_call_id"],
+                }
+                input_.append(function_call_output)
         elif msg["role"] == "assistant":
+            # Reasoning items
+            reasoning_items = []
+            if reasoning := lc_msg.additional_kwargs.get("reasoning"):
+                reasoning_items.append(reasoning)
+            # Function calls
             function_calls = []
             if tool_calls := msg.pop("tool_calls", None):
                 # TODO: should you be able to preserve the function call object id on
@@ -2979,7 +3012,12 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     ):
                         function_call["id"] = _id
                     function_calls.append(function_call)
-
+            # Computer calls
+            computer_calls = []
+            tool_outputs = lc_msg.additional_kwargs.get("tool_outputs", [])
+            for tool_output in tool_outputs:
+                if tool_output.get("type") == "computer_call":
+                    computer_calls.append(tool_output)
             msg["content"] = msg.get("content") or []
             if lc_msg.additional_kwargs.get("refusal"):
                 if isinstance(msg["content"], str):
@@ -3013,7 +3051,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 msg["content"] = new_blocks
             if msg["content"]:
                 input_.append(msg)
+            input_.extend(reasoning_items)
             input_.extend(function_calls)
+            input_.extend(computer_calls)
         elif msg["role"] == "user":
             if isinstance(msg["content"], list):
                 new_blocks = []
