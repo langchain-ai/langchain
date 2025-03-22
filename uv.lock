@@ -2153,7 +2153,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.20"
+version = "0.3.21"
 source = { editable = "libs/langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2171,6 +2171,7 @@ requires-dist = [
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
+    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-cohere", marker = "extra == 'cohere'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "libs/core" },
@@ -2192,7 +2193,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -2261,7 +2262,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.9"
+version = "0.3.10"
 source = { editable = "libs/partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2271,7 +2272,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.47.0,<1" },
+    { name = "anthropic", specifier = ">=0.49.0,<1" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
@@ -2362,7 +2363,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.19"
+version = "0.3.20"
 source = { editable = "libs/community" }
 dependencies = [
     { name = "aiohttp" },
@@ -2451,7 +2452,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.43"
+version = "0.3.46"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2574,7 +2575,7 @@ dependencies = [
 
 [[package]]
 name = "langchain-groq"
-version = "0.2.5"
+version = "0.3.0"
 source = { editable = "libs/partners/groq" }
 dependencies = [
     { name = "groq" },
@@ -2607,7 +2608,7 @@ typing = [
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.7"
+version = "0.2.8"
 source = { editable = "libs/partners/mistralai" }
 dependencies = [
     { name = "httpx" },
@@ -2733,7 +2734,7 @@ typing = []
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.8"
+version = "0.3.9"
 source = { editable = "libs/partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2744,7 +2745,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "libs/core" },
-    { name = "openai", specifier = ">=1.66.0,<2.0.0" },
+    { name = "openai", specifier = ">=1.66.3,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
@@ -2781,7 +2782,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "libs/text-splitters" }
 dependencies = [
     { name = "langchain-core" },
@@ -3631,7 +3632,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.66.2"
+version = "1.67.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -3643,9 +3644,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/e1/b3e1fda1aa32d4f40d4de744e91de4de65c854c3e53c63342e4b5f9c5995/openai-1.66.2.tar.gz", hash = "sha256:9b3a843c25f81ee09b6469d483d9fba779d5c6ea41861180772f043481b0598d", size = 397041 }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/63/6fd027fa4cb7c3b6bee4c3150f44803b3a7e4335f0b6e49e83a0c51c321b/openai-1.67.0.tar.gz", hash = "sha256:3b386a866396daa4bf80e05a891c50a7746ecd7863b8a27423b62136e3b8f6bc", size = 403596 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2c/6f/3315b3583ffe3e31c55b446cb22d2a7c235e65ca191674fffae62deb3c11/openai-1.66.2-py3-none-any.whl", hash = "sha256:75194057ee6bb8b732526387b6041327a05656d976fc21c064e21c8ac6b07999", size = 567268 },
+    { url = "https://files.pythonhosted.org/packages/42/de/b42ddabe211411645105ae99ad93f4f3984f53be7ced2ad441378c27f62e/openai-1.67.0-py3-none-any.whl", hash = "sha256:dbbb144f38739fc0e1d951bc67864647fca0b9ffa05aef6b70eeea9f71d79663", size = 580168 },
 ]
 
 [[package]]
