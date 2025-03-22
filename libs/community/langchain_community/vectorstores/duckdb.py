@@ -1,7 +1,6 @@
 # mypy: disable-error-code=func-returns-value
 from __future__ import annotations
 
-import importlib
 import json
 import logging
 import uuid
@@ -99,13 +98,6 @@ class DuckDB(VectorStore):
             raise ImportError(
                 "Could not import duckdb package. "
                 "Please install it with `pip install duckdb`."
-            )
-
-        pandas_path = importlib.util.find_spec("pandas")
-        if pandas_path is None:
-            raise ImportError(
-                "Using DuckDB as a vector store currently relies on using Pandas."
-                "\nPlease install it with `pip install pandas`."
             )
 
         self.duckdb = duckdb
@@ -218,6 +210,11 @@ class DuckDB(VectorStore):
         Returns:
             A list of Documents most similar to the query.
         """
+        try:
+            import pandas as pandas
+        except ImportError:
+            warnings.warn("You may need to `pip install pandas` to use this method.")
+
         embedding = self._embedding.embed_query(query)  # type: ignore
         list_cosine_similarity = self.duckdb.FunctionExpression(
             "list_cosine_similarity",
