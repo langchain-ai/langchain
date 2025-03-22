@@ -1,6 +1,7 @@
 # mypy: disable-error-code=func-returns-value
 from __future__ import annotations
 
+import importlib
 import json
 import logging
 import uuid
@@ -100,11 +101,10 @@ class DuckDB(VectorStore):
                 "Please install it with `pip install duckdb`."
             )
 
-        try:
-            import pandas
-        except ImportError:
+        pandas_path = importlib.util.find_spec('pandas')
+        if pandas_path is None:
             raise ImportError(
-                "Using DuckDB as a vector store currently relies on using Pandas for similarity searches. "
+                "Using DuckDB as a vector store currently relies on using Pandas."
                 "\nPlease install it with `pip install pandas`."
             )
 
