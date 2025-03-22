@@ -1,0 +1,51 @@
+# NAVER
+
+All functionality related to Naver tools and services integrated with LangChain.
+
+> [Naver](https://navercorp.com/) is a global technology company based in South Korea, offering various services including search, commerce, fintech, content, cloud, and AI.
+
+> **Note**: `langchain-naver-community` is an unofficial, community-maintained package and is not officially supported by Naver or LangChain. It provides integration with Naver services through their public APIs.
+
+## Installation and Setup
+
+```bash
+pip install -U langchain-naver-community
+```
+
+## Tools
+
+### Naver Search
+
+The Naver Search integration allows your LangChain applications to retrieve information from Naver's search engine. This is particularly useful for Korean language queries and getting up-to-date information about Korean topics.
+
+To use the Naver Search tools, you need to:
+
+1. Sign in to the [Naver Developers portal](https://developers.naver.com/main/)
+2. Create a new application and enable the Search API
+3. Obtain your **NAVER_CLIENT_ID** and **NAVER_CLIENT_SECRET** from the "Application List" section
+4. Set these as environment variables in your application
+
+```python
+from langchain_naver_community.tool import NaverSearchResults
+from langchain_naver_community.utils import NaverSearchAPIWrapper
+
+# Set up the search wrapper
+search = NaverSearchAPIWrapper()
+
+# Create a tool
+tool = NaverSearchResults(api_wrapper=search)
+```
+
+See a [usage example](/docs/integrations/tools/naver_search) for more details.
+
+### Specialized Search Tools
+
+The package also provides specialized search tools for different types of content:
+
+```python
+from langchain_naver_community.tool import NaverNewsSearch  # For news articles
+from langchain_naver_community.tool import NaverBlogSearch  # For blog posts
+from langchain_naver_community.tool import NaverImageSearch  # For images
+```
+
+Each of these can be used within LangChain agents to provide more targeted search capabilities.
