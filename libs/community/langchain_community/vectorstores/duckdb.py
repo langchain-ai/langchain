@@ -101,7 +101,7 @@ class DuckDB(VectorStore):
                 "Please install it with `pip install duckdb`."
             )
 
-        pandas_path = importlib.util.find_spec('pandas')
+        pandas_path = importlib.util.find_spec("pandas")
         if pandas_path is None:
             raise ImportError(
                 "Using DuckDB as a vector store currently relies on using Pandas."
