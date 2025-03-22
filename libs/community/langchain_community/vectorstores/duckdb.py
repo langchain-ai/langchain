@@ -99,6 +99,15 @@ class DuckDB(VectorStore):
                 "Could not import duckdb package. "
                 "Please install it with `pip install duckdb`."
             )
+
+        try:
+            import pandas
+        except ImportError:
+            raise ImportError(
+                "Using DuckDB as a vector store currently relies on using Pandas for similarity searches. "
+                "\nPlease install it with `pip install pandas`."
+            )
+
         self.duckdb = duckdb
         self._embedding = embedding
         self._vector_key = vector_key
