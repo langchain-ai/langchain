@@ -40,7 +40,7 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
 def test_reasoning_content() -> None:
     """Test reasoning content."""
     chat_model = ChatDeepSeek(model="deepseek-reasoner")
-    response = chat_model.invoke("What is the square root of 256256?")
+    response = chat_model.invoke("What is 3^3?")
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
     raise ValueError()
@@ -50,7 +50,7 @@ def test_reasoning_content() -> None:
 def test_reasoning_content_streaming() -> None:
     chat_model = ChatDeepSeek(model="deepseek-reasoner")
     full: Optional[BaseMessageChunk] = None
-    for chunk in chat_model.stream("What is the square root of 256256?"):
+    for chunk in chat_model.stream("What is 3^3?"):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]

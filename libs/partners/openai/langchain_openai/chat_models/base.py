@@ -1566,7 +1566,7 @@ class BaseChatOpenAI(BaseChatModel):
                 parallel_tool_calls=False,
                 strict=strict,
                 ls_structured_output_format={
-                    "kwargs": {"method": method},
+                    "kwargs": {"method": method, "strict": strict},
                     "schema": schema,
                 },
             )
@@ -1604,7 +1604,7 @@ class BaseChatOpenAI(BaseChatModel):
             llm = self.bind(
                 response_format=response_format,
                 ls_structured_output_format={
-                    "kwargs": {"method": method},
+                    "kwargs": {"method": method, "strict": strict},
                     "schema": convert_to_openai_tool(schema),
                 },
             )
