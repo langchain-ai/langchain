@@ -134,6 +134,8 @@ def _convert_delta_to_message_chunk(
     content = _dict.get("content") or ""
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
+    elif _dict.get("reasoning_content"):
+        additional_kwargs = {"reasoning_content": _dict["reasoning_content"]}
     else:
         additional_kwargs = {}
 
