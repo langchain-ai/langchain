@@ -535,3 +535,28 @@ def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
     )
     graph = sequence.get_graph()
     assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid")
+
+
+def test_graph_mermaid_frontmatter_config(snapshot: SnapshotAssertion) -> None:
+    graph = Graph(
+        nodes={
+            "__start__": Node(
+                id="__start__", name="__start__", data=BaseModel, metadata=None
+            ),
+            "my_node": Node(
+                id="my_node", name="my_node", data=BaseModel, metadata=None
+            ),
+        },
+        edges=[
+            Edge(source="__start__", target="my_node", data=None, conditional=False)
+        ],
+    )
+    assert graph.draw_mermaid(
+        frontmatter_config={
+            "config": {
+                "theme": "neutral",
+                "look": "handDrawn",
+                "themeVariables": {"primaryColor": "#e2e2e2"},
+            }
+        }
+    ) == snapshot(name="mermaid")
