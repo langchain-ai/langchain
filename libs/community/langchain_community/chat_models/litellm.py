@@ -253,6 +253,7 @@ class ChatLiteLLM(BaseChatModel):
     replicate_api_key: Optional[str] = None
     cohere_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
+    apipie_api_key: Optional[str] = None
     api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
@@ -309,6 +310,7 @@ class ChatLiteLLM(BaseChatModel):
             "replicate_api_key",
             "cohere_api_key",
             "openrouter_api_key",
+            "apipie_api_key",
         ]:
             if api_key_value := getattr(self, named_api_key):
                 setattr(
@@ -362,6 +364,9 @@ class ChatLiteLLM(BaseChatModel):
         values["openrouter_api_key"] = get_from_dict_or_env(
             values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
         )
+        values["apipie_api_key"] = get_from_dict_or_env(
+            values, "apipie_api_key", "APIPIE_API_KEY", default=""
+        )        
         values["cohere_api_key"] = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY", default=""
         )
