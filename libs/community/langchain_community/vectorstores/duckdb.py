@@ -205,7 +205,8 @@ class DuckDB(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Performs a similarity search for a given query string.
-        Requires pandas to be installed. This was the previously executed method for similarity search.
+        Requires pandas to be installed.
+        This was the previously executed method for similarity search.
 
         Args:
             query: The query string to search for.
