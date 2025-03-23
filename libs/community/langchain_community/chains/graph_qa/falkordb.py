@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Any, Dict, List, Optional
+from falkordb.node import Node
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -164,7 +165,12 @@ class FalkorDBQAChain(Chain):
         intermediate_steps.append({"query": generated_cypher})
 
         # Retrieve and limit the number of results
-        context = self.graph.query(generated_cypher)[: self.top_k]
+        context_list = self.graph.query(generated_cypher)[: self.top_k]
+        # If the context is a list of nodes (object), extract the properties
+        context = [
+                [r.properties if isinstance(r, Node) else r for r in sublist] 
+                for sublist in context_list
+            ]
 
         if self.return_direct:
             final_result = context
