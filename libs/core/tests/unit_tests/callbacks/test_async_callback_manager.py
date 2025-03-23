@@ -195,7 +195,7 @@ async def test_base_run_manager_asdict() -> None:
 
 async def test_callback_manager_json_serialization() -> None:
     """Test that AsyncCallbackManagerForToolRun can be properly JSON serialized."""
-    # Setup callback manager 
+    # Setup callback manager
     run_id = uuid4()
     manager = AsyncCallbackManagerForToolRun(
         run_id=run_id,
@@ -232,7 +232,8 @@ async def test_callback_manager_json_serialization() -> None:
 
 
 def test_callback_manager_pickle_serialization() -> None:
-    """Test callback managers can be pickled for msgpack serialization in checkpoints."""
+    """Test callback managers can be
+    pickled for msgpack serialization in checkpoints."""
     # Setup manager
     run_id = uuid4()
     manager = CallbackManagerForToolRun(

@@ -2668,7 +2668,6 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
     }
 
 
-
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
