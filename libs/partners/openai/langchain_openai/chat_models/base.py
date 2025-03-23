@@ -2640,7 +2640,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 # Resolve the issue of RunManager's inability to serialize
-def _lc_tool_call_to_openai_tool_call_encoder(obj) -> Any:
+def _lc_tool_call_to_openai_tool_call_encoder(obj: Any) -> Any:
     try:
         if hasattr(obj, "dict") and callable(obj.dict):
             return obj.dict()
