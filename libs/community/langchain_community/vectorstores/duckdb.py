@@ -236,7 +236,7 @@ class DuckDB(VectorStore):
             .limit(k)
             .fetchdf()
         )
-        return_value = [
+        return [
             Document(
                 page_content=docs[self._text_key][idx],
                 metadata={
@@ -249,7 +249,6 @@ class DuckDB(VectorStore):
             )
             for idx in range(len(docs))
         ]
-        return return_value
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -282,7 +281,7 @@ class DuckDB(VectorStore):
             .limit(k)
             .fetchall()
         )
-        return_value = [
+        return [
             Document(
                 page_content=docs[idx][DUCKDB_FETCHALL_PAGE_CONTENT_INDEX],
                 metadata={
@@ -297,7 +296,6 @@ class DuckDB(VectorStore):
             )
             for idx in range(len(docs))
         ]
-        return return_value
 
     @classmethod
     def from_texts(
