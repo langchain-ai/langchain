@@ -118,7 +118,7 @@ if TYPE_CHECKING:
         JavelinAIGatewayEmbeddings,
     )
     from langchain_community.embeddings.jina import (
-        JinaEmbeddings,
+        JinaEmbeddings, JinaLateChunkEmbeddings
     )
     from langchain_community.embeddings.johnsnowlabs import (
         JohnSnowLabsEmbeddings,
@@ -285,6 +285,7 @@ __all__ = [
     "IpexLLMBgeEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "JinaEmbeddings",
+    "JinaLateChunkEmbeddings",
     "JohnSnowLabsEmbeddings",
     "LLMRailsEmbeddings",
     "LaserEmbeddings",
@@ -370,6 +371,7 @@ _module_lookup = {
     "IpexLLMBgeEmbeddings": "langchain_community.embeddings.ipex_llm",
     "JavelinAIGatewayEmbeddings": "langchain_community.embeddings.javelin_ai_gateway",
     "JinaEmbeddings": "langchain_community.embeddings.jina",
+    "JinaLateChunkEmbeddings": "langchain_community.embeddings.jina",
     "JohnSnowLabsEmbeddings": "langchain_community.embeddings.johnsnowlabs",
     "LLMRailsEmbeddings": "langchain_community.embeddings.llm_rails",
     "LaserEmbeddings": "langchain_community.embeddings.laser",

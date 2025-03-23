@@ -1,4 +1,5 @@
 import base64
+import json
 from os.path import exists
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -122,3 +123,59 @@ class JinaEmbeddings(BaseModel, Embeddings):
             else:
                 input.append({"url": uri})
         return self._embed(input)
+
+class JinaLateChunkEmbeddings(JinaEmbeddings):
+    session: Any  #: :meta private:
+    model_name: str = "jina-embeddings-v3"
+    jina_api_key: Optional[SecretStr] = None
+
+    model_config = ConfigDict(protected_namespaces=())
+    
+    dimensions: int = 1024
+    embedding_type: float = "float"
+    
+    def _embed(self, input: Any, task, late_chunking) -> List[List[float]]:
+        # Call Jina AI Embedding API
+        data = {
+            "input": input,
+            "model": self.model_name,
+            "late_chunking": late_chunking,
+            "dimensions": self.dimensions,
+            "task": task,
+            "embedding_type": self.embedding_type
+        }
+    
+        resp = self.session.post(  # type: ignore
+            JINA_API_URL, data=json.dumps(data)
+        ).json()
+        
+        if "data" not in resp:
+            raise RuntimeError(resp["detail"])
+
+        embeddings = resp["data"]
+
+        return [result["embedding"] for result in embeddings]
+    
+    def embed_documents(self, texts: List[str], task="retrieval.passage", late_chunking=True) -> List[List[float]]:
+        """Call out to Jina's embedding endpoint.
+        Args:
+            texts: The list of texts to embed.
+            task: Task-Specific Embedding. `retrieval.passage` Used for passage embeddings in asymmetric retrieval tasks
+            late_chunking: Apply latechunking or not. Default: True
+        Returns:
+            List of embeddings, one for each text.
+        """
+   
+        return self._embed(texts, task=task, late_chunking=late_chunking)
+
+    def embed_query(self, text: str, task="retrieval.query", late_chunking=False) -> List[float]:
+        """Call out to Jina's embedding endpoint.
+        Args:
+            text: The text to embed.
+            task: Task-Specific Embedding. `retrieval.query' Used for query embeddings in asymmetric retrieval tasks
+            late_chunking: Apply latechunking or not. Default: False
+        Returns:
+            Embeddings for the text.
+        """
+      
+        return self._embed([text], task=task, late_chunking=late_chunking)[0]
