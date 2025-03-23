@@ -2651,7 +2651,7 @@ def _lc_tool_call_to_openai_tool_call_encoder(obj):
             return str(obj)
     except Exception:
         # if failed, return None
-        return None 
+        return None
 
 
 def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
@@ -2662,8 +2662,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
             "name": tool_call["name"],
             # "arguments": json.dumps(tool_call["args"]),
             "arguments": json.dumps(
-                tool_call["args"],
-                default=_lc_tool_call_to_openai_tool_call_encoder,
+                tool_call["args"], default=_lc_tool_call_to_openai_tool_call_encoder
             ),
         },
     }

@@ -505,7 +505,7 @@ class BaseRunManager(RunManagerMixin):
             "parent_run_id": str(self.parent_run_id) if self.parent_run_id else None,
             "tags": self.tags.copy() if self.tags else [],
             "metadata": {k: v for k, v in self.metadata.items()
-                        if isinstance(v, (str, int, float, bool, 
+                        if isinstance(v, (str, int, float, bool,
                                           type(None), list, dict))},
             "type": self.__class__.__name__,
             # Exclude complex handler objects and only retain their quantity information

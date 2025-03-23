@@ -6,14 +6,21 @@ via snapshot testing (e.g., see unit tests for runnables).
 """
 
 import contextvars
+import json
+import pickle
 from contextlib import asynccontextmanager
 from typing import Any, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
+
+import pytest
 
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
+    AsyncCallbackManagerForToolRun,
     BaseCallbackHandler,
+    BaseRunManager,
+    CallbackManagerForToolRun,
 )
 
 
@@ -146,3 +153,122 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
             3,
             3,
         ], f"Expected order of states was broken due to context loss. Got {states}"
+
+
+# Serialization Tests
+
+async def test_base_run_manager_asdict() -> None:
+    """Test that BaseRunManager._asdict() returns a properly serializable dictionary."""
+    # Setup a manager with various types of metadata
+    run_id = uuid4()
+    parent_run_id = uuid4()
+    tags = ["test", "serialization"]
+    metadata = {"simple": "value", "number": 42, "complex_obj": object()}
+
+    manager = BaseRunManager(
+        run_id=run_id,
+        parent_run_id=parent_run_id,
+        tags=tags,
+        metadata=metadata,
+    )
+
+    # Get dictionary representation
+    result = manager._asdict()
+
+    # Verify all essential properties are included
+    assert isinstance(result, dict)
+    assert result["run_id"] == str(run_id)
+    assert result["parent_run_id"] == str(parent_run_id)
+    assert result["tags"] == tags
+    assert "simple" in result["metadata"]
+    assert result["metadata"]["simple"] == "value"
+    assert result["metadata"]["number"] == 42
+    # Complex objects should be filtered out
+    assert "complex_obj" not in result["metadata"]
+
+    # Should be JSON serializable
+    serialized = json.dumps(result)
+    assert isinstance(serialized, str)
+
+
+async def test_callback_manager_json_serialization() -> None:
+    """Test that AsyncCallbackManagerForToolRun can be properly JSON serialized."""
+    # Setup callback manager 
+    run_id = uuid4()
+    manager = AsyncCallbackManagerForToolRun(
+        run_id=run_id,
+        parent_run_id=None,
+        tags=["tool_test"],
+        metadata={"tool": "test_tool"},
+    )
+
+    # Create tool arguments with the callback manager included
+    tool_args = {
+        "query": "test query",
+        "run_manager": manager,
+        "callbacks": manager.get_child()
+    }
+
+    # Test JSON serialization
+    try:
+        serialized = json.dumps(
+            tool_args,
+            default=lambda obj: obj._asdict() if hasattr(obj, "_asdict") else str(obj)
+        )
+        # Successful serialization
+        deserialized = json.loads(serialized)
+
+        # Verify contents were preserved
+        assert "run_manager" in deserialized
+        assert deserialized["run_manager"]["run_id"] == str(run_id)
+        assert "tool_test" in deserialized["run_manager"]["tags"]
+        assert deserialized["run_manager"]["metadata"]["tool"] == "test_tool"
+    except (TypeError, ValueError) as e:
+        pytest.fail(f"JSON serialization failed: {e}")
+
+
+def test_callback_manager_pickle_serialization() -> None:
+    """Test callback managers can be pickled for msgpack serialization in checkpoints."""
+    # Setup manager
+    run_id = uuid4()
+    manager = CallbackManagerForToolRun(
+        run_id=run_id,
+        tags=["pickle_test"],
+        metadata={"serialization": "pickle"}
+    )
+
+    # Test pickle serialization
+    try:
+        pickled = pickle.dumps(manager)
+        unpickled = pickle.loads(pickled)
+
+        # Verify properties survived
+        assert str(unpickled.run_id) == str(run_id)
+        assert "pickle_test" in unpickled.tags
+        assert unpickled.metadata["serialization"] == "pickle"
+    except (TypeError, ValueError) as e:
+        pytest.fail(f"Pickle serialization failed: {e}")
+
+
+def test_openai_encoder_with_callback_manager() -> None:
+    """Test the _lc_tool_call_to_openai_tool_call_encoder with callback managers."""
+    # Skip if langchain_openai isn't available
+    try:
+        from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call_encoder
+    except ImportError:
+        pytest.skip("langchain_openai not available")
+
+    # Setup manager
+    manager = AsyncCallbackManagerForToolRun(
+        run_id=uuid4(),
+        tags=["encoder_test"],
+    )
+
+    # Test encoding
+    encoded = _lc_tool_call_to_openai_tool_call_encoder(manager)
+
+    # Verify
+    assert isinstance(encoded, dict)
+    assert "run_id" in encoded
+    assert "tags" in encoded
+    assert "encoder_test" in encoded["tags"]
