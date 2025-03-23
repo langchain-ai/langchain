@@ -193,8 +193,8 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
             assert "images" not in chunk.additional_kwargs
     assert isinstance(full, AIMessageChunk)
     assert full.content == "Hello Perplexity"
-    assert full.additional_kwargs == {"citations": ["example.com", "example2.com"]}
     assert full.additional_kwargs == {
+        "citations": ["example.com", "example2.com"],
         "images": [
             {
                 "image_url": "mock_image_url",
@@ -202,7 +202,7 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
                 "height": 100,
                 "width": 100,
             }
-        ]
+        ],
     }
 
     patcher.assert_called_once()
@@ -267,9 +267,9 @@ def test_perplexity_stream_includes_citations_and_related_questions(
             assert "related_questions" not in chunk.additional_kwargs
     assert isinstance(full, AIMessageChunk)
     assert full.content == "Hello Perplexity"
-    assert full.additional_kwargs == {"citations": ["example.com", "example2.com"]}
     assert full.additional_kwargs == {
-        "related_questions": ["example_question_1", "example_question_2"]
+        "citations": ["example.com", "example2.com"],
+        "related_questions": ["example_question_1", "example_question_2"],
     }
 
     patcher.assert_called_once()
