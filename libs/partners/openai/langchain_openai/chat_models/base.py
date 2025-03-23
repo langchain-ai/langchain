@@ -2641,7 +2641,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 # Resolve the issue of RunManager's inability to serialize
 def _lc_tool_call_to_openai_tool_call_encoder(obj):
-    try: 
+    try:
         if hasattr(obj, "dict") and callable(obj.dict):
             return obj.dict()
         if hasattr(obj, "_asdict") and callable(obj._asdict):
@@ -2661,9 +2661,10 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
         "function": {
             "name": tool_call["name"],
             # "arguments": json.dumps(tool_call["args"]),
-            "arguments": json.dumps(tool_call["args"],
-                         default=_lc_tool_call_to_openai_tool_call_encoder, 
-                         indent=4),
+            "arguments": json.dumps(
+                tool_call["args"],
+                default=_lc_tool_call_to_openai_tool_call_encoder,
+            ),
         },
     }
 
