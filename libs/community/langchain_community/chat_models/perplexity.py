@@ -72,23 +72,6 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
 
 
 class ChatPerplexity(BaseChatModel):
-    # """`Perplexity AI` Chat models API.
-
-    # To use, you should have the ``openai`` python package installed, and the
-    # environment variable ``PPLX_API_KEY`` set to your API key.
-    # Any parameters that are valid to be passed to the openai.create call can be passed
-    # in, even if not explicitly saved on this class.
-
-    # Example:
-    #     .. code-block:: python
-
-    #         from langchain_community.chat_models import ChatPerplexity
-
-    #         chat = ChatPerplexity(
-    #             model="llama-3.1-sonar-small-128k-online",
-    #             temperature=0.7,
-    #         )
-    # """
     """ `Perplexity AI` Chat models API.
 
     Setup:
@@ -162,7 +145,7 @@ class ChatPerplexity(BaseChatModel):
             .. code-block:: python
 
                 for chunk in llm.stream(messages):
-                    print(chunk.text)
+                    print(chunk.content)
 
         Token usage:
             .. code-block:: python
