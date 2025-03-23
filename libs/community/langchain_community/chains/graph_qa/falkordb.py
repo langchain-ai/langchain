@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 from typing import Any, Dict, List, Optional
-from falkordb.node import Node
 
+from falkordb.node import Node
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks import CallbackManagerForChainRun
