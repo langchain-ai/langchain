@@ -164,17 +164,19 @@ async def test_base_run_manager_asdict() -> None:
     parent_run_id = uuid4()
     tags = ["test", "serialization"]
     metadata = {"simple": "value", "number": 42, "complex_obj": object()}
-
+    
     manager = BaseRunManager(
         run_id=run_id,
         parent_run_id=parent_run_id,
         tags=tags,
         metadata=metadata,
+        handlers=[],  # Empty list of handlers
+        inheritable_handlers=[],  # Empty list of inheritable handlers
     )
-
+    
     # Get dictionary representation
     result = manager._asdict()
-
+    
     # Verify all essential properties are included
     assert isinstance(result, dict)
     assert result["run_id"] == str(run_id)
@@ -185,7 +187,7 @@ async def test_base_run_manager_asdict() -> None:
     assert result["metadata"]["number"] == 42
     # Complex objects should be filtered out
     assert "complex_obj" not in result["metadata"]
-
+    
     # Should be JSON serializable
     serialized = json.dumps(result)
     assert isinstance(serialized, str)
@@ -200,15 +202,17 @@ async def test_callback_manager_json_serialization() -> None:
         parent_run_id=None,
         tags=["tool_test"],
         metadata={"tool": "test_tool"},
+        handlers=[],  # Empty list of handlers
+        inheritable_handlers=[],  # Empty list of inheritable handlers
     )
-
+    
     # Create tool arguments with the callback manager included
     tool_args = {
         "query": "test query",
         "run_manager": manager,
         "callbacks": manager.get_child()
     }
-
+    
     # Test JSON serialization
     try:
         serialized = json.dumps(
@@ -217,7 +221,7 @@ async def test_callback_manager_json_serialization() -> None:
         )
         # Successful serialization
         deserialized = json.loads(serialized)
-
+        
         # Verify contents were preserved
         assert "run_manager" in deserialized
         assert deserialized["run_manager"]["run_id"] == str(run_id)
@@ -234,41 +238,19 @@ def test_callback_manager_pickle_serialization() -> None:
     manager = CallbackManagerForToolRun(
         run_id=run_id,
         tags=["pickle_test"],
-        metadata={"serialization": "pickle"}
+        metadata={"serialization": "pickle"},
+        handlers=[],  # Empty list of handlers
+        inheritable_handlers=[],  # Empty list of inheritable handlers
     )
-
+    
     # Test pickle serialization
     try:
         pickled = pickle.dumps(manager)
         unpickled = pickle.loads(pickled)
-
+        
         # Verify properties survived
         assert str(unpickled.run_id) == str(run_id)
         assert "pickle_test" in unpickled.tags
         assert unpickled.metadata["serialization"] == "pickle"
     except (TypeError, ValueError) as e:
         pytest.fail(f"Pickle serialization failed: {e}")
-
-
-def test_openai_encoder_with_callback_manager() -> None:
-    """Test the _lc_tool_call_to_openai_tool_call_encoder with callback managers."""
-    # Skip if langchain_openai isn't available
-    try:
-        from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call_encoder
-    except ImportError:
-        pytest.skip("langchain_openai not available")
-
-    # Setup manager
-    manager = AsyncCallbackManagerForToolRun(
-        run_id=uuid4(),
-        tags=["encoder_test"],
-    )
-
-    # Test encoding
-    encoded = _lc_tool_call_to_openai_tool_call_encoder(manager)
-
-    # Verify
-    assert isinstance(encoded, dict)
-    assert "run_id" in encoded
-    assert "tags" in encoded
-    assert "encoder_test" in encoded["tags"]

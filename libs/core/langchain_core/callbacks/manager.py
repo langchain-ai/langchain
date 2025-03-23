@@ -491,6 +491,7 @@ class BaseRunManager(RunManagerMixin):
             metadata={},
             inheritable_metadata={},
         )
+
     def _asdict(self) -> dict[str, Any]:
         """Return a dictionary representation of the run manager.
 
@@ -504,9 +505,11 @@ class BaseRunManager(RunManagerMixin):
             "run_id": str(self.run_id),
             "parent_run_id": str(self.parent_run_id) if self.parent_run_id else None,
             "tags": self.tags.copy() if self.tags else [],
-            "metadata": {k: v for k, v in self.metadata.items()
-                        if isinstance(v, (str, int, float, bool,
-                                          type(None), list, dict))},
+            "metadata": {
+                k: v
+                for k, v in self.metadata.items()
+                if isinstance(v, (str, int, float, bool, type(None), list, dict))
+            },
             "type": self.__class__.__name__,
             # Exclude complex handler objects and only retain their quantity information
             "handlers_count": len(self.handlers),
