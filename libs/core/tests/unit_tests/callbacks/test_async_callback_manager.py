@@ -164,7 +164,7 @@ async def test_base_run_manager_asdict() -> None:
     parent_run_id = uuid4()
     tags = ["test", "serialization"]
     metadata = {"simple": "value", "number": 42, "complex_obj": object()}
-    
+
     manager = BaseRunManager(
         run_id=run_id,
         parent_run_id=parent_run_id,
@@ -173,10 +173,10 @@ async def test_base_run_manager_asdict() -> None:
         handlers=[],  # Empty list of handlers
         inheritable_handlers=[],  # Empty list of inheritable handlers
     )
-    
+
     # Get dictionary representation
     result = manager._asdict()
-    
+
     # Verify all essential properties are included
     assert isinstance(result, dict)
     assert result["run_id"] == str(run_id)
@@ -187,7 +187,7 @@ async def test_base_run_manager_asdict() -> None:
     assert result["metadata"]["number"] == 42
     # Complex objects should be filtered out
     assert "complex_obj" not in result["metadata"]
-    
+
     # Should be JSON serializable
     serialized = json.dumps(result)
     assert isinstance(serialized, str)
@@ -205,14 +205,14 @@ async def test_callback_manager_json_serialization() -> None:
         handlers=[],  # Empty list of handlers
         inheritable_handlers=[],  # Empty list of inheritable handlers
     )
-    
+
     # Create tool arguments with the callback manager included
     tool_args = {
         "query": "test query",
         "run_manager": manager,
         "callbacks": manager.get_child()
     }
-    
+
     # Test JSON serialization
     try:
         serialized = json.dumps(
@@ -221,7 +221,7 @@ async def test_callback_manager_json_serialization() -> None:
         )
         # Successful serialization
         deserialized = json.loads(serialized)
-        
+
         # Verify contents were preserved
         assert "run_manager" in deserialized
         assert deserialized["run_manager"]["run_id"] == str(run_id)
@@ -242,12 +242,12 @@ def test_callback_manager_pickle_serialization() -> None:
         handlers=[],  # Empty list of handlers
         inheritable_handlers=[],  # Empty list of inheritable handlers
     )
-    
+
     # Test pickle serialization
     try:
         pickled = pickle.dumps(manager)
         unpickled = pickle.loads(pickled)
-        
+
         # Verify properties survived
         assert str(unpickled.run_id) == str(run_id)
         assert "pickle_test" in unpickled.tags
