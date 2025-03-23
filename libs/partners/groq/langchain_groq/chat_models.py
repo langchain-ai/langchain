@@ -541,8 +541,7 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
-                if model_name := chunk.get("model"):
-                    generation_info["model_name"] = model_name
+                generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
             logprobs = choice.get("logprobs")
@@ -583,8 +582,7 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
-                if model_name := chunk.get("model"):
-                    generation_info["model_name"] = model_name
+                generation_info["model_name"] = self.model_name
                 if system_fingerprint := chunk.get("system_fingerprint"):
                     generation_info["system_fingerprint"] = system_fingerprint
             logprobs = choice.get("logprobs")
