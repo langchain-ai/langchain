@@ -546,3 +546,8 @@ packages:
   provider_page: zotero
   downloads: 153
   downloads_updated_at: '2025-03-22T21:59:15.663971+00:00'
+- name: langchain-naver-community
+  name_title: Naver
+  provider_page: naver
+  path: .
+  repo: e7217/langchain-naver-community
