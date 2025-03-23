@@ -157,6 +157,7 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
 
 # Serialization Tests
 
+
 async def test_base_run_manager_asdict() -> None:
     """Test that BaseRunManager._asdict() returns a properly serializable dictionary."""
     # Setup a manager with various types of metadata
@@ -210,14 +211,14 @@ async def test_callback_manager_json_serialization() -> None:
     tool_args = {
         "query": "test query",
         "run_manager": manager,
-        "callbacks": manager.get_child()
+        "callbacks": manager.get_child(),
     }
 
     # Test JSON serialization
     try:
         serialized = json.dumps(
             tool_args,
-            default=lambda obj: obj._asdict() if hasattr(obj, "_asdict") else str(obj)
+            default=lambda obj: obj._asdict() if hasattr(obj, "_asdict") else str(obj),
         )
         # Successful serialization
         deserialized = json.loads(serialized)
