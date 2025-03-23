@@ -72,13 +72,13 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
 
 
 class ChatPerplexity(BaseChatModel):
-    """ `Perplexity AI` Chat models API.
+    """`Perplexity AI` Chat models API.
 
     Setup:
         To use, you should have the ``openai`` python package installed, and the
         environment variable ``PPLX_API_KEY`` set to your API key.
-        Any parameters that are valid to be passed to the openai.create call can be passed
-        in, even if not explicitly saved on this class.
+        Any parameters that are valid to be passed to the openai.create call
+        can be passed in, even if not explicitly saved on this class.
 
         .. code-block:: bash
 
@@ -159,7 +159,7 @@ class ChatPerplexity(BaseChatModel):
                 response = llm.invoke(messages)
                 response.response_metadata
 
-    """ # noqa: E501
+    """  # noqa: E501
 
     client: Any = None  #: :meta private:
     model: str = "llama-3.1-sonar-small-128k-online"
