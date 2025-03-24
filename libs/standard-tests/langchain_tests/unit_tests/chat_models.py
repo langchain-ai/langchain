@@ -717,4 +717,9 @@ class ChatModelUnitTests(ChatModelTests):
             with mock.patch.dict(os.environ, env_params):
                 ser = dumpd(model)
                 assert ser == snapshot(name="serialized")
-                assert model.dict() == load(dumpd(model)).dict()
+                assert (
+                    model.dict()
+                    == load(
+                        dumpd(model), valid_namespaces=model.get_lc_namespace()[:1]
+                    ).dict()
+                )
