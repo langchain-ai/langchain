@@ -73,9 +73,13 @@ class ChatSeekrFlow(BaseChatModel):
         ai_content = response.choices[0].message.content
 
         if stop:
-            stop_positions = [ai_content.find(token) for token in stop if token in ai_content]
+            stop_positions = [
+                ai_content.find(token) for token in stop if token in ai_content
+            ]
             if stop_positions:
-                ai_content = ai_content[:min(pos for pos in stop_positions if pos != -1)]
+                ai_content = ai_content[
+                    : min(pos for pos in stop_positions if pos != -1)
+                ]
 
         return AIMessage(content=ai_content)
 
@@ -113,7 +117,11 @@ class ChatSeekrFlow(BaseChatModel):
                     continue
 
                 choice = chunk.choices[0]
-                if hasattr(choice, "delta") and choice.delta and hasattr(choice.delta, "content"):
+                if (
+                    hasattr(choice, "delta")
+                    and choice.delta
+                    and hasattr(choice.delta, "content")
+                ):
                     content = choice.delta.content
                     if content:
                         buffer += content
@@ -143,4 +151,3 @@ class ChatSeekrFlow(BaseChatModel):
         return ChatResult(
             generations=[ChatGeneration(message=response_msg)], llm_output={}
         )
-
