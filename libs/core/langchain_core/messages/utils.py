@@ -685,7 +685,7 @@ def trim_messages(
             Note:
                 Use `count_tokens_approximately` to get fast, approximate token counts.
                 This is recommended for using `trim_messages` on the hot path, where
-                exact token counting is not necessary and the overhead is prohibitive.
+                exact token counting is not necessary.
 
         strategy: Strategy for trimming.
             - "first": Keep the first <= n_count tokens of the messages.
