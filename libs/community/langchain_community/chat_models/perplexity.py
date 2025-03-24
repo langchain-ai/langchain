@@ -290,7 +290,7 @@ class ChatPerplexity(BaseChatModel):
                 chunk.usage_metadata = usage_metadata
 
             if first_chunk:
-                chunk.additional_kwargs = additional_kwargs
+                chunk.additional_kwargs |= additional_kwargs
                 first_chunk = False
 
             finish_reason = choice.get("finish_reason")
