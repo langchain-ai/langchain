@@ -149,7 +149,7 @@ def test_function_calling() -> None:
     assert full.tool_calls[0]["name"] == "multiply"
     assert set(full.tool_calls[0]["args"]) == {"x", "y"}
 
-    response = bound_llm.invoke("whats some good news from today")
+    response = bound_llm.invoke("What was a positive news story from today?")
     _check_response(response)
 
 
