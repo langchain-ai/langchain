@@ -2712,19 +2712,13 @@ class LateChunkQdrant(Qdrant):
 
         Example:
             .. code-block:: python
+                            
                 from langchain_community.vectorstores import LateChunkQdrant
                 from langchain_community.embeddings import JinaLateChunkEmbeddings
                 from langchain_text_splitters import CharacterTextSplitter
                 embeddings = JinaLateChunkEmbeddings()
                 text_splitter = CharacterTextSplitter()
-                qdrant = LateChunkQdrant.from_texts(texts, embeddings, text_splitter, "localhost")
-                
-                from langchain_community.vectorstores import Qdrant
-                from langchain_community.embeddings import JinaLateChunkEmbeddings
-                from langchain_text_splitters import CharacterTextSplitter
-                embeddings = JinaLateChunkEmbeddings()
-                text_splitter = CharacterTextSplitter()
-                qdrant = await Qdrant.afrom_texts(texts, embeddings, text_splitter, "localhost")
+                qdrant = await LateChunkQdrant.afrom_texts(texts, embeddings, text_splitter, "localhost")
         """
         qdrant = await cls.aconstruct_instance(
             texts,
