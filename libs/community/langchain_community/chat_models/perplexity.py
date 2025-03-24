@@ -205,13 +205,11 @@ class ChatPerplexity(BaseChatModel):
         return message_dicts, params
 
     def _convert_delta_to_message_chunk(
-        self,
-        _dict: Mapping[str, Any],
-        default_class: Type[BaseMessageChunk],
-        additional_kwargs: Dict[str, Any] = {},
+        self, _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
     ) -> BaseMessageChunk:
         role = _dict.get("role")
         content = _dict.get("content") or ""
+        additional_kwargs: Dict = {}
         if _dict.get("function_call"):
             function_call = dict(_dict["function_call"])
             if "name" in function_call and function_call["name"] is None:
@@ -283,13 +281,18 @@ class ChatPerplexity(BaseChatModel):
                 for attr in ["images", "related_questions"]:
                     if attr in chunk:
                         additional_kwargs[attr] = chunk[attr]
-                first_chunk = False
 
             chunk = self._convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class, additional_kwargs
+                choice["delta"], default_chunk_class
             )
+
             if isinstance(chunk, AIMessageChunk) and usage_metadata:
                 chunk.usage_metadata = usage_metadata
+
+            if first_chunk:
+                chunk.additional_kwargs = additional_kwargs
+                first_chunk = False
+
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
