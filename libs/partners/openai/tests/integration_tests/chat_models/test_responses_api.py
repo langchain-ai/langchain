@@ -286,10 +286,14 @@ def test_reasoning() -> None:
     assert isinstance(response, AIMessage)
     assert response.additional_kwargs["reasoning"]
 
+    # Test init params + streaming
     llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
-    response = llm.invoke("Hello")
-    assert isinstance(response, AIMessage)
-    assert response.additional_kwargs["reasoning"]
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    assert full.additional_kwargs["reasoning"]
 
 
 def test_stateful_api() -> None:
@@ -302,6 +306,24 @@ def test_stateful_api() -> None:
     )
     assert isinstance(second_response.content, list)
     assert "bobo" in second_response.content[0]["text"].lower()  # type: ignore
+
+
+def test_route_from_model_kwargs() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, model_kwargs={"truncation": "auto"})
+    _ = next(llm.stream("Hello"))
+
+
+def test_computer_calls() -> None:
+    llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
+    tool = {
+        "type": "computer_use_preview",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    llm_with_tools = llm.bind_tools([tool], tool_choice="any")
+    response = llm_with_tools.invoke("Please wait a moment.")
+    assert response.additional_kwargs["tool_outputs"]
 
 
 def test_file_search() -> None:
