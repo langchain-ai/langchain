@@ -49,7 +49,6 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             endpoint=api_endpoint,
             credential=azure_credential or AzureKeyCredential(api_key),
             headers={"x-ms-useragent": "langchain-parser/1.0.0"},
-            features=analysis_features,
             **kwargs,
         )
         self.api_model = api_model
