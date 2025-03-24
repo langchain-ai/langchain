@@ -50,8 +50,7 @@ def test_doc_intelligence_with_analysis_features(
         credential=mock_credential(),
         headers={
             "x-ms-useragent": "langchain-parser/1.0.0",
-        },
-        features=analysis_features,
+        }
     )
     assert parser.client == mock_client()
     assert parser.api_model == "prebuilt-layout"
