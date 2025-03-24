@@ -19,12 +19,10 @@ class ChatSeekrFlow(BaseChatModel):
     with separate methods for single vs. streaming responses.
     """
 
-    # Pydantic fields
-    model_name: str  # Required
-    temperature: Optional[float] = 0.7  # Default to 0.7
-    streaming: bool = False  # Default to False
+    model_name: str
+    temperature: Optional[float] = 0.7
+    streaming: bool = False
 
-    # Private attribute for the SeekrFlow client
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -35,44 +33,23 @@ class ChatSeekrFlow(BaseChatModel):
         streaming: bool = False,
         **kwargs,
     ):
-        """
-        Initialize the SeekrFlow chat model.
-
-        Args:
-            client (Any): SeekrFlow API client.
-            model_name (str): The model name to use (required).
-            temperature (float, optional): Sampling temperature (default: 0.7).
-            streaming (bool, optional): Enable streaming (default: False).
-
-        Raises:
-            ValueError: If `client` is None or `model_name` is empty.
-        """
-        # Ensure the client is provided
         if client is None:
             raise ValueError("SeekrFlow client cannot be None.")
-
-        # Ensure model_name is valid
         if not isinstance(model_name, str) or not model_name.strip():
             raise ValueError("A valid model name must be provided.")
 
-        # Initialize the parent Pydantic model
         super().__init__(
             model_name=model_name,
             temperature=temperature,
             streaming=streaming,
             **kwargs,
         )
-
-        # Store the client separately (since it's not a Pydantic field)
         self._client = client
 
     @property
     def _llm_type(self) -> str:
         return "seekrflow"
 
-    #
-    # Single-call synchronous logic
-    #
     def invoke(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs
     ) -> AIMessage:
@@ -96,21 +73,16 @@ class ChatSeekrFlow(BaseChatModel):
         ai_content = response.choices[0].message.content
 
         if stop:
-            for token in stop:
-                idx = ai_content.find(token)
-                if idx != -1:
-                    ai_content = ai_content[:idx]
-                    break
+            stop_positions = [ai_content.find(token) for token in stop if token in ai_content]
+            if stop_positions:
+                ai_content = ai_content[:min(pos for pos in stop_positions if pos != -1)]
 
         return AIMessage(content=ai_content)
 
-    #
-    # Streaming logic
-    #
     def stream(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs
     ) -> Iterator[AIMessage]:
-        """Yield AIMessage chunks when streaming=True."""
+        """Yield AIMessage chunks when streaming=True, with stop token support."""
         if not self.streaming:
             raise ValueError("Streaming is disabled. Cannot call .stream().")
 
@@ -126,6 +98,8 @@ class ChatSeekrFlow(BaseChatModel):
             api_messages.append({"role": "system", "content": system_content})
         api_messages.append({"role": "user", "content": user_content})
 
+        buffer = ""
+
         response_stream = self._client.chat.completions.create(
             model=self.model_name,
             messages=api_messages,
@@ -135,41 +109,38 @@ class ChatSeekrFlow(BaseChatModel):
 
         for chunk in response_stream:
             try:
-                # ✅ Ensure chunk is an instance of expected response type
                 if not hasattr(chunk, "choices") or not chunk.choices:
-                    continue  # Skip empty or malformed chunks
+                    continue
 
                 choice = chunk.choices[0]
-                if (
-                    hasattr(choice, "delta")
-                    and choice.delta
-                    and hasattr(choice.delta, "content")
-                ):
+                if hasattr(choice, "delta") and choice.delta and hasattr(choice.delta, "content"):
                     content = choice.delta.content
                     if content:
+                        buffer += content
+                        if stop:
+                            if any(stop_token in buffer for stop_token in stop):
+                                for token in stop:
+                                    idx = buffer.find(token)
+                                    if idx != -1:
+                                        buffer = buffer[:idx]
+                                        yield AIMessage(content=buffer)
+                                        return
                         yield AIMessage(content=content)
-
             except (json.JSONDecodeError, UnicodeDecodeError):
-                # ✅ Handle known JSON decoding issues without breaking the stream
-                continue  # Skip malformed chunks and keep streaming
-
+                continue
             except Exception:
-                # ✅ Catch all unexpected errors without stopping the entire stream
-                continue  # Skip the problematic chunk but keep yielding
+                continue
 
-    #
-    # Required by BaseChatModel
-    #
     def _generate(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        config: Optional[dict] = None,
+        run_manager: Optional[Any] = None,
+        **kwargs,
     ) -> ChatResult:
         """Implements the required generate function."""
-        config = config if isinstance(config, dict) else {}
-        response_msg = self.invoke(messages, stop=stop, **config)
-
+        response_msg = self.invoke(messages, stop=stop, **kwargs)
         return ChatResult(
             generations=[ChatGeneration(message=response_msg)], llm_output={}
         )
+
