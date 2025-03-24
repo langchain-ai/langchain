@@ -163,9 +163,7 @@ if TYPE_CHECKING:
         ChatSambaNovaCloud,
         ChatSambaStudio,
     )
-    from langchain_community.chat_models.seekrflow import (
-        ChatSeekrFlow
-    )
+    from langchain_community.chat_models.seekrflow import ChatSeekrFlow
     from langchain_community.chat_models.snowflake import (
         ChatSnowflakeCortex,
     )
