@@ -462,7 +462,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.47"
+version = "0.3.48"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -520,7 +520,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.9"
+version = "0.3.10"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -566,7 +566,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "openai", specifier = ">=1.66.3,<2.0.0" },
+    { name = "openai", specifier = ">=1.68.2,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
@@ -751,7 +751,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.66.3"
+version = "1.68.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -763,9 +763,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/77/5172104ca1df35ed2ed8fb26dbc787f721c39498fc51d666c4db07756a0c/openai-1.66.3.tar.gz", hash = "sha256:8dde3aebe2d081258d4159c4cb27bdc13b5bb3f7ea2201d9bd940b9a89faf0c9", size = 397244 }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/6b/6b002d5d38794645437ae3ddb42083059d556558493408d39a0fcea608bc/openai-1.68.2.tar.gz", hash = "sha256:b720f0a95a1dbe1429c0d9bb62096a0d98057bcda82516f6e8af10284bdd5b19", size = 413429 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/5a/e20182f7b6171642d759c548daa0ba20a1d3ac10d2bd0a13fd75704a9ac3/openai-1.66.3-py3-none-any.whl", hash = "sha256:a427c920f727711877ab17c11b95f1230b27767ba7a01e5b66102945141ceca9", size = 567400 },
+    { url = "https://files.pythonhosted.org/packages/fd/34/cebce15f64eb4a3d609a83ac3568d43005cc9a1cba9d7fde5590fd415423/openai-1.68.2-py3-none-any.whl", hash = "sha256:24484cb5c9a33b58576fdc5acf0e5f92603024a4e39d0b99793dfa1eb14c2b36", size = 606073 },
 ]
 
 [[package]]
