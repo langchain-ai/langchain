@@ -286,10 +286,14 @@ def test_reasoning() -> None:
     assert isinstance(response, AIMessage)
     assert response.additional_kwargs["reasoning"]
 
+    # Test init params + streaming
     llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
-    response = llm.invoke("Hello")
-    assert isinstance(response, AIMessage)
-    assert response.additional_kwargs["reasoning"]
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessage)
+    assert full.additional_kwargs["reasoning"]
 
 
 def test_stateful_api() -> None:
