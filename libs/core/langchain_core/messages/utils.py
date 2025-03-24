@@ -681,6 +681,12 @@ def trim_messages(
             BaseMessage. If a BaseLanguageModel is passed in then
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
             Set to `len` to count the number of **messages** in the chat history.
+
+            Note:
+                Use `count_tokens_approximately` to get fast, approximate token counts.
+                This is recommended for using `trim_messages` on the hot path, where
+                exact token counting is not necessary.
+
         strategy: Strategy for trimming.
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
