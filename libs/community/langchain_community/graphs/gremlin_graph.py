@@ -106,7 +106,7 @@ class GremlinGraph(GraphStore):
             [
                 "Vertex labels are the following:",
                 ",".join(vertex_schema),
-                "Edge labes are the following:",
+                "Edge labels are the following:",
                 ",".join(edge_schema),
                 f"Vertices have following properties:\n{vertex_properties}",
             ]
