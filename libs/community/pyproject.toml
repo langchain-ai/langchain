@@ -7,8 +7,8 @@ authors = []
 license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.37",
-    "langchain<1.0.0,>=0.3.19",
+    "langchain-core<1.0.0,>=0.3.45",
+    "langchain<1.0.0,>=0.3.21",
     "SQLAlchemy<3,>=1.4",
     "requests<3,>=2",
     "PyYAML>=5.3",
@@ -18,11 +18,10 @@ dependencies = [
     "pydantic-settings<3.0.0,>=2.4.0",
     "langsmith<0.4,>=0.1.125",
     "httpx-sse<1.0.0,>=0.4.0",
-    "numpy<2,>=1.26.4; python_version < \"3.12\"",
-    "numpy<3,>=1.26.2; python_version >= \"3.12\"",
+    "numpy<3,>=1.26.2",
 ]
 name = "langchain-community"
-version = "0.3.18"
+version = "0.3.20"
 description = "Community contributed LangChain integrations."
 readme = "README.md"
 

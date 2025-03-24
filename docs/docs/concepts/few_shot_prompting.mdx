@@ -30,7 +30,7 @@ At a high-level, the basic ways to generate examples are:
 - User feedback: users (or labelers) leave feedback on interactions with the application and examples are generated based on that feedback (for example, all interactions with positive feedback could be turned into examples).
 - LLM feedback: same as user feedback but the process is automated by having models evaluate themselves.
 
-Which approach is best depends on your task. For tasks where a small number core principles need to be understood really well, it can be valuable hand-craft a few really good examples.
+Which approach is best depends on your task. For tasks where a small number of core principles need to be understood really well, it can be valuable hand-craft a few really good examples.
 For tasks where the space of correct behaviors is broader and more nuanced, it can be useful to generate many examples in a more automated fashion so that there's a higher likelihood of there being some highly relevant examples for any runtime input.
 
 **Single-turn v.s. multi-turn examples**
@@ -39,8 +39,8 @@ Another dimension to think about when generating examples is what the example is
 
 The simplest types of examples just have a user input and an expected model output. These are single-turn examples.
 
-One more complex type if example is where the example is an entire conversation, usually in which a model initially responds incorrectly and a user then tells the model how to correct its answer.
-This is called a multi-turn example. Multi-turn examples can be useful for more nuanced tasks where its useful to show common errors and spell out exactly why they're wrong and what should be done instead.
+One more complex type of example is where the example is an entire conversation, usually in which a model initially responds incorrectly and a user then tells the model how to correct its answer.
+This is called a multi-turn example. Multi-turn examples can be useful for more nuanced tasks where it's useful to show common errors and spell out exactly why they're wrong and what should be done instead.
 
 ## 2. Number of examples
 
@@ -77,7 +77,7 @@ If we insert our examples as messages, where each example is represented as a se
 One area where formatting examples as messages can be tricky is when our example outputs have tool calls. This is because different models have different constraints on what types of message sequences are allowed when any tool calls are generated.
 - Some models require that any AIMessage with tool calls be immediately followed by ToolMessages for every tool call,
 - Some models additionally require that any ToolMessages be immediately followed by an AIMessage before the next HumanMessage,
-- Some models require that tools are passed in to the model if there are any tool calls / ToolMessages in the chat history.
+- Some models require that tools are passed into the model if there are any tool calls / ToolMessages in the chat history.
 
 These requirements are model-specific and should be checked for the model you are using. If your model requires ToolMessages after tool calls and/or AIMessages after ToolMessages and your examples only include expected tool calls and not the actual tool outputs, you can try adding dummy ToolMessages / AIMessages to the end of each example with generic contents to satisfy the API constraints.
 In these cases it's especially worth experimenting with inserting your examples as strings versus messages, as having dummy messages can adversely affect certain models.
