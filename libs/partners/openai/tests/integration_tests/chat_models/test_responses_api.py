@@ -304,6 +304,24 @@ def test_stateful_api() -> None:
     assert "bobo" in second_response.content[0]["text"].lower()  # type: ignore
 
 
+def test_route_from_model_kwargs() -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, model_kwargs={"truncation": "auto"})
+    _ = next(llm.stream("Hello"))
+
+
+def test_computer_calls() -> None:
+    llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
+    tool = {
+        "type": "computer_use_preview",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    llm_with_tools = llm.bind_tools([tool], tool_choice="any")
+    response = llm_with_tools.invoke("Please wait a moment.")
+    assert response.additional_kwargs["tool_outputs"]
+
+
 def test_file_search() -> None:
     pytest.skip()  # TODO: set up infra
     llm = ChatOpenAI(model=MODEL_NAME)
