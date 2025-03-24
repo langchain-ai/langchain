@@ -17,7 +17,6 @@ from collections.abc import (
     Sequence,
 )
 from concurrent.futures import FIRST_COMPLETED, wait
-from contextvars import copy_context
 from functools import wraps
 from itertools import groupby, tee
 from operator import itemgetter
@@ -47,7 +46,6 @@ from langchain_core.load.serializable import (
 )
 from langchain_core.runnables.config import (
     RunnableConfig,
-    _set_config_context,
     acall_func_with_variable_args,
     call_func_with_variable_args,
     ensure_config,
@@ -58,6 +56,7 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
     run_in_executor,
+    set_config_context,
 )
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
@@ -1920,19 +1919,18 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            output = cast(
-                Output,
-                context.run(
-                    call_func_with_variable_args,  # type: ignore[arg-type]
-                    func,  # type: ignore[arg-type]
-                    input,  # type: ignore[arg-type]
-                    config,
-                    run_manager,
-                    **kwargs,
-                ),
-            )
+            with set_config_context(child_config) as context:
+                output = cast(
+                    Output,
+                    context.run(
+                        call_func_with_variable_args,  # type: ignore[arg-type]
+                        func,  # type: ignore[arg-type]
+                        input,  # type: ignore[arg-type]
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
+                )
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise
@@ -1970,15 +1968,14 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            coro = acall_func_with_variable_args(
-                func, input, config, run_manager, **kwargs
-            )
-            if asyncio_accepts_context():
-                output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
-            else:
-                output = await coro
+            with set_config_context(child_config) as context:
+                coro = acall_func_with_variable_args(
+                    func, input, config, run_manager, **kwargs
+                )
+                if asyncio_accepts_context():
+                    output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    output = await coro
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -2182,49 +2179,50 @@ class Runnable(Generic[Input, Output], ABC):
                 kwargs["config"] = child_config
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
-            if stream_handler := next(
-                (
-                    cast(_StreamingCallbackHandler, h)
-                    for h in run_manager.handlers
-                    # instance check OK here, it's a mixin
-                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
-                ),
-                None,
-            ):
-                # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_iter(run_manager.run_id, iterator)
-            try:
-                while True:
-                    chunk: Output = context.run(next, iterator)  # type: ignore
-                    yield chunk
-                    if final_output_supported:
-                        if final_output is None:
+            with set_config_context(child_config) as context:
+                iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+                if stream_handler := next(
+                    (
+                        cast(_StreamingCallbackHandler, h)
+                        for h in run_manager.handlers
+                        # instance check OK here, it's a mixin
+                        if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                    ),
+                    None,
+                ):
+                    # populates streamed_output in astream_log() output if needed
+                    iterator = stream_handler.tap_output_iter(
+                        run_manager.run_id, iterator
+                    )
+                try:
+                    while True:
+                        chunk: Output = context.run(next, iterator)  # type: ignore
+                        yield chunk
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore
+                                except TypeError:
+                                    final_output = chunk
+                                    final_output_supported = False
+                        else:
                             final_output = chunk
+                except (StopIteration, GeneratorExit):
+                    pass
+                for ichunk in input_for_tracing:
+                    if final_input_supported:
+                        if final_input is None:
+                            final_input = ichunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore
                             except TypeError:
-                                final_output = chunk
-                                final_output_supported = False
+                                final_input = ichunk
+                                final_input_supported = False
                     else:
-                        final_output = chunk
-            except (StopIteration, GeneratorExit):
-                pass
-            for ichunk in input_for_tracing:
-                if final_input_supported:
-                    if final_input is None:
                         final_input = ichunk
-                    else:
-                        try:
-                            final_input = final_input + ichunk  # type: ignore
-                        except TypeError:
-                            final_input = ichunk
-                            final_input_supported = False
-                else:
-                    final_input = ichunk
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -2283,60 +2281,59 @@ class Runnable(Generic[Input, Output], ABC):
                 kwargs["config"] = child_config
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            with set_config_context(child_config) as context:
+                iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
-            if stream_handler := next(
-                (
-                    cast(_StreamingCallbackHandler, h)
-                    for h in run_manager.handlers
-                    # instance check OK here, it's a mixin
-                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
-                ),
-                None,
-            ):
-                # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_aiter(
-                    run_manager.run_id, iterator_
-                )
-            else:
-                iterator = iterator_
-            try:
-                while True:
-                    if asyncio_accepts_context():
-                        chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
-                            py_anext(iterator),  # type: ignore[arg-type]
-                            context=context,
-                        )
-                    else:
-                        chunk = cast(Output, await py_anext(iterator))
-                    yield chunk
-                    if final_output_supported:
-                        if final_output is None:
+                if stream_handler := next(
+                    (
+                        cast(_StreamingCallbackHandler, h)
+                        for h in run_manager.handlers
+                        # instance check OK here, it's a mixin
+                        if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                    ),
+                    None,
+                ):
+                    # populates streamed_output in astream_log() output if needed
+                    iterator = stream_handler.tap_output_aiter(
+                        run_manager.run_id, iterator_
+                    )
+                else:
+                    iterator = iterator_
+                try:
+                    while True:
+                        if asyncio_accepts_context():
+                            chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
+                                py_anext(iterator),  # type: ignore[arg-type]
+                                context=context,
+                            )
+                        else:
+                            chunk = cast(Output, await py_anext(iterator))
+                        yield chunk
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore
+                                except TypeError:
+                                    final_output = chunk
+                                    final_output_supported = False
+                        else:
                             final_output = chunk
+                except StopAsyncIteration:
+                    pass
+                async for ichunk in input_for_tracing:
+                    if final_input_supported:
+                        if final_input is None:
+                            final_input = ichunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore[operator]
                             except TypeError:
-                                final_output = chunk
-                                final_output_supported = False
+                                final_input = ichunk
+                                final_input_supported = False
                     else:
-                        final_output = chunk
-            except StopAsyncIteration:
-                pass
-            async for ichunk in input_for_tracing:
-                if final_input_supported:
-                    if final_input is None:
                         final_input = ichunk
-                    else:
-                        try:
-                            final_input = final_input + ichunk  # type: ignore[operator]
-                        except TypeError:
-                            final_input = ichunk
-                            final_input_supported = False
-                else:
-                    final_input = ichunk
         except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -3021,12 +3018,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 config = patch_config(
                     config, callbacks=run_manager.get_child(f"seq:step:{i + 1}")
                 )
-                context = copy_context()
-                context.run(_set_config_context, config)
-                if i == 0:
-                    input = context.run(step.invoke, input, config, **kwargs)
-                else:
-                    input = context.run(step.invoke, input, config)
+                with set_config_context(config) as context:
+                    if i == 0:
+                        input = context.run(step.invoke, input, config, **kwargs)
+                    else:
+                        input = context.run(step.invoke, input, config)
         # finish the root run
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -3061,17 +3057,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 config = patch_config(
                     config, callbacks=run_manager.get_child(f"seq:step:{i + 1}")
                 )
-                context = copy_context()
-                context.run(_set_config_context, config)
-                if i == 0:
-                    part = functools.partial(step.ainvoke, input, config, **kwargs)
-                else:
-                    part = functools.partial(step.ainvoke, input, config)
-                if asyncio_accepts_context():
-                    input = await asyncio.create_task(part(), context=context)  # type: ignore
-                else:
-                    input = await asyncio.create_task(part())
-        # finish the root run
+                with set_config_context(config) as context:
+                    if i == 0:
+                        part = functools.partial(step.ainvoke, input, config, **kwargs)
+                    else:
+                        part = functools.partial(step.ainvoke, input, config)
+                    if asyncio_accepts_context():
+                        input = await asyncio.create_task(part(), context=context)  # type: ignore
+                    else:
+                        input = await asyncio.create_task(part())
+            # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -3713,13 +3708,12 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 # mark each step as a child run
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            return context.run(
-                step.invoke,
-                input,
-                child_config,
-            )
+            with set_config_context(child_config) as context:
+                return context.run(
+                    step.invoke,
+                    input,
+                    child_config,
+                )
 
         # gather results from all steps
         try:
@@ -3764,14 +3758,13 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 config,
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            if asyncio_accepts_context():
-                return await asyncio.create_task(  # type: ignore
-                    step.ainvoke(input, child_config), context=context
-                )
-            else:
-                return await asyncio.create_task(step.ainvoke(input, child_config))
+            with set_config_context(child_config) as context:
+                if asyncio_accepts_context():
+                    return await asyncio.create_task(  # type: ignore
+                        step.ainvoke(input, child_config), context=context
+                    )
+                else:
+                    return await asyncio.create_task(step.ainvoke(input, child_config))
 
         # gather results from all steps
         try:
