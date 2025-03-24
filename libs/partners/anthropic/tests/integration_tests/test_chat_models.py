@@ -380,20 +380,21 @@ async def test_astreaming() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME)
-    llm_with_tools = llm.bind_tools(
-        [
-            {
-                "name": "get_weather",
-                "description": "Get weather report for a city",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {"location": {"type": "string"}},
-                },
-            }
-        ]
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-20250219",
+        temperature=0,
     )
-    response = llm_with_tools.invoke("what's the weather in san francisco, ca")
+    tool_definition = {
+        "name": "get_weather",
+        "description": "Get weather report for a city",
+        "input_schema": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+        },
+    }
+    llm_with_tools = llm.bind_tools([tool_definition])
+    query = "how are you? what's the weather in san francisco, ca"
+    response = llm_with_tools.invoke(query)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     assert isinstance(response.tool_calls, list)
@@ -404,10 +405,18 @@ def test_tool_use() -> None:
     assert "location" in tool_call["args"]
 
     # Test streaming
-    input = "how are you? what's the weather in san francisco, ca"
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-20250219",
+        temperature=0,
+        # Add extra headers to also test token-efficient tools
+        model_kwargs={
+            "extra_headers": {"anthropic-beta": "token-efficient-tools-2025-02-19"}
+        },
+    )
+    llm_with_tools = llm.bind_tools([tool_definition])
     first = True
     chunks = []  # type: ignore
-    for chunk in llm_with_tools.stream(input):
+    for chunk in llm_with_tools.stream(query):
         chunks = chunks + [chunk]
         if first:
             gathered = chunk
@@ -435,10 +444,19 @@ def test_tool_use() -> None:
     assert "location" in tool_call["args"]
     assert tool_call["id"] is not None
 
+    # Testing token-efficient tools
+    # https://docs.anthropic.com/en/docs/build-with-claude/tool-use/token-efficient-tool-use
+    assert gathered.usage_metadata
+    assert response.usage_metadata
+    assert (
+        gathered.usage_metadata["total_tokens"]
+        < response.usage_metadata["total_tokens"]
+    )
+
     # Test passing response back to model
     stream = llm_with_tools.stream(
         [
-            input,
+            query,
             gathered,
             ToolMessage(content="sunny and warm", tool_call_id=tool_call["id"]),
         ]
@@ -453,6 +471,17 @@ def test_tool_use() -> None:
         else:
             gathered = gathered + chunk  # type: ignore
     assert len(chunks) > 1
+
+
+def test_builtin_tools() -> None:
+    llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+    tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+    llm_with_tools = llm.bind_tools([tool])
+    response = llm_with_tools.invoke(
+        "There's a syntax error in my primes.py file. Can you help me fix it?"
+    )
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
 
 
 class GenerateUsername(BaseModel):

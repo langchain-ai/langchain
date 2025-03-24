@@ -15,7 +15,7 @@ dependencies = [
     "gritql<1.0.0,>=0.2.0",
 ]
 name = "langchain-cli"
-version = "0.0.35"
+version = "0.0.36"
 description = "CLI for interacting with LangChain"
 readme = "README.md"
 
@@ -31,11 +31,12 @@ langchain-cli = "langchain_cli.cli:app"
 [dependency-groups]
 dev = ["pytest<8.0.0,>=7.4.2", "pytest-watch<5.0.0,>=4.2.0"]
 lint = ["ruff<1.0,>=0.5", "mypy<2.0.0,>=1.13.0"]
-test = ["langchain"]
+test = ["langchain-core", "langchain"]
 typing = ["langchain"]
 test_integration = []
 
 [tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
 langchain = { path = "../langchain", editable = true }
 
 [tool.ruff.lint]
