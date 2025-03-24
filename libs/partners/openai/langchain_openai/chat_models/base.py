@@ -2291,7 +2291,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
-        if self._use_responses_api(kwargs):
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
             return super()._stream_responses(*args, **kwargs)
         else:
             stream_usage = self._should_stream_usage(stream_usage, **kwargs)
@@ -2309,7 +2309,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
-        if self._use_responses_api(kwargs):
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
         else:
