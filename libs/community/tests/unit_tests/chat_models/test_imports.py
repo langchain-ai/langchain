@@ -2,6 +2,7 @@ from langchain_community.chat_models import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AzureChatOpenAI",
+    "ChatAPIpie",
     "BedrockChat",
     "ChatAnthropic",
     "ChatAnyscale",
