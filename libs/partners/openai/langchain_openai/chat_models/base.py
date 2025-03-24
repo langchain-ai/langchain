@@ -3257,6 +3257,8 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         if parsed := msg.additional_kwargs.get("parsed"):
             additional_kwargs["parsed"] = parsed
+        if reasoning := msg.additional_kwargs.get("reasoning"):
+            additional_kwargs["reasoning"] = reasoning
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
