@@ -25,10 +25,14 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
 
             callback = UsageMetadataCallbackHandler()
             results = llm.batch(["Hello", "Goodbye"], config={"callbacks": [callback]})
-            print(callback)
+            print(callback.usage_metadata)
+
+        .. code-block:: none
+
+            {'output_token_details': {'audio': 0, 'reasoning': 0}, 'input_tokens': 17, 'output_tokens': 31, 'total_tokens': 48, 'input_token_details': {'cache_read': 0, 'audio': 0}}
 
     .. versionadded:: 0.3.49
-    """
+    """  # noqa: E501
 
     def __init__(self) -> None:
         super().__init__()
@@ -82,12 +86,16 @@ def get_usage_metadata_callback(
             llm = init_chat_model(model="openai:gpt-4o-mini")
 
             with get_usage_metadata_callback() as cb:
-                llm.invoke("...")
-                llm.invoke("...")
+                llm.invoke("Hello")
+                llm.invoke("Goodbye")
                 print(cb.usage_metadata)
 
+        .. code-block:: none
+
+            {'output_token_details': {'audio': 0, 'reasoning': 0}, 'input_tokens': 17, 'output_tokens': 31, 'total_tokens': 48, 'input_token_details': {'cache_read': 0, 'audio': 0}}
+
     .. versionadded:: 0.3.49
-    """
+    """  # noqa: E501
     from langchain_core.tracers.context import register_configure_hook
 
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
