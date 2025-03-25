@@ -612,7 +612,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.35"
+version = "0.3.47"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -670,7 +670,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.6"
+version = "0.3.9"
 source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -681,7 +681,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "openai", specifier = ">=1.58.1,<2.0.0" },
+    { name = "openai", specifier = ">=1.66.3,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7,<1" },
 ]
 
@@ -718,7 +718,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.12"
+version = "0.3.15"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -734,8 +734,7 @@ dependencies = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
     { name = "langchain-core", editable = "../../core" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.24.0,<2.0.0" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.2,<3" },
+    { name = "numpy", specifier = ">=1.26.2,<3" },
     { name = "pytest", specifier = ">=7,<9" },
     { name = "pytest-asyncio", specifier = ">=0.20,<1" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1" },
@@ -754,7 +753,7 @@ typing = [
 
 [[package]]
 name = "langchain-xai"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1053,7 +1052,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.61.1"
+version = "1.67.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1065,9 +1064,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/cf/61e71ce64cf0a38f029da0f9a5f10c9fa0e69a7a977b537126dac50adfea/openai-1.61.1.tar.gz", hash = "sha256:ce1851507218209961f89f3520e06726c0aa7d0512386f0f977e3ac3e4f2472e", size = 350784 }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/63/6fd027fa4cb7c3b6bee4c3150f44803b3a7e4335f0b6e49e83a0c51c321b/openai-1.67.0.tar.gz", hash = "sha256:3b386a866396daa4bf80e05a891c50a7746ecd7863b8a27423b62136e3b8f6bc", size = 403596 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/b6/2e2a011b2dc27a6711376808b4cd8c922c476ea0f1420b39892117fa8563/openai-1.61.1-py3-none-any.whl", hash = "sha256:72b0826240ce26026ac2cd17951691f046e5be82ad122d20a8e1b30ca18bd11e", size = 463126 },
+    { url = "https://files.pythonhosted.org/packages/42/de/b42ddabe211411645105ae99ad93f4f3984f53be7ced2ad441378c27f62e/openai-1.67.0-py3-none-any.whl", hash = "sha256:dbbb144f38739fc0e1d951bc67864647fca0b9ffa05aef6b70eeea9f71d79663", size = 580168 },
 ]
 
 [[package]]

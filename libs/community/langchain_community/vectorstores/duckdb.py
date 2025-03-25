@@ -99,6 +99,7 @@ class DuckDB(VectorStore):
                 "Could not import duckdb package. "
                 "Please install it with `pip install duckdb`."
             )
+
         self.duckdb = duckdb
         self._embedding = embedding
         self._vector_key = vector_key
@@ -209,6 +210,11 @@ class DuckDB(VectorStore):
         Returns:
             A list of Documents most similar to the query.
         """
+        try:
+            import pandas as pandas
+        except ImportError:
+            warnings.warn("You may need to `pip install pandas` to use this method.")
+
         embedding = self._embedding.embed_query(query)  # type: ignore
         list_cosine_similarity = self.duckdb.FunctionExpression(
             "list_cosine_similarity",
