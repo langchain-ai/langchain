@@ -11,7 +11,6 @@ from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     get_template_variables,
 )
-from langchain_core.utils.image import image_to_data_url
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
@@ -117,6 +116,10 @@ class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
     def _prompt_type(self) -> str:
         return "message-dict-prompt"
 
+    @classmethod
+    def get_lc_namespace(cls) -> list[str]:
+        return ["langchain_core", "prompts", "message"]
+
 
 def _get_input_variables(
     template: dict, template_format: Literal["f-string", "mustache"]
@@ -147,10 +150,15 @@ def _insert_input_variables(
         if isinstance(v, str):
             formatted[k] = formatter(v, **inputs)
         elif isinstance(v, dict):
-            # Special handling for loading local images.
+            # No longer support loading local images.
             if k == "image_url" and "path" in v:
-                formatted_path = formatter(v.pop("path"), **inputs)
-                v["url"] = image_to_data_url(formatted_path)
+                msg = (
+                    "Specifying image inputs via file path in environments with "
+                    "user-input paths is a security vulnerability. Out of an abundance "
+                    "of caution, the utility has been removed to prevent possible "
+                    "misuse."
+                )
+                raise ValueError(msg)
             formatted[k] = _insert_input_variables(v, inputs, template_format)
         elif isinstance(v, (list, tuple)):
             formatted_v = []

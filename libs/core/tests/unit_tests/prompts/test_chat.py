@@ -32,7 +32,6 @@ from langchain_core.prompts.chat import (
     _convert_to_message_template,
 )
 from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.utils.image import image_to_data_url
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -828,25 +827,6 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
         assert optional_prompt.format_messages() == []
 
 
-def test_chat_prompt_message_placeholder_dict() -> None:
-    prompt = ChatPromptTemplate([{"role": "placeholder", "content": "{convo}"}])
-    assert prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
-
-    assert prompt.format_messages() == []
-
-    # Is optional = True
-    optional_prompt = ChatPromptTemplate(
-        [{"role": "placeholder", "content": ["{convo}", False]}]
-    )
-    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
-    with pytest.raises(KeyError):
-        assert optional_prompt.format_messages() == []
-
-
 def test_chat_prompt_message_dict() -> None:
     prompt = ChatPromptTemplate(
         [{"role": "system", "content": "foo"}, {"role": "user", "content": "bar"}]
@@ -856,11 +836,8 @@ def test_chat_prompt_message_dict() -> None:
         HumanMessage(content="bar"),
     ]
 
-    with pytest.raises(ValueError):
-        ChatPromptTemplate([{"role": "system", "content": False}])
-
-    with pytest.raises(ValueError):
-        ChatPromptTemplate([{"role": "foo", "content": "foo"}])
+    ChatPromptTemplate([{"role": "system", "content": False}])
+    ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 
 async def test_messages_prompt_accepts_list() -> None:
@@ -925,7 +902,7 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
     assert load(dumpd(prompt)) == prompt
 
 
-async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
+def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     """Test chat prompt template ser/des."""
     template = ChatPromptTemplate(
         [
@@ -965,11 +942,22 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
                             "image_url": {"url": "data:image/jpeg;base64,foobar"},
                         },
                         {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
+                        # {"random_type": {"foo": "{bar}"}},
                     ],
                 ),
             ),
             ("placeholder", "{chat_history}"),
             MessagesPlaceholder("more_history", optional=False),
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_image",
+                        "src": "{file_path}",
+                        "details": {"resolution": "{res}"},
+                    }
+                ],
+            },
         ]
     )
     assert dumpd(template) == snapshot()
@@ -987,7 +975,6 @@ def test_chat_tmpl_dict_msg() -> None:
                         "text": "{text1}",
                         "cache_control": {"type": "ephemeral"},
                     },
-                    {"type": "image_url", "image_url": {"path": "{local_image_path}"}},
                 ],
                 "name": "{name1}",
                 "tool_calls": [
@@ -1007,8 +994,6 @@ def test_chat_tmpl_dict_msg() -> None:
             },
         ]
     )
-    image_path = str(CUR_DIR / "favicon-16x16.png")
-    image_url = image_to_data_url(image_path)
     expected = [
         AIMessage(
             [
@@ -1017,7 +1002,6 @@ def test_chat_tmpl_dict_msg() -> None:
                     "text": "important message",
                     "cache_control": {"type": "ephemeral"},
                 },
-                {"type": "image_url", "image_url": {"url": image_url}},
             ],
             name="foo",
             tool_calls=[
@@ -1034,7 +1018,6 @@ def test_chat_tmpl_dict_msg() -> None:
 
     actual = template.invoke(
         {
-            "local_image_path": image_path,
             "text1": "important message",
             "name1": "foo",
             "tool_arg1": "important arg1",
@@ -1044,10 +1027,9 @@ def test_chat_tmpl_dict_msg() -> None:
     ).to_messages()
     assert actual == expected
 
-    partial_ = template.partial(local_image_path=image_path)
+    partial_ = template.partial(text1="important message")
     actual = partial_.invoke(
         {
-            "text1": "important message",
             "name1": "foo",
             "tool_arg1": "important arg1",
             "tool_name1": "do_stuff",

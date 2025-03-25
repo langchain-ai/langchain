@@ -1027,7 +1027,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.15"
+version = "0.3.16"
 source = { directory = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
