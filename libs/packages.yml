@@ -532,3 +532,8 @@ packages:
   repo: TimBMK/langchain-zotero-retriever
   name_title: Zotero
   provider_page: zotero
+- name: goat-sdk-adapter-langchain
+  path: python/src/adapters/langchain
+  repo: goat-sdk/goat
+  name_title: GOAT SDK
+  provider_page: goat
