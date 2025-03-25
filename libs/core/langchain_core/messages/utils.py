@@ -504,7 +504,7 @@ def filter_messages(
                         )
                     ]
 
-                msg = msg.model_copy(
+                msg = msg.model_copy(  # noqa: PLW2901
                     update={"tool_calls": tool_calls, "content": content}
                 )
             elif (
