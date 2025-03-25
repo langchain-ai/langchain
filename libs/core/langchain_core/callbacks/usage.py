@@ -4,7 +4,7 @@ import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
@@ -37,7 +37,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     def __init__(self) -> None:
         super().__init__()
         self._lock = threading.Lock()
-        self.usage_metadata: Optional[UsageMetadata] = None
+        self.usage_metadata: Dict[str, UsageMetadata] = {}
 
     def __repr__(self) -> str:
         return str(self.usage_metadata)
@@ -54,16 +54,26 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
                 message = generation.message
                 if isinstance(message, AIMessage):
                     usage_metadata = message.usage_metadata
+                    model_name = message.response_metadata.get("model_name")
                 else:
                     usage_metadata = None
+                    model_name = None
             except AttributeError:
                 usage_metadata = None
+                model_name = None
         else:
             usage_metadata = None
+            model_name = None
+
 
         # update shared state behind lock
         with self._lock:
-            self.usage_metadata = add_usage(self.usage_metadata, usage_metadata)
+            if model_name not in self.usage_metadata:
+                self.usage_metadata[model_name] = usage_metadata
+            else:
+                self.usage_metadata[model_name] = add_usage(
+                    self.usage_metadata[model_name], usage_metadata
+                )
 
 
 @contextmanager
