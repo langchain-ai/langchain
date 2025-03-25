@@ -13,6 +13,7 @@ from langchain_core.tracers.context import register_configure_hook
 from langchain_community.callbacks.bedrock_anthropic_callback import (
     BedrockAnthropicTokenUsageCallbackHandler,
 )
+from langchain_community.callbacks.mistralai_callback import MistralAiCallbackHandler
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.callbacks.tracers.comet import CometTracer
 from langchain_community.callbacks.tracers.wandb import WandbTracer
@@ -31,6 +32,10 @@ wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(
 comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(
     "tracing_comet_callback", default=None
 )
+mistral_ai_callback_var: (ContextVar)[Optional[MistralAiCallbackHandler]] = ContextVar(
+    "mistral_ai_callback_var", default=None
+)
+
 
 register_configure_hook(openai_callback_var, True)
 register_configure_hook(bedrock_anthropic_callback_var, True)
@@ -40,6 +45,7 @@ register_configure_hook(
 register_configure_hook(
     comet_tracing_callback_var, True, CometTracer, "LANGCHAIN_COMET_TRACING"
 )
+register_configure_hook(mistral_ai_callback_var, True)
 
 
 @contextmanager
@@ -102,3 +108,22 @@ def wandb_tracing_enabled(
     wandb_tracing_callback_var.set(cb)
     yield None
     wandb_tracing_callback_var.set(None)
+
+
+@contextmanager
+def get_mistral_ai_callback() -> Generator[MistralAiCallbackHandler, None, None]:
+    """Get the Mistral AI callback handler in a context manager.
+    which conveniently exposes token and cost information.
+
+    Returns:
+        MistralAiCallbackHandler:
+            The Mistral AI callback handler.
+
+    Example:
+        >>>  with get_mistral_ai_callback() as cb:
+        ...     # Use the Mistral AI callback handler
+    """
+    cb = MistralAiCallbackHandler()
+    mistral_ai_callback_var.set(cb)
+    yield cb
+    mistral_ai_callback_var.set(None)

@@ -10,7 +10,10 @@ from langchain_core.utils.pydantic import get_fields
 from langsmith import utils as ls_utils
 
 from langchain_community.callbacks import get_openai_callback
-from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
+from langchain_community.callbacks.manager import (
+    get_bedrock_anthropic_callback,
+    get_mistral_ai_callback,
+)
 from langchain_community.llms.openai import BaseOpenAI
 
 
@@ -120,5 +123,36 @@ def test_callback_manager_configure_context_vars(
                     assert cb.prompt_tokens == 2
                     assert cb.completion_tokens == 1
                     assert cb.total_cost > 0
+
+                with get_mistral_ai_callback() as cb:
+                    # This is a new empty callback handler
+                    assert cb.successful_requests == 0
+                    assert cb.total_tokens == 0
+
+                    # configure adds this mistral AI cb,
+                    # but doesn't modify the group manager
+                    mngr = CallbackManager.configure(group_manager)
+                    assert mngr.handlers == [tracer, cb]
+                    assert group_manager.handlers == [tracer]
+
+                    response = LLMResult(
+                        generations=[],
+                        llm_output={
+                            "token_usage": {
+                                "prompt_tokens": 2,
+                                "completion_tokens": 1,
+                                "total_tokens": 3,
+                            },
+                            "model": "mistral-large-2402",
+                        },
+                    )
+                    mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
+
+                    # The callback handler has been updated
+                    assert cb.successful_requests == 1
+                    assert cb.total_tokens == 3
+                    assert cb.prompt_tokens == 2
+                    assert cb.completion_tokens == 1
+                    assert cb.total_cost > 0
             wait_for_all_tracers()
-            assert LangChainTracer._persist_run_single.call_count == 4  # type: ignore
+            assert LangChainTracer._persist_run_single.call_count == 5  # type: ignore
