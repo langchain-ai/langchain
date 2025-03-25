@@ -6,12 +6,14 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Optional
 
+from langchain_core._api import beta
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 
+@beta()
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks AIMessage.usage_metadata.
 
@@ -67,6 +69,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
 
 
 @contextmanager
+@beta()
 def get_usage_metadata_callback(
     name: str = "usage_metadata_callback",
 ) -> Generator[UsageMetadataCallbackHandler, None, None]:
