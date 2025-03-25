@@ -16,7 +16,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
@@ -576,8 +576,7 @@ class APIOperation(BaseModel):
                 prop_type = f"{{\n{nested_props}\n{' ' * indent}}}"
 
             formatted_props.append(
-                f"{prop_desc}\n{' ' * indent}{prop_name}"
-                f"{prop_required}: {prop_type},"
+                f"{prop_desc}\n{' ' * indent}{prop_name}{prop_required}: {prop_type},"
             )
 
         return "\n".join(formatted_props)

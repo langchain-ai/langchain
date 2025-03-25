@@ -396,6 +396,14 @@ def _import_oci_md_vllm() -> Type[BaseLLM]:
     return OCIModelDeploymentVLLM
 
 
+def _import_oci_md() -> Type[BaseLLM]:
+    from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
+        OCIModelDeploymentLLM,
+    )
+
+    return OCIModelDeploymentLLM
+
+
 def _import_oci_gen_ai() -> Type[BaseLLM]:
     from langchain_community.llms.oci_generative_ai import OCIGenAI
 
@@ -448,6 +456,12 @@ def _import_openlm() -> Type[BaseLLM]:
     from langchain_community.llms.openlm import OpenLM
 
     return OpenLM
+
+
+def _import_outlines() -> Type[BaseLLM]:
+    from langchain_community.llms.outlines import Outlines
+
+    return Outlines
 
 
 def _import_pai_eas_endpoint() -> Type[BaseLLM]:
@@ -510,10 +524,10 @@ def _import_sagemaker_endpoint() -> Type[BaseLLM]:
     return SagemakerEndpoint
 
 
-def _import_sambaverse() -> Type[BaseLLM]:
-    from langchain_community.llms.sambanova import Sambaverse
+def _import_sambanovacloud() -> Type[BaseLLM]:
+    from langchain_community.llms.sambanova import SambaNovaCloud
 
-    return Sambaverse
+    return SambaNovaCloud
 
 
 def _import_sambastudio() -> Type[BaseLLM]:
@@ -779,6 +793,8 @@ def __getattr__(name: str) -> Any:
         return _import_oci_md_tgi()
     elif name == "OCIModelDeploymentVLLM":
         return _import_oci_md_vllm()
+    elif name == "OCIModelDeploymentLLM":
+        return _import_oci_md()
     elif name == "OCIGenAI":
         return _import_oci_gen_ai()
     elif name == "OctoAIEndpoint":
@@ -797,6 +813,8 @@ def __getattr__(name: str) -> Any:
         return _import_openllm()
     elif name == "OpenLM":
         return _import_openlm()
+    elif name == "Outlines":
+        return _import_outlines()
     elif name == "PaiEasEndpoint":
         return _import_pai_eas_endpoint()
     elif name == "Petals":
@@ -817,8 +835,8 @@ def __getattr__(name: str) -> Any:
         return _import_rwkv()
     elif name == "SagemakerEndpoint":
         return _import_sagemaker_endpoint()
-    elif name == "Sambaverse":
-        return _import_sambaverse()
+    elif name == "SambaNovaCloud":
+        return _import_sambanovacloud()
     elif name == "SambaStudio":
         return _import_sambastudio()
     elif name == "SelfHostedPipeline":
@@ -936,6 +954,7 @@ __all__ = [
     "OCIGenAI",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
+    "OCIModelDeploymentLLM",
     "OctoAIEndpoint",
     "Ollama",
     "OpaquePrompts",
@@ -943,6 +962,7 @@ __all__ = [
     "OpenAIChat",
     "OpenLLM",
     "OpenLM",
+    "Outlines",
     "PaiEasEndpoint",
     "Petals",
     "PipelineAI",
@@ -954,7 +974,7 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
-    "Sambaverse",
+    "SambaNovaCloud",
     "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
@@ -1038,6 +1058,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nlpcloud": _import_nlpcloud,
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
+        "oci_model_deployment_endpoint": _import_oci_md,
         "oci_generative_ai": _import_oci_gen_ai,
         "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
@@ -1051,7 +1072,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "replicate": _import_replicate,
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
-        "sambaverse": _import_sambaverse,
+        "sambanovacloud": _import_sambanovacloud,
         "sambastudio": _import_sambastudio,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
@@ -1063,7 +1084,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
-        "openllm_client": _import_openllm,
+        "outlines": _import_outlines,
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,

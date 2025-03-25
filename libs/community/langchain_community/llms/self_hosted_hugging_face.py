@@ -3,6 +3,7 @@ import logging
 from typing import Any, Callable, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from pydantic import ConfigDict
 
 from langchain_community.llms.self_hosted import SelfHostedPipeline
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -68,8 +69,7 @@ def _load_transformer(
             model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
         else:
             raise ValueError(
-                f"Got invalid task {task}, "
-                f"currently only {VALID_TASKS} are supported"
+                f"Got invalid task {task}, currently only {VALID_TASKS} are supported"
             )
     except ImportError as e:
         raise ImportError(
@@ -159,7 +159,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model."""
-    hardware: Any
+    hardware: Any = None
     """Remote hardware to send the inference function to."""
     model_reqs: List[str] = ["./", "transformers", "torch"]
     """Requirements to install on hardware to inference the model."""
@@ -168,8 +168,9 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     inference_fn: Callable = _generate_text  #: :meta private:
     """Inference function to send to the remote hardware."""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def __init__(self, **kwargs: Any):
         """Construct the pipeline remotely using an auxiliary function.

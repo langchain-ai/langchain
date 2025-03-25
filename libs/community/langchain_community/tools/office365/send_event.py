@@ -6,9 +6,10 @@ https://learn.microsoft.com/en-us/graph/auth/
 
 from datetime import datetime as dt
 from typing import List, Optional, Type
+from zoneinfo import ZoneInfo
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.office365.utils import UTC_FORMAT
@@ -47,7 +48,7 @@ class SendEventSchema(BaseModel):
     )
 
 
-class O365SendEvent(O365BaseTool):
+class O365SendEvent(O365BaseTool):  # type: ignore[override, override]
     """Tool for sending calendar events in Office 365."""
 
     name: str = "send_event"
@@ -73,12 +74,22 @@ class O365SendEvent(O365BaseTool):
 
         event.body = body
         event.subject = subject
-        event.start = dt.strptime(start_datetime, UTC_FORMAT)
-        event.end = dt.strptime(end_datetime, UTC_FORMAT)
+        try:
+            event.start = dt.fromisoformat(start_datetime).replace(
+                tzinfo=ZoneInfo("UTC")
+            )
+        except ValueError:
+            # fallback for backwards compatibility
+            event.start = dt.strptime(start_datetime, UTC_FORMAT)
+        try:
+            event.end = dt.fromisoformat(end_datetime).replace(tzinfo=ZoneInfo("UTC"))
+        except ValueError:
+            # fallback for backwards compatibility
+            event.end = dt.strptime(end_datetime, UTC_FORMAT)
+
         for attendee in attendees:
             event.attendees.add(attendee)
 
-        # TO-DO: Look into PytzUsageWarning
         event.save()
 
         output = "Event sent: " + str(event)

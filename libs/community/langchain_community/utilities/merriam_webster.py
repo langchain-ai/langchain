@@ -1,12 +1,12 @@
 """Util that calls Merriam-Webster."""
 
 import json
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 from urllib.parse import quote
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 MERRIAM_WEBSTER_API_URL = (
     "https://www.dictionaryapi.com/api/v3/references/collegiate/json"
@@ -28,11 +28,13 @@ class MerriamWebsterAPIWrapper(BaseModel):
 
     merriam_webster_api_key: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key exists in environment."""
         merriam_webster_api_key = get_from_dict_or_env(
             values, "merriam_webster_api_key", "MERRIAM_WEBSTER_API_KEY"
@@ -82,7 +84,7 @@ class MerriamWebsterAPIWrapper(BaseModel):
             formatted_definitions.extend(self._format_definition(definition))
 
         if len(formatted_definitions) == 1:
-            return f"Definition of '{query}':\n" f"{formatted_definitions[0]}"
+            return f"Definition of '{query}':\n{formatted_definitions[0]}"
 
         result = f"Definitions of '{query}':\n\n"
         for i, formatted_definition in enumerate(formatted_definitions, 1):

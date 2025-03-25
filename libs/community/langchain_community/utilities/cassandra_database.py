@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from cassandra.cluster import ResultSet, Session
@@ -432,7 +433,7 @@ class CassandraDatabase:
             import cassio.config
         except ImportError:
             raise ValueError(
-                "cassio package not found, please install with" " `pip install cassio`"
+                "cassio package not found, please install with `pip install cassio`"
             )
 
         # Use pre-existing session on cassio
@@ -480,16 +481,17 @@ class Table(BaseModel):
     clustering: List[Tuple[str, str]] = Field(default_factory=list)
     indexes: List[Tuple[str, str, str]] = Field(default_factory=list)
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def check_required_fields(cls, class_values: dict) -> dict:
-        if not class_values["columns"]:
+    @model_validator(mode="after")
+    def check_required_fields(self) -> Self:
+        if not self.columns:
             raise ValueError("non-empty column list for must be provided")
-        if not class_values["partition"]:
+        if not self.partition:
             raise ValueError("non-empty partition list must be provided")
-        return class_values
+        return self
 
     @classmethod
     def from_database(
@@ -608,7 +610,11 @@ class Table(BaseModel):
                 partition_info.append((row["column_name"], row["position"]))
             elif row["kind"] == "clustering":
                 cluster_info.append(
-                    (row["column_name"], row["clustering_order"], row["position"])
+                    (
+                        row["column_name"],
+                        row["clustering_order"],
+                        row["position"],
+                    )
                 )
 
         partition = [

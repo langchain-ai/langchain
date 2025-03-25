@@ -7,8 +7,8 @@ import json
 from typing import Any, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel
 
 FINANCIAL_DATASETS_BASE_URL = "https://api.financialdatasets.ai/"
 
@@ -23,6 +23,18 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         self.financial_datasets_api_key = get_from_dict_or_env(
             data, "financial_datasets_api_key", "FINANCIAL_DATASETS_API_KEY"
         )
+
+    @property
+    def _api_key(self) -> str:
+        if self.financial_datasets_api_key is None:
+            raise ValueError(
+                "API key is required for the FinancialDatasetsAPIWrapper. "
+                "Please provide the API key by either:\n"
+                "1. Manually specifying it when initializing the wrapper: "
+                "FinancialDatasetsAPIWrapper(financial_datasets_api_key='your_api_key')\n"
+                "2. Setting it as an environment variable: FINANCIAL_DATASETS_API_KEY"
+            )
+        return self.financial_datasets_api_key
 
     def get_income_statements(
         self,
@@ -47,7 +59,7 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         )
 
         # Add the api key to the headers
-        headers = {"X-API-KEY": self.financial_datasets_api_key}
+        headers = {"X-API-KEY": self._api_key}
 
         # Execute the request
         response = requests.get(url, headers=headers)
@@ -78,7 +90,7 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         )
 
         # Add the api key to the headers
-        headers = {"X-API-KEY": self.financial_datasets_api_key}
+        headers = {"X-API-KEY": self._api_key}
 
         # Execute the request
         response = requests.get(url, headers=headers)
@@ -110,7 +122,7 @@ class FinancialDatasetsAPIWrapper(BaseModel):
         )
 
         # Add the api key to the headers
-        headers = {"X-API-KEY": self.financial_datasets_api_key}
+        headers = {"X-API-KEY": self._api_key}
 
         # Execute the request
         response = requests.get(url, headers=headers)

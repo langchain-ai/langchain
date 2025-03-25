@@ -1,7 +1,8 @@
+import io
 import logging
 import os
 import time
-from typing import Any, Dict, Iterator, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, Literal, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 
@@ -12,6 +13,217 @@ from langchain_community.utils.openai import is_openai_v1
 logger = logging.getLogger(__name__)
 
 
+class AzureOpenAIWhisperParser(BaseBlobParser):
+    """
+    Transcribe and parse audio files using Azure OpenAI Whisper.
+
+    This parser integrates with the Azure OpenAI Whisper model to transcribe
+    audio files. It differs from the standard OpenAI Whisper parser, requiring
+    an Azure endpoint and credentials. The parser is limited to files under 25 MB.
+
+    **Note**:
+    This parser uses the Azure OpenAI API, providing integration with the Azure
+     ecosystem, and making it suitable for workflows involving other Azure services.
+
+    For files larger than 25 MB, consider using Azure AI Speech batch transcription:
+    https://learn.microsoft.com/azure/ai-services/speech-service/batch-transcription-create?pivots=rest-api#use-a-whisper-model
+
+    Setup:
+        1. Follow the instructions here to deploy Azure Whisper:
+           https://learn.microsoft.com/azure/ai-services/openai/whisper-quickstart?tabs=command-line%2Cpython-new&pivots=programming-language-python
+        2. Install ``langchain`` and set the following environment variables:
+
+        .. code-block:: bash
+
+            pip install -U langchain langchain-community
+
+            export AZURE_OPENAI_API_KEY="your-api-key"
+            export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
+            export OPENAI_API_VERSION="your-api-version"
+
+    Example Usage:
+        .. code-block:: python
+
+            from langchain.community import AzureOpenAIWhisperParser
+
+            whisper_parser = AzureOpenAIWhisperParser(
+                deployment_name="your-whisper-deployment",
+                api_version="2024-06-01",
+                api_key="your-api-key",
+                # other params...
+            )
+
+            audio_blob = Blob(path="your-audio-file-path")
+            response = whisper_parser.lazy_parse(audio_blob)
+
+            for document in response:
+                print(document.page_content)
+
+    Integration with Other Loaders:
+        The AzureOpenAIWhisperParser can be used with video/audio loaders and
+        `GenericLoader` to automate retrieval and parsing.
+
+    YoutubeAudioLoader Example:
+        .. code-block:: python
+
+            from langchain_community.document_loaders.blob_loaders import (
+                YoutubeAudioLoader
+                )
+            from langchain_community.document_loaders.generic import GenericLoader
+
+            # Must be a list
+            youtube_url = ["https://your-youtube-url"]
+            save_dir = "directory-to-download-videos"
+
+            loader = GenericLoader(
+                YoutubeAudioLoader(youtube_url, save_dir),
+                AzureOpenAIWhisperParser(deployment_name="your-deployment-name")
+            )
+
+            docs = loader.load()
+    """
+
+    def __init__(
+        self,
+        *,
+        api_key: Optional[str] = None,
+        azure_endpoint: Optional[str] = None,
+        api_version: Optional[str] = None,
+        azure_ad_token_provider: Union[Callable[[], str], None] = None,
+        language: Optional[str] = None,
+        prompt: Optional[str] = None,
+        response_format: Union[
+            Literal["json", "text", "srt", "verbose_json", "vtt"], None
+        ] = None,
+        temperature: Optional[float] = None,
+        deployment_name: str,
+        max_retries: int = 3,
+    ):
+        """
+        Initialize the AzureOpenAIWhisperParser.
+
+        Args:
+            api_key (Optional[str]):
+                Azure OpenAI API key. If not provided, defaults to the
+                `AZURE_OPENAI_API_KEY` environment variable.
+            azure_endpoint (Optional[str]):
+                Azure OpenAI service endpoint. Defaults to `AZURE_OPENAI_ENDPOINT`
+                environment variable if not set.
+            api_version (Optional[str]):
+                API version to use,
+                defaults to the `OPENAI_API_VERSION` environment variable.
+            azure_ad_token_provider (Union[Callable[[], str], None]):
+                Azure Active Directory token for authentication (if applicable).
+            language (Optional[str]):
+                Language in which the request should be processed.
+            prompt (Optional[str]):
+                Custom instructions or prompt for the Whisper model.
+            response_format (Union[str, None]):
+                The desired output format. Options: "json", "text", "srt",
+                "verbose_json", "vtt".
+            temperature (Optional[float]):
+                Controls the randomness of the model's output.
+            deployment_name (str):
+                The deployment name of the Whisper model.
+            max_retries (int):
+                Maximum number of retries for failed API requests.
+        Raises:
+            ImportError:
+                If the required package `openai` is not installed.
+        """
+        self.api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        self.azure_endpoint = azure_endpoint or os.environ.get("AZURE_OPENAI_ENDPOINT")
+        self.api_version = api_version or os.environ.get("OPENAI_API_VERSION")
+        self.azure_ad_token_provider = azure_ad_token_provider
+
+        self.language = language
+        self.prompt = prompt
+        self.response_format = response_format
+        self.temperature = temperature
+
+        self.deployment_name = deployment_name
+        self.max_retries = max_retries
+
+        try:
+            import openai
+        except ImportError:
+            raise ImportError(
+                "openai package not found, please install it with `pip install openai`"
+            )
+
+        if is_openai_v1():
+            self._client = openai.AzureOpenAI(
+                api_key=self.api_key,
+                azure_endpoint=self.azure_endpoint,
+                api_version=self.api_version,
+                max_retries=self.max_retries,
+                azure_ad_token_provider=self.azure_ad_token_provider,
+            )
+        else:
+            if self.api_key:
+                openai.api_key = self.api_key
+            if self.azure_endpoint:
+                openai.api_base = self.azure_endpoint
+            if self.api_version:
+                openai.api_version = self.api_version
+            openai.api_type = "azure"
+            self._client = openai
+
+    @property
+    def _create_params(self) -> Dict[str, Any]:
+        params = {
+            "language": self.language,
+            "prompt": self.prompt,
+            "response_format": self.response_format,
+            "temperature": self.temperature,
+        }
+        return {k: v for k, v in params.items() if v is not None}
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """
+        Lazily parse the provided audio blob for transcription.
+
+        Args:
+            blob (Blob):
+                The audio file in Blob format to be transcribed.
+
+        Yields:
+            Document:
+                Parsed transcription from the audio file.
+
+        Raises:
+            Exception:
+                If an error occurs during transcription.
+        """
+
+        file_obj = open(str(blob.path), "rb")
+
+        # Transcribe
+        try:
+            if is_openai_v1():
+                transcript = self._client.audio.transcriptions.create(
+                    model=self.deployment_name,
+                    file=file_obj,
+                    **self._create_params,
+                )
+            else:
+                transcript = self._client.Audio.transcribe(
+                    model=self.deployment_name,
+                    deployment_id=self.deployment_name,
+                    file=file_obj,
+                    **self._create_params,
+                )
+        except Exception:
+            raise
+
+        yield Document(
+            page_content=transcript.text
+            if not isinstance(transcript, str)
+            else transcript,
+            metadata={"source": blob.source},
+        )
+
+
 class OpenAIWhisperParser(BaseBlobParser):
     """Transcribe and parse audio files.
 
@@ -19,7 +231,7 @@ class OpenAIWhisperParser(BaseBlobParser):
 
     Args:
         api_key: OpenAI API key
-        chunk_duration_threshold: minimum duration of a chunk in seconds
+        chunk_duration_threshold: Minimum duration of a chunk in seconds
             NOTE: According to the OpenAI API, the chunk duration should be at least 0.1
             seconds. If the chunk duration is less or equal than the threshold,
             it will be skipped.
@@ -37,6 +249,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             Literal["json", "text", "srt", "verbose_json", "vtt"], None
         ] = None,
         temperature: Union[float, None] = None,
+        model: str = "whisper-1",
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
@@ -47,6 +260,7 @@ class OpenAIWhisperParser(BaseBlobParser):
         self.prompt = prompt
         self.response_format = response_format
         self.temperature = temperature
+        self.model = model
 
     @property
     def _create_params(self) -> Dict[str, Any]:
@@ -61,21 +275,14 @@ class OpenAIWhisperParser(BaseBlobParser):
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
 
-        import io
-
         try:
             import openai
         except ImportError:
             raise ImportError(
-                "openai package not found, please install it with "
-                "`pip install openai`"
+                "openai package not found, please install it with `pip install openai`"
             )
-        try:
-            from pydub import AudioSegment
-        except ImportError:
-            raise ImportError(
-                "pydub package not found, please install it with " "`pip install pydub`"
-            )
+
+        audio = _get_audio_from_blob(blob)
 
         if is_openai_v1():
             # api_key optional, defaults to `os.environ['OPENAI_API_KEY']`
@@ -85,10 +292,7 @@ class OpenAIWhisperParser(BaseBlobParser):
             if self.api_key:
                 openai.api_key = self.api_key
             if self.base_url:
-                openai.base_url = self.base_url
-
-        # Audio file from disk
-        audio = AudioSegment.from_file(blob.path)
+                openai.api_base = self.base_url
 
         # Define the duration of each chunk in minutes
         # Need to meet 25MB size limit for Whisper API
@@ -115,10 +319,10 @@ class OpenAIWhisperParser(BaseBlobParser):
                 try:
                     if is_openai_v1():
                         transcript = client.audio.transcriptions.create(
-                            model="whisper-1", file=file_obj, **self._create_params
+                            model=self.model, file=file_obj, **self._create_params
                         )
                     else:
-                        transcript = openai.Audio.transcribe("whisper-1", file_obj)
+                        transcript = openai.Audio.transcribe(self.model, file_obj)  # type: ignore[attr-defined]
                     break
                 except Exception as e:
                     attempts += 1
@@ -191,7 +395,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
             import torch
         except ImportError:
             raise ImportError(
-                "torch package not found, please install it with " "`pip install torch`"
+                "torch package not found, please install it with `pip install torch`"
             )
 
         # Determine the device to use
@@ -240,15 +444,6 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
 
-        import io
-
-        try:
-            from pydub import AudioSegment
-        except ImportError:
-            raise ImportError(
-                "pydub package not found, please install it with `pip install pydub`"
-            )
-
         try:
             import librosa
         except ImportError:
@@ -257,8 +452,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
                 "`pip install librosa`"
             )
 
-        # Audio file from disk
-        audio = AudioSegment.from_file(blob.path)
+        audio = _get_audio_from_blob(blob)
 
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
@@ -320,12 +514,8 @@ class YandexSTTParser(BaseBlobParser):
                 "yandex-speechkit package not found, please install it with "
                 "`pip install yandex-speechkit`"
             )
-        try:
-            from pydub import AudioSegment
-        except ImportError:
-            raise ImportError(
-                "pydub package not found, please install it with " "`pip install pydub`"
-            )
+
+        audio = _get_audio_from_blob(blob)
 
         if self.api_key:
             configure_credentials(
@@ -335,8 +525,6 @@ class YandexSTTParser(BaseBlobParser):
             configure_credentials(
                 yandex_credentials=creds.YandexCredentials(iam_token=self.iam_token)
             )
-
-        audio = AudioSegment.from_file(blob.path)
 
         model = model_repository.recognition_model()
 
@@ -436,15 +624,6 @@ class FasterWhisperParser(BaseBlobParser):
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
 
-        import io
-
-        try:
-            from pydub import AudioSegment
-        except ImportError:
-            raise ImportError(
-                "pydub package not found, please install it with `pip install pydub`"
-            )
-
         try:
             from faster_whisper import WhisperModel
         except ImportError:
@@ -453,22 +632,12 @@ class FasterWhisperParser(BaseBlobParser):
                 "`pip install faster-whisper`"
             )
 
-        # get the audio
-        if isinstance(blob.data, bytes):
-            # blob contains the audio
-            audio = AudioSegment.from_file(io.BytesIO(blob.data))
-        elif blob.data is None and blob.path:
-            # Audio file from disk
-            audio = AudioSegment.from_file(blob.path)
-        else:
-            raise ValueError("Unable to get audio from blob")
+        audio = _get_audio_from_blob(blob)
 
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        model = WhisperModel(
-            self.model_size, device=self.device, compute_type="float16"
-        )
+        model = WhisperModel(self.model_size, device=self.device)
 
         segments, info = model.transcribe(file_obj, beam_size=5)
 
@@ -483,3 +652,33 @@ class FasterWhisperParser(BaseBlobParser):
                     **blob.metadata,
                 },
             )
+
+
+def _get_audio_from_blob(blob: Blob) -> Any:
+    """Get audio data from blob.
+
+    Args:
+        blob: Blob object containing the audio data.
+
+    Returns:
+        AudioSegment: Audio data from the blob.
+
+    Raises:
+        ImportError: If the required package `pydub` is not installed.
+        ValueError: If the audio data is not found in the blob
+    """
+    try:
+        from pydub import AudioSegment
+    except ImportError:
+        raise ImportError(
+            "pydub package not found, please install it with `pip install pydub`"
+        )
+
+    if isinstance(blob.data, bytes):
+        audio = AudioSegment.from_file(io.BytesIO(blob.data))
+    elif blob.data is None and blob.path:
+        audio = AudioSegment.from_file(blob.path)
+    else:
+        raise ValueError("Unable to get audio from blob")
+
+    return audio

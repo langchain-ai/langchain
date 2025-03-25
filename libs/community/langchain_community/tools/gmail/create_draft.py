@@ -3,7 +3,7 @@ from email.message import EmailMessage
 from typing import List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.gmail.base import GmailBaseTool
 
@@ -33,7 +33,7 @@ class CreateDraftSchema(BaseModel):
     )
 
 
-class GmailCreateDraft(GmailBaseTool):
+class GmailCreateDraft(GmailBaseTool):  # type: ignore[override, override]
     """Tool that creates a draft email for Gmail."""
 
     name: str = "create_gmail_draft"
@@ -81,7 +81,7 @@ class GmailCreateDraft(GmailBaseTool):
                 .create(userId="me", body=create_message)
                 .execute()
             )
-            output = f'Draft created. Draft Id: {draft["id"]}'
+            output = f"Draft created. Draft Id: {draft['id']}"
             return output
         except Exception as e:
             raise Exception(f"An error occurred: {e}")

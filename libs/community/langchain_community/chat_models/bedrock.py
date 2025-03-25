@@ -16,6 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from pydantic import ConfigDict
 
 from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
@@ -109,9 +110,9 @@ def _format_anthropic_messages(
 
         if not isinstance(message.content, str):
             # parse as dict
-            assert isinstance(
-                message.content, list
-            ), "Anthropic message content must be str or list of dicts"
+            assert isinstance(message.content, list), (
+                "Anthropic message content must be str or list of dicts"
+            )
 
             # populate content
             content = []
@@ -231,8 +232,9 @@ class BedrockChat(BaseChatModel, BedrockBase):
 
         return attributes
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     def _stream(
         self,

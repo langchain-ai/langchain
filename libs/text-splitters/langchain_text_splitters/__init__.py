@@ -1,6 +1,5 @@
 """**Text Splitters** are classes for splitting text.
 
-
 **Class hierarchy:**
 
 .. code-block::
@@ -34,11 +33,14 @@ from langchain_text_splitters.html import (
     ElementType,
     HTMLHeaderTextSplitter,
     HTMLSectionSplitter,
+    HTMLSemanticPreservingSplitter,
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (
+    ExperimentalMarkdownSyntaxTextSplitter,
     HeaderType,
     LineType,
     MarkdownHeaderTextSplitter,
@@ -59,6 +61,7 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
     "LatexTextSplitter",
+    "JSFrameworkTextSplitter",
     "PythonCodeTextSplitter",
     "KonlpyTextSplitter",
     "SpacyTextSplitter",
@@ -70,7 +73,9 @@ __all__ = [
     "LineType",
     "HTMLHeaderTextSplitter",
     "HTMLSectionSplitter",
+    "HTMLSemanticPreservingSplitter",
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",
+    "ExperimentalMarkdownSyntaxTextSplitter",
 ]

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Tuple
 
 import numpy as np
 import pytest
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 if TYPE_CHECKING:
     from docarray.index import (
@@ -22,13 +22,11 @@ from langchain_community.embeddings import FakeEmbeddings
 
 
 @pytest.fixture
-def init_weaviate() -> (
-    Generator[
-        Tuple[WeaviateDocumentIndex, Dict[str, Any], FakeEmbeddings],
-        None,
-        None,
-    ]
-):
+def init_weaviate() -> Generator[
+    Tuple[WeaviateDocumentIndex, Dict[str, Any], FakeEmbeddings],
+    None,
+    None,
+]:
     """
     cd tests/integration_tests/vectorstores/docker-compose
     docker compose -f weaviate.yml up
@@ -75,9 +73,9 @@ def init_weaviate() -> (
 
 
 @pytest.fixture
-def init_elastic() -> (
-    Generator[Tuple[ElasticDocIndex, Dict[str, Any], FakeEmbeddings], None, None]
-):
+def init_elastic() -> Generator[
+    Tuple[ElasticDocIndex, Dict[str, Any], FakeEmbeddings], None, None
+]:
     """
     cd tests/integration_tests/vectorstores/docker-compose
     docker-compose -f elasticsearch.yml up

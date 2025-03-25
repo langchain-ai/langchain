@@ -1,12 +1,39 @@
 """Configuration for unit tests."""
 
+from collections.abc import Iterator, Sequence
 from importlib import util
-from typing import Dict, Sequence
 from uuid import UUID
 
 import pytest
+from blockbuster import BlockBuster, blockbuster_ctx
 from pytest import Config, Function, Parser
 from pytest_mock import MockerFixture
+
+
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[BlockBuster]:
+    with blockbuster_ctx("langchain_core") as bb:
+        for func in ["os.stat", "os.path.abspath"]:
+            (
+                bb.functions[func]
+                .can_block_in("langchain_core/_api/internal.py", "is_caller_internal")
+                .can_block_in("langchain_core/runnables/base.py", "__repr__")
+                .can_block_in(
+                    "langchain_core/beta/runnables/context.py", "aconfig_with_context"
+                )
+            )
+
+        for func in ["os.stat", "io.TextIOWrapper.read"]:
+            bb.functions[func].can_block_in(
+                "langsmith/client.py", "_default_retry_config"
+            )
+
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in(
+                "freezegun/api.py", "_get_cached_module_attributes"
+            )
+
+        yield bb
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -41,13 +68,14 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
-    required_pkgs_info: Dict[str, bool] = {}
+    required_pkgs_info: dict[str, bool] = {}
 
     only_extended = config.getoption("--only-extended") or False
     only_core = config.getoption("--only-core") or False
 
     if only_extended and only_core:
-        raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")
+        msg = "Cannot specify both `--only-extended` and `--only-core`."
+        raise ValueError(msg)
 
     for item in items:
         requires_marker = item.get_closest_marker("requires")

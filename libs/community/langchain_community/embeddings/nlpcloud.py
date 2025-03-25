@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict
 
 
 class NLPCloudEmbeddings(BaseModel, Embeddings):
@@ -21,6 +21,8 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
     model_name: str  # Define model_name as a class attribute
     gpu: bool  # Define gpu as a class attribute
     client: Any  #: :meta private:
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(
         self,

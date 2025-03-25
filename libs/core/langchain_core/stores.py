@@ -7,16 +7,11 @@ The primary goal of these storages is to support implementation of caching.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
-    Dict,
     Generic,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -84,7 +79,7 @@ class BaseStore(Generic[K, V], ABC):
     """
 
     @abstractmethod
-    def mget(self, keys: Sequence[K]) -> List[Optional[V]]:
+    def mget(self, keys: Sequence[K]) -> list[Optional[V]]:
         """Get the values associated with the given keys.
 
         Args:
@@ -95,7 +90,7 @@ class BaseStore(Generic[K, V], ABC):
             If a key is not found, the corresponding value will be None.
         """
 
-    async def amget(self, keys: Sequence[K]) -> List[Optional[V]]:
+    async def amget(self, keys: Sequence[K]) -> list[Optional[V]]:
         """Async get the values associated with the given keys.
 
         Args:
@@ -108,14 +103,14 @@ class BaseStore(Generic[K, V], ABC):
         return await run_in_executor(None, self.mget, keys)
 
     @abstractmethod
-    def mset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
+    def mset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Set the values for the given keys.
 
         Args:
             key_value_pairs (Sequence[Tuple[K, V]]): A sequence of key-value pairs.
         """
 
-    async def amset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
+    async def amset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Async set the values for the given keys.
 
         Args:
@@ -184,9 +179,9 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
 
     def __init__(self) -> None:
         """Initialize an empty store."""
-        self.store: Dict[str, V] = {}
+        self.store: dict[str, V] = {}
 
-    def mget(self, keys: Sequence[str]) -> List[Optional[V]]:
+    def mget(self, keys: Sequence[str]) -> list[Optional[V]]:
         """Get the values associated with the given keys.
 
         Args:
@@ -198,7 +193,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         return [self.store.get(key) for key in keys]
 
-    async def amget(self, keys: Sequence[str]) -> List[Optional[V]]:
+    async def amget(self, keys: Sequence[str]) -> list[Optional[V]]:
         """Async get the values associated with the given keys.
 
         Args:
@@ -210,7 +205,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         return self.mget(keys)
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
+    def mset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
         """Set the values for the given keys.
 
         Args:
@@ -222,7 +217,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         for key, value in key_value_pairs:
             self.store[key] = value
 
-    async def amset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
+    async def amset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
         """Async set the values for the given keys.
 
         Args:
@@ -263,7 +258,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         if prefix is None:
             yield from self.store.keys()
         else:
-            for key in self.store.keys():
+            for key in self.store:
                 if key.startswith(prefix):
                     yield key
 
@@ -277,10 +272,10 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
             AsyncIterator[str]: An async iterator over keys that match the given prefix.
         """
         if prefix is None:
-            for key in self.store.keys():
+            for key in self.store:
                 yield key
         else:
-            for key in self.store.keys():
+            for key in self.store:
                 if key.startswith(prefix):
                     yield key
 

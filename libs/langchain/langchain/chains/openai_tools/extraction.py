@@ -4,9 +4,9 @@ from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from pydantic import BaseModel
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
 in the following passage together with their properties.
@@ -32,7 +32,7 @@ If a property is not present and is not required in the function parameters, do 
     removal="1.0",
     alternative=(
         """
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
     
             class Joke(BaseModel):
@@ -68,7 +68,10 @@ def create_extraction_chain_pydantic(
     if not isinstance(pydantic_schemas, list):
         pydantic_schemas = [pydantic_schemas]
     prompt = ChatPromptTemplate.from_messages(
-        [("system", system_message), ("user", "{input}")]
+        [
+            ("system", system_message),
+            ("user", "{input}"),
+        ]
     )
     functions = [convert_pydantic_to_openai_function(p) for p in pydantic_schemas]
     tools = [{"type": "function", "function": d} for d in functions]

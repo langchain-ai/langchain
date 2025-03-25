@@ -2,19 +2,36 @@ import warnings
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
     InMemoryChatMessageHistory,
 )
 from langchain_core.memory import BaseMemory
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.memory.utils import get_prompt_input_key
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class BaseChatMemory(BaseMemory, ABC):
-    """Abstract base class for chat memory."""
+    """Abstract base class for chat memory.
+
+    **ATTENTION** This abstraction was created prior to when chat models had
+        native tool calling capabilities.
+        It does **NOT** support native tool calling capabilities for chat models and
+        will fail SILENTLY if used with a chat model that has native tool calling.
+
+    DO NOT USE THIS ABSTRACTION FOR NEW CODE.
+    """
 
     chat_memory: BaseChatMessageHistory = Field(
         default_factory=InMemoryChatMessageHistory
@@ -54,7 +71,10 @@ class BaseChatMemory(BaseMemory, ABC):
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_messages(
-            [HumanMessage(content=input_str), AIMessage(content=output_str)]
+            [
+                HumanMessage(content=input_str),
+                AIMessage(content=output_str),
+            ]
         )
 
     async def asave_context(
@@ -63,7 +83,10 @@ class BaseChatMemory(BaseMemory, ABC):
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         await self.chat_memory.aadd_messages(
-            [HumanMessage(content=input_str), AIMessage(content=output_str)]
+            [
+                HumanMessage(content=input_str),
+                AIMessage(content=output_str),
+            ]
         )
 
     def clear(self) -> None:

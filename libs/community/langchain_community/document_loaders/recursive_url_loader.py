@@ -53,7 +53,8 @@ def _metadata_extractor(
 class RecursiveUrlLoader(BaseLoader):
     """Recursively load all child links from a root URL.
 
-    **Security Note**: This loader is a crawler that will start crawling
+    **Security Note**:
+        This loader is a crawler that will start crawling
         at a given URL and then expand to crawl child links recursively.
 
         Web crawlers should generally NOT be deployed with network access
@@ -79,7 +80,7 @@ class RecursiveUrlLoader(BaseLoader):
         GET request to an endpoint on Bob's site. Both sites are hosted on the
         same host, so such a request would not be prevented by default.
 
-        See https://python.langchain.com/v0.2/docs/security/
+        See https://python.langchain.com/docs/security/
 
     Setup:
 
@@ -154,36 +155,36 @@ class RecursiveUrlLoader(BaseLoader):
         content. To parse this HTML into a more human/LLM-friendly format you can pass
         in a custom ``extractor`` method:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                # This example uses `beautifulsoup4` and `lxml`
-                import re
-                from bs4 import BeautifulSoup
+            # This example uses `beautifulsoup4` and `lxml`
+            import re
+            from bs4 import BeautifulSoup
 
-                def bs4_extractor(html: str) -> str:
-                    soup = BeautifulSoup(html, "lxml")
-                    return re.sub(r"\n\n+", "\n\n", soup.text).strip()
+            def bs4_extractor(html: str) -> str:
+                soup = BeautifulSoup(html, "lxml")
+                return re.sub(r"\\n\\n+", "\\n\\n", soup.text).strip()
 
-                loader = RecursiveUrlLoader(
-                    "https://docs.python.org/3.9/",
-                    extractor=bs4_extractor,
-                )
-                print(loader.load()[0].page_content[:200])
+            loader = RecursiveUrlLoader(
+                "https://docs.python.org/3.9/",
+                extractor=bs4_extractor,
+            )
+            print(loader.load()[0].page_content[:200])
 
 
-            .. code-block:: python
+        .. code-block:: python
 
-                3.9.19 Documentation
+            3.9.19 Documentation
 
-                Download
-                Download these documents
-                Docs by version
+            Download
+            Download these documents
+            Docs by version
 
-                Python 3.13 (in development)
-                Python 3.12 (stable)
-                Python 3.11 (security-fixes)
-                Python 3.10 (security-fixes)
-                Python 3.9 (securit
+            Python 3.13 (in development)
+            Python 3.12 (stable)
+            Python 3.11 (security-fixes)
+            Python 3.10 (security-fixes)
+            Python 3.9 (securit
 
     Metadata extraction:
         Similarly to content extraction, you can specify a metadata extraction function
@@ -227,7 +228,7 @@ class RecursiveUrlLoader(BaseLoader):
                 "https://docs.python.org/3.9/",
                 prevent_outside=True,
                 base_url="https://docs.python.org",
-                link_regex=r'<a\s+(?:[^>]*?\s+)?href="([^"]*(?=index)[^"]*)"',
+                link_regex=r'<a\\s+(?:[^>]*?\\s+)?href="([^"]*(?=index)[^"]*)"',
                 exclude_dirs=['https://docs.python.org/3.9/faq']
             )
             docs = loader.load()
@@ -268,6 +269,7 @@ class RecursiveUrlLoader(BaseLoader):
         base_url: Optional[str] = None,
         autoset_encoding: bool = True,
         encoding: Optional[str] = None,
+        proxies: Optional[dict] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -313,6 +315,16 @@ class RecursiveUrlLoader(BaseLoader):
                 encoding, unless the `encoding` argument has already been explicitly set.
             encoding: The encoding of the response. If manually set, the encoding will be
                 set to given value, regardless of the `autoset_encoding` argument.
+            proxies: A dictionary mapping protocol names to the proxy URLs to be used for requests.
+                This allows the crawler to route its requests through specified proxy servers.
+                If None, no proxies will be used and requests will go directly to the target URL.
+                Example usage:
+                ..code-block:: python
+
+                    proxies = {
+                        "http": "http://10.10.1.10:3128",
+                        "https": "https://10.10.1.10:1080",
+                    }
         """  # noqa: E501
 
         self.url = url
@@ -342,6 +354,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.check_response_status = check_response_status
         self.continue_on_failure = continue_on_failure
         self.base_url = base_url if base_url is not None else url
+        self.proxies = proxies
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
@@ -360,7 +373,9 @@ class RecursiveUrlLoader(BaseLoader):
         # Get all links that can be accessed from the current URL
         visited.add(url)
         try:
-            response = requests.get(url, timeout=self.timeout, headers=self.headers)
+            response = requests.get(
+                url, timeout=self.timeout, headers=self.headers, proxies=self.proxies
+            )
 
             if self.encoding is not None:
                 response.encoding = self.encoding

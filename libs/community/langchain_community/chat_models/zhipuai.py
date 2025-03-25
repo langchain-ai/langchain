@@ -50,11 +50,11 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ def _get_jwt_token(api_key: str) -> str:
         import jwt
     except ImportError:
         raise ImportError(
-            "jwt package not found, please install it with" "`pip install pyjwt`"
+            "jwt package not found, please install it with`pip install pyjwt`"
         )
 
     try:
@@ -204,7 +204,7 @@ def _convert_delta_to_message_chunk(
     role = dct.get("role")
     content = dct.get("content", "")
     additional_kwargs = {}
-    tool_calls = dct.get("tool_call", None)
+    tool_calls = dct.get("tool_calls", None)
     if tool_calls is not None:
         additional_kwargs["tool_calls"] = tool_calls
 
@@ -331,7 +331,7 @@ class ChatZhipuAI(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -371,7 +371,7 @@ class ChatZhipuAI(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -480,11 +480,13 @@ class ChatZhipuAI(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict[str, Any]) -> Any:
         values["zhipuai_api_key"] = get_from_dict_or_env(
             values, ["zhipuai_api_key", "api_key"], "ZHIPUAI_API_KEY"
         )
@@ -589,13 +591,19 @@ class ChatZhipuAI(BaseChatModel):
                     if len(chunk["choices"]) == 0:
                         continue
                     choice = chunk["choices"][0]
+                    usage = chunk.get("usage", None)
+                    model_name = chunk.get("model", "")
                     chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     finish_reason = choice.get("finish_reason", None)
 
                     generation_info = (
-                        {"finish_reason": finish_reason}
+                        {
+                            "finish_reason": finish_reason,
+                            "token_usage": usage,
+                            "model_name": model_name,
+                        }
                         if finish_reason is not None
                         else None
                     )
@@ -676,13 +684,19 @@ class ChatZhipuAI(BaseChatModel):
                     if len(chunk["choices"]) == 0:
                         continue
                     choice = chunk["choices"][0]
+                    usage = chunk.get("usage", None)
+                    model_name = chunk.get("model", "")
                     chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     finish_reason = choice.get("finish_reason", None)
 
                     generation_info = (
-                        {"finish_reason": finish_reason}
+                        {
+                            "finish_reason": finish_reason,
+                            "token_usage": usage,
+                            "model_name": model_name,
+                        }
                         if finish_reason is not None
                         else None
                     )
@@ -773,7 +787,7 @@ class ChatZhipuAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatZhipuAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -793,7 +807,7 @@ class ChatZhipuAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatZhipuAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -814,7 +828,7 @@ class ChatZhipuAI(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import ChatZhipuAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

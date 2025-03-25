@@ -8,8 +8,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseSettings
 from langchain_core.vectorstores import VectorStore
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger()
 
@@ -85,10 +85,12 @@ class MyScaleSettings(BaseSettings):
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        env_prefix = "myscale_"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="myscale_",
+        extra="ignore",
+    )
 
 
 class MyScale(VectorStore):
@@ -164,16 +166,16 @@ class MyScale(VectorStore):
         )
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                {self.config.column_map['id']} String,
-                {self.config.column_map['text']} String,
-                {self.config.column_map['vector']} Array(Float32),
-                {self.config.column_map['metadata']} JSON,
+                {self.config.column_map["id"]} String,
+                {self.config.column_map["text"]} String,
+                {self.config.column_map["vector"]} Array(Float32),
+                {self.config.column_map["metadata"]} JSON,
                 CONSTRAINT cons_vec_len CHECK length(\
-                    {self.config.column_map['vector']}) = {dim},
-                VECTOR INDEX vidx {self.config.column_map['vector']} \
+                    {self.config.column_map["vector"]}) = {dim},
+                VECTOR INDEX vidx {self.config.column_map["vector"]} \
                     TYPE {self.config.index_type}(\
                         'metric_type={self.config.metric}'{index_params})
-            ) ENGINE = MergeTree ORDER BY {self.config.column_map['id']}
+            ) ENGINE = MergeTree ORDER BY {self.config.column_map["id"]}
         """
         self.dim = dim
         self.BS = "\\"
@@ -191,6 +193,13 @@ class MyScale(VectorStore):
             password=self.config.password,
             **kwargs,
         )
+        try:
+            self.client.command("SET allow_experimental_json_type=1")
+        except Exception as _:
+            logger.debug(
+                f"Clickhouse version={self.client.server_version} - "
+                "There is no allow_experimental_json_type parameter."
+            )
         self.client.command("SET allow_experimental_object_type=1")
         self.client.command(schema_)
 
@@ -211,7 +220,7 @@ class MyScale(VectorStore):
                 INSERT INTO TABLE 
                     {self.config.database}.{self.config.table}({ks})
                 VALUES
-                {','.join(_data)}
+                {",".join(_data)}
                 """
         return i_str
 
@@ -336,11 +345,11 @@ class MyScale(VectorStore):
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map['text']}, 
-                {self.config.column_map['metadata']}, dist
+            SELECT {self.config.column_map["text"]}, 
+                {self.config.column_map["metadata"]}, dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}]) 
+            ORDER BY distance({self.config.column_map["vector"]}, [{q_emb_str}]) 
                 AS dist {self.dist_order}
             LIMIT {topk}
             """
@@ -466,9 +475,9 @@ class MyScale(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        assert not (
-            ids is None and where_str is None
-        ), "You need to specify where to be deleted! Either with `ids` or `where_str`"
+        assert not (ids is None and where_str is None), (
+            "You need to specify where to be deleted! Either with `ids` or `where_str`"
+        )
         conds = []
         if ids and len(ids) > 0:
             id_list = ", ".join([f"'{id}'" for id in ids])
@@ -527,11 +536,11 @@ class MyScaleWithoutJSON(MyScale):
             where_str = ""
 
         q_str = f"""
-            SELECT {self.config.column_map['text']}, dist, 
-                {','.join(self.must_have_cols)}
+            SELECT {self.config.column_map["text"]}, dist, 
+                {",".join(self.must_have_cols)}
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY distance({self.config.column_map['vector']}, [{q_emb_str}]) 
+            ORDER BY distance({self.config.column_map["vector"]}, [{q_emb_str}]) 
                 AS dist {self.dist_order}
             LIMIT {topk}
             """

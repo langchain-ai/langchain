@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 if TYPE_CHECKING:
     from gitlab.v4.objects import Issue
@@ -15,8 +15,10 @@ if TYPE_CHECKING:
 class GitLabAPIWrapper(BaseModel):
     """Wrapper for GitLab API."""
 
-    gitlab: Any  #: :meta private:
-    gitlab_repo_instance: Any  #: :meta private:
+    gitlab: Any = None  #: :meta private:
+    gitlab_repo_instance: Any = None  #: :meta private:
+    gitlab_url: Optional[str] = None
+    """The url of the GitLab instance."""
     gitlab_repository: Optional[str] = None
     """The name of the GitLab repository, in the form {username}/{repo-name}."""
     gitlab_personal_access_token: Optional[str] = None
@@ -30,11 +32,13 @@ class GitLabAPIWrapper(BaseModel):
         Usually 'main' or 'master'. Defaults to 'main'.
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
 
         gitlab_url = get_from_dict_or_env(
@@ -74,6 +78,7 @@ class GitLabAPIWrapper(BaseModel):
 
         values["gitlab"] = g
         values["gitlab_repo_instance"] = g.projects.get(gitlab_repository)
+        values["gitlab_url"] = gitlab_url
         values["gitlab_repository"] = gitlab_repository
         values["gitlab_personal_access_token"] = gitlab_personal_access_token
         values["gitlab_branch"] = gitlab_branch
@@ -133,7 +138,10 @@ class GitLabAPIWrapper(BaseModel):
             for comment in comments_page:
                 comment = issue.notes.get(comment.id)
                 comments.append(
-                    {"body": comment.body, "user": comment.author["username"]}
+                    {
+                        "body": comment.body,
+                        "user": comment.author["username"],
+                    }
                 )
             page += 1
 
@@ -205,6 +213,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             str: A success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
         try:
@@ -251,6 +265,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             A success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             file_path = file_query.split("\n")[0]
             old_file_contents = (
@@ -297,6 +317,12 @@ class GitLabAPIWrapper(BaseModel):
         Returns:
             str: Success or failure message
         """
+        if self.gitlab_branch == self.gitlab_base_branch:
+            return (
+                "You're attempting to commit directly"
+                f"to the {self.gitlab_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
         try:
             self.gitlab_repo_instance.files.delete(
                 file_path, self.gitlab_branch, "Delete " + file_path
@@ -304,6 +330,161 @@ class GitLabAPIWrapper(BaseModel):
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
+
+    def list_files_in_main_branch(self) -> str:
+        """
+        Get the list of files in the main branch of the repository
+
+        Returns:
+            str: A plaintext report containing the list of files
+            in the repository in the main branch
+        """
+        if self.gitlab_base_branch is None:
+            return "No base branch set. Please set a base branch."
+        return self._list_files(self.gitlab_base_branch)
+
+    def list_files_in_bot_branch(self) -> str:
+        """
+        Get the list of files in the active branch of the repository
+
+        Returns:
+            str: A plaintext report containing the list of files
+            in the repository in the active branch
+        """
+        if self.gitlab_branch is None:
+            return "No active branch set. Please set a branch."
+        return self._list_files(self.gitlab_branch)
+
+    def list_files_from_directory(self, path: str) -> str:
+        """
+        Get the list of files in the active branch of the repository
+        from a specific directory
+
+        Returns:
+            str: A plaintext report containing the list of files
+            in the repository in the active branch from the specified directory
+        """
+        if self.gitlab_branch is None:
+            return "No active branch set. Please set a branch."
+        return self._list_files(
+            branch=self.gitlab_branch,
+            path=path,
+        )
+
+    def _list_files(self, branch: str, path: str = "") -> str:
+        try:
+            files = self._get_repository_files(
+                branch=branch,
+                path=path,
+            )
+            if files:
+                files_str = "\n".join(files)
+                return f"Found {len(files)} files in branch `{branch}`:\n{files_str}"
+            else:
+                return f"No files found in branch: `{branch}`"
+        except Exception as e:
+            return f"Error: {e}"
+
+    def _get_repository_files(self, branch: str, path: str = "") -> List[str]:
+        repo_contents = self.gitlab_repo_instance.repository_tree(ref=branch, path=path)
+
+        files: List[str] = []
+        for content in repo_contents:
+            if content["type"] == "tree":
+                files.extend(self._get_repository_files(branch, content["path"]))
+            else:
+                files.append(content["path"])
+
+        return files
+
+    def create_branch(self, proposed_branch_name: str) -> str:
+        """
+        Create a new branch in the repository and set it as the active branch
+
+        Parameters:
+            proposed_branch_name (str): The name of the new branch to be created
+        Returns:
+            str: A success or failure message
+        """
+        from gitlab import GitlabCreateError
+
+        max_attempts = 100
+        new_branch_name = proposed_branch_name
+        for i in range(max_attempts):
+            try:
+                response = self.gitlab_repo_instance.branches.create(
+                    {
+                        "branch": new_branch_name,
+                        "ref": self.gitlab_branch,
+                    }
+                )
+
+                self.gitlab_branch = response.name
+                return (
+                    f"Branch '{response.name}' "
+                    "created successfully, and set as current active branch."
+                )
+
+            except GitlabCreateError as e:
+                if (
+                    e.response_code == 400
+                    and "Branch already exists" in e.error_message
+                ):
+                    i += 1
+                    new_branch_name = f"{proposed_branch_name}_v{i}"
+                else:
+                    # Handle any other exceptions
+                    print(f"Failed to create branch. Error: {e}")  # noqa: T201
+                    raise Exception(
+                        "Unable to create branch name from proposed_branch_name: "
+                        f"{proposed_branch_name}"
+                    )
+
+        return (
+            f"Unable to create branch. At least {max_attempts} branches exist "
+            f"with named derived from "
+            f"proposed_branch_name: `{proposed_branch_name}`"
+        )
+
+    def list_branches_in_repo(self) -> str:
+        """
+        Get the list of branches in the repository
+
+        Returns:
+            str: A plaintext report containing the number of branches
+            and each branch name
+        """
+        branches = [
+            branch.name for branch in self.gitlab_repo_instance.branches.list(all=True)
+        ]
+        if branches:
+            branches_str = "\n".join(branches)
+            return (
+                f"Found {str(len(branches))} branches in the repository:"
+                f"\n{branches_str}"
+            )
+        return "No branches found in the repository"
+
+    def set_active_branch(self, branch_name: str) -> str:
+        """Equivalent to `git checkout branch_name` for this Agent.
+        Clones formatting from Gitlab.
+
+        Returns an Error (as a string) if branch doesn't exist.
+        """
+        curr_branches = [
+            branch.name
+            for branch in self.gitlab_repo_instance.branches.list(
+                all=True,
+            )
+        ]
+        if branch_name in curr_branches:
+            self.gitlab_branch = branch_name
+            return f"Switched to branch `{branch_name}`"
+        else:
+            return (
+                f"Error {branch_name} does not exist,"
+                f"in repo with current branches: {str(curr_branches)}"
+            )
 
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issues":
@@ -322,5 +503,17 @@ class GitLabAPIWrapper(BaseModel):
             return self.update_file(query)
         elif mode == "delete_file":
             return self.delete_file(query)
+        elif mode == "create_branch":
+            return self.create_branch(query)
+        elif mode == "list_branches_in_repo":
+            return self.list_branches_in_repo()
+        elif mode == "set_active_branch":
+            return self.set_active_branch(query)
+        elif mode == "list_files_in_main_branch":
+            return self.list_files_in_main_branch()
+        elif mode == "list_files_in_bot_branch":
+            return self.list_files_in_bot_branch()
+        elif mode == "list_files_from_directory":
+            return self.list_files_from_directory(query)
         else:
             raise ValueError("Invalid mode" + mode)

@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from copy import deepcopy
 from enum import Enum
+from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Field, PrivateAttr, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from packaging.version import Version
+from pydantic import ConfigDict, Field, PrivateAttr, model_validator
 
 if TYPE_CHECKING:
     from rank_llm.data import Candidate, Query, Request
@@ -36,16 +38,22 @@ class RankLLMRerank(BaseDocumentCompressor):
     """OpenAI model name."""
     _retriever: Any = PrivateAttr()
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate python package exists in environment."""
 
         if not values.get("client"):
             client_name = values.get("model", "zephyr")
+
+            is_pre_rank_llm_revamp = Version(version=version("rank_llm")) <= Version(
+                "0.12.8"
+            )
 
             try:
                 model_enum = ModelType(client_name.lower())
@@ -56,15 +64,29 @@ class RankLLMRerank(BaseDocumentCompressor):
 
             try:
                 if model_enum == ModelType.VICUNA:
-                    from rank_llm.rerank.vicuna_reranker import VicunaReranker
+                    if is_pre_rank_llm_revamp:
+                        from rank_llm.rerank.vicuna_reranker import VicunaReranker
+                    else:
+                        from rank_llm.rerank.listwise.vicuna_reranker import (
+                            VicunaReranker,
+                        )
 
                     values["client"] = VicunaReranker()
                 elif model_enum == ModelType.ZEPHYR:
-                    from rank_llm.rerank.zephyr_reranker import ZephyrReranker
+                    if is_pre_rank_llm_revamp:
+                        from rank_llm.rerank.zephyr_reranker import ZephyrReranker
+                    else:
+                        from rank_llm.rerank.listwise.zephyr_reranker import (
+                            ZephyrReranker,
+                        )
 
                     values["client"] = ZephyrReranker()
                 elif model_enum == ModelType.GPT:
-                    from rank_llm.rerank.rank_gpt import SafeOpenai
+                    if is_pre_rank_llm_revamp:
+                        from rank_llm.rerank.rank_gpt import SafeOpenai
+                    else:
+                        from rank_llm.rerank.listwise.rank_gpt import SafeOpenai
+
                     from rank_llm.rerank.reranker import Reranker
 
                     openai_api_key = get_from_dict_or_env(
@@ -108,10 +130,17 @@ class RankLLMRerank(BaseDocumentCompressor):
         )
 
         final_results = []
-        for res in rerank_results.candidates:
-            doc = documents[int(res.docid)]
-            doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
-            final_results.append(doc_copy)
+        if hasattr(rerank_results, "candidates"):
+            # Old API format
+            for res in rerank_results.candidates:
+                doc = documents[int(res.docid)]
+                doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
+                final_results.append(doc_copy)
+        else:
+            for res in rerank_results:
+                doc = documents[int(res.docid)]
+                doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
+                final_results.append(doc_copy)
 
         return final_results[: self.top_n]
 

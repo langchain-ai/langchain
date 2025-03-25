@@ -1,4 +1,5 @@
 """Fake Chat Model wrapper for testing purposes."""
+
 import json
 from typing import Any, Dict, List, Optional
 
@@ -21,7 +22,7 @@ class FakeEchoPromptChatModel(SimpleChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        return json.dumps([message.dict() for message in messages])
+        return json.dumps([message.model_dump() for message in messages])
 
     async def _agenerate(
         self,

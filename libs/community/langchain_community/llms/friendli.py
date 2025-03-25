@@ -10,20 +10,25 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import pre_init
 from langchain_core.utils.env import get_from_dict_or_env
 from langchain_core.utils.utils import convert_to_secret_str
+from pydantic import Field, SecretStr
 
 
-def _stream_response_to_generation_chunk(stream_response: Any) -> GenerationChunk:
+def _stream_response_to_generation_chunk(
+    stream_response: Any,
+) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
-    if stream_response.event == "token_sampled":
-        return GenerationChunk(
-            text=stream_response.text,
-            generation_info={"token": str(stream_response.token)},
-        )
-    return GenerationChunk(text="")
+    if not stream_response.get("choices", None):
+        return GenerationChunk(text="")
+    return GenerationChunk(
+        text=stream_response.choices[0].text,
+        # generation_info=dict(
+        #     finish_reason=stream_response.choices[0].get("finish_reason", None),
+        #     logprobs=stream_response.choices[0].get("logprobs", None),
+        # ),
+    )
 
 
 class BaseFriendli(Serializable):
@@ -34,7 +39,7 @@ class BaseFriendli(Serializable):
     # Friendli Async client.
     async_client: Any = Field(default=None, exclude=True)
     # Model name to use.
-    model: str = "mixtral-8x7b-instruct-v0-1"
+    model: str = "meta-llama-3.1-8b-instruct"
     # Friendli personal access token to run as.
     friendli_token: Optional[SecretStr] = None
     # Friendli team ID to run as.
@@ -107,7 +112,7 @@ class Friendli(LLM, BaseFriendli):
             from langchain_community.llms import Friendli
 
             friendli = Friendli(
-                model="mixtral-8x7b-instruct-v0-1", friendli_token="YOUR FRIENDLI TOKEN"
+                model="meta-llama-3.1-8b-instruct", friendli_token="YOUR FRIENDLI TOKEN"
             )
     """
 
@@ -233,9 +238,9 @@ class Friendli(LLM, BaseFriendli):
         )
         for line in stream:
             chunk = _stream_response_to_generation_chunk(line)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(line.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -250,9 +255,9 @@ class Friendli(LLM, BaseFriendli):
         )
         async for line in stream:
             chunk = _stream_response_to_generation_chunk(line)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(line.text, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,

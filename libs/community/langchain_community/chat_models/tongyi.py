@@ -53,16 +53,17 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+)
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -87,7 +88,6 @@ def convert_dict_to_message(
     """Convert a dict to a message."""
     role = _dict["role"]
     content = _dict["content"]
-
     if role == "user":
         return (
             HumanMessageChunk(content=content)
@@ -122,6 +122,10 @@ def convert_dict_to_message(
                             tool_calls.append(parsed_tool)
                     except Exception as e:
                         invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
+        elif "reasoning_content" in _dict:
+            additional_kwargs = {"reasoning_content": _dict["reasoning_content"]}
+        elif "partial" in _dict and isinstance(_dict["partial"], bool):
+            additional_kwargs = {"partial": _dict["partial"]}
         else:
             additional_kwargs = {}
 
@@ -203,6 +207,9 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
         if "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        # support Partial Mode for text continuation
+        if "partial" in message.additional_kwargs:
+            message_dict["partial"] = message.additional_kwargs["partial"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
@@ -348,7 +355,7 @@ class ChatTongyi(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -386,7 +393,7 @@ class ChatTongyi(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -433,7 +440,7 @@ class ChatTongyi(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = Field(default="qwen-turbo", alias="model")
     """Model name to use.
     callable multimodal model:
@@ -457,8 +464,9 @@ class ChatTongyi(BaseChatModel):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -479,11 +487,12 @@ class ChatTongyi(BaseChatModel):
                 "Please install it with `pip install dashscope --upgrade`."
             )
         dashscope_multimodal_models = [
-            "qwen-vl-v1",
-            "qwen-vl-chat-v1",
             "qwen-audio-turbo",
+            "qwen-audio-turbo-latest",
             "qwen-vl-plus",
+            "qwen-vl-plus-latest",
             "qwen-vl-max",
+            "qwen-vl-max-latest",
         ]
         if (
             values["model_name"] in dashscope_multimodal_models
@@ -545,6 +554,19 @@ class ChatTongyi(BaseChatModel):
                 if _kwargs.get("stream") and not _kwargs.get(
                     "incremental_output", False
                 ):
+                    # inline fix response text logic
+                    resp_copy = json.loads(json.dumps(resp))
+                    if resp_copy.get("output") and resp_copy["output"].get("choices"):
+                        choice = resp_copy["output"]["choices"][0]
+                        message = choice["message"]
+                        if isinstance(message.get("content"), list):
+                            content_text = "".join(
+                                item.get("text", "")
+                                for item in message["content"]
+                                if isinstance(item, dict)
+                            )
+                            message["content"] = content_text
+                        resp = resp_copy
                     if prev_resp is None:
                         delta_resp = resp
                     else:
@@ -709,6 +731,7 @@ class ChatTongyi(BaseChatModel):
             if (
                 choice["finish_reason"] == "null"
                 and message["content"] == ""
+                and message["reasoning_content"] == ""
                 and "tool_calls" not in message
             ):
                 continue
@@ -763,8 +786,6 @@ class ChatTongyi(BaseChatModel):
         ]
         if len(system_message_indices) == 1 and system_message_indices[0] != 0:
             raise ValueError("System message can only be the first message.")
-        elif len(system_message_indices) > 1:
-            raise ValueError("There can be only one system message at most.")
 
         params["messages"] = message_dicts
 

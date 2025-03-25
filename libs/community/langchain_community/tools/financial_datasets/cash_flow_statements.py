@@ -1,8 +1,8 @@
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.utilities.financial_datasets import FinancialDatasetsAPIWrapper
 
@@ -20,11 +20,11 @@ class CashFlowStatementsSchema(BaseModel):
         "Default is 'annual'.",
     )
     limit: int = Field(
-        description="The number of cash flow statements to return. " "Default is 10.",
+        description="The number of cash flow statements to return. Default is 10.",
     )
 
 
-class CashFlowStatements(BaseTool):
+class CashFlowStatements(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets cash flow statements for a given ticker over a given period.
     """

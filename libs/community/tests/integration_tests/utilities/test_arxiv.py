@@ -135,7 +135,12 @@ def test_load_returns_full_set_of_metadata() -> None:
         assert doc.page_content
         assert doc.metadata
         assert set(doc.metadata).issuperset(
-            {"Published", "Title", "Authors", "Summary"}
+            {
+                "Published",
+                "Title",
+                "Authors",
+                "Summary",
+            }
         )
         print(doc.metadata)  # noqa: T201
         assert len(set(doc.metadata)) > 4
@@ -152,9 +157,9 @@ def _load_arxiv_from_universal_entry(**kwargs: Any) -> BaseTool:
 def test_load_arxiv_from_universal_entry() -> None:
     arxiv_tool = _load_arxiv_from_universal_entry()
     output = arxiv_tool.invoke("Caprice Stanley")
-    assert (
-        "On Mixing Behavior of a Family of Random Walks" in output
-    ), "failed to fetch a valid result"
+    assert "On Mixing Behavior of a Family of Random Walks" in output, (
+        "failed to fetch a valid result"
+    )
 
 
 def test_load_arxiv_from_universal_entry_with_params() -> None:
@@ -168,6 +173,6 @@ def test_load_arxiv_from_universal_entry_with_params() -> None:
     wp = arxiv_tool.api_wrapper
     assert wp.top_k_results == 1, "failed to assert top_k_results"
     assert wp.load_max_docs == 10, "failed to assert load_max_docs"
-    assert (
-        wp.load_all_available_meta is True
-    ), "failed to assert load_all_available_meta"
+    assert wp.load_all_available_meta is True, (
+        "failed to assert load_all_available_meta"
+    )

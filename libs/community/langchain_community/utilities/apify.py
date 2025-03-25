@@ -1,13 +1,24 @@
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, model_validator
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import ApifyDatasetLoader
 
 
+@deprecated(
+    since="0.3.18",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "You can swap to using the `ApifyWrapper`"
+        " implementation in `langchain_apify` package. "
+        "See <https://github.com/apify/langchain-apify>"
+    ),
+    alternative_import="langchain_apify.ApifyWrapper",
+)
 class ApifyWrapper(BaseModel):
     """Wrapper around Apify.
     To use, you should have the ``apify-client`` python package installed,
@@ -19,8 +30,9 @@ class ApifyWrapper(BaseModel):
     apify_client_async: Any
     apify_api_token: Optional[str] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate environment.
         Validate that an Apify API token is set and the apify-client
         Python package exists in the current environment.

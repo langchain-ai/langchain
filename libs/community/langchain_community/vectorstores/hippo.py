@@ -118,7 +118,7 @@ class Hippo(VectorStore):
                 self.hc.delete_table(self.table_name, self.database_name)
         except Exception as e:
             logging.error(
-                f"An error occurred while deleting the table " f"{self.table_name}: {e}"
+                f"An error occurred while deleting the table {self.table_name}: {e}"
             )
             raise
 
@@ -127,7 +127,7 @@ class Hippo(VectorStore):
                 self.col = self.hc.get_table(self.table_name, self.database_name)
         except Exception as e:
             logging.error(
-                f"An error occurred while getting the table " f"{self.table_name}: {e}"
+                f"An error occurred while getting the table {self.table_name}: {e}"
             )
             raise
 

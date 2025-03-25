@@ -106,7 +106,10 @@ class Typesense(VectorStore):
             {"name": ".*", "type": "auto"},
         ]
         self._typesense_client.collections.create(
-            {"name": self._typesense_collection_name, "fields": fields}
+            {
+                "name": self._typesense_collection_name,
+                "fields": fields,
+            }
         )
 
     def add_texts(
@@ -158,7 +161,7 @@ class Typesense(VectorStore):
         embedded_query = [str(x) for x in self._embedding.embed_query(query)]
         query_obj = {
             "q": "*",
-            "vector_query": f'vec:([{",".join(embedded_query)}], k:{k})',
+            "vector_query": f"vec:([{','.join(embedded_query)}], k:{k})",
             "filter_by": filter,
             "collection": self._typesense_collection_name,
         }

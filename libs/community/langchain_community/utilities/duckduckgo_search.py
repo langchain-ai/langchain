@@ -4,9 +4,9 @@ No setup required. Free.
 https://pypi.org/project/duckduckgo-search/
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
@@ -28,20 +28,22 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     Options: d, w, m, y
     """
     max_results: int = 5
-    backend: str = "api"
+    backend: str = "auto"
     """
-    Options: api, html, lite
+    Options: auto, html, lite
     """
     source: str = "text"
     """
-    Options: text, news
+    Options: text, news, images
     """
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that python package exists in environment."""
         try:
             from duckduckgo_search import DDGS  # noqa: F401
@@ -61,7 +63,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.text(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
                 max_results=max_results or self.max_results,
@@ -80,9 +82,26 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         with DDGS() as ddgs:
             ddgs_gen = ddgs.news(
                 query,
-                region=self.region,
+                region=self.region,  # type: ignore[arg-type]
                 safesearch=self.safesearch,
                 timelimit=self.time,
+                max_results=max_results or self.max_results,
+            )
+            if ddgs_gen:
+                return [r for r in ddgs_gen]
+        return []
+
+    def _ddgs_images(
+        self, query: str, max_results: Optional[int] = None
+    ) -> List[Dict[str, str]]:
+        """Run query through DuckDuckGo image search and return results."""
+        from duckduckgo_search import DDGS
+
+        with DDGS() as ddgs:
+            ddgs_gen = ddgs.images(
+                query,
+                region=self.region,  # type: ignore[arg-type]
+                safesearch=self.safesearch,
                 max_results=max_results or self.max_results,
             )
             if ddgs_gen:
@@ -95,6 +114,8 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             results = self._ddgs_text(query)
         elif self.source == "news":
             results = self._ddgs_news(query)
+        elif self.source == "images":
+            results = self._ddgs_images(query)
         else:
             results = []
 
@@ -134,6 +155,19 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
                     "source": r["source"],
                 }
                 for r in self._ddgs_news(query, max_results=max_results)
+            ]
+        elif source == "images":
+            results = [
+                {
+                    "title": r["title"],
+                    "thumbnail": r["thumbnail"],
+                    "image": r["image"],
+                    "url": r["url"],
+                    "height": r["height"],
+                    "width": r["width"],
+                    "source": r["source"],
+                }
+                for r in self._ddgs_images(query, max_results=max_results)
             ]
         else:
             results = []

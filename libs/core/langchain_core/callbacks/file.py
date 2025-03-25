@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, TextIO, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.utils.input import print_text
+
+if TYPE_CHECKING:
+    from langchain_core.agents import AgentAction, AgentFinish
 
 
 class FileCallbackHandler(BaseCallbackHandler):
     """Callback Handler that writes to a file.
 
     Parameters:
-        file: The file to write to.
+        filename: The file to write to.
+        mode: The mode to open the file in. Defaults to "a".
         color: The color to use for the text.
     """
 
@@ -27,7 +31,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             mode: The mode to open the file in. Defaults to "a".
             color: The color to use for the text. Defaults to None.
         """
-        self.file = cast(TextIO, open(filename, mode, encoding="utf-8"))
+        self.file = cast(TextIO, Path(filename).open(mode, encoding="utf-8"))  # noqa: SIM115
         self.color = color
 
     def __del__(self) -> None:
@@ -35,7 +39,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         self.file.close()
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+        self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
     ) -> None:
         """Print out that we are entering a chain.
 
@@ -44,14 +48,20 @@ class FileCallbackHandler(BaseCallbackHandler):
             inputs (Dict[str, Any]): The inputs to the chain.
             **kwargs (Any): Additional keyword arguments.
         """
-        class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+        if "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            if serialized:
+                name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+            else:
+                name = "<unknown>"
         print_text(
-            f"\n\n\033[1m> Entering new {class_name} chain...\033[0m",
+            f"\n\n\033[1m> Entering new {name} chain...\033[0m",
             end="\n",
             file=self.file,
         )
 
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain.
 
         Args:

@@ -1,11 +1,22 @@
 from typing import Any, Callable, Dict, List
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
+@deprecated(
+    since="0.3.18",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "You can swap to using the `ApifyDatasetLoader`"
+        " implementation in `langchain_apify` package. "
+        "See <https://github.com/apify/langchain-apify>"
+    ),
+    alternative_import="langchain_apify.ApifyDatasetLoader",
+)
 class ApifyDatasetLoader(BaseLoader, BaseModel):
     """Load datasets from `Apify` web scraping, crawling, and data extraction platform.
 
@@ -49,8 +60,9 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             dataset_id=dataset_id, dataset_mapping_function=dataset_mapping_function
         )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate environment.
 
         Args:

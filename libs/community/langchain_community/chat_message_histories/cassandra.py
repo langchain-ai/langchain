@@ -103,7 +103,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         Args:
             message: A message to write.
         """
-        this_row_id = uuid.uuid1()
+        this_row_id = uuid.uuid4()
         self.table.put(
             partition_id=self.session_id,
             row_id=this_row_id,
@@ -113,7 +113,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
         for message in messages:
-            this_row_id = uuid.uuid1()
+            this_row_id = uuid.uuid4()
             await self.table.aput(
                 partition_id=self.session_id,
                 row_id=this_row_id,

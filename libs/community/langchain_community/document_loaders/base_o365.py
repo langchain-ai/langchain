@@ -3,26 +3,32 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
+import re
 import tempfile
+import urllib
 from abc import abstractmethod
-from enum import Enum
+from datetime import datetime
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
 
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
-    BaseSettings,
     Field,
     FilePath,
+    PrivateAttr,
     SecretStr,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.document_loaders.base import BaseBlobParser, BaseLoader
 from langchain_community.document_loaders.blob_loaders.file_system import (
     FileSystemBlobLoader,
 )
 from langchain_community.document_loaders.blob_loaders.schema import Blob
+from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
+from langchain_community.document_loaders.parsers.registry import get_parser
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -34,37 +40,39 @@ CHUNK_SIZE = 1024 * 1024 * 5
 
 
 class _O365Settings(BaseSettings):
-    client_id: str = Field(..., env="O365_CLIENT_ID")
-    client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
+    client_id: str = Field(..., alias="O365_CLIENT_ID")
+    client_secret: SecretStr = Field(..., alias="O365_CLIENT_SECRET")
 
-    class Config:
-        case_sentive = False
-        env_file = ".env"
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        case_sensitive=False, env_file=".env", env_prefix="", extra="ignore"
+    )
 
 
 class _O365TokenStorage(BaseSettings):
     token_path: FilePath = Path.home() / ".credentials" / "o365_token.txt"
 
 
-class _FileType(str, Enum):
-    DOC = "doc"
-    DOCX = "docx"
-    PDF = "pdf"
-
-
-def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
+def fetch_mime_types(file_types: Sequence[str]) -> Dict[str, str]:
     """Fetch the mime types for the specified file types."""
     mime_types_mapping = {}
-    for file_type in file_types:
-        if file_type.value == "doc":
-            mime_types_mapping[file_type.value] = "application/msword"
-        elif file_type.value == "docx":
-            mime_types_mapping[file_type.value] = (
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
-            )
-        elif file_type.value == "pdf":
-            mime_types_mapping[file_type.value] = "application/pdf"
+    for ext in file_types:
+        mime_type, _ = mimetypes.guess_type(f"file.{ext}")
+        if mime_type:
+            mime_types_mapping[ext] = mime_type
+        else:
+            raise ValueError(f"Unknown mimetype of extension {ext}")
+    return mime_types_mapping
+
+
+def fetch_extensions(mime_types: Sequence[str]) -> Dict[str, str]:
+    """Fetch the mime types for the specified file types."""
+    mime_types_mapping = {}
+    for mime_type in mime_types:
+        ext = mimetypes.guess_extension(mime_type)
+        if ext:
+            mime_types_mapping[ext[1:]] = mime_type  # ignore leading `.`
+        else:
+            raise ValueError(f"Unknown mimetype {mime_type}")
     return mime_types_mapping
 
 
@@ -79,16 +87,85 @@ class O365BaseLoader(BaseLoader, BaseModel):
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
     recursive: bool = False
     """Should the loader recursively load subfolders?"""
+    modified_since: Optional[datetime] = None
+    """Only fetch documents modified since given datetime. The datetime object
+    must be timezone aware."""
+    handlers: Optional[Dict[str, Any]] = {}
+    """
+    Provide custom handlers for MimeTypeBasedParser.
 
-    @property
-    @abstractmethod
-    def _file_types(self) -> Sequence[_FileType]:
-        """Return supported file types."""
+    Pass a dictionary mapping either file extensions (like "doc", "pdf", etc.) 
+    or MIME types (like "application/pdf", "text/plain", etc.) to parsers. 
+    Note that you must use either file extensions or MIME types exclusively and 
+    cannot mix them.
+
+    Do not include the leading dot for file extensions.
+    
+    Example using file extensions:
+    ```python
+        handlers = {
+            "doc": MsWordParser(),
+            "pdf": PDFMinerParser(),
+            "txt": TextParser()
+        }
+    ```
+    
+    Example using MIME types:
+    ```python
+        handlers = {
+            "application/msword": MsWordParser(),
+            "application/pdf": PDFMinerParser(),
+            "text/plain": TextParser()
+        }
+    ```
+    """
+
+    _blob_parser: BaseBlobParser = PrivateAttr()
+    _file_types: Sequence[str] = PrivateAttr()
+    _mime_types: Dict[str, str] = PrivateAttr()
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        if self.handlers:
+            handler_keys = list(self.handlers.keys())
+            try:
+                # assume handlers.keys() are file extensions
+                self._mime_types = fetch_mime_types(handler_keys)
+                self._file_types = list(set(handler_keys))
+                mime_handlers = {
+                    self._mime_types[extension]: handler
+                    for extension, handler in self.handlers.items()
+                }
+            except ValueError:
+                try:
+                    # assume handlers.keys() are mime types
+                    self._mime_types = fetch_extensions(handler_keys)
+                    self._file_types = list(set(self._mime_types.keys()))
+                    mime_handlers = self.handlers
+                except ValueError:
+                    raise ValueError(
+                        "`handlers` keys must be either file extensions or mimetypes.\n"
+                        f"{handler_keys} could not be interpreted as either.\n"
+                        "File extensions and mimetypes cannot mix. "
+                        "Use either one or the other"
+                    )
+
+            self._blob_parser = MimeTypeBasedParser(
+                handlers=mime_handlers, fallback_parser=None
+            )
+        else:
+            self._blob_parser = get_parser("default")
+            if not isinstance(self._blob_parser, MimeTypeBasedParser):
+                raise TypeError(
+                    'get_parser("default) was supposed to return MimeTypeBasedParser.'
+                    f"It returned {type(self._blob_parser)}"
+                )
+            self._mime_types = fetch_extensions(list(self._blob_parser.handlers.keys()))
 
     @property
     def _fetch_mime_types(self) -> Dict[str, str]:
         """Return a dict of supported file types to corresponding mime types."""
-        return fetch_mime_types(self._file_types)
+        return self._mime_types
 
     @property
     @abstractmethod
@@ -115,17 +192,29 @@ class O365BaseLoader(BaseLoader, BaseModel):
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
-                        file.download(to_path=temp_dir, chunk_size=self.chunk_size)
-                        metadata_dict[file.name] = {
-                            "source": file.web_url,
-                            "mime_type": file.mime_type,
-                            "created": file.created,
-                            "modified": file.modified,
-                            "created_by": str(file.created_by),
-                            "modified_by": str(file.modified_by),
-                            "description": file.description,
-                            "id": str(file.object_id),
-                        }
+                        if (not self.modified_since) or (
+                            file.modified > self.modified_since
+                        ):
+                            source = file.web_url
+                            if re.search(
+                                r"Doc.aspx\?sourcedoc=.*file=([^&]+)", file.web_url
+                            ):
+                                source = (
+                                    file._parent.web_url
+                                    + "/"
+                                    + urllib.parse.quote(file.name)
+                                )
+                            file.download(to_path=temp_dir, chunk_size=self.chunk_size)
+                            metadata_dict[file.name] = {
+                                "source": source,
+                                "mime_type": file.mime_type,
+                                "created": str(file.created),
+                                "modified": str(file.modified),
+                                "created_by": str(file.created_by),
+                                "modified_by": str(file.modified_by),
+                                "description": file.description,
+                                "id": str(file.object_id),
+                            }
 
             loader = FileSystemBlobLoader(path=temp_dir)
             for blob in loader.yield_blobs():
@@ -170,9 +259,18 @@ class O365BaseLoader(BaseLoader, BaseModel):
                     continue
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
+                        source = file.web_url
+                        if re.search(
+                            r"Doc.aspx\?sourcedoc=.*file=([^&]+)", file.web_url
+                        ):
+                            source = (
+                                file._parent.web_url
+                                + "/"
+                                + urllib.parse.quote(file.name)
+                            )
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
                         metadata_dict[file.name] = {
-                            "source": file.web_url,
+                            "source": source,
                             "mime_type": file.mime_type,
                             "created": file.created,
                             "modified": file.modified,

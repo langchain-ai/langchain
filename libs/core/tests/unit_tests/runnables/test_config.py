@@ -1,7 +1,7 @@
 import json
 import uuid
 from contextvars import copy_context
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import pytest
 
@@ -26,7 +26,7 @@ from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
 def test_ensure_config() -> None:
     run_id = str(uuid.uuid4())
-    arg: Dict = {
+    arg: dict = {
         "something": "else",
         "metadata": {"foo": "bar"},
         "configurable": {"baz": "qux"},
@@ -49,12 +49,12 @@ def test_ensure_config() -> None:
         },
     )
     config = ctx.run(ensure_config, cast(RunnableConfig, arg))
-    assert (
-        len(arg["callbacks"]) == 1
-    ), "ensure_config should not modify the original config"
-    assert (
-        json.dumps({**arg, "callbacks": []}) == arg_str
-    ), "ensure_config should not modify the original config"
+    assert len(arg["callbacks"]) == 1, (
+        "ensure_config should not modify the original config"
+    )
+    assert json.dumps({**arg, "callbacks": []}) == arg_str, (
+        "ensure_config should not modify the original config"
+    )
     assert config is not arg
     assert config["callbacks"] is not arg["callbacks"]
     assert config["metadata"] is not arg["metadata"]

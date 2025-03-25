@@ -3,11 +3,15 @@ from __future__ import annotations
 import contextlib
 import mimetypes
 from io import BufferedReader, BytesIO
-from pathlib import PurePath
-from typing import Any, Generator, List, Literal, Mapping, Optional, Union, cast
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, root_validator
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 PathLike = Union[str, PurePath]
 
@@ -30,14 +34,21 @@ class BaseMedia(Serializable):
     id: Optional[str] = None
     """An optional identifier for the document.
 
-    Ideally this should be unique across the document collection and formatted 
+    Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
-    
+
     .. versionadded:: 0.2.11
     """
 
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
+
+    @field_validator("id", mode="before")
+    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        if id_value is not None:
+            return str(id_value)
+        else:
+            return id_value
 
 
 class Blob(BaseMedia):
@@ -98,7 +109,7 @@ class Blob(BaseMedia):
                 print(f.read())
     """
 
-    data: Union[bytes, str, None]
+    data: Union[bytes, str, None] = None
     """Raw data associated with the blob."""
     mimetype: Optional[str] = None
     """MimeType not to be confused with a file extension."""
@@ -110,9 +121,10 @@ class Blob(BaseMedia):
     path: Optional[PathLike] = None
     """Location where the original content was found."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        frozen = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        frozen=True,
+    )
 
     @property
     def source(self) -> Optional[str]:
@@ -127,24 +139,26 @@ class Blob(BaseMedia):
             return cast(Optional[str], self.metadata["source"])
         return str(self.path) if self.path else None
 
-    @root_validator(pre=True)
-    def check_blob_is_valid(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def check_blob_is_valid(cls, values: dict[str, Any]) -> Any:
         """Verify that either data or path is provided."""
         if "data" not in values and "path" not in values:
-            raise ValueError("Either data or path must be provided")
+            msg = "Either data or path must be provided"
+            raise ValueError(msg)
         return values
 
     def as_string(self) -> str:
         """Read data as a string."""
         if self.data is None and self.path:
-            with open(str(self.path), encoding=self.encoding) as f:
-                return f.read()
+            return Path(self.path).read_text(encoding=self.encoding)
         elif isinstance(self.data, bytes):
             return self.data.decode(self.encoding)
         elif isinstance(self.data, str):
             return self.data
         else:
-            raise ValueError(f"Unable to get string for blob {self}")
+            msg = f"Unable to get string for blob {self}"
+            raise ValueError(msg)
 
     def as_bytes(self) -> bytes:
         """Read data as bytes."""
@@ -153,10 +167,10 @@ class Blob(BaseMedia):
         elif isinstance(self.data, str):
             return self.data.encode(self.encoding)
         elif self.data is None and self.path:
-            with open(str(self.path), "rb") as f:
-                return f.read()
+            return Path(self.path).read_bytes()
         else:
-            raise ValueError(f"Unable to get bytes for blob {self}")
+            msg = f"Unable to get bytes for blob {self}"
+            raise ValueError(msg)
 
     @contextlib.contextmanager
     def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
@@ -164,10 +178,11 @@ class Blob(BaseMedia):
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
-            with open(str(self.path), "rb") as f:
+            with Path(self.path).open("rb") as f:
                 yield f
         else:
-            raise NotImplementedError(f"Unable to convert blob {self}")
+            msg = f"Unable to convert blob {self}"
+            raise NotImplementedError(msg)
 
     @classmethod
     def from_path(
@@ -275,7 +290,7 @@ class Document(BaseMedia):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "document"]
 

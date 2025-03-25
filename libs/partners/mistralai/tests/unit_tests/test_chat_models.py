@@ -15,7 +15,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
 )
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
@@ -91,6 +91,10 @@ def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
         (
             AIMessage(content="Hello"),
             dict(role="assistant", content="Hello"),
+        ),
+        (
+            AIMessage(content="{", additional_kwargs={"prefix": True}),
+            dict(role="assistant", content="{", prefix=True),
         ),
         (
             ChatMessage(role="assistant", content="Hello"),
@@ -212,7 +216,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             InvalidToolCall(
                 name="GenerateUsername",
                 args="oops",
-                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
+                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
                 id="ssAbar4Dr",
                 type="invalid_tool_call",
             ),
@@ -251,3 +255,18 @@ def test_tool_id_conversion() -> None:
     for input_id, expected_output in result_map.items():
         assert _convert_tool_call_id_to_mistral_compatible(input_id) == expected_output
         assert _is_valid_mistral_tool_call_id(expected_output)
+
+
+def test_extra_kwargs() -> None:
+    # Check that foo is saved in extra_kwargs.
+    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    assert llm.model_kwargs == {"foo": 3}
+
+    # Test that if extra_kwargs are provided, they are added to it.
+    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    assert llm.model_kwargs == {"foo": 3, "bar": 2}
+
+    # Test that if provided twice it errors
+    with pytest.raises(ValueError):
+        ChatMistralAI(model="my-model", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]

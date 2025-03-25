@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core._api import deprecated, warn_deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -44,7 +44,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     cache_folder: Optional[str] = None
@@ -93,8 +93,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -152,7 +151,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
     cache_folder: Optional[str] = None
@@ -208,8 +207,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
                 )
             self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -246,6 +244,11 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         return embedding.tolist()
 
 
+@deprecated(
+    since="0.2.2",
+    removal="1.0",
+    alternative_import="langchain_huggingface.HuggingFaceEmbeddings",
+)
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
@@ -285,7 +288,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = DEFAULT_BGE_MODEL
     """Model name to use."""
     cache_folder: Optional[str] = None
@@ -324,11 +327,25 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
+                "Please install it with `pip install sentence-transformers`."
             ) from exc
-
+        extra_model_kwargs = [
+            "torch_dtype",
+            "attn_implementation",
+            "provider",
+            "file_name",
+            "export",
+        ]
+        extra_model_kwargs_dict = {
+            k: self.model_kwargs.pop(k)
+            for k in extra_model_kwargs
+            if k in self.model_kwargs
+        }
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            self.model_name,
+            cache_folder=self.cache_folder,
+            **self.model_kwargs,
+            model_kwargs=extra_model_kwargs_dict,
         )
 
         if "-zh" in self.model_name:
@@ -348,8 +365,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
                 )
             self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -398,6 +414,8 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     """Custom inference endpoint url. None for using default public url."""
     additional_headers: Dict[str, str] = {}
     """Pass additional headers to the requests library if needed."""
+
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @property
     def _api_url(self) -> str:

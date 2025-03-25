@@ -4,14 +4,16 @@ from decimal import Decimal
 from hashlib import md5
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core._api import deprecated
 from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.tools.base import BaseToolkit
+from pydantic import BaseModel, Field, create_model
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
+
+from pydantic import ConfigDict
 
 from langchain_community.tools.databricks._execution import execute_function
 
@@ -119,7 +121,7 @@ def _get_tool_name(function: "FunctionInfo") -> str:
     return tool_name
 
 
-def _get_default_workspace_client() -> "WorkspaceClient":
+def _get_default_workspace_client() -> Any:
     try:
         from databricks.sdk import WorkspaceClient
     except ImportError as e:
@@ -130,20 +132,26 @@ def _get_default_workspace_client() -> "WorkspaceClient":
     return WorkspaceClient()
 
 
+@deprecated(
+    since="0.3.18",
+    removal="1.0",
+    alternative_import="databricks_langchain.uc_ai.UCFunctionToolkit",
+)
 class UCFunctionToolkit(BaseToolkit):
     warehouse_id: str = Field(
         description="The ID of a Databricks SQL Warehouse to execute functions."
     )
 
-    workspace_client: "WorkspaceClient" = Field(
+    workspace_client: Any = Field(
         default_factory=_get_default_workspace_client,
         description="Databricks workspace client.",
     )
 
     tools: Dict[str, BaseTool] = Field(default_factory=dict)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def include(self, *function_names: str, **kwargs: Any) -> Self:
         """

@@ -10,9 +10,9 @@ import aiohttp
 from aiohttp import ClientTimeout
 from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import BaseModel
 from requests import Response, request
 from requests.exceptions import RequestException
 
@@ -467,7 +467,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                         logger.warning(f"Pebblo Server: Error {response.status}")
                     elif response.status >= HTTPStatus.BAD_REQUEST:
                         logger.warning(
-                            f"Pebblo received an invalid payload: " f"{response.text}"
+                            f"Pebblo received an invalid payload: {response.text}"
                         )
                     elif response.status != HTTPStatus.OK:
                         logger.warning(

@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class AscendEmbeddings(Embeddings, BaseModel):
@@ -30,8 +30,11 @@ class AscendEmbeddings(Embeddings, BaseModel):
     document_instruction: str = ""
     use_fp16: bool = True
     pooling_method: Optional[str] = "cls"
+    batch_size: int = 32
     model: Any
     tokenizer: Any
+
+    model_config = ConfigDict(protected_namespaces=())
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -54,8 +57,9 @@ class AscendEmbeddings(Embeddings, BaseModel):
             self.model.half()
         self.encode([f"warmup {i} times" for i in range(10)])
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         if "model_path" not in values:
             raise ValueError("model_path is required")
         if not os.access(values["model_path"], os.F_OK):
@@ -86,7 +90,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
         last_hidden_state = self.model(
             inputs.input_ids.npu(), inputs.attention_mask.npu(), return_dict=True
@@ -100,7 +104,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
         if self.pooling_method == "cls":
             return last_hidden_state[:, 0]
@@ -116,7 +120,18 @@ class AscendEmbeddings(Embeddings, BaseModel):
             )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.encode([self.document_instruction + text for text in texts])
+        try:
+            import numpy as np
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import numpy, please install with `pip install -U numpy`."
+            ) from e
+        embedding_list = []
+        for i in range(0, len(texts), self.batch_size):
+            texts_ = texts[i : i + self.batch_size]
+            emb = self.encode([self.document_instruction + text for text in texts_])
+            embedding_list.append(emb)
+        return np.concatenate(embedding_list)
 
     def embed_query(self, text: str) -> List[float]:
         return self.encode([self.query_instruction + text])[0]

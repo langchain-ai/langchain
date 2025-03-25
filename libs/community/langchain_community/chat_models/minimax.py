@@ -44,12 +44,18 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import get_fields
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +273,7 @@ class MiniMaxChat(BaseChatModel):
     Tool calling:
         .. code-block:: python
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class GetWeather(BaseModel):
@@ -307,7 +313,7 @@ class MiniMaxChat(BaseChatModel):
 
             from typing import Optional
 
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
 
 
             class Joke(BaseModel):
@@ -363,8 +369,8 @@ class MiniMaxChat(BaseChatModel):
             **self.model_kwargs,
         }
 
-    _client: Any
-    model: str = "abab6.5-chat"
+    _client: Any = None
+    model: str = "abab6.5s-chat"
     """Model name to use."""
     max_tokens: int = 256
     """Denotes the number of tokens to predict per generation."""
@@ -375,7 +381,7 @@ class MiniMaxChat(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     minimax_api_host: str = Field(
-        default="https://api.minimax.chat/v1/text/chatcompletion_v2", alias="base_url"
+        default="https://api.minimaxi.chat/v1/text/chatcompletion_v2", alias="base_url"
     )
     minimax_group_id: Optional[str] = Field(default=None, alias="group_id")
     """[DEPRECATED, keeping it for for backward compatibility] Group Id"""
@@ -384,11 +390,13 @@ class MiniMaxChat(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -503,7 +511,13 @@ class MiniMaxChat(BaseChatModel):
         with httpx.Client(headers=headers, timeout=60) as client:
             response = client.post(self.minimax_api_host, json=payload)
             response.raise_for_status()
-
+        final_response = response.json()
+        if (
+            "base_resp" in final_response
+            and "status_msg" in final_response["base_resp"]
+            and final_response["base_resp"]["status_msg"] == "invalid api key"
+        ):
+            raise Exception("Invalid API Key Provided")
         return self._create_chat_result(response.json())
 
     def _stream(
@@ -694,7 +708,7 @@ class MiniMaxChat(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import MiniMaxChat
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -715,7 +729,7 @@ class MiniMaxChat(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import MiniMaxChat
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
@@ -737,7 +751,7 @@ class MiniMaxChat(BaseChatModel):
             .. code-block:: python
 
                 from langchain_community.chat_models import MiniMaxChat
-                from langchain_core.pydantic_v1 import BaseModel
+                from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
                 class AnswerWithJustification(BaseModel):

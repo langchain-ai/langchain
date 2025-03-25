@@ -2,26 +2,28 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 # TODO: think about error handling, more specific api specs, and jql/project limits
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
-    jira: Any  #: :meta private:
-    confluence: Any
+    jira: Any = None  #: :meta private:
+    confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         jira_username = get_from_dict_or_env(
             values, "jira_username", "JIRA_USERNAME", default=""
@@ -37,6 +39,9 @@ class JiraAPIWrapper(BaseModel):
             values, "jira_instance_url", "JIRA_INSTANCE_URL"
         )
         values["jira_instance_url"] = jira_instance_url
+
+        if "jira_cloud" in values and values["jira_cloud"] is not None:
+            values["jira_cloud"] = str(values["jira_cloud"])
 
         jira_cloud_str = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
         jira_cloud = jira_cloud_str.lower() == "true"
@@ -82,7 +87,10 @@ class JiraAPIWrapper(BaseModel):
             key = issue["key"]
             summary = issue["fields"]["summary"]
             created = issue["fields"]["created"][0:10]
-            priority = issue["fields"]["priority"]["name"]
+            if "priority" in issue["fields"]:
+                priority = issue["fields"]["priority"]["name"]
+            else:
+                priority = None
             status = issue["fields"]["status"]["name"]
             try:
                 assignee = issue["fields"]["assignee"]["displayName"]
@@ -119,7 +127,7 @@ class JiraAPIWrapper(BaseModel):
             key = project["key"]
             name = project["name"]
             type = project["projectTypeKey"]
-            style = project["style"]
+            style = project.get("style", None)
             parsed.append(
                 {"id": id, "key": key, "name": name, "type": type, "style": style}
             )

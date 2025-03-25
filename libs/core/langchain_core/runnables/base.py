@@ -2,52 +2,50 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import contextlib
 import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
-from concurrent.futures import FIRST_COMPLETED, wait
-from contextvars import copy_context
-from functools import wraps
-from itertools import groupby, tee
-from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
+from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
     Awaitable,
-    Callable,
     Coroutine,
-    Dict,
-    Generic,
     Iterator,
-    List,
     Mapping,
-    Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
+)
+from concurrent.futures import FIRST_COMPLETED, wait
+from functools import wraps
+from itertools import groupby, tee
+from operator import itemgetter
+from types import GenericAlias
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    Protocol,
     TypeVar,
     Union,
     cast,
+    get_type_hints,
     overload,
 )
 
-from typing_extensions import Literal, get_args
+from pydantic import BaseModel, ConfigDict, Field, RootModel
+from typing_extensions import Literal, get_args, override
 
 from langchain_core._api import beta_decorator
-from langchain_core.load.dump import dumpd
 from langchain_core.load.serializable import (
     Serializable,
     SerializedConstructor,
     SerializedNotImplemented,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
-    _set_config_context,
     acall_func_with_variable_args,
     call_func_with_variable_args,
     ensure_config,
@@ -58,9 +56,9 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
     run_in_executor,
+    set_config_context,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import (
     AddableDict,
     AnyConfigurableField,
@@ -71,7 +69,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
     asyncio_accepts_context,
-    create_model,
+    gated_coro,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
     get_function_nonlocals,
@@ -83,7 +81,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -94,6 +92,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
     from langchain_core.tracers.log_stream import (
         RunLog,
@@ -191,7 +190,7 @@ class Runnable(Generic[Input, Output], ABC):
 
 
         def buggy_double(y: int) -> int:
-            '''Buggy code that will fail 70% of the time'''
+            \"\"\"Buggy code that will fail 70% of the time\"\"\"
             if random.random() > 0.3:
                 print('This code failed, and will probably be retried!')  # noqa: T201
                 raise ValueError('Triggered buggy code')
@@ -205,8 +204,8 @@ class Runnable(Generic[Input, Output], ABC):
             )
         )
 
-        print(sequence.input_schema.schema()) # Show inferred input schema
-        print(sequence.output_schema.schema()) # Show inferred output schema
+        print(sequence.input_schema.model_json_schema()) # Show inferred input schema
+        print(sequence.output_schema.model_json_schema()) # Show inferred output schema
         print(sequence.invoke(2)) # invoke the sequence (note the retry above!!)
 
     Debugging and tracing
@@ -236,56 +235,99 @@ class Runnable(Generic[Input, Output], ABC):
     For a UI (and much more) checkout LangSmith: https://docs.smith.langchain.com/
     """  # noqa: E501
 
-    name: Optional[str] = None
+    name: Optional[str]
     """The name of the Runnable. Used for debugging and tracing."""
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
         """Get the name of the Runnable."""
-        name = name or self.name or self.__class__.__name__
-        if suffix:
-            if name[0].isupper():
-                return name + suffix.title()
-            else:
-                return name + "_" + suffix.lower()
+        if name:
+            name_ = name
+        elif hasattr(self, "name") and self.name:
+            name_ = self.name
         else:
-            return name
+            # Here we handle a case where the runnable subclass is also a pydantic
+            # model.
+            cls = self.__class__
+            # Then it's a pydantic sub-class, and we have to check
+            # whether it's a generic, and if so recover the original name.
+            if (
+                hasattr(
+                    cls,
+                    "__pydantic_generic_metadata__",
+                )
+                and "origin" in cls.__pydantic_generic_metadata__
+                and cls.__pydantic_generic_metadata__["origin"] is not None
+            ):
+                name_ = cls.__pydantic_generic_metadata__["origin"].__name__
+            else:
+                name_ = cls.__name__
+
+        if suffix:
+            if name_[0].isupper():
+                return name_ + suffix.title()
+            else:
+                return name_ + "_" + suffix.lower()
+        else:
+            return name_
 
     @property
-    def InputType(self) -> Type[Input]:
+    def InputType(self) -> type[Input]:  # noqa: N802
         """The type of input this Runnable accepts specified as a type annotation."""
+        # First loop through all parent classes and if any of them is
+        # a pydantic model, we will pick up the generic parameterization
+        # from that model via the __pydantic_generic_metadata__ attribute.
+        for base in self.__class__.mro():
+            if hasattr(base, "__pydantic_generic_metadata__"):
+                metadata = base.__pydantic_generic_metadata__
+                if "args" in metadata and len(metadata["args"]) == 2:
+                    return metadata["args"][0]
+
+        # If we didn't find a pydantic model in the parent classes,
+        # then loop through __orig_bases__. This corresponds to
+        # Runnables that are not pydantic models.
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 2:
                 return type_args[0]
 
-        raise TypeError(
+        msg = (
             f"Runnable {self.get_name()} doesn't have an inferable InputType. "
             "Override the InputType property to specify the input type."
         )
+        raise TypeError(msg)
 
     @property
-    def OutputType(self) -> Type[Output]:
+    def OutputType(self) -> type[Output]:  # noqa: N802
         """The type of output this Runnable produces specified as a type annotation."""
+        # First loop through bases -- this will help generic
+        # any pydantic models.
+        for base in self.__class__.mro():
+            if hasattr(base, "__pydantic_generic_metadata__"):
+                metadata = base.__pydantic_generic_metadata__
+                if "args" in metadata and len(metadata["args"]) == 2:
+                    return metadata["args"][1]
+
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 2:
                 return type_args[1]
 
-        raise TypeError(
+        msg = (
             f"Runnable {self.get_name()} doesn't have an inferable OutputType. "
             "Override the OutputType property to specify the output type."
         )
+        raise TypeError(msg)
 
     @property
-    def input_schema(self) -> Type[BaseModel]:
+    def input_schema(self) -> type[BaseModel]:
         """The type of input this Runnable accepts specified as a pydantic model."""
         return self.get_input_schema()
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate input to the Runnable.
 
         Runnables that leverage the configurable_fields and configurable_alternatives
@@ -302,22 +344,62 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.InputType
 
-        if inspect.isclass(root_type) and is_basemodel_subclass(root_type):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Input"),
-            __root__=(root_type, None),
+            root=root_type,
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
+            module_name=self.__class__.__module__,
         )
 
+    def get_input_jsonschema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> dict[str, Any]:
+        """Get a JSON schema that represents the input to the Runnable.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A JSON schema that represents the input to the Runnable.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                runnable = RunnableLambda(add_one)
+
+                print(runnable.get_input_jsonschema())
+
+        .. versionadded:: 0.3.0
+        """
+        return self.get_input_schema(config).model_json_schema()
+
     @property
-    def output_schema(self) -> Type[BaseModel]:
+    def output_schema(self) -> type[BaseModel]:
         """The type of output this Runnable produces specified as a pydantic model."""
         return self.get_output_schema()
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate output to the Runnable.
 
         Runnables that leverage the configurable_fields and configurable_alternatives
@@ -334,22 +416,62 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and is_basemodel_subclass(root_type):
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
             return root_type
 
-        return create_model(
+        return create_model_v2(
             self.get_name("Output"),
-            __root__=(root_type, None),
+            root=root_type,
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
+            module_name=self.__class__.__module__,
         )
 
+    def get_output_jsonschema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> dict[str, Any]:
+        """Get a JSON schema that represents the output of the Runnable.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A JSON schema that represents the output of the Runnable.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                runnable = RunnableLambda(add_one)
+
+                print(runnable.get_output_jsonschema())
+
+        .. versionadded:: 0.3.0
+        """
+        return self.get_output_schema(config).model_json_schema()
+
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         """List configurable fields for this Runnable."""
         return []
 
     def config_schema(
         self, *, include: Optional[Sequence[str]] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """The type of config this Runnable accepts specified as a pydantic model.
 
         To mark a field as configurable, see the `configurable_fields`
@@ -361,13 +483,12 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A pydantic model that can be used to validate config.
         """
-
         include = include or []
         config_specs = self.config_specs
         configurable = (
-            create_model(  # type: ignore[call-overload]
+            create_model_v2(  # type: ignore[call-overload]
                 "Configurable",
-                **{
+                field_definitions={
                     spec.id: (
                         spec.annotation,
                         Field(
@@ -381,39 +502,56 @@ class Runnable(Generic[Input, Output], ABC):
             else None
         )
 
-        return create_model(  # type: ignore[call-overload]
-            self.get_name("Config"),
+        # Many need to create a typed dict instead to implement NotRequired!
+        all_fields = {
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
                 field_name: (field_type, None)
-                for field_name, field_type in RunnableConfig.__annotations__.items()
+                for field_name, field_type in get_type_hints(RunnableConfig).items()
                 if field_name in [i for i in include if i != "configurable"]
             },
+        }
+        model = create_model_v2(  # type: ignore[call-overload]
+            self.get_name("Config"), field_definitions=all_fields
         )
+        return model
+
+    def get_config_jsonschema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> dict[str, Any]:
+        """Get a JSON schema that represents the config of the Runnable.
+
+        Args:
+            include: A list of fields to include in the config schema.
+
+        Returns:
+            A JSON schema that represents the config of the Runnable.
+
+        .. versionadded:: 0.3.0
+        """
+        return self.config_schema(include=include).model_json_schema()
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
-        from langchain_core.runnables.graph import Graph
-
         graph = Graph()
         try:
             input_node = graph.add_node(self.get_input_schema(config))
         except TypeError:
-            input_node = graph.add_node(create_model(self.get_name("Input")))
+            input_node = graph.add_node(create_model_v2(self.get_name("Input")))
         runnable_node = graph.add_node(
             self, metadata=config.get("metadata") if config else None
         )
         try:
             output_node = graph.add_node(self.get_output_schema(config))
         except TypeError:
-            output_node = graph.add_node(create_model(self.get_name("Output")))
+            output_node = graph.add_node(create_model_v2(self.get_name("Output")))
         graph.add_edge(input_node, runnable_node)
         graph.add_edge(runnable_node, output_node)
         return graph
 
     def get_prompts(
         self, config: Optional[RunnableConfig] = None
-    ) -> List[BasePromptTemplate]:
+    ) -> list[BasePromptTemplate]:
         """Return a list of prompts used by this Runnable."""
         from langchain_core.prompts.base import BasePromptTemplate
 
@@ -483,8 +621,8 @@ class Runnable(Generic[Input, Output], ABC):
         """
         return RunnableSequence(self, *others, name=name)
 
-    def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
-        """Pick keys from the dict output of this Runnable.
+    def pick(self, keys: Union[str, list[str]]) -> RunnableSerializable[Any, Any]:
+        """Pick keys from the output dict of this Runnable.
 
         Pick single key:
             .. code-block:: python
@@ -539,11 +677,11 @@ class Runnable(Generic[Input, Output], ABC):
     def assign(
         self,
         **kwargs: Union[
-            Runnable[Dict[str, Any], Any],
-            Callable[[Dict[str, Any]], Any],
+            Runnable[dict[str, Any], Any],
+            Callable[[dict[str, Any]], Any],
             Mapping[
                 str,
-                Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
+                Union[Runnable[dict[str, Any], Any], Callable[[dict[str, Any]], Any]],
             ],
         ],
     ) -> RunnableSerializable[Any, Any]:
@@ -568,23 +706,25 @@ class Runnable(Generic[Input, Output], ABC):
 
             chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
 
-            print(chain_with_assign.input_schema.schema())
+            print(chain_with_assign.input_schema.model_json_schema())
             # {'title': 'PromptInput', 'type': 'object', 'properties':
             {'question': {'title': 'Question', 'type': 'string'}}}
-            print(chain_with_assign.output_schema.schema()) #
-            {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
+            print(chain_with_assign.output_schema.model_json_schema())
+            # {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
             {'str': {'title': 'Str',
             'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
 
         """
         from langchain_core.runnables.passthrough import RunnableAssign
 
-        return self | RunnableAssign(RunnableParallel(kwargs))
+        return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
 
     """ --- Public API --- """
 
     @abstractmethod
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         """Transform a single input into an output. Override to implement.
 
         Args:
@@ -613,12 +753,12 @@ class Runnable(Generic[Input, Output], ABC):
 
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         """Default implementation runs invoke in parallel using a thread pool executor.
 
         The default implementation of batch works well for IO bound runnables.
@@ -642,10 +782,10 @@ class Runnable(Generic[Input, Output], ABC):
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return cast(List[Output], [invoke(inputs[0], configs[0])])
+            return cast(list[Output], [invoke(inputs[0], configs[0])])
 
         with get_executor_for_config(configs[0]) as executor:
-            return cast(List[Output], list(executor.map(invoke, inputs, configs)))
+            return cast(list[Output], list(executor.map(invoke, inputs, configs)))
 
     @overload
     def batch_as_completed(
@@ -655,7 +795,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Output]]: ...
+    ) -> Iterator[tuple[int, Output]]: ...
 
     @overload
     def batch_as_completed(
@@ -665,7 +805,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]: ...
+    ) -> Iterator[tuple[int, Union[Output, Exception]]]: ...
 
     def batch_as_completed(
         self,
@@ -674,10 +814,10 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+    ) -> Iterator[tuple[int, Union[Output, Exception]]]:
         """Run invoke in parallel on a list of inputs,
-        yielding results as they complete."""
-
+        yielding results as they complete.
+        """
         if not inputs:
             return
 
@@ -685,7 +825,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         def invoke(
             i: int, input: Input, config: RunnableConfig
-        ) -> Tuple[int, Union[Output, Exception]]:
+        ) -> tuple[int, Union[Output, Exception]]:
             if return_exceptions:
                 try:
                     out: Union[Output, Exception] = self.invoke(input, config, **kwargs)
@@ -717,12 +857,12 @@ class Runnable(Generic[Input, Output], ABC):
 
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         """Default implementation runs ainvoke in parallel using asyncio.gather.
 
         The default implementation of batch works well for IO bound runnables.
@@ -771,7 +911,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Output]]: ...
+    ) -> AsyncIterator[tuple[int, Output]]: ...
 
     @overload
     def abatch_as_completed(
@@ -781,7 +921,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]: ...
+    ) -> AsyncIterator[tuple[int, Union[Output, Exception]]]: ...
 
     async def abatch_as_completed(
         self,
@@ -790,7 +930,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+    ) -> AsyncIterator[tuple[int, Union[Output, Exception]]]:
         """Run ainvoke in parallel on a list of inputs,
         yielding results as they complete.
 
@@ -808,15 +948,17 @@ class Runnable(Generic[Input, Output], ABC):
         Yields:
             A tuple of the index of the input and the output from the Runnable.
         """
-
         if not inputs:
             return
 
         configs = get_config_list(config, len(inputs))
+        # Get max_concurrency from first config, defaulting to None (unlimited)
+        max_concurrency = configs[0].get("max_concurrency") if configs else None
+        semaphore = asyncio.Semaphore(max_concurrency) if max_concurrency else None
 
-        async def ainvoke(
+        async def ainvoke_task(
             i: int, input: Input, config: RunnableConfig
-        ) -> Tuple[int, Union[Output, Exception]]:
+        ) -> tuple[int, Union[Output, Exception]]:
             if return_exceptions:
                 try:
                     out: Union[Output, Exception] = await self.ainvoke(
@@ -826,10 +968,14 @@ class Runnable(Generic[Input, Output], ABC):
                     out = e
             else:
                 out = await self.ainvoke(input, config, **kwargs)
-
             return (i, out)
 
-        coros = map(ainvoke, range(len(inputs)), inputs, configs)
+        coros = [
+            gated_coro(semaphore, ainvoke_task(i, input, config))
+            if semaphore
+            else ainvoke_task(i, input, config)
+            for i, (input, config) in enumerate(zip(inputs, configs))
+        ]
 
         for coro in asyncio.as_completed(coros):
             yield await coro
@@ -840,8 +986,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """
-        Default implementation of stream, which calls invoke.
+        """Default implementation of stream, which calls invoke.
         Subclasses should override this method if they support streaming output.
 
         Args:
@@ -860,8 +1005,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """
-        Default implementation of astream, which calls ainvoke.
+        """Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
 
         Args:
@@ -923,8 +1067,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
-        """
-        Stream all output from a Runnable, as reported to the callback system.
+        """Stream all output from a Runnable, as reported to the callback system.
         This includes all inner runs of LLMs, Retrievers, Tools, etc.
 
         Output is streamed as Log objects, which include a list of
@@ -979,13 +1122,12 @@ class Runnable(Generic[Input, Output], ABC):
         ):
             yield item
 
-    @beta_decorator.beta(message="This API is in beta and may change in the future.")
     async def astream_events(
         self,
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
-        version: Literal["v1", "v2"],
+        version: Literal["v1", "v2"] = "v2",
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -1021,7 +1163,7 @@ class Runnable(Generic[Input, Output], ABC):
         - ``data``: **Dict[str, Any]**
 
 
-        Below is a table that illustrates some evens that might be emitted by various
+        Below is a table that illustrates some events that might be emitted by various
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
@@ -1239,9 +1381,8 @@ class Runnable(Generic[Input, Output], ABC):
                 **kwargs,
             )
         else:
-            raise NotImplementedError(
-                'Only versions "v1" and "v2" of the schema is currently supported.'
-            )
+            msg = 'Only versions "v1" and "v2" of the schema is currently supported.'
+            raise NotImplementedError(msg)
 
         async with aclosing(event_stream):
             async for event in event_stream:
@@ -1253,8 +1394,8 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """
-        Default implementation of transform, which buffers input and then calls stream.
+        """Default implementation of transform, which buffers input and calls astream.
+
         Subclasses should override this method if they can start producing output while
         input is still being generated.
 
@@ -1295,8 +1436,7 @@ class Runnable(Generic[Input, Output], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """
-        Default implementation of atransform, which buffers input and calls astream.
+        """Default implementation of atransform, which buffers input and calls astream.
         Subclasses should override this method if they can start producing output while
         input is still being generated.
 
@@ -1333,8 +1473,7 @@ class Runnable(Generic[Input, Output], ABC):
                 yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
-        """
-        Bind arguments to a Runnable, returning a new Runnable.
+        """Bind arguments to a Runnable, returning a new Runnable.
 
         Useful when a Runnable in a chain requires an argument that is not
         in the output of the previous Runnable or included in the user input.
@@ -1381,8 +1520,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Sadly Unpack is not well-supported by mypy so this will have to be untyped
         **kwargs: Any,
     ) -> Runnable[Input, Output]:
-        """
-        Bind config to a Runnable, returning a new Runnable.
+        """Bind config to a Runnable, returning a new Runnable.
 
         Args:
             config: The config to bind to the Runnable.
@@ -1413,8 +1551,7 @@ class Runnable(Generic[Input, Output], ABC):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
         on_start: Called before the Runnable starts running, with the Run object.
         on_end: Called after the Runnable finishes running, with the Run object.
@@ -1481,8 +1618,7 @@ class Runnable(Generic[Input, Output], ABC):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind asynchronous lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
 
         on_start: Asynchronously called before the Runnable starts running.
         on_end: Asynchronously called after the Runnable finishes running.
@@ -1507,8 +1643,13 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. code-block:: python
 
-            from langchain_core.runnables import RunnableLambda
+            from langchain_core.runnables import RunnableLambda, Runnable
+            from datetime import datetime, timezone
             import time
+            import asyncio
+
+            def format_t(timestamp: float) -> str:
+                return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
 
             async def test_runnable(time_to_sleep : int):
                 print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
@@ -1516,12 +1657,12 @@ class Runnable(Generic[Input, Output], ABC):
                 print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
 
             async def fn_start(run_obj : Runnable):
-                print(f"on start callback starts at {format_t(time.time())}
+                print(f"on start callback starts at {format_t(time.time())}")
                 await asyncio.sleep(3)
                 print(f"on start callback ends at {format_t(time.time())}")
 
             async def fn_end(run_obj : Runnable):
-                print(f"on end callback starts at {format_t(time.time())}
+                print(f"on end callback starts at {format_t(time.time())}")
                 await asyncio.sleep(2)
                 print(f"on end callback ends at {format_t(time.time())}")
 
@@ -1534,18 +1675,18 @@ class Runnable(Generic[Input, Output], ABC):
 
             asyncio.run(concurrent_runs())
             Result:
-            on start callback starts at 2024-05-16T14:20:29.637053+00:00
-            on start callback starts at 2024-05-16T14:20:29.637150+00:00
-            on start callback ends at 2024-05-16T14:20:32.638305+00:00
-            on start callback ends at 2024-05-16T14:20:32.638383+00:00
-            Runnable[3s]: starts at 2024-05-16T14:20:32.638849+00:00
-            Runnable[5s]: starts at 2024-05-16T14:20:32.638999+00:00
-            Runnable[3s]: ends at 2024-05-16T14:20:35.640016+00:00
-            on end callback starts at 2024-05-16T14:20:35.640534+00:00
-            Runnable[5s]: ends at 2024-05-16T14:20:37.640169+00:00
-            on end callback starts at 2024-05-16T14:20:37.640574+00:00
-            on end callback ends at 2024-05-16T14:20:37.640654+00:00
-            on end callback ends at 2024-05-16T14:20:39.641751+00:00
+            on start callback starts at 2025-03-01T07:05:22.875378+00:00
+            on start callback starts at 2025-03-01T07:05:22.875495+00:00
+            on start callback ends at 2025-03-01T07:05:25.878862+00:00
+            on start callback ends at 2025-03-01T07:05:25.878947+00:00
+            Runnable[2s]: starts at 2025-03-01T07:05:25.879392+00:00
+            Runnable[3s]: starts at 2025-03-01T07:05:25.879804+00:00
+            Runnable[2s]: ends at 2025-03-01T07:05:27.881998+00:00
+            on end callback starts at 2025-03-01T07:05:27.882360+00:00
+            Runnable[3s]: ends at 2025-03-01T07:05:28.881737+00:00
+            on end callback starts at 2025-03-01T07:05:28.882428+00:00
+            on end callback ends at 2025-03-01T07:05:29.883893+00:00
+            on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
         """
         from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
@@ -1569,11 +1710,10 @@ class Runnable(Generic[Input, Output], ABC):
     def with_types(
         self,
         *,
-        input_type: Optional[Type[Input]] = None,
-        output_type: Optional[Type[Output]] = None,
+        input_type: Optional[type[Input]] = None,
+        output_type: Optional[type[Output]] = None,
     ) -> Runnable[Input, Output]:
-        """
-        Bind input and output types to a Runnable, returning a new Runnable.
+        """Bind input and output types to a Runnable, returning a new Runnable.
 
         Args:
             input_type: The input type to bind to the Runnable. Defaults to None.
@@ -1592,7 +1732,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_retry(
         self,
         *,
-        retry_if_exception_type: Tuple[Type[BaseException], ...] = (Exception,),
+        retry_if_exception_type: tuple[type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
@@ -1659,9 +1799,8 @@ class Runnable(Generic[Input, Output], ABC):
             max_attempt_number=stop_after_attempt,
         )
 
-    def map(self) -> Runnable[List[Input], List[Output]]:
-        """
-        Return a new Runnable that maps a list of inputs to a list of outputs,
+    def map(self) -> Runnable[list[Input], list[Output]]:
+        """Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
 
         Returns:
@@ -1685,7 +1824,7 @@ class Runnable(Generic[Input, Output], ABC):
         self,
         fallbacks: Sequence[Runnable[Input, Output]],
         *,
-        exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,),
+        exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,),
         exception_key: Optional[str] = None,
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a Runnable, returning a new Runnable.
@@ -1763,14 +1902,16 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement invoke() in subclasses."""
+        with callbacks. Use this method to implement invoke() in subclasses.
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -1778,19 +1919,18 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            output = cast(
-                Output,
-                context.run(
-                    call_func_with_variable_args,  # type: ignore[arg-type]
-                    func,  # type: ignore[arg-type]
-                    input,  # type: ignore[arg-type]
-                    config,
-                    run_manager,
-                    **kwargs,
-                ),
-            )
+            with set_config_context(child_config) as context:
+                output = cast(
+                    Output,
+                    context.run(
+                        call_func_with_variable_args,  # type: ignore[arg-type]
+                        func,  # type: ignore[arg-type]
+                        input,  # type: ignore[arg-type]
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
+                )
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise
@@ -1811,14 +1951,16 @@ class Runnable(Generic[Input, Output], ABC):
         input: Input,
         config: Optional[RunnableConfig],
         run_type: Optional[str] = None,
+        serialized: Optional[dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement ainvoke() in subclasses."""
+        with callbacks. Use this method to implement ainvoke() in subclasses.
+        """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            serialized,
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -1826,15 +1968,14 @@ class Runnable(Generic[Input, Output], ABC):
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            coro = acall_func_with_variable_args(
-                func, input, config, run_manager, **kwargs
-            )
-            if asyncio_accepts_context():
-                output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
-            else:
-                output = await coro
+            with set_config_context(child_config) as context:
+                coro = acall_func_with_variable_args(
+                    func, input, config, run_manager, **kwargs
+                )
+                if asyncio_accepts_context():
+                    output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    output = await coro
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -1845,25 +1986,26 @@ class Runnable(Generic[Input, Output], ABC):
     def _batch_with_config(
         self,
         func: Union[
-            Callable[[List[Input]], List[Union[Exception, Output]]],
+            Callable[[list[Input]], list[Union[Exception, Output]]],
             Callable[
-                [List[Input], List[CallbackManagerForChainRun]],
-                List[Union[Exception, Output]],
+                [list[Input], list[CallbackManagerForChainRun]],
+                list[Union[Exception, Output]],
             ],
             Callable[
-                [List[Input], List[CallbackManagerForChainRun], List[RunnableConfig]],
-                List[Union[Exception, Output]],
+                [list[Input], list[CallbackManagerForChainRun], list[RunnableConfig]],
+                list[Union[Exception, Output]],
             ],
         ],
-        input: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        input: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         run_type: Optional[str] = None,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement invoke() in subclasses."""
+        with callbacks. Use this method to implement invoke() in subclasses.
+        """
         if not input:
             return []
 
@@ -1871,7 +2013,7 @@ class Runnable(Generic[Input, Output], ABC):
         callback_managers = [get_callback_manager_for_config(c) for c in configs]
         run_managers = [
             callback_manager.on_chain_start(
-                dumpd(self),
+                None,
                 input,
                 run_type=run_type,
                 name=config.get("run_name") or self.get_name(),
@@ -1894,7 +2036,7 @@ class Runnable(Generic[Input, Output], ABC):
             for run_manager in run_managers:
                 run_manager.on_chain_error(e)
             if return_exceptions:
-                return cast(List[Output], [e for _ in input])
+                return cast(list[Output], [e for _ in input])
             else:
                 raise
         else:
@@ -1906,45 +2048,46 @@ class Runnable(Generic[Input, Output], ABC):
                 else:
                     run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], output)
+                return cast(list[Output], output)
             else:
                 raise first_exception
 
     async def _abatch_with_config(
         self,
         func: Union[
-            Callable[[List[Input]], Awaitable[List[Union[Exception, Output]]]],
+            Callable[[list[Input]], Awaitable[list[Union[Exception, Output]]]],
             Callable[
-                [List[Input], List[AsyncCallbackManagerForChainRun]],
-                Awaitable[List[Union[Exception, Output]]],
+                [list[Input], list[AsyncCallbackManagerForChainRun]],
+                Awaitable[list[Union[Exception, Output]]],
             ],
             Callable[
                 [
-                    List[Input],
-                    List[AsyncCallbackManagerForChainRun],
-                    List[RunnableConfig],
+                    list[Input],
+                    list[AsyncCallbackManagerForChainRun],
+                    list[RunnableConfig],
                 ],
-                Awaitable[List[Union[Exception, Output]]],
+                Awaitable[list[Union[Exception, Output]]],
             ],
         ],
-        input: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        input: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         run_type: Optional[str] = None,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         """Helper method to transform an Input value to an Output value,
-        with callbacks. Use this method to implement invoke() in subclasses."""
+        with callbacks. Use this method to implement invoke() in subclasses.
+        """
         if not input:
             return []
 
         configs = get_config_list(config, len(input))
         callback_managers = [get_async_callback_manager_for_config(c) for c in configs]
-        run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
+        run_managers: list[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 callback_manager.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
                     run_type=run_type,
                     name=config.get("run_name") or self.get_name(),
@@ -1969,12 +2112,12 @@ class Runnable(Generic[Input, Output], ABC):
                 *(run_manager.on_chain_error(e) for run_manager in run_managers)
             )
             if return_exceptions:
-                return cast(List[Output], [e for _ in input])
+                return cast(list[Output], [e for _ in input])
             else:
                 raise
         else:
             first_exception: Optional[Exception] = None
-            coros: List[Awaitable[None]] = []
+            coros: list[Awaitable[None]] = []
             for run_manager, out in zip(run_managers, output):
                 if isinstance(out, Exception):
                     first_exception = first_exception or out
@@ -1983,7 +2126,7 @@ class Runnable(Generic[Input, Output], ABC):
                     coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], output)
+                return cast(list[Output], output)
             else:
                 raise first_exception
 
@@ -2008,7 +2151,8 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Iterator[Output]:
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
-        Use this to implement `stream()` or `transform()` in Runnable subclasses."""
+        Use this to implement `stream()` or `transform()` in Runnable subclasses.
+        """
         # Mixin that is used by both astream log and astream events implementation
         from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
@@ -2023,7 +2167,7 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
@@ -2035,49 +2179,50 @@ class Runnable(Generic[Input, Output], ABC):
                 kwargs["config"] = child_config
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
-            if stream_handler := next(
-                (
-                    cast(_StreamingCallbackHandler, h)
-                    for h in run_manager.handlers
-                    # instance check OK here, it's a mixin
-                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
-                ),
-                None,
-            ):
-                # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_iter(run_manager.run_id, iterator)
-            try:
-                while True:
-                    chunk: Output = context.run(next, iterator)  # type: ignore
-                    yield chunk
-                    if final_output_supported:
-                        if final_output is None:
+            with set_config_context(child_config) as context:
+                iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+                if stream_handler := next(
+                    (
+                        cast(_StreamingCallbackHandler, h)
+                        for h in run_manager.handlers
+                        # instance check OK here, it's a mixin
+                        if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                    ),
+                    None,
+                ):
+                    # populates streamed_output in astream_log() output if needed
+                    iterator = stream_handler.tap_output_iter(
+                        run_manager.run_id, iterator
+                    )
+                try:
+                    while True:
+                        chunk: Output = context.run(next, iterator)  # type: ignore
+                        yield chunk
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore
+                                except TypeError:
+                                    final_output = chunk
+                                    final_output_supported = False
+                        else:
                             final_output = chunk
+                except (StopIteration, GeneratorExit):
+                    pass
+                for ichunk in input_for_tracing:
+                    if final_input_supported:
+                        if final_input is None:
+                            final_input = ichunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore
                             except TypeError:
-                                final_output = chunk
-                                final_output_supported = False
+                                final_input = ichunk
+                                final_input_supported = False
                     else:
-                        final_output = chunk
-            except (StopIteration, GeneratorExit):
-                pass
-            for ichunk in input_for_tracing:
-                if final_input_supported:
-                    if final_input is None:
                         final_input = ichunk
-                    else:
-                        try:
-                            final_input = final_input + ichunk  # type: ignore
-                        except TypeError:
-                            final_input = ichunk
-                            final_input_supported = False
-                else:
-                    final_input = ichunk
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -2108,7 +2253,8 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> AsyncIterator[Output]:
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
-        Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
+        Use this to implement `astream()` or `atransform()` in Runnable subclasses.
+        """
         # Mixin that is used by both astream log and astream events implementation
         from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
@@ -2123,73 +2269,71 @@ class Runnable(Generic[Input, Output], ABC):
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
-        iterator_ = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
                 kwargs["config"] = child_config
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            with set_config_context(child_config) as context:
+                iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
-            if stream_handler := next(
-                (
-                    cast(_StreamingCallbackHandler, h)
-                    for h in run_manager.handlers
-                    # instance check OK here, it's a mixin
-                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
-                ),
-                None,
-            ):
-                # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_aiter(
-                    run_manager.run_id, iterator_
-                )
-            else:
-                iterator = iterator_
-            try:
-                while True:
-                    if asyncio_accepts_context():
-                        chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
-                            py_anext(iterator),  # type: ignore[arg-type]
-                            context=context,
-                        )
-                    else:
-                        chunk = cast(Output, await py_anext(iterator))
-                    yield chunk
-                    if final_output_supported:
-                        if final_output is None:
+                if stream_handler := next(
+                    (
+                        cast(_StreamingCallbackHandler, h)
+                        for h in run_manager.handlers
+                        # instance check OK here, it's a mixin
+                        if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                    ),
+                    None,
+                ):
+                    # populates streamed_output in astream_log() output if needed
+                    iterator = stream_handler.tap_output_aiter(
+                        run_manager.run_id, iterator_
+                    )
+                else:
+                    iterator = iterator_
+                try:
+                    while True:
+                        if asyncio_accepts_context():
+                            chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
+                                py_anext(iterator),  # type: ignore[arg-type]
+                                context=context,
+                            )
+                        else:
+                            chunk = cast(Output, await py_anext(iterator))
+                        yield chunk
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore
+                                except TypeError:
+                                    final_output = chunk
+                                    final_output_supported = False
+                        else:
                             final_output = chunk
+                except StopAsyncIteration:
+                    pass
+                async for ichunk in input_for_tracing:
+                    if final_input_supported:
+                        if final_input is None:
+                            final_input = ichunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore[operator]
                             except TypeError:
-                                final_output = chunk
-                                final_output_supported = False
+                                final_input = ichunk
+                                final_input_supported = False
                     else:
-                        final_output = chunk
-            except StopAsyncIteration:
-                pass
-            async for ichunk in input_for_tracing:
-                if final_input_supported:
-                    if final_input is None:
                         final_input = ichunk
-                    else:
-                        try:
-                            final_input = final_input + ichunk  # type: ignore[operator]
-                        except TypeError:
-                            final_input = ichunk
-                            final_input_supported = False
-                else:
-                    final_input = ichunk
         except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -2202,11 +2346,11 @@ class Runnable(Generic[Input, Output], ABC):
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
     def as_tool(
         self,
-        args_schema: Optional[Type[BaseModel]] = None,
+        args_schema: Optional[type[BaseModel]] = None,
         *,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        arg_types: Optional[Dict[str, Type]] = None,
+        arg_types: Optional[dict[str, type]] = None,
     ) -> BaseTool:
         """Create a BaseTool from a Runnable.
 
@@ -2250,7 +2394,7 @@ class Runnable(Generic[Input, Output], ABC):
         .. code-block:: python
 
             from typing import Any, Dict, List
-            from langchain_core.pydantic_v1 import BaseModel, Field
+            from pydantic import BaseModel, Field
             from langchain_core.runnables import RunnableLambda
 
             def f(x: Dict[str, Any]) -> str:
@@ -2314,7 +2458,12 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     """Runnable that can be serialized to JSON."""
 
     name: Optional[str] = None
-    """The name of the Runnable. Used for debugging and tracing."""
+
+    model_config = ConfigDict(
+        # Suppress warnings from pydantic protected namespaces
+        # (e.g., `model_`)
+        protected_namespaces=(),
+    )
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the Runnable to JSON.
@@ -2323,11 +2472,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             A JSON-serializable representation of the Runnable.
         """
         dumped = super().to_json()
-        try:
+        with contextlib.suppress(Exception):
             dumped["name"] = self.get_name()
-            dumped["graph"] = self.get_graph().to_json()
-        except Exception:
-            pass
         return dumped
 
     def configurable_fields(
@@ -2369,11 +2515,12 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
-            if key not in self.__fields__:
-                raise ValueError(
+            if key not in self.model_fields:
+                msg = (
                     f"Configuration key {key} not found in {self}: "
-                    f"available keys are {self.__fields__.keys()}"
+                    f"available keys are {self.model_fields.keys()}"
                 )
+                raise ValueError(msg)
 
         return RunnableConfigurableFields(default=self, fields=kwargs)
 
@@ -2438,8 +2585,8 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 
 
 def _seq_input_schema(
-    steps: List[Runnable[Any, Any]], config: Optional[RunnableConfig]
-) -> Type[BaseModel]:
+    steps: list[Runnable[Any, Any]], config: Optional[RunnableConfig]
+) -> type[BaseModel]:
     from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
 
     first = steps[0]
@@ -2447,13 +2594,13 @@ def _seq_input_schema(
         return first.get_input_schema(config)
     elif isinstance(first, RunnableAssign):
         next_input_schema = _seq_input_schema(steps[1:], config)
-        if not next_input_schema.__custom_root_type__:
+        if not issubclass(next_input_schema, RootModel):
             # it's a dict as expected
-            return create_model(  # type: ignore[call-overload]
+            return create_model_v2(  # type: ignore[call-overload]
                 "RunnableSequenceInput",
-                **{
+                field_definitions={
                     k: (v.annotation, v.default)
-                    for k, v in next_input_schema.__fields__.items()
+                    for k, v in next_input_schema.model_fields.items()
                     if k not in first.mapper.steps__
                 },
             )
@@ -2464,8 +2611,8 @@ def _seq_input_schema(
 
 
 def _seq_output_schema(
-    steps: List[Runnable[Any, Any]], config: Optional[RunnableConfig]
-) -> Type[BaseModel]:
+    steps: list[Runnable[Any, Any]], config: Optional[RunnableConfig]
+) -> type[BaseModel]:
     from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
 
     last = steps[-1]
@@ -2474,39 +2621,38 @@ def _seq_output_schema(
     elif isinstance(last, RunnableAssign):
         mapper_output_schema = last.mapper.get_output_schema(config)
         prev_output_schema = _seq_output_schema(steps[:-1], config)
-        if not prev_output_schema.__custom_root_type__:
+        if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
-            return create_model(  # type: ignore[call-overload]
+            return create_model_v2(  # type: ignore[call-overload]
                 "RunnableSequenceOutput",
-                **{
+                field_definitions={
                     **{
                         k: (v.annotation, v.default)
-                        for k, v in prev_output_schema.__fields__.items()
+                        for k, v in prev_output_schema.model_fields.items()
                     },
                     **{
                         k: (v.annotation, v.default)
-                        for k, v in mapper_output_schema.__fields__.items()
+                        for k, v in mapper_output_schema.model_fields.items()
                     },
                 },
             )
     elif isinstance(last, RunnablePick):
         prev_output_schema = _seq_output_schema(steps[:-1], config)
-        if not prev_output_schema.__custom_root_type__:
+        if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
             if isinstance(last.keys, list):
-                return create_model(  # type: ignore[call-overload]
+                return create_model_v2(  # type: ignore[call-overload]
                     "RunnableSequenceOutput",
-                    **{
+                    field_definitions={
                         k: (v.annotation, v.default)
-                        for k, v in prev_output_schema.__fields__.items()
+                        for k, v in prev_output_schema.model_fields.items()
                         if k in last.keys
                     },
                 )
             else:
-                field = prev_output_schema.__fields__[last.keys]
-                return create_model(  # type: ignore[call-overload]
-                    "RunnableSequenceOutput",
-                    __root__=(field.annotation, field.default),
+                field = prev_output_schema.model_fields[last.keys]
+                return create_model_v2(  # type: ignore[call-overload]
+                    "RunnableSequenceOutput", root=(field.annotation, field.default)
                 )
 
     return last.get_output_schema(config)
@@ -2596,7 +2742,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     # the last type.
     first: Runnable[Input, Any]
     """The first Runnable in the sequence."""
-    middle: List[Runnable[Any, Any]] = Field(default_factory=list)
+    middle: list[Runnable[Any, Any]] = Field(default_factory=list)
     """The middle Runnables in the sequence."""
     last: Runnable[Any, Output]
     """The last Runnable in the sequence."""
@@ -2606,7 +2752,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         *steps: RunnableLike,
         name: Optional[str] = None,
         first: Optional[Runnable[Any, Any]] = None,
-        middle: Optional[List[Runnable[Any, Any]]] = None,
+        middle: Optional[list[Runnable[Any, Any]]] = None,
         last: Optional[Runnable[Any, Any]] = None,
     ) -> None:
         """Create a new RunnableSequence.
@@ -2621,19 +2767,17 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Raises:
             ValueError: If the sequence has less than 2 steps.
         """
-        steps_flat: List[Runnable] = []
-        if not steps:
-            if first is not None and last is not None:
-                steps_flat = [first] + (middle or []) + [last]
+        steps_flat: list[Runnable] = []
+        if not steps and first is not None and last is not None:
+            steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
             else:
                 steps_flat.append(coerce_to_runnable(step))
         if len(steps_flat) < 2:
-            raise ValueError(
-                f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
-            )
+            msg = f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
+            raise ValueError(msg)
         super().__init__(  # type: ignore[call-arg]
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
@@ -2642,12 +2786,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         )
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
     @property
-    def steps(self) -> List[Runnable[Any, Any]]:
+    def steps(self) -> list[Runnable[Any, Any]]:
         """All the Runnables that make up the sequence in order.
 
         Returns:
@@ -2665,22 +2809,25 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         """
         return True
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
-    def InputType(self) -> Type[Input]:
+    @override
+    def InputType(self) -> type[Input]:
         """The type of the input to the Runnable."""
         return self.first.InputType
 
     @property
-    def OutputType(self) -> Type[Output]:
+    @override
+    def OutputType(self) -> type[Output]:
         """The type of the output of the Runnable."""
         return self.last.OutputType
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get the input schema of the Runnable.
 
         Args:
@@ -2693,7 +2840,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get the output schema of the Runnable.
 
         Args:
@@ -2705,7 +2852,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return _seq_output_schema(self.steps, config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         """Get the config specs of the Runnable.
 
         Returns:
@@ -2725,10 +2872,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # calculate context dependencies
         specs_by_pos = groupby(
             [tup for tup in all_specs if tup[0].id.startswith(CONTEXT_CONFIG_PREFIX)],
-            lambda x: x[1],
+            itemgetter(1),
         )
-        next_deps: Set[str] = set()
-        deps_by_pos: Dict[int, Set[str]] = {}
+        next_deps: set[str] = set()
+        deps_by_pos: dict[int, set[str]] = {}
         for pos, specs in specs_by_pos:
             deps_by_pos[pos] = next_deps
             next_deps = next_deps | {spec[0].id for spec in specs}
@@ -2779,7 +2926,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 step_graph.trim_last_node()
             step_first_node, _ = graph.extend(step_graph)
             if not step_first_node:
-                raise ValueError(f"Runnable {step} has no first node")
+                msg = f"Runnable {step} has no first node"
+                raise ValueError(msg)
             if current_last_node:
                 graph.add_edge(current_last_node, step_first_node)
 
@@ -2857,7 +3005,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -2868,14 +3016,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for i, step in enumerate(self.steps):
                 # mark each step as a child run
                 config = patch_config(
-                    config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    config, callbacks=run_manager.get_child(f"seq:step:{i + 1}")
                 )
-                context = copy_context()
-                context.run(_set_config_context, config)
-                if i == 0:
-                    input = context.run(step.invoke, input, config, **kwargs)
-                else:
-                    input = context.run(step.invoke, input, config)
+                with set_config_context(config) as context:
+                    if i == 0:
+                        input = context.run(step.invoke, input, config, **kwargs)
+                    else:
+                        input = context.run(step.invoke, input, config)
         # finish the root run
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -2897,7 +3044,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -2908,19 +3055,18 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for i, step in enumerate(self.steps):
                 # mark each step as a child run
                 config = patch_config(
-                    config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
+                    config, callbacks=run_manager.get_child(f"seq:step:{i + 1}")
                 )
-                context = copy_context()
-                context.run(_set_config_context, config)
-                if i == 0:
-                    part = functools.partial(step.ainvoke, input, config, **kwargs)
-                else:
-                    part = functools.partial(step.ainvoke, input, config)
-                if asyncio_accepts_context():
-                    input = await asyncio.create_task(part(), context=context)  # type: ignore
-                else:
-                    input = await asyncio.create_task(part())
-        # finish the root run
+                with set_config_context(config) as context:
+                    if i == 0:
+                        part = functools.partial(step.ainvoke, input, config, **kwargs)
+                    else:
+                        part = functools.partial(step.ainvoke, input, config)
+                    if asyncio_accepts_context():
+                        input = await asyncio.create_task(part(), context=context)  # type: ignore
+                    else:
+                        input = await asyncio.create_task(part())
+            # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -2930,12 +3076,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.beta.runnables.context import config_with_context
         from langchain_core.callbacks.manager import CallbackManager
 
@@ -2962,7 +3108,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # start the root runs, one per input
         run_managers = [
             cm.on_chain_start(
-                dumpd(self),
+                None,
                 input,
                 name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
@@ -2976,7 +3122,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 # Track which inputs (by index) failed so far
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
-                failed_inputs_map: Dict[int, Exception] = {}
+                failed_inputs_map: dict[int, Exception] = {}
                 for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
@@ -2993,7 +3139,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                                config,
+                                callbacks=rm.get_child(f"seq:step:{stepidx + 1}"),
                             )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
@@ -3025,7 +3172,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                                config, callbacks=rm.get_child(f"seq:step:{i + 1}")
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
@@ -3038,7 +3185,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for rm in run_managers:
                 rm.on_chain_error(e)
             if return_exceptions:
-                return cast(List[Output], [e for _ in inputs])
+                return cast(list[Output], [e for _ in inputs])
             else:
                 raise
         else:
@@ -3050,18 +3197,18 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 else:
                     run_manager.on_chain_end(out)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], inputs)
+                return cast(list[Output], inputs)
             else:
                 raise first_exception
 
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         from langchain_core.beta.runnables.context import aconfig_with_context
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
@@ -3086,10 +3233,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for config in configs
         ]
         # start the root runs, one per input
-        run_managers: List[AsyncCallbackManagerForChainRun] = await asyncio.gather(
+        run_managers: list[AsyncCallbackManagerForChainRun] = await asyncio.gather(
             *(
                 cm.on_chain_start(
-                    dumpd(self),
+                    None,
                     input,
                     name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
@@ -3105,7 +3252,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 # Track which inputs (by index) failed so far
                 # If an input has failed it will be present in this map,
                 # and the value will be the exception that was raised.
-                failed_inputs_map: Dict[int, Exception] = {}
+                failed_inputs_map: dict[int, Exception] = {}
                 for stepidx, step in enumerate(self.steps):
                     # Assemble the original indexes of the remaining inputs
                     # (i.e. the ones that haven't failed yet)
@@ -3122,7 +3269,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{stepidx+1}")
+                                config,
+                                callbacks=rm.get_child(f"seq:step:{stepidx + 1}"),
                             )
                             for i, (rm, config) in enumerate(zip(run_managers, configs))
                             if i not in failed_inputs_map
@@ -3154,7 +3302,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         [
                             # each step a child run of the corresponding root run
                             patch_config(
-                                config, callbacks=rm.get_child(f"seq:step:{i+1}")
+                                config, callbacks=rm.get_child(f"seq:step:{i + 1}")
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
@@ -3165,12 +3313,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         except BaseException as e:
             await asyncio.gather(*(rm.on_chain_error(e) for rm in run_managers))
             if return_exceptions:
-                return cast(List[Output], [e for _ in inputs])
+                return cast(list[Output], [e for _ in inputs])
             else:
                 raise
         else:
             first_exception: Optional[Exception] = None
-            coros: List[Awaitable[None]] = []
+            coros: list[Awaitable[None]] = []
             for run_manager, out in zip(run_managers, inputs):
                 if isinstance(out, Exception):
                     first_exception = first_exception or out
@@ -3179,7 +3327,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     coros.append(run_manager.on_chain_end(out))
             await asyncio.gather(*coros)
             if return_exceptions or first_exception is None:
-                return cast(List[Output], inputs)
+                return cast(list[Output], inputs)
             else:
                 raise first_exception
 
@@ -3201,7 +3349,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         final_pipeline = cast(Iterator[Output], input)
         for idx, step in enumerate(steps):
             config = patch_config(
-                config, callbacks=run_manager.get_child(f"seq:step:{idx+1}")
+                config, callbacks=run_manager.get_child(f"seq:step:{idx + 1}")
             )
             if idx == 0:
                 final_pipeline = step.transform(final_pipeline, config, **kwargs)
@@ -3230,7 +3378,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         for idx, step in enumerate(steps):
             config = patch_config(
                 config,
-                callbacks=run_manager.get_child(f"seq:step:{idx+1}"),
+                callbacks=run_manager.get_child(f"seq:step:{idx + 1}"),
             )
             if idx == 0:
                 final_pipeline = step.atransform(final_pipeline, config, **kwargs)
@@ -3287,7 +3435,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             yield chunk
 
 
-class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
+class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     """Runnable that runs a mapping of Runnables in parallel, and returns a mapping
     of their outputs.
 
@@ -3398,12 +3546,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
@@ -3421,6 +3570,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to the Runnable."""
         for step in self.steps__.values():
@@ -3431,7 +3581,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get the input schema of the Runnable.
 
         Args:
@@ -3441,16 +3591,17 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             The input schema of the Runnable.
         """
         if all(
-            s.get_input_schema(config).schema().get("type", "object") == "object"
+            s.get_input_schema(config).model_json_schema().get("type", "object")
+            == "object"
             for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
-            return create_model(  # type: ignore[call-overload]
+            return create_model_v2(  # type: ignore[call-overload]
                 self.get_name("Input"),
-                **{
+                field_definitions={
                     k: (v.annotation, v.default)
                     for step in self.steps__.values()
-                    for k, v in step.get_input_schema(config).__fields__.items()
+                    for k, v in step.get_input_schema(config).model_fields.items()
                     if k != "__root__"
                 },
             )
@@ -3459,7 +3610,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """Get the output schema of the Runnable.
 
         Args:
@@ -3468,14 +3619,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         Returns:
             The output schema of the Runnable.
         """
-        # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            self.get_name("Output"),
-            **{k: (v.OutputType, None) for k, v in self.steps__.items()},
-        )
+        fields = {k: (v.OutputType, ...) for k, v in self.steps__.items()}
+        return create_model_v2(self.get_name("Output"), field_definitions=fields)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         """Get the config specs of the Runnable.
 
         Returns:
@@ -3511,9 +3659,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             else:
                 step_first_node, step_last_node = graph.extend(step_graph)
                 if not step_first_node:
-                    raise ValueError(f"Runnable {step} has no first node")
+                    msg = f"Runnable {step} has no first node"
+                    raise ValueError(msg)
                 if not step_last_node:
-                    raise ValueError(f"Runnable {step} has no last node")
+                    msg = f"Runnable {step} has no last node"
+                    raise ValueError(msg)
                 graph.add_edge(input_node, step_first_node)
                 graph.add_edge(step_last_node, output_node)
 
@@ -3527,8 +3677,8 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         return "{\n  " + map_for_repr + "\n}"
 
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None
-    ) -> Dict[str, Any]:
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> dict[str, Any]:
         from langchain_core.callbacks.manager import CallbackManager
 
         # setup callbacks
@@ -3544,7 +3694,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -3558,13 +3708,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 # mark each step as a child run
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            return context.run(
-                step.invoke,
-                input,
-                child_config,
-            )
+            with set_config_context(child_config) as context:
+                return context.run(
+                    step.invoke,
+                    input,
+                    child_config,
+                )
 
         # gather results from all steps
         try:
@@ -3590,13 +3739,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # setup callbacks
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             input,
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
@@ -3609,14 +3758,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 config,
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            if asyncio_accepts_context():
-                return await asyncio.create_task(  # type: ignore
-                    step.ainvoke(input, child_config), context=context
-                )
-            else:
-                return await asyncio.create_task(step.ainvoke(input, child_config))
+            with set_config_context(child_config) as context:
+                if asyncio_accepts_context():
+                    return await asyncio.create_task(  # type: ignore
+                        step.ainvoke(input, child_config), context=context
+                    )
+                else:
+                    return await asyncio.create_task(step.ainvoke(input, child_config))
 
         # gather results from all steps
         try:
@@ -3634,7 +3782,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                     for key, step in steps.items()
                 )
             )
-            output = {key: value for key, value in zip(steps, results)}
+            output = dict(zip(steps, results))
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -3695,7 +3843,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         input: Iterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
@@ -3705,7 +3853,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         yield from self.transform(iter([input]), config)
 
     async def _atransform(
@@ -3764,7 +3912,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         input: AsyncIterator[Input],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
         ):
@@ -3775,7 +3923,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
         async def input_aiter() -> AsyncIterator[Input]:
             yield input
 
@@ -3882,6 +4030,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         atransform: Optional[
             Callable[[AsyncIterator[Input]], AsyncIterator[Output]]
         ] = None,
+        *,
+        name: Optional[str] = None,
     ) -> None:
         """Initialize a RunnableGenerator.
 
@@ -3903,17 +4053,19 @@ class RunnableGenerator(Runnable[Input, Output]):
             self._transform = transform
             func_for_name = transform
         else:
-            raise TypeError(
+            msg = (
                 "Expected a generator function type for `transform`."
                 f"Instead got an unsupported type: {type(transform)}"
             )
+            raise TypeError(msg)
 
         try:
-            self.name = func_for_name.__name__
+            self.name = name or func_for_name.__name__
         except AttributeError:
-            pass
+            self.name = "RunnableGenerator"
 
     @property
+    @override
     def InputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -3926,7 +4078,35 @@ class RunnableGenerator(Runnable[Input, Output]):
         except ValueError:
             return Any
 
+    def get_input_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> type[BaseModel]:
+        # Override the default implementation.
+        # For a runnable generator, we need to bring to provide the
+        # module of the underlying function when creating the model.
+        root_type = self.InputType
+
+        func = getattr(self, "_transform", None) or self._atransform
+        module = getattr(func, "__module__", None)
+
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
+            return root_type
+
+        return create_model_v2(
+            self.get_name("Input"),
+            root=root_type,
+            # To create the schema, we need to provide the module
+            # where the underlying function is defined.
+            # This allows pydantic to resolve type annotations appropriately.
+            module_name=module,
+        )
+
     @property
+    @override
     def OutputType(self) -> Any:
         func = getattr(self, "_transform", None) or self._atransform
         try:
@@ -3938,6 +4118,32 @@ class RunnableGenerator(Runnable[Input, Output]):
             )
         except ValueError:
             return Any
+
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> type[BaseModel]:
+        # Override the default implementation.
+        # For a runnable generator, we need to bring to provide the
+        # module of the underlying function when creating the model.
+        root_type = self.OutputType
+        func = getattr(self, "_transform", None) or self._atransform
+        module = getattr(func, "__module__", None)
+
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
+            return root_type
+
+        return create_model_v2(
+            self.get_name("Output"),
+            root=root_type,
+            # To create the schema, we need to provide the module
+            # where the underlying function is defined.
+            # This allows pydantic to resolve type annotations appropriately.
+            module_name=module,
+        )
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunnableGenerator):
@@ -3960,7 +4166,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> Iterator[Output]:
         if not hasattr(self, "_transform"):
-            raise NotImplementedError(f"{repr(self)} only supports async methods.")
+            msg = f"{repr(self)} only supports async methods."
+            raise NotImplementedError(msg)
         return self._transform_stream_with_config(
             input,
             self._transform,  # type: ignore[arg-type]
@@ -3979,12 +4186,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         for output in self.stream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
     def atransform(
@@ -3994,7 +4198,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         if not hasattr(self, "_atransform"):
-            raise NotImplementedError(f"{repr(self)} only supports sync methods.")
+            msg = f"{repr(self)} only supports sync methods."
+            raise NotImplementedError(msg)
 
         return self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
@@ -4014,12 +4219,9 @@ class RunnableGenerator(Runnable[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        final = None
+        final: Optional[Output] = None
         async for output in self.astream(input, config, **kwargs):
-            if final is None:
-                final = output
-            else:
-                final = final + output
+            final = output if final is None else final + output  # type: ignore[operator]
         return cast(Output, final)
 
 
@@ -4125,21 +4327,23 @@ class RunnableLambda(Runnable[Input, Output]):
 
         if is_async_callable(func) or is_async_generator(func):
             if afunc is not None:
-                raise TypeError(
+                msg = (
                     "Func was provided as a coroutine function, but afunc was "
                     "also provided. If providing both, func should be a regular "
                     "function to avoid ambiguity."
                 )
+                raise TypeError(msg)
             self.afunc = func
             func_for_name = func
         elif callable(func):
             self.func = cast(Callable[[Input], Output], func)
             func_for_name = func
         else:
-            raise TypeError(
+            msg = (
                 "Expected a callable type for `func`."
                 f"Instead got an unsupported type: {type(func)}"
             )
+            raise TypeError(msg)
 
         try:
             if name is not None:
@@ -4149,7 +4353,10 @@ class RunnableLambda(Runnable[Input, Output]):
         except AttributeError:
             pass
 
+        self._repr: Optional[str] = None
+
     @property
+    @override
     def InputType(self) -> Any:
         """The type of the input to this Runnable."""
         func = getattr(self, "func", None) or self.afunc
@@ -4165,7 +4372,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         """The pydantic schema for the input to this Runnable.
 
         Args:
@@ -4183,29 +4390,33 @@ class RunnableLambda(Runnable[Input, Output]):
             if all(
                 item[0] == "'" and item[-1] == "'" and len(item) > 2 for item in items
             ):
+                fields = {item[1:-1]: (Any, ...) for item in items}
                 # It's a dict, lol
-                return create_model(
-                    self.get_name("Input"),
-                    **{item[1:-1]: (Any, None) for item in items},  # type: ignore
-                )
+                return create_model_v2(self.get_name("Input"), field_definitions=fields)
             else:
-                return create_model(
+                module = getattr(func, "__module__", None)
+                return create_model_v2(
                     self.get_name("Input"),
-                    __root__=(List[Any], None),
+                    root=list[Any],
+                    # To create the schema, we need to provide the module
+                    # where the underlying function is defined.
+                    # This allows pydantic to resolve type annotations appropriately.
+                    module_name=module,
                 )
 
         if self.InputType != Any:
             return super().get_input_schema(config)
 
         if dict_keys := get_function_first_arg_dict_keys(func):
-            return create_model(
+            return create_model_v2(
                 self.get_name("Input"),
-                **{key: (Any, None) for key in dict_keys},  # type: ignore
+                field_definitions=dict.fromkeys(dict_keys, (Any, ...)),
             )
 
         return super().get_input_schema(config)
 
     @property
+    @override
     def OutputType(self) -> Any:
         """The type of the output of this Runnable as a type annotation.
 
@@ -4228,8 +4439,34 @@ class RunnableLambda(Runnable[Input, Output]):
         except ValueError:
             return Any
 
-    @property
-    def deps(self) -> List[Runnable]:
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> type[BaseModel]:
+        # Override the default implementation.
+        # For a runnable lambda, we need to bring to provide the
+        # module of the underlying function when creating the model.
+        root_type = self.OutputType
+        func = getattr(self, "func", None) or self.afunc
+        module = getattr(func, "__module__", None)
+
+        if (
+            inspect.isclass(root_type)
+            and not isinstance(root_type, GenericAlias)
+            and issubclass(root_type, BaseModel)
+        ):
+            return root_type
+
+        return create_model_v2(
+            self.get_name("Output"),
+            root=root_type,
+            # To create the schema, we need to provide the module
+            # where the underlying function is defined.
+            # This allows pydantic to resolve type annotations appropriately.
+            module_name=module,
+        )
+
+    @functools.cached_property
+    def deps(self) -> list[Runnable]:
         """The dependencies of this Runnable.
 
         Returns:
@@ -4243,7 +4480,7 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        deps: List[Runnable] = []
+        deps: list[Runnable] = []
         for obj in objects:
             if isinstance(obj, Runnable):
                 deps.append(obj)
@@ -4252,7 +4489,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return deps
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for dep in self.deps for spec in dep.config_specs
         )
@@ -4271,9 +4508,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 else:
                     dep_first_node, dep_last_node = graph.extend(dep_graph)
                     if not dep_first_node:
-                        raise ValueError(f"Runnable {dep} has no first node")
+                        msg = f"Runnable {dep} has no first node"
+                        raise ValueError(msg)
                     if not dep_last_node:
-                        raise ValueError(f"Runnable {dep} has no last node")
+                        msg = f"Runnable {dep} has no last node"
+                        raise ValueError(msg)
                     graph.add_edge(input_node, dep_first_node)
                     graph.add_edge(dep_last_node, output_node)
         else:
@@ -4294,14 +4533,18 @@ class RunnableLambda(Runnable[Input, Output]):
 
     def __repr__(self) -> str:
         """A string representation of this Runnable."""
-        if hasattr(self, "func") and isinstance(self.func, itemgetter):
-            return f"RunnableLambda({str(self.func)[len('operator.'):]})"
-        elif hasattr(self, "func"):
-            return f"RunnableLambda({get_lambda_source(self.func) or '...'})"
-        elif hasattr(self, "afunc"):
-            return f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
-        else:
-            return "RunnableLambda(...)"
+        if self._repr is None:
+            if hasattr(self, "func") and isinstance(self.func, itemgetter):
+                self._repr = f"RunnableLambda({str(self.func)[len('operator.') :]})"
+            elif hasattr(self, "func"):
+                self._repr = f"RunnableLambda({get_lambda_source(self.func) or '...'})"
+            elif hasattr(self, "afunc"):
+                self._repr = (
+                    f"RunnableLambda(afunc={get_lambda_source(self.afunc) or '...'})"
+                )
+            else:
+                self._repr = "RunnableLambda(...)"
+        return self._repr
 
     def _invoke(
         self,
@@ -4334,9 +4577,10 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
+                msg = (
                     f"Recursion limit reached when invoking {self} with input {input}."
                 )
+                raise RecursionError(msg)
             output = output.invoke(
                 input,
                 patch_config(
@@ -4395,7 +4639,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     )
 
             @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+            async def f(*args: Any, **kwargs: Any) -> Any:
                 return await run_in_executor(config, func, *args, **kwargs)
 
             afunc = f
@@ -4433,9 +4677,10 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
+                msg = (
                     f"Recursion limit reached when invoking {self} with input {input}."
                 )
+                raise RecursionError(msg)
             output = await output.ainvoke(
                 input,
                 patch_config(
@@ -4478,10 +4723,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 **kwargs,
             )
         else:
-            raise TypeError(
+            msg = (
                 "Cannot invoke a coroutine function synchronously."
                 "Use `ainvoke` instead."
             )
+            raise TypeError(msg)
 
     async def ainvoke(
         self,
@@ -4552,10 +4798,10 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {final}."
+                msg = (
+                    f"Recursion limit reached when invoking {self} with input {final}."
                 )
+                raise RecursionError(msg)
             for chunk in output.stream(
                 final,
                 patch_config(
@@ -4583,10 +4829,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 **kwargs,
             )
         else:
-            raise TypeError(
+            msg = (
                 "Cannot stream a coroutine function synchronously."
                 "Use `astream` instead."
             )
+            raise TypeError(msg)
 
     def stream(
         self,
@@ -4623,10 +4870,11 @@ class RunnableLambda(Runnable[Input, Output]):
             afunc = self.afunc
         else:
             if inspect.isgeneratorfunction(self.func):
-                raise TypeError(
+                msg = (
                     "Cannot stream from a generator function asynchronously."
                     "Use .stream() instead."
                 )
+                raise TypeError(msg)
 
             def func(
                 input: Input,
@@ -4639,7 +4887,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 )
 
             @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+            async def f(*args: Any, **kwargs: Any) -> Any:
                 return await run_in_executor(config, func, *args, **kwargs)
 
             afunc = f
@@ -4673,10 +4921,10 @@ class RunnableLambda(Runnable[Input, Output]):
         if isinstance(output, Runnable):
             recursion_limit = config["recursion_limit"]
             if recursion_limit <= 0:
-                raise RecursionError(
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {final}."
+                msg = (
+                    f"Recursion limit reached when invoking {self} with input {final}."
                 )
+                raise RecursionError(msg)
             async for chunk in output.astream(
                 final,
                 patch_config(
@@ -4717,7 +4965,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield chunk
 
 
-class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
+class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     """Runnable that delegates calls to another Runnable
     with each element of the input sequence.
 
@@ -4728,42 +4976,58 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
 
     bound: Runnable[Input, Output]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
+    @override
     def InputType(self) -> Any:
-        return List[self.bound.InputType]  # type: ignore[name-defined]
+        return list[self.bound.InputType]  # type: ignore[name-defined]
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
-        return create_model(
+    ) -> type[BaseModel]:
+        return create_model_v2(
             self.get_name("Input"),
-            __root__=(
-                List[self.bound.get_input_schema(config)],  # type: ignore
+            root=(
+                list[self.bound.get_input_schema(config)],  # type: ignore
                 None,
             ),
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
+            module_name=self.__class__.__module__,
         )
 
     @property
-    def OutputType(self) -> Type[List[Output]]:
-        return List[self.bound.OutputType]  # type: ignore[name-defined]
+    @override
+    def OutputType(self) -> type[list[Output]]:
+        return list[self.bound.OutputType]  # type: ignore[name-defined]
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         schema = self.bound.get_output_schema(config)
-        return create_model(
+        return create_model_v2(
             self.get_name("Output"),
-            __root__=(
-                List[schema],  # type: ignore
-                None,
-            ),
+            root=list[schema],  # type: ignore[valid-type]
+            # create model needs access to appropriate type annotations to be
+            # able to construct the pydantic model.
+            # When we create the model, we pass information about the namespace
+            # where the model is being created, so the type annotations can
+            # be resolved correctly as well.
+            # self.__class__.__module__ handles the case when the Runnable is
+            # being sub-classed in a different module.
+            module_name=self.__class__.__module__,
         )
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -4774,42 +5038,42 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
     def _invoke(
         self,
-        inputs: List[Input],
+        inputs: list[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
-    ) -> List[Output]:
+    ) -> list[Output]:
         configs = [
             patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
         ]
         return self.bound.batch(inputs, configs, **kwargs)
 
     def invoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Output]:
+        self, input: list[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> list[Output]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
-        inputs: List[Input],
+        inputs: list[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
-    ) -> List[Output]:
+    ) -> list[Output]:
         configs = [
             patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
         ]
         return await self.bound.abatch(inputs, configs, **kwargs)
 
     async def ainvoke(
-        self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> List[Output]:
+        self, input: list[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> list[Output]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
     async def astream_events(
@@ -4819,9 +5083,8 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[StreamEvent]:
         for _ in range(1):
-            raise NotImplementedError(
-                "RunnableEach does not support astream_events yet."
-            )
+            msg = "RunnableEach does not support astream_events yet."
+            raise NotImplementedError(msg)
             yield
 
 
@@ -4854,7 +5117,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     """
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -4958,10 +5221,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     kwargs.
     """
 
-    config: RunnableConfig = Field(default_factory=dict)
+    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore
     """The config to bind to the underlying Runnable."""
 
-    config_factories: List[Callable[[RunnableConfig], RunnableConfig]] = Field(
+    config_factories: list[Callable[[RunnableConfig], RunnableConfig]] = Field(
         default_factory=list
     )
     """The config factories to bind to the underlying Runnable."""
@@ -4979,8 +5242,9 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(
         self,
@@ -4989,10 +5253,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[RunnableConfig] = None,
         config_factories: Optional[
-            List[Callable[[RunnableConfig], RunnableConfig]]
+            list[Callable[[RunnableConfig], RunnableConfig]]
         ] = None,
-        custom_input_type: Optional[Union[Type[Input], BaseModel]] = None,
-        custom_output_type: Optional[Union[Type[Output], BaseModel]] = None,
+        custom_input_type: Optional[Union[type[Input], BaseModel]] = None,
+        custom_output_type: Optional[Union[type[Output], BaseModel]] = None,
         **other_kwargs: Any,
     ) -> None:
         """Create a RunnableBinding from a Runnable and kwargs.
@@ -5034,37 +5298,39 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.get_name(suffix, name=name)
 
     @property
-    def InputType(self) -> Type[Input]:
+    @override
+    def InputType(self) -> type[Input]:
         return (
-            cast(Type[Input], self.custom_input_type)
+            cast(type[Input], self.custom_input_type)
             if self.custom_input_type is not None
             else self.bound.InputType
         )
 
     @property
-    def OutputType(self) -> Type[Output]:
+    @override
+    def OutputType(self) -> type[Output]:
         return (
-            cast(Type[Output], self.custom_output_type)
+            cast(type[Output], self.custom_output_type)
             if self.custom_output_type is not None
             else self.bound.OutputType
         )
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         if self.custom_input_type is not None:
             return super().get_input_schema(config)
         return self.bound.get_input_schema(merge_configs(self.config, config))
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         if self.custom_output_type is not None:
             return super().get_output_schema(config)
         return self.bound.get_output_schema(merge_configs(self.config, config))
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return self.bound.config_specs
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -5075,7 +5341,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -5109,15 +5375,15 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5131,15 +5397,15 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5159,7 +5425,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Output]]: ...
+    ) -> Iterator[tuple[int, Output]]: ...
 
     @overload
     def batch_as_completed(
@@ -5169,7 +5435,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]: ...
+    ) -> Iterator[tuple[int, Union[Output, Exception]]]: ...
 
     def batch_as_completed(
         self,
@@ -5178,10 +5444,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+    ) -> Iterator[tuple[int, Union[Output, Exception]]]:
         if isinstance(config, Sequence):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5210,7 +5476,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Output]]: ...
+    ) -> AsyncIterator[tuple[int, Output]]: ...
 
     @overload
     def abatch_as_completed(
@@ -5220,7 +5486,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]: ...
+    ) -> AsyncIterator[tuple[int, Union[Output, Exception]]]: ...
 
     async def abatch_as_completed(
         self,
@@ -5229,10 +5495,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+    ) -> AsyncIterator[tuple[int, Union[Output, Exception]]]:
         if isinstance(config, Sequence):
             configs = cast(
-                List[RunnableConfig],
+                list[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
             )
         else:
@@ -5316,7 +5582,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             yield item
 
 
-RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
+RunnableBindingBase.model_rebuild()
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):
@@ -5341,7 +5607,6 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     - ``with_fallbacks``: Bind a fallback policy to the underlying Runnable.
 
     Example:
-
     `bind`: Bind kwargs to pass to the underlying Runnable when running it.
 
         .. code-block:: python
@@ -5369,7 +5634,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     """
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
@@ -5457,8 +5722,8 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
 
     def with_types(
         self,
-        input_type: Optional[Union[Type[Input], BaseModel]] = None,
-        output_type: Optional[Union[Type[Output], BaseModel]] = None,
+        input_type: Optional[Union[type[Input], BaseModel]] = None,
+        output_type: Optional[Union[type[Output], BaseModel]] = None,
     ) -> Runnable[Input, Output]:
         return self.__class__(
             bound=self.bound,
@@ -5519,12 +5784,36 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         return attr
 
 
+class _RunnableCallableSync(Protocol[Input, Output]):
+    def __call__(self, __in: Input, *, config: RunnableConfig) -> Output: ...
+
+
+class _RunnableCallableAsync(Protocol[Input, Output]):
+    def __call__(self, __in: Input, *, config: RunnableConfig) -> Awaitable[Output]: ...
+
+
+class _RunnableCallableIterator(Protocol[Input, Output]):
+    def __call__(
+        self, __in: Iterator[Input], *, config: RunnableConfig
+    ) -> Iterator[Output]: ...
+
+
+class _RunnableCallableAsyncIterator(Protocol[Input, Output]):
+    def __call__(
+        self, __in: AsyncIterator[Input], *, config: RunnableConfig
+    ) -> AsyncIterator[Output]: ...
+
+
 RunnableLike = Union[
     Runnable[Input, Output],
     Callable[[Input], Output],
     Callable[[Input], Awaitable[Output]],
     Callable[[Iterator[Input]], Iterator[Output]],
     Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+    _RunnableCallableSync[Input, Output],
+    _RunnableCallableAsync[Input, Output],
+    _RunnableCallableIterator[Input, Output],
+    _RunnableCallableAsyncIterator[Input, Output],
     Mapping[str, Any],
 ]
 
@@ -5550,10 +5839,11 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     elif isinstance(thing, dict):
         return cast(Runnable[Input, Output], RunnableParallel(thing))
     else:
-        raise TypeError(
+        msg = (
             f"Expected a Runnable, callable or dict."
             f"Instead got an unsupported type: {type(thing)}"
         )
+        raise TypeError(msg)
 
 
 @overload

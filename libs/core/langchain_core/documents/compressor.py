@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, Optional
 
-from langchain_core.callbacks import Callbacks
-from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
+
 from langchain_core.runnables import run_in_executor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.callbacks import Callbacks
+    from langchain_core.documents import Document
 
 
 class BaseDocumentCompressor(BaseModel, ABC):

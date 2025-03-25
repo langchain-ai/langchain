@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import requests
 import yaml
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -211,8 +211,7 @@ class OpenAPISpec(OpenAPI):
             )
         else:
             raise ValueError(
-                "Attempting to load an unsupported spec:"
-                f"\n\n{obj}\n{warning_message}"
+                f"Attempting to load an unsupported spec:\n\n{obj}\n{warning_message}"
             )
 
     @classmethod

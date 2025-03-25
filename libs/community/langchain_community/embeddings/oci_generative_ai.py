@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -29,6 +29,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service. If a specific config profile is used,
     you must pass the name of the profile (~/.oci/config) through auth_profile.
+    If a specific config file location is used, you must pass
+    the file location where profile name configs present
+    through auth_file_location
 
     To use, you must provide the compartment id
     along with the endpoint url, and model id
@@ -46,9 +49,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
-    service_models: Any  #: :meta private:
+    service_models: Any = None  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
@@ -66,16 +69,21 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None  # type: ignore[assignment]
+    auth_file_location: Optional[str] = "~/.oci/config"
+    """Path to the config file.
+    If not specified, ~/.oci/config will be used
+    """
+
+    model_id: Optional[str] = None
     """Id of the model to call, e.g., cohere.embed-english-light-v2.0"""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None  # type: ignore[assignment]
+    service_endpoint: Optional[str] = None
     """service endpoint url"""
 
-    compartment_id: str = None  # type: ignore[assignment]
+    compartment_id: Optional[str] = None
     """OCID of compartment"""
 
     truncate: Optional[str] = "END"
@@ -85,8 +93,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts
      per request"""
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
@@ -109,7 +116,8 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
 
             if values["auth_type"] == OCIAuthType(1).name:
                 client_kwargs["config"] = oci.config.from_file(
-                    profile_name=values["auth_profile"]
+                    file_location=values["auth_file_location"],
+                    profile_name=values["auth_profile"],
                 )
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
@@ -125,7 +133,8 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                     return oci.auth.signers.SecurityTokenSigner(st_string, pk)
 
                 client_kwargs["config"] = oci.config.from_file(
-                    profile_name=values["auth_profile"]
+                    file_location=values["auth_file_location"],
+                    profile_name=values["auth_profile"],
                 )
                 client_kwargs["signer"] = make_security_token_signer(
                     oci_config=client_kwargs["config"]
@@ -152,11 +161,11 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             ) from ex
         except Exception as e:
             raise ValueError(
-                "Could not authenticate with OCI client. "
-                "Please check if ~/.oci/config exists. "
-                "If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, "
-                "Please check the specified "
-                "auth_profile and auth_type are valid."
+                """Could not authenticate with OCI client.
+                If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used,
+                please check the specified
+                auth_profile, auth_file_location and auth_type are valid.""",
+                e,
             ) from e
 
         return values
@@ -179,6 +188,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         from oci.generative_ai_inference import models
+
+        if not self.model_id:
+            raise ValueError("Model ID is required to embed documents")
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)

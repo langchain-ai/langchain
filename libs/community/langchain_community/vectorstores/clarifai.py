@@ -115,14 +115,14 @@ class Clarifai(VectorStore):
         assert length > 0, "No texts provided to add to the vectorstore."
 
         if metadatas is not None:
-            assert length == len(
-                metadatas
-            ), "Number of texts and metadatas should be the same."
+            assert length == len(metadatas), (
+                "Number of texts and metadatas should be the same."
+            )
 
         if ids is not None:
-            assert len(ltexts) == len(
-                ids
-            ), "Number of text inputs and input ids should be the same."
+            assert len(ltexts) == len(ids), (
+                "Number of text inputs and input ids should be the same."
+            )
 
         input_obj = Inputs.from_auth_helper(auth=self._auth)
         batch_size = 32

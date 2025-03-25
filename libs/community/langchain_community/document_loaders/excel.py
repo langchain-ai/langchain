@@ -42,10 +42,11 @@ class UnstructuredExcelLoader(UnstructuredFileLoader):
               for more info. Optional. Defaults to "single".
             **unstructured_kwargs: Keyword arguments to pass to unstructured.
         """
+        file_path = str(file_path)
         validate_unstructured_version(min_unstructured_version="0.6.7")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         from unstructured.partition.xlsx import partition_xlsx
 
-        return partition_xlsx(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_xlsx(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

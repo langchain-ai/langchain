@@ -23,8 +23,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import Field, SecretStr
 
 from langchain_community.adapters.openai import (
     convert_message_to_dict,
@@ -42,7 +42,7 @@ DEFAULT_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 logger = logging.getLogger(__name__)
 
 
-class ChatKonko(ChatOpenAI):
+class ChatKonko(ChatOpenAI):  # type: ignore[override]
     """`ChatKonko` Chat large language models API.
 
     To use, you should have the ``konko`` python package installed, and the
@@ -179,8 +179,7 @@ class ChatKonko(ChatOpenAI):
 
         if models_response.status_code != 200:
             raise ValueError(
-                f"Error getting models from {models_url}: "
-                f"{models_response.status_code}"
+                f"Error getting models from {models_url}: {models_response.status_code}"
             )
 
         return {model["id"] for model in models_response.json()["data"]}

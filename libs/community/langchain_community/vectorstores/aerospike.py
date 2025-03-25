@@ -149,7 +149,7 @@ class Aerospike(VectorStore):
             return DistanceStrategy.EUCLIDEAN_DISTANCE
 
         raise ValueError(
-            "Unknown distance strategy, must be cosine, dot_product" ", or euclidean"
+            "Unknown distance strategy, must be cosine, dot_product, or euclidean"
         )
 
     def add_texts(
@@ -168,7 +168,7 @@ class Aerospike(VectorStore):
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
+            metadatas: Optional list of metadata associated with the texts.
             ids: Optional list of ids to associate with the texts.
             set_name: Optional aerospike set name to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
@@ -437,8 +437,7 @@ class Aerospike(VectorStore):
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, dot_product"
-                ", or euclidean"
+                "Unknown distance strategy, must be cosine, dot_product, or euclidean"
             )
 
     @staticmethod

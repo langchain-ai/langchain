@@ -1,10 +1,11 @@
+import json
 import logging
 import time
 from typing import Any, List
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,7 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
     """ OVHcloud AI Endpoints region"""
     region: str = "kepler"
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -42,17 +42,55 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
         Returns:
             List[float]: Embeddings for the text.
         """
+
+        return self._send_request_to_ai_endpoints("text/plain", text, "text2vec")
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of documents.
+        Args:
+           texts (List[str]): The list of texts to embed.
+
+        Returns:
+           List[List[float]]: List of embeddings, one for each input text.
+
+        """
+
+        return self._send_request_to_ai_endpoints(
+            "application/json", json.dumps(texts), "batch_text2vec"
+        )
+
+    def embed_query(self, text: str) -> List[float]:
+        """Embed a single query text.
+        Args:
+            text (str): The text to embed.
+        Returns:
+            List[float]: Embeddings for the text.
+        """
+        return self._generate_embedding(text)
+
+    def _send_request_to_ai_endpoints(
+        self, contentType: str, payload: str, route: str
+    ) -> Any:
+        """Send a HTTPS request to OVHcloud AI Endpoints
+        Args:
+            contentType (str): The content type of the request, application/json or text/plain.
+            payload (str): The payload of the request.
+            route (str): The route of the request, batch_text2vec or text2vec.
+        """  # noqa: E501
         headers = {
-            "content-type": "text/plain",
+            "content-type": contentType,
             "Authorization": f"Bearer {self.access_token}",
         }
 
         session = requests.session()
         while True:
             response = session.post(
-                f"https://{self.model_name}.endpoints.{self.region}.ai.cloud.ovh.net/api/text2vec",
+                (
+                    f"https://{self.model_name}.endpoints.{self.region}"
+                    f".ai.cloud.ovh.net/api/{route}"
+                ),
                 headers=headers,
-                data=text,
+                data=payload,
             )
             if response.status_code != 200:
                 if response.status_code == 429:
@@ -75,22 +113,3 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
                     )
                 )
             return response.json()
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Create a retry decorator for PremAIEmbeddings.
-        Args:
-           texts (List[str]): The list of texts to embed.
-
-        Returns:
-           List[List[float]]: List of embeddings, one for each input text.
-        """
-        return [self._generate_embedding(text) for text in texts]
-
-    def embed_query(self, text: str) -> List[float]:
-        """Embed a single query text.
-        Args:
-            text (str): The text to embed.
-        Returns:
-            List[float]: Embeddings for the text.
-        """
-        return self._generate_embedding(text)

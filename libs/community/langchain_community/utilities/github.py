@@ -6,8 +6,8 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 if TYPE_CHECKING:
     from github.Issue import Issue
@@ -20,8 +20,7 @@ def _import_tiktoken() -> Any:
         import tiktoken
     except ImportError:
         raise ImportError(
-            "tiktoken is not installed. "
-            "Please install it with `pip install tiktoken`"
+            "tiktoken is not installed. Please install it with `pip install tiktoken`"
         )
     return tiktoken
 
@@ -29,19 +28,21 @@ def _import_tiktoken() -> Any:
 class GitHubAPIWrapper(BaseModel):
     """Wrapper for GitHub API."""
 
-    github: Any  #: :meta private:
-    github_repo_instance: Any  #: :meta private:
+    github: Any = None  #: :meta private:
+    github_repo_instance: Any = None  #: :meta private:
     github_repository: Optional[str] = None
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
     active_branch: Optional[str] = None
     github_base_branch: Optional[str] = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
         """Validate that api key and python package exists in environment."""
         github_repository = get_from_dict_or_env(
             values, "github_repository", "GITHUB_REPOSITORY"
@@ -88,8 +89,7 @@ class GitHubAPIWrapper(BaseModel):
             installation = installation[0]
         except ValueError as e:
             raise ValueError(
-                "Please make sure to give correct github parameters "
-                f"Error message: {e}"
+                f"Please make sure to give correct github parameters Error message: {e}"
             )
         # create a GitHub instance:
         g = installation.get_github_for_installation()
@@ -211,7 +211,7 @@ class GitHubAPIWrapper(BaseModel):
             )
             for content in contents:
                 if content.type == "dir":
-                    files.extend(self.get_files_from_directory(content.path))
+                    files.extend(self._list_files(content.path))
                 else:
                     files.append(content.path)
 
@@ -255,8 +255,7 @@ class GitHubAPIWrapper(BaseModel):
             if branches:
                 branches_str = "\n".join(branches)
                 return (
-                    f"Found {len(branches)} branches in the repository:"
-                    f"\n{branches_str}"
+                    f"Found {len(branches)} branches in the repository:\n{branches_str}"
                 )
             else:
                 return "No branches found in the repository"
@@ -322,7 +321,7 @@ class GitHubAPIWrapper(BaseModel):
             )
             for content in contents:
                 if content.type == "dir":
-                    files.extend(self.get_files_from_directory(content.path))
+                    files.extend(self._list_files(content.path))
                 else:
                     files.append(content.path)
 
@@ -349,20 +348,24 @@ class GitHubAPIWrapper(BaseModel):
         """
         from github import GithubException
 
-        files: List[str] = []
         try:
-            contents = self.github_repo_instance.get_contents(
-                directory_path, ref=self.active_branch
-            )
+            return str(self._list_files(directory_path))
         except GithubException as e:
             return f"Error: status code {e.status}, {e.message}"
 
+    def _list_files(self, directory_path: str) -> List[str]:
+        files: List[str] = []
+
+        contents = self.github_repo_instance.get_contents(
+            directory_path, ref=self.active_branch
+        )
+
         for content in contents:
             if content.type == "dir":
-                files.extend(self.get_files_from_directory(content.path))
+                files.extend(self._list_files(content.path))
             else:
                 files.append(content.path)
-        return str(files)
+        return files
 
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
@@ -490,7 +493,7 @@ class GitHubAPIWrapper(BaseModel):
         response_dict: Dict[str, str] = {}
         add_to_dict(response_dict, "title", pull.title)
         add_to_dict(response_dict, "number", str(pr_number))
-        add_to_dict(response_dict, "body", pull.body)
+        add_to_dict(response_dict, "body", pull.body if pull.body else "")
 
         comments: List[str] = []
         page = 0
@@ -768,8 +771,7 @@ class GitHubAPIWrapper(BaseModel):
                 code.path, ref=self.active_branch
             ).decoded_content.decode()
             results.append(
-                f"Filepath: `{code.path}`\nFile contents: "
-                f"{file_content}\n<END OF FILE>"
+                f"Filepath: `{code.path}`\nFile contents: {file_content}\n<END OF FILE>"
             )
             count += 1
         return "\n".join(results)
@@ -806,6 +808,50 @@ class GitHubAPIWrapper(BaseModel):
             )
         except Exception as e:
             return f"Failed to create a review request with error {e}"
+
+    def get_latest_release(self) -> str:
+        """
+        Fetches the latest release of the repository.
+
+        Returns:
+            str: The latest release
+        """
+        release = self.github_repo_instance.get_latest_release()
+        return (
+            f"Latest title: {release.title} "
+            f"tag: {release.tag_name} "
+            f"body: {release.body}"
+        )
+
+    def get_releases(self) -> str:
+        """
+        Fetches all releases of the repository.
+
+        Returns:
+            str: The releases
+        """
+        releases = self.github_repo_instance.get_releases()
+        max_results = min(5, releases.totalCount)
+        results = [f"Top {max_results} results:"]
+        for release in releases[:max_results]:
+            results.append(
+                f"Title: {release.title}, Tag: {release.tag_name}, Body: {release.body}"
+            )
+
+        return "\n".join(results)
+
+    def get_release(self, tag_name: str) -> str:
+        """
+        Fetches a specific release of the repository.
+
+        Parameters:
+            tag_name(str): The tag name of the release
+
+        Returns:
+            str: The release
+        """
+        release = self.github_repo_instance.get_release(tag_name)
+        return f"Release: {release.title} tag: {release.tag_name} body: {release.body}"
 
     def run(self, mode: str, query: str) -> str:
         if mode == "get_issue":
@@ -848,5 +894,11 @@ class GitHubAPIWrapper(BaseModel):
             return self.search_code(query)
         elif mode == "create_review_request":
             return self.create_review_request(query)
+        elif mode == "get_latest_release":
+            return self.get_latest_release()
+        elif mode == "get_releases":
+            return self.get_releases()
+        elif mode == "get_release":
+            return self.get_release(query)
         else:
             raise ValueError("Invalid mode" + mode)

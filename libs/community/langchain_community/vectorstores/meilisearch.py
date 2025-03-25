@@ -33,8 +33,7 @@ def _create_client(
         client = meilisearch.Client(url=url, api_key=api_key)
     elif not isinstance(client, meilisearch.Client):
         raise ValueError(
-            f"client should be an instance of meilisearch.Client, "
-            f"got {type(client)}"
+            f"client should be an instance of meilisearch.Client, got {type(client)}"
         )
     try:
         client.version()
@@ -253,7 +252,10 @@ class Meilisearch(VectorStore):
                 text = metadata.pop(self._text_key)
                 semantic_score = result["_rankingScore"]
                 docs.append(
-                    (Document(page_content=text, metadata=metadata), semantic_score)
+                    (
+                        Document(page_content=text, metadata=metadata),
+                        semantic_score,
+                    )
                 )
 
         return docs

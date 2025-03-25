@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools.amadeus.base import AmadeusBaseTool
@@ -27,7 +27,7 @@ class ClosestAirportSchema(BaseModel):
     )
 
 
-class AmadeusClosestAirport(AmadeusBaseTool):
+class AmadeusClosestAirport(AmadeusBaseTool):  # type: ignore[override, override, override]
     """Tool for finding the closest airport to a particular location."""
 
     name: str = "closest_airport"
@@ -39,8 +39,9 @@ class AmadeusClosestAirport(AmadeusBaseTool):
     llm: Optional[BaseLanguageModel] = Field(default=None)
     """Tool's llm used for calculating the closest airport. Defaults to `ChatOpenAI`."""
 
-    @root_validator(pre=True)
-    def set_llm(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="before")
+    @classmethod
+    def set_llm(cls, values: Dict[str, Any]) -> Any:
         if not values.get("llm"):
             # For backward-compatibility
             values["llm"] = ChatOpenAI(temperature=0)
