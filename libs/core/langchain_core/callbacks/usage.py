@@ -30,10 +30,10 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     .. versionadded:: 0.3.49
     """
 
-    def __init__(self, usage_metadata: Optional[UsageMetadata] = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._lock = threading.Lock()
-        self.usage_metadata = usage_metadata
+        self.usage_metadata: Optional[UsageMetadata] = None
 
     def __repr__(self) -> str:
         return str(self.usage_metadata)
