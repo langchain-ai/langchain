@@ -228,7 +228,7 @@ The following table shows tools that can be used to automate tasks in databases:
 
 {database_table}
 
-## Agentic Finance
+## Finance
 
 The following table shows tools that can be used to execute financial transactions such as payments, purchases, and more:
 
