@@ -1,4 +1,9 @@
-from langchain_core.callbacks import get_usage_metadata_callback
+from itertools import cycle
+
+from langchain_core.callbacks import (
+    UsageMetadataCallbackHandler,
+    get_usage_metadata_callback,
+)
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import (
@@ -40,13 +45,20 @@ def test_usage_callback() -> None:
         AIMessage("Response 3", usage_metadata=usage3),
         AIMessage("Response 4", usage_metadata=usage4),
     ]
-    llm = GenericFakeChatModel(messages=iter(messages))
+    llm = GenericFakeChatModel(messages=cycle(messages))
+
+    # Test context manager
     with get_usage_metadata_callback() as cb:
-        llm.invoke("Message 1")
-        llm.invoke("Message 2")
+        _ = llm.invoke("Message 1")
+        _ = llm.invoke("Message 2")
         total_1_2 = add_usage(usage1, usage2)
         assert cb.usage_metadata == total_1_2
-        llm.invoke("Message 3")
-        llm.invoke("Message 4")
+        _ = llm.invoke("Message 3")
+        _ = llm.invoke("Message 4")
         total_3_4 = add_usage(usage3, usage4)
         assert cb.usage_metadata == add_usage(total_1_2, total_3_4)
+
+    # Test via config
+    callback = UsageMetadataCallbackHandler()
+    _ = llm.batch(["Message 1", "Message 2"], config={"callbacks": [callback]})
+    assert callback.usage_metadata == total_1_2
