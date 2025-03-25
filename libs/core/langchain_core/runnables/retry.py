@@ -43,7 +43,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     way to use it is through the `.with_retry()` method on all Runnables.
 
     Example:
-
     Here's an example that uses a RunnableLambda to raise an exception
 
         .. code-block:: python
@@ -136,8 +135,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     def _async_retrying(self, **kwargs: Any) -> AsyncRetrying:
         return AsyncRetrying(**self._kwargs_retrying, **kwargs)
 
+    @staticmethod
     def _patch_config(
-        self,
         config: RunnableConfig,
         run_manager: "T",
         retry_state: RetryCallState,
@@ -249,7 +248,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 result = cast(list[Output], [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
@@ -315,7 +314,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 result = cast(list[Output], [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:

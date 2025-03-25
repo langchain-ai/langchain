@@ -15,6 +15,7 @@ from typing import (
 )
 
 import httpx
+from httpx_sse import SSEError
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -35,7 +36,13 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import convert_to_secret_str, get_from_env
-from pydantic import AliasChoices, Field, SecretStr, model_validator
+from pydantic import (
+    AliasChoices,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 from typing_extensions import Self
 
 _DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
@@ -47,10 +54,13 @@ def _convert_chunk_to_message_chunk(
     sse: Any, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     sse_data = sse.json()
+    if sse.event == "result":
+        response_metadata = _sse_data_to_response_metadata(sse_data)
+        return AIMessageChunk(content="", response_metadata=response_metadata)
+
     message = sse_data.get("message")
     role = message.get("role")
     content = message.get("content") or ""
-
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
@@ -61,6 +71,21 @@ def _convert_chunk_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _sse_data_to_response_metadata(sse_data: Dict) -> Dict[str, Any]:
+    response_metadata = {}
+    if "stopReason" in sse_data:
+        response_metadata["stop_reason"] = sse_data["stopReason"]
+    if "inputLength" in sse_data:
+        response_metadata["input_length"] = sse_data["inputLength"]
+    if "outputLength" in sse_data:
+        response_metadata["output_length"] = sse_data["outputLength"]
+    if "seed" in sse_data:
+        response_metadata["seed"] = sse_data["seed"]
+    if "aiFilter" in sse_data:
+        response_metadata["ai_filter"] = sse_data["aiFilter"]
+    return response_metadata
 
 
 def _convert_message_to_naver_chat_message(
@@ -124,8 +149,8 @@ async def _aiter_sse(
             event_data = sse.json()
             if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                 return
-            if sse.event == "result":
-                return
+            if sse.event == "error":
+                raise SSEError(message=sse.data)
             yield sse
 
 
@@ -171,8 +196,8 @@ class ChatClovaX(BaseChatModel):
             model.invoke([HumanMessage(content="Come up with 10 names for a song about parrots.")])
     """  # noqa: E501
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    client: Optional[httpx.Client] = Field(default=None)  #: :meta private:
+    async_client: Optional[httpx.AsyncClient] = Field(default=None)  #: :meta private:
 
     model_name: str = Field(
         default="HCX-003",
@@ -193,7 +218,7 @@ class ChatClovaX(BaseChatModel):
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: str = Field(default=None, alias="base_url")
+    base_url: str = Field(default="", alias="base_url")
     """
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
@@ -210,10 +235,7 @@ class ChatClovaX(BaseChatModel):
     timeout: int = Field(gt=0, default=90)
     max_retries: int = Field(ge=1, default=2)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -239,10 +261,15 @@ class ChatClovaX(BaseChatModel):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
-            "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
-        }
+        if not self._is_new_api_key():
+            return {
+                "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+            }
+        else:
+            return {
+                "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+                "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
+            }
 
     @property
     def _llm_type(self) -> str:
@@ -284,10 +311,8 @@ class ChatClovaX(BaseChatModel):
                 get_from_env("ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
             )
 
-        if not self.ncp_apigw_api_key:
-            self.ncp_apigw_api_key = convert_to_secret_str(
-                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY")
-            )
+        if not self._is_new_api_key():
+            self._init_fields_on_old_api_key()
 
         if not self.base_url:
             self.base_url = get_from_env(
@@ -310,23 +335,47 @@ class ChatClovaX(BaseChatModel):
 
         return self
 
+    def _is_new_api_key(self) -> bool:
+        if self.ncp_clovastudio_api_key:
+            return self.ncp_clovastudio_api_key.get_secret_value().startswith("nv-")
+        else:
+            return False
+
+    def _init_fields_on_old_api_key(self) -> None:
+        if not self.ncp_apigw_api_key:
+            self.ncp_apigw_api_key = convert_to_secret_str(
+                get_from_env("ncp_apigw_api_key", "NCP_APIGW_API_KEY", "")
+            )
+
     def default_headers(self) -> Dict[str, Any]:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
         clovastudio_api_key = (
             self.ncp_clovastudio_api_key.get_secret_value()
             if self.ncp_clovastudio_api_key
             else None
         )
-        apigw_api_key = (
-            self.ncp_apigw_api_key.get_secret_value()
-            if self.ncp_apigw_api_key
-            else None
-        )
-        return {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-NCP-CLOVASTUDIO-API-KEY": clovastudio_api_key,
-            "X-NCP-APIGW-API-KEY": apigw_api_key,
-        }
+
+        if self._is_new_api_key():
+            ### headers on new api key
+            headers["Authorization"] = f"Bearer {clovastudio_api_key}"
+        else:
+            ### headers on old api key
+            if clovastudio_api_key:
+                headers["X-NCP-CLOVASTUDIO-API-KEY"] = clovastudio_api_key
+
+            apigw_api_key = (
+                self.ncp_apigw_api_key.get_secret_value()
+                if self.ncp_apigw_api_key
+                else None
+            )
+            if apigw_api_key:
+                headers["X-NCP-APIGW-API-KEY"] = apigw_api_key
+
+        return headers
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -341,7 +390,6 @@ class ChatClovaX(BaseChatModel):
     def _completion_with_retry(self, **kwargs: Any) -> Any:
         from httpx_sse import (
             ServerSentEvent,
-            SSEError,
             connect_sse,
         )
 
@@ -349,11 +397,12 @@ class ChatClovaX(BaseChatModel):
             kwargs["stream"] = False
 
         stream = kwargs["stream"]
+        client = cast(httpx.Client, self.client)
         if stream:
 
             def iter_sse() -> Iterator[ServerSentEvent]:
                 with connect_sse(
-                    self.client, "POST", self._api_url, json=kwargs
+                    client, "POST", self._api_url, json=kwargs
                 ) as event_source:
                     _raise_on_error(event_source.response)
                     for sse in event_source.iter_sse():
@@ -363,15 +412,13 @@ class ChatClovaX(BaseChatModel):
                             and event_data.get("data", {}) == "[DONE]"
                         ):
                             return
-                        if sse.event == "result":
-                            return
                         if sse.event == "error":
                             raise SSEError(message=sse.data)
                         yield sse
 
             return iter_sse()
         else:
-            response = self.client.post(url=self._api_url, json=kwargs)
+            response = client.post(url=self._api_url, json=kwargs)
             _raise_on_error(response)
             return response.json()
 
@@ -390,13 +437,14 @@ class ChatClovaX(BaseChatModel):
             if "stream" not in kwargs:
                 kwargs["stream"] = False
             stream = kwargs["stream"]
+            async_client = cast(httpx.AsyncClient, self.async_client)
             if stream:
                 event_source = aconnect_sse(
-                    self.async_client, "POST", self._api_url, json=kwargs
+                    async_client, "POST", self._api_url, json=kwargs
                 )
                 return _aiter_sse(event_source)
             else:
-                response = await self.async_client.post(url=self._api_url, json=kwargs)
+                response = await async_client.post(url=self._api_url, json=kwargs)
                 await _araise_on_error(response)
                 return response.json()
 

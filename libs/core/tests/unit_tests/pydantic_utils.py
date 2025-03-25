@@ -75,7 +75,6 @@ def _remove_enum(obj: Any) -> None:
 
 def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
-
     if not is_basemodel_subclass(obj):
         msg = f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
         raise TypeError(msg)

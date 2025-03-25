@@ -98,13 +98,15 @@ class BasePromptTemplate(
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
-        Returns ["langchain", "schema", "prompt_template"]."""
+        Returns ["langchain", "schema", "prompt_template"].
+        """
         return ["langchain", "schema", "prompt_template"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable.
-        Returns True."""
+        Returns True.
+        """
         return True
 
     model_config = ConfigDict(
@@ -264,7 +266,7 @@ class BasePromptTemplate(
         """Return a partial of the prompt template.
 
         Args:
-            kwargs: Union[str, Callable[[], str], partial variables to set.
+            kwargs: Union[str, Callable[[], str]], partial variables to set.
 
         Returns:
             BasePromptTemplate: A partial of the prompt template.
@@ -366,16 +368,16 @@ class BasePromptTemplate(
             raise NotImplementedError(msg)
 
         # Convert file to Path object.
-        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+        save_path = Path(file_path)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

@@ -1,9 +1,9 @@
 import os
+from typing import Optional
 from unittest import mock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
@@ -27,7 +27,6 @@ def test_all_imports() -> None:
     "langchain_openai",
     "langchain_anthropic",
     "langchain_fireworks",
-    "langchain_mistralai",
     "langchain_groq",
 )
 @pytest.mark.parametrize(
@@ -39,10 +38,14 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_chat_model(model_name: str, model_provider: str) -> None:
-    _: BaseChatModel = init_chat_model(
+def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
+    llm1: BaseChatModel = init_chat_model(
         model_name, model_provider=model_provider, api_key="foo"
     )
+    llm2: BaseChatModel = init_chat_model(
+        f"{model_provider}:{model_name}", api_key="foo"
+    )
+    assert llm1.dict() == llm2.dict()
 
 
 def test_init_missing_dep() -> None:
@@ -104,22 +107,23 @@ def test_configurable() -> None:
             "disable_streaming": False,
             "disabled_params": None,
             "model_name": "gpt-4o",
-            "temperature": 0.7,
+            "temperature": None,
             "model_kwargs": {},
             "openai_api_key": SecretStr("foo"),
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
             "request_timeout": None,
-            "max_retries": 2,
+            "max_retries": None,
             "presence_penalty": None,
+            "reasoning_effort": None,
             "frequency_penalty": None,
             "seed": None,
             "logprobs": None,
             "top_logprobs": None,
             "logit_bias": None,
             "streaming": False,
-            "n": 1,
+            "n": None,
             "top_p": None,
             "max_tokens": None,
             "tiktoken_model_name": None,
@@ -129,6 +133,7 @@ def test_configurable() -> None:
             "extra_body": None,
             "include_response_headers": False,
             "stream_usage": False,
+            "use_responses_api": None,
         },
         "kwargs": {
             "tools": [
@@ -180,9 +185,6 @@ def test_configurable_with_default() -> None:
     )
 
     assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
-    # Anthropic defaults to using `transformers` for token counting.
-    with pytest.raises(ImportError):
-        model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))])  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
@@ -192,6 +194,7 @@ def test_configurable_with_default() -> None:
             "model": "claude-3-sonnet-20240229",
             "max_tokens": 1024,
             "temperature": None,
+            "thinking": None,
             "top_k": None,
             "top_p": None,
             "default_request_timeout": None,

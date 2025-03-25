@@ -1,10 +1,10 @@
----
 name: CI
 
 on:
   push:
     branches: [master]
   pull_request:
+  merge_group:
 
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
@@ -17,7 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  POETRY_VERSION: "1.7.1"
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
 
 jobs:
   build:
@@ -31,7 +32,7 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
       - id: set-matrix
         run: |
-          python -m pip install packaging
+          python -m pip install packaging requests
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
       lint: ${{ steps.set-matrix.outputs.lint }}
@@ -119,30 +120,26 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
       fail-fast: false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.job-configs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python ${{ matrix.job-configs.python-version }} + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.job-configs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ matrix.job-configs.working-directory }}
-          cache-key: extended
 
-      - name: Install dependencies
+      - name: Install dependencies and run extended tests
         shell: bash
         run: |
-          echo "Running extended tests, installing dependencies with poetry..."
-          poetry install --with test
-          poetry run pip install uv
-          poetry run uv pip install -r extended_testing_deps.txt
-
-      - name: Run extended tests
-        run: make extended_tests
+          echo "Running extended tests, installing dependencies with uv..."
+          uv venv
+          uv sync --group test
+          VIRTUAL_ENV=.venv uv pip install -r extended_testing_deps.txt
+          VIRTUAL_ENV=.venv make extended_tests
 
       - name: Ensure the tests did not create any additional files
         shell: bash

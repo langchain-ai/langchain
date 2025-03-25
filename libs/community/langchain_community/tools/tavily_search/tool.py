@@ -1,6 +1,6 @@
 """Tool for the Tavily search API."""
 
-from typing import Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -51,9 +51,12 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
 
             tool.invoke({'query': 'who won the last french open'})
 
-        .. code-block:: python
+        .. code-block:: json
 
-            '{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...'
+            {
+                "url": "https://www.nytimes.com...",
+                "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..."
+            }
 
     Invoke with tool call:
 
@@ -64,7 +67,7 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
         .. code-block:: python
 
             ToolMessage(
-                content='{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
+                content='{ "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ..." }',
                 artifact={
                     'query': 'who won the last french open',
                     'follow_up_questions': None,
@@ -145,6 +148,15 @@ class TavilySearchResults(BaseTool):  # type: ignore[override, override]
 
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
     response_format: Literal["content_and_artifact"] = "content_and_artifact"
+
+    def __init__(self, **kwargs: Any) -> None:
+        # Create api_wrapper with tavily_api_key if provided
+        if "tavily_api_key" in kwargs:
+            kwargs["api_wrapper"] = TavilySearchAPIWrapper(
+                tavily_api_key=kwargs["tavily_api_key"]
+            )
+
+        super().__init__(**kwargs)
 
     def _run(
         self,

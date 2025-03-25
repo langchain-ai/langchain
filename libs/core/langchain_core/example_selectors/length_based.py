@@ -50,7 +50,6 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             example: A dictionary with keys as input variables
                 and values as their values.
         """
-
         self.add_example(example)
 
     @model_validator(mode="after")

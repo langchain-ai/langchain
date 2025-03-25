@@ -1,13 +1,14 @@
 # serializer version: 1
 # name: test_double_nested_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	parent_1(parent_1)
-  	child_child_1_grandchild_1(grandchild_1)
-  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
-  	child_child_2(child_2)
   	parent_2(parent_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> parent_1;
@@ -15,11 +16,84 @@
   	parent_1 --> child_child_1_grandchild_1;
   	parent_2 --> __end__;
   	subgraph child
+  	child_child_2(child_2)
   	child_child_1_grandchild_2 --> child_child_2;
   	subgraph child_1
+  	child_child_1_grandchild_1(grandchild_1)
+  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
   	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
   	end
   	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_triple_nested_subgraph_mermaid[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	parent_1(parent_1)
+  	parent_2(parent_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> parent_1;
+  	child_child_2 --> parent_2;
+  	parent_1 --> child_child_1_grandchild_1;
+  	parent_2 --> __end__;
+  	subgraph child
+  	child_child_2(child_2)
+  	child_child_1_grandchild_2 --> child_child_2;
+  	subgraph child_1
+  	child_child_1_grandchild_1(grandchild_1)
+  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child_child_1_grandchild_1_greatgrandchild --> child_child_1_grandchild_2;
+  	subgraph grandchild_1
+  	child_child_1_grandchild_1_greatgrandchild(greatgrandchild)
+  	child_child_1_grandchild_1 --> child_child_1_grandchild_1_greatgrandchild;
+  	end
+  	end
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_graph_mermaid_duplicate_nodes[mermaid]
+  '''
+  graph TD;
+  	PromptInput --> PromptTemplate_1;
+  	Parallel_llm1_llm2_Input --> FakeListLLM_1;
+  	FakeListLLM_1 --> Parallel_llm1_llm2_Output;
+  	Parallel_llm1_llm2_Input --> FakeListLLM_2;
+  	FakeListLLM_2 --> Parallel_llm1_llm2_Output;
+  	PromptTemplate_1 --> Parallel_llm1_llm2_Input;
+  	PromptTemplate_2 --> PromptTemplateOutput;
+  	Parallel_llm1_llm2_Output --> PromptTemplate_2;
+  
+  '''
+# ---
+# name: test_graph_mermaid_frontmatter_config[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+    look: handDrawn
+    theme: neutral
+    themeVariables:
+      primaryColor: '#e2e2e2'
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	my_node([my_node]):::last
+  	__start__ --> my_node;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -59,7 +133,11 @@
 # ---
 # name: test_graph_sequence[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
@@ -454,6 +532,7 @@
                   'const': 'ai',
                   'default': 'ai',
                   'title': 'Type',
+                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -566,6 +645,7 @@
                   'const': 'AIMessageChunk',
                   'default': 'AIMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -650,6 +730,7 @@
                   'const': 'chat',
                   'default': 'chat',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -724,6 +805,7 @@
                   'const': 'ChatMessageChunk',
                   'default': 'ChatMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -795,6 +877,7 @@
                   'const': 'function',
                   'default': 'function',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -857,6 +940,7 @@
                   'const': 'FunctionMessageChunk',
                   'default': 'FunctionMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -955,6 +1039,7 @@
                   'const': 'human',
                   'default': 'human',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1029,6 +1114,7 @@
                   'const': 'HumanMessageChunk',
                   'default': 'HumanMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1127,6 +1213,7 @@
                 'type': dict({
                   'const': 'invalid_tool_call',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1252,6 +1339,7 @@
                   'const': 'system',
                   'default': 'system',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1321,6 +1409,7 @@
                   'const': 'SystemMessageChunk',
                   'default': 'SystemMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1369,6 +1458,7 @@
                 'type': dict({
                   'const': 'tool_call',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1447,6 +1537,7 @@
                 'type': dict({
                   'const': 'tool_call_chunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1569,6 +1660,7 @@
                   'const': 'tool',
                   'default': 'tool',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1650,6 +1742,7 @@
                   'const': 'ToolMessageChunk',
                   'default': 'ToolMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1867,7 +1960,11 @@
 # ---
 # name: test_graph_sequence_map[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
@@ -1917,7 +2014,11 @@
 # ---
 # name: test_graph_single_runnable[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	StrOutputParserInput([StrOutputParserInput]):::first
   	StrOutputParser(StrOutputParser)
@@ -1932,14 +2033,14 @@
 # ---
 # name: test_parallel_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	outer_1(outer_1)
-  	inner_1_inner_1(inner_1)
-  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
-  	inner_2_inner_1(inner_1)
-  	inner_2_inner_2(inner_2)
   	outer_2(outer_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> outer_1;
@@ -1949,10 +2050,35 @@
   	outer_1 --> inner_2_inner_1;
   	outer_2 --> __end__;
   	subgraph inner_1
+  	inner_1_inner_1(inner_1)
+  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
   	inner_1_inner_1 --> inner_1_inner_2;
   	end
   	subgraph inner_2
+  	inner_2_inner_1(inner_1)
+  	inner_2_inner_2(inner_2)
   	inner_2_inner_1 --> inner_2_inner_2;
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_single_node_subgraph_mermaid[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> sub_meow;
+  	sub_meow --> __end__;
+  	subgraph sub
+  	sub_meow(meow)
   	end
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0

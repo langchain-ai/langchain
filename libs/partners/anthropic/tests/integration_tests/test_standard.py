@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Type, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_anthropic import ChatAnthropic
 
@@ -19,7 +19,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "claude-3-haiku-20240307"}
+        return {"model": "claude-3-5-sonnet-latest"}
 
     @property
     def supports_image_inputs(self) -> bool:

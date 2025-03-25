@@ -5,7 +5,7 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import AzureChatOpenAI
 
@@ -22,13 +22,17 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {
             "deployment_name": os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-            "model": "gpt-4o",
+            "model": "gpt-4o-mini",
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
         }
 
     @property
     def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_json_mode(self) -> bool:
         return True
 
     @pytest.mark.xfail(reason="Not yet supported.")
@@ -50,6 +54,10 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
         }
+
+    @property
+    def structured_output_kwargs(self) -> dict:
+        return {"method": "function_calling"}
 
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:

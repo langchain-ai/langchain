@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import ConfigDict, Field, field_validator
@@ -11,6 +10,8 @@ from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -92,6 +93,27 @@ class BaseMessage(Serializable):
         """
         return ["langchain", "schema", "messages"]
 
+    def text(self) -> str:
+        """Get the text content of the message.
+
+        Returns:
+            The text content of the message.
+        """
+        if isinstance(self.content, str):
+            return self.content
+
+        # must be a list
+        blocks = [
+            block
+            for block in self.content
+            if isinstance(block, str)
+            or block.get("type") == "text"
+            and isinstance(block.get("text"), str)
+        ]
+        return "".join(
+            block if isinstance(block, str) else block["text"] for block in blocks
+        )
+
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
@@ -123,11 +145,11 @@ def merge_content(
     first_content: Union[str, list[Union[str, dict]]],
     *contents: Union[str, list[Union[str, dict]]],
 ) -> Union[str, list[Union[str, dict]]]:
-    """Merge two message contents.
+    """Merge multiple message contents.
 
     Args:
         first_content: The first content. Can be a string or a list.
-        second_content: The second content. Can be a string or a list.
+        contents: The other contents. Can be a string or a list.
 
     Returns:
         The merged content.
@@ -198,6 +220,7 @@ class BaseMessageChunk(BaseMessage):
 
             return self.__class__(  # type: ignore[call-arg]
                 id=self.id,
+                type=self.type,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs

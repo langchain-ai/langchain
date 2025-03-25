@@ -219,7 +219,7 @@ class BaseOpenAI(BaseLLM):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
+    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)  # type: ignore[arg-type]
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -724,7 +724,7 @@ class BaseOpenAI(BaseLLM):
         Example:
             .. code-block:: python
 
-                max_tokens = openai.max_token_for_prompt("Tell me a joke.")
+                max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -924,7 +924,10 @@ class AzureOpenAI(BaseOpenAI):
                 "base_url": values["openai_api_base"],
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
-                "default_headers": values["default_headers"],
+                "default_headers": {
+                    **(values["default_headers"] or {}),
+                    "User-Agent": "langchain-comm-python-azure-openai",
+                },
                 "default_query": values["default_query"],
                 "http_client": values["http_client"],
             }

@@ -24,6 +24,8 @@ DEFAULT_NAMESPACES = [
     "langchain_google_vertexai",
     "langchain_mistralai",
     "langchain_fireworks",
+    "langchain_xai",
+    "langchain_sambanova",
 ]
 # Namespaces for which only deserializing via the SERIALIZABLE_MAPPING is allowed.
 # Load by path is not allowed.
@@ -96,8 +98,7 @@ class Reviver:
             else:
                 if self.secrets_from_env and key in os.environ and os.environ[key]:
                     return os.environ[key]
-                msg = f'Missing key "{key}" in load(secrets_map)'
-                raise KeyError(msg)
+                return None
 
         if (
             value.get("lc") == 1

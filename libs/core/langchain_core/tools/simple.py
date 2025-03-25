@@ -3,25 +3,27 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
     Union,
 )
 
-from pydantic import BaseModel
-
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    ArgsSchema,
     BaseTool,
     ToolException,
     _get_runnable_config_param,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class Tool(BaseTool):
@@ -57,14 +59,20 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            return self.args_schema.model_json_schema()["properties"]
+            if isinstance(self.args_schema, dict):
+                json_schema = self.args_schema
+            else:
+                json_schema = self.args_schema.model_json_schema()
+            return json_schema["properties"]
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> tuple[tuple, dict]:
         """Convert tool input to pydantic model."""
-        args, kwargs = super()._to_args_and_kwargs(tool_input)
+        args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
@@ -130,7 +138,7 @@ class Tool(BaseTool):
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,
-        args_schema: Optional[type[BaseModel]] = None,
+        args_schema: Optional[ArgsSchema] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]
         ] = None,  # This is last for compatibility, but should be after func

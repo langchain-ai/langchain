@@ -2,12 +2,20 @@ from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
+
+from ..utils.import_utils import (
+    IMPORT_ERROR,
+    is_ipex_available,
+    is_openvino_available,
+    is_optimum_intel_available,
+    is_optimum_intel_version,
+)
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -18,6 +26,8 @@ VALID_TASKS = (
     "translation",
 )
 DEFAULT_BATCH_SIZE = 4
+_MIN_OPTIMUM_VERSION = "1.21"
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +65,10 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any = None  #: :meta private:
-    model_id: str = DEFAULT_MODEL_ID
-    """Model name to use."""
+    model_id: Optional[str] = None
+    """The model name. If not set explicitly by the user,
+    it will be inferred from the provided pipeline (if available).
+    If neither is provided, the DEFAULT_MODEL_ID will be used."""
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     pipeline_kwargs: Optional[dict] = None
@@ -67,6 +79,17 @@ class HuggingFacePipeline(BaseLLM):
     model_config = ConfigDict(
         extra="forbid",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def pre_init_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure model_id is set either by pipeline or user input."""
+        if "model_id" not in values:
+            if "pipeline" in values and values["pipeline"]:
+                values["model_id"] = values["pipeline"].model.name_or_path
+            else:
+                values["model_id"] = DEFAULT_MODEL_ID
+        return values
 
     @classmethod
     def from_model_id(
@@ -113,73 +136,82 @@ class HuggingFacePipeline(BaseLLM):
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        try:
-            if task == "text-generation":
-                if backend == "openvino":
-                    try:
-                        from optimum.intel.openvino import (  # type: ignore[import]
-                            OVModelForCausalLM,
-                        )
-
-                    except ImportError:
-                        raise ValueError(
-                            "Could not import optimum-intel python package. "
-                            "Please install it with: "
-                            "pip install 'optimum[openvino,nncf]' "
-                        )
-                    try:
-                        # use local model
-                        model = OVModelForCausalLM.from_pretrained(
-                            model_id, **_model_kwargs
-                        )
-
-                    except Exception:
-                        # use remote model
-                        model = OVModelForCausalLM.from_pretrained(
-                            model_id, export=True, **_model_kwargs
-                        )
-                else:
-                    model = AutoModelForCausalLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
-            elif task in ("text2text-generation", "summarization", "translation"):
-                if backend == "openvino":
-                    try:
-                        from optimum.intel.openvino import OVModelForSeq2SeqLM
-
-                    except ImportError:
-                        raise ValueError(
-                            "Could not import optimum-intel python package. "
-                            "Please install it with: "
-                            "pip install 'optimum[openvino,nncf]' "
-                        )
-                    try:
-                        # use local model
-                        model = OVModelForSeq2SeqLM.from_pretrained(
-                            model_id, **_model_kwargs
-                        )
-
-                    except Exception:
-                        # use remote model
-                        model = OVModelForSeq2SeqLM.from_pretrained(
-                            model_id, export=True, **_model_kwargs
-                        )
-                else:
-                    model = AutoModelForSeq2SeqLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
-            else:
+        if backend in {"openvino", "ipex"}:
+            if task not in VALID_TASKS:
                 raise ValueError(
                     f"Got invalid task {task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
-        except ImportError as e:
-            raise ValueError(
-                f"Could not load the {task} model due to missing dependencies."
-            ) from e
+
+            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            if not is_optimum_intel_available():
+                raise ImportError(err_msg)
+
+            # TODO: upgrade _MIN_OPTIMUM_VERSION to 1.22 after release
+            min_optimum_version = (
+                "1.22"
+                if backend == "ipex" and task != "text-generation"
+                else _MIN_OPTIMUM_VERSION
+            )
+            if is_optimum_intel_version("<", min_optimum_version):
+                raise ImportError(
+                    f"Backend: {backend} requires optimum-intel>="
+                    f"{min_optimum_version}. You can install it with pip: "
+                    "`pip install --upgrade --upgrade-strategy eager "
+                    f"`optimum[{backend}]`."
+                )
+
+            if backend == "openvino":
+                if not is_openvino_available():
+                    raise ImportError(err_msg)
+
+                from optimum.intel import (  # type: ignore[import]
+                    OVModelForCausalLM,
+                    OVModelForSeq2SeqLM,
+                )
+
+                model_cls = (
+                    OVModelForCausalLM
+                    if task == "text-generation"
+                    else OVModelForSeq2SeqLM
+                )
+            else:
+                if not is_ipex_available():
+                    raise ImportError(err_msg)
+
+                if task == "text-generation":
+                    from optimum.intel import (
+                        IPEXModelForCausalLM,  # type: ignore[import]
+                    )
+
+                    model_cls = IPEXModelForCausalLM
+                else:
+                    from optimum.intel import (
+                        IPEXModelForSeq2SeqLM,  # type: ignore[import]
+                    )
+
+                    model_cls = IPEXModelForSeq2SeqLM
+
+        else:
+            model_cls = (
+                AutoModelForCausalLM
+                if task == "text-generation"
+                else AutoModelForSeq2SeqLM
+            )
+
+        model = model_cls.from_pretrained(model_id, **_model_kwargs)
 
         if tokenizer.pad_token is None:
-            tokenizer.pad_token_id = model.config.eos_token_id
+            if model.config.pad_token_id is not None:
+                tokenizer.pad_token_id = model.config.pad_token_id
+            elif model.config.eos_token_id is not None and isinstance(
+                model.config.eos_token_id, int
+            ):
+                tokenizer.pad_token_id = model.config.eos_token_id
+            elif tokenizer.eos_token_id is not None:
+                tokenizer.pad_token_id = tokenizer.eos_token_id
+            else:
+                tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
         if (
             (

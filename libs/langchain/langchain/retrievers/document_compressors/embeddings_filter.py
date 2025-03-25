@@ -1,6 +1,5 @@
 from typing import Callable, Dict, Optional, Sequence
 
-import numpy as np
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -69,13 +68,20 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
+
+        try:
+            import numpy as np
+        except ImportError as e:
+            raise ImportError(
+                "Could not import numpy, please install with `pip install numpy`."
+            ) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents
         )
         embedded_query = self.embeddings.embed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
-        included_idxs = np.arange(len(embedded_documents))
+        included_idxs: np.ndarray = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
@@ -104,13 +110,20 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 "To use please install langchain-community "
                 "with `pip install langchain-community`."
             )
+
+        try:
+            import numpy as np
+        except ImportError as e:
+            raise ImportError(
+                "Could not import numpy, please install with `pip install numpy`."
+            ) from e
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = await _aget_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents
         )
         embedded_query = await self.embeddings.aembed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
-        included_idxs = np.arange(len(embedded_documents))
+        included_idxs: np.ndarray = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:

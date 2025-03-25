@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Optional,
@@ -49,6 +49,9 @@ from langchain_core.prompts.string import (
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
@@ -172,7 +175,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value} of type {type(value)}"
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         value = convert_to_messages(value)
         if self.n_messages:
             value = value[-self.n_messages :]
@@ -321,8 +324,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @property
     def input_variables(self) -> list[str]:
-        """
-        Input variables for this prompt template.
+        """Input variables for this prompt template.
 
         Returns:
             List of input variable names.
@@ -506,7 +508,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             return cls(prompt=prompt, **kwargs)
         else:
             msg = f"Invalid template: {template}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     @classmethod
     def from_template_file(
@@ -525,8 +527,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        with open(str(template_file)) as f:
-            template = f.read()
+        template = Path(template_file).read_text()
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -553,8 +554,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
     @property
     def input_variables(self) -> list[str]:
-        """
-        Input variables for this prompt template.
+        """Input variables for this prompt template.
 
         Returns:
             List of input variable names.
@@ -671,8 +671,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
     @property
     def lc_attributes(self) -> dict:
-        """
-        Return a list of attribute names that should be included in the
+        """Return a list of attribute names that should be included in the
         serialized kwargs. These attributes must be accepted by the
         constructor.
         """
@@ -910,7 +909,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             A chat prompt template.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python
@@ -1104,7 +1102,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Create a chat prompt template from a variety of message formats.
 
         Examples:
-
             Instantiation from a list of message templates:
 
             .. code-block:: python
@@ -1160,7 +1157,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 result.extend(message)
             else:
                 msg = f"Unexpected input: {message_template}"
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY004
         return result
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -1188,7 +1185,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 result.extend(message)
             else:
                 msg = f"Unexpected input: {message_template}"
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa:TRY004
         return result
 
     def partial(self, **kwargs: Any) -> ChatPromptTemplate:
@@ -1335,10 +1332,8 @@ def _create_template_from_message_type(
         elif len(template) == 2 and isinstance(template[1], bool):
             var_name_wrapped, is_optional = template
             if not isinstance(var_name_wrapped, str):
-                msg = (
-                    "Expected variable name to be a string." f" Got: {var_name_wrapped}"
-                )
-                raise ValueError(msg)
+                msg = f"Expected variable name to be a string. Got: {var_name_wrapped}"
+                raise ValueError(msg)  # noqa:TRY004
             if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
                 msg = (
                     f"Invalid placeholder template: {var_name_wrapped}."
@@ -1400,7 +1395,15 @@ def _convert_to_message_template(
         _message = _create_template_from_message_type(
             "human", message, template_format=template_format
         )
-    elif isinstance(message, tuple):
+    elif isinstance(message, (tuple, dict)):
+        if isinstance(message, dict):
+            if set(message.keys()) != {"content", "role"}:
+                msg = (
+                    "Expected dict to have exact keys 'role' and 'content'."
+                    f" Got: {message}"
+                )
+                raise ValueError(msg)
+            message = (message["role"], message["content"])
         if len(message) != 2:
             msg = f"Expected 2-tuple of (role, template), got {message}"
             raise ValueError(msg)

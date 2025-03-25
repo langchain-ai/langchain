@@ -29,7 +29,8 @@ def test_single_item() -> None:
 
 def test_multiple_items_with_spaces() -> None:
     """Test that a string with multiple comma-separated items
-    with spaces is parsed to a list."""
+    with spaces is parsed to a list.
+    """
     parser = CommaSeparatedListOutputParser()
     text = "foo, bar, baz"
     expected = ["foo", "bar", "baz"]
@@ -51,6 +52,26 @@ def test_multiple_items() -> None:
     parser = CommaSeparatedListOutputParser()
     text = "foo,bar,baz"
     expected = ["foo", "bar", "baz"]
+
+    assert parser.parse(text) == expected
+    assert add(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [
+        [a] for a in expected
+    ]
+    assert list(
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))
+    ) == [[a] for a in expected]
+    assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
+def test_multiple_items_with_comma() -> None:
+    """Test that a string with multiple comma-separated items with 1 item containing a
+    comma is parsed to a list.
+    """
+    parser = CommaSeparatedListOutputParser()
+    text = '"foo, foo2",bar,baz'
+    expected = ["foo, foo2", "bar", "baz"]
 
     assert parser.parse(text) == expected
     assert add(parser.transform(t for t in text)) == expected
@@ -102,7 +123,8 @@ def test_numbered_list() -> None:
 def test_markdown_list() -> None:
     parser = MarkdownListOutputParser()
     text1 = (
-        "Your response should be a numbered - not a list item - list with each item on a new line."  # noqa: E501
+        "Your response should be a numbered - not a list item - "
+        "list with each item on a new line."
         "For example: \n- foo\n- bar\n- baz"
     )
 

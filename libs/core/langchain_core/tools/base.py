@@ -4,13 +4,11 @@ import asyncio
 import functools
 import inspect
 import json
-import uuid
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from contextvars import copy_context
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -45,7 +43,7 @@ from langchain_core.callbacks import (
     CallbackManager,
     Callbacks,
 )
-from langchain_core.messages.tool import ToolCall, ToolMessage
+from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
@@ -53,7 +51,7 @@ from langchain_core.runnables import (
     patch_config,
     run_in_executor,
 )
-from langchain_core.runnables.config import _set_config_context
+from langchain_core.runnables.config import set_config_context
 from langchain_core.runnables.utils import asyncio_accepts_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
@@ -67,6 +65,10 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -317,6 +319,9 @@ class ToolException(Exception):  # noqa: N818
     """
 
 
+ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
+
+
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
 
@@ -354,7 +359,7 @@ class ChildTool(BaseTool):
     You can provide few-shot examples as a part of the description.
     """
 
-    args_schema: Annotated[Optional[TypeBaseModel], SkipValidation()] = Field(
+    args_schema: Annotated[Optional[ArgsSchema], SkipValidation()] = Field(
         default=None, description="The tool schema."
     )
     """Pydantic model class to validate and parse the tool's input arguments.
@@ -364,6 +369,8 @@ class ChildTool(BaseTool):
     - A subclass of pydantic.BaseModel.
     or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
+    or
+    - a JSON schema dict
     """
     return_direct: bool = False
     """Whether to return the tool's output directly.
@@ -423,10 +430,11 @@ class ChildTool(BaseTool):
             "args_schema" in kwargs
             and kwargs["args_schema"] is not None
             and not is_basemodel_subclass(kwargs["args_schema"])
+            and not isinstance(kwargs["args_schema"], dict)
         ):
             msg = (
-                f"args_schema must be a subclass of pydantic BaseModel. "
-                f"Got: {kwargs['args_schema']}."
+                "args_schema must be a subclass of pydantic BaseModel or "
+                f"a JSON schema dict. Got: {kwargs['args_schema']}."
             )
             raise TypeError(msg)
         super().__init__(**kwargs)
@@ -443,13 +451,27 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        return self.get_input_schema().model_json_schema()["properties"]
+        if isinstance(self.args_schema, dict):
+            json_schema = self.args_schema
+        else:
+            input_schema = self.get_input_schema()
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     @property
-    def tool_call_schema(self) -> type[BaseModel]:
+    def tool_call_schema(self) -> ArgsSchema:
+        if isinstance(self.args_schema, dict):
+            if self.description:
+                return {
+                    **self.args_schema,
+                    "description": self.description,
+                }
+
+            return self.args_schema
+
         full_schema = self.get_input_schema()
         fields = []
-        for name, type_ in _get_all_basemodel_annotations(full_schema).items():
+        for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
@@ -470,6 +492,8 @@ class ChildTool(BaseTool):
             The input schema for the tool.
         """
         if self.args_schema is not None:
+            if isinstance(self.args_schema, dict):
+                return super().get_input_schema(config)
             return self.args_schema
         else:
             return create_schema_from_function(self.name, self._run)
@@ -494,7 +518,9 @@ class ChildTool(BaseTool):
 
     # --- Tool ---
 
-    def _parse_input(self, tool_input: Union[str, dict]) -> Union[str, dict[str, Any]]:
+    def _parse_input(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> Union[str, dict[str, Any]]:
         """Convert tool input to a pydantic model.
 
         Args:
@@ -503,6 +529,12 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
+                if isinstance(input_args, dict):
+                    msg = (
+                        "String tool inputs are not allowed when "
+                        "using tools with JSON schema args_schema."
+                    )
+                    raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
                 if hasattr(input_args, "model_validate"):
                     input_args.model_validate({key_: tool_input})
@@ -511,10 +543,42 @@ class ChildTool(BaseTool):
             return tool_input
         else:
             if input_args is not None:
-                if issubclass(input_args, BaseModel):
+                if isinstance(input_args, dict):
+                    return tool_input
+                elif issubclass(input_args, BaseModel):
+                    for k, v in get_all_basemodel_annotations(input_args).items():
+                        if (
+                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                            and k not in tool_input
+                        ):
+                            if tool_call_id is None:
+                                msg = (
+                                    "When tool includes an InjectedToolCallId "
+                                    "argument, tool must always be invoked with a full "
+                                    "model ToolCall of the form: {'args': {...}, "
+                                    "'name': '...', 'type': 'tool_call', "
+                                    "'tool_call_id': '...'}"
+                                )
+                                raise ValueError(msg)
+                            tool_input[k] = tool_call_id
                     result = input_args.model_validate(tool_input)
                     result_dict = result.model_dump()
                 elif issubclass(input_args, BaseModelV1):
+                    for k, v in get_all_basemodel_annotations(input_args).items():
+                        if (
+                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                            and k not in tool_input
+                        ):
+                            if tool_call_id is None:
+                                msg = (
+                                    "When tool includes an InjectedToolCallId "
+                                    "argument, tool must always be invoked with a full "
+                                    "model ToolCall of the form: {'args': {...}, "
+                                    "'name': '...', 'type': 'tool_call', "
+                                    "'tool_call_id': '...'}"
+                                )
+                                raise ValueError(msg)
+                            tool_input[k] = tool_call_id
                     result = input_args.parse_obj(tool_input)
                     result_dict = result.dict()
                 else:
@@ -570,8 +634,18 @@ class ChildTool(BaseTool):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
-        tool_input = self._parse_input(tool_input)
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> tuple[tuple, dict]:
+        if (
+            self.args_schema is not None
+            and isinstance(self.args_schema, type)
+            and is_basemodel_subclass(self.args_schema)
+            and not get_fields(self.args_schema)
+        ):
+            # StructuredTool with no args
+            return (), {}
+        tool_input = self._parse_input(tool_input, tool_call_id)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
         if isinstance(tool_input, str):
@@ -609,7 +683,7 @@ class ChildTool(BaseTool):
             run_id: The id of the run. Defaults to None.
             config: The configuration for the tool. Defaults to None.
             tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Additional arguments to pass to the tool
+            kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
             The output of the tool.
@@ -643,18 +717,19 @@ class ChildTool(BaseTool):
 
         content = None
         artifact = None
+        status = "success"
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
-
-            if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs[config_param] = config
-            response = context.run(self._run, *tool_args, **tool_kwargs)
+            with set_config_context(child_config) as context:
+                tool_args, tool_kwargs = self._to_args_and_kwargs(
+                    tool_input, tool_call_id
+                )
+                if signature(self._run).parameters.get("run_manager"):
+                    tool_kwargs = tool_kwargs | {"run_manager": run_manager}
+                if config_param := _get_runnable_config_param(self._run):
+                    tool_kwargs = tool_kwargs | {config_param: config}
+                response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
@@ -663,26 +738,25 @@ class ChildTool(BaseTool):
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                    raise ValueError(msg)
-                content, artifact = response
+                    error_to_raise = ValueError(msg)
+                else:
+                    content, artifact = response
             else:
                 content = response
-            status = "success"
         except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
+                status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
+                status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
-            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
@@ -721,7 +795,7 @@ class ChildTool(BaseTool):
             run_id: The id of the run. Defaults to None.
             config: The configuration for the tool. Defaults to None.
             tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Additional arguments to pass to the tool
+            kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
             The output of the tool.
@@ -753,25 +827,25 @@ class ChildTool(BaseTool):
         )
         content = None
         artifact = None
+        status = "success"
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            func_to_check = (
-                self._run if self.__class__._arun is BaseTool._arun else self._arun
-            )
-            if signature(func_to_check).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
-            if config_param := _get_runnable_config_param(func_to_check):
-                tool_kwargs[config_param] = config
+            with set_config_context(child_config) as context:
+                func_to_check = (
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun
+                )
+                if signature(func_to_check).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                if config_param := _get_runnable_config_param(func_to_check):
+                    tool_kwargs[config_param] = config
 
-            coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if asyncio_accepts_context():
-                response = await asyncio.create_task(coro, context=context)  # type: ignore
-            else:
-                response = await coro
+                coro = self._arun(*tool_args, **tool_kwargs)
+                if asyncio_accepts_context():
+                    response = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    response = await coro
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
@@ -780,26 +854,25 @@ class ChildTool(BaseTool):
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                    raise ValueError(msg)
-                content, artifact = response
+                    error_to_raise = ValueError(msg)
+                else:
+                    content, artifact = response
             else:
                 content = response
-            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
-            status = "error"
+                status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
-            status = "error"
+                status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
-            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
@@ -837,7 +910,7 @@ def _handle_validation_error(
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 
@@ -857,7 +930,7 @@ def _handle_tool_error(
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 
@@ -889,20 +962,23 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
-) -> Union[ToolMessage, Any]:
-    if tool_call_id:
-        if not _is_message_content_type(content):
-            content = _stringify(content)
-        return ToolMessage(
-            content,
-            artifact=artifact,
-            tool_call_id=tool_call_id,
-            name=name,
-            status=status,
-        )
-    else:
+    content: Any,
+    artifact: Any,
+    tool_call_id: Optional[str],
+    name: str,
+    status: str,
+) -> Union[ToolOutputMixin, Any]:
+    if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
+    if not _is_message_content_type(content):
+        content = _stringify(content)
+    return ToolMessage(
+        content,
+        artifact=artifact,
+        tool_call_id=tool_call_id,
+        name=name,
+        status=status,
+    )
 
 
 def _is_message_content_type(obj: Any) -> bool:
@@ -954,15 +1030,36 @@ class InjectedToolArg:
     """Annotation for a Tool arg that is **not** meant to be generated by a model."""
 
 
-def _is_injected_arg_type(type_: type) -> bool:
+class InjectedToolCallId(InjectedToolArg):
+    r'''Annotation for injecting the tool_call_id.
+
+    Example:
+        ..code-block:: python
+
+            from typing_extensions import Annotated
+
+            from langchain_core.messages import ToolMessage
+            from langchain_core.tools import tool, InjectedToolCallID
+
+            @tool
+            def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallID]) -> ToolMessage:
+                """Return x."""
+                return ToolMessage(str(x), artifact=x, name="foo", tool_call_id=tool_call_id)
+    '''  # noqa: E501
+
+
+def _is_injected_arg_type(
+    type_: type, injected_type: Optional[type[InjectedToolArg]] = None
+) -> bool:
+    injected_type = injected_type or InjectedToolArg
     return any(
-        isinstance(arg, InjectedToolArg)
-        or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
+        isinstance(arg, injected_type)
+        or (isinstance(arg, type) and issubclass(arg, injected_type))
         for arg in get_args(type_)[1:]
     )
 
 
-def _get_all_basemodel_annotations(
+def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> dict[str, type]:
     # cls has no subscript: cls = FooBar
@@ -980,7 +1077,7 @@ def _get_all_basemodel_annotations(
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
-        annotations = _get_all_basemodel_annotations(
+        annotations = get_all_basemodel_annotations(
             get_origin(cls), default_to_bound=False
         )
         orig_bases = (cls,)
@@ -994,7 +1091,7 @@ def _get_all_basemodel_annotations(
             # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
                 annotations.update(
-                    _get_all_basemodel_annotations(parent, default_to_bound=False)
+                    get_all_basemodel_annotations(parent, default_to_bound=False)
                 )
                 continue
 

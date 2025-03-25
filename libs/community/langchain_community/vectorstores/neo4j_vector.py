@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
@@ -63,6 +64,11 @@ SUPPORTED_OPERATORS = (
 )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.SearchType",
+)
 class SearchType(str, enum.Enum):
     """Enumerator of the Distance strategies."""
 
@@ -73,6 +79,11 @@ class SearchType(str, enum.Enum):
 DEFAULT_SEARCH_TYPE = SearchType.VECTOR
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.IndexType",
+)
 class IndexType(str, enum.Enum):
     """Enumerator of the index types."""
 
@@ -83,6 +94,11 @@ class IndexType(str, enum.Enum):
 DEFAULT_INDEX_TYPE = IndexType.NODE
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector._get_search_index_query",
+)
 def _get_search_index_query(
     search_type: SearchType, index_type: IndexType = DEFAULT_INDEX_TYPE
 ) -> str:
@@ -119,6 +135,11 @@ def _get_search_index_query(
         )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.check_if_not_null",
+)
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
     """Check if the values are not None or empty string"""
     for prop, value in zip(props, values):
@@ -126,6 +147,11 @@ def check_if_not_null(props: List[str], values: List[Any]) -> None:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.sort_by_index_name",
+)
 def sort_by_index_name(
     lst: List[Dict[str, Any]], index_name: str
 ) -> List[Dict[str, Any]]:
@@ -133,6 +159,11 @@ def sort_by_index_name(
     return sorted(lst, key=lambda x: x.get("name") != index_name)
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.remove_lucene_chars",
+)
 def remove_lucene_chars(text: str) -> str:
     """Remove Lucene special characters"""
     special_chars = [
@@ -161,6 +192,11 @@ def remove_lucene_chars(text: str) -> str:
     return text.strip()
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.dict_to_yaml_str",
+)
 def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
     """
     Convert a dictionary to a YAML-like string without using external libraries.
@@ -186,6 +222,11 @@ def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
     return yaml_str
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.combine_queries",
+)
 def combine_queries(
     input_queries: List[Tuple[str, Dict[str, Any]]], operator: str
 ) -> Tuple[str, Dict[str, Any]]:
@@ -220,6 +261,11 @@ def combine_queries(
     return combined_query, combined_params
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.collect_params",
+)
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
 ) -> Tuple[List[str], Dict[str, Any]]:
@@ -247,6 +293,11 @@ def collect_params(
     return (query_parts, params)
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector._handle_field_filter",
+)
 def _handle_field_filter(
     field: str, value: Any, param_number: int = 1
 ) -> Tuple[str, Dict]:
@@ -272,8 +323,7 @@ def _handle_field_filter(
 
     if field.startswith("$"):
         raise ValueError(
-            f"Invalid filter condition. Expected a field but got an operator: "
-            f"{field}"
+            f"Invalid filter condition. Expected a field but got an operator: {field}"
         )
 
     # Allow [a-zA-Z0-9_], disallow $ for now until we support escape characters
@@ -293,8 +343,7 @@ def _handle_field_filter(
         # Verify that that operator is an operator
         if operator not in SUPPORTED_OPERATORS:
             raise ValueError(
-                f"Invalid operator: {operator}. "
-                f"Expected one of {SUPPORTED_OPERATORS}"
+                f"Invalid operator: {operator}. Expected one of {SUPPORTED_OPERATORS}"
             )
     else:  # Then we assume an equality operator
         operator = "$eq"
@@ -348,6 +397,11 @@ def _handle_field_filter(
         raise NotImplementedError()
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.vectorstores.neo4j_vector.construct_metadata_filter",
+)
 def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
     """Construct a metadata filter.
 
@@ -367,8 +421,7 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                 # Then it's an operator
                 if key.lower() not in ["$and", "$or"]:
                     raise ValueError(
-                        f"Invalid filter condition. Expected $and or $or "
-                        f"but got: {key}"
+                        f"Invalid filter condition. Expected $and or $or but got: {key}"
                     )
             else:
                 # Then it's a field
@@ -403,7 +456,7 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                     )
             else:
                 raise ValueError(
-                    f"Invalid filter condition. Expected $and or $or " f"but got: {key}"
+                    f"Invalid filter condition. Expected $and or $or but got: {key}"
                 )
         elif len(filter) > 1:
             # Then all keys have to be fields (they cannot be operators)
@@ -430,6 +483,11 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
             raise ValueError("Got an empty dictionary for filters.")
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.Neo4jVector",
+)
 class Neo4jVector(VectorStore):
     """`Neo4j` vector index.
 
@@ -890,7 +948,7 @@ class Neo4jVector(VectorStore):
 
         import_query = (
             "UNWIND $data AS row "
-            "CALL { WITH row "
+            "CALL (row) { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
             f"CALL db.create.setNodeVectorProperty(c, "
@@ -1275,8 +1333,7 @@ class Neo4jVector(VectorStore):
 
         if search_type == SearchType.HYBRID and not keyword_index_name:
             raise ValueError(
-                "keyword_index name has to be specified "
-                "when using hybrid search option"
+                "keyword_index name has to be specified when using hybrid search option"
             )
 
         store = cls(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import threading
-from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping
+from collections.abc import Awaitable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,7 +32,6 @@ from langchain_core.runnables.config import (
     get_executor_for_config,
     patch_config,
 )
-from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
@@ -42,10 +41,13 @@ from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator, Mapping
+
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain_core.runnables.graph import Graph
 
 
 def identity(x: Other) -> Other:
@@ -472,9 +474,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+        if not isinstance(input, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
             **input,
@@ -500,9 +502,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+        if not isinstance(input, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
             **input,
@@ -553,9 +555,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             )
             # consume passthrough stream
             for chunk in for_passthrough:
-                assert isinstance(
-                    chunk, dict
-                ), "The input to RunnablePassthrough.assign() must be a dict."
+                if not isinstance(chunk, dict):
+                    msg = "The input to RunnablePassthrough.assign() must be a dict."
+                    raise ValueError(msg)  # noqa: TRY004
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
                     {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -603,9 +605,10 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
-            assert isinstance(
-                chunk, dict
-            ), "The input to RunnablePassthrough.assign() must be a dict."
+            if not isinstance(chunk, dict):
+                msg = "The input to RunnablePassthrough.assign() must be a dict."
+                raise ValueError(msg)  # noqa: TRY004
+
             # remove mapper keys from passthrough chunk, to be overwritten by map output
             filtered = AddableDict(
                 {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -705,9 +708,9 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     def _pick(self, input: dict[str, Any]) -> Any:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+        if not isinstance(input, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
             return input.get(self.keys)

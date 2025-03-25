@@ -70,6 +70,7 @@ def extract_sub_links(
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
         continue_on_failure: If True, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
+
     Returns:
         List[str]: sub links.
     """
@@ -96,8 +97,7 @@ def extract_sub_links(
             if continue_on_failure:
                 logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
                 continue
-            else:
-                raise e
+            raise
 
     results = []
     for path in absolute_paths:

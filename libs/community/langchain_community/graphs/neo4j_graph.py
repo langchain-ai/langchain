@@ -1,6 +1,7 @@
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.graphs.graph_document import GraphDocument
@@ -51,6 +52,11 @@ include_docs_query = (
 )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph.clean_string_values",
+)
 def clean_string_values(text: str) -> str:
     """Clean string values for schema.
 
@@ -65,6 +71,11 @@ def clean_string_values(text: str) -> str:
     return text.replace("\n", " ").replace("\r", " ")
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph.value_sanitize",
+)
 def value_sanitize(d: Any) -> Any:
     """Sanitize the input dictionary or list.
 
@@ -111,6 +122,11 @@ def value_sanitize(d: Any) -> Any:
         return d
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._get_node_import_query",
+)
 def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
     if baseEntityLabel:
         return (
@@ -134,6 +150,11 @@ def _get_node_import_query(baseEntityLabel: bool, include_source: bool) -> str:
         )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._get_rel_import_query",
+)
 def _get_rel_import_query(baseEntityLabel: bool) -> str:
     if baseEntityLabel:
         return (
@@ -158,6 +179,11 @@ def _get_rel_import_query(baseEntityLabel: bool) -> str:
         )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._format_schema",
+)
 def _format_schema(schema: Dict, is_enhanced: bool) -> str:
     formatted_node_props = []
     formatted_rel_props = []
@@ -178,7 +204,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         example = (
                             (
                                 "Available options: "
-                                f'{[clean_string_values(el) for el in prop["values"]]}'
+                                f"{[clean_string_values(el) for el in prop['values']]}"
                             )
                             if prop["values"]
                             else ""
@@ -192,7 +218,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                     "LOCAL_DATE_TIME",
                 ]:
                     if prop.get("min") is not None:
-                        example = f'Min: {prop["min"]}, Max: {prop["max"]}'
+                        example = f"Min: {prop['min']}, Max: {prop['max']}"
                     else:
                         example = (
                             f'Example: "{prop["values"][0]}"'
@@ -204,7 +230,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                     if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
-                        f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     )
                 formatted_node_props.append(
                     f"  - `{prop['property']}`: {prop['type']} {example}"
@@ -226,7 +252,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         example = (
                             (
                                 "Available options: "
-                                f'{[clean_string_values(el) for el in prop["values"]]}'
+                                f"{[clean_string_values(el) for el in prop['values']]}"
                             )
                             if prop["values"]
                             else ""
@@ -239,7 +265,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                     "LOCAL_DATE_TIME",
                 ]:
                     if prop.get("min"):  # If we have min/max
-                        example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
+                        example = f"Min: {prop['min']}, Max:  {prop['max']}"
                     else:  # return a single value
                         example = (
                             f'Example: "{prop["values"][0]}"' if prop["values"] else ""
@@ -249,7 +275,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                     if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
-                        f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     )
                 formatted_rel_props.append(
                     f"  - `{prop['property']}: {prop['type']}` {example}"
@@ -287,10 +313,20 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
     )
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.graphs.neo4j_graph._remove_backticks",
+)
 def _remove_backticks(text: str) -> str:
     return text.replace("`", "")
 
 
+@deprecated(
+    since="0.3.8",
+    removal="1.0",
+    alternative_import="langchain_neo4j.Neo4jGraph",
+)
 class Neo4jGraph(GraphStore):
     """Neo4j database wrapper for various graph operations.
 

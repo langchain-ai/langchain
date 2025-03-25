@@ -1,16 +1,20 @@
 """Ollama chat models."""
 
+import json
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
     Callable,
     Dict,
+    Final,
     Iterator,
     List,
     Literal,
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -21,12 +25,14 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolCall,
@@ -34,13 +40,28 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
+from langchain_core.output_parsers import (
+    JsonOutputKeyToolsParser,
+    JsonOutputParser,
+    PydanticOutputParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
+    convert_to_openai_tool,
+)
+from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
-from pydantic import PrivateAttr, model_validator
-from typing_extensions import Self
+from pydantic import BaseModel, PrivateAttr, model_validator
+from pydantic.json_schema import JsonSchemaValue
+from pydantic.v1 import BaseModel as BaseModelV1
+from typing_extensions import Self, is_typeddict
+
+DEFAULT_THINK_TOKEN_START: Final[str] = "<think>"
+DEFAULT_THINK_TOKEN_END: Final[str] = "</think>"
 
 
 def _get_usage_metadata_from_generation_info(
@@ -60,19 +81,89 @@ def _get_usage_metadata_from_generation_info(
     return None
 
 
+def _parse_json_string(
+    json_string: str, raw_tool_call: dict[str, Any], skip: bool
+) -> Any:
+    """Attempt to parse a JSON string for tool calling.
+
+    Args:
+        json_string: JSON string to parse.
+        skip: Whether to ignore parsing errors and return the value anyways.
+        raw_tool_call: Raw tool call to include in error message.
+
+    Returns:
+        The parsed JSON string.
+
+    Raises:
+        OutputParserException: If the JSON string wrong invalid and skip=False.
+    """
+    try:
+        return json.loads(json_string)
+    except json.JSONDecodeError as e:
+        if skip:
+            return json_string
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+            f"Received JSONDecodeError {e}"
+        )
+        raise OutputParserException(msg) from e
+    except TypeError as e:
+        if skip:
+            return json_string
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{raw_tool_call['function']['arguments']}\n\nare not a string or a "
+            f"dictionary. Received TypeError {e}"
+        )
+        raise OutputParserException(msg) from e
+
+
+def _parse_arguments_from_tool_call(
+    raw_tool_call: dict[str, Any],
+) -> Optional[dict[str, Any]]:
+    """Parse arguments by trying to parse any shallowly nested string-encoded JSON.
+
+    Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
+    Should be removed/changed if fixed upstream.
+    See https://github.com/ollama/ollama/issues/6155
+    """
+    if "function" not in raw_tool_call:
+        return None
+    arguments = raw_tool_call["function"]["arguments"]
+    parsed_arguments: dict = {}
+    if isinstance(arguments, dict):
+        for key, value in arguments.items():
+            if isinstance(value, str):
+                parsed_value = _parse_json_string(
+                    value, skip=True, raw_tool_call=raw_tool_call
+                )
+                if isinstance(parsed_value, (dict, list)):
+                    parsed_arguments[key] = parsed_value
+                else:
+                    parsed_arguments[key] = value
+            else:
+                parsed_arguments[key] = value
+    else:
+        parsed_arguments = _parse_json_string(
+            arguments, skip=False, raw_tool_call=raw_tool_call
+        )
+    return parsed_arguments
+
+
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
 ) -> List[ToolCall]:
     """Get tool calls from ollama response."""
     tool_calls = []
     if "message" in response:
-        if "tool_calls" in response["message"]:
-            for tc in response["message"]["tool_calls"]:
+        if raw_tool_calls := response["message"].get("tool_calls"):
+            for tc in raw_tool_calls:
                 tool_calls.append(
                     tool_call(
                         id=str(uuid4()),
                         name=tc["function"]["name"],
-                        args=tc["function"]["arguments"],
+                        args=_parse_arguments_from_tool_call(tc) or {},
                     )
                 )
     return tool_calls
@@ -89,8 +180,12 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
     }
 
 
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
+
+
 class ChatOllama(BaseChatModel):
-    """Ollama chat model integration.
+    r"""Ollama chat model integration.
 
     .. dropdown:: Setup
         :open:
@@ -144,7 +239,7 @@ class ChatOllama(BaseChatModel):
                 ("human", "Return the words Hello World!"),
             ]
             for chunk in llm.stream(messages):
-                print(chunk)
+                print(chunk.text(), end="")
 
 
         .. code-block:: python
@@ -222,8 +317,6 @@ class ChatOllama(BaseChatModel):
             '{"location": "Pune, India", "time_of_day": "morning"}'
 
     Tool Calling:
-        .. warning::
-            Ollama currently does not support streaming for tools
 
         .. code-block:: python
 
@@ -247,6 +340,13 @@ class ChatOllama(BaseChatModel):
 
     model: str
     """Model name to use."""
+
+    extract_reasoning: Optional[Union[bool, Tuple[str, str]]] = False
+    """Whether to extract the reasoning tokens in think blocks.
+    Extracts `chunk.content` to `chunk.additional_kwargs.reasoning_content`.
+    If a tuple is supplied, they are assumed to be the (start, end) tokens.
+    If `extract_reasoning=True`, the tokens will default to (<think>, </think>).
+    """
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
@@ -317,8 +417,8 @@ class ChatOllama(BaseChatModel):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
-    format: Literal["", "json"] = ""
-    """Specify the format of the output (options: json)"""
+    format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None
+    """Specify the format of the output (options: "json", JSON schema)."""
 
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
@@ -327,27 +427,36 @@ class ChatOllama(BaseChatModel):
     """Base url the model is hosted under."""
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx Client. 
+    """Additional kwargs to pass to the httpx Client.
     For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    _client: Client = PrivateAttr(default=None)
+    _client: Client = PrivateAttr(default=None)  # type: ignore
     """
     The client to use for making requests.
     """
 
-    _async_client: AsyncClient = PrivateAttr(default=None)
+    _async_client: AsyncClient = PrivateAttr(default=None)  # type: ignore
     """
     The async client to use for making requests.
     """
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Ollama."""
-        return {
-            "model": self.model,
-            "format": self.format,
-            "options": {
+    def _chat_params(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            stop = self.stop
+
+        options_dict = kwargs.pop(
+            "options",
+            {
                 "mirostat": self.mirostat,
                 "mirostat_eta": self.mirostat_eta,
                 "mirostat_tau": self.mirostat_tau,
@@ -359,13 +468,27 @@ class ChatOllama(BaseChatModel):
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
                 "seed": self.seed,
-                "stop": self.stop,
+                "stop": self.stop if stop is None else stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
             },
-            "keep_alive": self.keep_alive,
+        )
+
+        params = {
+            "messages": ollama_messages,
+            "stream": kwargs.pop("stream", True),
+            "model": kwargs.pop("model", self.model),
+            "format": kwargs.pop("format", self.format),
+            "options": Options(**options_dict),
+            "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
+            **kwargs,
         }
+
+        if tools := kwargs.get("tools"):
+            params["tools"] = tools
+
+        return params
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
@@ -458,43 +581,41 @@ class ChatOllama(BaseChatModel):
 
         return ollama_messages
 
+    def _extract_reasoning(
+        self, message_chunk: BaseMessageChunk, is_thinking: bool
+    ) -> Tuple[BaseMessageChunk, bool]:
+        """Mutate a message chunk to extract reasoning content."""
+        if not self.extract_reasoning:
+            return message_chunk, is_thinking
+        elif self.extract_reasoning is True:
+            start_token = DEFAULT_THINK_TOKEN_START
+            end_token = DEFAULT_THINK_TOKEN_END
+        else:
+            start_token, end_token = cast(tuple, self.extract_reasoning)
+        if start_token in message_chunk.content:
+            is_thinking = True
+        content = message_chunk.content
+        if is_thinking:
+            message_chunk.additional_kwargs["reasoning_content"] = content
+            message_chunk.content = ""
+        if end_token in content:
+            is_thinking = False
+
+        return message_chunk, is_thinking
+
     async def _acreate_chat_stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
-        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+        chat_params = self._chat_params(messages, stop, **kwargs)
 
-        stop = stop if stop is not None else self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            yield await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=False,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )  # type:ignore
-        else:
-            async for part in await self._async_client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            ):  # type:ignore
+        if chat_params["stream"]:
+            async for part in await self._async_client.chat(**chat_params):
                 yield part
+        else:
+            yield await self._async_client.chat(**chat_params)
 
     def _create_chat_stream(
         self,
@@ -502,36 +623,12 @@ class ChatOllama(BaseChatModel):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
-        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+        chat_params = self._chat_params(messages, stop, **kwargs)
 
-        stop = stop if stop is not None else self.stop
-
-        params = self._default_params
-
-        for key in self._default_params:
-            if key in kwargs:
-                params[key] = kwargs[key]
-
-        params["options"]["stop"] = stop
-        if "tools" in kwargs:
-            yield self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=False,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-                tools=kwargs["tools"],
-            )
+        if chat_params["stream"]:
+            yield from self._client.chat(**chat_params)
         else:
-            yield from self._client.chat(
-                model=params["model"],
-                messages=ollama_messages,
-                stream=True,
-                options=Options(**params["options"]),
-                keep_alive=params["keep_alive"],
-                format=params["format"],
-            )
+            yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
@@ -542,35 +639,17 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
-        for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
-            if not isinstance(stream_resp, str):
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
-                        usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
-                        ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
-                    ),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+        for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+            if final_chunk is None:
+                final_chunk = chunk
+            else:
+                final_chunk += chunk
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    chunk=chunk,
+                    verbose=verbose,
                 )
-                if final_chunk is None:
-                    final_chunk = chunk
-                else:
-                    final_chunk += chunk
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=verbose,
-                    )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
@@ -585,35 +664,17 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
-        async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
-            if not isinstance(stream_resp, str):
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=(
-                            stream_resp["message"]["content"]
-                            if "message" in stream_resp
-                            and "content" in stream_resp["message"]
-                            else ""
-                        ),
-                        usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
-                        ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
-                    ),
-                    generation_info=(
-                        dict(stream_resp) if stream_resp.get("done") is True else None
-                    ),
+        async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
+            if final_chunk is None:
+                final_chunk = chunk
+            else:
+                final_chunk += chunk
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    chunk.text,
+                    chunk=chunk,
+                    verbose=verbose,
                 )
-                if final_chunk is None:
-                    final_chunk = chunk
-                else:
-                    final_chunk += chunk
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=verbose,
-                    )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
@@ -650,18 +711,19 @@ class ChatOllama(BaseChatModel):
                 content=final_chunk.text,
                 usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
                 tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+                additional_kwargs=final_chunk.message.additional_kwargs,
             ),
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
 
-    def _stream(
+    def _iterate_over_stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        is_thinking = False
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
@@ -681,20 +743,35 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
+                if self.extract_reasoning:
+                    message, is_thinking = self._extract_reasoning(
+                        chunk.message, is_thinking
                     )
+                    chunk.message = message
                 yield chunk
 
-    async def _astream(
+    def _stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
+                )
+            yield chunk
+
+    async def _aiterate_over_stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        is_thinking = False
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
@@ -714,12 +791,27 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
+                if self.extract_reasoning:
+                    message, is_thinking = self._extract_reasoning(
+                        chunk.message, is_thinking
                     )
+                    chunk.message = message
                 yield chunk
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    chunk.text,
+                    verbose=self.verbose,
+                )
+            yield chunk
 
     async def _agenerate(
         self,
@@ -737,6 +829,7 @@ class ChatOllama(BaseChatModel):
                 content=final_chunk.text,
                 usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
                 tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+                additional_kwargs=final_chunk.message.additional_kwargs,
             ),
             generation_info=generation_info,
         )
@@ -750,6 +843,8 @@ class ChatOllama(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -760,8 +855,359 @@ class ChatOllama(BaseChatModel):
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+            tool_choice: If provided, which tool for model to call. **This parameter
+                is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, type],
+        *,
+        method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema:
+                The output schema. Can be passed in as:
+
+                - a Pydantic class,
+                - a JSON schema
+                - a TypedDict class
+                - an OpenAI function/tool schema.
+
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+            method: The method for steering model generation, one of:
+
+                - "json_schema":
+                    Uses Ollama's structured output API: https://ollama.com/blog/structured-outputs
+                - "function_calling":
+                    Uses Ollama's tool-calling API
+                - "json_mode":
+                    Specifies ``format="json"``. Note that if using JSON mode then you
+                    must include instructions for formatting the output into the
+                    desired schema into the model call.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+            kwargs: Additional keyword args aren't supported.
+
+        Returns:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
+
+        .. versionchanged:: 0.2.2
+
+            Added support for structured output API via ``format`` parameter.
+
+        .. versionchanged:: 0.3.0
+
+            Updated default ``method`` to ``"json_schema"``.
+
+        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
+
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_ollama import ChatOllama
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Optional[str] = Field(
+                        default=..., description="A justification for the answer."
+                    )
+
+
+                llm = ChatOllama(model="llama3.1", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
+
+            .. code-block:: python
+
+                from langchain_ollama import ChatOllama
+                from pydantic import BaseModel
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: str
+
+
+                llm = ChatOllama(model="llama3.1", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
+
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_ollama import ChatOllama
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Optional[str] = Field(
+                        default=..., description="A justification for the answer."
+                    )
+
+
+                llm = ChatOllama(model="llama3.1", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, method="function_calling"
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        .. dropdown:: Example: schema=TypedDict class, method="function_calling", include_raw=False
+
+            .. code-block:: python
+
+                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
+                # from typing_extensions, not from typing.
+                from typing_extensions import Annotated, TypedDict
+
+                from langchain_ollama import ChatOllama
+
+
+                class AnswerWithJustification(TypedDict):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    justification: Annotated[
+                        Optional[str], None, "A justification for the answer."
+                    ]
+
+
+                llm = ChatOllama(model="llama3.1", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        .. dropdown:: Example: schema=OpenAI function schema, method="function_calling", include_raw=False
+
+            .. code-block:: python
+
+                from langchain_ollama import ChatOllama
+
+                oai_schema = {
+                    'name': 'AnswerWithJustification',
+                    'description': 'An answer to the user question along with justification for the answer.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'answer': {'type': 'string'},
+                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                        },
+                       'required': ['answer']
+                   }
+               }
+
+                llm = ChatOllama(model="llama3.1", temperature=0)
+                structured_llm = llm.with_structured_output(oai_schema)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+
+            .. code-block::
+
+                from langchain_ollama import ChatOllama
+                from pydantic import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatOllama(model="llama3.1", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification,
+                    method="json_mode",
+                    include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+                #     'parsing_error': None
+                # }
+        """  # noqa: E501, D301
+        _ = kwargs.pop("strict", None)
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                ls_structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": formatted_tool,
+                },
+            )
+            if is_pydantic_schema:
+                output_parser: Runnable = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(
+                format="json",
+                ls_structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": schema,
+                },
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            if is_pydantic_schema:
+                schema = cast(TypeBaseModel, schema)
+                if issubclass(schema, BaseModelV1):
+                    response_format = schema.schema()
+                else:
+                    response_format = schema.model_json_schema()
+                llm = self.bind(
+                    format=response_format,
+                    ls_structured_output_format={
+                        "kwargs": {"method": method},
+                        "schema": schema,
+                    },
+                )
+                output_parser = PydanticOutputParser(pydantic_object=schema)
+            else:
+                if is_typeddict(schema):
+                    response_format = convert_to_json_schema(schema)
+                    if "required" not in response_format:
+                        response_format["required"] = list(
+                            response_format["properties"].keys()
+                        )
+                else:
+                    # is JSON schema
+                    response_format = cast(dict, schema)
+                llm = self.bind(
+                    format=response_format,
+                    ls_structured_output_format={
+                        "kwargs": {"method": method},
+                        "schema": response_format,
+                    },
+                )
+                output_parser = JsonOutputParser()
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling', "
+                f"'json_schema', or 'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser

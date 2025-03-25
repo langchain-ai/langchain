@@ -3,6 +3,7 @@
 import base64
 import json
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -21,16 +22,16 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_standard_tests.integration_tests.chat_models import (
-    _validate_tool_call_message,
-)
-from langchain_standard_tests.integration_tests.chat_models import (
+from langchain_tests.integration_tests.chat_models import _validate_tool_call_message
+from langchain_tests.integration_tests.chat_models import (
     magic_function as invalid_magic_function,
 )
 from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
+
+MAX_TOKEN_COUNT = 16
 
 
 @pytest.mark.scheduled
@@ -45,7 +46,7 @@ def test_chat_openai() -> None:
         max_retries=3,
         http_client=None,
         n=1,
-        max_tokens=10,
+        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         default_headers=None,
         default_query=None,
     )
@@ -63,20 +64,21 @@ def test_chat_openai_model() -> None:
     assert chat.model_name == "bar"
 
 
-def test_chat_openai_system_message() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_chat_openai_system_message(use_responses_api: bool) -> None:
     """Test ChatOpenAI wrapper with system message."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(use_responses_api=use_responses_api, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
-    assert isinstance(response.content, str)
+    assert isinstance(response.text(), str)
 
 
 @pytest.mark.scheduled
 def test_chat_openai_generate() -> None:
     """Test ChatOpenAI wrapper with generate."""
-    chat = ChatOpenAI(max_tokens=10, n=2)
+    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=2)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -93,7 +95,7 @@ def test_chat_openai_generate() -> None:
 @pytest.mark.scheduled
 def test_chat_openai_multiple_completions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
-    chat = ChatOpenAI(max_tokens=10, n=5)
+    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=5)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
@@ -104,16 +106,18 @@ def test_chat_openai_multiple_completions() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_openai_streaming() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_chat_openai_streaming(use_responses_api: bool) -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
-        max_tokens=10,
+        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         streaming=True,
         temperature=0,
         callback_manager=callback_manager,
         verbose=True,
+        use_responses_api=use_responses_api,
     )
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
@@ -134,7 +138,7 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)
+    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)  # type: ignore[call-arg]
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
@@ -143,7 +147,7 @@ def test_chat_openai_streaming_generation_info() -> None:
 
 def test_chat_openai_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
@@ -152,7 +156,7 @@ def test_chat_openai_llm_output_contains_model_name() -> None:
 
 def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=10, streaming=True)
+    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, streaming=True)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
@@ -162,13 +166,13 @@ def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
 def test_chat_openai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
-        ChatOpenAI(max_tokens=10, streaming=True, temperature=0, n=5)
+        ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, streaming=True, temperature=0, n=5)  # type: ignore[call-arg]
 
 
 @pytest.mark.scheduled
 async def test_async_chat_openai() -> None:
     """Test async generation."""
-    chat = ChatOpenAI(max_tokens=10, n=2)
+    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=2)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -188,7 +192,7 @@ async def test_async_chat_openai_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
-        max_tokens=10,
+        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         streaming=True,
         temperature=0,
         callback_manager=callback_manager,
@@ -220,7 +224,7 @@ async def test_async_chat_openai_bind_functions() -> None:
             default=None, title="Fav Food", description="The person's favorite food"
         )
 
-    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(
+    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(  # type: ignore[call-arg]
         functions=[Person], function_call="Person"
     )
 
@@ -242,7 +246,7 @@ async def test_async_chat_openai_bind_functions() -> None:
 @pytest.mark.scheduled
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -251,7 +255,7 @@ def test_openai_streaming() -> None:
 @pytest.mark.scheduled
 async def test_openai_astream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -260,7 +264,7 @@ async def test_openai_astream() -> None:
 @pytest.mark.scheduled
 async def test_openai_abatch() -> None:
     """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -268,21 +272,22 @@ async def test_openai_abatch() -> None:
 
 
 @pytest.mark.scheduled
-async def test_openai_abatch_tags() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_abatch_tags(use_responses_api: bool) -> None:
     """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, use_responses_api=use_responses_api)  # type: ignore[call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
     )
     for token in result:
-        assert isinstance(token.content, str)
+        assert isinstance(token.text(), str)
 
 
 @pytest.mark.scheduled
 def test_openai_batch() -> None:
     """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -292,7 +297,7 @@ def test_openai_batch() -> None:
 @pytest.mark.scheduled
 async def test_openai_ainvoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -301,7 +306,7 @@ async def test_openai_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -386,7 +391,7 @@ async def test_astream() -> None:
             assert chunks_with_token_counts == 0
             assert full.usage_metadata is None
 
-    llm = ChatOpenAI(temperature=0, max_tokens=5)
+    llm = ChatOpenAI(temperature=0, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
     await _test_stream(llm.astream("Hello"), expect_usage=False)
     await _test_stream(
         llm.astream("Hello", stream_options={"include_usage": True}), expect_usage=True
@@ -394,7 +399,7 @@ async def test_astream() -> None:
     await _test_stream(llm.astream("Hello", stream_usage=True), expect_usage=True)
     llm = ChatOpenAI(
         temperature=0,
-        max_tokens=5,
+        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         model_kwargs={"stream_options": {"include_usage": True}},
     )
     await _test_stream(llm.astream("Hello"), expect_usage=True)
@@ -402,7 +407,7 @@ async def test_astream() -> None:
         llm.astream("Hello", stream_options={"include_usage": False}),
         expect_usage=False,
     )
-    llm = ChatOpenAI(temperature=0, max_tokens=5, stream_usage=True)
+    llm = ChatOpenAI(temperature=0, max_tokens=MAX_TOKEN_COUNT, stream_usage=True)  # type: ignore[call-arg]
     await _test_stream(llm.astream("Hello"), expect_usage=True)
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
@@ -571,9 +576,12 @@ def test_tool_use() -> None:
     llm_with_tool.invoke(msgs)
 
 
-def test_manual_tool_call_msg() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_manual_tool_call_msg(use_responses_api: bool) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
+    )
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
     msgs: List = [
         HumanMessage("Sally has green hair, what would her username be?"),
@@ -614,9 +622,12 @@ def test_manual_tool_call_msg() -> None:
         llm_with_tool.invoke(msgs)
 
 
-def test_bind_tools_tool_choice() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_bind_tools_tool_choice(use_responses_api: bool) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
+    )
     for tool_choice in ("any", "required"):
         llm_with_tools = llm.bind_tools(
             tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice
@@ -629,14 +640,27 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
-def test_openai_structured_output() -> None:
+def test_disable_parallel_tool_calling() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
+    result = llm_with_tools.invoke(
+        "Use the GenerateUsername tool to generate user names for:\n\n"
+        "Sally with green hair\n"
+        "Bob with blue hair"
+    )
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+
+
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4"])
+def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
 
         name: str
         age: int
 
-    llm = ChatOpenAI().with_structured_output(MyModel)
+    llm = ChatOpenAI(model=model).with_structured_output(MyModel)
     result = llm.invoke("I'm a 27 year old named Erick")
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
@@ -663,11 +687,14 @@ def test_openai_proxy() -> None:
         assert proxy.port == 8080
 
 
-def test_openai_response_headers() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_response_headers(use_responses_api: bool) -> None:
     """Test ChatOpenAI response headers."""
-    chat_openai = ChatOpenAI(include_response_headers=True)
+    chat_openai = ChatOpenAI(
+        include_response_headers=True, use_responses_api=use_responses_api
+    )
     query = "I'm Pickle Rick"
-    result = chat_openai.invoke(query, max_tokens=10)
+    result = chat_openai.invoke(query, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
     headers = result.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
@@ -675,7 +702,7 @@ def test_openai_response_headers() -> None:
 
     # Stream
     full: Optional[BaseMessageChunk] = None
-    for chunk in chat_openai.stream(query, max_tokens=10):
+    for chunk in chat_openai.stream(query, max_tokens=MAX_TOKEN_COUNT):  # type: ignore[call-arg]
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
     headers = full.response_metadata["headers"]
@@ -684,11 +711,14 @@ def test_openai_response_headers() -> None:
     assert "content-type" in headers
 
 
-async def test_openai_response_headers_async() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_response_headers_async(use_responses_api: bool) -> None:
     """Test ChatOpenAI response headers."""
-    chat_openai = ChatOpenAI(include_response_headers=True)
+    chat_openai = ChatOpenAI(
+        include_response_headers=True, use_responses_api=use_responses_api
+    )
     query = "I'm Pickle Rick"
-    result = await chat_openai.ainvoke(query, max_tokens=10)
+    result = await chat_openai.ainvoke(query, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
     headers = result.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
@@ -696,7 +726,7 @@ async def test_openai_response_headers_async() -> None:
 
     # Stream
     full: Optional[BaseMessageChunk] = None
-    async for chunk in chat_openai.astream(query, max_tokens=10):
+    async for chunk in chat_openai.astream(query, max_tokens=MAX_TOKEN_COUNT):  # type: ignore[call-arg]
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
     headers = full.response_metadata["headers"]
@@ -705,6 +735,12 @@ async def test_openai_response_headers_async() -> None:
     assert "content-type" in headers
 
 
+@pytest.mark.xfail(
+    reason=(
+        "As of 12.19.24 OpenAI API returns 1151 instead of 1118. Not clear yet if "
+        "this is an undocumented API change or a bug on their end."
+    )
+)
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -737,6 +773,12 @@ def test_image_token_counting_jpeg() -> None:
     assert expected == actual
 
 
+@pytest.mark.xfail(
+    reason=(
+        "As of 12.19.24 OpenAI API returns 871 instead of 779. Not clear yet if "
+        "this is an undocumented API change or a bug on their end."
+    )
+)
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
@@ -769,7 +811,8 @@ def test_image_token_counting_png() -> None:
     assert expected == actual
 
 
-def test_tool_calling_strict() -> None:
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_tool_calling_strict(use_responses_api: bool) -> None:
     """Test tool calling with strict=True."""
 
     class magic_function(BaseModel):
@@ -777,7 +820,9 @@ def test_tool_calling_strict() -> None:
 
         input: int
 
-    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model = ChatOpenAI(
+        model="gpt-4o", temperature=0, use_responses_api=use_responses_api
+    )
     model_with_tools = model.bind_tools([magic_function], strict=True)
 
     # invalid_magic_function adds metadata to schema that isn't supported by OpenAI.
@@ -806,21 +851,22 @@ def test_tool_calling_strict() -> None:
         next(model_with_invalid_tool_schema.stream(query))
 
 
+@pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize(
-    ("model", "method", "strict"),
-    [("gpt-4o", "function_calling", True), ("gpt-4o-2024-08-06", "json_schema", None)],
+    ("model", "method"),
+    [("gpt-4o", "function_calling"), ("gpt-4o-2024-08-06", "json_schema")],
 )
 def test_structured_output_strict(
     model: str,
     method: Literal["function_calling", "json_schema"],
-    strict: Optional[bool],
+    use_responses_api: bool,
 ) -> None:
     """Test to verify structured output with strict=True."""
 
     from pydantic import BaseModel as BaseModelProper
     from pydantic import Field as FieldProper
 
-    llm = ChatOpenAI(model=model, temperature=0)
+    llm = ChatOpenAI(model=model, use_responses_api=use_responses_api)
 
     class Joke(BaseModelProper):
         """Joke to tell user."""
@@ -829,10 +875,7 @@ def test_structured_output_strict(
         punchline: str = FieldProper(description="answer to resolve the joke")
 
     # Pydantic class
-    # Type ignoring since the interface only officially supports pydantic 1
-    # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-    # We'll need to do a pass updating the type signatures.
-    chat = llm.with_structured_output(Joke, method=method, strict=strict)
+    chat = llm.with_structured_output(Joke, method=method, strict=True)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, Joke)
 
@@ -841,7 +884,7 @@ def test_structured_output_strict(
 
     # Schema
     chat = llm.with_structured_output(
-        Joke.model_json_schema(), method=method, strict=strict
+        Joke.model_json_schema(), method=method, strict=True
     )
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
@@ -862,14 +905,14 @@ def test_structured_output_strict(
             default="foo", description="answer to resolve the joke"
         )
 
-    chat = llm.with_structured_output(InvalidJoke, method=method, strict=strict)
+    chat = llm.with_structured_output(InvalidJoke, method=method, strict=True)
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
     with pytest.raises(openai.BadRequestError):
         next(chat.stream("Tell me a joke about cats."))
 
     chat = llm.with_structured_output(
-        InvalidJoke.model_json_schema(), method=method, strict=strict
+        InvalidJoke.model_json_schema(), method=method, strict=True
     )
     with pytest.raises(openai.BadRequestError):
         chat.invoke("Tell me a joke about cats.")
@@ -877,17 +920,16 @@ def test_structured_output_strict(
         next(chat.stream("Tell me a joke about cats."))
 
 
-@pytest.mark.parametrize(
-    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
-)
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
 def test_nested_structured_output_strict(
-    model: str, method: Literal["json_schema"], strict: Optional[bool]
+    model: str, method: Literal["json_schema"], use_responses_api: bool
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
 
     from typing import TypedDict
 
-    llm = ChatOpenAI(model=model, temperature=0)
+    llm = ChatOpenAI(model=model, temperature=0, use_responses_api=use_responses_api)
 
     class SelfEvaluation(TypedDict):
         score: int
@@ -901,7 +943,7 @@ def test_nested_structured_output_strict(
         self_evaluation: SelfEvaluation
 
     # Schema
-    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=True)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
     assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
@@ -914,10 +956,51 @@ def test_nested_structured_output_strict(
     assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
 
 
+@pytest.mark.parametrize(
+    ("strict", "method"),
+    [
+        (True, "json_schema"),
+        (False, "json_schema"),
+        (True, "function_calling"),
+        (False, "function_calling"),
+    ],
+)
+def test_json_schema_openai_format(
+    strict: bool, method: Literal["json_schema", "function_calling"]
+) -> None:
+    """Test we can pass in OpenAI schema format specifying strict."""
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    schema = {
+        "name": "get_weather",
+        "description": "Fetches the weather in the given location",
+        "strict": strict,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location to get the weather for",
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "The unit to return the temperature in",
+                    "enum": ["F", "C"],
+                },
+            },
+            "additionalProperties": False,
+            "required": ["location", "unit"],
+        },
+    }
+    chat = llm.with_structured_output(schema, method=method)
+    result = chat.invoke("What is the weather in New York?")
+    assert isinstance(result, dict)
+
+
 def test_json_mode() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = llm.invoke(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks.",  # noqa: E501
+        response_format={"type": "json_object"},
     )
     assert isinstance(response.content, str)
     assert json.loads(response.content) == {"a": 1}
@@ -936,7 +1019,7 @@ def test_json_mode() -> None:
 async def test_json_mode_async() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = await llm.ainvoke(
-        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+        "Return this as json: {'a': 1}. Do not return anything other than json. Do not include markdown codeblocks."  # noqa: E501
     )
     assert isinstance(response.content, str)
     assert json.loads(response.content) == {"a": 1}
@@ -1018,3 +1101,167 @@ def test_audio_input_modality() -> None:
 
     assert isinstance(output, AIMessage)
     assert "audio" in output.additional_kwargs
+
+
+def test_prediction_tokens() -> None:
+    code = dedent(
+        """
+    /// <summary>
+    /// Represents a user with a first name, last name, and username.
+    /// </summary>
+    public class User
+    {
+        /// <summary>
+        /// Gets or sets the user's first name.
+        /// </summary>
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's last name.
+        /// </summary>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user's username.
+        /// </summary>
+        public string Username { get; set; }
+    }
+    """
+    )
+
+    llm = ChatOpenAI(model="gpt-4o")
+    query = (
+        "Replace the Username property with an Email property. "
+        "Respond only with code, and with no markdown formatting."
+    )
+    response = llm.invoke(
+        [{"role": "user", "content": query}, {"role": "user", "content": code}],
+        prediction={"type": "content", "content": code},
+    )
+    assert isinstance(response, AIMessage)
+    assert response.response_metadata is not None
+    output_token_details = response.response_metadata["token_usage"][
+        "completion_tokens_details"
+    ]
+    assert output_token_details["accepted_prediction_tokens"] > 0
+    assert output_token_details["rejected_prediction_tokens"] > 0
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_stream_o_series(use_responses_api: bool) -> None:
+    list(
+        ChatOpenAI(model="o3-mini", use_responses_api=use_responses_api).stream(
+            "how are you"
+        )
+    )
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_astream_o_series(use_responses_api: bool) -> None:
+    async for _ in ChatOpenAI(
+        model="o3-mini", use_responses_api=use_responses_api
+    ).astream("how are you"):
+        pass
+
+
+class Foo(BaseModel):
+    response: str
+
+
+def test_stream_response_format() -> None:
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    for chunk in ChatOpenAI(model="gpt-4o-mini").stream(
+        "how are ya", response_format=Foo
+    ):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
+
+
+async def test_astream_response_format() -> None:
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    async for chunk in ChatOpenAI(model="gpt-4o-mini").astream(
+        "how are ya", response_format=Foo
+    ):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
+def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
+    if use_max_completion_tokens:
+        kwargs: dict = {"max_completion_tokens": MAX_TOKEN_COUNT}
+    else:
+        kwargs = {"max_tokens": MAX_TOKEN_COUNT}
+    response = ChatOpenAI(
+        model="o1",
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+        **kwargs,
+    ).invoke(
+        [
+            {"role": "developer", "content": "respond in all caps"},
+            {"role": "user", "content": "HOW ARE YOU"},
+        ]
+    )
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.text(), str)
+    assert response.text().upper() == response.text()
+
+
+@pytest.mark.scheduled
+def test_o1_stream_default_works() -> None:
+    result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
+    assert len(result) > 0
+
+
+def test_multi_party_conversation() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    messages = [
+        HumanMessage("Hi, I have black hair.", name="Alice"),
+        HumanMessage("Hi, I have brown hair.", name="Bob"),
+        HumanMessage("Who just spoke?", name="Charlie"),
+    ]
+    response = llm.invoke(messages)
+    assert "Bob" in response.content
+
+
+def test_structured_output_and_tools() -> None:
+    class ResponseFormat(BaseModel):
+        response: str
+        explanation: str
+
+    llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(
+        [GenerateUsername], strict=True, response_format=ResponseFormat
+    )
+
+    response = llm.invoke("What weighs more, a pound of feathers or a pound of gold?")
+    assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
+
+    # Test streaming tool calls
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Generate a user name for Alice, black hair. Use the tool."
+    ):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1
+    tool_call = full.tool_calls[0]
+    assert tool_call["name"] == "GenerateUsername"

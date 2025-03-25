@@ -482,7 +482,7 @@ class Person(BaseModel):
 
 
 class NameCollector(BaseModel):
-    """record names of all people mentioned"""
+    """record names of all people mentioned."""
 
     names: list[str] = Field(..., description="all names mentioned")
     person: Person = Field(..., description="info about the main subject")

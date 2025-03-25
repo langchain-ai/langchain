@@ -1,0 +1,474 @@
+---
+pagination_next: contributing/how_to/integrations/standard_tests
+pagination_prev: contributing/how_to/integrations/index
+---
+# How to implement an integration package
+
+This guide walks through the process of implementing a LangChain integration 
+package.
+
+Integration packages are just Python packages that can be installed with `pip install <your-package>`,
+which contain classes that are compatible with LangChain's core interfaces.
+
+We will cover:
+
+1. (Optional) How to bootstrap a new integration package
+2. How to implement components, such as [chat models](/docs/concepts/chat_models/) and [vector stores](/docs/concepts/vectorstores/), that adhere
+to the LangChain interface;  
+
+## (Optional) bootstrapping a new integration package
+
+In this section, we will outline 2 options for bootstrapping a new integration package, 
+and you're welcome to use other tools if you prefer!
+
+1. **langchain-cli**: This is a command-line tool that can be used to bootstrap a new integration package with a template for LangChain components and Poetry for dependency management.
+2. **Poetry**: This is a Python dependency management tool that can be used to bootstrap a new Python package with dependencies. You can then add LangChain components to this package.
+
+<details>
+    <summary>Option 1: langchain-cli (recommended)</summary>
+
+In this guide, we will be using the `langchain-cli` to create a new integration package
+from a template, which can be edited to implement your LangChain components.
+
+### **Prerequisites**
+
+- [GitHub](https://github.com) account
+- [PyPi](https://pypi.org/) account
+
+### Bootstrapping a new Python package with langchain-cli
+
+First, install `langchain-cli` and `poetry`:
+
+```bash
+pip install langchain-cli poetry
+```
+
+Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
+You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
+
+Next, create your new Python package with `langchain-cli`, and navigate into the new directory with `cd`:
+
+```bash
+langchain-cli integration new
+
+> The name of the integration to create (e.g. `my-integration`): parrot-link
+> Name of integration in PascalCase [ParrotLink]:
+
+cd parrot-link
+```
+
+Next, let's add any dependencies we need
+
+```bash
+poetry add my-integration-sdk
+```
+
+We can also add some `typing` or `test` dependencies in a separate poetry dependency group.
+
+```
+poetry add --group typing my-typing-dep
+poetry add --group test my-test-dep
+```
+
+And finally, have poetry set up a virtual environment with your dependencies, as well
+as your integration package:
+
+```bash
+poetry install --with lint,typing,test,test_integration
+```
+
+You now have a new Python package with a template for LangChain components! This
+template comes with files for each integration type, and you're welcome to duplicate or
+delete any of these files as needed (including the associated test files).
+
+To create any individual files from the [template], you can run e.g.:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/chat_models.py \
+    --dst langchain_parrot_link/chat_models_2.py
+```
+
+</details>
+
+<details>
+    <summary>Option 2: Poetry (manual)</summary>
+
+In this guide, we will be using [Poetry](https://python-poetry.org/) for
+dependency management and packaging, and you're welcome to use any other tools you prefer.
+
+### **Prerequisites**
+
+- [GitHub](https://github.com) account
+- [PyPi](https://pypi.org/) account
+
+### Bootstrapping a new Python package with Poetry
+
+First, install Poetry:
+
+```bash
+pip install poetry
+```
+
+Next, come up with a name for your package. For this guide, we'll use `langchain-parrot-link`.
+You can confirm that the name is available on PyPi by searching for it on the [PyPi website](https://pypi.org/).
+
+Next, create your new Python package with Poetry, and navigate into the new directory with `cd`:
+
+```bash
+poetry new langchain-parrot-link
+cd langchain-parrot-link
+```
+
+Add main dependencies using Poetry, which will add them to your `pyproject.toml` file:
+
+```bash
+poetry add langchain-core
+```
+
+We will also add some `test` dependencies in a separate poetry dependency group. If
+you are not using Poetry, we recommend adding these in a way that won't package them
+with your published package, or just installing them separately when you run tests.
+
+`langchain-tests` will provide the [standard tests](../standard_tests) we will use later. 
+We recommended pinning these to the latest version: <img src="https://img.shields.io/pypi/v/langchain-tests" style={{position:"relative",top:4,left:3}} />
+
+Note: Replace `<latest_version>` with the latest version of `langchain-tests` below.
+
+```bash
+poetry add --group test pytest pytest-socket pytest-asyncio langchain-tests==<latest_version>
+```
+
+And finally, have poetry set up a virtual environment with your dependencies, as well
+as your integration package:
+
+```bash
+poetry install --with test
+```
+
+You're now ready to start writing your integration package!
+
+### Writing your integration
+
+Let's say you're building a simple integration package that provides a `ChatParrotLink`
+chat model integration for LangChain. Here's a simple example of what your project
+structure might look like:
+
+```plaintext
+langchain-parrot-link/
+├── langchain_parrot_link/
+│   ├── __init__.py
+│   └── chat_models.py
+├── tests/
+│   ├── __init__.py
+│   └── test_chat_models.py
+├── pyproject.toml
+└── README.md
+```
+
+All of these files should already exist from step 1, except for 
+`chat_models.py` and `test_chat_models.py`! We will implement `test_chat_models.py` 
+later, following the [standard tests](../standard_tests) guide.
+
+For `chat_models.py`, simply paste the contents of the chat model implementation
+[above](#implementing-langchain-components).
+
+</details>
+
+### Push your package to a public Github repository
+
+This is only required if you want to publish your integration in the LangChain documentation.
+
+1. Create a new repository on GitHub.
+2. Push your code to the repository.
+3. Confirm that your repository is viewable by the public (e.g. in a private browsing window, where you're not logged into Github).
+
+## Implementing LangChain components
+
+LangChain components are subclasses of base classes in [langchain-core](/docs/concepts/architecture/#langchain-core).
+Examples include [chat models](/docs/concepts/chat_models/),
+[vector stores](/docs/concepts/vectorstores/), [tools](/docs/concepts/tools/),
+[embedding models](/docs/concepts/embedding_models/) and [retrievers](/docs/concepts/retrievers/).
+
+Your integration package will typically implement a subclass of at least one of these
+components. Expand the tabs below to see details on each.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Tabs>
+
+    <TabItem value="chat_models" label="Chat models">
+        
+        Refer to the [Custom Chat Model Guide](/docs/how_to/custom_chat_model) guide for
+        detail on a starter chat model [implementation](/docs/how_to/custom_chat_model/#implementation).
+
+        You can start from the following template or langchain-cli command:
+
+        ```bash
+        langchain-cli integration new \
+            --name parrot-link \
+            --name-class ParrotLink \
+            --src integration_template/chat_models.py \
+            --dst langchain_parrot_link/chat_models.py
+        ```
+
+        <details>
+            <summary>Example chat model code</summary>
+
+import ChatModelSource from '../../../../src/theme/integration_template/integration_template/chat_models.py';
+
+        <CodeBlock language="python" title="langchain_parrot_link/chat_models.py">
+            {
+                ChatModelSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+    <TabItem value="vector_stores" label="Vector stores">
+
+        Your vector store implementation will depend on your chosen database technology.
+        `langchain-core` includes a minimal
+        [in-memory vector store](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html)
+        that we can use as a guide. You can access the code [here](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py).
+
+        All vector stores must inherit from the [VectorStore](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
+        base class. This interface consists of methods for writing, deleting and searching
+        for documents in the vector store.
+
+        `VectorStore` supports a variety of synchronous and asynchronous search types (e.g., 
+        nearest-neighbor or maximum marginal relevance), as well as interfaces for adding
+        documents to the store. See the [API Reference](https://python.langchain.com/api_reference/core/vectorstores/langchain_core.vectorstores.base.VectorStore.html)
+        for all supported methods. The required methods are tabulated below:
+
+        | Method/Property         | Description                                          |
+        |------------------------ |------------------------------------------------------|
+        | `add_documents`         | Add documents to the vector store.                   |
+        | `delete`                | Delete selected documents from vector store (by IDs) |
+        | `get_by_ids`            | Get selected documents from vector store (by IDs)    |
+        | `similarity_search`     | Get documents most similar to a query.               |
+        | `embeddings` (property) | Embeddings object for vector store.                  |
+        | `from_texts`            | Instantiate vector store via adding texts.           |
+
+        Note that `InMemoryVectorStore` implements some optional search types, as well as
+        convenience methods for loading and dumping the object to a file, but this is not
+        necessary for all implementations.
+
+        :::tip
+
+        The [in-memory vector store](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/vectorstores/in_memory.py)
+        is tested against the standard tests in the LangChain Github repository.
+
+        :::
+
+        <details>
+            <summary>Example vector store code</summary>
+
+import VectorstoreSource from '../../../../src/theme/integration_template/integration_template/vectorstores.py';
+
+        <CodeBlock language="python" title="langchain_parrot_link/vectorstores.py">
+            {
+                VectorstoreSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+    <TabItem value="embeddings" label="Embeddings">
+
+Embeddings are used to convert `str` objects from `Document.page_content` fields
+into a vector representation (represented as a list of floats).
+
+Refer to the [Custom Embeddings Guide](/docs/how_to/custom_embeddings) guide for
+detail on a starter embeddings [implementation](/docs/how_to/custom_embeddings/#implementation).
+
+You can start from the following template or langchain-cli command:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/embeddings.py \
+    --dst langchain_parrot_link/embeddings.py
+```
+
+        <details>
+            <summary>Example embeddings code</summary>
+
+import EmbeddingsSource from '/src/theme/integration_template/integration_template/embeddings.py';
+
+        <CodeBlock language="python" title="langchain_parrot_link/embeddings.py">
+            {
+                EmbeddingsSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+    <TabItem value="tools" label="Tools">
+
+Tools are used in 2 main ways:
+
+1. To define an "input schema" or "args schema" to pass to a chat model's tool calling
+feature along with a text request, such that the chat model can generate a "tool call",
+or parameters to call the tool with.
+2. To take a "tool call" as generated above, and take some action and return a response
+that can be passed back to the chat model as a ToolMessage.
+
+The `Tools` class must inherit from the [BaseTool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.base.BaseTool.html#langchain_core.tools.base.BaseTool) base class. This interface has 3 properties and 2 methods that should be implemented in a 
+subclass.
+
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `name`                  | Name of the tool (passed to the LLM too).            |
+| `description`           | Description of the tool (passed to the LLM too).     |
+| `args_schema`           | Define the schema for the tool's input arguments.    |
+| `_run`                  | Run the tool with the given arguments.               |
+| `_arun`                 | Asynchronously run the tool with the given arguments.|
+
+### Properties
+
+`name`, `description`, and `args_schema` are all properties that should be implemented
+in the subclass. `name` and `description` are strings that are used to identify the tool
+and provide a description of what the tool does. Both of these are passed to the LLM,
+and users may override these values depending on the LLM they are using as a form of
+"prompt engineering." Giving these a concise and LLM-usable name and description is
+important for the initial user experience of the tool.
+
+`args_schema` is a Pydantic `BaseModel` that defines the schema for the tool's input
+arguments. This is used to validate the input arguments to the tool, and to provide
+a schema for the LLM to fill out when calling the tool. Similar to the `name` and
+`description` of the overall Tool class, the fields' names (the variable name) and
+description (part of `Field(..., description="description")`) are passed to the LLM, 
+and the values in these fields should be concise and LLM-usable.
+
+### Run Methods
+
+`_run` is the main method that should be implemented in the subclass. This method
+takes in the arguments from `args_schema` and runs the tool, returning a string
+response. This method is usually called in a LangGraph [`ToolNode`](https://langchain-ai.github.io/langgraph/how-tos/tool-calling/), and can also be called in a legacy
+`langchain.agents.AgentExecutor`.
+
+`_arun` is optional because by default, `_run` will be run in an async executor.
+However, if your tool is calling any apis or doing any async work, you should implement
+this method to run the tool asynchronously in addition to `_run`.
+
+### Implementation
+
+You can start from the following template or langchain-cli command:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/tools.py \
+    --dst langchain_parrot_link/tools.py
+```
+
+        <details>
+            <summary>Example tool code</summary>
+
+import ToolSource from '/src/theme/integration_template/integration_template/tools.py';
+
+        <CodeBlock language="python" title="langchain_parrot_link/tools.py">
+            {
+                ToolSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+    <TabItem value="retrievers" label="Retrievers">
+
+Retrievers are used to retrieve documents from APIs, databases, or other sources
+based on a query. The `Retriever` class must inherit from the [BaseRetriever](https://python.langchain.com/api_reference/core/retrievers/langchain_core.retrievers.BaseRetriever.html) base class. This interface has 1 attribute and 2 methods that should be implemented in a subclass.
+
+| Method/Property         | Description                                          |
+|------------------------ |------------------------------------------------------|
+| `k`                     | Default number of documents to retrieve (configurable). |
+| `_get_relevant_documents`| Retrieve documents based on a query.                 |
+| `_aget_relevant_documents`| Asynchronously retrieve documents based on a query.  |
+
+### Attributes
+
+`k` is an attribute that should be implemented in the subclass. This attribute
+can simply be defined at the top of the class with a default value like
+`k: int = 5`. This attribute is the default number of documents to retrieve
+from the retriever, and can be overridden by the user when constructing or calling
+the retriever.
+
+### Methods
+
+`_get_relevant_documents` is the main method that should be implemented in the subclass.
+
+This method takes in a query and returns a list of `Document` objects, which have 2
+main properties:
+
+- `page_content` - the text content of the document
+- `metadata` - a dictionary of metadata about the document
+
+Retrievers are typically directly invoked by a user, e.g. as
+`MyRetriever(k=4).invoke("query")`, which will automatically call `_get_relevant_documents`
+under the hood.
+
+`_aget_relevant_documents` is optional because by default, `_get_relevant_documents` will
+be run in an async executor. However, if your retriever is calling any apis or doing
+any async work, you should implement this method to run the retriever asynchronously
+in addition to `_get_relevant_documents` for performance reasons.
+
+### Implementation
+
+You can start from the following template or langchain-cli command:
+
+```bash
+langchain-cli integration new \
+    --name parrot-link \
+    --name-class ParrotLink \
+    --src integration_template/retrievers.py \
+    --dst langchain_parrot_link/retrievers.py
+```
+
+        <details>
+            <summary>Example retriever code</summary>
+
+import RetrieverSource from '/src/theme/integration_template/integration_template/retrievers.py';
+
+        <CodeBlock language="python" title="langchain_parrot_link/retrievers.py">
+            {
+                RetrieverSource.replaceAll('__ModuleName__', 'ParrotLink')
+                    .replaceAll('__package_name__', 'langchain-parrot-link')
+                    .replaceAll('__MODULE_NAME__', 'PARROT_LINK')
+                    .replaceAll('__module_name__', 'langchain_parrot_link')
+            }
+        </CodeBlock>
+
+        </details>
+
+    </TabItem>
+</Tabs>
+
+---
+
+## Next Steps
+
+Now that you've implemented your package, you can move on to [testing your integration](../standard_tests) for your integration and successfully run them.

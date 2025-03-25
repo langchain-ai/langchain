@@ -5,10 +5,6 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import Message, TextBlock, Usage
-from anthropic.types.beta.prompt_caching import (
-    PromptCachingBetaMessage,
-    PromptCachingBetaUsage,
-)
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -110,14 +106,14 @@ def test__format_output() -> None:
 
 
 def test__format_output_cached() -> None:
-    anthropic_msg = PromptCachingBetaMessage(
+    anthropic_msg = Message(
         id="foo",
         content=[TextBlock(type="text", text="bar")],
         model="baz",
         role="assistant",
         stop_reason=None,
         stop_sequence=None,
-        usage=PromptCachingBetaUsage(
+        usage=Usage(
             input_tokens=2,
             output_tokens=1,
             cache_creation_input_tokens=3,
@@ -331,7 +327,7 @@ def dummy_tool() -> BaseTool:
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
-    class DummyFunction(BaseTool):
+    class DummyFunction(BaseTool):  # type: ignore[override]
         args_schema: Type[BaseModel] = Schema
         name: str = "dummy_function"
         description: str = "dummy function"
@@ -690,6 +686,28 @@ def test__format_messages_with_cache_control() -> None:
             ],
         }
     ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert expected_system == actual_system
+    assert expected_messages == actual_messages
+
+
+def test__format_messages_with_multiple_system() -> None:
+    messages = [
+        HumanMessage("baz"),
+        SystemMessage("bar"),
+        SystemMessage("baz"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ]
+        ),
+    ]
+    expected_system = [
+        {"type": "text", "text": "bar"},
+        {"type": "text", "text": "baz"},
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+    ]
+    expected_messages = [{"role": "user", "content": "baz"}]
     actual_system, actual_messages = _format_messages(messages)
     assert expected_system == actual_system
     assert expected_messages == actual_messages

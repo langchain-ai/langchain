@@ -1,16 +1,59 @@
-# Writer
+---
+keywords: [writer]
+---
 
-This page covers how to use the Writer ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Writer wrappers.
+# Writer, Inc.
+
+All functionality related to Writer
+
+
+>This page covers how to use the [Writer](https://writer.com/) ecosystem within LangChain. For further information see Writer [docs](https://dev.writer.com/home/introduction).
+>[Palmyra](https://writer.com/blog/palmyra/) is a Large Language Model (LLM) developed by `Writer, Inc`.
+>
+>The [Writer API](https://dev.writer.com/api-guides/introduction) is powered by a diverse set of Palmyra sub-models with different capabilities and price points.
 
 ## Installation and Setup
-- Get an Writer api key and set it as an environment variable (`WRITER_API_KEY`)
 
-## Wrappers
-
-### LLM
-
-There exists an Writer LLM wrapper, which you can access with 
-```python
-from langchain_community.llms import Writer
+Install the integration package with
+```bash
+pip install langchain-writer
 ```
+
+Get an Writer API key and set it as an environment variable (`WRITER_API_KEY`)
+
+## Chat model
+
+```python
+from langchain_writer import ChatWriter
+```
+See [details](/docs/integrations/chat/writer).
+
+## PDF Parser
+
+
+```python
+from langchain_writer.pdf_parser import PDFParser
+```
+See [details](/docs/integrations/document_loaders/parsers/writer_pdf_parser).
+
+## Text splitter
+
+```python
+from langchain_writer.text_splitter import WriterTextSplitter
+```
+See [details](/docs/integrations/splitters/writer_text_splitter).
+
+## Tools calling
+
+### Functions
+
+Support of basic function calls defined via dicts, Pydantic, python functions etc.
+
+### Graphs
+
+```python
+from langchain_writer.tools import GraphTool
+```
+See [details](/docs/integrations/tools/writer).
+
+Writer-specific remotely invoking tool

@@ -15,7 +15,7 @@ from pydantic import (
 from requests import RequestException
 from typing_extensions import Self
 
-BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
+BAICHUAN_API_URL: str = "https://api.baichuan-ai.com/v1/embeddings"
 
 # BaichuanTextEmbeddings is an embedding model provided by Baichuan Inc. (https://www.baichuan-ai.com/home).
 # As of today (Jan 25th, 2024) BaichuanTextEmbeddings ranks #1 in C-MTEB
@@ -25,7 +25,7 @@ BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 # Official Website: https://platform.baichuan-ai.com/docs/text-Embedding
 # An API-key is required to use this embedding model. You can get one by registering
 # at https://platform.baichuan-ai.com/docs/text-Embedding.
-# BaichuanTextEmbeddings support 512 token window and preduces vectors with
+# BaichuanTextEmbeddings support 512 token window and produces vectors with
 # 1024 dimensions.
 
 

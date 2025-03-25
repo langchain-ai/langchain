@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator, Mapping
+from collections.abc import Mapping
+from itertools import starmap
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -30,6 +32,9 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
 
 class RouterInput(TypedDict):
     """Router input.
@@ -44,8 +49,7 @@ class RouterInput(TypedDict):
 
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
-    """
-    Runnable that routes to a set of Runnables based on Input['key'].
+    """Runnable that routes to a set of Runnables based on Input['key'].
     Returns the output of the selected Runnable.
 
     Parameters:
@@ -190,10 +194,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         configs = get_config_list(config, len(inputs))
         return await gather_with_concurrency(
             configs[0].get("max_concurrency"),
-            *(
-                ainvoke(runnable, input, config)
-                for runnable, input, config in zip(runnables, actual_inputs, configs)
-            ),
+            *starmap(ainvoke, zip(runnables, actual_inputs, configs)),
         )
 
     def stream(

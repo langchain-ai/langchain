@@ -23,9 +23,8 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Whether the class is serializable.
-
-        Returns: True
+        """Return whether or not the class is serializable.
+        Returns: True.
         """
         return True
 
@@ -42,7 +41,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            list of BaseMessages.
+            List of BaseMessages.
         """
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -53,7 +52,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             **kwargs: Keyword arguments to use for formatting.
 
         Returns:
-            list of BaseMessages.
+            List of BaseMessages.
         """
         return self.format_messages(**kwargs)
 
@@ -63,7 +62,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Input variables for this prompt template.
 
         Returns:
-            list of input variables.
+            List of input variables.
         """
 
     def pretty_repr(self, html: bool = False) -> str:
@@ -90,8 +89,6 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        from langchain_core.prompts.chat import ChatPromptTemplate
-
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
