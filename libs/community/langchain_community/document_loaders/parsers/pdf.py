@@ -1508,6 +1508,11 @@ class AmazonTextractPDFParser(BaseBlobParser):
     This helps most LLMs to achieve better accuracy when
     processing these texts.
 
+    ``Document`` objects are returned with metadata that includes the ``source`` and
+    a 1-based index of the page number in ``page``. Note that ``page`` represents
+    the index of the result returned from Textract, not necessarily the as-written
+    page number in the document.
+
     """
 
     def __init__(
