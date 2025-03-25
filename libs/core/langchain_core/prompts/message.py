@@ -89,6 +89,8 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
+        from langchain_core.prompts.chat import ChatPromptTemplate
+
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
