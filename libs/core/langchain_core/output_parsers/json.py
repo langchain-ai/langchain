@@ -123,13 +123,13 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         return "simple_json_output_parser"
 
 
+# For backwards compatibility
 SimpleJsonOutputParser = JsonOutputParser
 
 
 __all__ = [
     "JsonOutputParser",
-    "SimpleJsonOutputParser",
-    # For backwards compatibility
-    "parse_partial_json",
-    "parse_and_check_json_markdown",
+    "SimpleJsonOutputParser",  # For backwards compatibility
+    "parse_partial_json",  # For backwards compatibility
+    "parse_and_check_json_markdown",  # For backwards compatibility
 ]
