@@ -317,6 +317,7 @@ def get_agentic_finance_table() -> str:
         for h in header[1:]:
             row.append(feats.get(h))
 
+
 def get_search_tools_table() -> str:
     """Get the table of search tools."""
     header = ["tool", "pricing", "available_data"]
