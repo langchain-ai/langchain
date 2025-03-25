@@ -13,9 +13,9 @@ from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRU
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.json import (
-    parse_and_check_json_markdown,  # noqa: F401 backward compatibility
+    parse_and_check_json_markdown,
     parse_json_markdown,
-    parse_partial_json,  # noqa: F401 backward compatibility
+    parse_partial_json,
 )
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
@@ -123,5 +123,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         return "simple_json_output_parser"
 
 
-# For backwards compatibility
-SimpleJsonOutputParser = JsonOutputParser
+__all__ = [
+    "JsonOutputParser",
+    # For backwards compatibility
+    "parse_partial_json",
+    "parse_and_check_json_markdown",
+]
