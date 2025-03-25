@@ -169,6 +169,14 @@ DATABASE_TOOL_FEAT_TABLE = {
     },
 }
 
+AGENTIC_FINANCE_TOOL_FEAT_TABLE = {
+    "GOAT": {
+        "link": "/docs/integrations/tools/goat",
+        "pricing": "Free",
+        "capabilities": "Create and receive payments, purchase physical goods, make investments, and more.",
+    },
+}
+
 TOOLS_TEMPLATE = """\
 ---
 sidebar_position: 0
@@ -219,6 +227,12 @@ The following table shows tools that can be used to automate tasks in web browse
 The following table shows tools that can be used to automate tasks in databases:
 
 {database_table}
+
+## Agentic Finance
+
+The following table shows tools that can be used to execute financial transactions such as payments, purchases, and more:
+
+{agentic_finance_table}
 
 ## All tools
 
@@ -290,6 +304,19 @@ def get_database_table() -> str:
     return "\n".join(["|".join(row) for row in rows])
 
 
+def get_agentic_finance_table() -> str:
+    """Get the table of agentic finance tools."""
+    header = ["tool", "pricing", "available_data"]
+    title = ["Tool/Toolkit", "Pricing", "Capabilities"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
+    for agentic_finance_tool, feats in sorted(AGENTIC_FINANCE_TOOL_FEAT_TABLE.items()):
+        # Fields are in the order of the header
+        row = [
+            f"[{agentic_finance_tool}]({feats['link']})",
+        ]
+        for h in header[1:]:
+            row.append(feats.get(h))
+
 def get_search_tools_table() -> str:
     """Get the table of search tools."""
     header = ["tool", "pricing", "available_data"]
@@ -355,6 +382,7 @@ if __name__ == "__main__":
         productivity_table=get_productivity_table(),
         webbrowsing_table=get_webbrowsing_table(),
         database_table=get_database_table(),
+        agentic_finance_table=get_agentic_finance_table(),
     )
     with open(output_integrations_dir / "tools" / "index.mdx", "w") as f:
         f.write(tools_page)
