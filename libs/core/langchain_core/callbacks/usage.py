@@ -1,4 +1,4 @@
-"""Callback Handler that prints to std out."""
+"""Callback Handler that tracks AIMessage.usage_metadata."""
 
 import threading
 from collections.abc import Generator
@@ -13,7 +13,22 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that tracks AIMessage.usage_metadata."""
+    """Callback Handler that tracks AIMessage.usage_metadata.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chat_models import init_chat_model
+            from langchain_core.callbacks import UsageMetadataCallbackHandler
+
+            llm = init_chat_model(model="openai:gpt-4o-mini")
+
+            callback = UsageMetadataCallbackHandler()
+            results = llm.batch(["Hello", "Goodbye"], config={"callbacks": [callback]})
+            print(callback)
+
+    .. versionadded:: 0.3.49
+    """
 
     usage_metadata: Optional[UsageMetadata] = None
 
@@ -71,6 +86,8 @@ def get_usage_metadata_callback(
                 llm.invoke("...")
                 llm.invoke("...")
                 print(cb.usage_metadata)
+
+    .. versionadded:: 0.3.49
     """
     from langchain_core.tracers.context import register_configure_hook
 
