@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -40,9 +40,9 @@ DEPRECATION_ADDENDUM = (
 )
 
 
-@beta()
 @deprecated(
-    since="0.3.20",
+    since="0.3.21",
+    removal="0.5",
     addendum=DEPRECATION_ADDENDUM,
 )
 class Node(Serializable):
@@ -129,9 +129,9 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
         )
 
 
-@beta()
 @deprecated(
-    since="0.3.20",
+    since="0.3.21",
+    removal="0.5",
     addendum=DEPRECATION_ADDENDUM,
 )
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
@@ -157,9 +157,9 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
         )
 
 
-@beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
 @deprecated(
-    since="0.3.20",
+    since="0.3.21",
+    removal="0.5",
     addendum=DEPRECATION_ADDENDUM,
 )
 class GraphVectorStore(VectorStore):
@@ -723,9 +723,9 @@ class GraphVectorStore(VectorStore):
         return GraphVectorStoreRetriever(vectorstore=self, **kwargs)
 
 
-@beta(message="Added in version 0.3.1 of langchain_community. API subject to change.")
 @deprecated(
-    since="0.3.20",
+    since="0.3.21",
+    removal="0.5",
     addendum=DEPRECATION_ADDENDUM,
 )
 class GraphVectorStoreRetriever(VectorStoreRetriever):
