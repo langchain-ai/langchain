@@ -316,6 +316,7 @@ def get_finance_table() -> str:
         ]
         for h in header[1:]:
             row.append(feats.get(h))
+        rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
 
