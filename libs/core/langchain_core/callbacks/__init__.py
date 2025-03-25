@@ -43,10 +43,12 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks.usage import get_usage_metadata_callback
 
 __all__ = [
     "dispatch_custom_event",
     "adispatch_custom_event",
+    "get_usage_metadata_callback",
     "RetrieverManagerMixin",
     "LLMManagerMixin",
     "ChainManagerMixin",

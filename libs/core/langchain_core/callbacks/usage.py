@@ -1,0 +1,83 @@
+"""Callback Handler that prints to std out."""
+
+import threading
+from collections.abc import Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Optional
+
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.messages import AIMessage
+from langchain_core.messages.ai import UsageMetadata, add_usage
+from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.tracers.context import register_configure_hook
+
+
+class UsageMetadataCallbackHandler(BaseCallbackHandler):
+    """Callback Handler that tracks AIMessage.usage_metadata."""
+
+    usage_metadata: Optional[UsageMetadata] = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._lock = threading.Lock()
+
+    def __repr__(self) -> str:
+        return str(self.usage_metadata)
+
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        """Collect token usage."""
+        # Check for usage_metadata (langchain-core >= 0.2.2)
+        try:
+            generation = response.generations[0][0]
+        except IndexError:
+            generation = None
+        if isinstance(generation, ChatGeneration):
+            try:
+                message = generation.message
+                if isinstance(message, AIMessage):
+                    usage_metadata = message.usage_metadata
+                else:
+                    usage_metadata = None
+            except AttributeError:
+                usage_metadata = None
+        else:
+            usage_metadata = None
+
+        # update shared state behind lock
+        with self._lock:
+            self.usage_metadata = add_usage(self.usage_metadata, usage_metadata)
+
+
+@contextmanager
+def get_usage_metadata_callback(
+    name: str = "usage_metadata_callback",
+) -> Generator[UsageMetadataCallbackHandler, None, None]:
+    """Get context manager for tracking usage metadata across chat model calls using
+    ``AIMessage.usage_metadata``.
+
+    Args:
+        name (str): The name of the context variable. Defaults to
+            ``"usage_metadata_callback"``.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.chat_models import init_chat_model
+            from langchain_core.callbacks import get_usage_metadata_callback
+
+            llm = init_chat_model(model="openai:gpt-4o-mini")
+
+            with get_usage_metadata_callback() as cb:
+                llm.invoke("...")
+                llm.invoke("...")
+                print(cb.usage_metadata)
+    """
+    usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
+        ContextVar(name, default=None)
+    )
+    register_configure_hook(usage_metadata_callback_var, True)
+    cb = UsageMetadataCallbackHandler()
+    usage_metadata_callback_var.set(cb)
+    yield cb
+    usage_metadata_callback_var.set(None)

@@ -1,0 +1,52 @@
+from langchain_core.callbacks import get_usage_metadata_callback
+from langchain_core.language_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+    add_usage,
+)
+
+
+def test_usage_callback() -> None:
+    usage1 = UsageMetadata(
+        input_tokens=1,
+        output_tokens=2,
+        total_tokens=3,
+    )
+    usage2 = UsageMetadata(
+        input_tokens=4,
+        output_tokens=5,
+        total_tokens=9,
+    )
+    usage3 = UsageMetadata(
+        input_tokens=10,
+        output_tokens=20,
+        total_tokens=30,
+        input_token_details=InputTokenDetails(audio=5),
+        output_token_details=OutputTokenDetails(reasoning=10),
+    )
+    usage4 = UsageMetadata(
+        input_tokens=5,
+        output_tokens=10,
+        total_tokens=15,
+        input_token_details=InputTokenDetails(audio=3),
+        output_token_details=OutputTokenDetails(reasoning=5),
+    )
+    messages = [
+        AIMessage("Response 1", usage_metadata=usage1),
+        AIMessage("Response 2", usage_metadata=usage2),
+        AIMessage("Response 3", usage_metadata=usage3),
+        AIMessage("Response 4", usage_metadata=usage4),
+    ]
+    llm = GenericFakeChatModel(messages=iter(messages))
+    with get_usage_metadata_callback() as cb:
+        llm.invoke("Message 1")
+        llm.invoke("Message 2")
+        total_1_2 = add_usage(usage1, usage2)
+        assert cb.usage_metadata == total_1_2
+        llm.invoke("Message 3")
+        llm.invoke("Message 4")
+        total_3_4 = add_usage(usage3, usage4)
+        assert cb.usage_metadata == add_usage(total_1_2, total_3_4)
