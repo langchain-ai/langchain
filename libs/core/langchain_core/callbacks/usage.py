@@ -39,7 +39,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     def __init__(self) -> None:
         super().__init__()
         self._lock = threading.Lock()
-        self.usage_metadata: Optional[UsageMetadata] = None
+        self.usage_metadata: dict[str, UsageMetadata] = {}
 
     def __repr__(self) -> str:
         return str(self.usage_metadata)
@@ -51,21 +51,27 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
             generation = response.generations[0][0]
         except IndexError:
             generation = None
+
+        usage_metadata = None
+        model_name = None
         if isinstance(generation, ChatGeneration):
             try:
                 message = generation.message
                 if isinstance(message, AIMessage):
                     usage_metadata = message.usage_metadata
-                else:
-                    usage_metadata = None
+                    model_name = message.response_metadata.get("model_name")
             except AttributeError:
-                usage_metadata = None
-        else:
-            usage_metadata = None
+                pass
 
         # update shared state behind lock
-        with self._lock:
-            self.usage_metadata = add_usage(self.usage_metadata, usage_metadata)
+        if usage_metadata and model_name:
+            with self._lock:
+                if model_name not in self.usage_metadata:
+                    self.usage_metadata[model_name] = usage_metadata
+                else:
+                    self.usage_metadata[model_name] = add_usage(
+                        self.usage_metadata[model_name], usage_metadata
+                    )
 
 
 @contextmanager
