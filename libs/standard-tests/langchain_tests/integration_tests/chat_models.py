@@ -750,6 +750,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+        # Check model_name is in response_metadata
+        # Needed for langchain_core.callbacks.usage
+        model_name = result.response_metadata.get("model_name")
+        assert isinstance(model_name, str)
+        assert model_name
+
         if "audio_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_input()
             assert msg.usage_metadata is not None
@@ -914,6 +920,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
+
+        # Check model_name is in response_metadata
+        # Needed for langchain_core.callbacks.usage
+        model_name = full.response_metadata.get("model_name")
+        assert isinstance(model_name, str)
+        assert model_name
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
