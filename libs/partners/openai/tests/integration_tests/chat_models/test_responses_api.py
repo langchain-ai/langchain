@@ -53,6 +53,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
         assert tool_output["type"]
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_web_search() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     first_response = llm.invoke(
@@ -108,6 +109,7 @@ def test_web_search() -> None:
     _check_response(response)
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 async def test_web_search_async() -> None:
     llm = ChatOpenAI(model=MODEL_NAME)
     response = await llm.ainvoke(
@@ -129,6 +131,7 @@ async def test_web_search_async() -> None:
     _check_response(full)
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_function_calling() -> None:
     def multiply(x: int, y: int) -> int:
         """return x * y"""
@@ -197,6 +200,7 @@ async def test_parsed_pydantic_schema_async() -> None:
     assert parsed.response
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 def test_parsed_dict_schema(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
@@ -241,6 +245,7 @@ def test_parsed_strict() -> None:
         )
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 async def test_parsed_dict_schema_async(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
@@ -313,6 +318,7 @@ def test_route_from_model_kwargs() -> None:
     _ = next(llm.stream("Hello"))
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_computer_calls() -> None:
     llm = ChatOpenAI(model="computer-use-preview", model_kwargs={"truncation": "auto"})
     tool = {

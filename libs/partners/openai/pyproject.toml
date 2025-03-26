@@ -30,6 +30,7 @@ test = [
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1.0.0,>=0.21.1",
     "pytest-cov<5.0.0,>=4.1.0",
+    "pytest-retry<1.8.0,>=1.7.0",
     "pytest-socket<1.0.0,>=0.6.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "numpy<2,>=1; python_version < \"3.12\"",

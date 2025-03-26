@@ -551,3 +551,6 @@ packages:
   provider_page: naver
   path: .
   repo: e7217/langchain-naver-community
+- name: langchain-memgraph
+  path: .
+  repo: memgraph/langchain-memgraph
