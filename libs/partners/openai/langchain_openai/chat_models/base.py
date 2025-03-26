@@ -457,8 +457,10 @@ class BaseChatOpenAI(BaseChatModel):
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
     stream_usage: bool = False
-    """Whether to include usage metadata in streaming output. If True, additional
-    message chunks will be generated during the stream including usage metadata.
+    """Whether to include usage metadata in streaming output. If True, an additional
+    message chunk will be generated during the stream including usage metadata.
+
+    .. versionadded:: 0.3.9
     """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
