@@ -74,21 +74,92 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``PPLX_API_KEY`` set to your API key.
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+    Setup:
+        To use, you should have the ``openai`` python package installed, and the
+        environment variable ``PPLX_API_KEY`` set to your API key.
+        Any parameters that are valid to be passed to the openai.create call
+        can be passed in, even if not explicitly saved on this class.
 
-    Example:
-        .. code-block:: python
+        .. code-block:: bash
 
-            from langchain_community.chat_models import ChatPerplexity
+            pip install openai
+            export PPLX_API_KEY=your_api_key
 
-            chat = ChatPerplexity(
-                model="llama-3.1-sonar-small-128k-online",
-                temperature=0.7,
-            )
-    """
+        Key init args - completion params:
+            model: str
+                Name of the model to use. e.g. "llama-3.1-sonar-small-128k-online"
+            temperature: float
+                Sampling temperature to use. Default is 0.7
+            max_tokens: Optional[int]
+                Maximum number of tokens to generate.
+            streaming: bool
+                Whether to stream the results or not.
+
+        Key init args - client params:
+            pplx_api_key: Optional[str]
+                API key for PerplexityChat API. Default is None.
+            request_timeout: Optional[Union[float, Tuple[float, float]]]
+                Timeout for requests to PerplexityChat completion API. Default is None.
+            max_retries: int
+                Maximum number of retries to make when generating.
+
+        See full list of supported init args and their descriptions in the params section.
+
+        Instantiate:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatPerplexity
+
+                llm = ChatPerplexity(
+                    model="llama-3.1-sonar-small-128k-online",
+                    temperature=0.7,
+                )
+
+        Invoke:
+            .. code-block:: python
+
+                messages = [
+                    ("system", "You are a chatbot."),
+                    ("user", "Hello!")
+                ]
+                llm.invoke(messages)
+
+        Invoke with structured output:
+            .. code-block:: python
+
+                from pydantic import BaseModel
+
+                class StructuredOutput(BaseModel):
+                    role: str
+                    content: str
+
+                llm.with_structured_output(StructuredOutput)
+                llm.invoke(messages)
+
+        Invoke with perplexity-specific params:
+            .. code-block:: python
+
+                llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+
+        Stream:
+            .. code-block:: python
+
+                for chunk in llm.stream(messages):
+                    print(chunk.content)
+
+        Token usage:
+            .. code-block:: python
+
+                response = llm.invoke(messages)
+                response.usage_metadata
+
+        Response metadata:
+            .. code-block:: python
+
+                response = llm.invoke(messages)
+                response.response_metadata
+
+    """  # noqa: E501
 
     client: Any = None  #: :meta private:
     model: str = "llama-3.1-sonar-small-128k-online"
