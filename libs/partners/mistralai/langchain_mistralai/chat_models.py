@@ -274,7 +274,9 @@ def _convert_chunk_to_message_chunk(
             }
         else:
             usage_metadata = None
-        if _choice.get("finish_reason") is not None:
+        if _choice.get("finish_reason") is not None and isinstance(
+            chunk.get("model"), str
+        ):
             response_metadata["model_name"] = chunk.get("model")
         return AIMessageChunk(
             content=content,
