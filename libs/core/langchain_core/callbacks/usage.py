@@ -23,18 +23,28 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
             from langchain.chat_models import init_chat_model
             from langchain_core.callbacks import UsageMetadataCallbackHandler
 
-            llm = init_chat_model(model="openai:gpt-4o-mini")
+            llm_1 = init_chat_model(model="openai:gpt-4o-mini")
+            llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
 
             callback = UsageMetadataCallbackHandler()
-            results = llm.batch(["Hello", "Goodbye"], config={"callbacks": [callback]})
-            print(callback.usage_metadata)
+            result_1 = llm_1.invoke("Hello", config={"callbacks": [callback]})
+            result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
+            callback.usage_metadata
 
         .. code-block:: none
 
-            {'output_token_details': {'audio': 0, 'reasoning': 0}, 'input_tokens': 17, 'output_tokens': 31, 'total_tokens': 48, 'input_token_details': {'cache_read': 0, 'audio': 0}}
+            {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
+              'output_tokens': 10,
+              'total_tokens': 18,
+              'input_token_details': {'audio': 0, 'cache_read': 0},
+              'output_token_details': {'audio': 0, 'reasoning': 0}},
+             'claude-3-5-haiku-20241022': {'input_tokens': 8,
+              'output_tokens': 21,
+              'total_tokens': 29,
+              'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
     .. versionadded:: 0.3.49
-    """  # noqa: E501
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -92,19 +102,28 @@ def get_usage_metadata_callback(
             from langchain.chat_models import init_chat_model
             from langchain_core.callbacks import get_usage_metadata_callback
 
-            llm = init_chat_model(model="openai:gpt-4o-mini")
+            llm_1 = init_chat_model(model="openai:gpt-4o-mini")
+            llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
 
             with get_usage_metadata_callback() as cb:
-                llm.invoke("Hello")
-                llm.invoke("Goodbye")
+                llm_1.invoke("Hello")
+                llm_2.invoke("Hello")
                 print(cb.usage_metadata)
 
         .. code-block:: none
 
-            {'output_token_details': {'audio': 0, 'reasoning': 0}, 'input_tokens': 17, 'output_tokens': 31, 'total_tokens': 48, 'input_token_details': {'cache_read': 0, 'audio': 0}}
+            {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
+              'output_tokens': 10,
+              'total_tokens': 18,
+              'input_token_details': {'audio': 0, 'cache_read': 0},
+              'output_token_details': {'audio': 0, 'reasoning': 0}},
+             'claude-3-5-haiku-20241022': {'input_tokens': 8,
+              'output_tokens': 21,
+              'total_tokens': 29,
+              'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
     .. versionadded:: 0.3.49
-    """  # noqa: E501
+    """
     from langchain_core.tracers.context import register_configure_hook
 
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
