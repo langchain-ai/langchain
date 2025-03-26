@@ -412,6 +412,9 @@ class ChatModelUnitTests(ChatModelTests):
             def returns_usage_metadata(self) -> bool:
                 return False
 
+        Models supporting ``usage_metadata`` should also return the name of the
+        underlying model in the ``response_metadata`` of the AIMessage.
+
     .. dropdown:: supports_anthropic_inputs
 
         Boolean property indicating whether the chat model supports Anthropic-style

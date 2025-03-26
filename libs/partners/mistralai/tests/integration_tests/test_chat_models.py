@@ -20,7 +20,7 @@ def test_stream() -> None:
     """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
-    for token in llm.stream("I'm Pickle Rick"):
+    for token in llm.stream("Hello"):
         assert isinstance(token.content, str)
 
 
@@ -30,16 +30,19 @@ async def test_astream() -> None:
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
-    async for token in llm.astream("I'm Pickle Rick"):
+    chunks_with_response_metadata = 0
+    async for token in llm.astream("Hello"):
         assert isinstance(token, AIMessageChunk)
         assert isinstance(token.content, str)
         full = token if full is None else full + token
         if token.usage_metadata is not None:
             chunks_with_token_counts += 1
-    if chunks_with_token_counts != 1:
+        if token.response_metadata:
+            chunks_with_response_metadata += 1
+    if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         raise AssertionError(
-            "Expected exactly one chunk with token counts. "
-            "AIMessageChunk aggregation adds counts. Check that "
+            "Expected exactly one chunk with token counts or response_metadata. "
+            "AIMessageChunk aggregation adds / appends counts and metadata. Check that "
             "this is behaving properly."
         )
     assert isinstance(full, AIMessageChunk)
@@ -50,6 +53,8 @@ async def test_astream() -> None:
         full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
         == full.usage_metadata["total_tokens"]
     )
+    assert isinstance(full.response_metadata["model_name"], str)
+    assert full.response_metadata["model_name"]
 
 
 async def test_abatch() -> None:
