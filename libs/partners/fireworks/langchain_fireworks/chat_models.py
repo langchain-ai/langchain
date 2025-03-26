@@ -75,6 +75,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
     convert_to_openai_function,
     convert_to_openai_tool,
 )
@@ -737,7 +738,9 @@ class ChatFireworks(BaseChatModel):
         self,
         schema: Optional[Union[Dict, Type[BaseModel]]] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
@@ -761,13 +764,19 @@ class ChatFireworks(BaseChatModel):
 
                         Added support for TypedDict class.
 
-            method:
-                The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
+            method: The method for steering model generation, one of:
+
+                - "function_calling":
+                    Uses Fireworks's `tool-calling features <https://docs.fireworks.ai/guides/function-calling>`_.
+                - "json_schema":
+                    Uses Fireworks's `structured output feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+                - "json_mode":
+                    Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+
+                .. versionchanged:: 0.2.8
+
+                    Added support for ``"json_schema"``.
+
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -928,11 +937,11 @@ class ChatFireworks(BaseChatModel):
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
@@ -944,11 +953,11 @@ class ChatFireworks(BaseChatModel):
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
                 #     'parsed': {
                 #         'answer': 'They are both the same weight.',
                 #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
@@ -956,6 +965,7 @@ class ChatFireworks(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
@@ -984,6 +994,25 @@ class ChatFireworks(BaseChatModel):
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=tool_name, first_tool_only=True
                 )
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'json_schema'. "
+                    "Received None."
+                )
+            formatted_schema = convert_to_json_schema(schema)
+            llm = self.bind(
+                response_format={"type": "json_object", "schema": formatted_schema},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_schema"},
+                    "schema": schema,
+                },
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},

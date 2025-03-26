@@ -88,8 +88,6 @@ from typing_extensions import Self
 
 from langchain_groq.version import __version__
 
-WARNED_DEFAULT_MODEL = False
-
 
 class ChatGroq(BaseChatModel):
     """`Groq` Chat large language models API.
@@ -305,7 +303,7 @@ class ChatGroq(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="mixtral-8x7b-32768", alias="model")
+    model_name: str = Field(alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -352,27 +350,6 @@ class ChatGroq(BaseChatModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def warn_default_model(cls, values: Dict[str, Any]) -> Any:
-        """Warning anticipating removal of default model."""
-        # TODO(ccurme): remove this warning in 0.3.0 when default model is removed
-        global WARNED_DEFAULT_MODEL
-        if (
-            "model" not in values
-            and "model_name" not in values
-            and not WARNED_DEFAULT_MODEL
-        ):
-            warnings.warn(
-                "Groq is retiring the default model for ChatGroq, mixtral-8x7b-32768, "
-                "on March 20, 2025. Requests with the default model will start failing "
-                "on that date. Version 0.3.0 of langchain-groq will remove the "
-                "default. Please specify `model` explicitly, e.g., "
-                "`model='mistral-saba-24b'` or `model='llama-3.3-70b-versatile'`.",
-            )
-            WARNED_DEFAULT_MODEL = True
-        return values
 
     @model_validator(mode="before")
     @classmethod
@@ -483,6 +460,24 @@ class ChatGroq(BaseChatModel):
             ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
         return ls_params
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Determine if a given model call should hit the streaming API."""
+        base_should_stream = super()._should_stream(
+            async_api=async_api, run_manager=run_manager, **kwargs
+        )
+        if base_should_stream and ("response_format" in kwargs):
+            # Streaming not supported in JSON mode.
+            return kwargs["response_format"] != {"type": "json_object"}
+        return base_should_stream
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -546,6 +541,9 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
+                if system_fingerprint := chunk.get("system_fingerprint"):
+                    generation_info["system_fingerprint"] = system_fingerprint
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -584,6 +582,9 @@ class ChatGroq(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
+                if system_fingerprint := chunk.get("system_fingerprint"):
+                    generation_info["system_fingerprint"] = system_fingerprint
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -1010,9 +1011,14 @@ class ChatGroq(BaseChatModel):
                 #     'parsing_error': None
                 # }
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "json_schema":
+            # Some applications require that incompatible parameters (e.g., unsupported
+            # methods) be handled.
+            method = "function_calling"
         if method == "function_calling":
             if schema is None:
                 raise ValueError(

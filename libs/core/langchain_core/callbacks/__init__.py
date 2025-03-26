@@ -43,6 +43,10 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks.usage import (
+    UsageMetadataCallbackHandler,
+    get_usage_metadata_callback,
+)
 
 __all__ = [
     "dispatch_custom_event",
@@ -77,4 +81,6 @@ __all__ = [
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
     "FileCallbackHandler",
+    "UsageMetadataCallbackHandler",
+    "get_usage_metadata_callback",
 ]
