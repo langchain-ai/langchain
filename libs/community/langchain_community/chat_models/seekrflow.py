@@ -105,7 +105,8 @@ class ChatSeekrFlow(BaseChatModel):
                 ai_content.find(token) for token in stop if token in ai_content
             ]
             if stop_positions:
-                ai_content = ai_content[: min(pos for pos in stop_positions if pos != -1)]
+                stop_index = min(pos for pos in stop_positions if pos != -1)
+                ai_content = ai_content[:stop_index]
         return AIMessage(content=ai_content)
 
     def stream(
