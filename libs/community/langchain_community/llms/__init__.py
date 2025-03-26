@@ -296,6 +296,12 @@ def _import_javelin_ai_gateway() -> Type[BaseLLM]:
     return JavelinAIGateway
 
 
+def _import_klusterai() -> Type[BaseLLM]:
+    from langchain_community.llms.klusterai import KlusterAi
+
+    return KlusterAi
+
+
 def _import_koboldai() -> Type[BaseLLM]:
     from langchain_community.llms.koboldai import KoboldApiLLM
 
@@ -765,6 +771,8 @@ def __getattr__(name: str) -> Any:
         return _import_ipex_llm()
     elif name == "JavelinAIGateway":
         return _import_javelin_ai_gateway()
+    elif name == "KlusterAi":
+        return _import_klusterai()
     elif name == "KoboldApiLLM":
         return _import_koboldai()
     elif name == "Konko":
@@ -937,6 +945,7 @@ __all__ = [
     "HumanInputLLM",
     "IpexLLM",
     "JavelinAIGateway",
+    "KlusterAi",
     "KoboldApiLLM",
     "Konko",
     "LlamaCpp",
@@ -1042,6 +1051,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "huggingface_textgen_inference": _import_huggingface_text_gen_inference,
         "human-input": _import_human,
         "koboldai": _import_koboldai,
+        "klusterai": _import_klusterai,
         "konko": _import_konko,
         "llamacpp": _import_llamacpp,
         "llamafile": _import_llamafile,

@@ -263,6 +263,12 @@ def _import_javelin_ai_gateway() -> Any:
     return JavelinAIGateway
 
 
+def _import_klusterai() -> Any:
+    from langchain_community.llms.klusterai import KlusterAi
+
+    return KlusterAi
+
+
 def _import_koboldai() -> Any:
     from langchain_community.llms.koboldai import KoboldApiLLM
 
@@ -602,6 +608,7 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "KlusterAi",
     "KoboldApiLLM",
     "LlamaCpp",
     "TextGen",
@@ -688,6 +695,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "huggingface_pipeline": _import_huggingface_pipeline,
         "huggingface_textgen_inference": _import_huggingface_text_gen_inference,
         "human-input": _import_human,
+        "klusterai": _import_klusterai,
         "koboldai": _import_koboldai,
         "llamacpp": _import_llamacpp,
         "textgen": _import_textgen,

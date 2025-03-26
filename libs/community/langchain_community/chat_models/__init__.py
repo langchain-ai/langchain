@@ -94,6 +94,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.kinetica import (
         ChatKinetica,
     )
+    from langchain_community.chat_models.klusterai import (
+        ChatKlusterAi,
+    )
     from langchain_community.chat_models.konko import (
         ChatKonko,
     )
@@ -215,6 +218,7 @@ __all__ = [
     "ChatHunyuan",
     "ChatJavelinAIGateway",
     "ChatKinetica",
+    "ChatKlusterAi",
     "ChatKonko",
     "ChatLiteLLM",
     "ChatLiteLLMRouter",
@@ -281,6 +285,7 @@ _module_lookup = {
     "ChatHunyuan": "langchain_community.chat_models.hunyuan",
     "ChatJavelinAIGateway": "langchain_community.chat_models.javelin_ai_gateway",
     "ChatKinetica": "langchain_community.chat_models.kinetica",
+    "ChatKlusterAi": "langchain_community.chat_models.klusterai",
     "ChatKonko": "langchain_community.chat_models.konko",
     "ChatLiteLLM": "langchain_community.chat_models.litellm",
     "ChatLiteLLMRouter": "langchain_community.chat_models.litellm_router",

@@ -43,6 +43,7 @@ EXPECT_ALL = [
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
     "IpexLLM",
+    "KlusterAi",
     "KoboldApiLLM",
     "Konko",
     "LlamaCpp",

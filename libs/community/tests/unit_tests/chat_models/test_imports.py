@@ -20,6 +20,7 @@ EXPECTED_ALL = [
     "ChatHunyuan",
     "ChatJavelinAIGateway",
     "ChatKinetica",
+    "ChatKlusterAi",
     "ChatKonko",
     "ChatLiteLLM",
     "ChatLiteLLMRouter",
