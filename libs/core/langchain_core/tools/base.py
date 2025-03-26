@@ -4,13 +4,11 @@ import asyncio
 import functools
 import inspect
 import json
-import uuid
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from contextvars import copy_context
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -53,7 +51,7 @@ from langchain_core.runnables import (
     patch_config,
     run_in_executor,
 )
-from langchain_core.runnables.config import _set_config_context
+from langchain_core.runnables.config import set_config_context
 from langchain_core.runnables.utils import asyncio_accepts_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
@@ -67,6 +65,10 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -317,6 +319,9 @@ class ToolException(Exception):  # noqa: N818
     """
 
 
+ArgsSchema = Union[TypeBaseModel, dict[str, Any]]
+
+
 class BaseTool(RunnableSerializable[Union[str, dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
 
@@ -354,7 +359,7 @@ class ChildTool(BaseTool):
     You can provide few-shot examples as a part of the description.
     """
 
-    args_schema: Annotated[Optional[TypeBaseModel], SkipValidation()] = Field(
+    args_schema: Annotated[Optional[ArgsSchema], SkipValidation()] = Field(
         default=None, description="The tool schema."
     )
     """Pydantic model class to validate and parse the tool's input arguments.
@@ -364,6 +369,8 @@ class ChildTool(BaseTool):
     - A subclass of pydantic.BaseModel.
     or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
+    or
+    - a JSON schema dict
     """
     return_direct: bool = False
     """Whether to return the tool's output directly.
@@ -423,10 +430,11 @@ class ChildTool(BaseTool):
             "args_schema" in kwargs
             and kwargs["args_schema"] is not None
             and not is_basemodel_subclass(kwargs["args_schema"])
+            and not isinstance(kwargs["args_schema"], dict)
         ):
             msg = (
-                f"args_schema must be a subclass of pydantic BaseModel. "
-                f"Got: {kwargs['args_schema']}."
+                "args_schema must be a subclass of pydantic BaseModel or "
+                f"a JSON schema dict. Got: {kwargs['args_schema']}."
             )
             raise TypeError(msg)
         super().__init__(**kwargs)
@@ -443,10 +451,24 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        return self.get_input_schema().model_json_schema()["properties"]
+        if isinstance(self.args_schema, dict):
+            json_schema = self.args_schema
+        else:
+            input_schema = self.get_input_schema()
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     @property
-    def tool_call_schema(self) -> type[BaseModel]:
+    def tool_call_schema(self) -> ArgsSchema:
+        if isinstance(self.args_schema, dict):
+            if self.description:
+                return {
+                    **self.args_schema,
+                    "description": self.description,
+                }
+
+            return self.args_schema
+
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
@@ -470,6 +492,8 @@ class ChildTool(BaseTool):
             The input schema for the tool.
         """
         if self.args_schema is not None:
+            if isinstance(self.args_schema, dict):
+                return super().get_input_schema(config)
             return self.args_schema
         else:
             return create_schema_from_function(self.name, self._run)
@@ -505,6 +529,12 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
+                if isinstance(input_args, dict):
+                    msg = (
+                        "String tool inputs are not allowed when "
+                        "using tools with JSON schema args_schema."
+                    )
+                    raise ValueError(msg)
                 key_ = next(iter(get_fields(input_args).keys()))
                 if hasattr(input_args, "model_validate"):
                     input_args.model_validate({key_: tool_input})
@@ -513,7 +543,9 @@ class ChildTool(BaseTool):
             return tool_input
         else:
             if input_args is not None:
-                if issubclass(input_args, BaseModel):
+                if isinstance(input_args, dict):
+                    return tool_input
+                elif issubclass(input_args, BaseModel):
                     for k, v in get_all_basemodel_annotations(input_args).items():
                         if (
                             _is_injected_arg_type(v, injected_type=InjectedToolCallId)
@@ -605,7 +637,12 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
-        if self.args_schema is not None and not get_fields(self.args_schema):
+        if (
+            self.args_schema is not None
+            and isinstance(self.args_schema, type)
+            and is_basemodel_subclass(self.args_schema)
+            and not get_fields(self.args_schema)
+        ):
             # StructuredTool with no args
             return (), {}
         tool_input = self._parse_input(tool_input, tool_call_id)
@@ -684,14 +721,15 @@ class ChildTool(BaseTool):
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
-            if signature(self._run).parameters.get("run_manager"):
-                tool_kwargs = tool_kwargs | {"run_manager": run_manager}
-            if config_param := _get_runnable_config_param(self._run):
-                tool_kwargs = tool_kwargs | {config_param: config}
-            response = context.run(self._run, *tool_args, **tool_kwargs)
+            with set_config_context(child_config) as context:
+                tool_args, tool_kwargs = self._to_args_and_kwargs(
+                    tool_input, tool_call_id
+                )
+                if signature(self._run).parameters.get("run_manager"):
+                    tool_kwargs = tool_kwargs | {"run_manager": run_manager}
+                if config_param := _get_runnable_config_param(self._run):
+                    tool_kwargs = tool_kwargs | {config_param: config}
+                response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
@@ -794,21 +832,20 @@ class ChildTool(BaseTool):
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
-            context = copy_context()
-            context.run(_set_config_context, child_config)
-            func_to_check = (
-                self._run if self.__class__._arun is BaseTool._arun else self._arun
-            )
-            if signature(func_to_check).parameters.get("run_manager"):
-                tool_kwargs["run_manager"] = run_manager
-            if config_param := _get_runnable_config_param(func_to_check):
-                tool_kwargs[config_param] = config
+            with set_config_context(child_config) as context:
+                func_to_check = (
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun
+                )
+                if signature(func_to_check).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                if config_param := _get_runnable_config_param(func_to_check):
+                    tool_kwargs[config_param] = config
 
-            coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if asyncio_accepts_context():
-                response = await asyncio.create_task(coro, context=context)  # type: ignore
-            else:
-                response = await coro
+                coro = self._arun(*tool_args, **tool_kwargs)
+                if asyncio_accepts_context():
+                    response = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    response = await coro
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (
@@ -931,7 +968,7 @@ def _format_output(
     name: str,
     status: str,
 ) -> Union[ToolOutputMixin, Any]:
-    if isinstance(content, ToolOutputMixin) or not tool_call_id:
+    if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
     if not _is_message_content_type(content):
         content = _stringify(content)

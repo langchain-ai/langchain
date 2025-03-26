@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import BaseModel, model_validator
 
@@ -16,7 +16,9 @@ from langchain_core.prompts.string import (
     get_template_variables,
     mustache_schema,
 )
-from langchain_core.runnables.config import RunnableConfig
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.config import RunnableConfig
 
 
 class PromptTemplate(StringPromptTemplate):
@@ -235,8 +237,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), encoding=encoding) as f:
-            template = f.read()
+        template = Path(template_file).read_text(encoding=encoding)
         if input_variables:
             warnings.warn(
                 "`input_variables' is deprecated and ignored.",

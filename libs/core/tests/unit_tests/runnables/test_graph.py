@@ -375,6 +375,96 @@ def test_double_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
+def test_triple_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "parent_1": Node(
+            id="parent_1", name="parent_1", data=empty_data, metadata=None
+        ),
+        "child:child_1:grandchild_1": Node(
+            id="child:child_1:grandchild_1",
+            name="grandchild_1",
+            data=empty_data,
+            metadata=None,
+        ),
+        "child:child_1:grandchild_1:greatgrandchild": Node(
+            id="child:child_1:grandchild_1:greatgrandchild",
+            name="greatgrandchild",
+            data=empty_data,
+            metadata=None,
+        ),
+        "child:child_1:grandchild_2": Node(
+            id="child:child_1:grandchild_2",
+            name="grandchild_2",
+            data=empty_data,
+            metadata={"__interrupt": "before"},
+        ),
+        "child:child_2": Node(
+            id="child:child_2", name="child_2", data=empty_data, metadata=None
+        ),
+        "parent_2": Node(
+            id="parent_2", name="parent_2", data=empty_data, metadata=None
+        ),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(
+            source="child:child_1:grandchild_1",
+            target="child:child_1:grandchild_1:greatgrandchild",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="child:child_1:grandchild_1:greatgrandchild",
+            target="child:child_1:grandchild_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="child:child_1:grandchild_2",
+            target="child:child_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(source="__start__", target="parent_1", data=None, conditional=False),
+        Edge(
+            source="child:child_2",
+            target="parent_2",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="parent_1",
+            target="child:child_1:grandchild_1",
+            data=None,
+            conditional=False,
+        ),
+        Edge(source="parent_2", target="__end__", data=None, conditional=False),
+    ]
+    graph = Graph(nodes, edges)
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
+def test_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "sub:meow": Node(id="sub:meow", name="meow", data=empty_data, metadata=None),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(source="__start__", target="sub:meow", data=None, conditional=False),
+        Edge(source="sub:meow", target="__end__", data=None, conditional=False),
+    ]
+    graph = Graph(nodes, edges)
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
 def test_runnable_get_graph_with_invalid_input_type() -> None:
     """Test that error isn't raised when getting graph with invalid input type."""
 
@@ -445,3 +535,28 @@ def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
     )
     graph = sequence.get_graph()
     assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid")
+
+
+def test_graph_mermaid_frontmatter_config(snapshot: SnapshotAssertion) -> None:
+    graph = Graph(
+        nodes={
+            "__start__": Node(
+                id="__start__", name="__start__", data=BaseModel, metadata=None
+            ),
+            "my_node": Node(
+                id="my_node", name="my_node", data=BaseModel, metadata=None
+            ),
+        },
+        edges=[
+            Edge(source="__start__", target="my_node", data=None, conditional=False)
+        ],
+    )
+    assert graph.draw_mermaid(
+        frontmatter_config={
+            "config": {
+                "theme": "neutral",
+                "look": "handDrawn",
+                "themeVariables": {"primaryColor": "#e2e2e2"},
+            }
+        }
+    ) == snapshot(name="mermaid")

@@ -74,6 +74,8 @@ As an example, query decomposition can simply be accomplished using prompting an
 These can then be run sequentially or in parallel on a downstream retrieval system.
 
 ```python
+from typing import List
+
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage

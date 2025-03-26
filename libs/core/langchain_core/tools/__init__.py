@@ -23,6 +23,9 @@ from langchain_core.tools.base import (
     FILTERED_ARGS as FILTERED_ARGS,
 )
 from langchain_core.tools.base import (
+    ArgsSchema as ArgsSchema,
+)
+from langchain_core.tools.base import (
     BaseTool as BaseTool,
 )
 from langchain_core.tools.base import (

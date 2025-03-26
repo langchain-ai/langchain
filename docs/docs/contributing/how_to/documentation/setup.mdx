@@ -50,11 +50,6 @@ locally to ensure that it looks good and is free of errors.
 If you're unable to build it locally that's okay as well, as you will be able to
 see a preview of the documentation on the pull request page.
 
-From the **monorepo root**, run the following command to install the dependencies:
-
-```bash
-poetry install --with lint,docs --no-root
-````
 
 ### Building
 
@@ -156,14 +151,6 @@ the working directory to the `langchain-community` directory:
 
 ```bash
 cd [root]/libs/langchain-community
-```
-
-Set up a virtual environment for the package if you haven't done so already.
-
-Install the dependencies for the package.
-
-```bash
-poetry install --with lint
 ```
 
 Then you can run the following commands to lint and format the in-code documentation:

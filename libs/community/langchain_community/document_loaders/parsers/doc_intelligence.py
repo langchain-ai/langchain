@@ -45,32 +45,19 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         if api_version is not None:
             kwargs["api_version"] = api_version
 
-        if analysis_features is not None:
-            _SUPPORTED_FEATURES = [
-                DocumentAnalysisFeature.OCR_HIGH_RESOLUTION,
-            ]
-
-            analysis_features = [
-                DocumentAnalysisFeature(feature) for feature in analysis_features
-            ]
-            if any(
-                [feature not in _SUPPORTED_FEATURES for feature in analysis_features]
-            ):
-                logger.warning(
-                    f"The current supported features are: "
-                    f"{[f.value for f in _SUPPORTED_FEATURES]}. "
-                    "Using other features may result in unexpected behavior."
-                )
-
         self.client = DocumentIntelligenceClient(
             endpoint=api_endpoint,
             credential=azure_credential or AzureKeyCredential(api_key),
             headers={"x-ms-useragent": "langchain-parser/1.0.0"},
-            features=analysis_features,
             **kwargs,
         )
         self.api_model = api_model
         self.mode = mode
+        self.features: Optional[List[DocumentAnalysisFeature]] = None
+        if analysis_features is not None:
+            self.features = [
+                DocumentAnalysisFeature(feature) for feature in analysis_features
+            ]
         assert self.mode in ["single", "page", "markdown"]
 
     def _generate_docs_page(self, result: Any) -> Iterator[Document]:
@@ -97,6 +84,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
                 body=file_obj,
                 content_type="application/octet-stream",
                 output_content_format="markdown" if self.mode == "markdown" else "text",
+                features=self.features,
             )
             result = poller.result()
 
@@ -114,6 +102,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             self.api_model,
             body=AnalyzeDocumentRequest(url_source=url),
             output_content_format="markdown" if self.mode == "markdown" else "text",
+            features=self.features,
         )
         result = poller.result()
 
@@ -131,6 +120,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             self.api_model,
             body=AnalyzeDocumentRequest(bytes_source=bytes_source),
             output_content_format="markdown" if self.mode == "markdown" else "text",
+            features=self.features,
         )
         result = poller.result()
 

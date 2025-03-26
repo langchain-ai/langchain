@@ -6,7 +6,6 @@ import logging
 import sys
 import traceback
 from abc import ABC, abstractmethod
-from collections.abc import Coroutine, Sequence
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
@@ -16,13 +15,9 @@ from typing import (
     Union,
     cast,
 )
-from uuid import UUID
-
-from tenacity import RetryCallState
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -32,7 +27,13 @@ from langchain_core.outputs import (
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine, Sequence
+    from uuid import UUID
+
+    from tenacity import RetryCallState
+
     from langchain_core.documents import Document
+    from langchain_core.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 

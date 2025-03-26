@@ -6,7 +6,7 @@ import functools
 import importlib
 import os
 import warnings
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib.metadata import version
 from typing import Any, Callable, Optional, Union, overload
 
@@ -73,7 +73,7 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 @contextlib.contextmanager
-def mock_now(dt_value):  # type: ignore
+def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
     """Context manager for mocking out datetime.now() in unit tests.
 
     Args:
@@ -91,9 +91,9 @@ def mock_now(dt_value):  # type: ignore
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
-        def now(cls):  # type: ignore
+        def now(cls, tz: Union[datetime.tzinfo, None] = None) -> "MockDateTime":
             # Create a copy of dt_value.
-            return datetime.datetime(
+            return MockDateTime(
                 dt_value.year,
                 dt_value.month,
                 dt_value.day,
@@ -105,11 +105,11 @@ def mock_now(dt_value):  # type: ignore
             )
 
     real_datetime = datetime.datetime
-    datetime.datetime = MockDateTime
+    datetime.datetime = MockDateTime  # type: ignore[misc]
     try:
         yield datetime.datetime
     finally:
-        datetime.datetime = real_datetime
+        datetime.datetime = real_datetime  # type: ignore[misc]
 
 
 def guard_import(

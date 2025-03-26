@@ -255,3 +255,18 @@ def test_tool_id_conversion() -> None:
     for input_id, expected_output in result_map.items():
         assert _convert_tool_call_id_to_mistral_compatible(input_id) == expected_output
         assert _is_valid_mistral_tool_call_id(expected_output)
+
+
+def test_extra_kwargs() -> None:
+    # Check that foo is saved in extra_kwargs.
+    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    assert llm.model_kwargs == {"foo": 3}
+
+    # Test that if extra_kwargs are provided, they are added to it.
+    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    assert llm.model_kwargs == {"foo": 3, "bar": 2}
+
+    # Test that if provided twice it errors
+    with pytest.raises(ValueError):
+        ChatMistralAI(model="my-model", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
