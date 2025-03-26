@@ -951,6 +951,7 @@ def _prep_run_args(
                 tool_input = tool_input.copy()
             except Exception:
                 import copy
+
                 tool_input = copy.deepcopy(tool_input)
 
     return (
