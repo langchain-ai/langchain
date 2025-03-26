@@ -1,8 +1,6 @@
 import json
 from typing import Any, Iterator, List, Optional
 
-from pydantic import Field, PrivateAttr
-
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -12,6 +10,7 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage,
 )
+from pydantic import Field, PrivateAttr
 
 
 class ChatSeekrFlow(BaseChatModel):
@@ -53,7 +52,8 @@ class ChatSeekrFlow(BaseChatModel):
     def _convert_input(self, input: Any) -> List[BaseMessage]:
         """
         Convert various input types into a list of BaseMessage.
-        Supports str, list[BaseMessage], dict with "text", or an object with to_messages().
+        Supports str, list[BaseMessage], dict with "text", or an object
+        with to_messages().
         """
         if isinstance(input, list):
             return input
@@ -105,9 +105,7 @@ class ChatSeekrFlow(BaseChatModel):
                 ai_content.find(token) for token in stop if token in ai_content
             ]
             if stop_positions:
-                ai_content = ai_content[
-                    : min(pos for pos in stop_positions if pos != -1)
-                ]
+                ai_content = ai_content[: min(pos for pos in stop_positions if pos != -1)]
         return AIMessage(content=ai_content)
 
     def stream(
