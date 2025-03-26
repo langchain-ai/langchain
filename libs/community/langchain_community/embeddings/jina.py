@@ -156,11 +156,14 @@ class JinaLateChunkEmbeddings(JinaEmbeddings):
 
         return [result["embedding"] for result in embeddings]
     
-    def embed_documents(self, texts: List[str], task="retrieval.passage", late_chunking=True) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], task="retrieval.passage", late_chunking=True
+    ) -> List[List[float]]:
         """Call out to Jina's embedding endpoint.
         Args:
             texts: The list of texts to embed.
-            task: Task-Specific Embedding. `retrieval.passage` Used for passage embeddings in asymmetric retrieval tasks
+            task: Task-Specific Embedding. `retrieval.passage` used for 
+                passage embeddings in asymmetric retrieval tasks
             late_chunking: Apply latechunking or not. Default: True
         Returns:
             List of embeddings, one for each text.
@@ -168,11 +171,14 @@ class JinaLateChunkEmbeddings(JinaEmbeddings):
    
         return self._embed(texts, task=task, late_chunking=late_chunking)
 
-    def embed_query(self, text: str, task="retrieval.query", late_chunking=False) -> List[float]:
+    def embed_query(
+        self, text: str, task="retrieval.query", late_chunking=False
+    ) -> List[float]:
         """Call out to Jina's embedding endpoint.
         Args:
             text: The text to embed.
-            task: Task-Specific Embedding. `retrieval.query' Used for query embeddings in asymmetric retrieval tasks
+            task: Task-Specific Embedding. `retrieval.query' used for 
+                    query embeddings in asymmetric retrieval tasks
             late_chunking: Apply latechunking or not. Default: False
         Returns:
             Embeddings for the text.

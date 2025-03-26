@@ -2302,7 +2302,17 @@ class LateChunkQdrant(Qdrant):
         async_client: Optional[Any] = None,
         embedding_function: Optional[Callable] = None,  # deprecated
     ):
-        super().__init__(client=client, collection_name=collection_name, embeddings=embeddings, content_payload_key=content_payload_key, metadata_payload_key=metadata_payload_key, distance_strategy=distance_strategy, vector_name=vector_name,async_client=async_client,embedding_function=embedding_function)
+        super().__init__(
+            client=client, 
+            collection_name=collection_name, 
+            embeddings=embeddings, 
+            content_payload_key=content_payload_key, 
+            metadata_payload_key=metadata_payload_key, 
+            distance_strategy=distance_strategy, 
+            vector_name=vector_name,
+            async_client=async_client,
+            embedding_function=embedding_function
+        )
         
         self.text_splitter = text_splitter
         
@@ -2333,7 +2343,9 @@ class LateChunkQdrant(Qdrant):
         context_length = 8194
         step = batch_size // 2
         added_ids = []
-        for subtext, submetadatas, subembed in self.process_text_in_batches(texts, metadatas, step, context_length):
+        for subtext, submetadatas, subembed in self.process_text_in_batches(
+            texts, metadatas, step, context_length
+        ):
             for batch_ids, points in self._generate_rest_batches(
                 subtext, subembed, submetadatas, ids, batch_size
             ):
@@ -2379,7 +2391,9 @@ class LateChunkQdrant(Qdrant):
         context_length = 8194
         step = batch_size // 2
         added_ids = []
-        async for subtext, submetadatas, subembed in self.process_text_in_batches(texts, metadatas, step, context_length):
+        async for subtext, submetadatas, subembed in self.process_text_in_batches(
+            texts, metadatas, step, context_length
+        ):
             async for batch_ids, points in self._agenerate_rest_batches(
                 subtext, subembed, submetadatas, ids, batch_size
             ):
@@ -2534,7 +2548,9 @@ class LateChunkQdrant(Qdrant):
                 from langchain_text_splitters import CharacterTextSplitter
                 embeddings = JinaLateChunkEmbeddings()
                 text_splitter = CharacterTextSplitter()
-                qdrant = LateChunkQdrant.from_texts(texts, embeddings, text_splitter, "localhost")
+                qdrant = LateChunkQdrant.from_texts(
+                    texts, embeddings, text_splitter, "localhost"
+                )
         """
         qdrant = cls.construct_instance(
             texts,
@@ -2718,7 +2734,9 @@ class LateChunkQdrant(Qdrant):
                 from langchain_text_splitters import CharacterTextSplitter
                 embeddings = JinaLateChunkEmbeddings()
                 text_splitter = CharacterTextSplitter()
-                qdrant = await LateChunkQdrant.afrom_texts(texts, embeddings, text_splitter, "localhost")
+                qdrant = await LateChunkQdrant.afrom_texts(
+                    texts, embeddings, text_splitter, "localhost"
+                )
         """
         qdrant = await cls.aconstruct_instance(
             texts,
@@ -3180,27 +3198,59 @@ class LateChunkQdrant(Qdrant):
 
             yield batch_ids, points
         
-    def process_text_in_batches(self, texts: list[str], metadatas:List[dict], batch_size=3, context_length=8192):
+    def process_text_in_batches(
+        self, 
+        texts: list[str], 
+        metadatas:List[dict], 
+        batch_size: int = 3, 
+        context_length: int = 8192
+    ):
         n_texts = len(texts)
+        
+        # Check if the text_splitter has the tokenizer attribute and warn the user if not
+        if not hasattr(self.text_splitter, 'tokenizer'):
+            warnings.warn(
+                """
+                Warning: The 'tokenizer' attribute is not implemented in 'self.text_splitter'.
+                It is recommended to implement it for token length calculations and splitting.
+                Example:
+                    from transformer import Autokenizer
+                    tokenizer = AutoTokenizer.from_pretrained('jinaai/jina-embeddings-v3')
+                    
+                    text_spliter.tokenizer = tokenizer
+                """,
+                UserWarning
+            )
+        
         for start in range(0, n_texts, batch_size):
             end = min(start + batch_size, n_texts)
             subtexts, subembeds, submetadatas = [], [], []
+            
             for i in range(start, end):
                 text = texts[i]
+                
                 subtext = [
-                    doc.page_content for doc in self.text_splitter.create_documents([text])
+                    doc.page_content 
+                    for doc in self.text_splitter.create_documents([text])
                 ]
-                # check token length
-                token_len = self.text_splitter._get_token_length_of_text(text)
-                if token_len > context_length:
-                    bz = int(len(subtext) / 2)
+                
+                # Check token length and adjust if it exceeds context_length
+                size = len(subtext)
+                if hasattr(self.text_splitter, 'tokenizer'):
+                    size = len(self.text_splitter.tokenizer(text)['input_ids'])
+     
+                if size > context_length:
+                    # Split into smaller chunks if text exceeds context_length
+                    bz = len(subtext) // 4
                     for k in range(0, len(subtext), bz):
                         subembeds.extend(self._embed_texts(subtext[k: k+bz]))
                 else:
                     subembeds.extend(self._embed_texts(subtext))
-
+                
+                # Extend metadatas and subtexts accordingly
                 submetadatas.extend([metadatas[i]] * len(subtext)) 
                 subtexts.extend(subtext)
             
-            assert len(subtexts) == len(subembeds) == len(submetadatas)    
+            assert len(subtexts) == len(subembeds) == len(submetadatas)
+               
             yield subtexts, submetadatas, subembeds

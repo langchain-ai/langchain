@@ -118,7 +118,8 @@ if TYPE_CHECKING:
         JavelinAIGatewayEmbeddings,
     )
     from langchain_community.embeddings.jina import (
-        JinaEmbeddings, JinaLateChunkEmbeddings
+        JinaEmbeddings,
+        JinaLateChunkEmbeddings
     )
     from langchain_community.embeddings.johnsnowlabs import (
         JohnSnowLabsEmbeddings,

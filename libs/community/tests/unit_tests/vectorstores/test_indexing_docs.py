@@ -80,6 +80,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "PGVector",
         "Pinecone",
         "Qdrant",
+        "LateChunkQdrant",
         "Redis",
         "Relyt",
         "Rockset",

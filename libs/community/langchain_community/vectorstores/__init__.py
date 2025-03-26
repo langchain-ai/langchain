@@ -207,7 +207,8 @@ if TYPE_CHECKING:
         Pinecone,
     )
     from langchain_community.vectorstores.qdrant import (
-        Qdrant, LateChunkQdrant
+        Qdrant,
+        LateChunkQdrant
     )
     from langchain_community.vectorstores.redis import (
         Redis,
@@ -382,7 +383,7 @@ __all__ = [
     "PathwayVectorClient",
     "Pinecone",
     "Qdrant",
-    "LateChunkQdrant"
+    "LateChunkQdrant",
     "Redis",
     "Relyt",
     "Rockset",
