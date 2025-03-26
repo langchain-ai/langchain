@@ -236,13 +236,15 @@ async def acompletion_with_retry(
 def _convert_chunk_to_message_chunk(
     chunk: Dict, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    _delta = chunk["choices"][0]["delta"]
+    _choice = chunk["choices"][0]
+    _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
+        response_metadata = {}
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
@@ -272,11 +274,14 @@ def _convert_chunk_to_message_chunk(
             }
         else:
             usage_metadata = None
+        if _choice.get("finish_reason") is not None:
+            response_metadata["model_name"] = chunk.get("model")
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata=response_metadata,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
