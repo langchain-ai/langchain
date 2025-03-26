@@ -1,15 +1,18 @@
 import json
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Optional, cast
 
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
     BaseMessage,
+    BaseMessageChunk,
     ChatGeneration,
     ChatResult,
     HumanMessage,
     SystemMessage,
+    PromptValue,
 )
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from pydantic import Field, PrivateAttr
 
 
@@ -49,27 +52,34 @@ class ChatSeekrFlow(BaseChatModel):
     def _llm_type(self) -> str:
         return "seekrflow"
 
-    def _convert_input(self, input: Any) -> List[BaseMessage]:
+    def _convert_input(self, input: Any) -> PromptValue:
         """
-        Convert various input types into a list of BaseMessage.
+        Convert various input types into a PromptValue (list of BaseMessage).
         Supports str, list[BaseMessage], dict with "text", or an object
         with to_messages().
         """
         if isinstance(input, list):
-            return input
+            messages = input
         elif isinstance(input, str):
-            return [HumanMessage(content=input)]
+            messages = [HumanMessage(content=input)]
         elif isinstance(input, dict):
             if "text" in input:
-                return [HumanMessage(content=input["text"])]
+                messages = [HumanMessage(content=input["text"])]
             elif hasattr(input, "to_messages") and callable(input.to_messages):
-                return input.to_messages()
+                messages = input.to_messages()
+            else:
+                raise ValueError(
+                    "Invalid input type; expected str, List[BaseMessage], dict with 'text', "
+                    "or ChatPromptValue."
+                )
         elif hasattr(input, "to_messages") and callable(input.to_messages):
-            return input.to_messages()
-        raise ValueError(
-            "Invalid input type; expected str, List[BaseMessage], dict with 'text', "
-            "or ChatPromptValue."
-        )
+            messages = input.to_messages()
+        else:
+            raise ValueError(
+                "Invalid input type; expected str, List[BaseMessage], dict with 'text', "
+                "or ChatPromptValue."
+            )
+        return cast(PromptValue, messages)
 
     def invoke(
         self,
@@ -82,8 +92,7 @@ class ChatSeekrFlow(BaseChatModel):
         """Return a single final AIMessage from the SeekrFlow API."""
         messages = self._convert_input(input)
         system_content = next(
-            (msg.content for msg in messages if isinstance(msg, SystemMessage)),
-            None,
+            (msg.content for msg in messages if isinstance(msg, SystemMessage)), None
         )
         user_content = " ".join(
             msg.content for msg in messages if isinstance(msg, HumanMessage)
@@ -116,14 +125,13 @@ class ChatSeekrFlow(BaseChatModel):
         *,
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[AIMessage]:
+    ) -> Iterator[BaseMessageChunk]:
         """Yield AIMessage chunks when streaming=True, with stop token support."""
         if not self.streaming:
             raise ValueError("Streaming is disabled. Cannot call .stream().")
         messages = self._convert_input(input)
         system_content = next(
-            (msg.content for msg in messages if isinstance(msg, SystemMessage)),
-            None,
+            (msg.content for msg in messages if isinstance(msg, SystemMessage)), None
         )
         user_content = " ".join(
             msg.content for msg in messages if isinstance(msg, HumanMessage)
@@ -151,7 +159,8 @@ class ChatSeekrFlow(BaseChatModel):
                     and choice.delta
                     and hasattr(choice.delta, "content")
                 ):
-                    content = choice.delta.content
+                    # Ensure that the content is treated as a string.
+                    content = str(choice.delta.content)
                     if content:
                         buffer += content
                         if stop:
@@ -170,13 +179,13 @@ class ChatSeekrFlow(BaseChatModel):
 
     def _generate(
         self,
-        input: Any,
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[Any] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Implements the required generate function."""
-        response_msg = self.invoke(input, stop=stop, **kwargs)
+        response_msg = self.invoke(messages, stop=stop, **kwargs)
         return ChatResult(
             generations=[ChatGeneration(message=response_msg)], llm_output={}
         )
