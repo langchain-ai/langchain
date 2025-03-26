@@ -1,5 +1,7 @@
 import json
-from typing import Any, Iterator, List, Optional, Union
+from typing import Any, Iterator, List, Optional
+
+from pydantic import Field, PrivateAttr
 
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
@@ -10,7 +12,6 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage,
 )
-from pydantic import PrivateAttr, Field
 
 
 class ChatSeekrFlow(BaseChatModel):
@@ -18,6 +19,7 @@ class ChatSeekrFlow(BaseChatModel):
     Implements the BaseChatModel interface for SeekrFlow's LLMs,
     with separate methods for single vs. streaming responses.
     """
+
     model_name: str = Field(default="")
     temperature: float = 0.7
     streaming: bool = False
@@ -64,7 +66,10 @@ class ChatSeekrFlow(BaseChatModel):
                 return input.to_messages()
         elif hasattr(input, "to_messages") and callable(input.to_messages):
             return input.to_messages()
-        raise ValueError("Invalid input type; expected str, List[BaseMessage], dict with 'text', or a ChatPromptValue.")
+        raise ValueError(
+            "Invalid input type; expected str, List[BaseMessage], dict with 'text', "
+            "or ChatPromptValue."
+        )
 
     def invoke(
         self,
@@ -73,12 +78,12 @@ class ChatSeekrFlow(BaseChatModel):
         *,
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> BaseMessage:
+    ) -> AIMessage:
         """Return a single final AIMessage from the SeekrFlow API."""
         messages = self._convert_input(input)
-
         system_content = next(
-            (msg.content for msg in messages if isinstance(msg, SystemMessage)), None
+            (msg.content for msg in messages if isinstance(msg, SystemMessage)),
+            None,
         )
         user_content = " ".join(
             msg.content for msg in messages if isinstance(msg, HumanMessage)
@@ -90,17 +95,19 @@ class ChatSeekrFlow(BaseChatModel):
         api_messages.append({"role": "user", "content": user_content})
 
         response = self._client.chat.completions.create(
-            model=self.model_name, messages=api_messages, temperature=self.temperature
+            model=self.model_name,
+            messages=api_messages,
+            temperature=self.temperature,
         )
-
         ai_content = response.choices[0].message.content
-
         if stop:
             stop_positions = [
                 ai_content.find(token) for token in stop if token in ai_content
             ]
             if stop_positions:
-                ai_content = ai_content[: min(pos for pos in stop_positions if pos != -1)]
+                ai_content = ai_content[
+                    : min(pos for pos in stop_positions if pos != -1)
+                ]
         return AIMessage(content=ai_content)
 
     def stream(
@@ -114,11 +121,10 @@ class ChatSeekrFlow(BaseChatModel):
         """Yield AIMessage chunks when streaming=True, with stop token support."""
         if not self.streaming:
             raise ValueError("Streaming is disabled. Cannot call .stream().")
-
         messages = self._convert_input(input)
-
         system_content = next(
-            (msg.content for msg in messages if isinstance(msg, SystemMessage)), None
+            (msg.content for msg in messages if isinstance(msg, SystemMessage)),
+            None,
         )
         user_content = " ".join(
             msg.content for msg in messages if isinstance(msg, HumanMessage)
@@ -130,19 +136,16 @@ class ChatSeekrFlow(BaseChatModel):
         api_messages.append({"role": "user", "content": user_content})
 
         buffer = ""
-
         response_stream = self._client.chat.completions.create(
             model=self.model_name,
             messages=api_messages,
             temperature=self.temperature,
             stream=True,
         )
-
         for chunk in response_stream:
             try:
                 if not hasattr(chunk, "choices") or not chunk.choices:
                     continue
-
                 choice = chunk.choices[0]
                 if (
                     hasattr(choice, "delta")
