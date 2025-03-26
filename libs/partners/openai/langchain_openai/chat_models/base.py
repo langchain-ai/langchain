@@ -823,7 +823,7 @@ class BaseChatOpenAI(BaseChatModel):
         For backwards compatibility, we check for `stream_options` passed
         explicitly to kwargs or in the model_kwargs and override self.stream_usage.
         """
-        stream_usage_sources = [  # order of preference
+        stream_usage_sources = [  # order of precedence
             stream_usage,
             kwargs.get("stream_options", {}).get("include_usage"),
             self.model_kwargs.get("stream_options", {}).get("include_usage"),
