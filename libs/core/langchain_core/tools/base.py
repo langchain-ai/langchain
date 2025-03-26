@@ -945,7 +945,14 @@ def _prep_run_args(
         tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast(Union[str, dict], input).copy()
+        tool_input = cast(Union[str, dict], input)
+        if not isinstance(tool_input, str):
+            try:
+                tool_input = tool_input.copy()
+            except Exception as e:
+                import copy
+                tool_input = copy.deepcopy(tool_input)
+
     return (
         tool_input,
         dict(
