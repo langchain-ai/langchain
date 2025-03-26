@@ -552,5 +552,5 @@ packages:
   path: .
   repo: e7217/langchain-naver-community
 - name: langchain-memgraph
-  path: libs/memgraph
-  repo: langchain-ai/langchain-memgraph
+  path: .
+  repo: memgraph/langchain-memgraph
