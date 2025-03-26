@@ -949,7 +949,7 @@ def _prep_run_args(
         if not isinstance(tool_input, str):
             try:
                 tool_input = tool_input.copy()
-            except Exception as e:
+            except Exception:
                 import copy
                 tool_input = copy.deepcopy(tool_input)
 
