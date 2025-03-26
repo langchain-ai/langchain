@@ -428,8 +428,8 @@ class PyPDFParser(BaseBlobParser):
         """
         if not self.images_parser:
             return ""
-        from PIL import Image
         import pypdf
+        from PIL import Image
 
         if "/XObject" not in cast(dict, page["/Resources"]).keys():
             return ""
@@ -439,9 +439,11 @@ class PyPDFParser(BaseBlobParser):
         for obj in xObject:
             np_image: Any = None
             if xObject[obj]["/Subtype"] == "/Image":
-                img_filter = xObject[obj]["/Filter"][1:] if type(
-                    xObject[obj]["/Filter"]) == pypdf.generic._base.NameObject else \
-                    xObject[obj]["/Filter"][0][1:]
+                img_filter = (
+                    xObject[obj]["/Filter"][1:]
+                    if type(xObject[obj]["/Filter"]) is pypdf.generic._base.NameObject
+                    else xObject[obj]["/Filter"][0][1:]
+                )
                 if img_filter in _PDF_FILTER_WITHOUT_LOSS:
                     height, width = xObject[obj]["/Height"], xObject[obj]["/Width"]
 
