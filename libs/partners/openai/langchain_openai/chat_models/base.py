@@ -456,10 +456,9 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    stream_usage: Optional[bool] = None
+    stream_usage: bool = False
     """Whether to include usage metadata in streaming output. If True, additional
-    message chunks will be generated during the stream including usage metadata. If
-    None, no stream_options are passed to the client.
+    message chunks will be generated during the stream including usage metadata.
     """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
@@ -818,7 +817,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _should_stream_usage(
         self, stream_usage: Optional[bool] = None, **kwargs: Any
-    ) -> Optional[bool]:
+    ) -> bool:
         """Determine whether to include usage metadata in streaming output.
 
         For backwards compatibility, we check for `stream_options` passed
@@ -845,7 +844,7 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        if stream_usage is not None:
+        if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
@@ -1038,7 +1037,7 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        if stream_usage is not None:
+        if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
