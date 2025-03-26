@@ -25,6 +25,7 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
             "model": "gpt-4o-mini",
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
+            "stream_usage": True,
         }
 
     @property
@@ -49,12 +50,9 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
             "deployment_name": os.environ["AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME"],
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
+            "stream_usage": True,
         }
 
     @property
     def structured_output_kwargs(self) -> dict:
         return {"method": "function_calling"}
-
-    @pytest.mark.xfail(reason="Not yet supported.")
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata_streaming(model)
