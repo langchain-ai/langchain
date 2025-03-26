@@ -839,6 +839,7 @@ class BaseChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
         stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
@@ -1032,6 +1033,7 @@ class BaseChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
         stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
