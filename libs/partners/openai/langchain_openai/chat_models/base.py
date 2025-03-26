@@ -458,7 +458,8 @@ class BaseChatOpenAI(BaseChatModel):
         None."""
     stream_usage: Optional[bool] = None
     """Whether to include usage metadata in streaming output. If True, additional
-    message chunks will be generated during the stream including usage metadata.
+    message chunks will be generated during the stream including usage metadata. If
+    None, no stream_options are passed to the client.
     """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
