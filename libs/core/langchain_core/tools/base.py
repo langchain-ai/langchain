@@ -837,6 +837,8 @@ class ChildTool(BaseTool):
                     self._run if self.__class__._arun is BaseTool._arun else self._arun
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
+                    import copy
+                    tool_kwargs = copy.deepcopy(tool_kwargs)
                     tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(func_to_check):
                     tool_kwargs[config_param] = config
