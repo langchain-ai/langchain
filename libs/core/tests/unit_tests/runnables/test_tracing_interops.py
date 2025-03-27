@@ -445,11 +445,12 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         metadata={"some_foo": "some_bar"},
         tags=["afoo"],
     ):
-        if parent_type == "ls":
-            collected: dict[str, RunTree] = {}  # noqa
+        collected: dict[str, RunTree] = {}  # noqa
 
-            def collect_run(run: RunTree) -> None:
-                collected[str(run.id)] = run
+        def collect_run(run: RunTree) -> None:
+            collected[str(run.id)] = run
+
+        if parent_type == "ls":
 
             @traceable
             def parent() -> str:
@@ -459,7 +460,6 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
             )
             assert collected
-            run = collected.get(str(rid))
 
         else:
 
@@ -468,8 +468,10 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
+            tracer._persist_run = collect_run  # type: ignore
+
             assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
-            run = tracer.latest_run
+    run = collected.get(str(rid))
 
     assert run is not None
     assert run.name == "parent"

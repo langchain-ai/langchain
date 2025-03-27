@@ -563,6 +563,7 @@ class Graph:
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: Optional[NodeStyles] = None,
         wrap_label_n_words: int = 9,
+        frontmatter_config: Optional[dict[str, Any]] = None,
     ) -> str:
         """Draw the graph as a Mermaid syntax string.
 
@@ -572,6 +573,22 @@ class Graph:
             node_colors: The colors of the nodes. Defaults to NodeStyles().
             wrap_label_n_words: The number of words to wrap the node labels at.
                 Defaults to 9.
+            frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+                Can be used to customize theme and styles. Will be converted to YAML and
+                added to the beginning of the mermaid graph. Defaults to None.
+
+                See more here: https://mermaid.js.org/config/configuration.html.
+
+                Example:
+                ```python
+                {
+                    "config": {
+                        "theme": "neutral",
+                        "look": "handDrawn",
+                        "themeVariables": { "primaryColor": "#e2e2e2"},
+                    }
+                }
+                ```
 
         Returns:
             The Mermaid syntax string.
@@ -591,6 +608,7 @@ class Graph:
             curve_style=curve_style,
             node_styles=node_colors,
             wrap_label_n_words=wrap_label_n_words,
+            frontmatter_config=frontmatter_config,
         )
 
     def draw_mermaid_png(
@@ -603,6 +621,7 @@ class Graph:
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
+        frontmatter_config: Optional[dict[str, Any]] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -617,6 +636,22 @@ class Graph:
                 Defaults to MermaidDrawMethod.API.
             background_color: The color of the background. Defaults to "white".
             padding: The padding around the graph. Defaults to 10.
+            frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+                Can be used to customize theme and styles. Will be converted to YAML and
+                added to the beginning of the mermaid graph. Defaults to None.
+
+                See more here: https://mermaid.js.org/config/configuration.html.
+
+                Example:
+                ```python
+                {
+                    "config": {
+                        "theme": "neutral",
+                        "look": "handDrawn",
+                        "themeVariables": { "primaryColor": "#e2e2e2"},
+                    }
+                }
+                ```
 
         Returns:
             The PNG image as bytes.
@@ -627,6 +662,7 @@ class Graph:
             curve_style=curve_style,
             node_colors=node_colors,
             wrap_label_n_words=wrap_label_n_words,
+            frontmatter_config=frontmatter_config,
         )
         return draw_mermaid_png(
             mermaid_syntax=mermaid_syntax,

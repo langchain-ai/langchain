@@ -62,17 +62,36 @@ class ToolDescription(TypedDict):
 
 
 def _rm_titles(kv: dict, prev_key: str = "") -> dict:
+    """Recursively removes "title" fields from a JSON schema dictionary.
+
+    Remove "title" fields from the input JSON schema dictionary,
+    except when a "title" appears within a property definition under "properties".
+
+    Args:
+        kv (dict): The input JSON schema as a dictionary.
+        prev_key (str): The key from the parent dictionary, used to identify context.
+
+    Returns:
+        dict: A new dictionary with appropriate "title" fields removed.
+    """
     new_kv = {}
+
     for k, v in kv.items():
         if k == "title":
-            if isinstance(v, dict) and prev_key == "properties" and "title" in v:
+            # If the value is a nested dict and part of a property under "properties",
+            # preserve the title but continue recursion
+            if isinstance(v, dict) and prev_key == "properties":
                 new_kv[k] = _rm_titles(v, k)
             else:
+                # Otherwise, remove this "title" key
                 continue
         elif isinstance(v, dict):
+            # Recurse into nested dictionaries
             new_kv[k] = _rm_titles(v, k)
         else:
+            # Leave non-dict values untouched
             new_kv[k] = v
+
     return new_kv
 
 

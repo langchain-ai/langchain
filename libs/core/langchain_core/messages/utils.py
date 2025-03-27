@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import inspect
 import json
+import math
 from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
@@ -403,6 +404,7 @@ def filter_messages(
     exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
+    exclude_tool_calls: Optional[Sequence[str] | bool] = None,
 ) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
@@ -418,6 +420,13 @@ def filter_messages(
             SystemMessage, HumanMessage, AIMessage, ...). Default is None.
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
+        exclude_tool_calls: Tool call IDs to exclude. Default is None.
+            Can be one of the following:
+            - `True`: all AIMessages with tool calls and all ToolMessages will be excluded.
+            - a sequence of tool call IDs to exclude:
+              - ToolMessages with the corresponding tool call ID will be excluded.
+              - The `tool_calls` in the AIMessage will be updated to exclude matching tool calls.
+                If all tool_calls are filtered from an AIMessage, the whole message is excluded.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -465,6 +474,43 @@ def filter_messages(
             continue
         else:
             pass
+
+        if exclude_tool_calls is True and (
+            (isinstance(msg, AIMessage) and msg.tool_calls)
+            or isinstance(msg, ToolMessage)
+        ):
+            continue
+
+        if isinstance(exclude_tool_calls, (list, tuple, set)):
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                tool_calls = [
+                    tool_call
+                    for tool_call in msg.tool_calls
+                    if tool_call["id"] not in exclude_tool_calls
+                ]
+                if not tool_calls:
+                    continue
+
+                content = msg.content
+                # handle Anthropic content blocks
+                if isinstance(msg.content, list):
+                    content = [
+                        content_block
+                        for content_block in msg.content
+                        if (
+                            not isinstance(content_block, dict)
+                            or content_block.get("type") != "tool_use"
+                            or content_block.get("id") not in exclude_tool_calls
+                        )
+                    ]
+
+                msg = msg.model_copy(
+                    update={"tool_calls": tool_calls, "content": content}
+                )
+            elif (
+                isinstance(msg, ToolMessage) and msg.tool_call_id in exclude_tool_calls
+            ):
+                continue
 
         # default to inclusion when no inclusion criteria given.
         if (
@@ -635,6 +681,12 @@ def trim_messages(
             BaseMessage. If a BaseLanguageModel is passed in then
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
             Set to `len` to count the number of **messages** in the chat history.
+
+            Note:
+                Use `count_tokens_approximately` to get fast, approximate token counts.
+                This is recommended for using `trim_messages` on the hot path, where
+                exact token counting is not necessary.
+
         strategy: Strategy for trimming.
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
@@ -823,10 +875,14 @@ def trim_messages(
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
     """  # noqa: E501
+    # Validate arguments
     if start_on and strategy == "first":
-        raise ValueError
+        msg = "start_on parameter is only valid with strategy='last'"
+        raise ValueError(msg)
     if include_system and strategy == "first":
-        raise ValueError
+        msg = "include_system parameter is only valid with strategy='last'"
+        raise ValueError(msg)
+
     messages = convert_to_messages(messages)
     if hasattr(token_counter, "get_num_tokens_from_messages"):
         list_token_counter = token_counter.get_num_tokens_from_messages
@@ -1231,15 +1287,40 @@ def _first_max_tokens(
     messages = list(messages)
     if not messages:
         return messages
-    idx = 0
-    for i in range(len(messages)):
-        if token_counter(messages[:-i] if i else messages) <= max_tokens:
-            idx = len(messages) - i
+
+    # Check if all messages already fit within token limit
+    if token_counter(messages) <= max_tokens:
+        # When all messages fit, only apply end_on filtering if needed
+        if end_on:
+            for _ in range(len(messages)):
+                if not _is_message_type(messages[-1], end_on):
+                    messages.pop()
+                else:
+                    break
+        return messages
+
+    # Use binary search to find the maximum number of messages within token limit
+    left, right = 0, len(messages)
+    max_iterations = len(messages).bit_length()
+    for _ in range(max_iterations):
+        if left >= right:
             break
-    if partial_strategy and (idx < len(messages) - 1 or idx == 0):
+        mid = (left + right + 1) // 2
+        if token_counter(messages[:mid]) <= max_tokens:
+            left = mid
+            idx = mid
+        else:
+            right = mid - 1
+
+    # idx now contains the maximum number of complete messages we can include
+    idx = left
+
+    if partial_strategy and idx < len(messages):
         included_partial = False
+        copied = False
         if isinstance(messages[idx].content, list):
             excluded = messages[idx].model_copy(deep=True)
+            copied = True
             num_block = len(excluded.content)
             if partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
@@ -1253,41 +1334,59 @@ def _first_max_tokens(
             if included_partial and partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
         if not included_partial:
-            excluded = messages[idx].model_copy(deep=True)
-            if isinstance(excluded.content, list) and any(
-                isinstance(block, str) or block["type"] == "text"
-                for block in messages[idx].content
-            ):
-                text_block = next(
-                    block
-                    for block in messages[idx].content
-                    if isinstance(block, str) or block["type"] == "text"
-                )
-                text = (
-                    text_block["text"] if isinstance(text_block, dict) else text_block
-                )
-            elif isinstance(excluded.content, str):
+            if not copied:
+                excluded = messages[idx].model_copy(deep=True)
+                copied = True
+
+            # Extract text content efficiently
+            text = None
+            if isinstance(excluded.content, str):
                 text = excluded.content
-            else:
-                text = None
-            if text:
-                split_texts = text_splitter(text)
-                num_splits = len(split_texts)
-                if partial_strategy == "last":
-                    split_texts = list(reversed(split_texts))
-                for _ in range(num_splits - 1):
-                    split_texts.pop()
-                    excluded.content = "".join(split_texts)
-                    if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                        if partial_strategy == "last":
-                            excluded.content = "".join(reversed(split_texts))
-                        messages = messages[:idx] + [excluded]
-                        idx += 1
+            elif isinstance(excluded.content, list) and excluded.content:
+                for block in excluded.content:
+                    if isinstance(block, str):
+                        text = block
+                        break
+                    elif isinstance(block, dict) and block.get("type") == "text":
+                        text = block.get("text")
                         break
 
+            if text:
+                if not copied:
+                    excluded = excluded.model_copy(deep=True)
+
+                split_texts = text_splitter(text)
+                base_message_count = token_counter(messages[:idx])
+                if partial_strategy == "last":
+                    split_texts = list(reversed(split_texts))
+
+                # Binary search for the maximum number of splits we can include
+                left, right = 0, len(split_texts)
+                max_iterations = len(split_texts).bit_length()
+                for _ in range(max_iterations):
+                    if left >= right:
+                        break
+                    mid = (left + right + 1) // 2
+                    excluded.content = "".join(split_texts[:mid])
+                    if base_message_count + token_counter([excluded]) <= max_tokens:
+                        left = mid
+                    else:
+                        right = mid - 1
+
+                if left > 0:
+                    content_splits = split_texts[:left]
+                    if partial_strategy == "last":
+                        content_splits = list(reversed(content_splits))
+                    excluded.content = "".join(content_splits)
+                    messages = messages[:idx] + [excluded]
+                    idx += 1
+
     if end_on:
-        while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
-            idx -= 1
+        for _ in range(idx):
+            if idx > 0 and not _is_message_type(messages[idx - 1], end_on):
+                idx -= 1
+            else:
+                break
 
     return messages[:idx]
 
@@ -1310,24 +1409,45 @@ def _last_max_tokens(
     messages = list(messages)
     if len(messages) == 0:
         return []
-    if end_on:
-        while messages and not _is_message_type(messages[-1], end_on):
-            messages.pop()
-    swapped_system = include_system and isinstance(messages[0], SystemMessage)
-    reversed_ = messages[:1] + messages[1:][::-1] if swapped_system else messages[::-1]
 
-    reversed_ = _first_max_tokens(
-        reversed_,
-        max_tokens=max_tokens,
+    # Filter out messages after end_on type
+    if end_on:
+        for _ in range(len(messages)):
+            if not _is_message_type(messages[-1], end_on):
+                messages.pop()
+            else:
+                break
+
+    # Handle system message preservation
+    system_message = None
+    if include_system and len(messages) > 0 and isinstance(messages[0], SystemMessage):
+        system_message = messages[0]
+        messages = messages[1:]
+
+    # Reverse messages to use _first_max_tokens with reversed logic
+    reversed_messages = messages[::-1]
+
+    # Calculate remaining tokens after accounting for system message if present
+    remaining_tokens = max_tokens
+    if system_message:
+        system_tokens = token_counter([system_message])
+        remaining_tokens = max(0, max_tokens - system_tokens)
+
+    reversed_result = _first_max_tokens(
+        reversed_messages,
+        max_tokens=remaining_tokens,
         token_counter=token_counter,
         text_splitter=text_splitter,
         partial_strategy="last" if allow_partial else None,
         end_on=start_on,
     )
-    if swapped_system:
-        return reversed_[:1] + reversed_[1:][::-1]
-    else:
-        return reversed_[::-1]
+
+    # Re-reverse the messages and add back the system message if needed
+    result = reversed_result[::-1]
+    if system_message:
+        result = [system_message] + result
+
+    return result
 
 
 _MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
@@ -1424,3 +1544,83 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
         }
         for tool_call in tool_calls
     ]
+
+
+def count_tokens_approximately(
+    messages: Iterable[MessageLikeRepresentation],
+    *,
+    chars_per_token: float = 4.0,
+    extra_tokens_per_message: float = 3.0,
+    count_name: bool = True,
+) -> int:
+    """Approximate the total number of tokens in messages.
+
+    The token count includes stringified message content, role, and (optionally) name.
+    - For AI messages, the token count also includes stringified tool calls.
+    - For tool messages, the token count also includes the tool call ID.
+
+    Args:
+        messages: List of messages to count tokens for.
+        chars_per_token: Number of characters per token to use for the approximation.
+            Default is 4 (one token corresponds to ~4 chars for common English text).
+            You can also specify float values for more fine-grained control.
+            See more here: https://platform.openai.com/tokenizer
+        extra_tokens_per_message: Number of extra tokens to add per message.
+            Default is 3 (special tokens, including beginning/end of message).
+            You can also specify float values for more fine-grained control.
+            See more here:
+            https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+        count_name: Whether to include message names in the count.
+            Enabled by default.
+
+    Returns:
+        Approximate number of tokens in the messages.
+
+    Note:
+        This is a simple approximation that may not match the exact token count
+        used by specific models. For accurate counts, use model-specific tokenizers.
+
+    Warning:
+        This function does not currently support counting image tokens.
+
+    .. versionadded:: 0.3.46
+    """
+    token_count = 0.0
+    for message in convert_to_messages(messages):
+        message_chars = 0
+        if isinstance(message.content, str):
+            message_chars += len(message.content)
+
+        # TODO: add support for approximate counting for image blocks
+        else:
+            content = repr(message.content)
+            message_chars += len(content)
+
+        if (
+            isinstance(message, AIMessage)
+            # exclude Anthropic format as tool calls are already included in the content
+            and not isinstance(message.content, list)
+            and message.tool_calls
+        ):
+            tool_calls_content = repr(message.tool_calls)
+            message_chars += len(tool_calls_content)
+
+        if isinstance(message, ToolMessage):
+            message_chars += len(message.tool_call_id)
+
+        role = _get_message_openai_role(message)
+        message_chars += len(role)
+
+        if message.name and count_name:
+            message_chars += len(message.name)
+
+        # NOTE: we're rounding up per message to ensure that
+        # individual message token counts add up to the total count
+        # for a list of messages
+        token_count += math.ceil(message_chars / chars_per_token)
+
+        # add extra tokens per message
+        token_count += extra_tokens_per_message
+
+    # round up once more time in case extra_tokens_per_message is a float
+    return math.ceil(token_count)

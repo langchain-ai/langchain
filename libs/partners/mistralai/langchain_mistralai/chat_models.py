@@ -236,13 +236,15 @@ async def acompletion_with_retry(
 def _convert_chunk_to_message_chunk(
     chunk: Dict, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    _delta = chunk["choices"][0]["delta"]
+    _choice = chunk["choices"][0]
+    _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
+        response_metadata = {}
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
@@ -272,11 +274,16 @@ def _convert_chunk_to_message_chunk(
             }
         else:
             usage_metadata = None
+        if _choice.get("finish_reason") is not None and isinstance(
+            chunk.get("model"), str
+        ):
+            response_metadata["model_name"] = chunk.get("model")
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata=response_metadata,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -685,6 +692,7 @@ class ChatMistralAI(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -705,6 +713,22 @@ class ChatMistralAI(BaseChatModel):
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            tool_names = []
+            for tool in formatted_tools:
+                if "function" in tool and (name := tool["function"].get("name")):
+                    tool_names.append(name)
+                elif name := tool.get("name"):
+                    tool_names.append(name)
+                else:
+                    pass
+            if tool_choice in tool_names:
+                kwargs["tool_choice"] = {
+                    "type": "function",
+                    "function": {"name": tool_choice},
+                }
+            else:
+                kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -945,6 +969,7 @@ class ChatMistralAI(BaseChatModel):
                 # }
 
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
