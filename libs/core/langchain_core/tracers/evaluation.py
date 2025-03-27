@@ -90,7 +90,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
             weakref.finalize(
                 self,
-                lambda: cast(ThreadPoolExecutor, self.executor).shutdown(wait=True),
+                lambda: cast("ThreadPoolExecutor", self.executor).shutdown(wait=True),
             )
         else:
             self.executor = None
@@ -156,7 +156,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if isinstance(results, EvaluationResult):
             results_ = [results]
         elif isinstance(results, dict) and "results" in results:
-            results_ = cast(list[EvaluationResult], results["results"])
+            results_ = cast("list[EvaluationResult]", results["results"])
         else:
             msg = (
                 f"Invalid evaluation result type {type(results)}."
