@@ -68,7 +68,7 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
         )
 
     return cast(
-        list[StreamEvent],
+        "list[StreamEvent]",
         [{**event, "run_id": "", "parent_ids": []} for event in events],
     )
 

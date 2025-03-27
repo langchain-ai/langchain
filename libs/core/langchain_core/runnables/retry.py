@@ -245,7 +245,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
         for idx in range(len(inputs)):
@@ -311,7 +311,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
         for idx in range(len(inputs)):

@@ -360,7 +360,7 @@ def _get_key(
                 # Move into the scope
                 try:
                     # Try subscripting (Normal dictionaries)
-                    resolved_scope = cast(dict[str, Any], resolved_scope)[child]
+                    resolved_scope = cast("dict[str, Any]", resolved_scope)[child]
                 except (TypeError, AttributeError):
                     try:
                         resolved_scope = getattr(resolved_scope, child)
@@ -618,7 +618,7 @@ def render(
             scope = _get_key(
                 key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel
             )
-            scopes.insert(0, cast(Literal[False], not scope))
+            scopes.insert(0, cast("Literal[False]", not scope))
 
         # If we're a partial
         elif tag == "partial":

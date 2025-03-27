@@ -2436,7 +2436,7 @@ async def test_stream_log_retriever() -> None:
             ):
                 del op["value"]["id"]
 
-    assert sorted(cast(RunLog, add(stream_log)).state["logs"]) == [
+    assert sorted(cast("RunLog", add(stream_log)).state["logs"]) == [
         "ChatPromptTemplate",
         "FakeListLLM",
         "FakeListLLM:2",
@@ -2632,7 +2632,7 @@ def test_combining_sequences(
         lambda x: {"question": x[0] + x[1]}
     )
 
-    chain2 = cast(RunnableSequence, input_formatter | prompt2 | chat2 | parser2)
+    chain2 = cast("RunnableSequence", input_formatter | prompt2 | chat2 | parser2)
 
     assert isinstance(chain, RunnableSequence)
     assert chain2.first == input_formatter
@@ -2640,7 +2640,7 @@ def test_combining_sequences(
     assert chain2.last == parser2
     assert dumps(chain2, pretty=True) == snapshot
 
-    combined_chain = cast(RunnableSequence, chain | chain2)
+    combined_chain = cast("RunnableSequence", chain | chain2)
 
     assert combined_chain.first == prompt
     assert combined_chain.middle == [
@@ -3278,7 +3278,7 @@ async def test_map_astream() -> None:
             final_state = chunk
         else:
             final_state += chunk
-    final_state = cast(RunLog, final_state)
+    final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
@@ -3312,7 +3312,7 @@ async def test_map_astream() -> None:
             final_state = chunk
         else:
             final_state += chunk
-    final_state = cast(RunLog, final_state)
+    final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
@@ -3328,7 +3328,7 @@ async def test_map_astream() -> None:
             final_state = chunk
         else:
             final_state += chunk
-    final_state = cast(RunLog, final_state)
+    final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
     assert len(final_state.state["streamed_output"]) == len(streamed_chunks)
@@ -4032,7 +4032,7 @@ async def test_runnable_lambda_astream() -> None:
     output = [
         chunk
         async for chunk in cast(
-            AsyncIterator[str], RunnableLambda(lambda x: llm).astream("")
+            "AsyncIterator[str]", RunnableLambda(lambda x: llm).astream("")
         )
     ]
     assert output == list(llm_res)
@@ -5350,7 +5350,7 @@ def test_default_transform_with_dicts() -> None:
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
-            return cast(Output, input)  # type: ignore
+            return cast("Output", input)  # type: ignore
 
     runnable = CustomRunnable[dict[str, str], dict[str, str]]()
     chunks = iter(
@@ -5371,7 +5371,7 @@ async def test_default_atransform_with_dicts() -> None:
         def invoke(
             self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> Output:
-            return cast(Output, input)
+            return cast("Output", input)
 
     runnable = CustomRunnable[dict[str, str], dict[str, str]]()
 
