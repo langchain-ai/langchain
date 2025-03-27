@@ -5,7 +5,7 @@ from langchain_community.document_loaders.parsers.language.tree_sitter_segmenter
 )
 
 if TYPE_CHECKING:
-    from tree_sitter import Language
+    from tree_sitter import Language, Parser
 
 
 CHUNK_QUERY = """
@@ -20,9 +20,14 @@ class GoSegmenter(TreeSitterSegmenter):
     """Code segmenter for Go."""
 
     def get_language(self) -> "Language":
-        from tree_sitter_languages import get_language
+        from tree_sitter_language_pack import get_language
 
         return get_language("go")
+
+    def get_parser(self) -> "Parser":
+        from tree_sitter_language_pack import get_parser
+
+        return get_parser("go")
 
     def get_chunk_query(self) -> str:
         return CHUNK_QUERY

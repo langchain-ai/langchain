@@ -5,15 +5,20 @@ from langchain_community.document_loaders.parsers.language.tree_sitter_segmenter
 )
 
 if TYPE_CHECKING:
-    from tree_sitter import Language
+    from tree_sitter import Language, Parser
 
+# CHUNK_QUERY = """
+#     [
+#         (create_table) @create
+#         (_select_statement) @select
+#         (insert) @insert
+#         (update) @update
+#         (_delete_statement) @delete
+#     ]
+# """
 CHUNK_QUERY = """
     [
-        (create_table_statement) @create
-        (select_statement) @select
-        (insert_statement) @insert
-        (update_statement) @update
-        (delete_statement) @delete
+        (statement) @statement
     ]
 """
 
@@ -28,9 +33,14 @@ class SQLSegmenter(TreeSitterSegmenter):
 
     def get_language(self) -> "Language":
         """Return the SQL language grammar for Tree-sitter."""
-        from tree_sitter_languages import get_language
+        from tree_sitter_language_pack import get_language
 
         return get_language("sql")
+
+    def get_parser(self) -> "Parser":
+        from tree_sitter_language_pack import get_parser
+
+        return get_parser("sql")
 
     def get_chunk_query(self) -> str:
         """Return the Tree-sitter query for SQL segmentation."""

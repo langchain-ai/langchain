@@ -5,7 +5,7 @@ from langchain_community.document_loaders.parsers.language.tree_sitter_segmenter
 )
 
 if TYPE_CHECKING:
-    from tree_sitter import Language
+    from tree_sitter import Language, Parser
 
 
 CHUNK_QUERY = """
@@ -25,9 +25,14 @@ class CSharpSegmenter(TreeSitterSegmenter):
     """Code segmenter for C#."""
 
     def get_language(self) -> "Language":
-        from tree_sitter_languages import get_language
+        from tree_sitter_language_pack import get_language
 
-        return get_language("c_sharp")
+        return get_language("csharp")
+
+    def get_parser(self) -> "Parser":
+        from tree_sitter_language_pack import get_parser
+
+        return get_parser("csharp")
 
     def get_chunk_query(self) -> str:
         return CHUNK_QUERY
