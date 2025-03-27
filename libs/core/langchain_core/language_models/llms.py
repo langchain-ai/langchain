@@ -328,16 +328,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         """Get the input type for this runnable."""
         return str
 
-    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if isinstance(input, PromptValue):
-            return input
-        elif isinstance(input, str):
-            return StringPromptValue(text=input)
-        elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
+    def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
+        if isinstance(model_input, PromptValue):
+            return model_input
+        elif isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        elif isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
         else:
             msg = (
-                f"Invalid input type {type(input)}. "
+                f"Invalid input type {type(model_input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
             raise ValueError(msg)  # noqa: TRY004
@@ -377,6 +377,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         return ls_params
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -401,6 +402,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             .text
         )
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -439,7 +441,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if max_concurrency is None:
             try:
                 llm_result = self.generate_prompt(
-                    [self._convert_input(input) for input in inputs],
+                    [self._convert_input(input_) for input_ in inputs],
                     callbacks=[c.get("callbacks") for c in config],
                     tags=[c.get("tags") for c in config],
                     metadata=[c.get("metadata") for c in config],
@@ -485,7 +487,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if max_concurrency is None:
             try:
                 llm_result = await self.agenerate_prompt(
-                    [self._convert_input(input) for input in inputs],
+                    [self._convert_input(input_) for input_ in inputs],
                     callbacks=[c.get("callbacks") for c in config],
                     tags=[c.get("tags") for c in config],
                     metadata=[c.get("metadata") for c in config],
@@ -515,6 +517,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ]
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -581,6 +584,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
             run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,

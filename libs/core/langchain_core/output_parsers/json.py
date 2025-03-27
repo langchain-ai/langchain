@@ -1,3 +1,4 @@
+# noqa: A005
 from __future__ import annotations
 
 import json
@@ -7,6 +8,7 @@ from typing import Annotated, Any, Optional, TypeVar, Union
 import jsonpatch  # type: ignore[import]
 import pydantic
 from pydantic import SkipValidation
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -45,6 +47,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """The Pydantic object to use for validation.
     If None, no validation is performed."""
 
+    @override
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 

@@ -190,6 +190,7 @@ class BasePromptTemplate(
         _inner_input = self._validate_input(inner_input)
         return await self.aformat_prompt(**_inner_input)
 
+    @override
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
@@ -215,6 +216,7 @@ class BasePromptTemplate(
             serialized=self._serialized,
         )
 
+    @override
     async def ainvoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:

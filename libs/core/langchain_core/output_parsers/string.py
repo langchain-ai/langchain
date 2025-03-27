@@ -1,3 +1,4 @@
+# noqa: A005
 from typing import Optional as Optional
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser

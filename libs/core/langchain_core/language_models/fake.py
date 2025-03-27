@@ -3,6 +3,8 @@ import time
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any, Optional
 
+from typing_extensions import override
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -86,6 +88,7 @@ class FakeStreamingListLLM(FakeListLLM):
     error_on_chunk_number: Optional[int] = None
     """If set, will raise an exception on the specified chunk number."""
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -106,6 +109,7 @@ class FakeStreamingListLLM(FakeListLLM):
                 raise FakeListLLMError
             yield c
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,

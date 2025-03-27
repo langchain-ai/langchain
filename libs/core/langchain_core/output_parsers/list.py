@@ -8,6 +8,8 @@ from io import StringIO
 from typing import TYPE_CHECKING, TypeVar, Union
 from typing import Optional as Optional
 
+from typing_extensions import override
+
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
@@ -17,7 +19,10 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def droplastn(iter: Iterator[T], n: int) -> Iterator[T]:
+def droplastn(
+    iter: Iterator[T],  # noqa: A002
+    n: int,
+) -> Iterator[T]:
     """Drop the last n elements of an iterator.
 
     Args:
@@ -63,6 +68,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         """
         raise NotImplementedError
 
+    @override
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[list[str]]:
@@ -96,6 +102,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         for part in self.parse(buffer):
             yield [part]
 
+    @override
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[list[str]]:

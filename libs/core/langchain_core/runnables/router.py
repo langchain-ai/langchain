@@ -12,7 +12,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain_core.runnables.base import (
     Input,
@@ -99,6 +99,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
+    @override
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -111,6 +112,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         runnable = self.runnables[key]
         return runnable.invoke(actual_input, config)
 
+    @override
     async def ainvoke(
         self,
         input: RouterInput,
@@ -137,22 +139,22 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         if not inputs:
             return []
 
-        keys = [input["key"] for input in inputs]
-        actual_inputs = [input["input"] for input in inputs]
+        keys = [value["key"] for value in inputs]
+        actual_inputs = [value["input"] for value in inputs]
         if any(key not in self.runnables for key in keys):
             msg = "One or more keys do not have a corresponding runnable"
             raise ValueError(msg)
 
         def invoke(
-            runnable: Runnable, input: Input, config: RunnableConfig
+            runnable: Runnable, value: Input, config: RunnableConfig
         ) -> Union[Output, Exception]:
             if return_exceptions:
                 try:
-                    return runnable.invoke(input, config, **kwargs)
+                    return runnable.invoke(value, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return runnable.invoke(input, config, **kwargs)
+                return runnable.invoke(value, config, **kwargs)
 
         runnables = [self.runnables[key] for key in keys]
         configs = get_config_list(config, len(inputs))
@@ -173,22 +175,22 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         if not inputs:
             return []
 
-        keys = [input["key"] for input in inputs]
-        actual_inputs = [input["input"] for input in inputs]
+        keys = [value["key"] for value in inputs]
+        actual_inputs = [value["input"] for value in inputs]
         if any(key not in self.runnables for key in keys):
             msg = "One or more keys do not have a corresponding runnable"
             raise ValueError(msg)
 
         async def ainvoke(
-            runnable: Runnable, input: Input, config: RunnableConfig
+            runnable: Runnable, value: Input, config: RunnableConfig
         ) -> Union[Output, Exception]:
             if return_exceptions:
                 try:
-                    return await runnable.ainvoke(input, config, **kwargs)
+                    return await runnable.ainvoke(value, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return await runnable.ainvoke(input, config, **kwargs)
+                return await runnable.ainvoke(value, config, **kwargs)
 
         runnables = [self.runnables[key] for key in keys]
         configs = get_config_list(config, len(inputs))
@@ -197,6 +199,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             *starmap(ainvoke, zip(runnables, actual_inputs, configs)),
         )
 
+    @override
     def stream(
         self,
         input: RouterInput,
@@ -212,6 +215,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         runnable = self.runnables[key]
         yield from runnable.stream(actual_input, config)
 
+    @override
     async def astream(
         self,
         input: RouterInput,

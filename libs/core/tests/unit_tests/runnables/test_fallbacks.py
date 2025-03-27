@@ -258,16 +258,16 @@ async def test_abatch() -> None:
     _assert_potential_error(actual, expected)
 
 
-def _generate(input: Iterator) -> Iterator[str]:
+def _generate(_values: Iterator) -> Iterator[str]:
     yield from "foo bar"
 
 
-def _generate_immediate_error(input: Iterator) -> Iterator[str]:
+def _generate_immediate_error(_values: Iterator) -> Iterator[str]:
     raise ValueError
     yield ""
 
 
-def _generate_delayed_error(input: Iterator) -> Iterator[str]:
+def _generate_delayed_error(_values: Iterator) -> Iterator[str]:
     yield ""
     raise ValueError
 
@@ -285,17 +285,17 @@ def test_fallbacks_stream() -> None:
         list(runnable.stream({}))
 
 
-async def _agenerate(input: AsyncIterator) -> AsyncIterator[str]:
+async def _agenerate(_values: AsyncIterator) -> AsyncIterator[str]:
     for c in "foo bar":
         yield c
 
 
-async def _agenerate_immediate_error(input: AsyncIterator) -> AsyncIterator[str]:
+async def _agenerate_immediate_error(_values: AsyncIterator) -> AsyncIterator[str]:
     raise ValueError
     yield ""
 
 
-async def _agenerate_delayed_error(input: AsyncIterator) -> AsyncIterator[str]:
+async def _agenerate_delayed_error(_values: AsyncIterator) -> AsyncIterator[str]:
     yield ""
     raise ValueError
 

@@ -279,20 +279,21 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Get the output type for this runnable."""
         return AnyMessage
 
-    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if isinstance(input, PromptValue):
-            return input
-        elif isinstance(input, str):
-            return StringPromptValue(text=input)
-        elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
+    def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
+        if isinstance(model_input, PromptValue):
+            return model_input
+        elif isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        elif isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
         else:
             msg = (
-                f"Invalid input type {type(input)}. "
+                f"Invalid input type {type(model_input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
             raise ValueError(msg)  # noqa: TRY004
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -316,6 +317,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ).generations[0][0],
         ).message
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -372,6 +374,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -453,6 +456,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
             run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,

@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 
 import jsonpatch  # type: ignore[import]
 from pydantic import BaseModel, model_validator
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -68,6 +69,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _type(self) -> str:
         return "json_functions"
 
+    @override
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
