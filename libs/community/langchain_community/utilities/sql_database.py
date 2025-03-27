@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
@@ -42,6 +43,16 @@ def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
         return content
 
     return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+
+
+def sanitize_schema(schema: str) -> str:
+    """Sanitize a schema name to only contain letters, digits, and underscores."""
+    if not re.match(r"^[a-zA-Z0-9_]+$", schema):
+        raise ValueError(
+            f"Schema name '{schema}' contains invalid characters. "
+            "Schema names must contain only letters, digits, and underscores."
+        )
+    return schema
 
 
 class SQLDatabase:
@@ -467,7 +478,7 @@ class SQLDatabase:
                     )
                 elif self.dialect == "hana":
                     connection.exec_driver_sql(
-                        f"SET SCHEMA {self._schema}",
+                        f"SET SCHEMA {sanitize_schema(self._schema)}",
                         execution_options=execution_options,
                     )
 
