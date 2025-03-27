@@ -458,14 +458,25 @@ class Weaviate(VectorStore):
                 "Please install it with `pip install weaviate-client`"
             ) from e
 
-        client = client or _create_weaviate_client(
-            url=weaviate_url,
-            api_key=weaviate_api_key,
+        # SemanticSimilarityExampleSelector.from_examples need to init client
+        # here could keep client instance in vectorstore_cls_kwargs
+        client = (
+            client
+            or kwargs["vectorstore_cls_kwargs"]["client"]
+            or _create_weaviate_client(
+                url=weaviate_url,
+                api_key=weaviate_api_key,
+            )
         )
         if batch_size:
             client.batch.configure(batch_size=batch_size)
 
-        index_name = index_name or f"LangChain_{uuid4().hex}"
+        index_name = (
+            index_name
+            or kwargs["vectorstore_cls_kwargs"]["index_name"]
+            or f"LangChain_{uuid4().hex}"
+        )
+        text_key = text_key or kwargs["vectorstore_cls_kwargs"]["text_key"]
         schema = _default_schema(index_name, text_key)
         # check whether the index already exists
         if not client.schema.exists(index_name):
