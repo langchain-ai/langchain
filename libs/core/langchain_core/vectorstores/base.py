@@ -294,8 +294,7 @@ class VectorStore(ABC):
     async def aadd_documents(
         self, documents: list[Document], **kwargs: Any
     ) -> list[str]:
-        """Async run more documents through the embeddings and add to
-        the vectorstore.
+        """Async run more documents through the embeddings and add to the vectorstore.
 
         Args:
             documents: Documents to add to the vectorstore.
@@ -434,7 +433,8 @@ class VectorStore(ABC):
         return -1.0 * distance
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """The 'correct' relevance function
+        """The 'correct' relevance function.
+
         may differ depending on a few things, including:
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
@@ -484,8 +484,9 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """Default similarity search with relevance scores. Modify if necessary
-        in subclass.
+        """Default similarity search with relevance scores.
+
+        Modify if necessary in subclass.
         Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -510,8 +511,9 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """Default similarity search with relevance scores. Modify if necessary
-        in subclass.
+        """Default similarity search with relevance scores.
+
+        Modify if necessary in subclass.
         Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -732,6 +734,7 @@ class VectorStore(ABC):
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of Documents selected by maximal marginal relevance.

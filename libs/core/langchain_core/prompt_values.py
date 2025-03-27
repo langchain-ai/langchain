@@ -36,6 +36,7 @@ class PromptValue(Serializable, ABC):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         This is used to determine the namespace of the object when serializing.
         Defaults to ["langchain", "schema", "prompt"].
         """
@@ -60,6 +61,7 @@ class StringPromptValue(PromptValue):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         This is used to determine the namespace of the object when serializing.
         Defaults to ["langchain", "prompts", "base"].
         """
@@ -94,6 +96,7 @@ class ChatPromptValue(PromptValue):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         This is used to determine the namespace of the object when serializing.
         Defaults to ["langchain", "prompts", "chat"].
         """
@@ -129,6 +132,7 @@ class ImagePromptValue(PromptValue):
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
+
     For use in external schemas.
     """
 
@@ -136,11 +140,3 @@ class ChatPromptValueConcrete(ChatPromptValue):
     """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        This is used to determine the namespace of the object when serializing.
-        Defaults to ["langchain", "prompts", "chat"].
-        """
-        return ["langchain", "prompts", "chat"]

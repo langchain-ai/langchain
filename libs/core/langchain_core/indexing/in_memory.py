@@ -1,3 +1,5 @@
+"""In memory document index."""
+
 import operator
 import uuid
 from collections.abc import Sequence

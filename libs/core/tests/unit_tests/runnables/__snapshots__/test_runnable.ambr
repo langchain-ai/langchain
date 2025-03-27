@@ -3743,6 +3743,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -5247,6 +5248,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -8142,6 +8144,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -10990,6 +10993,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({
@@ -12455,6 +12459,7 @@
       'ChatPromptValueConcrete': dict({
         'description': '''
           Chat prompt value which explicitly lists out the message types it accepts.
+          
           For use in external schemas.
         ''',
         'properties': dict({

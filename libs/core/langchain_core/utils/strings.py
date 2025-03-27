@@ -1,3 +1,5 @@
+"""String utilities."""
+
 from typing import Any
 
 

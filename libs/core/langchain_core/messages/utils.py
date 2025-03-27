@@ -83,7 +83,7 @@ AnyMessage = Annotated[
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
-    """Convert a sequence of Messages to strings and concatenate them into one string.
+    r"""Convert a sequence of Messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
@@ -532,7 +532,7 @@ def merge_message_runs(
     *,
     chunk_separator: str = "\n",
 ) -> list[BaseMessage]:
-    """Merge consecutive Messages of the same type.
+    r"""Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
     can't be merged.
@@ -682,7 +682,7 @@ def trim_messages(
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
             Set to `len` to count the number of **messages** in the chat history.
 
-            Note:
+            .. note::
                 Use `count_tokens_approximately` to get fast, approximate token counts.
                 This is recommended for using `trim_messages` on the hot path, where
                 exact token counting is not necessary.

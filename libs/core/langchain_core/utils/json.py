@@ -1,3 +1,5 @@
+"""Utilities for JSON."""
+
 from __future__ import annotations
 
 import json
@@ -18,7 +20,9 @@ def _replace_new_line(match: re.Match[str]) -> str:
 
 
 def _custom_parser(multiline_string: str) -> str:
-    """The LLM response for `action_input` may be a multiline
+    r"""Custom parser for multiline strings.
+
+    The LLM response for `action_input` may be a multiline
     string containing unescaped newlines, tabs or quotes. This function
     replaces those characters with their escaped counterparts.
     (newlines in JSON must be double-escaped: `\\n`).
@@ -132,6 +136,7 @@ def parse_json_markdown(
 
     Args:
         json_string: The Markdown string.
+        parser: The parser to use. Defaults to `parse_partial_json`.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -165,8 +170,9 @@ def _parse_json(
 
 
 def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
-    """Parse a JSON string from a Markdown string and check that it
-    contains the expected keys.
+    """Parse and check a JSON string from a Markdown string.
+
+    Checks that it contains the expected keys.
 
     Args:
         text: The Markdown string.

@@ -1,4 +1,5 @@
-"""Adapted from https://github.com/noahmorrison/chevron
+"""Adapted from https://github.com/noahmorrison/chevron.
+
 MIT License.
 """
 
