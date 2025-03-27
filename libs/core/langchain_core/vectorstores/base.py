@@ -36,6 +36,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
@@ -818,11 +819,11 @@ class VectorStore(ABC):
 
     @classmethod
     def from_documents(
-        cls: type[VST],
+        cls,
         documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Return VectorStore initialized from documents and embeddings.
 
         Args:
@@ -848,11 +849,11 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls: type[VST],
+        cls,
         documents: list[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Async return VectorStore initialized from documents and embeddings.
 
         Args:
@@ -903,14 +904,14 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_texts(
-        cls: type[VST],
+        cls,
         texts: list[str],
         embedding: Embeddings,
         metadatas: Optional[list[dict]] = None,
         *,
         ids: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Self:
         """Async return VectorStore initialized from texts and embeddings.
 
         Args:

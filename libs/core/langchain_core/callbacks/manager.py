@@ -22,6 +22,7 @@ from typing import (
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
+from typing_extensions import Self
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -489,7 +490,7 @@ class BaseRunManager(RunManagerMixin):
         self.inheritable_metadata = inheritable_metadata or {}
 
     @classmethod
-    def get_noop_manager(cls: type[BRM]) -> BRM:
+    def get_noop_manager(cls) -> Self:
         """Return a manager that doesn't perform any operations.
 
         Returns:

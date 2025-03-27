@@ -4200,7 +4200,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     @override
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, RunnableGenerator):
             if hasattr(self, "_transform") and hasattr(other, "_transform"):
                 return self._transform == other._transform
@@ -4582,7 +4582,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return graph
 
     @override
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, RunnableLambda):
             if hasattr(self, "func") and hasattr(other, "func"):
                 return self.func == other.func
@@ -5880,22 +5880,24 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
 
 
 class _RunnableCallableSync(Protocol[Input, Output]):
-    def __call__(self, __in: Input, *, config: RunnableConfig) -> Output: ...
+    def __call__(self, _in: Input, /, *, config: RunnableConfig) -> Output: ...
 
 
 class _RunnableCallableAsync(Protocol[Input, Output]):
-    def __call__(self, __in: Input, *, config: RunnableConfig) -> Awaitable[Output]: ...
+    def __call__(
+        self, _in: Input, /, *, config: RunnableConfig
+    ) -> Awaitable[Output]: ...
 
 
 class _RunnableCallableIterator(Protocol[Input, Output]):
     def __call__(
-        self, __in: Iterator[Input], *, config: RunnableConfig
+        self, _in: Iterator[Input], /, *, config: RunnableConfig
     ) -> Iterator[Output]: ...
 
 
 class _RunnableCallableAsyncIterator(Protocol[Input, Output]):
     def __call__(
-        self, __in: AsyncIterator[Input], *, config: RunnableConfig
+        self, _in: AsyncIterator[Input], /, *, config: RunnableConfig
     ) -> AsyncIterator[Output]: ...
 
 
