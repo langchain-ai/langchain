@@ -464,9 +464,9 @@ class ChatMistralAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
-        # retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
-        # @retry_decorator
+        @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
             if "stream" not in kwargs:
                 kwargs["stream"] = False
