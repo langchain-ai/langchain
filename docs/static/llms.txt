@@ -354,7 +354,7 @@ large volumes of text. For a high-level tutorial, check out [this guide](https:/
 Tracing gives you observability inside your chains and agents, and is vital in diagnosing issues.
 
 - [How to: trace with LangChain](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain/)
-- [How to: add metadata and tags to traces](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain#add-metadata-and-tags-to-traces)
+- [How to: add metadata and tags to traces](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain/#add-metadata-and-tags-to-traces)
 
 You can see general tracing-related how-tos [in this section of the LangSmith docs](https://docs.smith.langchain.com/how_to_guides/tracing/).
 
@@ -387,50 +387,50 @@ Other chat model integrations can be found [here](https://python.langchain.com/d
 
 ## Glossary
 
-- **[AIMessageChunk](https://python.langchain.com/docs/concepts/messages#aimessagechunk)**: A partial response from an AI message. Used when streaming responses from a chat model.
-- **[AIMessage](https://python.langchain.com/docs/concepts/messages#aimessage)**: Represents a complete response from an AI model.
-- **[astream_events](https://python.langchain.com/docs/concepts/chat_models#key-methods)**: Stream granular information from [LCEL](https://python.langchain.com/docs/concepts/lcel/) chains.
+- **[AIMessageChunk](https://python.langchain.com/docs/concepts/messages/#aimessagechunk)**: A partial response from an AI message. Used when streaming responses from a chat model.
+- **[AIMessage](https://python.langchain.com/docs/concepts/messages/#aimessage)**: Represents a complete response from an AI model.
+- **[astream_events](https://python.langchain.com/docs/concepts/chat_models/#key-methods)**: Stream granular information from [LCEL](https://python.langchain.com/docs/concepts/lcel/) chains.
 - **[BaseTool](https://python.langchain.com/docs/concepts/tools/#tool-interface)**: The base class for all tools in LangChain.
 - **[batch](https://python.langchain.com/docs/concepts/runnables/)**: Use to execute a runnable with batch inputs.
 - **[bind_tools](https://python.langchain.com/docs/concepts/tool_calling/#tool-binding)**: Allows models to interact with tools.
-- **[Caching](https://python.langchain.com/docs/concepts/chat_models#caching)**: Storing results to avoid redundant calls to a chat model.
+- **[Caching](https://python.langchain.com/docs/concepts/chat_models/#caching)**: Storing results to avoid redundant calls to a chat model.
 - **[Chat models](https://python.langchain.com/docs/concepts/multimodality/#multimodality-in-chat-models)**: Chat models that handle multiple data modalities.
 - **[Configurable runnables](https://python.langchain.com/docs/concepts/runnables/#configurable-runnables)**: Creating configurable Runnables.
-- **[Context window](https://python.langchain.com/docs/concepts/chat_models#context-window)**: The maximum size of input a chat model can process.
-- **[Conversation patterns](https://python.langchain.com/docs/concepts/chat_history#conversation-patterns)**: Common patterns in chat interactions.
+- **[Context window](https://python.langchain.com/docs/concepts/chat_models/#context-window)**: The maximum size of input a chat model can process.
+- **[Conversation patterns](https://python.langchain.com/docs/concepts/chat_history/#conversation-patterns)**: Common patterns in chat interactions.
 - **[Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html/)**: LangChain's representation of a document.
 - **[Embedding models](https://python.langchain.com/docs/concepts/multimodality/#multimodality-in-embedding-models)**: Models that generate vector embeddings for various data types.
-- **[HumanMessage](https://python.langchain.com/docs/concepts/messages#humanmessage)**: Represents a message from a human user.
-- **[InjectedState](https://python.langchain.com/docs/concepts/tools#injectedstate)**: A state injected into a tool function.
-- **[InjectedStore](https://python.langchain.com/docs/concepts/tools#injectedstore)**: A store that can be injected into a tool for data persistence.
-- **[InjectedToolArg](https://python.langchain.com/docs/concepts/tools#injectedtoolarg)**: Mechanism to inject arguments into tool functions.
-- **[input and output types](https://python.langchain.com/docs/concepts/runnables#input-and-output-types)**: Types used for input and output in Runnables.
+- **[HumanMessage](https://python.langchain.com/docs/concepts/messages/#humanmessage)**: Represents a message from a human user.
+- **[InjectedState](https://python.langchain.com/docs/concepts/tools/#injectedstate)**: A state injected into a tool function.
+- **[InjectedStore](https://python.langchain.com/docs/concepts/tools/#injectedstore)**: A store that can be injected into a tool for data persistence.
+- **[InjectedToolArg](https://python.langchain.com/docs/concepts/tools/#injectedtoolarg)**: Mechanism to inject arguments into tool functions.
+- **[input and output types](https://python.langchain.com/docs/concepts/runnables/#input-and-output-types)**: Types used for input and output in Runnables.
 - **[Integration packages](https://python.langchain.com/docs/concepts/architecture/#integration-packages)**: Third-party packages that integrate with LangChain.
-- **[Integration tests](https://python.langchain.com/docs/concepts/testing#integration-tests)**: Tests that verify the correctness of the interaction between components, usually run with access to the underlying API that powers an integration.
+- **[Integration tests](https://python.langchain.com/docs/concepts/testing/#integration-tests)**: Tests that verify the correctness of the interaction between components, usually run with access to the underlying API that powers an integration.
 - **[invoke](https://python.langchain.com/docs/concepts/runnables/)**: A standard method to invoke a Runnable.
-- **[JSON mode](https://python.langchain.com/docs/concepts/structured_outputs#json-mode)**: Returning responses in JSON format.
-- **[langchain-community](https://python.langchain.com/docs/concepts/architecture#langchain-community)**: Community-driven components for LangChain.
-- **[langchain-core](https://python.langchain.com/docs/concepts/architecture#langchain-core)**: Core langchain package. Includes base interfaces and in-memory implementations.
-- **[langchain](https://python.langchain.com/docs/concepts/architecture#langchain)**: A package for higher level components (e.g., some pre-built chains).
-- **[langgraph](https://python.langchain.com/docs/concepts/architecture#langgraph)**: Powerful orchestration layer for LangChain. Use to build complex pipelines and workflows.
-- **[Managing chat history](https://python.langchain.com/docs/concepts/chat_history#managing-chat-history)**: Techniques to maintain and manage the chat history.
-- **[OpenAI format](https://python.langchain.com/docs/concepts/messages#openai-format)**: OpenAI's message format for chat models.
+- **[JSON mode](https://python.langchain.com/docs/concepts/structured_outputs/#json-mode)**: Returning responses in JSON format.
+- **[langchain-community](https://python.langchain.com/docs/concepts/architecture/#langchain-community)**: Community-driven components for LangChain.
+- **[langchain-core](https://python.langchain.com/docs/concepts/architecture/#langchain-core)**: Core langchain package. Includes base interfaces and in-memory implementations.
+- **[langchain](https://python.langchain.com/docs/concepts/architecture/#langchain)**: A package for higher level components (e.g., some pre-built chains).
+- **[langgraph](https://python.langchain.com/docs/concepts/architecture/#langgraph)**: Powerful orchestration layer for LangChain. Use to build complex pipelines and workflows.
+- **[Managing chat history](https://python.langchain.com/docs/concepts/chat_history/#managing-chat-history)**: Techniques to maintain and manage the chat history.
+- **[OpenAI format](https://python.langchain.com/docs/concepts/messages/#openai-format)**: OpenAI's message format for chat models.
 - **[Propagation of RunnableConfig](https://python.langchain.com/docs/concepts/runnables/#propagation-of-runnableconfig)**: Propagating configuration through Runnables. Read if working with python 3.9, 3.10 and async.
-- **[rate-limiting](https://python.langchain.com/docs/concepts/chat_models#rate-limiting)**: Client side rate limiting for chat models.
+- **[rate-limiting](https://python.langchain.com/docs/concepts/chat_models/#rate-limiting)**: Client side rate limiting for chat models.
 - **[RemoveMessage](https://python.langchain.com/docs/concepts/messages/#removemessage)**: An abstraction used to remove a message from chat history, used primarily in LangGraph.
-- **[role](https://python.langchain.com/docs/concepts/messages#role)**: Represents the role (e.g., user, assistant) of a chat message.
+- **[role](https://python.langchain.com/docs/concepts/messages/#role)**: Represents the role (e.g., user, assistant) of a chat message.
 - **[RunnableConfig](https://python.langchain.com/docs/concepts/runnables/#runnableconfig)**: Use to pass run time information to Runnables (e.g., `run_name`, `run_id`, `tags`, `metadata`, `max_concurrency`, `recursion_limit`, `configurable`).
-- **[Standard parameters for chat models](https://python.langchain.com/docs/concepts/chat_models#standard-parameters)**: Parameters such as API key, `temperature`, and `max_tokens`.
-- **[Standard tests](https://python.langchain.com/docs/concepts/testing#standard-tests)**: A defined set of unit and integration tests that all integrations must pass.
+- **[Standard parameters for chat models](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters)**: Parameters such as API key, `temperature`, and `max_tokens`.
+- **[Standard tests](https://python.langchain.com/docs/concepts/testing/#standard-tests)**: A defined set of unit and integration tests that all integrations must pass.
 - **[stream](https://python.langchain.com/docs/concepts/streaming/)**: Use to stream output from a Runnable or a graph.
 - **[Tokenization](https://python.langchain.com/docs/concepts/tokens/)**: The process of converting data into tokens and vice versa.
 - **[Tokens](https://python.langchain.com/docs/concepts/tokens/)**: The basic unit that a language model reads, processes, and generates under the hood.
-- **[Tool artifacts](https://python.langchain.com/docs/concepts/tools#tool-artifacts)**: Add artifacts to the output of a tool that will not be sent to the model, but will be available for downstream processing.
-- **[Tool binding](https://python.langchain.com/docs/concepts/tool_calling#tool-binding)**: Binding tools to models.
+- **[Tool artifacts](https://python.langchain.com/docs/concepts/tools/#tool-artifacts)**: Add artifacts to the output of a tool that will not be sent to the model, but will be available for downstream processing.
+- **[Tool binding](https://python.langchain.com/docs/concepts/tool_calling/#tool-binding)**: Binding tools to models.
 - **[@tool](https://python.langchain.com/docs/concepts/tools/#create-tools-using-the-tool-decorator)**: Decorator for creating tools in LangChain.
-- **[Toolkits](https://python.langchain.com/docs/concepts/tools#toolkits)**: A collection of tools that can be used together.
-- **[ToolMessage](https://python.langchain.com/docs/concepts/messages#toolmessage)**: Represents a message that contains the results of a tool execution.
-- **[Unit tests](https://python.langchain.com/docs/concepts/testing#unit-tests)**: Tests that verify the correctness of individual components, run in isolation without access to the Internet.
+- **[Toolkits](https://python.langchain.com/docs/concepts/tools/#toolkits)**: A collection of tools that can be used together.
+- **[ToolMessage](https://python.langchain.com/docs/concepts/messages/#toolmessage)**: Represents a message that contains the results of a tool execution.
+- **[Unit tests](https://python.langchain.com/docs/concepts/testing/#unit-tests)**: Tests that verify the correctness of individual components, run in isolation without access to the Internet.
 - **[Vector stores](https://python.langchain.com/docs/concepts/vectorstores/)**: Datastores specialized for storing and efficiently searching vector embeddings.
 - **[with_structured_output](https://python.langchain.com/docs/concepts/structured_outputs/#structured-output-method)**: A helper method for chat models that natively support [tool calling](https://python.langchain.com/docs/concepts/tool_calling/) to get structured output matching a given schema specified via Pydantic, JSON schema or a function.
-- **[with_types](https://python.langchain.com/docs/concepts/runnables#with_types)**: Method to overwrite the input and output types of a runnable. Useful when working with complex LCEL chains and deploying with LangServe.
+- **[with_types](https://python.langchain.com/docs/concepts/runnables/#with_types)**: Method to overwrite the input and output types of a runnable. Useful when working with complex LCEL chains and deploying with LangServe.
