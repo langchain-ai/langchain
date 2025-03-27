@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -18,13 +17,15 @@ from langsmith import utils as ls_utils
 
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from langchain_core.tracers.schemas import TracerSessionV1
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from langsmith import Client as LangSmithClient
 
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
+    from langchain_core.tracers.schemas import TracerSessionV1
 
 # for backwards partial compatibility if this is imported by users but unused
 tracing_callback_var: Any = None
@@ -88,11 +89,11 @@ def tracing_v2_enabled(
         tags=tags,
         client=client,
     )
+    token = tracing_v2_callback_var.set(cb)
     try:
-        tracing_v2_callback_var.set(cb)
         yield cb
     finally:
-        tracing_v2_callback_var.set(None)
+        tracing_v2_callback_var.reset(token)
 
 
 @contextmanager
@@ -108,9 +109,11 @@ def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
                 run_id = runs_cb.traced_runs[0].id
     """
     cb = RunCollectorCallbackHandler()
-    run_collector_var.set(cb)
-    yield cb
-    run_collector_var.set(None)
+    token = run_collector_var.set(cb)
+    try:
+        yield cb
+    finally:
+        run_collector_var.reset(token)
 
 
 def _get_trace_callbacks(

@@ -845,6 +845,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         operator_map = {
             "$eq": "=",
             "$ne": "!=",
+            "$in": "IN",
             "$lt": "<",
             "$lte": "<=",
             "$gt": ">",

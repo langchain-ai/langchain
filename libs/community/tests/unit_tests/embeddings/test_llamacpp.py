@@ -38,3 +38,11 @@ def test_embed_query(mock_llama_client: MagicMock) -> None:
     result = embeddings.embed_query("Sample query")
     expected = [0.1, 0.2, 0.3]
     assert result == expected
+
+
+def test_embed_query_not_nested(mock_llama_client: MagicMock) -> None:
+    mock_llama_client.embed.return_value = [0.1, 0.2, 0.3]
+    embeddings = LlamaCppEmbeddings(client=mock_llama_client)  # type: ignore[call-arg]
+    result = embeddings.embed_query("Sample query")
+    expected = [0.1, 0.2, 0.3]
+    assert result == expected

@@ -43,27 +43,27 @@ class JiraToolkit(BaseToolkit):
         operations: List[Dict] = [
             {
                 "mode": "jql",
-                "name": "JQL Query",
+                "name": "jql_query",
                 "description": JIRA_JQL_PROMPT,
             },
             {
                 "mode": "get_projects",
-                "name": "Get Projects",
+                "name": "get_projects",
                 "description": JIRA_GET_ALL_PROJECTS_PROMPT,
             },
             {
                 "mode": "create_issue",
-                "name": "Create Issue",
+                "name": "create_issue",
                 "description": JIRA_ISSUE_CREATE_PROMPT,
             },
             {
                 "mode": "other",
-                "name": "Catch all Jira API call",
+                "name": "catch_all_jira_api",
                 "description": JIRA_CATCH_ALL_PROMPT,
             },
             {
                 "mode": "create_page",
-                "name": "Create confluence page",
+                "name": "create_confluence_page",
                 "description": JIRA_CONFLUENCE_PAGE_CREATE_PROMPT,
             },
         ]

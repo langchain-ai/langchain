@@ -76,6 +76,7 @@ class ChatParrotLink(BaseChatModel):
             additional_kwargs={},  # Used to add additional payload to the message
             response_metadata={  # Use for response metadata
                 "time_in_seconds": 3,
+                "model_name": self.model_name,
             },
             usage_metadata={
                 "input_tokens": ct_input_tokens,
@@ -138,7 +139,10 @@ class ChatParrotLink(BaseChatModel):
 
         # Let's add some other information (e.g., response metadata)
         chunk = ChatGenerationChunk(
-            message=AIMessageChunk(content="", response_metadata={"time_in_sec": 3})
+            message=AIMessageChunk(
+                content="",
+                response_metadata={"time_in_sec": 3, "model_name": self.model_name},
+            )
         )
         if run_manager:
             # This is optional in newer versions of LangChain

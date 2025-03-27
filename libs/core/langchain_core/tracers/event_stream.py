@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -37,13 +36,15 @@ from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
-from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.utils.aiter import aclosing, py_anext
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator, Sequence
+
     from langchain_core.documents import Document
     from langchain_core.runnables import Runnable, RunnableConfig
+    from langchain_core.tracers.log_stream import LogEntry
 
 logger = logging.getLogger(__name__)
 

@@ -4,6 +4,7 @@ import os
 from unittest import mock
 
 import pytest
+from langchain_core.messages import HumanMessage
 from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
@@ -81,3 +82,20 @@ def test_structured_output_old_model() -> None:
     # assert tool calling was used instead of json_schema
     assert "tools" in llm.steps[0].kwargs  # type: ignore
     assert "response_format" not in llm.steps[0].kwargs  # type: ignore
+
+
+def test_max_completion_tokens_in_payload() -> None:
+    llm = AzureChatOpenAI(
+        azure_deployment="o1-mini",
+        api_version="2024-12-01-preview",
+        azure_endpoint="my-base-url",
+        model_kwargs={"max_completion_tokens": 300},
+    )
+    messages = [HumanMessage("Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload == {
+        "messages": [{"content": "Hello", "role": "user"}],
+        "model": None,
+        "stream": False,
+        "max_completion_tokens": 300,
+    }

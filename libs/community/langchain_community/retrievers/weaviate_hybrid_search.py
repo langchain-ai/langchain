@@ -3,12 +3,18 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict, model_validator
 
 
+@deprecated(
+    since="0.3.18",
+    removal="1.0",
+    alternative_import="langchain_weaviate.WeaviateVectorStore",
+)
 class WeaviateHybridSearchRetriever(BaseRetriever):
     """`Weaviate hybrid search` retriever.
 

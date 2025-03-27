@@ -75,6 +75,7 @@ class LanceDB(VectorStore):
     ):
         """Initialize with Lance DB vectorstore"""
         lancedb = guard_import("lancedb")
+        lancedb.remote.table = guard_import("lancedb.remote.table")
         self._embedding = embedding
         self._vector_key = vector_key
         self._id_key = id_key

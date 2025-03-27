@@ -5,7 +5,6 @@ import functools
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
@@ -21,7 +20,6 @@ from typing import (
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
-from tenacity import RetryCallState
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -39,6 +37,10 @@ from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
+
+    from tenacity import RetryCallState
+
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult

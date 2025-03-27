@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 import threading
 import weakref
-from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from uuid import UUID
 
 import langsmith
@@ -17,7 +16,11 @@ from langchain_core.tracers import langchain as langchain_tracer
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import tracing_v2_enabled
 from langchain_core.tracers.langchain import _get_executor
-from langchain_core.tracers.schemas import Run
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.tracers.schemas import Run
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,6 @@ _TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
 
 def wait_for_all_evaluators() -> None:
     """Wait for all tracers to finish."""
-    global _TRACERS
     for tracer in list(_TRACERS):
         if tracer is not None:
             tracer.wait_for_futures()
@@ -97,7 +99,6 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.project_name = project_name
         self.logged_eval_results: dict[tuple[str, str], list[EvaluationResult]] = {}
         self.lock = threading.Lock()
-        global _TRACERS
         _TRACERS.add(self)
 
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:

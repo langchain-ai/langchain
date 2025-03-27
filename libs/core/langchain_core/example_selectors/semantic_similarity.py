@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
+    from langchain_core.documents import Document
     from langchain_core.embeddings import Embeddings
 
 

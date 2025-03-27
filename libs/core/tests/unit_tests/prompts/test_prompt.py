@@ -354,7 +354,7 @@ def test_prompt_from_file_with_partial_variables() -> None:
     template = "This is a {foo} test {bar}."
     partial_variables = {"bar": "baz"}
     # when
-    with mock.patch("builtins.open", mock.mock_open(read_data=template)):
+    with mock.patch("pathlib.Path.open", mock.mock_open(read_data=template)):
         prompt = PromptTemplate.from_file(
             "mock_file_name", partial_variables=partial_variables
         )

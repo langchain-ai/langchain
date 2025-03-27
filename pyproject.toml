@@ -80,9 +80,6 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
-extend-exclude = [
-    "docs/docs/expression_language/why.ipynb", # TODO: look into why linter errors
-]
 
 [tool.ruff.lint]
 select = ["D"]
@@ -97,8 +94,3 @@ pydocstyle = { convention = "google" }
 
 ]
 "!libs/langchain/langchain/model_laboratory.py" = ["D"]
-
-# These files were failing the listed rules at the time ruff was adopted for notebooks.
-# Don't require them to change at once, though we should look into them eventually.
-"cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
-"docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
