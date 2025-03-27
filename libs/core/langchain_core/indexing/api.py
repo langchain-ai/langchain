@@ -473,7 +473,9 @@ def index(
                 record_manager.delete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full" or cleanup == "scoped_full":
+    if cleanup == "full" or (
+        cleanup == "scoped_full" and scoped_full_cleanup_source_ids
+    ):
         delete_group_ids: Optional[Sequence[str]] = None
         if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)
@@ -786,7 +788,9 @@ async def aindex(
                 await record_manager.adelete_keys(uids_to_delete)
                 num_deleted += len(uids_to_delete)
 
-    if cleanup == "full" or cleanup == "scoped_full":
+    if cleanup == "full" or (
+        cleanup == "scoped_full" and scoped_full_cleanup_source_ids
+    ):
         delete_group_ids: Optional[Sequence[str]] = None
         if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)
