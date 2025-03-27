@@ -599,8 +599,7 @@ def test_tracer_nested_runs_on_error() -> None:
 
 def _get_mock_client() -> Client:
     mock_session = MagicMock()
-    client = Client(session=mock_session, api_key="test")
-    return client
+    return Client(session=mock_session, api_key="test")
 
 
 def test_traceable_to_tracing() -> None:

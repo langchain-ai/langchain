@@ -2887,11 +2887,10 @@ def test_higher_order_lambda_runnable(
     def router(input: dict[str, Any]) -> Runnable:
         if input["key"] == "math":
             return itemgetter("input") | math_chain
-        elif input["key"] == "english":
+        if input["key"] == "english":
             return itemgetter("input") | english_chain
-        else:
-            msg = f"Unknown key: {input['key']}"
-            raise ValueError(msg)
+        msg = f"Unknown key: {input['key']}"
+        raise ValueError(msg)
 
     chain: Runnable = input_map | router
     assert dumps(chain, pretty=True) == snapshot
@@ -2944,11 +2943,10 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     def router(input: dict[str, Any]) -> Runnable:
         if input["key"] == "math":
             return itemgetter("input") | math_chain
-        elif input["key"] == "english":
+        if input["key"] == "english":
             return itemgetter("input") | english_chain
-        else:
-            msg = f"Unknown key: {input['key']}"
-            raise ValueError(msg)
+        msg = f"Unknown key: {input['key']}"
+        raise ValueError(msg)
 
     chain: Runnable = input_map | router
 
@@ -2967,11 +2965,10 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     async def arouter(input: dict[str, Any]) -> Runnable:
         if input["key"] == "math":
             return itemgetter("input") | math_chain
-        elif input["key"] == "english":
+        if input["key"] == "english":
             return itemgetter("input") | english_chain
-        else:
-            msg = f"Unknown key: {input['key']}"
-            raise ValueError(msg)
+        msg = f"Unknown key: {input['key']}"
+        raise ValueError(msg)
 
     achain: Runnable = input_map | arouter
     math_spy = mocker.spy(math_chain.__class__, "ainvoke")
@@ -3803,8 +3800,7 @@ def test_recursive_lambda() -> None:
     def _simple_recursion(x: int) -> Union[int, Runnable]:
         if x < 10:
             return RunnableLambda(lambda *args: _simple_recursion(x + 1))
-        else:
-            return x
+        return x
 
     runnable = RunnableLambda(_simple_recursion)
     assert runnable.invoke(5) == 10
@@ -3818,11 +3814,10 @@ def test_retrying(mocker: MockerFixture) -> None:
         if x == 1:
             msg = "x is 1"
             raise ValueError(msg)
-        elif x == 2:
+        if x == 2:
             msg = "x is 2"
             raise RuntimeError(msg)
-        else:
-            return x
+        return x
 
     _lambda_mock = mocker.Mock(side_effect=_lambda)
     runnable = RunnableLambda(_lambda_mock)
@@ -3883,11 +3878,10 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
         if x == 1:
             msg = "x is 1"
             raise ValueError(msg)
-        elif x == 2:
+        if x == 2:
             msg = "x is 2"
             raise RuntimeError(msg)
-        else:
-            return x
+        return x
 
     _lambda_mock = mocker.Mock(side_effect=_lambda)
     runnable = RunnableLambda(_lambda_mock)

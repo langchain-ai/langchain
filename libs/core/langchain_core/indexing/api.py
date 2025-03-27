@@ -152,16 +152,15 @@ def _get_source_id_assigner(
     """Get the source id from the document."""
     if source_id_key is None:
         return lambda doc: None
-    elif isinstance(source_id_key, str):
+    if isinstance(source_id_key, str):
         return lambda doc: doc.metadata[source_id_key]
-    elif callable(source_id_key):
+    if callable(source_id_key):
         return source_id_key
-    else:
-        msg = (
-            f"source_id_key should be either None, a string or a callable. "
-            f"Got {source_id_key} of type {type(source_id_key)}."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"source_id_key should be either None, a string or a callable. "
+        f"Got {source_id_key} of type {type(source_id_key)}."
+    )
+    raise ValueError(msg)
 
 
 def _deduplicate_in_order(

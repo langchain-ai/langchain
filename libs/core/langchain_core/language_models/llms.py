@@ -252,8 +252,7 @@ def update_cache(
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache is not None:
             llm_cache.update(prompt, llm_string, result)
-    llm_output = new_results.llm_output
-    return llm_output
+    return new_results.llm_output
 
 
 async def aupdate_cache(
@@ -286,8 +285,7 @@ async def aupdate_cache(
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result)
-    llm_output = new_results.llm_output
-    return llm_output
+    return new_results.llm_output
 
 
 class BaseLLM(BaseLanguageModel[str], ABC):
@@ -331,16 +329,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):
             return input
-        elif isinstance(input, str):
+        if isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, Sequence):
+        if isinstance(input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(input))
-        else:
-            msg = (
-                f"Invalid input type {type(input)}. "
-                "Must be a PromptValue, str, or list of BaseMessages."
-            )
-            raise ValueError(msg)  # noqa: TRY004
+        msg = (
+            f"Invalid input type {type(input)}. "
+            "Must be a PromptValue, str, or list of BaseMessages."
+        )
+        raise ValueError(msg)  # noqa: TRY004
 
     def _get_ls_params(
         self,
@@ -450,8 +447,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             except Exception as e:
                 if return_exceptions:
                     return cast(list[str], [e for _ in inputs])
-                else:
-                    raise
+                raise
         else:
             batches = [
                 inputs[i : i + max_concurrency]
@@ -496,8 +492,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             except Exception as e:
                 if return_exceptions:
                     return cast(list[str], [e for _ in inputs])
-                else:
-                    raise
+                raise
         else:
             batches = [
                 inputs[i : i + max_concurrency]
@@ -963,10 +958,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     callback_managers, prompts, run_name_list, run_ids_list
                 )
             ]
-            output = self._generate_helper(
+            return self._generate_helper(
                 prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
-            return output
         if len(missing_prompts) > 0:
             run_managers = [
                 callback_managers[idx].on_llm_start(
@@ -1211,14 +1205,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 ]
             )
             run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
-            output = await self._agenerate_helper(
+            return await self._agenerate_helper(
                 prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
                 bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )
-            return output
         if len(missing_prompts) > 0:
             run_managers = await asyncio.gather(
                 *[
