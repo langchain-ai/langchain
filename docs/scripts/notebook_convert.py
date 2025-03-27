@@ -9,9 +9,12 @@ import nbformat
 from nbconvert.exporters import MarkdownExporter
 from nbconvert.preprocessors import Preprocessor
 
+HIDE_IN_NB_MAGIC_OPEN = "<!-- HIDE_IN_NB"
+HIDE_IN_NB_MAGIC_CLOSE = "HIDE_IN_NB -->"
+
 
 class EscapePreprocessor(Preprocessor):
-    def preprocess_cell(self, cell, resources, cell_index):
+    def preprocess_cell(self, cell, resources, index):
         if cell.cell_type == "markdown":
             # rewrite .ipynb links to .md
             cell.source = re.sub(
@@ -61,7 +64,7 @@ class ExtractAttachmentsPreprocessor(Preprocessor):
     outputs are returned in the 'resources' dictionary.
     """
 
-    def preprocess_cell(self, cell, resources, cell_index):
+    def preprocess_cell(self, cell, resources, index):
         """
         Apply a transformation on each cell,
         Parameters
@@ -117,11 +120,19 @@ class CustomRegexRemovePreprocessor(Preprocessor):
         return nb, resources
 
 
+class UnHidePreprocessor(Preprocessor):
+    def preprocess_cell(self, cell, resources, index):
+        cell.source = cell.source.replace(HIDE_IN_NB_MAGIC_OPEN, "")
+        cell.source = cell.source.replace(HIDE_IN_NB_MAGIC_CLOSE, "")
+        return cell, resources
+
+
 exporter = MarkdownExporter(
     preprocessors=[
         EscapePreprocessor,
         ExtractAttachmentsPreprocessor,
         CustomRegexRemovePreprocessor,
+        UnHidePreprocessor,
     ],
     template_name="mdoutput",
     extra_template_basedirs=["./scripts/notebook_convert_templates"],
