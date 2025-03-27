@@ -143,7 +143,7 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast(T, obj)
+                return cast("T", obj)
 
         elif isinstance(obj, property):
             # note(erick): this block doesn't seem to be used?
@@ -217,7 +217,7 @@ def beta(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return cast(T, wrapper)
+                return cast("T", wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n") or ""
         components = [message, addendum]
@@ -228,7 +228,7 @@ def beta(
             finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
             finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast(T, finalized)
+        return cast("T", finalized)
 
     return beta
 

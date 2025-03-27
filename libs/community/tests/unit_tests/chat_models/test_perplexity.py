@@ -116,3 +116,160 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
     assert full.additional_kwargs == {"citations": ["example.com", "example2.com"]}
 
     patcher.assert_called_once()
+
+
+@pytest.mark.requires("openai")
+def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) -> None:
+    """Test that the stream method includes citations in the additional_kwargs."""
+    llm = ChatPerplexity(
+        model="test",
+        timeout=30,
+        verbose=True,
+    )
+    mock_chunk_0 = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Hello ",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "citations": ["example.com", "example2.com"],
+        "images": [
+            {
+                "image_url": "mock_image_url",
+                "origin_url": "mock_origin_url",
+                "height": 100,
+                "width": 100,
+            }
+        ],
+    }
+    mock_chunk_1 = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Perplexity",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "citations": ["example.com", "example2.com"],
+        "images": [
+            {
+                "image_url": "mock_image_url",
+                "origin_url": "mock_origin_url",
+                "height": 100,
+                "width": 100,
+            }
+        ],
+    }
+    mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = mock_chunks
+    patcher = mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_stream
+    )
+    stream = llm.stream("Hello langchain")
+    full: Optional[BaseMessageChunk] = None
+    for i, chunk in enumerate(stream):
+        full = chunk if full is None else full + chunk
+        assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
+        if i == 0:
+            assert chunk.additional_kwargs["citations"] == [
+                "example.com",
+                "example2.com",
+            ]
+            assert chunk.additional_kwargs["images"] == [
+                {
+                    "image_url": "mock_image_url",
+                    "origin_url": "mock_origin_url",
+                    "height": 100,
+                    "width": 100,
+                }
+            ]
+        else:
+            assert "citations" not in chunk.additional_kwargs
+            assert "images" not in chunk.additional_kwargs
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "Hello Perplexity"
+    assert full.additional_kwargs == {
+        "citations": ["example.com", "example2.com"],
+        "images": [
+            {
+                "image_url": "mock_image_url",
+                "origin_url": "mock_origin_url",
+                "height": 100,
+                "width": 100,
+            }
+        ],
+    }
+
+    patcher.assert_called_once()
+
+
+@pytest.mark.requires("openai")
+def test_perplexity_stream_includes_citations_and_related_questions(
+    mocker: MockerFixture,
+) -> None:
+    """Test that the stream method includes citations in the additional_kwargs."""
+    llm = ChatPerplexity(
+        model="test",
+        timeout=30,
+        verbose=True,
+    )
+    mock_chunk_0 = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Hello ",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "citations": ["example.com", "example2.com"],
+        "related_questions": ["example_question_1", "example_question_2"],
+    }
+    mock_chunk_1 = {
+        "choices": [
+            {
+                "delta": {
+                    "content": "Perplexity",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "citations": ["example.com", "example2.com"],
+        "related_questions": ["example_question_1", "example_question_2"],
+    }
+    mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = mock_chunks
+    patcher = mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_stream
+    )
+    stream = llm.stream("Hello langchain")
+    full: Optional[BaseMessageChunk] = None
+    for i, chunk in enumerate(stream):
+        full = chunk if full is None else full + chunk
+        assert chunk.content == mock_chunks[i]["choices"][0]["delta"]["content"]
+        if i == 0:
+            assert chunk.additional_kwargs["citations"] == [
+                "example.com",
+                "example2.com",
+            ]
+            assert chunk.additional_kwargs["related_questions"] == [
+                "example_question_1",
+                "example_question_2",
+            ]
+        else:
+            assert "citations" not in chunk.additional_kwargs
+            assert "related_questions" not in chunk.additional_kwargs
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "Hello Perplexity"
+    assert full.additional_kwargs == {
+        "citations": ["example.com", "example2.com"],
+        "related_questions": ["example_question_1", "example_question_2"],
+    }
+
+    patcher.assert_called_once()
