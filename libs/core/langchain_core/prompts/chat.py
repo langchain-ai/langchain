@@ -1426,3 +1426,7 @@ def _convert_to_message_template(
         raise NotImplementedError(msg)
 
     return _message
+
+
+# For backwards compat:
+_convert_to_message = _convert_to_message_template
