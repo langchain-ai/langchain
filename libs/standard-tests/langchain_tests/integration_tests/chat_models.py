@@ -337,6 +337,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             def returns_usage_metadata(self) -> bool:
                 return False
 
+        Models supporting ``usage_metadata`` should also return the name of the
+        underlying model in the ``response_metadata`` of the AIMessage.
+
     .. dropdown:: supports_anthropic_inputs
 
         Boolean property indicating whether the chat model supports Anthropic-style
@@ -669,6 +672,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         This test is optional and should be skipped if the model does not return
         usage metadata (see Configuration below).
 
+        .. versionchanged:: 0.3.17
+
+            Additionally check for the presence of `model_name` in the response
+            metadata, which is needed for usage tracking in callback handlers.
+
         .. dropdown:: Configuration
 
             By default, this test is run.
@@ -739,6 +747,9 @@ class ChatModelIntegrationTests(ChatModelTests):
                         )
                     )]
                 )
+
+            Check also that the response includes a ``"model_name"`` key in its
+            ``usage_metadata``.
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -749,6 +760,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["input_tokens"], int)
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
+
+        # Check model_name is in response_metadata
+        # Needed for langchain_core.callbacks.usage
+        model_name = result.response_metadata.get("model_name")
+        assert isinstance(model_name, str)
+        assert model_name
 
         if "audio_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_input()
@@ -808,6 +825,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         """
         Test to verify that the model returns correct usage metadata in streaming mode.
+
+        .. versionchanged:: 0.3.17
+
+            Additionally check for the presence of `model_name` in the response
+            metadata, which is needed for usage tracking in callback handlers.
 
         .. dropdown:: Configuration
 
@@ -891,6 +913,9 @@ class ChatModelIntegrationTests(ChatModelTests):
                         )
                     )]
                 )
+
+            Check also that the aggregated response includes a ``"model_name"`` key
+            in its ``usage_metadata``.
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -914,6 +939,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full.usage_metadata["input_tokens"], int)
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
+
+        # Check model_name is in response_metadata
+        # Needed for langchain_core.callbacks.usage
+        model_name = full.response_metadata.get("model_name")
+        assert isinstance(model_name, str)
+        assert model_name
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)

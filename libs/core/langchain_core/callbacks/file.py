@@ -31,7 +31,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             mode: The mode to open the file in. Defaults to "a".
             color: The color to use for the text. Defaults to None.
         """
-        self.file = cast(TextIO, Path(filename).open(mode, encoding="utf-8"))  # noqa: SIM115
+        self.file = cast("TextIO", Path(filename).open(mode, encoding="utf-8"))  # noqa: SIM115
         self.color = color
 
     def __del__(self) -> None:

@@ -556,3 +556,9 @@ packages:
   repo: goat-sdk/goat
   name_title: GOAT SDK
   provider_page: goat
+- name: langchain-memgraph
+  path: .
+  repo: memgraph/langchain-memgraph
+- name: langchain-vectara
+  path: libs/vectara
+  repo: vectara/langchain-vectara

@@ -41,7 +41,6 @@ def log_error_once(method: str, exception: Exception) -> None:
         method: The method that raised the exception.
         exception: The exception that was raised.
     """
-    global _LOGGED
     if (method, type(exception)) in _LOGGED:
         return
     _LOGGED.add((method, type(exception)))
@@ -61,7 +60,7 @@ def get_client() -> Client:
 
 def _get_executor() -> ThreadPoolExecutor:
     """Get the executor."""
-    global _EXECUTOR
+    global _EXECUTOR  # noqa: PLW0603
     if _EXECUTOR is None:
         _EXECUTOR = ThreadPoolExecutor()
     return _EXECUTOR
