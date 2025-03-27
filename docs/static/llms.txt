@@ -1,0 +1,436 @@
+# LangChain
+
+## High level
+
+- **[Why LangChain?](https://python.langchain.com/docs/concepts/why_langchain)**: Overview of the value that LangChain provides.
+- **[Architecture](https://python.langchain.com/docs/concepts/architecture)**: How packages are organized in the LangChain ecosystem.
+
+## Concepts
+
+- **[Chat models](https://python.langchain.com/docs/concepts/chat_models)**: LLMs exposed via a chat API that process sequences of messages as input and output a message.
+- **[Messages](https://python.langchain.com/docs/concepts/messages)**: The unit of communication in chat models, used to represent model input and output.
+- **[Chat history](https://python.langchain.com/docs/concepts/chat_history)**: A conversation represented as a sequence of messages, alternating between user messages and model responses.
+- **[Tools](https://python.langchain.com/docs/concepts/tools)**: A function with an associated schema defining the function's name, description, and the arguments it accepts.
+- **[Tool calling](https://python.langchain.com/docs/concepts/tool_calling)**: A type of chat model API that accepts tool schemas, along with messages, as input and returns invocations of those tools as part of the output message.
+- **[Structured output](https://python.langchain.com/docs/concepts/structured_outputs)**: A technique to make a chat model respond in a structured format, such as JSON that matches a given schema.
+- **[Memory](https://langchain-ai.github.io/langgraph/concepts/memory/)**: Information about a conversation that is persisted so that it can be used in future conversations.
+- **[Multimodality](https://python.langchain.com/docs/concepts/multimodality)**: The ability to work with data that comes in different forms, such as text, audio, images, and video.
+- **[Runnable interface](https://python.langchain.com/docs/concepts/runnables)**: The base abstraction that many LangChain components and the LangChain Expression Language are built on.
+- **[Streaming](https://python.langchain.com/docs/concepts/streaming)**: LangChain streaming APIs for surfacing results as they are generated.
+- **[LangChain Expression Language (LCEL)](https://python.langchain.com/docs/concepts/lcel)**: A syntax for orchestrating LangChain components. Most useful for simpler applications.
+- **[Document loaders](https://python.langchain.com/docs/concepts/document_loaders)**: Load a source as a list of documents.
+- **[Retrieval](https://python.langchain.com/docs/concepts/retrieval)**: Information retrieval systems can retrieve structured or unstructured data from a datasource in response to a query.
+- **[Text splitters](https://python.langchain.com/docs/concepts/text_splitters)**: Split long text into smaller chunks that can be individually indexed to enable granular retrieval.
+- **[Embedding models](https://python.langchain.com/docs/concepts/embedding_models)**: Models that represent data such as text or images in a vector space.
+- **[Vector stores](https://python.langchain.com/docs/concepts/vectorstores)**: Storage of and efficient search over vectors and associated metadata.
+- **[Retriever](https://python.langchain.com/docs/concepts/retrievers)**: A component that returns relevant documents from a knowledge base in response to a query.
+- **[Retrieval Augmented Generation (RAG)](https://python.langchain.com/docs/concepts/rag)**: A technique that enhances language models by combining them with external knowledge bases.
+- **[Agents](https://python.langchain.com/docs/concepts/agents)**: Use a [language model](https://python.langchain.com/docs/concepts/chat_models) to choose a sequence of actions to take. Agents can interact with external resources via [tool](https://python.langchain.com/docs/concepts/tools).
+- **[Prompt templates](https://python.langchain.com/docs/concepts/prompt_templates)**: Component for factoring out the static parts of a model "prompt" (usually a sequence of messages). Useful for serializing, versioning, and reusing these static parts.
+- **[Output parsers](https://python.langchain.com/docs/concepts/output_parsers)**: Responsible for taking the output of a model and transforming it into a more suitable format for downstream tasks. Output parsers were primarily useful prior to the general availability of [tool calling](https://python.langchain.com/docs/concepts/tool_calling) and [structured outputs](https://python.langchain.com/docs/concepts/structured_outputs).
+- **[Few-shot prompting](https://python.langchain.com/docs/concepts/few_shot_prompting)**: A technique for improving model performance by providing a few examples of the task to perform in the prompt.
+- **[Example selectors](https://python.langchain.com/docs/concepts/example_selectors)**: Used to select the most relevant examples from a dataset based on a given input. Example selectors are used in few-shot prompting to select examples for a prompt.
+- **[Async programming](https://python.langchain.com/docs/concepts/async)**: The basics that one should know to use LangChain in an asynchronous context.
+- **[Callbacks](https://python.langchain.com/docs/concepts/callbacks)**: Callbacks enable the execution of custom auxiliary code in built-in components. Callbacks are used to stream outputs from LLMs in LangChain, trace the intermediate steps of an application, and more.
+- **[Tracing](https://python.langchain.com/docs/concepts/tracing)**: The process of recording the steps that an application takes to go from input to output. Tracing is essential for debugging and diagnosing issues in complex applications.
+- **[Evaluation](https://python.langchain.com/docs/concepts/evaluation)**: The process of assessing the performance and effectiveness of AI applications. This involves testing the model's responses against a set of predefined criteria or benchmarks to ensure it meets the desired quality standards and fulfills the intended purpose. This process is vital for building reliable applications.
+- **[Testing](https://python.langchain.com/docs/concepts/testing)**: The process of verifying that a component of an integration or application works as expected. Testing is essential for ensuring that the application behaves correctly and that changes to the codebase do not introduce new bugs.
+
+## How-to guides
+
+### Installation
+
+- [How to: install LangChain packages](https://python.langchain.com/docs/how_to/installation/)
+- [How to: use LangChain with different Pydantic versions](https://python.langchain.com/docs/how_to/pydantic_compatibility)
+- [How to: return structured data from a model](https://python.langchain.com/docs/how_to/structured_output/)
+- [How to: use a model to call tools](https://python.langchain.com/docs/how_to/tool_calling)
+- [How to: stream runnables](https://python.langchain.com/docs/how_to/streaming)
+- [How to: debug your LLM apps](https://python.langchain.com/docs/how_to/debugging/)
+
+### Components
+
+These are the core building blocks you can use when building applications.
+
+#### Chat models
+
+[Chat Models](https://python.langchain.com/docs/concepts/chat_models) are newer forms of language models that take messages in and output a message.
+See [supported integrations](https://python.langchain.com/docs/integrations/chat/) for details on getting started with chat models from a specific provider.
+
+- [How to: do function/tool calling](https://python.langchain.com/docs/how_to/tool_calling)
+- [How to: get models to return structured output](https://python.langchain.com/docs/how_to/structured_output)
+- [How to: cache model responses](https://python.langchain.com/docs/how_to/chat_model_caching)
+- [How to: get log probabilities](https://python.langchain.com/docs/how_to/logprobs)
+- [How to: create a custom chat model class](https://python.langchain.com/docs/how_to/custom_chat_model)
+- [How to: stream a response back](https://python.langchain.com/docs/how_to/chat_streaming)
+- [How to: track token usage](https://python.langchain.com/docs/how_to/chat_token_usage_tracking)
+- [How to: track response metadata across providers](https://python.langchain.com/docs/how_to/response_metadata)
+- [How to: use chat model to call tools](https://python.langchain.com/docs/how_to/tool_calling)
+- [How to: stream tool calls](https://python.langchain.com/docs/how_to/tool_streaming)
+- [How to: handle rate limits](https://python.langchain.com/docs/how_to/chat_model_rate_limiting)
+- [How to: few shot prompt tool behavior](https://python.langchain.com/docs/how_to/tools_few_shot)
+- [How to: bind model-specific formatted tools](https://python.langchain.com/docs/how_to/tools_model_specific)
+- [How to: force a specific tool call](https://python.langchain.com/docs/how_to/tool_choice)
+- [How to: work with local models](https://python.langchain.com/docs/how_to/local_llms)
+- [How to: init any model in one line](https://python.langchain.com/docs/how_to/chat_models_universal_init/)
+
+#### Messages
+
+[Messages](https://python.langchain.com/docs/concepts/messages) are the input and output of chat models. They have some `content` and a `role`, which describes the source of the message.
+
+- [How to: trim messages](https://python.langchain.com/docs/how_to/trim_messages/)
+- [How to: filter messages](https://python.langchain.com/docs/how_to/filter_messages/)
+- [How to: merge consecutive messages of the same type](https://python.langchain.com/docs/how_to/merge_message_runs/)
+
+#### Prompt templates
+
+[Prompt Templates](https://python.langchain.com/docs/concepts/prompt_templates) are responsible for formatting user input into a format that can be passed to a language model.
+
+- [How to: use few shot examples](https://python.langchain.com/docs/how_to/few_shot_examples)
+- [How to: use few shot examples in chat models](https://python.langchain.com/docs/how_to/few_shot_examples_chat/)
+- [How to: partially format prompt templates](https://python.langchain.com/docs/how_to/prompts_partial)
+- [How to: compose prompts together](https://python.langchain.com/docs/how_to/prompts_composition)
+
+#### Example selectors
+
+[Example Selectors](https://python.langchain.com/docs/concepts/example_selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
+
+- [How to: use example selectors](https://python.langchain.com/docs/how_to/example_selectors)
+- [How to: select examples by length](https://python.langchain.com/docs/how_to/example_selectors_length_based)
+- [How to: select examples by semantic similarity](https://python.langchain.com/docs/how_to/example_selectors_similarity)
+- [How to: select examples by semantic ngram overlap](https://python.langchain.com/docs/how_to/example_selectors_ngram)
+- [How to: select examples by maximal marginal relevance](https://python.langchain.com/docs/how_to/example_selectors_mmr)
+- [How to: select examples from LangSmith few-shot datasets](https://python.langchain.com/docs/how_to/example_selectors_langsmith/)
+
+#### LLMs
+
+What LangChain calls [LLMs](https://python.langchain.com/docs/concepts/text_llms) are older forms of language models that take a string in and output a string.
+
+- [How to: cache model responses](https://python.langchain.com/docs/how_to/llm_caching)
+- [How to: create a custom LLM class](https://python.langchain.com/docs/how_to/custom_llm)
+- [How to: stream a response back](https://python.langchain.com/docs/how_to/streaming_llm)
+- [How to: track token usage](https://python.langchain.com/docs/how_to/llm_token_usage_tracking)
+- [How to: work with local models](https://python.langchain.com/docs/how_to/local_llms)
+
+#### Output parsers
+
+[Output Parsers](https://python.langchain.com/docs/concepts/output_parsers) are responsible for taking the output of an LLM and parsing into more structured format.
+
+- [How to: parse text from message objects](https://python.langchain.com/docs/how_to/output_parser_string)
+- [How to: use output parsers to parse an LLM response into structured format](https://python.langchain.com/docs/how_to/output_parser_structured)
+- [How to: parse JSON output](https://python.langchain.com/docs/how_to/output_parser_json)
+- [How to: parse XML output](https://python.langchain.com/docs/how_to/output_parser_xml)
+- [How to: parse YAML output](https://python.langchain.com/docs/how_to/output_parser_yaml)
+- [How to: retry when output parsing errors occur](https://python.langchain.com/docs/how_to/output_parser_retry)
+- [How to: try to fix errors in output parsing](https://python.langchain.com/docs/how_to/output_parser_fixing)
+- [How to: write a custom output parser class](https://python.langchain.com/docs/how_to/output_parser_custom)
+
+#### Document loaders
+
+[Document Loaders](https://python.langchain.com/docs/concepts/document_loaders) are responsible for loading documents from a variety of sources.
+
+- [How to: load PDF files](https://python.langchain.com/docs/how_to/document_loader_pdf)
+- [How to: load web pages](https://python.langchain.com/docs/how_to/document_loader_web)
+- [How to: load CSV data](https://python.langchain.com/docs/how_to/document_loader_csv)
+- [How to: load data from a directory](https://python.langchain.com/docs/how_to/document_loader_directory)
+- [How to: load HTML data](https://python.langchain.com/docs/how_to/document_loader_html)
+- [How to: load JSON data](https://python.langchain.com/docs/how_to/document_loader_json)
+- [How to: load Markdown data](https://python.langchain.com/docs/how_to/document_loader_markdown)
+- [How to: load Microsoft Office data](https://python.langchain.com/docs/how_to/document_loader_office_file)
+- [How to: write a custom document loader](https://python.langchain.com/docs/how_to/document_loader_custom)
+
+#### Text splitters
+
+[Text Splitters](https://python.langchain.com/docs/concepts/text_splitters) take a document and split into chunks that can be used for retrieval.
+
+- [How to: recursively split text](https://python.langchain.com/docs/how_to/recursive_text_splitter)
+- [How to: split HTML](https://python.langchain.com/docs/how_to/split_html)
+- [How to: split by character](https://python.langchain.com/docs/how_to/character_text_splitter)
+- [How to: split code](https://python.langchain.com/docs/how_to/code_splitter)
+- [How to: split Markdown by headers](https://python.langchain.com/docs/how_to/markdown_header_metadata_splitter)
+- [How to: recursively split JSON](https://python.langchain.com/docs/how_to/recursive_json_splitter)
+- [How to: split text into semantic chunks](https://python.langchain.com/docs/how_to/semantic-chunker)
+- [How to: split by tokens](https://python.langchain.com/docs/how_to/split_by_token)
+
+#### Embedding models
+
+[Embedding Models](https://python.langchain.com/docs/concepts/embedding_models) take a piece of text and create a numerical representation of it.
+See [supported integrations](https://python.langchain.com/docs/integrations/text_embedding/) for details on getting started with embedding models from a specific provider.
+
+- [How to: embed text data](https://python.langchain.com/docs/how_to/embed_text)
+- [How to: cache embedding results](https://python.langchain.com/docs/how_to/caching_embeddings)
+- [How to: create a custom embeddings class](https://python.langchain.com/docs/how_to/custom_embeddings)
+
+#### Vector stores
+
+[Vector stores](https://python.langchain.com/docs/concepts/vectorstores) are databases that can efficiently store and retrieve embeddings.
+See [supported integrations](https://python.langchain.com/docs/integrations/vectorstores/) for details on getting started with vector stores from a specific provider.
+
+- [How to: use a vector store to retrieve data](https://python.langchain.com/docs/how_to/vectorstores)
+
+#### Retrievers
+
+[Retrievers](https://python.langchain.com/docs/concepts/retrievers) are responsible for taking a query and returning relevant documents.
+
+- [How to: use a vector store to retrieve data](https://python.langchain.com/docs/how_to/vectorstore_retriever)
+- [How to: generate multiple queries to retrieve data for](https://python.langchain.com/docs/how_to/MultiQueryRetriever)
+- [How to: use contextual compression to compress the data retrieved](https://python.langchain.com/docs/how_to/contextual_compression)
+- [How to: write a custom retriever class](https://python.langchain.com/docs/how_to/custom_retriever)
+- [How to: add similarity scores to retriever results](https://python.langchain.com/docs/how_to/add_scores_retriever)
+- [How to: combine the results from multiple retrievers](https://python.langchain.com/docs/how_to/ensemble_retriever)
+- [How to: reorder retrieved results to mitigate the "lost in the middle" effect](https://python.langchain.com/docs/how_to/long_context_reorder)
+- [How to: generate multiple embeddings per document](https://python.langchain.com/docs/how_to/multi_vector)
+- [How to: retrieve the whole document for a chunk](https://python.langchain.com/docs/how_to/parent_document_retriever)
+- [How to: generate metadata filters](https://python.langchain.com/docs/how_to/self_query)
+- [How to: create a time-weighted retriever](https://python.langchain.com/docs/how_to/time_weighted_vectorstore)
+- [How to: use hybrid vector and keyword retrieval](https://python.langchain.com/docs/how_to/hybrid)
+
+#### Indexing
+
+Indexing is the process of keeping your vectorstore in-sync with the underlying data source.
+
+- [How to: reindex data to keep your vectorstore in-sync with the underlying data source](https://python.langchain.com/docs/how_to/indexing)
+
+#### Tools
+
+LangChain [Tools](https://python.langchain.com/docs/concepts/tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call. Refer [here](https://python.langchain.com/docs/integrations/tools/) for a list of pre-buit tools.
+
+- [How to: create tools](https://python.langchain.com/docs/how_to/custom_tools)
+- [How to: use built-in tools and toolkits](https://python.langchain.com/docs/how_to/tools_builtin)
+- [How to: use chat models to call tools](https://python.langchain.com/docs/how_to/tool_calling)
+- [How to: pass tool outputs to chat models](https://python.langchain.com/docs/how_to/tool_results_pass_to_model)
+- [How to: pass run time values to tools](https://python.langchain.com/docs/how_to/tool_runtime)
+- [How to: add a human-in-the-loop for tools](https://python.langchain.com/docs/how_to/tools_human)
+- [How to: handle tool errors](https://python.langchain.com/docs/how_to/tools_error)
+- [How to: force models to call a tool](https://python.langchain.com/docs/how_to/tool_choice)
+- [How to: disable parallel tool calling](https://python.langchain.com/docs/how_to/tool_calling_parallel)
+- [How to: access the `RunnableConfig` from a tool](https://python.langchain.com/docs/how_to/tool_configure)
+- [How to: stream events from a tool](https://python.langchain.com/docs/how_to/tool_stream_events)
+- [How to: return artifacts from a tool](https://python.langchain.com/docs/how_to/tool_artifacts/)
+- [How to: convert Runnables to tools](https://python.langchain.com/docs/how_to/convert_runnable_to_tool)
+- [How to: add ad-hoc tool calling capability to models](https://python.langchain.com/docs/how_to/tools_prompting)
+- [How to: pass in runtime secrets](https://python.langchain.com/docs/how_to/runnable_runtime_secrets)
+
+#### Multimodal
+
+- [How to: pass multimodal data directly to models](https://python.langchain.com/docs/how_to/multimodal_inputs/)
+- [How to: use multimodal prompts](https://python.langchain.com/docs/how_to/multimodal_prompts/)
+
+#### Agents
+
+:::note
+
+For in depth how-to guides for agents, please check out [LangGraph](https://langchain-ai.github.io/langgraph/) documentation.
+
+:::
+
+- [How to: use legacy LangChain Agents (AgentExecutor)](https://python.langchain.com/docs/how_to/agent_executor)
+- [How to: migrate from legacy LangChain agents to LangGraph](https://python.langchain.com/docs/how_to/migrate_agent)
+
+#### Callbacks
+
+[Callbacks](https://python.langchain.com/docs/concepts/callbacks) allow you to hook into the various stages of your LLM application's execution.
+
+- [How to: pass in callbacks at runtime](https://python.langchain.com/docs/how_to/callbacks_runtime)
+- [How to: attach callbacks to a module](https://python.langchain.com/docs/how_to/callbacks_attach)
+- [How to: pass callbacks into a module constructor](https://python.langchain.com/docs/how_to/callbacks_constructor)
+- [How to: create custom callback handlers](https://python.langchain.com/docs/how_to/custom_callbacks)
+- [How to: use callbacks in async environments](https://python.langchain.com/docs/how_to/callbacks_async)
+- [How to: dispatch custom callback events](https://python.langchain.com/docs/how_to/callbacks_custom_events)
+
+#### Custom
+
+All of LangChain components can easily be extended to support your own versions.
+
+- [How to: create a custom chat model class](https://python.langchain.com/docs/how_to/custom_chat_model)
+- [How to: create a custom LLM class](https://python.langchain.com/docs/how_to/custom_llm)
+- [How to: create a custom embeddings class](https://python.langchain.com/docs/how_to/custom_embeddings)
+- [How to: write a custom retriever class](https://python.langchain.com/docs/how_to/custom_retriever)
+- [How to: write a custom document loader](https://python.langchain.com/docs/how_to/document_loader_custom)
+- [How to: write a custom output parser class](https://python.langchain.com/docs/how_to/output_parser_custom)
+- [How to: create custom callback handlers](https://python.langchain.com/docs/how_to/custom_callbacks)
+- [How to: define a custom tool](https://python.langchain.com/docs/how_to/custom_tools)
+- [How to: dispatch custom callback events](https://python.langchain.com/docs/how_to/callbacks_custom_events)
+
+#### Serialization
+
+- [How to: save and load LangChain objects](https://python.langchain.com/docs/how_to/serialization)
+
+## Use cases
+
+These guides cover use-case specific details.
+
+### Q&A with RAG
+
+Retrieval Augmented Generation (RAG) is a way to connect LLMs to external sources of data.
+For a high-level tutorial on RAG, check out [this guide](https://python.langchain.com/docs/tutorials/rag/).
+
+- [How to: add chat history](https://python.langchain.com/docs/how_to/qa_chat_history_how_to/)
+- [How to: stream](https://python.langchain.com/docs/how_to/qa_streaming/)
+- [How to: return sources](https://python.langchain.com/docs/how_to/qa_sources/)
+- [How to: return citations](https://python.langchain.com/docs/how_to/qa_citations/)
+- [How to: do per-user retrieval](https://python.langchain.com/docs/how_to/qa_per_user/)
+
+
+### Extraction
+
+Extraction is when you use LLMs to extract structured information from unstructured text.
+For a high level tutorial on extraction, check out [this guide](https://python.langchain.com/docs/tutorials/extraction/).
+
+- [How to: use reference examples](https://python.langchain.com/docs/how_to/extraction_examples/)
+- [How to: handle long text](https://python.langchain.com/docs/how_to/extraction_long_text/)
+- [How to: do extraction without using function calling](https://python.langchain.com/docs/how_to/extraction_parse)
+
+### Chatbots
+
+Chatbots involve using an LLM to have a conversation.
+For a high-level tutorial on building chatbots, check out [this guide](https://python.langchain.com/docs/tutorials/chatbot/).
+
+- [How to: manage memory](https://python.langchain.com/docs/how_to/chatbots_memory)
+- [How to: do retrieval](https://python.langchain.com/docs/how_to/chatbots_retrieval)
+- [How to: use tools](https://python.langchain.com/docs/how_to/chatbots_tools)
+- [How to: manage large chat history](https://python.langchain.com/docs/how_to/trim_messages/)
+
+### Query analysis
+
+Query Analysis is the task of using an LLM to generate a query to send to a retriever.
+For a high-level tutorial on query analysis, check out [this guide](https://python.langchain.com/docs/tutorials/rag/#query-analysis).
+
+- [How to: add examples to the prompt](https://python.langchain.com/docs/how_to/query_few_shot)
+- [How to: handle cases where no queries are generated](https://python.langchain.com/docs/how_to/query_no_queries)
+- [How to: handle multiple queries](https://python.langchain.com/docs/how_to/query_multiple_queries)
+- [How to: handle multiple retrievers](https://python.langchain.com/docs/how_to/query_multiple_retrievers)
+- [How to: construct filters](https://python.langchain.com/docs/how_to/query_constructing_filters)
+- [How to: deal with high cardinality categorical variables](https://python.langchain.com/docs/how_to/query_high_cardinality)
+
+### Q&A over SQL + CSV
+
+You can use LLMs to do question answering over tabular data.
+For a high-level tutorial, check out [this guide](https://python.langchain.com/docs/tutorials/sql_qa/).
+
+- [How to: use prompting to improve results](https://python.langchain.com/docs/how_to/sql_prompting)
+- [How to: do query validation](https://python.langchain.com/docs/how_to/sql_query_checking)
+- [How to: deal with large databases](https://python.langchain.com/docs/how_to/sql_large_db)
+- [How to: deal with CSV files](https://python.langchain.com/docs/how_to/sql_csv)
+
+### Q&A over graph databases
+
+You can use an LLM to do question answering over graph databases.
+For a high-level tutorial, check out [this guide](https://python.langchain.com/docs/tutorials/graph/).
+
+- [How to: add a semantic layer over the database](https://python.langchain.com/docs/how_to/graph_semantic)
+- [How to: construct knowledge graphs](https://python.langchain.com/docs/how_to/graph_constructing)
+
+### Summarization
+
+LLMs can summarize and otherwise distill desired information from text, including
+large volumes of text. For a high-level tutorial, check out [this guide](https://python.langchain.com/docs/tutorials/summarization).
+
+- [How to: summarize text in a single LLM call](https://python.langchain.com/docs/how_to/summarize_stuff)
+- [How to: summarize text through parallelization](https://python.langchain.com/docs/how_to/summarize_map_reduce)
+- [How to: summarize text through iterative refinement](https://python.langchain.com/docs/how_to/summarize_refine)
+
+## LangChain Expression Language (LCEL)
+
+[LangChain Expression Language](https://python.langchain.com/docs/concepts/lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
+
+[**LCEL cheatsheet**](https://python.langchain.com/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
+
+[**Migration guide**](https://python.langchain.com/docs/versions/migrating_chains): For migrating legacy chain abstractions to LCEL.
+
+- [How to: chain runnables](https://python.langchain.com/docs/how_to/sequence)
+- [How to: stream runnables](https://python.langchain.com/docs/how_to/streaming)
+- [How to: invoke runnables in parallel](https://python.langchain.com/docs/how_to/parallel/)
+- [How to: add default invocation args to runnables](https://python.langchain.com/docs/how_to/binding/)
+- [How to: turn any function into a runnable](https://python.langchain.com/docs/how_to/functions)
+- [How to: pass through inputs from one chain step to the next](https://python.langchain.com/docs/how_to/passthrough)
+- [How to: configure runnable behavior at runtime](https://python.langchain.com/docs/how_to/configure)
+- [How to: add message history (memory) to a chain](https://python.langchain.com/docs/how_to/message_history)
+- [How to: route between sub-chains](https://python.langchain.com/docs/how_to/routing)
+- [How to: create a dynamic (self-constructing) chain](https://python.langchain.com/docs/how_to/dynamic_chain/)
+- [How to: inspect runnables](https://python.langchain.com/docs/how_to/inspect)
+- [How to: add fallbacks to a runnable](https://python.langchain.com/docs/how_to/fallbacks)
+- [How to: pass runtime secrets to a runnable](https://python.langchain.com/docs/how_to/runnable_runtime_secrets)
+
+Tracing gives you observability inside your chains and agents, and is vital in diagnosing issues.
+
+- [How to: trace with LangChain](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain)
+- [How to: add metadata and tags to traces](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain#add-metadata-and-tags-to-traces)
+
+You can see general tracing-related how-tos [in this section of the LangSmith docs](https://docs.smith.langchain.com/how_to_guides/tracing).
+
+## Integrations
+
+### Featured Chat Model Providers
+
+- [ChatAnthropic](https://python.langchain.com/docs/anthropic/)
+- [ChatMistralAI](https://python.langchain.com/docs/mistralai/)
+- [ChatFireworks](https://python.langchain.com/docs/fireworks/)
+- [AzureChatOpenAI](https://python.langchain.com/docs/azure_chat_openai/)
+- [ChatOpenAI](https://python.langchain.com/docs/openai/)
+- [ChatTogether](https://python.langchain.com/docs/together/)
+- [ChatVertexAI](https://python.langchain.com/docs/google_vertex_ai_palm/)
+- [ChatGoogleGenerativeAI](https://python.langchain.com/docs/google_generative_ai/)
+- [ChatGroq](https://python.langchain.com/docs/groq/)
+- [ChatCohere](https://python.langchain.com/docs/cohere/)
+- [ChatBedrock](https://python.langchain.com/docs/bedrock/)
+- [ChatHuggingFace](https://python.langchain.com/docs/huggingface/)
+- [ChatNVIDIA](https://python.langchain.com/docs/nvidia_ai_endpoints/)
+- [ChatOllama](https://python.langchain.com/docs/ollama/)
+- [ChatLlamaCpp](https://python.langchain.com/docs/llamacpp)
+- [ChatAI21](https://python.langchain.com/docs/ai21)
+- [ChatUpstage](https://python.langchain.com/docs/upstage)
+- [ChatDatabricks](https://python.langchain.com/docs/databricks)
+- [ChatWatsonx](https://python.langchain.com/docs/ibm_watsonx)
+- [ChatXAI](https://python.langchain.com/docs/xai)
+
+Other chat model integrations can be found [here](https://python.langchain.com/docs/integrations/chat/).
+
+## Glossary
+
+- **[AIMessageChunk](https://python.langchain.com/docs/concepts/messages#aimessagechunk)**: A partial response from an AI message. Used when streaming responses from a chat model.
+- **[AIMessage](https://python.langchain.com/docs/concepts/messages#aimessage)**: Represents a complete response from an AI model.
+- **[astream_events](https://python.langchain.com/docs/concepts/chat_models#key-methods)**: Stream granular information from [LCEL](https://python.langchain.com/docs/concepts/lcel) chains.
+- **[BaseTool](https://python.langchain.com/docs/concepts/tools/#tool-interface)**: The base class for all tools in LangChain.
+- **[batch](https://python.langchain.com/docs/concepts/runnables)**: Use to execute a runnable with batch inputs.
+- **[bind_tools](https://python.langchain.com/docs/concepts/tool_calling/#tool-binding)**: Allows models to interact with tools.
+- **[Caching](https://python.langchain.com/docs/concepts/chat_models#caching)**: Storing results to avoid redundant calls to a chat model.
+- **[Chat models](https://python.langchain.com/docs/concepts/multimodality/#multimodality-in-chat-models)**: Chat models that handle multiple data modalities.
+- **[Configurable runnables](https://python.langchain.com/docs/concepts/runnables/#configurable-runnables)**: Creating configurable Runnables.
+- **[Context window](https://python.langchain.com/docs/concepts/chat_models#context-window)**: The maximum size of input a chat model can process.
+- **[Conversation patterns](https://python.langchain.com/docs/concepts/chat_history#conversation-patterns)**: Common patterns in chat interactions.
+- **[Document](https://python.langchain.com/api_reference/core/documents/langchain_core.documents.base.Document.html)**: LangChain's representation of a document.
+- **[Embedding models](https://python.langchain.com/docs/concepts/multimodality/#multimodality-in-embedding-models)**: Models that generate vector embeddings for various data types.
+- **[HumanMessage](https://python.langchain.com/docs/concepts/messages#humanmessage)**: Represents a message from a human user.
+- **[InjectedState](https://python.langchain.com/docs/concepts/tools#injectedstate)**: A state injected into a tool function.
+- **[InjectedStore](https://python.langchain.com/docs/concepts/tools#injectedstore)**: A store that can be injected into a tool for data persistence.
+- **[InjectedToolArg](https://python.langchain.com/docs/concepts/tools#injectedtoolarg)**: Mechanism to inject arguments into tool functions.
+- **[input and output types](https://python.langchain.com/docs/concepts/runnables#input-and-output-types)**: Types used for input and output in Runnables.
+- **[Integration packages](https://python.langchain.com/docs/concepts/architecture/#integration-packages)**: Third-party packages that integrate with LangChain.
+- **[Integration tests](https://python.langchain.com/docs/concepts/testing#integration-tests)**: Tests that verify the correctness of the interaction between components, usually run with access to the underlying API that powers an integration.
+- **[invoke](https://python.langchain.com/docs/concepts/runnables)**: A standard method to invoke a Runnable.
+- **[JSON mode](https://python.langchain.com/docs/concepts/structured_outputs#json-mode)**: Returning responses in JSON format.
+- **[langchain-community](https://python.langchain.com/docs/concepts/architecture#langchain-community)**: Community-driven components for LangChain.
+- **[langchain-core](https://python.langchain.com/docs/concepts/architecture#langchain-core)**: Core langchain package. Includes base interfaces and in-memory implementations.
+- **[langchain](https://python.langchain.com/docs/concepts/architecture#langchain)**: A package for higher level components (e.g., some pre-built chains).
+- **[langgraph](https://python.langchain.com/docs/concepts/architecture#langgraph)**: Powerful orchestration layer for LangChain. Use to build complex pipelines and workflows.
+- **[Managing chat history](https://python.langchain.com/docs/concepts/chat_history#managing-chat-history)**: Techniques to maintain and manage the chat history.
+- **[OpenAI format](https://python.langchain.com/docs/concepts/messages#openai-format)**: OpenAI's message format for chat models.
+- **[Propagation of RunnableConfig](https://python.langchain.com/docs/concepts/runnables/#propagation-of-runnableconfig)**: Propagating configuration through Runnables. Read if working with python 3.9, 3.10 and async.
+- **[rate-limiting](https://python.langchain.com/docs/concepts/chat_models#rate-limiting)**: Client side rate limiting for chat models.
+- **[RemoveMessage](https://python.langchain.com/docs/concepts/messages/#removemessage)**: An abstraction used to remove a message from chat history, used primarily in LangGraph.
+- **[role](https://python.langchain.com/docs/concepts/messages#role)**: Represents the role (e.g., user, assistant) of a chat message.
+- **[RunnableConfig](https://python.langchain.com/docs/concepts/runnables/#runnableconfig)**: Use to pass run time information to Runnables (e.g., `run_name`, `run_id`, `tags`, `metadata`, `max_concurrency`, `recursion_limit`, `configurable`).
+- **[Standard parameters for chat models](https://python.langchain.com/docs/concepts/chat_models#standard-parameters)**: Parameters such as API key, `temperature`, and `max_tokens`.
+- **[Standard tests](https://python.langchain.com/docs/concepts/testing#standard-tests)**: A defined set of unit and integration tests that all integrations must pass.
+- **[stream](https://python.langchain.com/docs/concepts/streaming)**: Use to stream output from a Runnable or a graph.
+- **[Tokenization](https://python.langchain.com/docs/concepts/tokens)**: The process of converting data into tokens and vice versa.
+- **[Tokens](https://python.langchain.com/docs/concepts/tokens)**: The basic unit that a language model reads, processes, and generates under the hood.
+- **[Tool artifacts](https://python.langchain.com/docs/concepts/tools#tool-artifacts)**: Add artifacts to the output of a tool that will not be sent to the model, but will be available for downstream processing.
+- **[Tool binding](https://python.langchain.com/docs/concepts/tool_calling#tool-binding)**: Binding tools to models.
+- **[@tool](https://python.langchain.com/docs/concepts/tools/#create-tools-using-the-tool-decorator)**: Decorator for creating tools in LangChain.
+- **[Toolkits](https://python.langchain.com/docs/concepts/tools#toolkits)**: A collection of tools that can be used together.
+- **[ToolMessage](https://python.langchain.com/docs/concepts/messages#toolmessage)**: Represents a message that contains the results of a tool execution.
+- **[Unit tests](https://python.langchain.com/docs/concepts/testing#unit-tests)**: Tests that verify the correctness of individual components, run in isolation without access to the Internet.
+- **[Vector stores](https://python.langchain.com/docs/concepts/vectorstores)**: Datastores specialized for storing and efficiently searching vector embeddings.
+- **[with_structured_output](https://python.langchain.com/docs/concepts/structured_outputs/#structured-output-method)**: A helper method for chat models that natively support [tool calling](https://python.langchain.com/docs/concepts/tool_calling) to get structured output matching a given schema specified via Pydantic, JSON schema or a function.
+- **[with_types](https://python.langchain.com/docs/concepts/runnables#with_types)**: Method to overwrite the input and output types of a runnable. Useful when working with complex LCEL chains and deploying with LangServe.
