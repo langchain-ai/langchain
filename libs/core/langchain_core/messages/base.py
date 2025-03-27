@@ -107,8 +107,7 @@ class BaseMessage(Serializable):
             block
             for block in self.content
             if isinstance(block, str)
-            or block.get("type") == "text"
-            and isinstance(block.get("text"), str)
+            or (block.get("type") == "text" and isinstance(block.get("text"), str))
         ]
         return "".join(
             block if isinstance(block, str) else block["text"] for block in blocks
@@ -163,7 +162,7 @@ def merge_content(
                 merged = cast(str, merged) + content
             # If the next chunk is a list, add the current to the start of the list
             else:
-                merged = [merged] + content  # type: ignore
+                merged = [merged, *content]
         elif isinstance(content, list):
             # If both are lists
             merged = merge_lists(cast(list, merged), content)  # type: ignore

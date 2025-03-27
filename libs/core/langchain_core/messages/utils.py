@@ -888,7 +888,7 @@ def trim_messages(
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
         if (
-            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            next(iter(inspect.signature(token_counter).parameters.values())).annotation
             is BaseMessage
         ):
 
@@ -1445,7 +1445,7 @@ def _last_max_tokens(
     # Re-reverse the messages and add back the system message if needed
     result = reversed_result[::-1]
     if system_message:
-        result = [system_message] + result
+        result = [system_message, *result]
 
     return result
 
