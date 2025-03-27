@@ -37,17 +37,6 @@ def wait_for_all_evaluators() -> None:
 class EvaluatorCallbackHandler(BaseTracer):
     """Tracer that runs a run evaluator whenever a run is persisted.
 
-    Args:
-        evaluators : Sequence[RunEvaluator]
-            The run evaluators to apply to all top level runs.
-        client : LangSmith Client, optional
-            The LangSmith client instance to use for evaluating the runs.
-            If not specified, a new instance will be created.
-        example_id : Union[UUID, str], optional
-            The example ID to be associated with the runs.
-        project_name : str, optional
-            The LangSmith project name to be organize eval chain runs under.
-
     Attributes:
         example_id : Union[UUID, None]
             The example ID associated with the runs.
@@ -78,6 +67,23 @@ class EvaluatorCallbackHandler(BaseTracer):
         max_concurrency: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
+        """Create an EvaluatorCallbackHandler.
+
+        Args:
+            evaluators : Sequence[RunEvaluator]
+                The run evaluators to apply to all top level runs.
+            client : LangSmith Client, optional
+                The LangSmith client instance to use for evaluating the runs.
+                If not specified, a new instance will be created.
+            example_id : Union[UUID, str], optional
+                The example ID to be associated with the runs.
+            skip_unfinished: bool, optional
+                Whether to skip unfinished runs.
+            project_name : str, optional
+                The LangSmith project name to be organize eval chain runs under.
+            max_concurrency : int, optional
+                The maximum number of concurrent evaluators to run.
+        """
         super().__init__(**kwargs)
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id

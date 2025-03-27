@@ -1,3 +1,5 @@
+"""Runnable that manages chat message history for another Runnable."""
+
 from __future__ import annotations
 
 import inspect
@@ -236,11 +238,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     history_messages_key: Optional[str] = None
     history_factory_config: Sequence[ConfigurableFieldSpec]
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
     def __init__(
         self,
         runnable: Union[
@@ -365,12 +362,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self._history_chain = history_chain
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         """Get the configuration specs for the RunnableWithMessageHistory."""
         return get_unique_config_specs(
             super().config_specs + list(self.history_factory_config)
         )
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:

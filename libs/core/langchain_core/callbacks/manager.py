@@ -1,3 +1,5 @@
+"""Run managers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -68,6 +70,7 @@ def trace_as_chain_group(
     metadata: Optional[dict[str, Any]] = None,
 ) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
+
     Useful for grouping different calls together as a single run even if
     they aren't composed in a single chain.
 
@@ -148,6 +151,7 @@ async def atrace_as_chain_group(
     metadata: Optional[dict[str, Any]] = None,
 ) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
+
     Useful for grouping different async calls together as a single run even if
     they aren't composed in a single chain.
 

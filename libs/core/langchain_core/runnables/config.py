@@ -1,3 +1,5 @@
+"""Configuration utilities for Runnables."""
+
 from __future__ import annotations
 
 import asyncio
@@ -407,18 +409,14 @@ def call_func_with_variable_args(
     """Call function that may optionally accept a run_manager and/or config.
 
     Args:
-        func (Union[Callable[[Input], Output],
-          Callable[[Input, CallbackManagerForChainRun], Output],
-          Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output]]):
-           The function to call.
-        input (Input): The input to the function.
-        config (RunnableConfig): The config to pass to the function.
-        run_manager (CallbackManagerForChainRun): The run manager to
-          pass to the function. Defaults to None.
-        **kwargs (Any): The keyword arguments to pass to the function.
+        func: The function to call.
+        input: The input to the function.
+        config: The config to pass to the function.
+        run_manager: The run manager to pass to the function. Defaults to None.
+        **kwargs: The keyword arguments to pass to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
     if accepts_config(func):
         if run_manager is not None:
@@ -448,18 +446,14 @@ def acall_func_with_variable_args(
     """Async call function that may optionally accept a run_manager and/or config.
 
     Args:
-        func (Union[Callable[[Input], Awaitable[Output]], Callable[[Input,
-            AsyncCallbackManagerForChainRun], Awaitable[Output]], Callable[[Input,
-            AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]]]):
-            The function to call.
-        input (Input): The input to the function.
-        config (RunnableConfig): The config to pass to the function.
-        run_manager (AsyncCallbackManagerForChainRun): The run manager
-          to pass to the function. Defaults to None.
-        **kwargs (Any): The keyword arguments to pass to the function.
+        func: The function to call.
+        input: The input to the function.
+        config: The config to pass to the function.
+        run_manager: The run manager to pass to the function. Defaults to None.
+        **kwargs: The keyword arguments to pass to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
     if accepts_config(func):
         if run_manager is not None:

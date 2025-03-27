@@ -1,3 +1,5 @@
+"""Utilities for getting information about the runtime environment."""
+
 import platform
 from functools import lru_cache
 

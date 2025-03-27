@@ -1,3 +1,5 @@
+"""Tracers that print to the console."""
+
 import json
 from typing import Any, Callable
 
@@ -48,6 +50,11 @@ class FunctionCallbackHandler(BaseTracer):
     Default is "function_callback_handler"."""
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
+        """Create a FunctionCallbackHandler.
+
+        Args:
+            function: The callback function to call.
+        """
         super().__init__(**kwargs)
         self.function_callback = function
 
@@ -192,4 +199,5 @@ class ConsoleCallbackHandler(FunctionCallbackHandler):
     name: str = "console_callback_handler"
 
     def __init__(self, **kwargs: Any) -> None:
+        """Create a ConsoleCallbackHandler."""
         super().__init__(function=print, **kwargs)

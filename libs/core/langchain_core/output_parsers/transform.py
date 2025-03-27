@@ -1,3 +1,5 @@
+"""Base classes for output parsers that can handle streaming input."""
+
 from __future__ import annotations
 
 from typing import (
@@ -97,8 +99,9 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     """
 
     def _diff(self, prev: Optional[T], next: T) -> T:
-        """Convert parsed outputs into a diff format. The semantics of this are
-        up to the output parser.
+        """Convert parsed outputs into a diff format.
+
+        The semantics of this are up to the output parser.
 
         Args:
             prev: The previous parsed output.

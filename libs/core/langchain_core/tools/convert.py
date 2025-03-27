@@ -1,3 +1,5 @@
+"""Convert functions and runnables to tools."""
+
 import inspect
 from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
 
@@ -96,6 +98,7 @@ def tool(
                     (used even if `args_schema` is provided)
                 - `args_schema` description
                     (used only if `description` / docstring are not provided)
+        *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
         args_schema: optional argument schema for user to specify.
@@ -211,7 +214,7 @@ def tool(
                     monkey: The baz.
                 \"\"\"
                 return bar
-    """
+    """  # noqa: D214,D405,D410,D411,D412,D416
 
     def _create_tool_factory(
         tool_name: str,

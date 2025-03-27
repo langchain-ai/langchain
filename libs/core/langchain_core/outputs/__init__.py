@@ -1,4 +1,6 @@
-"""**Output** classes are used to represent the output of a language model call
+"""Output classes.
+
+**Output** classes are used to represent the output of a language model call
 and the output of a chat.
 
 The top container for information is the `LLMResult` object. `LLMResult` is used by

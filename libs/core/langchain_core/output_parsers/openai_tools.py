@@ -1,3 +1,5 @@
+"""Parse tools for OpenAI tools output."""
+
 import copy
 import json
 from json import JSONDecodeError

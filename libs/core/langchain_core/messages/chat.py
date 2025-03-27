@@ -1,4 +1,8 @@
+"""Chat Message."""
+
 from typing import Any, Literal
+
+from typing_extensions import override
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -17,13 +21,6 @@ class ChatMessage(BaseMessage):
     type: Literal["chat"] = "chat"
     """The type of the message (used during serialization). Defaults to "chat"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
 
 ChatMessage.model_rebuild()
 
@@ -38,13 +35,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """The type of the message (used during serialization).
     Defaults to "ChatMessageChunk"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
+    @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ChatMessageChunk):
             if self.role != other.role:

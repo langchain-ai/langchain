@@ -1,3 +1,5 @@
+"""Helper class to draw a state graph into a PNG file."""
+
 from typing import Any, Optional
 
 from langchain_core.runnables.graph import Graph, LabelsDict

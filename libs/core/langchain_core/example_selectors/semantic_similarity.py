@@ -328,8 +328,7 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         vectorstore_kwargs: Optional[dict] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
-        """Asynchronously create k-shot example selector using example list and
-        embeddings.
+        """Create k-shot example selector using example list and embeddings.
 
         Reshuffles examples dynamically based on Max Marginal Relevance.
 

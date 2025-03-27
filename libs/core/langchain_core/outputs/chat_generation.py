@@ -1,3 +1,5 @@
+"""Chat generation output classes."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
@@ -71,15 +73,11 @@ class ChatGeneration(Generation):
             raise ValueError(msg) from e
         return self
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "output"]
-
 
 class ChatGenerationChunk(ChatGeneration):
-    """ChatGeneration chunk, which can be concatenated with other
-    ChatGeneration chunks.
+    """ChatGeneration chunk.
+
+    ChatGeneration chunks can be concatenated with other ChatGeneration chunks.
     """
 
     message: BaseMessageChunk
@@ -88,14 +86,15 @@ class ChatGenerationChunk(ChatGeneration):
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "output"]
-
     def __add__(
         self, other: Union[ChatGenerationChunk, list[ChatGenerationChunk]]
     ) -> ChatGenerationChunk:
+        """Concatenate two ChatGenerationChunks.
+
+        Args:
+            other: The other ChatGenerationChunk or list of ChatGenerationChunks to
+                concatenate.
+        """
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
                 self.generation_info or {},

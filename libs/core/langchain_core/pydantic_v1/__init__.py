@@ -1,3 +1,5 @@
+"""Pydantic v1 compatibility shim."""
+
 from importlib import metadata
 
 from langchain_core._api.deprecation import warn_deprecated
