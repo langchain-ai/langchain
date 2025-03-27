@@ -24,7 +24,6 @@ def test_doc_intelligence(mock_credential: MagicMock, mock_client: MagicMock) ->
         headers={
             "x-ms-useragent": "langchain-parser/1.0.0",
         },
-        features=None,
     )
     assert parser.client == mock_client()
     assert parser.api_model == "prebuilt-layout"
@@ -51,7 +50,6 @@ def test_doc_intelligence_with_analysis_features(
         headers={
             "x-ms-useragent": "langchain-parser/1.0.0",
         },
-        features=analysis_features,
     )
     assert parser.client == mock_client()
     assert parser.api_model == "prebuilt-layout"

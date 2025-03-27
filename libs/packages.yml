@@ -554,3 +554,6 @@ packages:
 - name: langchain-memgraph
   path: .
   repo: memgraph/langchain-memgraph
+- name: langchain-vectara
+  path: libs/vectara
+  repo: vectara/langchain-vectara
