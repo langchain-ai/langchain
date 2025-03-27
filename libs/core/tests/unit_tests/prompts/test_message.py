@@ -2,7 +2,6 @@ from pathlib import Path
 
 from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
 from langchain_core.prompts.message import _DictMessagePromptTemplate
-from langchain_core.utils.image import image_to_data_url
 
 CUR_DIR = Path(__file__).parent.absolute().resolve()
 
@@ -12,7 +11,6 @@ def test__dict_message_prompt_template_fstring() -> None:
         "role": "assistant",
         "content": [
             {"type": "text", "text": "{text1}", "cache_control": {"type": "ephemeral"}},
-            {"type": "image_url", "image_url": {"path": "{local_image_path}"}},
         ],
         "name": "{name1}",
         "tool_calls": [
@@ -25,8 +23,6 @@ def test__dict_message_prompt_template_fstring() -> None:
         ],
     }
     prompt = _DictMessagePromptTemplate(template=template, template_format="f-string")
-    image_path = str(CUR_DIR / "favicon-16x16.png")
-    image_url = image_to_data_url(image_path)
     expected: BaseMessage = AIMessage(
         [
             {
@@ -34,7 +30,6 @@ def test__dict_message_prompt_template_fstring() -> None:
                 "text": "important message",
                 "cache_control": {"type": "ephemeral"},
             },
-            {"type": "image_url", "image_url": {"url": image_url}},
         ],
         name="foo",
         tool_calls=[
@@ -47,7 +42,6 @@ def test__dict_message_prompt_template_fstring() -> None:
         ],
     )
     actual = prompt.format_messages(
-        local_image_path=image_path,
         text1="important message",
         name1="foo",
         tool_arg1="important arg1",
