@@ -60,7 +60,10 @@ from langchain_core.tools.base import (
     _is_message_content_type,
     get_all_basemodel_annotations,
 )
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
     _create_subset_model,
@@ -2560,3 +2563,44 @@ def test_tool_decorator_description() -> None:
         ]
         == "description"
     )
+
+
+def test_title_property_preserved() -> None:
+    """Test that the title property is preserved when generating schema.
+
+    https://github.com/langchain-ai/langchain/issues/30456
+    """
+    from typing import Any
+
+    from langchain_core.tools import tool
+
+    schema_to_be_extracted = {
+        "type": "object",
+        "required": [],
+        "properties": {
+            "title": {"type": "string", "description": "item title"},
+            "due_date": {"type": "string", "description": "item due date"},
+        },
+        "description": "foo",
+    }
+
+    @tool(args_schema=schema_to_be_extracted)
+    def extract_data(extracted_data: dict[str, Any]) -> dict[str, Any]:
+        """Some documentation."""
+        return extracted_data
+
+    assert convert_to_openai_tool(extract_data) == {
+        "function": {
+            "description": "Some documentation.",
+            "name": "extract_data",
+            "parameters": {
+                "properties": {
+                    "due_date": {"description": "item due date", "type": "string"},
+                    "title": {"description": "item title", "type": "string"},
+                },
+                "required": [],
+                "type": "object",
+            },
+        },
+        "type": "function",
+    }
