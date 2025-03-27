@@ -124,7 +124,7 @@ class ImagePromptValue(PromptValue):
 
     def to_messages(self) -> list[BaseMessage]:
         """Return prompt (image URL) as messages."""
-        return [HumanMessage(content=[cast(dict, self.image_url)])]
+        return [HumanMessage(content=[cast("dict", self.image_url)])]
 
 
 class ChatPromptValueConcrete(ChatPromptValue):

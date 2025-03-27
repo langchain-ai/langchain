@@ -1,6 +1,6 @@
 """Standard LangChain interface tests"""
 
-from typing import Optional, Type
+from typing import Type
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.language_models import BaseChatModel
@@ -29,11 +29,6 @@ class TestXAIStandard(ChatModelIntegrationTests):
             "model": "grok-2",
             "rate_limiter": rate_limiter,
         }
-
-    @property
-    def tool_choice_value(self) -> Optional[str]:
-        """Value to use for tool choice when used in tests."""
-        return "tool_name"
 
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:

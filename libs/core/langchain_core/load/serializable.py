@@ -237,7 +237,7 @@ class Serializable(BaseModel, ABC):
                         raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
-            this = cast(Serializable, self if cls is None else super(cls, self))
+            this = cast("Serializable", self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
             # Now also add the aliases for the secrets

@@ -93,6 +93,22 @@ class AnthropicTool(TypedDict):
     cache_control: NotRequired[Dict[str, str]]
 
 
+def _is_builtin_tool(tool: Any) -> bool:
+    if not isinstance(tool, dict):
+        return False
+
+    tool_type = tool.get("type")
+    if not tool_type or not isinstance(tool_type, str):
+        return False
+
+    _builtin_tool_prefixes = [
+        "text_editor_",
+        "computer_",
+        "bash_",
+    ]
+    return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
+
+
 def _format_image(image_url: str) -> Dict:
     """
     Formats an image of format data:image/jpeg;base64,{b64_string}
@@ -669,6 +685,109 @@ class ChatAnthropic(BaseChatModel):
         These can be disabled by setting ``stream_usage=False`` in the stream method,
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
+    Prompt caching:
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Below is some long context:",
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{long_text}",
+                            "cache_control": {"type": "ephemeral"},
+                        },
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": "What's that about?",
+                },
+            ]
+
+            response = llm.invoke(messages)
+            response.usage_metadata["input_token_details"]
+
+        .. code-block:: python
+
+            {'cache_read': 0, 'cache_creation': 1458}
+
+    Token-efficient tool use (beta):
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.tools import tool
+
+            llm = ChatAnthropic(
+                model="claude-3-7-sonnet-20250219",
+                temperature=0,
+                model_kwargs={
+                    "extra_headers": {
+                        "anthropic-beta": "token-efficient-tools-2025-02-19"
+                    }
+                }
+            )
+
+            @tool
+            def get_weather(location: str) -> str:
+                \"\"\"Get the weather at a location.\"\"\"
+                return "It's sunny."
+
+            llm_with_tools = llm.bind_tools([get_weather])
+            response = llm_with_tools.invoke(
+                "What's the weather in San Francisco?"
+            )
+            print(response.tool_calls)
+            print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
+
+        .. code-block:: none
+
+            [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
+
+            Total tokens: 408
+
+    Built-in tools:
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`_
+        for more detail.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+
+            tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+            llm_with_tools = llm.bind_tools([tool])
+
+            response = llm_with_tools.invoke(
+                "There's a syntax error in my primes.py file. Can you help me fix it?"
+            )
+            print(response.text())
+            response.tool_calls
+
+        .. code-block:: none
+
+            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+
+            [{'name': 'str_replace_editor',
+            'args': {'command': 'view', 'path': '/repo/primes.py'},
+            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+            'type': 'tool_call'}]
+
     Response metadata
         .. code-block:: python
 
@@ -1156,7 +1275,6 @@ class ChatAnthropic(BaseChatModel):
                 llm = ChatAnthropic(
                     model="claude-3-5-sonnet-20240620",
                     temperature=0,
-                    extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
@@ -1174,7 +1292,10 @@ class ChatAnthropic(BaseChatModel):
                 AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 
         """  # noqa: E501
-        formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
+        formatted_tools = [
+            tool if _is_builtin_tool(tool) else convert_to_anthropic_tool(tool)
+            for tool in tools
+        ]
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):

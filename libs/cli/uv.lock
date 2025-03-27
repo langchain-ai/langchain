@@ -213,12 +213,6 @@ wheels = [
 ]
 
 [[package]]
-name = "docopt"
-version = "0.6.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/55/8f8cab2afd404cf578136ef2cc5dfb50baa1761b68c9da1fb1e4eed343c9/docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491", size = 25901 }
-
-[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -413,7 +407,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.20"
+version = "0.3.21"
 source = { editable = "../langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -431,6 +425,7 @@ requires-dist = [
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
+    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-cohere", marker = "extra == 'cohere'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
@@ -520,7 +515,7 @@ typing = [
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.35"
+version = "0.0.36"
 source = { editable = "." }
 dependencies = [
     { name = "gitpython" },
@@ -534,7 +529,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
-    { name = "pytest-watch" },
+    { name = "pytest-watcher" },
 ]
 lint = [
     { name = "mypy" },
@@ -561,7 +556,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=7.4.2,<8.0.0" },
-    { name = "pytest-watch", specifier = ">=4.2.0,<5.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
 ]
 lint = [
     { name = "mypy", specifier = ">=1.13.0,<2.0.0" },
@@ -576,7 +571,7 @@ typing = [{ name = "langchain", editable = "../langchain" }]
 
 [[package]]
 name = "langchain-core"
-version = "0.3.41"
+version = "0.3.48"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -634,7 +629,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
@@ -1026,16 +1021,17 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-watch"
-version = "4.2.0"
+name = "pytest-watcher"
+version = "0.4.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama" },
-    { name = "docopt" },
-    { name = "pytest" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "watchdog" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/36/47/ab65fc1d682befc318c439940f81a0de1026048479f732e84fe714cd69c0/pytest-watch-4.2.0.tar.gz", hash = "sha256:06136f03d5b361718b8d0d234042f7b2f203910d8568f63df2f866b547b3d4b9", size = 16340 }
+sdist = { url = "https://files.pythonhosted.org/packages/72/72/a2a1e81f1b272ddd9a1848af4959c87c39aa95c0bbfb3007cacb86c47fa9/pytest_watcher-0.4.3.tar.gz", hash = "sha256:0cb0e4661648c8c0ff2b2d25efa5a8e421784b9e4c60fcecbf9b7c30b2d731b3", size = 10386 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5b/3a/c44a76c6bb5e9e896d9707fb1c704a31a0136950dec9514373ced0684d56/pytest_watcher-0.4.3-py3-none-any.whl", hash = "sha256:d59b1e1396f33a65ea4949b713d6884637755d641646960056a90b267c3460f9", size = 11852 },
+]
 
 [[package]]
 name = "pyyaml"
