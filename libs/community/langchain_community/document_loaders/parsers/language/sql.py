@@ -7,15 +7,6 @@ from langchain_community.document_loaders.parsers.language.tree_sitter_segmenter
 if TYPE_CHECKING:
     from tree_sitter import Language, Parser
 
-# CHUNK_QUERY = """
-#     [
-#         (create_table) @create
-#         (_select_statement) @select
-#         (insert) @insert
-#         (update) @update
-#         (_delete_statement) @delete
-#     ]
-# """
 CHUNK_QUERY = """
     [
         (statement) @statement
