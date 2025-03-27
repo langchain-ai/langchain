@@ -2607,7 +2607,7 @@ def test_title_property_preserved() -> None:
 
 
 @pytest.mark.asyncio
-async def test_tool_with_langgraph() -> None:
+async def test_ainvoke_input_isolation_from_state_graph_context() -> None:
     """Test that tool execution works correctly with LangGraph."""
     from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage, AIMessage
     import json
