@@ -470,12 +470,111 @@ class _TextTemplateParam(TypedDict, total=False):
 class _ImageTemplateParam(TypedDict, total=False):
     image_url: Union[str, dict]
 
+class _PromptBlockWrapper(Serializable):
+    """Internal class to represent a single content block within a message template.
+
+    This enables preserving additional fields like cache_control within content blocks.
+    """
+
+    template: Union[StringPromptTemplate, ImagePromptTemplate] = Field()
+    """The core template for the dynamic content (text or image)."""
+
+    static_structure: dict = Field(default_factory=dict)
+    """Dict containing fixed keys associated with the block."""
+    
+    @classmethod
+    def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "chat"]
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    def format(self, **kwargs: Any) -> dict:
+        """Format the template and construct the complete block dict.
+
+        Args:
+            **kwargs: Keyword arguments for template formatting.
+
+        Returns:
+            A dictionary with the formatted content and preserved static structure.
+        """
+        # Copy the static structure to avoid modifying the original
+        result = self.static_structure.copy()
+
+        # Format the template and add the appropriate content key
+        if isinstance(self.template, StringPromptTemplate):
+            formatted = self.template.format(**kwargs)
+            result["text"] = formatted
+        elif isinstance(self.template, ImagePromptTemplate):
+            formatted = self.template.format(**kwargs)
+            result["image_url"] = formatted
+
+        return result
+
+    async def aformat(self, **kwargs: Any) -> dict:
+        """Async format the template and construct the complete block dict.
+
+        Args:
+            **kwargs: Keyword arguments for template formatting.
+
+        Returns:
+            A dictionary with the formatted content and preserved static structure.
+        """
+        # Copy the static structure to avoid modifying the original
+        result = self.static_structure.copy()
+
+        # Format the template and add the appropriate content key
+        if isinstance(self.template, StringPromptTemplate):
+            formatted = await self.template.aformat(**kwargs)
+            result["text"] = formatted
+        elif isinstance(self.template, ImagePromptTemplate):
+            formatted = await self.template.aformat(**kwargs)
+            result["image_url"] = formatted
+
+        return result
+    
+    @property
+    def input_variables(self) -> list[str]:
+        """Input variables for this prompt template.
+
+        Returns:
+            List of input variable names.
+        """
+        return self.template.input_variables
+    
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        return self.template.format_prompt(**kwargs)
+
+    def pretty_repr(self, html: bool = False) -> str:
+        """Human-readable representation.
+
+        Args:
+            html: Whether to format as HTML. Defaults to False.
+
+        Returns:
+            Human-readable representation.
+        """
+        # Delegate to the inner template's representation
+        inner_repr = self.template.pretty_repr(html=html)
+        return inner_repr
+
 
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
-        StringPromptTemplate, list[Union[StringPromptTemplate, ImagePromptTemplate]]
+        StringPromptTemplate,
+        list[Union[StringPromptTemplate, ImagePromptTemplate, _PromptBlockWrapper]],
     ]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
@@ -526,19 +625,30 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 raise ValueError(msg)
             prompt = []
             for tmpl in template:
-                if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
-                    if isinstance(tmpl, str):
-                        text: str = tmpl
-                    else:
-                        text = cast("_TextTemplateParam", tmpl)["text"]  # type: ignore[assignment]
+                if isinstance(tmpl, str):
+                    text: str = tmpl
                     prompt.append(
                         PromptTemplate.from_template(
                             text, template_format=template_format
                         )
                     )
+                elif isinstance(tmpl, dict) and "text" in tmpl:
+                    text = cast("_TextTemplateParam", tmpl)["text"]  # type: ignore[assignment]
+                    inner_template = PromptTemplate.from_template(
+                        text, template_format=template_format
+                    )
+
+                    static_structure = {k: v for k, v in tmpl.items() if k != "text"}
+                    # Add type if not present
+                    if "type" not in static_structure:
+                        static_structure["type"] = "text"
+
+                    prompt.append(_PromptBlockWrapper(template=inner_template, static_structure=static_structure))
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
-                    img_template = cast("_ImageTemplateParam", tmpl)["image_url"]
+                    img_template = cast("_ImageTemplateParam", tmpl)["image_url"]  # type: ignore
                     input_variables = []
+                    inner_template = None
+
                     if isinstance(img_template, str):
                         vars = get_template_variables(img_template, template_format)
                         if vars:
@@ -551,7 +661,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                 raise ValueError(msg)
                             input_variables = [vars[0]]
                         img_template = {"url": img_template}
-                        img_template_obj = ImagePromptTemplate(
+                        inner_template = ImagePromptTemplate(
                             input_variables=input_variables,
                             template=img_template,
                             template_format=template_format,
@@ -565,7 +675,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                         img_template[key], template_format
                                     )
                                 )
-                        img_template_obj = ImagePromptTemplate(
+                        inner_template = ImagePromptTemplate(
                             input_variables=input_variables,
                             template=img_template,
                             template_format=template_format,
@@ -573,7 +683,15 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     else:
                         msg = f"Invalid image template: {tmpl}"
                         raise ValueError(msg)
-                    prompt.append(img_template_obj)
+
+                    static_structure = {
+                        k: v for k, v in tmpl.items() if k != "image_url"
+                    }
+                    # Add type if not present
+                    if "type" not in static_structure:
+                        static_structure["type"] = "image_url"
+
+                    prompt.append(_PromptBlockWrapper(template=inner_template, static_structure=static_structure))
                 else:
                     msg = f"Invalid template: {tmpl}"
                     raise ValueError(msg)
@@ -653,7 +771,10 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             content: list = []
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
-                if isinstance(prompt, StringPromptTemplate):
+                if isinstance(prompt, _PromptBlockWrapper):
+                    block = prompt.format(**inputs)
+                    content.append(block)
+                elif isinstance(prompt, StringPromptTemplate):
                     formatted: Union[str, ImageURL] = prompt.format(**inputs)
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
@@ -681,7 +802,10 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             content: list = []
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
-                if isinstance(prompt, StringPromptTemplate):
+                if isinstance(prompt, _PromptBlockWrapper):
+                    block = await prompt.aformat(**inputs)
+                    content.append(block)
+                elif isinstance(prompt, StringPromptTemplate):
                     formatted: Union[str, ImageURL] = await prompt.aformat(**inputs)
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):

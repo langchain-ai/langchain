@@ -3026,18 +3026,33 @@
                 'id': list([
                   'langchain',
                   'prompts',
-                  'prompt',
-                  'PromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                    'name',
-                  ]),
-                  'template': 'You are an AI assistant named {name}.',
-                  'template_format': 'f-string',
+                  'static_structure': dict({
+                    'type': 'text',
+                  }),
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'prompt',
+                      'PromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                        'name',
+                      ]),
+                      'template': 'You are an AI assistant named {name}.',
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'PromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'PromptTemplate',
                 'type': 'constructor',
               }),
             ]),
@@ -3105,172 +3120,307 @@
                 'id': list([
                   'langchain',
                   'prompts',
-                  'prompt',
-                  'PromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                  ]),
-                  'template': "What's in this image?",
-                  'template_format': 'f-string',
-                }),
-                'lc': 1,
-                'name': 'PromptTemplate',
-                'type': 'constructor',
-              }),
-              dict({
-                'id': list([
-                  'langchain',
-                  'prompts',
-                  'prompt',
-                  'PromptTemplate',
-                ]),
-                'kwargs': dict({
-                  'input_variables': list([
-                  ]),
-                  'template': "What's in this image?",
-                  'template_format': 'f-string',
-                }),
-                'lc': 1,
-                'name': 'PromptTemplate',
-                'type': 'constructor',
-              }),
-              dict({
-                'id': list([
-                  'langchain',
-                  'prompts',
-                  'image',
-                  'ImagePromptTemplate',
-                ]),
-                'kwargs': dict({
-                  'input_variables': list([
-                    'my_image',
-                  ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,{my_image}',
+                  'static_structure': dict({
+                    'type': 'text',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'prompt',
+                      'PromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                      ]),
+                      'template': "What's in this image?",
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'PromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
               dict({
                 'id': list([
                   'langchain',
                   'prompts',
-                  'image',
-                  'ImagePromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                    'my_image',
-                  ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,{my_image}',
+                  'static_structure': dict({
+                    'type': 'text',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'prompt',
+                      'PromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                      ]),
+                      'template': "What's in this image?",
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'PromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
               dict({
                 'id': list([
                   'langchain',
                   'prompts',
-                  'image',
-                  'ImagePromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                    'my_other_image',
-                  ]),
-                  'template': dict({
-                    'url': '{my_other_image}',
+                  'static_structure': dict({
+                    'type': 'image_url',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                        'my_image',
+                      ]),
+                      'template': dict({
+                        'url': 'data:image/jpeg;base64,{my_image}',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
               dict({
                 'id': list([
                   'langchain',
                   'prompts',
-                  'image',
-                  'ImagePromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                    'my_other_image',
-                  ]),
-                  'template': dict({
-                    'detail': 'medium',
-                    'url': '{my_other_image}',
+                  'static_structure': dict({
+                    'type': 'image_url',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                        'my_image',
+                      ]),
+                      'template': dict({
+                        'url': 'data:image/jpeg;base64,{my_image}',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
               dict({
                 'id': list([
                   'langchain',
                   'prompts',
-                  'image',
-                  'ImagePromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                  ]),
-                  'template': dict({
-                    'url': 'https://www.langchain.com/image.png',
+                  'static_structure': dict({
+                    'type': 'image_url',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                        'my_other_image',
+                      ]),
+                      'template': dict({
+                        'url': '{my_other_image}',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
               dict({
                 'id': list([
                   'langchain',
                   'prompts',
-                  'image',
-                  'ImagePromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                  ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,foobar',
+                  'static_structure': dict({
+                    'type': 'image_url',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                        'my_other_image',
+                      ]),
+                      'template': dict({
+                        'detail': 'medium',
+                        'url': '{my_other_image}',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
               dict({
                 'id': list([
                   'langchain',
                   'prompts',
-                  'image',
-                  'ImagePromptTemplate',
+                  'chat',
+                  '_PromptBlockWrapper',
                 ]),
                 'kwargs': dict({
-                  'input_variables': list([
-                  ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,foobar',
+                  'static_structure': dict({
+                    'type': 'image_url',
                   }),
-                  'template_format': 'f-string',
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                      ]),
+                      'template': dict({
+                        'url': 'https://www.langchain.com/image.png',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
                 }),
                 'lc': 1,
-                'name': 'ImagePromptTemplate',
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'chat',
+                  '_PromptBlockWrapper',
+                ]),
+                'kwargs': dict({
+                  'static_structure': dict({
+                    'type': 'image_url',
+                  }),
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                      ]),
+                      'template': dict({
+                        'url': 'data:image/jpeg;base64,foobar',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
+                }),
+                'lc': 1,
+                'type': 'constructor',
+              }),
+              dict({
+                'id': list([
+                  'langchain',
+                  'prompts',
+                  'chat',
+                  '_PromptBlockWrapper',
+                ]),
+                'kwargs': dict({
+                  'static_structure': dict({
+                    'type': 'image_url',
+                  }),
+                  'template': dict({
+                    'id': list([
+                      'langchain',
+                      'prompts',
+                      'image',
+                      'ImagePromptTemplate',
+                    ]),
+                    'kwargs': dict({
+                      'input_variables': list([
+                      ]),
+                      'template': dict({
+                        'url': 'data:image/jpeg;base64,foobar',
+                      }),
+                      'template_format': 'f-string',
+                    }),
+                    'lc': 1,
+                    'name': 'ImagePromptTemplate',
+                    'type': 'constructor',
+                  }),
+                }),
+                'lc': 1,
                 'type': 'constructor',
               }),
             ]),
