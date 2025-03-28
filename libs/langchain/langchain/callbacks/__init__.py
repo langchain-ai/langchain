@@ -51,7 +51,6 @@ if TYPE_CHECKING:
     from langchain_community.callbacks.mlflow_callback import MlflowCallbackHandler
     from langchain_community.callbacks.openai_info import (
         OpenAICallbackHandler,
-        AsyncOpenAICallbackHandler,
     )
     from langchain_community.callbacks.promptlayer_callback import (
         PromptLayerCallbackHandler,
