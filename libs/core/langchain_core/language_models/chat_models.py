@@ -1169,7 +1169,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
         *,
-        tool_choice: Optional[Union[str, Literal["any"]]] = None,
+        tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError
