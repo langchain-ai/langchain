@@ -2,16 +2,12 @@
 
 import inspect
 import json
-import pytest
 import sys
 import textwrap
 import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing import (
     Annotated,
     Any,
@@ -23,6 +19,11 @@ from typing import (
     Union,
     cast,
 )
+
+import pytest
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict
 
 from langchain_core import tools
@@ -2690,4 +2691,3 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
     }
-

@@ -659,7 +659,8 @@ class ChildTool(BaseTool):
             return (), tool_input.copy()
         else:
             # This code path is not expected to be reachable.
-            raise TypeError(f"Invalid tool input type: {type(tool_input)}")
+            msg = f"Invalid tool input type: {type(tool_input)}"
+            raise TypeError(msg)
 
     def run(
         self,
