@@ -395,7 +395,7 @@ def index(
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
-            source_ids = cast(Sequence[str], source_ids)  # type: ignore[assignment]
+            source_ids = cast("Sequence[str]", source_ids)  # type: ignore[assignment]
 
         exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
 
@@ -461,7 +461,7 @@ def index(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast(Sequence[str], source_ids)
+            _source_ids = cast("Sequence[str]", source_ids)
 
             uids_to_delete = record_manager.list_keys(
                 group_ids=_source_ids, before=index_start_dt
@@ -710,7 +710,7 @@ async def aindex(
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
             # source ids cannot be None after for loop above.
-            source_ids = cast(Sequence[str], source_ids)
+            source_ids = cast("Sequence[str]", source_ids)
 
         exists_batch = await record_manager.aexists([doc.uid for doc in hashed_docs])
 
@@ -776,7 +776,7 @@ async def aindex(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast(Sequence[str], source_ids)
+            _source_ids = cast("Sequence[str]", source_ids)
 
             uids_to_delete = await record_manager.alist_keys(
                 group_ids=_source_ids, before=index_start_dt

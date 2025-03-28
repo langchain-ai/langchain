@@ -530,14 +530,14 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     if isinstance(tmpl, str):
                         text: str = tmpl
                     else:
-                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]
+                        text = cast("_TextTemplateParam", tmpl)["text"]  # type: ignore[assignment]
                     prompt.append(
                         PromptTemplate.from_template(
                             text, template_format=template_format
                         )
                     )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
-                    img_template = cast(_ImageTemplateParam, tmpl)["image_url"]
+                    img_template = cast("_ImageTemplateParam", tmpl)["image_url"]
                     input_variables = []
                     if isinstance(img_template, str):
                         vars = get_template_variables(img_template, template_format)
@@ -1024,7 +1024,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             "partial_variables": partial_vars,
             **kwargs,
         }
-        cast(type[ChatPromptTemplate], super()).__init__(messages=_messages, **kwargs)
+        cast("type[ChatPromptTemplate]", super()).__init__(messages=_messages, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
@@ -1382,11 +1382,11 @@ def _create_template_from_message_type(
         )
     elif message_type in ("ai", "assistant"):
         message = AIMessagePromptTemplate.from_template(
-            cast(str, template), template_format=template_format
+            cast("str", template), template_format=template_format
         )
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(
-            cast(str, template), template_format=template_format
+            cast("str", template), template_format=template_format
         )
     elif message_type == "placeholder":
         if isinstance(template, str):
@@ -1484,7 +1484,7 @@ def _convert_to_message(
         else:
             _message = message_type_str(
                 prompt=PromptTemplate.from_template(
-                    cast(str, template), template_format=template_format
+                    cast("str", template), template_format=template_format
                 )
             )
     else:

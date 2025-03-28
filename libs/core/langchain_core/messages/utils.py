@@ -908,7 +908,7 @@ def trim_messages(
     try:
         from langchain_text_splitters import TextSplitter
     except ImportError:
-        text_splitter_fn: Optional[Callable] = cast(Optional[Callable], text_splitter)
+        text_splitter_fn: Optional[Callable] = cast("Optional[Callable]", text_splitter)
     else:
         if isinstance(text_splitter, TextSplitter):
             text_splitter_fn = text_splitter.split_text
@@ -1148,7 +1148,7 @@ def convert_to_openai_messages(
                             raise ValueError(err)
                         if not any(
                             tool_call["id"] == block["id"]
-                            for tool_call in cast(AIMessage, message).tool_calls
+                            for tool_call in cast("AIMessage", message).tool_calls
                         ):
                             oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
                             oai_msg["tool_calls"].append(

@@ -517,6 +517,9 @@ packages:
   repo: OpenGradient/og-langchain
   downloads: 274
   downloads_updated_at: '2025-03-22T21:59:15.663971+00:00'
+- name: langchain-netmind
+  path: .
+  repo: protagolabs/langchain-netmind
 - name: langchain-agentql
   path: langchain
   repo: tinyfish-io/agentql-integrations

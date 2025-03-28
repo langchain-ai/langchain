@@ -128,9 +128,7 @@ def _get_trace_callbacks(
             example_id=example_id,
         )
         if callback_manager is None:
-            from langchain_core.callbacks.base import Callbacks
-
-            cb = cast(Callbacks, [tracer])
+            cb = cast("Callbacks", [tracer])
         else:
             if not any(
                 isinstance(handler, LangChainTracer)
@@ -206,13 +204,12 @@ def register_configure_hook(
     if env_var is not None and handle_class is None:
         msg = "If env_var is set, handle_class must also be set to a non-None value."
         raise ValueError(msg)
-    from langchain_core.callbacks.base import BaseCallbackHandler
 
     _configure_hooks.append(
         (
             # the typings of ContextVar do not have the generic arg set as covariant
             # so we have to cast it
-            cast(ContextVar[Optional[BaseCallbackHandler]], context_var),
+            cast("ContextVar[Optional[BaseCallbackHandler]]", context_var),
             inheritable,
             handle_class,
             env_var,
