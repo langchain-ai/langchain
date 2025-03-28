@@ -1,6 +1,9 @@
 import re
+from io import BytesIO
 from pathlib import Path
-from typing import Any, Type
+
+import numpy as np
+from typing import Any, Type, io
 
 import pytest
 from langchain_core.documents.base import Blob
@@ -24,12 +27,7 @@ _re_in_image = r"(?ms).*MAKE.*TEXT.*STAND.*OUT.*FROM.*"
 @pytest.mark.parametrize(
     "blob,body",
     [
-        # (building_image, ""),
-        # (Blob.from_path(path_base / "examples/text.png"), _re_in_image),
         (Blob.from_path(path_base / "examples/text-gray.png"), _re_in_image),
-        # (Blob.from_path(path_base / "examples/sample-bw.png"), _re_in_image),
-        # # (Blob.from_path(path_base / "examples/sample-color.png"), _re_in_image),
-        # # (Blob.from_path(path_base / "examples/sample-gray.png"), _re_in_image),
     ],
 )
 @pytest.mark.parametrize(
@@ -91,8 +89,12 @@ def test_image_parser_with_numpy(
     blob_loader: Type,
     kw: dict[str, Any],
 ) -> None:
-    blob = Blob.from_path(
-        path_base / "examples/gray.npy", mime_type="application/x-npy"
-    )
+    gray_image = np.empty(shape=(412, 1652, 1))
+    with BytesIO() as buffer:
+        np.save(buffer, gray_image)
+        buffer.seek(0)
+        npy_bytes = buffer.getvalue()
+
+    blob=Blob.from_data(npy_bytes,mime_type="application/x-npy")
     documents = list(blob_loader(**kw).lazy_parse(blob))
     assert len(documents) == 1
