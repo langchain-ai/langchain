@@ -470,6 +470,7 @@ class _TextTemplateParam(TypedDict, total=False):
 class _ImageTemplateParam(TypedDict, total=False):
     image_url: Union[str, dict]
 
+
 class _PromptBlockWrapper(Serializable):
     """Internal class to represent a single content block within a message template.
 
@@ -645,8 +646,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
                     prompt.append(
                         _PromptBlockWrapper(
-                            template=inner_template,
-                            static_structure=static_structure
+                            template=inner_template, static_structure=static_structure
                         )
                     )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
@@ -666,7 +666,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                 raise ValueError(msg)
                             input_variables = [vars[0]]
                         img_template = {"url": img_template}
-                        inner_template = ImagePromptTemplate(
+                        img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables,
                             template=img_template,
                             template_format=template_format,
@@ -680,14 +680,14 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                         img_template[key], template_format
                                     )
                                 )
-                        inner_template = ImagePromptTemplate(
+                        img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables,
                             template=img_template,
                             template_format=template_format,
                         )
                     else:
                         msg = f"Invalid image template: {tmpl}"
-                        raise ValueError(msg)
+                        raise TypeError(msg)
 
                     static_structure = {
                         k: v for k, v in tmpl.items() if k != "image_url"
@@ -698,8 +698,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
                     prompt.append(
                         _PromptBlockWrapper(
-                            template=inner_template,
-                            static_structure=static_structure
+                            template=img_template_obj, static_structure=static_structure
                         )
                     )
                 else:

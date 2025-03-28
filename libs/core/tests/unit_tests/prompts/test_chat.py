@@ -1068,10 +1068,7 @@ def test_chat_template_preserves_fields_in_multipart_messages() -> None:
         ]
     )
 
-    messages = template.format_messages(
-        name="Bob",
-        image_data="base64_encoded_data"
-    )
+    messages = template.format_messages(name="Bob", image_data="base64_encoded_data")
     assert len(messages) == 1
     assert messages[0].content == [
         {
