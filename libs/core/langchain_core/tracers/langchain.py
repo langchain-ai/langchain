@@ -66,7 +66,7 @@ def _get_executor() -> ThreadPoolExecutor:
     return _EXECUTOR
 
 
-def _run_to_dict(run: Run, exclude_inputs: bool = False) -> dict:
+def _run_to_dict(run: Run, *, exclude_inputs: bool = False) -> dict:
     # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
     # run.model_dump
     with warnings.catch_warnings():
