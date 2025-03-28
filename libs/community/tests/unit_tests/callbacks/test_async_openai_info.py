@@ -29,7 +29,7 @@ async def test_on_llm_end(handler: AsyncOpenAICallbackHandler) -> None:
             "model_name": get_fields(BaseOpenAI)["model_name"].default,
         },
     )
-    handler.on_llm_end(response)
+    await handler.on_llm_end(response)
     assert handler.successful_requests == 1
     assert handler.total_tokens == 3
     assert handler.prompt_tokens == 2
@@ -67,7 +67,7 @@ async def test_on_llm_end_with_chat_generation(
             "model_name": get_fields(BaseOpenAI)["model_name"].default,
         },
     )
-    handler.on_llm_end(response)
+    await handler.on_llm_end(response)
     assert handler.successful_requests == 1
     assert handler.total_tokens == 4
     assert handler.prompt_tokens == 2
@@ -92,7 +92,7 @@ async def test_on_llm_end_with_chat_generation_no_cost(
             "model_name": "foo-bar",
         },
     )
-    handler.on_llm_end(response)
+    await handler.on_llm_end(response)
     assert handler.total_cost == 0
 
 
@@ -126,7 +126,7 @@ async def test_on_llm_end_finetuned_model(
             "model_name": model_name,
         },
     )
-    handler.on_llm_end(response)
+    await handler.on_llm_end(response)
     assert np.isclose(handler.total_cost, expected_cost)
 
 
@@ -170,7 +170,7 @@ async def test_on_llm_end_azure_openai(
             "model_name": model_name,
         },
     )
-    handler.on_llm_end(response)
+    await handler.on_llm_end(response)
     assert handler.total_cost == expected_cost
 
 
@@ -192,10 +192,10 @@ async def test_on_llm_end_no_cost_invalid_model(
             "model_name": model_name,
         },
     )
-    handler.on_llm_end(response)
+    await handler.on_llm_end(response)
     assert handler.total_cost == 0
 
 
 @pytest.mark.asyncio
 async def test_on_retry_works(handler: AsyncOpenAICallbackHandler) -> None:
-    handler.on_retry(MagicMock(), run_id=uuid4())
+    await handler.on_retry(MagicMock(), run_id=uuid4())
