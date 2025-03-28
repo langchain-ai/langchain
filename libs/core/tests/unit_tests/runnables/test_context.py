@@ -330,7 +330,7 @@ test_cases = [
 ]
 
 
-@pytest.mark.parametrize("runnable, cases", test_cases)
+@pytest.mark.parametrize(("runnable", "cases"), test_cases)
 def test_context_runnables(
     runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
 ) -> None:
@@ -342,7 +342,7 @@ def test_context_runnables(
     assert add(runnable.stream(cases[0].input)) == cases[0].output
 
 
-@pytest.mark.parametrize("runnable, cases", test_cases)
+@pytest.mark.parametrize(("runnable", "cases"), test_cases)
 async def test_context_runnables_async(
     runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
 ) -> None:
@@ -357,14 +357,19 @@ async def test_context_runnables_async(
 def test_runnable_context_seq_key_not_found() -> None:
     seq: Runnable = {"bar": Context.setter("input")} | Context.getter("foo")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Expected exactly one setter for context key foo"
+    ):
         seq.invoke("foo")
 
 
 def test_runnable_context_seq_key_order() -> None:
     seq: Runnable = {"bar": Context.getter("foo")} | Context.setter("foo")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Context setter for key foo must be defined after all getters.",
+    ):
         seq.invoke("foo")
 
 
@@ -374,7 +379,9 @@ def test_runnable_context_deadlock() -> None:
         "foo": Context.setter("foo") | Context.getter("input"),
     } | RunnablePassthrough()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Deadlock detected between context keys foo and input"
+    ):
         seq.invoke("foo")
 
 
@@ -383,7 +390,9 @@ def test_runnable_context_seq_key_circular_ref() -> None:
         "bar": Context.setter(input=Context.getter("input"))
     } | Context.getter("foo")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Circular reference in context setter for key input"
+    ):
         seq.invoke("foo")
 
 

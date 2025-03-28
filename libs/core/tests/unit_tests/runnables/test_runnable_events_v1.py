@@ -1824,8 +1824,7 @@ async def test_runnable_each() -> None:
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
-        async for _ in add_one_map.astream_events([1, 2, 3], version="v1"):
-            pass
+        _ = [_ async for _ in add_one_map.astream_events([1, 2, 3], version="v1")]
 
 
 async def test_events_astream_config() -> None:
