@@ -3,13 +3,17 @@ from typing import TYPE_CHECKING, Any
 from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.callbacks.openai_info import OpenAICallbackHandler
+    from langchain_community.callbacks.openai_info import (
+        OpenAICallbackHandler,
+        AsyncOpenAICallbackHandler,
+    )
 
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "OpenAICallbackHandler": "langchain_community.callbacks.openai_info"
+    "OpenAICallbackHandler": "langchain_community.callbacks.openai_info",
+    "AsyncOpenAICallbackHandler": "langchain_community.callbacks.openai_info",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

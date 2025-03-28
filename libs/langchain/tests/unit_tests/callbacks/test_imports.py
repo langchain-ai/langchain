@@ -15,6 +15,7 @@ EXPECTED_ALL = [
     "MlflowCallbackHandler",
     "LLMonitorCallbackHandler",
     "OpenAICallbackHandler",
+    "AsyncOpenAICallbackHandler",
     "StdOutCallbackHandler",
     "AsyncIteratorCallbackHandler",
     "StreamingStdOutCallbackHandler",

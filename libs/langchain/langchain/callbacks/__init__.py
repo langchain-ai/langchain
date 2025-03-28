@@ -49,7 +49,10 @@ if TYPE_CHECKING:
         wandb_tracing_enabled,
     )
     from langchain_community.callbacks.mlflow_callback import MlflowCallbackHandler
-    from langchain_community.callbacks.openai_info import OpenAICallbackHandler
+    from langchain_community.callbacks.openai_info import (
+        OpenAICallbackHandler,
+        AsyncOpenAICallbackHandler,
+    )
     from langchain_community.callbacks.promptlayer_callback import (
         PromptLayerCallbackHandler,
     )
@@ -81,6 +84,7 @@ DEPRECATED_LOOKUP = {
     "MlflowCallbackHandler": "langchain_community.callbacks.mlflow_callback",
     "LLMonitorCallbackHandler": "langchain_community.callbacks.llmonitor_callback",
     "OpenAICallbackHandler": "langchain_community.callbacks.openai_info",
+    "AsyncOpenAICallbackHandler": "langchain_community.callbacks.openai_info",
     "LLMThoughtLabeler": (
         "langchain_community.callbacks.streamlit.streamlit_callback_handler"
     ),
