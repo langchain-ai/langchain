@@ -2,6 +2,11 @@
 # it is EXPERIMENTAL and may be removed in the future
 
 packages:
+- name: goat-sdk-adapter-langchain
+  path: python/src/adapters/langchain
+  repo: goat-sdk/goat
+  name_title: GOAT SDK
+  provider_page: goat
 - name: langchain-core
   path: libs/core
   repo: langchain-ai/langchain
