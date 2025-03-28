@@ -652,7 +652,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
                     img_template = cast("_ImageTemplateParam", tmpl)["image_url"]  # type: ignore
                     input_variables = []
-                    inner_template = None
+                    img_template_obj = None
 
                     if isinstance(img_template, str):
                         vars = get_template_variables(img_template, template_format)
