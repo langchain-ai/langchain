@@ -950,11 +950,11 @@ def _prep_run_args(
 ) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
+        tool_call_id: Optional[str] = cast("ToolCall", input)["id"]
+        tool_input: Union[str, dict] = cast("ToolCall", input)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast(Union[str, dict], input)
+        tool_input = cast("Union[str, dict]", input)
     return (
         tool_input,
         dict(

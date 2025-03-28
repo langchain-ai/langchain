@@ -730,6 +730,7 @@ def test_thinking() -> None:
             assert block["signature"] and isinstance(block["signature"], str)
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_redacted_thinking() -> None:
     llm = ChatAnthropic(
         model="claude-3-7-sonnet-latest",

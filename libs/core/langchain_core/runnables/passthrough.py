@@ -565,7 +565,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
                 if filtered:
                     yield filtered
             # yield map output
-            yield cast(dict[str, Any], first_map_chunk_future.result())
+            yield cast("dict[str, Any]", first_map_chunk_future.result())
             for chunk in map_output:
                 yield chunk
 

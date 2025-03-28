@@ -136,7 +136,7 @@ class Blob(BaseMedia):
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
-            return cast(Optional[str], self.metadata["source"])
+            return cast("Optional[str]", self.metadata["source"])
         return str(self.path) if self.path else None
 
     @model_validator(mode="before")
