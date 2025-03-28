@@ -38,6 +38,9 @@ if TYPE_CHECKING:
     from langchain_community.callbacks.flyte_callback import (
         FlyteCallbackHandler,
     )
+    from langchain_community.callbacks.google_genai_callback import (
+        GoogleGenAICallbackHandler,
+    )
     from langchain_community.callbacks.human import (
         HumanApprovalCallbackHandler,
     )
@@ -99,6 +102,7 @@ _module_lookup = {
     "FiddlerCallbackHandler": "langchain_community.callbacks.fiddler_callback",
     "FlyteCallbackHandler": "langchain_community.callbacks.flyte_callback",
     "HumanApprovalCallbackHandler": "langchain_community.callbacks.human",
+    "GoogleGenAICallbackHandler": "langchain_community.callbacks.google_genai_callback",
     "InfinoCallbackHandler": "langchain_community.callbacks.infino_callback",
     "LLMThoughtLabeler": "langchain_community.callbacks.streamlit",
     "LLMonitorCallbackHandler": "langchain_community.callbacks.llmonitor_callback",
@@ -136,6 +140,7 @@ __all__ = [
     "ContextCallbackHandler",
     "FiddlerCallbackHandler",
     "FlyteCallbackHandler",
+    "GoogleGenAICallbackHandler",
     "HumanApprovalCallbackHandler",
     "InfinoCallbackHandler",
     "LLMThoughtLabeler",
