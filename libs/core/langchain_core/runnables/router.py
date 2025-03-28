@@ -158,7 +158,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         configs = get_config_list(config, len(inputs))
         with get_executor_for_config(configs[0]) as executor:
             return cast(
-                list[Output],
+                "list[Output]",
                 list(executor.map(invoke, runnables, actual_inputs, configs)),
             )
 

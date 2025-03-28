@@ -500,14 +500,14 @@ def add_usage(
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
-        return cast(UsageMetadata, left or right)
+        return cast("UsageMetadata", left or right)
 
     return UsageMetadata(
         **cast(
-            UsageMetadata,
+            "UsageMetadata",
             _dict_int_op(
-                cast(dict, left),
-                cast(dict, right),
+                cast("dict", left),
+                cast("dict", right),
                 operator.add,
             ),
         )
@@ -557,14 +557,14 @@ def subtract_usage(
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
-        return cast(UsageMetadata, left or right)
+        return cast("UsageMetadata", left or right)
 
     return UsageMetadata(
         **cast(
-            UsageMetadata,
+            "UsageMetadata",
             _dict_int_op(
-                cast(dict, left),
-                cast(dict, right),
+                cast("dict", left),
+                cast("dict", right),
                 (lambda le, ri: max(le - ri, 0)),
             ),
         )

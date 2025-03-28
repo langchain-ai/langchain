@@ -42,7 +42,7 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
         assert "parent_ids" in event, "Parent ids should be present in the event."
         assert event["parent_ids"] == [], "Parent ids should be empty."
 
-    return cast(list[StreamEvent], [{**event, "run_id": ""} for event in events])
+    return cast("list[StreamEvent]", [{**event, "run_id": ""} for event in events])
 
 
 async def _as_async_iterator(iterable: list) -> AsyncIterator:

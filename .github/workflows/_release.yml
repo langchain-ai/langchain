@@ -12,6 +12,7 @@ on:
       working-directory:
         required: true
         type: string
+        description: "From which folder this pipeline executes"
         default: 'libs/langchain'
       dangerous-nonmaster-release:
         required: false

@@ -216,7 +216,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast(T, obj)
+                return cast("T", obj)
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -229,7 +229,7 @@ def deprecated(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 return cast(
-                    T,
+                    "T",
                     FieldInfoV1(
                         default=obj.default,
                         default_factory=obj.default_factory,
@@ -250,7 +250,7 @@ def deprecated(
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 return cast(
-                    T,
+                    "T",
                     FieldInfoV2(
                         default=obj.default,
                         default_factory=obj.default_factory,
@@ -264,7 +264,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast(Union[type, Callable], obj.fget).__qualname__
+            _name = _name or cast("Union[type, Callable]", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -311,14 +311,14 @@ def deprecated(
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the property."""
                 return cast(
-                    T,
+                    "T",
                     _DeprecatedProperty(
                         fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                     ),
                 )
 
         else:
-            _name = _name or cast(Union[type, Callable], obj).__qualname__
+            _name = _name or cast("Union[type, Callable]", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -338,7 +338,7 @@ def deprecated(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return cast(T, wrapper)
+                return cast("T", wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
@@ -391,7 +391,7 @@ def deprecated(
             finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
             finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast(T, finalized)
+        return cast("T", finalized)
 
     return deprecate
 
