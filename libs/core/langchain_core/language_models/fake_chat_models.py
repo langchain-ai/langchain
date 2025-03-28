@@ -262,7 +262,7 @@ class GenericFakeChatModel(BaseChatModel):
                 msg = "Expected content to be a string."
                 raise ValueError(msg)
 
-            content_chunks = cast(list[str], re.split(r"(\s)", content))
+            content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
@@ -280,7 +280,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = cast(list[str], re.split(r"(,)", fvalue))
+                            fvalue_chunks = cast("list[str]", re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(

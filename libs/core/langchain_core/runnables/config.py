@@ -200,7 +200,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if var_config := var_child_runnable_config.get():
         empty.update(
             cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
                     for k, v in var_config.items()
@@ -211,7 +211,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if config is not None:
         empty.update(
             cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
                     for k, v in config.items()
@@ -271,7 +271,7 @@ def get_config_list(
             stacklevel=3,
         )
         subsequent = cast(
-            RunnableConfig, {k: v for k, v in config.items() if k != "run_id"}
+            "RunnableConfig", {k: v for k, v in config.items() if k != "run_id"}
         )
         return [
             ensure_config(subsequent) if i else ensure_config(config)
@@ -533,7 +533,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             Future[T]: The future for the function.
         """
         return super().submit(
-            cast(Callable[..., T], partial(copy_context().run, func, *args, **kwargs))
+            cast("Callable[..., T]", partial(copy_context().run, func, *args, **kwargs))
         )
 
     def map(
@@ -621,7 +621,7 @@ async def run_in_executor(
         # Use default executor with context copied from current context
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            cast(Callable[..., T], partial(copy_context().run, wrapper)),
+            cast("Callable[..., T]", partial(copy_context().run, wrapper)),
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)

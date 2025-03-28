@@ -317,12 +317,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if not return_exceptions:
                         first_to_raise = first_to_raise or output
                     else:
-                        handled_exceptions[i] = cast(BaseException, output)
+                        handled_exceptions[i] = cast("BaseException", output)
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore
-                    handled_exceptions[i] = cast(BaseException, output)
+                    handled_exceptions[i] = cast("BaseException", output)
                 else:
                     run_managers[i].on_chain_end(output)
                     to_return[i] = output
@@ -413,12 +413,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if not return_exceptions:
                         first_to_raise = first_to_raise or output
                     else:
-                        handled_exceptions[i] = cast(BaseException, output)
+                        handled_exceptions[i] = cast("BaseException", output)
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
                         input[self.exception_key] = output  # type: ignore
-                    handled_exceptions[i] = cast(BaseException, output)
+                    handled_exceptions[i] = cast("BaseException", output)
                 else:
                     to_return[i] = output
                     await run_managers[i].on_chain_end(output)
@@ -547,7 +547,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                             context=context,
                         )
                     else:
-                        chunk = cast(Output, await py_anext(stream))
+                        chunk = cast("Output", await py_anext(stream))
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e

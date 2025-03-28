@@ -929,7 +929,7 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ("system", [{"text": "You are an AI assistant named {name}."}]),
             SystemMessagePromptTemplate.from_template("you are {foo}"),
             cast(
-                tuple,
+                "tuple",
                 (
                     "human",
                     [
