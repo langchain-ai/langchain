@@ -222,7 +222,11 @@ class LangChainTracer(BaseTracer):
             extra = run_dict.get("extra", {})
             extra["runtime"] = get_runtime_environment()
             run_dict["extra"] = extra
-            inputs_is_truthy = bool(run_dict.get("inputs"))
+            inputs_ = run_dict.get("inputs")
+            if inputs_ and (len(inputs_) > 1 or bool(next(iter(inputs_.values())))):
+                inputs_is_truthy = True
+            else:
+                inputs_is_truthy = False
             run.extra["inputs_is_truthy"] = inputs_is_truthy
             self.client.create_run(**run_dict, project_name=self.project_name)
         except Exception as e:
