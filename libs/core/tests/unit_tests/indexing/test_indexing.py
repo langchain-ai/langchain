@@ -822,6 +822,158 @@ async def test_ascoped_full_fails_with_bad_source_ids(
         )
 
 
+def test_index_empty_doc_scoped_full(
+    record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test Indexing with scoped_full strategy"""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is a test document from another source.",
+                metadata={"source": "2"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 4,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(documents=[])
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+
+async def test_aindex_empty_doc_scoped_full(
+    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test Indexing with scoped_full strategy."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is yet another document.",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="This is a test document from another source.",
+                metadata={"source": "2"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 4,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
+            "num_updated": 0,
+        }
+
+    loader = ToyLoader(documents=[])
+
+    with patch.object(
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+    ):
+        assert await aindex(
+            loader,
+            arecord_manager,
+            vector_store,
+            cleanup="scoped_full",
+            source_id_key="source",
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+
 def test_no_delete(
     record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:

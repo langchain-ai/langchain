@@ -48,7 +48,7 @@ def test_ensure_config() -> None:
             "tags": ["tag3", "tag4"],
         },
     )
-    config = ctx.run(ensure_config, cast(RunnableConfig, arg))
+    config = ctx.run(ensure_config, cast("RunnableConfig", arg))
     assert len(arg["callbacks"]) == 1, (
         "ensure_config should not modify the original config"
     )
@@ -147,7 +147,7 @@ async def test_merge_config_callbacks() -> None:
 def test_config_arbitrary_keys() -> None:
     base: RunnablePassthrough[Any] = RunnablePassthrough()
     bound = base.with_config(my_custom_key="my custom value")
-    config = cast(RunnableBinding, bound).config
+    config = cast("RunnableBinding", bound).config
 
     assert config.get("my_custom_key") == "my custom value"
 

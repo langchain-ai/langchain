@@ -244,10 +244,9 @@ convert_python_function_to_openai_function = deprecated(
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
     visited: dict = {}
-    from pydantic.v1 import BaseModel
 
     model = cast(
-        type[BaseModel],
+        "type[BaseModel]",
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
     return _convert_pydantic_to_openai_function(model)  # type: ignore
@@ -471,15 +470,17 @@ def convert_to_openai_function(
         if function_copy and "properties" in function_copy:
             oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(dict, _convert_pydantic_to_openai_function(function))
+        oai_function = cast("dict", _convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
-            dict, _convert_typed_dict_to_openai_function(cast(type, function))
+            "dict", _convert_typed_dict_to_openai_function(cast("type", function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(dict, _format_tool_to_openai_function(function))
+        oai_function = cast("dict", _format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(dict, _convert_python_function_to_openai_function(function))
+        oai_function = cast(
+            "dict", _convert_python_function_to_openai_function(function)
+        )
     else:
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -775,7 +776,7 @@ def _py_38_safe_origin(origin: type) -> type:
         collections.abc.MutableMapping: typing.MutableMapping,
         **origin_union_type_map,
     }
-    return cast(type, origin_map.get(origin, origin))
+    return cast("type", origin_map.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

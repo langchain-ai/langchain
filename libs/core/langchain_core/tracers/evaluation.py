@@ -29,7 +29,6 @@ _TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
 
 def wait_for_all_evaluators() -> None:
     """Wait for all tracers to finish."""
-    global _TRACERS
     for tracer in list(_TRACERS):
         if tracer is not None:
             tracer.wait_for_futures()
@@ -91,7 +90,7 @@ class EvaluatorCallbackHandler(BaseTracer):
             self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
             weakref.finalize(
                 self,
-                lambda: cast(ThreadPoolExecutor, self.executor).shutdown(wait=True),
+                lambda: cast("ThreadPoolExecutor", self.executor).shutdown(wait=True),
             )
         else:
             self.executor = None
@@ -100,7 +99,6 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.project_name = project_name
         self.logged_eval_results: dict[tuple[str, str], list[EvaluationResult]] = {}
         self.lock = threading.Lock()
-        global _TRACERS
         _TRACERS.add(self)
 
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
@@ -158,7 +156,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if isinstance(results, EvaluationResult):
             results_ = [results]
         elif isinstance(results, dict) and "results" in results:
-            results_ = cast(list[EvaluationResult], results["results"])
+            results_ = cast("list[EvaluationResult]", results["results"])
         else:
             msg = (
                 f"Invalid evaluation result type {type(results)}."
