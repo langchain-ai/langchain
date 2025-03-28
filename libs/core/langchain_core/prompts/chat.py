@@ -481,7 +481,7 @@ class _PromptBlockWrapper(Serializable):
 
     static_structure: dict = Field(default_factory=dict)
     """Dict containing fixed keys associated with the block."""
-    
+
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
@@ -534,7 +534,7 @@ class _PromptBlockWrapper(Serializable):
             result["image_url"] = formatted
 
         return result
-    
+
     @property
     def input_variables(self) -> list[str]:
         """Input variables for this prompt template.
@@ -543,7 +543,7 @@ class _PromptBlockWrapper(Serializable):
             List of input variable names.
         """
         return self.template.input_variables
-    
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Format the prompt template.
 
@@ -643,7 +643,12 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     if "type" not in static_structure:
                         static_structure["type"] = "text"
 
-                    prompt.append(_PromptBlockWrapper(template=inner_template, static_structure=static_structure))
+                    prompt.append(
+                        _PromptBlockWrapper(
+                            template=inner_template,
+                            static_structure=static_structure
+                        )
+                    )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
                     img_template = cast("_ImageTemplateParam", tmpl)["image_url"]  # type: ignore
                     input_variables = []
@@ -691,7 +696,12 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     if "type" not in static_structure:
                         static_structure["type"] = "image_url"
 
-                    prompt.append(_PromptBlockWrapper(template=inner_template, static_structure=static_structure))
+                    prompt.append(
+                        _PromptBlockWrapper(
+                            template=inner_template,
+                            static_structure=static_structure
+                        )
+                    )
                 else:
                     msg = f"Invalid template: {tmpl}"
                     raise ValueError(msg)

@@ -1034,7 +1034,7 @@ def test_chat_template_preserves_additional_fields() -> None:
             )
         ]
     )
-    
+
     messages = template.format_messages(number=5)
     assert len(messages) == 1
     assert messages[0].content == [
@@ -1067,7 +1067,7 @@ def test_chat_template_preserves_fields_in_multipart_messages() -> None:
             )
         ]
     )
-    
+
     messages = template.format_messages(
         name="Bob",
         image_data="base64_encoded_data"
@@ -1104,7 +1104,7 @@ async def test_chat_template_preserves_fields_async() -> None:
             )
         ]
     )
-    
+
     messages = await template.aformat_messages(number=5)
     assert len(messages) == 1
     assert messages[0].content == [
@@ -1133,7 +1133,7 @@ def test_chat_template_preserves_fields_with_partial() -> None:
             )
         ]
     )
-    
+
     partial_template = template.partial(name="Bob")
     messages = partial_template.format_messages(number=5)
     assert len(messages) == 1
