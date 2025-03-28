@@ -24,7 +24,6 @@ from pydantic import (
 )
 
 from langchain_core._api import deprecated
-from langchain_core.load import Serializable
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -38,6 +37,10 @@ from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
+from langchain_core.prompts.message import (
+    BaseMessagePromptTemplate,
+    _DictMessagePromptTemplate,
+)
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     PromptTemplateFormat,
@@ -49,81 +52,6 @@ from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-
-class BaseMessagePromptTemplate(Serializable, ABC):
-    """Base class for message prompt templates."""
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable.
-        Returns: True.
-        """
-        return True
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "prompts", "chat"]
-
-    @abstractmethod
-    def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
-        """Format messages from kwargs. Should return a list of BaseMessages.
-
-        Args:
-            **kwargs: Keyword arguments to use for formatting.
-
-        Returns:
-            List of BaseMessages.
-        """
-
-    async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
-        """Async format messages from kwargs.
-        Should return a list of BaseMessages.
-
-        Args:
-            **kwargs: Keyword arguments to use for formatting.
-
-        Returns:
-            List of BaseMessages.
-        """
-        return self.format_messages(**kwargs)
-
-    @property
-    @abstractmethod
-    def input_variables(self) -> list[str]:
-        """Input variables for this prompt template.
-
-        Returns:
-            List of input variables.
-        """
-
-    def pretty_repr(self, html: bool = False) -> str:
-        """Human-readable representation.
-
-        Args:
-            html: Whether to format as HTML. Defaults to False.
-
-        Returns:
-            Human-readable representation.
-        """
-        raise NotImplementedError
-
-    def pretty_print(self) -> None:
-        """Print a human-readable representation."""
-        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
-
-    def __add__(self, other: Any) -> ChatPromptTemplate:
-        """Combine two prompt templates.
-
-        Args:
-            other: Another prompt template.
-
-        Returns:
-            Combined prompt template.
-        """
-        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
-        return prompt + other
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
@@ -830,7 +758,7 @@ MessageLikeRepresentation = Union[
         Union[str, list[dict], list[object]],
     ],
     str,
-    dict,
+    dict[str, Any],
 ]
 
 
@@ -1002,7 +930,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         """
         _messages = [
-            _convert_to_message(message, template_format) for message in messages
+            _convert_to_message_template(message, template_format)
+            for message in messages
         ]
 
         # Automatically infer input variables from messages
@@ -1075,7 +1004,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             ValueError: If input variables do not match.
         """
         messages = values["messages"]
-        input_vars = set()
+        input_vars: set = set()
         optional_variables = set()
         input_types: dict[str, Any] = values.get("input_types", {})
         for message in messages:
@@ -1130,7 +1059,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return cls.from_messages([message])
 
     @classmethod
-    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages", pending=True)
     def from_role_strings(
         cls, string_messages: list[tuple[str, str]]
     ) -> ChatPromptTemplate:
@@ -1150,7 +1079,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         )
 
     @classmethod
-    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages", pending=True)
     def from_strings(
         cls, string_messages: list[tuple[type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
@@ -1301,7 +1230,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             message: representation of a message to append.
         """
-        self.messages.append(_convert_to_message(message))
+        self.messages.append(_convert_to_message_template(message))
 
     def extend(self, messages: Sequence[MessageLikeRepresentation]) -> None:
         """Extend the chat template with a sequence of messages.
@@ -1309,7 +1238,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Args:
             messages: sequence of message representations to append.
         """
-        self.messages.extend([_convert_to_message(message) for message in messages])
+        self.messages.extend(
+            [_convert_to_message_template(message) for message in messages]
+        )
 
     @overload
     def __getitem__(self, index: int) -> MessageLike: ...
@@ -1429,7 +1360,7 @@ def _create_template_from_message_type(
     return message
 
 
-def _convert_to_message(
+def _convert_to_message_template(
     message: MessageLikeRepresentation,
     template_format: PromptTemplateFormat = "f-string",
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
@@ -1464,15 +1395,7 @@ def _convert_to_message(
         _message = _create_template_from_message_type(
             "human", message, template_format=template_format
         )
-    elif isinstance(message, (tuple, dict)):
-        if isinstance(message, dict):
-            if set(message.keys()) != {"content", "role"}:
-                msg = (
-                    "Expected dict to have exact keys 'role' and 'content'."
-                    f" Got: {message}"
-                )
-                raise ValueError(msg)
-            message = (message["role"], message["content"])
+    elif isinstance(message, tuple):
         if len(message) != 2:
             msg = f"Expected 2-tuple of (role, template), got {message}"
             raise ValueError(msg)
@@ -1487,8 +1410,23 @@ def _convert_to_message(
                     cast("str", template), template_format=template_format
                 )
             )
+    elif isinstance(message, dict):
+        if template_format == "jinja":
+            msg = (
+                f"{template_format} is unsafe and is not supported for templates "
+                f"expressed as dicts. Please use 'f-string' or 'mustache' format."
+            )
+            raise ValueError(msg)
+        _message = _DictMessagePromptTemplate(
+            template=message,
+            template_format=template_format,  # type: ignore[arg-type]
+        )
     else:
         msg = f"Unsupported message type: {type(message)}"
         raise NotImplementedError(msg)
 
     return _message
+
+
+# For backwards compat:
+_convert_to_message = _convert_to_message_template
