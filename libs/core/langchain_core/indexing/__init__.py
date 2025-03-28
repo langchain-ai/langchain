@@ -15,12 +15,12 @@ from langchain_core.indexing.base import (
 )
 
 __all__ = [
-    "aindex",
     "DeleteResponse",
     "DocumentIndex",
-    "index",
-    "IndexingResult",
     "InMemoryRecordManager",
+    "IndexingResult",
     "RecordManager",
     "UpsertResponse",
+    "aindex",
+    "index",
 ]
