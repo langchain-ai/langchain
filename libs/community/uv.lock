@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12.4' and platform_python_implementation == 'PyPy'",
@@ -1531,6 +1532,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -1745,7 +1747,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.45"
+version = "0.3.47"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1803,7 +1805,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.14"
+version = "0.3.15"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },

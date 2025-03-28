@@ -1,10 +1,9 @@
 import re
 from io import BytesIO
 from pathlib import Path
+from typing import Any, Type
 
 import numpy as np
-from typing import Any, Type, io
-
 import pytest
 from langchain_core.documents.base import Blob
 from langchain_core.language_models import FakeMessagesListChatModel
@@ -95,6 +94,6 @@ def test_image_parser_with_numpy(
         buffer.seek(0)
         npy_bytes = buffer.getvalue()
 
-    blob=Blob.from_data(npy_bytes,mime_type="application/x-npy")
+    blob = Blob.from_data(npy_bytes, mime_type="application/x-npy")
     documents = list(blob_loader(**kw).lazy_parse(blob))
     assert len(documents) == 1

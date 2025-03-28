@@ -345,16 +345,25 @@ class ChatPerplexity(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            citations = chunk.get("citations", [])
+
+            additional_kwargs = {}
+            if first_chunk:
+                additional_kwargs["citations"] = chunk.get("citations", [])
+                for attr in ["images", "related_questions"]:
+                    if attr in chunk:
+                        additional_kwargs[attr] = chunk[attr]
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
+
             if isinstance(chunk, AIMessageChunk) and usage_metadata:
                 chunk.usage_metadata = usage_metadata
+
             if first_chunk:
-                chunk.additional_kwargs |= {"citations": citations}
+                chunk.additional_kwargs |= additional_kwargs
                 first_chunk = False
+
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
@@ -386,9 +395,14 @@ class ChatPerplexity(BaseChatModel):
         else:
             usage_metadata = None
 
+        additional_kwargs = {"citations": response.citations}
+        for attr in ["images", "related_questions"]:
+            if hasattr(response, attr):
+                additional_kwargs[attr] = getattr(response, attr)
+
         message = AIMessage(
             content=response.choices[0].message.content,
-            additional_kwargs={"citations": response.citations},
+            additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])

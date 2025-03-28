@@ -203,7 +203,7 @@ def test_decorator_with_specified_schema() -> None:
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
 
-    @tool(args_schema=cast(ArgsSchema, _MockSchemaV1))
+    @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
     def tool_func_v1(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
@@ -1935,7 +1935,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = cast(BaseModel, foo_tool.args_schema)
+    args_schema = cast("BaseModel", foo_tool.args_schema)
     args_json_schema = (
         args_schema.model_json_schema()
         if hasattr(args_schema, "model_json_schema")
@@ -2484,7 +2484,7 @@ def test_tool_decorator_description() -> None:
 
     assert foo.description == "Foo."
     assert (
-        cast(BaseModel, foo.tool_call_schema).model_json_schema()["description"]
+        cast("BaseModel", foo.tool_call_schema).model_json_schema()["description"]
         == "Foo."
     )
 
@@ -2496,7 +2496,7 @@ def test_tool_decorator_description() -> None:
 
     assert foo_description.description == "description"
     assert (
-        cast(BaseModel, foo_description.tool_call_schema).model_json_schema()[
+        cast("BaseModel", foo_description.tool_call_schema).model_json_schema()[
             "description"
         ]
         == "description"
@@ -2514,7 +2514,7 @@ def test_tool_decorator_description() -> None:
 
     assert foo_args_schema.description == "Bar."
     assert (
-        cast(BaseModel, foo_args_schema.tool_call_schema).model_json_schema()[
+        cast("BaseModel", foo_args_schema.tool_call_schema).model_json_schema()[
             "description"
         ]
         == "Bar."
@@ -2527,7 +2527,7 @@ def test_tool_decorator_description() -> None:
     assert foo_args_schema_description.description == "description"
     assert (
         cast(
-            BaseModel, foo_args_schema_description.tool_call_schema
+            "BaseModel", foo_args_schema_description.tool_call_schema
         ).model_json_schema()["description"]
         == "description"
     )
@@ -2552,13 +2552,13 @@ def test_tool_decorator_description() -> None:
 
     assert foo_args_jsons_schema.description == "JSON Schema."
     assert (
-        cast(dict, foo_args_jsons_schema.tool_call_schema)["description"]
+        cast("dict", foo_args_jsons_schema.tool_call_schema)["description"]
         == "JSON Schema."
     )
 
     assert foo_args_jsons_schema_with_description.description == "description"
     assert (
-        cast(dict, foo_args_jsons_schema_with_description.tool_call_schema)[
+        cast("dict", foo_args_jsons_schema_with_description.tool_call_schema)[
             "description"
         ]
         == "description"

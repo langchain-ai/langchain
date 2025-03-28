@@ -517,6 +517,9 @@ packages:
   repo: OpenGradient/og-langchain
   downloads: 274
   downloads_updated_at: '2025-03-22T21:59:15.663971+00:00'
+- name: langchain-netmind
+  path: .
+  repo: protagolabs/langchain-netmind
 - name: langchain-agentql
   path: langchain
   repo: tinyfish-io/agentql-integrations
@@ -551,3 +554,9 @@ packages:
   provider_page: naver
   path: .
   repo: e7217/langchain-naver-community
+- name: langchain-memgraph
+  path: .
+  repo: memgraph/langchain-memgraph
+- name: langchain-vectara
+  path: libs/vectara
+  repo: vectara/langchain-vectara
