@@ -41,7 +41,7 @@ class InMemoryDocumentIndex(DocumentIndex):
                 id_ = item.id
 
             self.store[id_] = item_
-            ok_ids.append(cast(str, item_.id))
+            ok_ids.append(cast("str", item_.id))
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
 

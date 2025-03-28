@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12.4' and platform_python_implementation == 'PyPy'",
@@ -1491,7 +1492,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.20"
+version = "0.3.21"
 source = { editable = "../langchain" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -1509,6 +1510,7 @@ requires-dist = [
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
+    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-cohere", marker = "extra == 'cohere'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
@@ -1530,6 +1532,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -1598,7 +1601,7 @@ typing = [
 
 [[package]]
 name = "langchain-community"
-version = "0.3.19"
+version = "0.3.20"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1744,7 +1747,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.41"
+version = "0.3.47"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1802,7 +1805,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.13"
+version = "0.3.15"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -1838,7 +1841,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },

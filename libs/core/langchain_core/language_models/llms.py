@@ -449,7 +449,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(list[str], [e for _ in inputs])
+                    return cast("list[str]", [e for _ in inputs])
                 else:
                     raise
         else:
@@ -495,7 +495,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(list[str], [e for _ in inputs])
+                    return cast("list[str]", [e for _ in inputs])
                 else:
                     raise
         else:
@@ -901,13 +901,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast(list[Callbacks], callbacks)
-            tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
+            callbacks = cast("list[Callbacks]", callbacks)
+            tags_list = cast(
+                "list[Optional[list[str]]]", tags or ([None] * len(prompts))
+            )
             metadata_list = cast(
-                list[Optional[dict[str, Any]]], metadata or ([{}] * len(prompts))
+                "list[Optional[dict[str, Any]]]", metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                list[Optional[str]], ([None] * len(prompts))
+                "list[Optional[str]]", ([None] * len(prompts))
             )
             callback_managers = [
                 CallbackManager.configure(
@@ -925,16 +927,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 CallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                    cast("Callbacks", callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(list[str], tags),
+                    cast("list[str]", tags),
                     self.tags,
-                    cast(dict[str, Any], metadata),
+                    cast("dict[str, Any]", metadata),
                     self.metadata,
                 )
             ] * len(prompts)
-            run_name_list = [cast(Optional[str], run_name)] * len(prompts)
+            run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
@@ -1143,13 +1145,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast(list[Callbacks], callbacks)
-            tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
+            callbacks = cast("list[Callbacks]", callbacks)
+            tags_list = cast(
+                "list[Optional[list[str]]]", tags or ([None] * len(prompts))
+            )
             metadata_list = cast(
-                list[Optional[dict[str, Any]]], metadata or ([{}] * len(prompts))
+                "list[Optional[dict[str, Any]]]", metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                list[Optional[str]], ([None] * len(prompts))
+                "list[Optional[str]]", ([None] * len(prompts))
             )
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1167,16 +1171,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 AsyncCallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                    cast("Callbacks", callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(list[str], tags),
+                    cast("list[str]", tags),
                     self.tags,
-                    cast(dict[str, Any], metadata),
+                    cast("dict[str, Any]", metadata),
                     self.metadata,
                 )
             ] * len(prompts)
-            run_name_list = [cast(Optional[str], run_name)] * len(prompts)
+            run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
