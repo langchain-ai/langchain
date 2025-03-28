@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests test_watch integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests test_watch integration_tests hpu_tests docker_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -6,6 +6,7 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 integration_tests: TEST_FILE = tests/integration_tests/
+HPU_TEST_FILES=$(shell find tests -name '*_hpu.py')
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
@@ -29,6 +30,11 @@ test_watch:
 
 check_imports: $(shell find langchain_community -name '*.py')
 	uv run --group test python ./scripts/check_imports.py $^
+
+# Run HPU-specific tests only if RUN_HPU_TEST is set.
+hpu_tests:
+	@echo "Setting RUN_HPU_TEST to 1 to enable HPU-specific tests."
+	export RUN_HPU_TEST=1 && poetry run pytest --disable-socket --allow-unix-socket $(HPU_TEST_FILES)
 
 extended_tests:
 	uv run --no-sync --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
@@ -77,3 +83,4 @@ help:
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'test_watch                   - run unit tests in watch mode'
+	@echo 'hpu_tests                    - run all HPU-specific tests (files ending with *_hpu.py) if RUN_HPU_TEST is set'

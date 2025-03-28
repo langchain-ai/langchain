@@ -33,6 +33,20 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
             )
+
+    Example using HPU:
+        .. code-block:: python
+
+            from langchain_huggingface import HuggingFaceEmbeddings
+
+            model_name = "sentence-transformers/all-mpnet-base-v2"
+            model_kwargs = {'device': 'hpu'}
+            encode_kwargs = {'normalize_embeddings': False}
+            hf = HuggingFaceEmbeddings(
+                model_name=model_name,
+                model_kwargs=model_kwargs,
+                encode_kwargs=encode_kwargs
+            )
     """
 
     model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")
