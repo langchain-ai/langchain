@@ -12,7 +12,7 @@ _EXPECTED_NUM_TOKENS = {
     "gpt-3.5-turbo": 12,
     "o1": 12,
     "o3": 12,
-    "gpt-4o": 12,
+    "gpt-4o": 11,
 }
 
 _MODELS = models = ["ada", "babbage", "curie", "davinci"]
