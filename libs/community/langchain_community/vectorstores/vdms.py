@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -135,6 +136,7 @@ def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
     return client
 
 
+@deprecated(since="0.3.18", removal="1.0.0", alternative_import="langchain_vdms.VDMS")
 class VDMS(VectorStore):
     """Intel Lab's VDMS for vector-store workloads.
 

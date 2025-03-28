@@ -112,6 +112,16 @@ def test_serializable_mapping() -> None:
             "chat_models",
             "ChatGroq",
         ),
+        ("langchain_sambanova", "chat_models", "ChatSambaNovaCloud"): (
+            "langchain_sambanova",
+            "chat_models",
+            "ChatSambaNovaCloud",
+        ),
+        ("langchain_sambanova", "chat_models", "ChatSambaStudio"): (
+            "langchain_sambanova",
+            "chat_models",
+            "ChatSambaStudio",
+        ),
         # TODO(0.3): For now we're skipping the below two tests. Need to fix
         # so that it only runs when langchain-aws, langchain-google-genai
         # are installed.

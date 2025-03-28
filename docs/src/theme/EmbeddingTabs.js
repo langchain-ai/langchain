@@ -155,7 +155,7 @@ export default function EmbeddingTabs(props) {
       },
       {
         value: "IBM",
-        label: "IBM",
+        label: "IBM watsonx",
         text: `from langchain_ibm import WatsonxEmbeddings\n\n${embeddingVarName} = WatsonxEmbeddings(${ibmParamsOrDefault})`,
         apiKeyName: "WATSONX_APIKEY",
         packageName: "langchain-ibm",

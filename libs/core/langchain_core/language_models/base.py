@@ -18,6 +18,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import TypeAlias, TypedDict, override
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
+from langchain_core.callbacks import Callbacks
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
@@ -29,8 +31,6 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
-    from langchain_core.caches import BaseCache
-    from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
 
 

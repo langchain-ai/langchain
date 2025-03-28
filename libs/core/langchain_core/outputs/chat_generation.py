@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 from pydantic import model_validator
-from typing_extensions import Self
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
 from langchain_core.utils._merge import merge_dicts
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 class ChatGeneration(Generation):

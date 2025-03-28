@@ -443,6 +443,11 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
+    id = None
+    for id_ in [left.id] + [o.id for o in others]:
+        if id_:
+            id = id_
+            break
     return left.__class__(
         example=left.example,
         content=content,
@@ -450,7 +455,7 @@ def add_ai_message_chunks(
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
-        id=left.id,
+        id=id,
     )
 
 
@@ -495,14 +500,14 @@ def add_usage(
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
-        return cast(UsageMetadata, left or right)
+        return cast("UsageMetadata", left or right)
 
     return UsageMetadata(
         **cast(
-            UsageMetadata,
+            "UsageMetadata",
             _dict_int_op(
-                cast(dict, left),
-                cast(dict, right),
+                cast("dict", left),
+                cast("dict", right),
                 operator.add,
             ),
         )
@@ -552,14 +557,14 @@ def subtract_usage(
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
-        return cast(UsageMetadata, left or right)
+        return cast("UsageMetadata", left or right)
 
     return UsageMetadata(
         **cast(
-            UsageMetadata,
+            "UsageMetadata",
             _dict_int_op(
-                cast(dict, left),
-                cast(dict, right),
+                cast("dict", left),
+                cast("dict", right),
                 (lambda le, ri: max(le - ri, 0)),
             ),
         )

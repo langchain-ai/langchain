@@ -139,7 +139,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         embedding = self.client.embed(text)
-        if not isinstance(embedding, list):
-            return list(map(float, embedding))
-        else:
+        if embedding and isinstance(embedding, list) and isinstance(embedding[0], list):
             return list(map(float, embedding[0]))
+        else:
+            return list(map(float, embedding))

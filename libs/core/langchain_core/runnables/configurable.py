@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from collections.abc import Mapping as Mapping
 from functools import wraps
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -26,7 +27,6 @@ from langchain_core.runnables.config import (
     get_executor_for_config,
     merge_configs,
 )
-from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AnyConfigurableField,
     ConfigurableField,
@@ -38,6 +38,9 @@ from langchain_core.runnables.utils import (
     gather_with_concurrency,
     get_unique_config_specs,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.graph import Graph
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
@@ -119,7 +122,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
             runnable, config = runnable._prepare(merge_configs(runnable.config, config))
-        return runnable, cast(RunnableConfig, config)
+        return runnable, cast("RunnableConfig", config)
 
     @abstractmethod
     def _prepare(
@@ -175,10 +178,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return cast(list[Output], [invoke(prepared[0], inputs[0])])
+            return cast("list[Output]", [invoke(prepared[0], inputs[0])])
 
         with get_executor_for_config(configs[0]) as executor:
-            return cast(list[Output], list(executor.map(invoke, prepared, inputs)))
+            return cast("list[Output]", list(executor.map(invoke, prepared, inputs)))
 
     async def abatch(
         self,
@@ -268,7 +271,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self.prepare(cast(RunnableConfig, arg))
+                        runnable, config = self.prepare(cast("RunnableConfig", arg))
                         kwargs = {**kwargs, "config": config}
                         return getattr(runnable, name)(*args, **kwargs)
 
@@ -278,7 +281,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self.prepare(cast(RunnableConfig, arg))
+                        runnable, config = self.prepare(cast("RunnableConfig", arg))
                         argsl = list(args)
                         argsl[idx] = config
                         return getattr(runnable, name)(*argsl, **kwargs)
@@ -560,7 +563,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                         for v in list(self.alternatives.keys()) + [self.default_key]
                     ),
                 )
-                _enums_for_spec[self.which] = cast(type[StrEnum], which_enum)
+                _enums_for_spec[self.which] = cast("type[StrEnum]", which_enum)
         return get_unique_config_specs(
             # which alternative
             [
@@ -614,7 +617,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         # remap configurable keys for the chosen alternative
         if self.prefix_keys:
             config = cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     **config,
                     "configurable": {
@@ -693,7 +696,7 @@ def make_options_spec(
                 spec.name or spec.id,
                 ((v, v) for v in list(spec.options.keys())),
             )
-            _enums_for_spec[spec] = cast(type[StrEnum], enum)
+            _enums_for_spec[spec] = cast("type[StrEnum]", enum)
     if isinstance(spec, ConfigurableFieldSingleOption):
         return ConfigurableFieldSpec(
             id=spec.id,

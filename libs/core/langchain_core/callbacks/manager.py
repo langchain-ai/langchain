@@ -5,7 +5,6 @@ import functools
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
@@ -21,7 +20,6 @@ from typing import (
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
-from tenacity import RetryCallState
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -39,6 +37,10 @@ from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
+
+    from tenacity import RetryCallState
+
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
@@ -230,7 +232,7 @@ def shielded(func: Func) -> Func:
     async def wrapped(*args: Any, **kwargs: Any) -> Any:
         return await asyncio.shield(func(*args, **kwargs))
 
-    return cast(Func, wrapped)
+    return cast("Func", wrapped)
 
 
 def handle_event(
@@ -306,7 +308,7 @@ def handle_event(
                 # The solution is to create a new loop in a new thread.
                 with ThreadPoolExecutor(1) as executor:
                     executor.submit(
-                        cast(Callable, copy_context().run), _run_coros, coros
+                        cast("Callable", copy_context().run), _run_coros, coros
                     ).result()
             else:
                 _run_coros(coros)
@@ -360,7 +362,7 @@ async def _ahandle_event_for_handler(
                     await asyncio.get_event_loop().run_in_executor(
                         None,
                         cast(
-                            Callable,
+                            "Callable",
                             functools.partial(
                                 copy_context().run, event, *args, **kwargs
                             ),
@@ -2393,7 +2395,7 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
+                    handler.run_map[str(run_tree.id)] = cast("Run", run_tree)
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
@@ -2401,7 +2403,9 @@ def _configure(
             and handler_class is not None
         )
         if var.get() is not None or create_one:
-            var_handler = var.get() or cast(type[BaseCallbackHandler], handler_class)()
+            var_handler = (
+                var.get() or cast("type[BaseCallbackHandler]", handler_class)()
+            )
             if handler_class is None:
                 if not any(
                     handler is var_handler  # direct pointer comparison

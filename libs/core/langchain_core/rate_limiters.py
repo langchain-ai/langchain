@@ -10,10 +10,7 @@ from typing import (
     Optional,
 )
 
-from langchain_core._api import beta
 
-
-@beta(message="Introduced in 0.2.24. API subject to change.")
 class BaseRateLimiter(abc.ABC):
     """Base class for rate limiters.
 
@@ -73,7 +70,6 @@ class BaseRateLimiter(abc.ABC):
         """
 
 
-@beta(message="Introduced in 0.2.24. API subject to change.")
 class InMemoryRateLimiter(BaseRateLimiter):
     """An in memory rate limiter based on a token bucket algorithm.
 

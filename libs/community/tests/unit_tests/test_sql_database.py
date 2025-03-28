@@ -16,7 +16,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.engine import Engine, Result
 
-from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
+from langchain_community.utilities.sql_database import (
+    SQLDatabase,
+    sanitize_schema,
+    truncate_word,
+)
 
 is_sqlalchemy_v1 = version.parse(sa.__version__).major == 1
 
@@ -262,3 +266,25 @@ def test_truncate_word() -> None:
     assert truncate_word("Hello World", length=-10) == "Hello World"
     assert truncate_word("Hello World", length=5, suffix="!!!") == "He!!!"
     assert truncate_word("Hello World", length=12, suffix="!!!") == "Hello World"
+
+
+def test_sanitize_schema() -> None:
+    valid_schema_names = [
+        "test_schema",
+        "schema123",
+        "TEST_SCHEMA_123",
+        "_schema_",
+    ]
+    for schema in valid_schema_names:
+        assert sanitize_schema(schema) == schema
+
+    invalid_schema_names = [
+        "test-schema",
+        "schema.name",
+        "schema$",
+        "schema name",
+    ]
+    for schema in invalid_schema_names:
+        with pytest.raises(ValueError) as ex:
+            sanitize_schema(schema)
+        assert f"Schema name '{schema}' contains invalid characters" in str(ex.value)

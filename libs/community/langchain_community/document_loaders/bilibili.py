@@ -11,6 +11,7 @@ from langchain_community.document_loaders.base import BaseLoader
 # Pre-compile regular expressions for video ID extraction
 BV_PATTERN = re.compile(r"BV\w+")
 AV_PATTERN = re.compile(r"av[0-9]+")
+PAGE_INDEX_PATTERN = re.compile(r"p=(\d+)")
 
 
 class BiliBiliLoader(BaseLoader):
@@ -93,8 +94,17 @@ class BiliBiliLoader(BaseLoader):
         if not self.credential:
             return "", video_info
 
+        cid = 0
+        page_match = PAGE_INDEX_PATTERN.search(url)
+        if page_match:
+            cid = video_info["pages"][int(page_match.group(1)) - 1][
+                "cid"
+            ]  # Bilibili page index starts from 1
+        else:
+            cid = video_info["cid"]
+
         # Fetching and processing subtitles
-        sub = sync(v.get_subtitle(video_info["cid"]))
+        sub = sync(v.get_subtitle(cid))
         sub_list = sub.get("subtitles", [])
         if sub_list:
             sub_url = sub_list[0].get("subtitle_url", "")

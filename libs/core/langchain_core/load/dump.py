@@ -1,6 +1,8 @@
 import json
 from typing import Any
 
+from pydantic import BaseModel
+
 from langchain_core.load.serializable import Serializable, to_json_not_implemented
 
 
@@ -18,6 +20,23 @@ def default(obj: Any) -> Any:
         return obj.to_json()
     else:
         return to_json_not_implemented(obj)
+
+
+def _dump_pydantic_models(obj: Any) -> Any:
+    from langchain_core.messages import AIMessage
+    from langchain_core.outputs import ChatGeneration
+
+    if (
+        isinstance(obj, ChatGeneration)
+        and isinstance(obj.message, AIMessage)
+        and (parsed := obj.message.additional_kwargs.get("parsed"))
+        and isinstance(parsed, BaseModel)
+    ):
+        obj_copy = obj.model_copy(deep=True)
+        obj_copy.message.additional_kwargs["parsed"] = parsed.model_dump()
+        return obj_copy
+    else:
+        return obj
 
 
 def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
@@ -40,6 +59,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
         msg = "`default` should not be passed to dumps"
         raise ValueError(msg)
     try:
+        obj = _dump_pydantic_models(obj)
         if pretty:
             indent = kwargs.pop("indent", 2)
             return json.dumps(obj, default=default, indent=indent, **kwargs)
