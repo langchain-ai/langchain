@@ -2629,7 +2629,7 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
         func=sync_no_op,
     )
 
-    tool_call = {
+    tool_call: ToolCall = {
         "name": "sample_tool",
         "args": {"foo": 2},
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
@@ -2677,7 +2677,7 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
         func=sync_no_op,
     )
 
-    tool_call = {
+    tool_call: ToolCall = {
         "name": "sample_tool",
         "args": {"foo": 2},
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
