@@ -1,3 +1,5 @@
+"""Utilities for JSON Schema."""
+
 from __future__ import annotations
 
 from copy import deepcopy

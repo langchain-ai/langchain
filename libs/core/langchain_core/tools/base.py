@@ -1,3 +1,5 @@
+"""Base for Tools."""
+
 from __future__ import annotations
 
 import asyncio
@@ -35,6 +37,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -451,6 +454,7 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
+        """The arguments of the tool."""
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
         else:
@@ -460,6 +464,7 @@ class ChildTool(BaseTool):
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
+        """The schema for a tool call."""
         if isinstance(self.args_schema, dict):
             if self.description:
                 return {
@@ -480,6 +485,7 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -498,6 +504,7 @@ class ChildTool(BaseTool):
         else:
             return create_schema_from_function(self.name, self._run)
 
+    @override
     def invoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -507,6 +514,7 @@ class ChildTool(BaseTool):
         tool_input, kwargs = _prep_run_args(input, config, **kwargs)
         return self.run(tool_input, **kwargs)
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -525,6 +533,7 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
+            tool_call_id: The id of the tool call.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -1040,7 +1049,7 @@ class InjectedToolArg:
 
 
 class InjectedToolCallId(InjectedToolArg):
-    r'''Annotation for injecting the tool_call_id.
+    """Annotation for injecting the tool_call_id.
 
     Example:
         ..code-block:: python
@@ -1052,9 +1061,9 @@ class InjectedToolCallId(InjectedToolArg):
 
             @tool
             def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallID]) -> ToolMessage:
-                """Return x."""
+                \"\"\"Return x.\"\"\"
                 return ToolMessage(str(x), artifact=x, name="foo", tool_call_id=tool_call_id)
-    '''  # noqa: E501
+    """  # noqa: E501
 
 
 def _is_injected_arg_type(
@@ -1071,6 +1080,12 @@ def _is_injected_arg_type(
 def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> dict[str, type]:
+    """Get all annotations from a Pydantic BaseModel and its parents.
+
+    Args:
+        cls: The Pydantic BaseModel class.
+        default_to_bound: Whether to default to the bound of a TypeVar if it exists.
+    """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         annotations: dict[str, type] = {}

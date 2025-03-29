@@ -1,3 +1,5 @@
+"""Graph used in Runnables."""
+
 from __future__ import annotations
 
 import inspect
@@ -28,7 +30,10 @@ if TYPE_CHECKING:
 
 
 class Stringifiable(Protocol):
-    def __str__(self) -> str: ...
+    """Protocol for objects that can be converted to a string."""
+
+    def __str__(self) -> str:
+        """Convert the object to a string."""
 
 
 class LabelsDict(TypedDict):
@@ -303,11 +308,13 @@ class Graph:
         }
 
     def __bool__(self) -> bool:
+        """Return whether the graph has any nodes."""
         return bool(self.nodes)
 
     def next_id(self) -> str:
-        """Return a new unique node
-        identifier that can be used to add a node to the graph.
+        """Return a new unique node identifier.
+
+        It that can be used to add a node to the graph.
         """
         return uuid4().hex
 
@@ -389,6 +396,7 @@ class Graph:
         self, graph: Graph, *, prefix: str = ""
     ) -> tuple[Optional[Node], Optional[Node]]:
         """Add all nodes and edges from another graph.
+
         Note this doesn't check for duplicates, nor does it connect the graphs.
 
         Args:
@@ -423,8 +431,9 @@ class Graph:
         )
 
     def reid(self) -> Graph:
-        """Return a new graph with all nodes re-identified,
-        using their unique, readable names where possible.
+        """Return a new graph with all nodes re-identified.
+
+        Uses their unique, readable names where possible.
         """
         node_name_to_ids = defaultdict(list)
         for node in self.nodes.values():
@@ -459,6 +468,7 @@ class Graph:
 
     def first_node(self) -> Optional[Node]:
         """Find the single node that is not a target of any edge.
+
         If there is no such node, or there are multiple, return None.
         When drawing the graph, this node would be the origin.
         """
@@ -466,13 +476,15 @@ class Graph:
 
     def last_node(self) -> Optional[Node]:
         """Find the single node that is not a source of any edge.
+
         If there is no such node, or there are multiple, return None.
         When drawing the graph, this node would be the destination.
         """
         return _last_node(self)
 
     def trim_first_node(self) -> None:
-        """Remove the first node if it exists and has a single outgoing edge,
+        """Remove the first node if it exists and has a single outgoing edge.
+
         i.e., if removing it would not leave the graph without a "first" node.
         """
         first_node = self.first_node()
@@ -484,7 +496,8 @@ class Graph:
             self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
-        """Remove the last node if it exists and has a single incoming edge,
+        """Remove the last node if it exists and has a single incoming edge.
+
         i.e., if removing it would not leave the graph without a "last" node.
         """
         last_node = self.last_node()
@@ -579,8 +592,10 @@ class Graph:
 
                 See more here: https://mermaid.js.org/config/configuration.html.
 
-                Example:
-                ```python
+                Example config:
+
+                .. code-block:: python
+
                 {
                     "config": {
                         "theme": "neutral",
@@ -588,7 +603,7 @@ class Graph:
                         "themeVariables": { "primaryColor": "#e2e2e2"},
                     }
                 }
-                ```
+
 
         Returns:
             The Mermaid syntax string.
@@ -642,8 +657,10 @@ class Graph:
 
                 See more here: https://mermaid.js.org/config/configuration.html.
 
-                Example:
-                ```python
+                Example config:
+
+                .. code-block:: python
+
                 {
                     "config": {
                         "theme": "neutral",
@@ -651,7 +668,6 @@ class Graph:
                         "themeVariables": { "primaryColor": "#e2e2e2"},
                     }
                 }
-                ```
 
         Returns:
             The PNG image as bytes.
@@ -675,6 +691,7 @@ class Graph:
 
 def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     """Find the single node that is not a target of any edge.
+
     Exclude nodes/sources with ids in the exclude list.
     If there is no such node, or there are multiple, return None.
     When drawing the graph, this node would be the origin.
@@ -689,6 +706,7 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
 
 def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     """Find the single node that is not a source of any edge.
+
     Exclude nodes/targets with ids in the exclude list.
     If there is no such node, or there are multiple, return None.
     When drawing the graph, this node would be the destination.

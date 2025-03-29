@@ -27,7 +27,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
-from typing_extensions import Self, TypedDict
+from typing_extensions import Self, TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -148,6 +148,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     use case.
     """
 
+    @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         # Version upgrade for old retrievers that implemented the public

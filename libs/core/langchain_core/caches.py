@@ -1,4 +1,5 @@
-"""
+"""Cache classes.
+
 .. warning::
   Beta Feature!
 
