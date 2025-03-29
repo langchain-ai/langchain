@@ -95,7 +95,9 @@ def extract_sub_links(
             absolute_paths.add(absolute_path)
         except Exception as e:
             if continue_on_failure:
-                logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
+                logger.warning(
+                    "Unable to load link %s. Raised exception:\n\n%s", link, e
+                )
                 continue
             raise
 

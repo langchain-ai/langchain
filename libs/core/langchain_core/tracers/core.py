@@ -119,8 +119,9 @@ class _TracerCore(ABC):
             else:
                 if self.log_missing_parent:
                     logger.debug(
-                        f"Parent run {run.parent_run_id} not found for run {run.id}."
-                        " Treating as a root run."
+                        "Parent run %s not found for run %s. Treating as a root run.",
+                        run.parent_run_id,
+                        run.id,
                     )
                 run.parent_run_id = None
                 run.trace_id = run.id

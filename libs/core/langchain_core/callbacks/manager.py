@@ -282,13 +282,17 @@ def handle_event(
                 else:
                     handler_name = handler.__class__.__name__
                     logger.warning(
-                        f"NotImplementedError in {handler_name}.{event_name}"
-                        f" callback: {repr(e)}"
+                        "NotImplementedError in %s.%s callback: %s",
+                        handler_name,
+                        event_name,
+                        repr(e),
                     )
             except Exception as e:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback:"
-                    f" {repr(e)}"
+                    "Error in %s.%s callback: %s",
+                    handler.__class__.__name__,
+                    event_name,
+                    repr(e),
                 )
                 if handler.raise_error:
                     raise
@@ -328,7 +332,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
                 try:
                     runner.run(coro)
                 except Exception as e:
-                    logger.warning(f"Error in callback coroutine: {repr(e)}")
+                    logger.warning("Error in callback coroutine: %s", repr(e))
 
             # Run pending tasks scheduled by coros until they are all done
             while pending := asyncio.all_tasks(runner.get_loop()):
@@ -340,7 +344,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
             try:
                 asyncio.run(coro)
             except Exception as e:
-                logger.warning(f"Error in callback coroutine: {repr(e)}")
+                logger.warning("Error in callback coroutine: %s", repr(e))
 
 
 async def _ahandle_event_for_handler(
@@ -382,12 +386,17 @@ async def _ahandle_event_for_handler(
             )
         else:
             logger.warning(
-                f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                f" callback: {repr(e)}"
+                "NotImplementedError in %s.%s callback: %s",
+                handler.__class__.__name__,
+                event_name,
+                repr(e),
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback: {repr(e)}"
+            "Error in %s.%s callback: %s",
+            handler.__class__.__name__,
+            event_name,
+            repr(e),
         )
         if handler.raise_error:
             raise
@@ -2386,7 +2395,8 @@ def _configure(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
                         " unset the LANGCHAIN_TRACING_V2 environment variables.\n"
-                        f"{repr(e)}",
+                        "%s",
+                        repr(e),
                     )
         if run_tree is not None:
             for handler in callback_manager.handlers:

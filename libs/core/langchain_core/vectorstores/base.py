@@ -117,8 +117,8 @@ class VectorStore(ABC):
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
         logger.debug(
-            f"The embeddings property has not been "
-            f"implemented for {self.__class__.__name__}"
+            "The embeddings property has not been implemented for %s",
+            self.__class__.__name__,
         )
         return None
 
@@ -573,8 +573,9 @@ class VectorStore(ABC):
             ]
             if len(docs_and_similarities) == 0:
                 logger.warning(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
+                    "No relevant docs were retrieved using the "
+                    "relevance score threshold %s",
+                    score_threshold,
                 )
         return docs_and_similarities
 
@@ -621,8 +622,9 @@ class VectorStore(ABC):
             ]
             if len(docs_and_similarities) == 0:
                 logger.warning(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
+                    "No relevant docs were retrieved using the "
+                    "relevance score threshold %s",
+                    score_threshold,
                 )
         return docs_and_similarities
 
