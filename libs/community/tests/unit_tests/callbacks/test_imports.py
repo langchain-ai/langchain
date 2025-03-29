@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "CometCallbackHandler",
     "ContextCallbackHandler",
     "HumanApprovalCallbackHandler",
+    "GoogleGenAICallbackHandler",
     "InfinoCallbackHandler",
     "MlflowCallbackHandler",
     "LLMonitorCallbackHandler",
