@@ -487,6 +487,7 @@ def test_get_output_schema() -> None:
     assert _schema(output_type) == {
         "title": "RunnableWithChatHistoryOutput",
         "type": "object",
+        "additionalProperties": True,
     }
 
 

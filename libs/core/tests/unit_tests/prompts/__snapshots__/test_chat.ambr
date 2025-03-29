@@ -15,6 +15,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -30,6 +31,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -78,6 +80,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -119,6 +122,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -134,6 +138,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -182,6 +187,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -232,6 +238,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -247,6 +254,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -281,6 +289,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -307,6 +316,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -322,6 +332,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -356,6 +367,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -391,6 +403,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -406,6 +419,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -432,6 +446,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -454,6 +469,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -469,6 +485,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -495,6 +512,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -540,6 +558,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -555,6 +574,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -594,6 +614,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -615,6 +636,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -630,6 +652,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -669,6 +692,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -845,6 +869,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -860,6 +885,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -894,6 +920,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -915,6 +942,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -930,6 +958,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -964,6 +993,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -999,6 +1029,7 @@
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -1155,6 +1186,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1173,6 +1205,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1207,6 +1240,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1237,6 +1271,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1255,6 +1290,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1289,6 +1325,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1445,6 +1482,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1460,6 +1498,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1508,6 +1547,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1549,6 +1589,7 @@
         'description': 'Message chunk from an AI.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1564,6 +1605,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1612,6 +1654,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1662,6 +1705,7 @@
         'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1677,6 +1721,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1711,6 +1756,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1737,6 +1783,7 @@
         'description': 'Chat Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1752,6 +1799,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1786,6 +1834,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1821,6 +1870,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1836,6 +1886,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1862,6 +1913,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1884,6 +1936,7 @@
         'description': 'Function Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1899,6 +1952,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -1925,6 +1979,7 @@
             'type': 'string',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -1970,6 +2025,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -1985,6 +2041,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -2024,6 +2081,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -2045,6 +2103,7 @@
         'description': 'Human Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -2060,6 +2119,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -2099,6 +2159,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -2275,6 +2336,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -2290,6 +2352,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -2324,6 +2387,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -2345,6 +2409,7 @@
         'description': 'System Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -2360,6 +2425,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -2394,6 +2460,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -2429,6 +2496,7 @@
         ''',
         'properties': dict({
           'args': dict({
+            'additionalProperties': True,
             'title': 'Args',
             'type': 'object',
           }),
@@ -2585,6 +2653,7 @@
         ''',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -2603,6 +2672,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -2637,6 +2707,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
@@ -2667,6 +2738,7 @@
         'description': 'Tool Message chunk.',
         'properties': dict({
           'additional_kwargs': dict({
+            'additionalProperties': True,
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
@@ -2685,6 +2757,7 @@
                       'type': 'string',
                     }),
                     dict({
+                      'additionalProperties': True,
                       'type': 'object',
                     }),
                   ]),
@@ -2719,6 +2792,7 @@
             'title': 'Name',
           }),
           'response_metadata': dict({
+            'additionalProperties': True,
             'title': 'Response Metadata',
             'type': 'object',
           }),
