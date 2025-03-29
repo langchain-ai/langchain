@@ -1,5 +1,6 @@
 """Callback Handler that prints to std out."""
 
+import asyncio
 import threading
 from enum import Enum, auto
 from typing import Any, Dict, List
@@ -405,4 +406,115 @@ class OpenAICallbackHandler(BaseCallbackHandler):
 
     def __deepcopy__(self, memo: Any) -> "OpenAICallbackHandler":
         """Return a deep copy of the callback handler."""
+        return self
+
+
+class AsyncOpenAICallbackHandler(BaseCallbackHandler):
+    """Async Callback Handler that tracks OpenAI info."""
+
+    total_tokens: int = 0
+    prompt_tokens: int = 0
+    prompt_tokens_cached: int = 0
+    completion_tokens: int = 0
+    reasoning_tokens: int = 0
+    successful_requests: int = 0
+    total_cost: float = 0.0
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._lock = asyncio.Lock()
+
+    def __repr__(self) -> str:
+        return (
+            f"Tokens Used: {self.total_tokens}\n"
+            f"\tPrompt Tokens: {self.prompt_tokens}\n"
+            f"\t\tPrompt Tokens Cached: {self.prompt_tokens_cached}\n"
+            f"\tCompletion Tokens: {self.completion_tokens}\n"
+            f"\t\tReasoning Tokens: {self.reasoning_tokens}\n"
+            f"Successful Requests: {self.successful_requests}\n"
+            f"Total Cost (USD): ${self.total_cost}"
+        )
+
+    @property
+    def always_verbose(self) -> bool:
+        return True
+
+    async def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> None:
+        pass
+
+    async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        pass
+
+    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        try:
+            generation = response.generations[0][0]
+        except IndexError:
+            generation = None
+
+        usage_metadata = None
+        response_metadata = None
+
+        if isinstance(generation, ChatGeneration):
+            message = generation.message
+            if isinstance(message, AIMessage):
+                usage_metadata = getattr(message, "usage_metadata", None)
+                response_metadata = getattr(message, "response_metadata", None)
+
+        prompt_tokens_cached = 0
+        reasoning_tokens = 0
+
+        if usage_metadata:
+            token_usage = {"total_tokens": usage_metadata["total_tokens"]}
+            completion_tokens = usage_metadata["output_tokens"]
+            prompt_tokens = usage_metadata["input_tokens"]
+            model_name = (
+                response_metadata.get("model_name", "") if response_metadata else ""
+            )
+
+            if "cache_read" in usage_metadata.get("input_token_details", {}):
+                prompt_tokens_cached = usage_metadata["input_token_details"][
+                    "cache_read"
+                ]
+            if "reasoning" in usage_metadata.get("output_token_details", {}):
+                reasoning_tokens = usage_metadata["output_token_details"]["reasoning"]
+        else:
+            if response.llm_output is None or "token_usage" not in response.llm_output:
+                async with self._lock:
+                    self.successful_requests += 1
+                return
+
+            token_usage = response.llm_output["token_usage"]
+            completion_tokens = token_usage.get("completion_tokens", 0)
+            prompt_tokens = token_usage.get("prompt_tokens", 0)
+            model_name = response.llm_output.get("model_name", "")
+
+        prompt_cost = completion_cost = 0
+        if model_name in MODEL_COST_PER_1K_TOKENS:
+            uncached_prompt_tokens = prompt_tokens - prompt_tokens_cached
+            uncached_prompt_cost = get_openai_token_cost_for_model(
+                model_name, uncached_prompt_tokens, token_type=TokenType.PROMPT
+            )
+            cached_prompt_cost = get_openai_token_cost_for_model(
+                model_name, prompt_tokens_cached, token_type=TokenType.PROMPT_CACHED
+            )
+            prompt_cost = uncached_prompt_cost + cached_prompt_cost
+            completion_cost = get_openai_token_cost_for_model(
+                model_name, completion_tokens, token_type=TokenType.COMPLETION
+            )
+
+        async with self._lock:
+            self.total_cost += prompt_cost + completion_cost
+            self.total_tokens += token_usage.get("total_tokens", 0)
+            self.prompt_tokens += prompt_tokens
+            self.prompt_tokens_cached += prompt_tokens_cached
+            self.completion_tokens += completion_tokens
+            self.reasoning_tokens += reasoning_tokens
+            self.successful_requests += 1
+
+    def __copy__(self) -> "AsyncOpenAICallbackHandler":
+        return self
+
+    def __deepcopy__(self, memo: Any) -> "AsyncOpenAICallbackHandler":
         return self
