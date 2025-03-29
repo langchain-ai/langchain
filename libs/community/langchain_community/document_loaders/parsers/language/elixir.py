@@ -5,17 +5,49 @@ from langchain_community.document_loaders.parsers.language.tree_sitter_segmenter
 )
 
 if TYPE_CHECKING:
-    from tree_sitter import Language
-
+    from tree_sitter import Language, Parser
 
 CHUNK_QUERY = """
     [
-        (call target: ((identifier) @_identifier
-            (#any-of? @_identifier "defmodule" "defprotocol" "defimpl"))) @module
-        (call target: ((identifier) @_identifier
-            (#any-of? @_identifier "def" "defmacro" "defmacrop" "defp"))) @function
-        (unary_operator operator: "@" operand: (call target: ((identifier) @_identifier
-              (#any-of? @_identifier "moduledoc" "typedoc""doc")))) @comment
+        (unary_operator
+            operator: "@"
+            operand: (call
+                target: (identifier)
+                (arguments
+                    [
+                        (string)
+                        (charlist)
+                        (sigil
+                            quoted_start: _
+                            quoted_end: _
+                        )
+                        (boolean)
+                    ]
+                )
+            )
+        ) @comment
+    
+        (call
+            target: (identifier)
+            (arguments (alias))
+        ) @module
+    
+        (call
+            target: (identifier)
+            (arguments
+                [
+                    ; zero-arity functions with no parentheses
+                    (identifier)
+                    ; regular function clause
+                    (call target: (identifier))
+                    ; function clause with a guard clause
+                    (binary_operator
+                        left: (call target: (identifier))
+                        operator: "when"
+                    )
+                ]
+            )
+        ) @function
     ]
 """.strip()
 
@@ -24,9 +56,14 @@ class ElixirSegmenter(TreeSitterSegmenter):
     """Code segmenter for Elixir."""
 
     def get_language(self) -> "Language":
-        from tree_sitter_languages import get_language
+        from tree_sitter_language_pack import get_language
 
         return get_language("elixir")
+
+    def get_parser(self) -> "Parser":
+        from tree_sitter_language_pack import get_parser
+
+        return get_parser("elixir")
 
     def get_chunk_query(self) -> str:
         return CHUNK_QUERY

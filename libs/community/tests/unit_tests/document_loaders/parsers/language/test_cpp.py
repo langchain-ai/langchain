@@ -5,7 +5,7 @@ import pytest
 from langchain_community.document_loaders.parsers.language.cpp import CPPSegmenter
 
 
-@pytest.mark.requires("tree_sitter", "tree_sitter_languages")
+@pytest.mark.requires("tree_sitter", "tree_sitter_language_pack")
 class TestCPPSegmenter(unittest.TestCase):
     def setUp(self) -> None:
         self.example_code = """int foo() {
@@ -55,9 +55,9 @@ auto T::bar() const -> int {
     def test_extract_functions_classes(self) -> None:
         segmenter = CPPSegmenter(self.example_code)
         extracted_code = segmenter.extract_functions_classes()
-        self.assertEqual(extracted_code, self.expected_extracted_code)
+        self.assertEqual(self.expected_extracted_code, extracted_code)
 
     def test_simplify_code(self) -> None:
         segmenter = CPPSegmenter(self.example_code)
         simplified_code = segmenter.simplify_code()
-        self.assertEqual(simplified_code, self.expected_simplified_code)
+        self.assertEqual(self.expected_simplified_code, simplified_code)
