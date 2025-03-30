@@ -238,12 +238,7 @@ class Serializable(BaseModel, ABC):
                         raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
-            if cls is None:
-                this = self
-                this_model_fields = type(self).model_fields
-            else:
-                this = cast("Serializable", super(cls, self))
-                this_model_fields = this.model_fields  # TODO: fix
+            this = cast("Serializable", self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
             # Now also add the aliases for the secrets
@@ -252,8 +247,8 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this_model_fields:
-                    alias = this_model_fields[key].alias
+                if key in model_fields:
+                    alias = model_fields[key].alias
                     if alias is not None:
                         secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
