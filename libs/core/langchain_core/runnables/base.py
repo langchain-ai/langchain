@@ -5670,6 +5670,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=cast("RunnableConfig", {**self.config, **(config or {}), **kwargs}),
+            config_factories=self.config_factories,
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
         )
