@@ -247,9 +247,10 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in model_fields:
-                    if (alias := model_fields[key].alias) is not None:
-                        secrets[alias] = value
+                if (key in model_fields) and (
+                    alias := model_fields[key].alias
+                ) is not None:
+                    secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
