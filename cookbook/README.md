@@ -18,4 +18,4 @@
 | [playlists](/cookbook/playlists.ipynb)                                          | Составление плейлистов Spotify с помощью GigaChat API. **Пример дорабатывается**                                                    |
 | [reporter](/cookbook/reporter/README.md)                                        | Кластеризация и генерация отчетов на основе отзывов пользователей                                                                   |
 | [repl_graph](/cookbook/repl_graph/repl.ipynb)                                   | Создание базового агента способного решать задачи пользователей с помощью написания кода                                            | 
-| [tructured_output](cookbook/structured_output/structured_output.ipynb)          | Получение данных от GigaChat в структурированном формате (JSON, Pydantic)                                                           | 
+| [structured_output](/cookbook/structured_output/structured_output.ipynb)          | Получение данных от GigaChat в структурированном формате (JSON, Pydantic)                                                           | 
