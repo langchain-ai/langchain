@@ -267,7 +267,8 @@ giga
   * [Дебаты агентов с разными ролями](/cookbook/agent_debates/README.md)
   * [Агент для получения рекомендаций Spotify](/cookbook/playlists.ipynb)
   * [Агент выполняющий код](/cookbook/repl_graph/repl.ipynb)
-* [Извлечение структурированной информации](/cookbook/extraction.ipynb)
+  * [Агент и MCP-сервер](/cookbook/mcp/README.md)
+* [Извлечение структурированной информации](/cookbook/structured_output/structured_output.ipynb)
 * Работа с изображениями:
   * [Распознавание изображения](/cookbook/gigachat_vision/gigachat_vision_simple.ipynb)
   * [Генерация структурированных данных на основе изображений](/cookbook/gigachat_vision/gigachat_vision.ipynb)
