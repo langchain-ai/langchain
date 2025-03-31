@@ -89,7 +89,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                     stack.pop()
                 else:
                     # Mismatched closing character; the input is malformed.
-                    return None
+                    continue
 
         # Append the processed character to the new string.
         new_chars.append(new_char)
