@@ -26,10 +26,10 @@ class NoLock:
         """Do nothing."""
 
     def __exit__(
-            self,
-            exc_type: Optional[type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[TracebackType],
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Exception not handled."""
         return False
@@ -180,10 +180,10 @@ class Tee(Generic[T]):
         return self
 
     def __exit__(
-            self,
-            exc_type: Optional[type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[TracebackType],
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Close all child iterators."""
         self.close()
