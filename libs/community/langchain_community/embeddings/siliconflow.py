@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Optional
+
+import requests
+from pydantic import BaseModel, Field, model_validator
+
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, Field, model_validator
-import requests
 
 class SiliconFlowEmbeddings(BaseModel, Embeddings):
     """
