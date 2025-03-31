@@ -183,4 +183,6 @@ docs/docs/templates
 
 prof
 virtualenv/
-.aider*
+ # Local development overrides
+ !/.gitignore
+ .aider/
