@@ -246,6 +246,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.zhipuai import (
         ZhipuAIEmbeddings,
     )
+    from langchain_community.embeddings.siliconflow import (
+        SiliconFlowEmbeddings,
+    )
 
 __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
@@ -331,6 +334,7 @@ __all__ = [
     "YandexGPTEmbeddings",
     "ZhipuAIEmbeddings",
     "HunyuanEmbeddings",
+    "SiliconFlowEmbeddings",
 ]
 
 _module_lookup = {
@@ -417,6 +421,7 @@ _module_lookup = {
     "AscendEmbeddings": "langchain_community.embeddings.ascend",
     "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
     "HunyuanEmbeddings": "langchain_community.embeddings.hunyuan",
+    "SiliconFlowEmbeddings": "langchain_community.embeddings.siliconflow",
 }
 
 
