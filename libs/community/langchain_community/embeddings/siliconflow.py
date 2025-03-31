@@ -17,7 +17,7 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
 
     Key init args:
         model: str
-            Name of the embedding model to use. Default is "BAAI/bge-large-zh-v1.5".
+            Name of the embedding model to use. Default is "BAAI/bge-m3".
         api_key: str
             Automatically inferred from env var `SILICONFLOW_API_KEY` if not provided.
         encoding_format: str
@@ -29,7 +29,7 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
             from your_module import SiliconFlowEmbeddings
 
             embed = SiliconFlowEmbeddings(
-                model="BAAI/bge-large-zh-v1.5",
+                model="BAAI/bge-m3",
                 # api_key="...",  # Optional, will use env var if not provided
             )
 
