@@ -71,7 +71,9 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
         """Validate that API key exists in environment or provided explicitly."""
-        values["api_key"] = get_from_dict_or_env(values, "api_key", "SILICONFLOW_API_KEY")
+        values["api_key"] = get_from_dict_or_env(
+            values, "api_key", "SILICONFLOW_API_KEY"
+        )
         return values
 
     def _embed(self, texts: List[str]) -> List[List[float]]:
