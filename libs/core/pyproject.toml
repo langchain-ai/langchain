@@ -77,8 +77,8 @@ target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FLY", "FURB", "I", "ICN", "INT", "LOG", "N", "NPY", "PD", "PIE", "PLW", "PTH", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T201", "TC", "TID", "TRY", "UP", "W", "YTT",]
-ignore = [ "ANN401", "COM812", "UP007", "S110", "S112", "TC001", "TC002", "TC003"]
+select = [ "AIR", "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INP","INT", "ISC", "LOG", "N", "NPY", "PD", "PIE", "PLW", "PTH", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T20", "TC", "TID", "TRY", "UP", "W", "YTT",]
+ignore = [ "ANN401", "COM812", "FA100", "ISC001", "S110", "S112", "TC001", "TC002", "TC003", "UP007",]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
@@ -102,4 +102,4 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 "tests/**" = [ "S",]
-"scripts/**" = [ "S",]
+"scripts/**" = [ "INP", "S",]
