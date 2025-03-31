@@ -59,7 +59,7 @@ class TestPinecone:
         else:
             pinecone.create_index(name=index_name, dimension=dimension)
 
-        # insure the index is empty
+        # ensure the index is empty
         index_stats = cls.index.describe_index_stats()
         assert index_stats["dimension"] == dimension
         if index_stats["namespaces"].get(namespace_name) is not None:

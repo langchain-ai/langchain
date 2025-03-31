@@ -105,7 +105,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise TypeError(msg)
 
         default_ = cast(
-            Runnable[Input, Output], coerce_to_runnable(cast(RunnableLike, default))
+            "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
         )
 
         _branches = []
@@ -125,7 +125,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 )
                 raise ValueError(msg)
             condition, runnable = branch
-            condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
+            condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 

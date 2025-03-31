@@ -862,7 +862,7 @@ def test_get_output_messages_with_value_error() -> None:
         with_history.bound.invoke([HumanMessage(content="hello")], config)
     excepted = (
         "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
-        + (f" Got {illegal_bool_message}.")
+        f" Got {illegal_bool_message}."
     )
     assert excepted in str(excinfo.value)
 
@@ -874,6 +874,6 @@ def test_get_output_messages_with_value_error() -> None:
         with_history.bound.invoke([HumanMessage(content="hello")], config)
     excepted = (
         "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
-        + (f" Got {illegal_int_message}.")
+        f" Got {illegal_int_message}."
     )
     assert excepted in str(excinfo.value)

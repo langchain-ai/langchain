@@ -165,6 +165,94 @@ def test_filter_message(filters: dict) -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_exclude_tool_calls() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            "bar-response",
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[:3]
+
+    # test excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+
+    # test explicitly excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls={"1", "2"})
+    assert expected == actual
+
+    # test excluding a specific tool call
+    expected = messages[:5]
+    expected[3] = expected[3].model_copy(update={"tool_calls": [tool_calls[0]]})
+    actual = filter_messages(messages, exclude_tool_calls=["2"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_tool_calls_content_blocks() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            [
+                {"text": "bar-response", "type": "text"},
+                {"name": "foo", "type": "tool_use", "id": "1"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[:3]
+
+    # test excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+
+    # test explicitly excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls={"1", "2"})
+    assert expected == actual
+
+    # test excluding a specific tool call
+    expected = messages[:4] + messages[-1:]
+    expected[3] = expected[3].model_copy(
+        update={
+            "tool_calls": [tool_calls[1]],
+            "content": [
+                {"text": "bar-response", "type": "text"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+        }
+    )
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),
@@ -451,6 +539,116 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
                 + default_msg_suffix_len
             )
     return count
+
+
+def test_trim_messages_partial_text_splitting() -> None:
+    messages = [HumanMessage(content="This is a long message that needs trimming")]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    def count_characters(msgs: list[BaseMessage]) -> int:
+        return sum(len(m.content) if isinstance(m.content, str) else 0 for m in msgs)
+
+    # Return individual characters to test text splitting
+    def char_splitter(text: str) -> list[str]:
+        return list(text)
+
+    result = trim_messages(
+        messages,
+        max_tokens=10,  # Only allow 10 characters
+        token_counter=count_characters,
+        strategy="first",
+        allow_partial=True,
+        text_splitter=char_splitter,
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "This is a "  # First 10 characters
+    assert messages == messages_copy
+
+
+def test_trim_messages_mixed_content_with_partial() -> None:
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "First part of text."},
+                {"type": "text", "text": "Second part that should be trimmed."},
+            ]
+        )
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    # Count total length of all text parts
+    def count_text_length(msgs: list[BaseMessage]) -> int:
+        total = 0
+        for msg in msgs:
+            if isinstance(msg.content, list):
+                for block in msg.content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        total += len(block["text"])
+            elif isinstance(msg.content, str):
+                total += len(msg.content)
+        return total
+
+    result = trim_messages(
+        messages,
+        max_tokens=20,  # Only allow first text block
+        token_counter=count_text_length,
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert len(result) == 1
+    assert len(result[0].content) == 1
+    assert result[0].content[0]["text"] == "First part of text."
+    assert messages == messages_copy
+
+
+def test_trim_messages_exact_token_boundary() -> None:
+    messages = [
+        SystemMessage(content="10 tokens exactly."),
+        HumanMessage(content="Another 10 tokens."),
+    ]
+
+    # First message only
+    result1 = trim_messages(
+        messages,
+        max_tokens=10,  # Exactly the size of first message
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result1) == 1
+    assert result1[0].content == "10 tokens exactly."
+
+    # Both messages exactly fit
+    result2 = trim_messages(
+        messages,
+        max_tokens=20,  # Exactly the size of both messages
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result2) == 2
+    assert result2 == messages
+
+
+def test_trim_messages_start_on_with_allow_partial() -> None:
+    messages = [
+        HumanMessage(content="First human message"),
+        AIMessage(content="AI response"),
+        HumanMessage(content="Second human message"),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+    result = trim_messages(
+        messages,
+        max_tokens=20,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        allow_partial=True,
+        start_on="human",
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "Second human message"
+    assert messages == messages_copy
 
 
 class FakeTokenCountingModel(FakeChatModel):

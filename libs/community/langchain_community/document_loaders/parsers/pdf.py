@@ -428,6 +428,7 @@ class PyPDFParser(BaseBlobParser):
         """
         if not self.images_parser:
             return ""
+        import pypdf
         from PIL import Image
 
         if "/XObject" not in cast(dict, page["/Resources"]).keys():
@@ -438,13 +439,18 @@ class PyPDFParser(BaseBlobParser):
         for obj in xObject:
             np_image: Any = None
             if xObject[obj]["/Subtype"] == "/Image":
-                if xObject[obj]["/Filter"][1:] in _PDF_FILTER_WITHOUT_LOSS:
+                img_filter = (
+                    xObject[obj]["/Filter"][1:]
+                    if type(xObject[obj]["/Filter"]) is pypdf.generic._base.NameObject
+                    else xObject[obj]["/Filter"][0][1:]
+                )
+                if img_filter in _PDF_FILTER_WITHOUT_LOSS:
                     height, width = xObject[obj]["/Height"], xObject[obj]["/Width"]
 
                     np_image = np.frombuffer(
                         xObject[obj].get_data(), dtype=np.uint8
                     ).reshape(height, width, -1)
-                elif xObject[obj]["/Filter"][1:] in _PDF_FILTER_WITH_LOSS:
+                elif img_filter in _PDF_FILTER_WITH_LOSS:
                     np_image = np.array(Image.open(io.BytesIO(xObject[obj].get_data())))
 
                 else:
@@ -1507,6 +1513,11 @@ class AmazonTextractPDFParser(BaseBlobParser):
     output the key/value pairs with a colon (key: value).
     This helps most LLMs to achieve better accuracy when
     processing these texts.
+
+    ``Document`` objects are returned with metadata that includes the ``source`` and
+    a 1-based index of the page number in ``page``. Note that ``page`` represents
+    the index of the result returned from Textract, not necessarily the as-written
+    page number in the document.
 
     """
 

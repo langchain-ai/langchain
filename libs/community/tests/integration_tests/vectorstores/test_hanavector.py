@@ -170,7 +170,7 @@ def test_hanavector_table_with_missing_columns() -> None:
         cur.close()
 
     # Check if table is created
-    exception_occured = False
+    exception_occurred = False
     try:
         HanaDB(
             connection=test_setup.conn,
@@ -178,10 +178,10 @@ def test_hanavector_table_with_missing_columns() -> None:
             distance_strategy=DistanceStrategy.COSINE,
             table_name=table_name,
         )
-        exception_occured = False
+        exception_occurred = False
     except AttributeError:
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -243,7 +243,7 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
         cur.close()
 
     # Check if table is created
-    exception_occured = False
+    exception_occurred = False
     try:
         HanaDB(
             connection=test_setup.conn,
@@ -251,11 +251,11 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
             distance_strategy=DistanceStrategy.COSINE,
             table_name=table_name,
         )
-        exception_occured = False
+        exception_occurred = False
     except AttributeError as err:
         print(err)  # noqa: T201
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -521,12 +521,12 @@ def test_hanavector_similarity_search_with_metadata_filter_invalid_type(
         table_name=table_name,
     )
 
-    exception_occured = False
+    exception_occurred = False
     try:
         vectorDB.similarity_search(texts[0], 3, filter={"wrong_type": 0.1})
     except ValueError:
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -727,20 +727,20 @@ def test_hanavector_delete_called_wrong(
     )
 
     # Delete without filter parameter
-    exception_occured = False
+    exception_occurred = False
     try:
         vectorDB.delete()
     except ValueError:
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
     # Delete with ids parameter
-    exception_occured = False
+    exception_occurred = False
     try:
         vectorDB.delete(ids=["id1", "id"], filter={"start": 100, "end": 200})
     except ValueError:
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -884,7 +884,7 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
     invalid_metadatas = [
         {"sta rt": 0, "end": 100, "quality": "good", "ready": True},
     ]
-    exception_occured = False
+    exception_occurred = False
     try:
         HanaDB.from_texts(
             connection=test_setup.conn,
@@ -894,13 +894,13 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
             table_name=table_name,
         )
     except ValueError:
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
     invalid_metadatas = [
         {"sta/nrt": 0, "end": 100, "quality": "good", "ready": True},
     ]
-    exception_occured = False
+    exception_occurred = False
     try:
         HanaDB.from_texts(
             connection=test_setup.conn,
@@ -910,8 +910,8 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
             table_name=table_name,
         )
     except ValueError:
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -1361,7 +1361,7 @@ def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
         cur.close()
 
     # Check if table is created
-    exception_occured = False
+    exception_occurred = False
     try:
         HanaDB.from_texts(
             connection=test_setup.conn,
@@ -1371,12 +1371,12 @@ def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
             table_name=table_name,
             specific_metadata_columns=["quality"],
         )
-        exception_occured = False
+        exception_occurred = False
     except dbapi.Error:  # Nothing we should do here, hdbcli will throw an error
-        exception_occured = True
-    assert exception_occured  # Check if table is created
+        exception_occurred = True
+    assert exception_occurred  # Check if table is created
 
-    exception_occured = False
+    exception_occurred = False
     try:
         HanaDB.from_texts(
             connection=test_setup.conn,
@@ -1386,10 +1386,10 @@ def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
             table_name=table_name,
             specific_metadata_columns=["NonExistingColumn"],
         )
-        exception_occured = False
+        exception_occurred = False
     except AttributeError:  # Nothing we should do here, hdbcli will throw an error
-        exception_occured = True
-    assert exception_occured
+        exception_occurred = True
+    assert exception_occurred
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")

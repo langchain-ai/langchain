@@ -160,13 +160,13 @@ def merge_content(
         if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
             if isinstance(content, str):
-                merged = cast(str, merged) + content
+                merged = cast("str", merged) + content
             # If the next chunk is a list, add the current to the start of the list
             else:
                 merged = [merged] + content  # type: ignore
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast(list, merged), content)  # type: ignore
+            merged = merge_lists(cast("list", merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
         else:
             # If the last element of the first content is a string

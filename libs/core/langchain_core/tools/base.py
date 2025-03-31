@@ -650,8 +650,17 @@ class ChildTool(BaseTool):
         # pass as a positional argument.
         if isinstance(tool_input, str):
             return (tool_input,), {}
+        elif isinstance(tool_input, dict):
+            # Make a shallow copy of the input to allow downstream code
+            # to modify the root level of the input without affecting the
+            # original input.
+            # This is used by the tool to inject run time information like
+            # the callback manager.
+            return (), tool_input.copy()
         else:
-            return (), tool_input
+            # This code path is not expected to be reachable.
+            msg = f"Invalid tool input type: {type(tool_input)}"
+            raise TypeError(msg)
 
     def run(
         self,
@@ -941,11 +950,11 @@ def _prep_run_args(
 ) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
+        tool_call_id: Optional[str] = cast("ToolCall", input)["id"]
+        tool_input: Union[str, dict] = cast("ToolCall", input)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast(Union[str, dict], input)
+        tool_input = cast("Union[str, dict]", input)
     return (
         tool_input,
         dict(

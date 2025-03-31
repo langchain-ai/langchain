@@ -303,7 +303,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> BaseMessage:
         config = ensure_config(config)
         return cast(
-            ChatGeneration,
+            "ChatGeneration",
             self.generate_prompt(
                 [self._convert_input(input)],
                 stop=stop,
@@ -335,7 +335,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=config.pop("run_id", None),
             **kwargs,
         )
-        return cast(ChatGeneration, llm_result.generations[0][0]).message
+        return cast("ChatGeneration", llm_result.generations[0][0]).message
 
     def _should_stream(
         self,
@@ -383,7 +383,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+                "BaseMessageChunk",
+                self.invoke(input, config=config, stop=stop, **kwargs),
             )
         else:
             config = ensure_config(config)
@@ -430,7 +431,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         chunk.message.id = f"run-{run_manager.run_id}"
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     run_manager.on_llm_new_token(
-                        cast(str, chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content), chunk=chunk
                     )
                     yield chunk.message
                     if generation is None:
@@ -464,7 +465,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
-                BaseMessageChunk,
+                "BaseMessageChunk",
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
             return
@@ -518,7 +519,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     chunk.message.id = f"run-{run_manager.run_id}"
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 await run_manager.on_llm_new_token(
-                    cast(str, chunk.message.content), chunk=chunk
+                    cast("str", chunk.message.content), chunk=chunk
                 )
                 yield chunk.message
                 if generation is None:
@@ -899,7 +900,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = f"run-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
-                        cast(str, chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content), chunk=chunk
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
@@ -972,7 +973,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = f"run-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
-                        cast(str, chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content), chunk=chunk
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
@@ -1167,6 +1168,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tools: Sequence[
             Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
+        *,
+        tool_choice: Optional[Union[str, Literal["any"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError
@@ -1280,6 +1283,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 Added support for TypedDict class.
         """  # noqa: E501
+        _ = kwargs.pop("method", None)
+        _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
@@ -1303,7 +1308,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[cast(TypeBaseModel, schema)], first_tool_only=True
+                tools=[cast("TypeBaseModel", schema)], first_tool_only=True
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

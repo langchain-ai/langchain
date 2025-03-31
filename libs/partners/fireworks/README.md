@@ -72,9 +72,9 @@ print(output.generations)
 
 ## Advanced usage
 ### Tool use: LangChain Agent + Fireworks function calling model
-Please checkout how to teach Fireworks function calling model to use a [calculator here](https://github.com/fw-ai/cookbook/blob/main/examples/function_calling/fireworks_langchain_tool_usage.ipynb). 
+Please checkout how to teach Fireworks function calling model to use a calculator [here](https://github.com/fw-ai/cookbook/blob/main/learn/function-calling/notebooks_langchain/fireworks_langchain_tool_usage.ipynb). 
 
 Fireworks focus on delivering the best experience for fast model inference as well as tool use. You can check out [our blog](https://fireworks.ai/blog/firefunction-v1-gpt-4-level-function-calling) for more details on how it fares compares to GPT-4, the punchline is that it is on par with GPT-4 in terms just function calling use cases, but it is way faster and much cheaper.
 
 ### RAG: LangChain agent + Fireworks function calling model + MongoDB + Nomic AI embeddings
-Please check out the [cookbook here](https://github.com/fw-ai/cookbook/blob/main/examples/rag/mongodb_agent.ipynb) for an end to end flow
+Please check out the [cookbook here](https://github.com/fw-ai/cookbook/blob/main/integrations/MongoDB/project_rag_with_mongodb/mongodb_agent.ipynb) for an end to end flow
