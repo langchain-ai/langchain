@@ -272,7 +272,14 @@ class YoutubeLoader(BaseLoader):
             transcript = transcript.translate(self.translation)
         transcript_object = transcript.fetch()
         if isinstance(transcript_object, FetchedTranscript):
-            transcript_pieces = [{"text": x.text} for x in transcript_object.snippets]
+            transcript_pieces = [
+                {
+                    "text": snippet.text,
+                    "start": snippet.start,
+                    "duration": snippet.duration,
+                }
+                for snippet in transcript_object.snippets
+            ]
         else:
             transcript_pieces: List[Dict[str, Any]] = transcript_object  # type: ignore[no-redef]
 
