@@ -33,7 +33,7 @@ def collection() -> Any:
 class TestMongoDBAtlasVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
-        # insure the test collection is empty
+        # ensure the test collection is empty
         collection = get_collection()
         assert collection.count_documents({}) == 0  # type: ignore[index]
 

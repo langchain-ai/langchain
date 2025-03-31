@@ -2604,3 +2604,90 @@ def test_title_property_preserved() -> None:
         },
         "type": "function",
     }
+
+
+async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
+    """Verify that the inputs are not mutated when invoking a tool asynchronously."""
+
+    def sync_no_op(foo: int) -> str:
+        return "good"
+
+    async def async_no_op(foo: int) -> str:
+        return "good"
+
+    tool = StructuredTool(
+        name="sample_tool",
+        description="",
+        args_schema={
+            "type": "object",
+            "required": ["foo"],
+            "properties": {
+                "seconds": {"type": "number", "description": "How big is foo"}
+            },
+        },
+        coroutine=async_no_op,
+        func=sync_no_op,
+    )
+
+    tool_call: ToolCall = {
+        "name": "sample_tool",
+        "args": {"foo": 2},
+        "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
+        "type": "tool_call",
+    }
+
+    assert tool.invoke(tool_call["args"]) == "good"
+    assert tool_call == {
+        "name": "sample_tool",
+        "args": {"foo": 2},
+        "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
+        "type": "tool_call",
+    }
+
+    assert await tool.ainvoke(tool_call["args"]) == "good"
+
+    assert tool_call == {
+        "name": "sample_tool",
+        "args": {"foo": 2},
+        "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
+        "type": "tool_call",
+    }
+
+
+def test_tool_invoke_does_not_mutate_inputs() -> None:
+    """Verify that the inputs are not mutated when invoking a tool synchronously."""
+
+    def sync_no_op(foo: int) -> str:
+        return "good"
+
+    async def async_no_op(foo: int) -> str:
+        return "good"
+
+    tool = StructuredTool(
+        name="sample_tool",
+        description="",
+        args_schema={
+            "type": "object",
+            "required": ["foo"],
+            "properties": {
+                "seconds": {"type": "number", "description": "How big is foo"}
+            },
+        },
+        coroutine=async_no_op,
+        func=sync_no_op,
+    )
+
+    tool_call: ToolCall = {
+        "name": "sample_tool",
+        "args": {"foo": 2},
+        "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
+        "type": "tool_call",
+    }
+
+    assert tool.invoke(tool_call["args"]) == "good"
+    assert tool_call == {
+        "name": "sample_tool",
+        "args": {"foo": 2},
+        "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
+        "type": "tool_call",
+    }

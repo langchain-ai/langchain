@@ -650,8 +650,17 @@ class ChildTool(BaseTool):
         # pass as a positional argument.
         if isinstance(tool_input, str):
             return (tool_input,), {}
+        elif isinstance(tool_input, dict):
+            # Make a shallow copy of the input to allow downstream code
+            # to modify the root level of the input without affecting the
+            # original input.
+            # This is used by the tool to inject run time information like
+            # the callback manager.
+            return (), tool_input.copy()
         else:
-            return (), tool_input
+            # This code path is not expected to be reachable.
+            msg = f"Invalid tool input type: {type(tool_input)}"
+            raise TypeError(msg)
 
     def run(
         self,
