@@ -1,6 +1,7 @@
 # langchain-mcp-adapters-example
 
 MCP + GigaChat usage example
+![alt text](image.png)
 
 # Components
 	1.	math_server.py – MCP server with two mathematical functions.
