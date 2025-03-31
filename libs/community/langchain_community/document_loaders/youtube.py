@@ -279,7 +279,7 @@ class YoutubeLoader(BaseLoader):
         if self.transcript_format == TranscriptFormat.TEXT:
             transcript = " ".join(
                 map(
-                    lambda transcript_piece: transcript_piece["text"].strip(" "),
+                    lambda transcript_piece: transcript_piece.text.strip(" "),
                     transcript_pieces,
                 )
             )
