@@ -1,34 +1,23 @@
 import json
-from typing import Dict, List
+from typing import List
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.utils import get_from_dict_or_env
-from pydantic import BaseModel, Field, SecretStr, model_validator
+from langchain_core.utils import secret_from_env
+from pydantic import BaseModel, Field, SecretStr
 
 
 class BraveSearchWrapper(BaseModel):
     """Wrapper around the Brave search engine."""
 
-    api_key: SecretStr
+    api_key: SecretStr = Field(
+        default_factory=secret_from_env(["BRAVE_SEARCH_API_KEY"])
+    )
     """The API key to use for the Brave search engine."""
     search_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the search request."""
     base_url: str = "https://api.search.brave.com/res/v1/web/search"
     """The base URL for the Brave search engine."""
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-
-        # if the api key is not in the values, get it from the environment, or we fail
-        # this is the pattern used in other tools, like Tavily, but it's not ideal from
-        # linter's point of view so we have to add some ignore comments
-        api_key = get_from_dict_or_env(values, "api_key", "BRAVE_SEARCH_API_KEY")
-        values["api_key"] = api_key
-
-        return values
 
     def run(self, query: str) -> str:
         """Query the Brave search engine and return the results as a JSON string.

@@ -11,6 +11,7 @@ from langchain_community.utilities.brave_search import BraveSearchWrapper
 
 class BraveSearch(BaseTool):  # type: ignore[override]
     """Tool that queries the BraveSearch.
+
     Api key can be provided as an environment variable BRAVE_SEARCH_API_KEY
     or as a parameter.
 
@@ -42,7 +43,7 @@ class BraveSearch(BaseTool):  # type: ignore[override]
         "useful for when you need to answer questions about current events."
         " input should be a search query."
     )
-    search_wrapper: BraveSearchWrapper = Field(default_factory=BraveSearchWrapper)  # type: ignore[arg-type]
+    search_wrapper: BraveSearchWrapper = Field(default_factory=BraveSearchWrapper)
 
     @classmethod
     def from_api_key(
@@ -65,8 +66,9 @@ class BraveSearch(BaseTool):  # type: ignore[override]
 
     @classmethod
     def from_search_kwargs(cls, search_kwargs: dict, **kwargs: Any) -> BraveSearch:
-        """Create a tool from search kwargs,
-        using environment variable BRAVE_SEARCH_API_KEY for api key.
+        """Create a tool from search kwargs.
+
+        Uses the environment variable BRAVE_SEARCH_API_KEY for api key.
 
         Args:
             search_kwargs: Any additional kwargs to pass to the search wrapper.
@@ -78,7 +80,7 @@ class BraveSearch(BaseTool):  # type: ignore[override]
         # we can not provide api key because it's calculated in the wrapper,
         # so the ignore is needed for linter
         # not ideal but needed to keep the tool code changes non-breaking
-        wrapper = BraveSearchWrapper(search_kwargs=search_kwargs)  # type: ignore[call-arg]
+        wrapper = BraveSearchWrapper(search_kwargs=search_kwargs)
         return cls(search_wrapper=wrapper, **kwargs)
 
     def _run(
