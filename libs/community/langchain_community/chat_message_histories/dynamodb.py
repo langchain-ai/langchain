@@ -139,11 +139,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             ) from e
 
         response = None
-        try:
-            response = self.table.get_item(Key=self.key)
-        except ClientError as err:
-            logger.error(err)
-            raise err
+        response = self.table.get_item(Key=self.key)
 
         if response and "Item" in response:
             items = response["Item"][self.history_messages_key]
@@ -177,28 +173,24 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         if self.history_size:
             existing_messages = existing_messages[-self.history_size :]
 
-        try:
-            if self.ttl:
-                import time
+        if self.ttl:
+            import time
 
-                expireAt = int(time.time()) + self.ttl
-                self.table.update_item(
-                    Key={**self.key},
-                    UpdateExpression=(
-                        f"set {self.history_messages_key} = :h, "
-                        f"{self.ttl_key_name} = :t"
-                    ),
-                    ExpressionAttributeValues={":h": existing_messages, ":t": expireAt},
-                )
-            else:
-                self.table.update_item(
-                    Key={**self.key},
-                    UpdateExpression=f"set {self.history_messages_key} = :h",
-                    ExpressionAttributeValues={":h": existing_messages},
-                )
-        except ClientError as err:
-            logger.error(err)
-            raise err
+            expireAt = int(time.time()) + self.ttl
+            self.table.update_item(
+                Key={**self.key},
+                UpdateExpression=(
+                    f"set {self.history_messages_key} = :h, "
+                    f"{self.ttl_key_name} = :t"
+                ),
+                ExpressionAttributeValues={":h": existing_messages, ":t": expireAt},
+            )
+        else:
+            self.table.update_item(
+                Key={**self.key},
+                UpdateExpression=f"set {self.history_messages_key} = :h",
+                ExpressionAttributeValues={":h": existing_messages},
+            )
 
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
@@ -209,8 +201,4 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 "Unable to import botocore, please install with `pip install botocore`."
             ) from e
 
-        try:
-            self.table.delete_item(Key=self.key)
-        except ClientError as err:
-            logger.error(err)
-            raise err
+        self.table.delete_item(Key=self.key)
