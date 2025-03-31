@@ -385,7 +385,7 @@ def _get_key(
     # We couldn't find the key in any of the scopes
 
     if warn:
-        logger.warn(f"Could not find key '{key}'")
+        logger.warning("Could not find key '%s'", key)
 
     if keep:
         return f"{def_ldel} {key} {def_rdel}"
