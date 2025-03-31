@@ -160,13 +160,8 @@ class ChatQwQ(BaseChatOpenAI):
         response: Union[dict, openai.BaseModel],
         generation_info: Optional[Dict] = None,
     ) -> ChatResult:
-        print("Response:", response)
-        print("Generation info:", generation_info)
         rtn = super()._create_chat_result(response, generation_info)
-        print(rtn)
-
-        print(rtn.generations[0].message)
-
+        
         if not isinstance(response, openai.BaseModel):
             return rtn
 
@@ -197,7 +192,6 @@ class ChatQwQ(BaseChatOpenAI):
             default_chunk_class,
             base_generation_info,
         )
-        print(generation_chunk)
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
