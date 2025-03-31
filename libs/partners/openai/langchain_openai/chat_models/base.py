@@ -1471,6 +1471,7 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
+        tools: Optional[list] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1636,13 +1637,16 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(
+            bind_kwargs = dict(
                 response_format=response_format,
                 ls_structured_output_format={
                     "kwargs": {"method": method, "strict": strict},
                     "schema": convert_to_openai_tool(schema),
                 },
             )
+            if tools:
+                bind_kwargs["tools"] = [convert_to_openai_tool(t) for t in tools]
+            llm = self.bind(**bind_kwargs)
             if is_pydantic_schema:
                 output_parser = RunnableLambda(
                     partial(_oai_structured_outputs_parser, schema=cast(type, schema))
