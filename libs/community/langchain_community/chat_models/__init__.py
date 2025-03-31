@@ -157,7 +157,7 @@ if TYPE_CHECKING:
         PromptLayerChatOpenAI,
     )
     from langchain_community.chat_models.qwq import (
-        ChatQwq,
+        ChatQwQ,
     )
     from langchain_community.chat_models.reka import (
         ChatReka,
@@ -234,6 +234,7 @@ __all__ = [
     "ChatOpenAI",
     "ChatOutlines",
     "ChatPerplexity",
+    "ChatQwQ",
     "ChatReka",
     "ChatPremAI",
     "ChatSambaNovaCloud",
@@ -300,6 +301,7 @@ _module_lookup = {
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatOutlines": "langchain_community.chat_models.outlines",
+    "ChatQwQ": "langchain_community.chat_models.qwq",
     "ChatReka": "langchain_community.chat_models.reka",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
     "ChatSambaNovaCloud": "langchain_community.chat_models.sambanova",

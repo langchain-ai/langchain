@@ -1,14 +1,14 @@
 """Qwen QwQ Thingking chat models."""
 
 from json import JSONDecodeError
-from typing import Any, Dict, Iterator, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Iterator, List, Optional, Type, Union
 
 import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.messages import AIMessageChunk, BaseMessage, AIMessage
-from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
@@ -142,11 +142,11 @@ class ChatQwQ(BaseChatOpenAI):
             if v is not None
         }
 
-        if not (self.client or None):
+        if not (self.client or None):  # type: ignore
             sync_specific: dict = {"http_client": self.http_client}
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
             self.client = self.root_client.chat.completions
-        if not (self.async_client or None):
+        if not (self.async_client or None):  # type: ignore
             async_specific: dict = {"http_client": self.http_async_client}
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
@@ -161,7 +161,7 @@ class ChatQwQ(BaseChatOpenAI):
         generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
-        
+
         if not isinstance(response, openai.BaseModel):
             return rtn
 
@@ -175,9 +175,9 @@ class ChatQwQ(BaseChatOpenAI):
             if isinstance(model_extra, dict) and (
                 reasoning := model_extra.get("reasoning")
             ):
-                rtn.generations[0].message.additional_kwargs[
-                    "reasoning_content"
-                ] = reasoning
+                rtn.generations[0].message.additional_kwargs["reasoning_content"] = (
+                    reasoning
+                )
 
         return rtn
 
@@ -242,7 +242,8 @@ class ChatQwQ(BaseChatOpenAI):
             reasoning_content = ""
 
             for chunk in chunks:
-                content += chunk.message.content
+                if isinstance(chunk.message.content, str):
+                    content += chunk.message.content
                 reasoning_content += chunk.message.additional_kwargs.get(
                     "reasoning_content", ""
                 )
