@@ -1,13 +1,13 @@
+# https://github.com/langchain-ai/langchain/pull/26562
 from __future__ import annotations
 
 import logging
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
-    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
@@ -141,11 +141,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         response = None
         try:
             response = self.table.get_item(Key=self.key)
-        except ClientError as error:
-            if error.response["Error"]["Code"] == "ResourceNotFoundException":
-                logger.warning("No record found with session id: %s", self.session_id)
-            else:
-                logger.error(error)
+        except ClientError as err:
+            logger.error(err)
+            raise err
 
         if response and "Item" in response:
             items = response["Item"][self.history_messages_key]
@@ -162,7 +160,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             " Use the 'add_messages' instead."
         )
 
-    def add_message(self, message: BaseMessage) -> None:
+    def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Append the message to the record in DynamoDB"""
         try:
             from botocore.exceptions import ClientError
@@ -171,15 +169,13 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 "Unable to import botocore, please install with `pip install botocore`."
             ) from e
 
-        messages = messages_to_dict(self.messages)
-        _message = message_to_dict(message)
-        messages.append(_message)
-
+        existing_messages = messages_to_dict(self.messages)
+        existing_messages.extend(messages_to_dict(messages))
         if self.coerce_float_to_decimal:
-            messages = convert_messages(messages)
+            existing_messages = convert_messages(existing_messages)
 
         if self.history_size:
-            messages = messages[-self.history_size :]
+            existing_messages = existing_messages[-self.history_size :]
 
         try:
             if self.ttl:
@@ -192,16 +188,17 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                         f"set {self.history_messages_key} = :h, "
                         f"{self.ttl_key_name} = :t"
                     ),
-                    ExpressionAttributeValues={":h": messages, ":t": expireAt},
+                    ExpressionAttributeValues={":h": existing_messages, ":t": expireAt},
                 )
             else:
                 self.table.update_item(
                     Key={**self.key},
                     UpdateExpression=f"set {self.history_messages_key} = :h",
-                    ExpressionAttributeValues={":h": messages},
+                    ExpressionAttributeValues={":h": existing_messages},
                 )
         except ClientError as err:
             logger.error(err)
+            raise err
 
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
@@ -216,3 +213,4 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             self.table.delete_item(Key=self.key)
         except ClientError as err:
             logger.error(err)
+            raise err
