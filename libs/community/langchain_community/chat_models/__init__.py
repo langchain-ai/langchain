@@ -156,6 +156,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
     )
+    from langchain_community.chat_models.qwq import (
+        ChatQwq,
+    )
     from langchain_community.chat_models.reka import (
         ChatReka,
     )
