@@ -237,8 +237,8 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.get_input_jsonschema() == {
-        "properties": {"foo": {"default": None, "title": "Foo", "type": "object"}},
+    assert _normalize_schema(prompt.get_input_jsonschema()) == {
+        "properties": {"foo": {"title": "Foo", "type": "object"}},
         "title": "PromptInput",
         "type": "object",
     }

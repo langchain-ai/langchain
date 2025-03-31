@@ -378,6 +378,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         """
         config_specs = []
 
+        default_fields = type(self.default).model_fields
         for field_name, spec in self.fields.items():
             if isinstance(spec, ConfigurableField):
                 config_specs.append(
@@ -385,18 +386,16 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                         id=spec.id,
                         name=spec.name,
                         description=spec.description
-                        or self.default.model_fields[field_name].description,
+                        or default_fields[field_name].description,
                         annotation=spec.annotation
-                        or self.default.model_fields[field_name].annotation,
+                        or default_fields[field_name].annotation,
                         default=getattr(self.default, field_name),
                         is_shared=spec.is_shared,
                     )
                 )
             else:
                 config_specs.append(
-                    make_options_spec(
-                        spec, self.default.model_fields[field_name].description
-                    )
+                    make_options_spec(spec, default_fields[field_name].description)
                 )
 
         config_specs.extend(self.default.config_specs)
@@ -444,7 +443,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             init_params = {
                 k: v
                 for k, v in self.default.__dict__.items()
-                if k in self.default.model_fields
+                if k in type(self.default).model_fields
             }
             return (
                 self.default.__class__(**{**init_params, **configurable}),
