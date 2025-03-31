@@ -58,7 +58,7 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
     """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model: str = Field(default="BAAI/bge-large-zh-v1.5")
+    model: str = Field(default="BAAI/bge-m3")
     """Model name"""
     api_key: str
     """Automatically inferred from env var `SILICONFLOW_API_KEY` if not provided."""
