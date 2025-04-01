@@ -243,6 +243,7 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
     ('{"foo":"bar\\', '{"foo": "bar"}'),
+    (']{"foo":"bar}', '{"foo": "bar"}'),
 ]
 
 
