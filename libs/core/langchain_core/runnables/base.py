@@ -5766,6 +5766,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         return self.__class__(
             bound=self.bound,
             config=self.config,
+            config_factories=self.config_factories,
             kwargs={**self.kwargs, **kwargs},
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
@@ -5782,6 +5783,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=cast("RunnableConfig", {**self.config, **(config or {}), **kwargs}),
+            config_factories=self.config_factories,
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
         )
@@ -5817,22 +5819,23 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
+        def listener_config_factory(config: RunnableConfig) -> RunnableConfig:
+            return {
+                "callbacks": [
+                    RootListenersTracer(
+                        config=config,
+                        on_start=on_start,
+                        on_end=on_end,
+                        on_error=on_error,
+                    )
+                ],
+            }
+
         return self.__class__(
             bound=self.bound,
             kwargs=self.kwargs,
             config=self.config,
-            config_factories=[
-                lambda config: {
-                    "callbacks": [
-                        RootListenersTracer(
-                            config=config,
-                            on_start=on_start,
-                            on_end=on_end,
-                            on_error=on_error,
-                        )
-                    ],
-                }
-            ],
+            config_factories=[listener_config_factory] + self.config_factories,
             custom_input_type=self.custom_input_type,
             custom_output_type=self.custom_output_type,
         )
@@ -5847,6 +5850,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound,
             kwargs=self.kwargs,
             config=self.config,
+            config_factories=self.config_factories,
             custom_input_type=(
                 input_type if input_type is not None else self.custom_input_type
             ),
@@ -5861,6 +5865,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             bound=self.bound.with_retry(**kwargs),
             kwargs=self.kwargs,
             config=self.config,
+            config_factories=self.config_factories,
         )
 
     @override
