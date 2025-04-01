@@ -1,6 +1,7 @@
 from typing import Iterator, List, Optional
 
 from langchain_core.documents import Document
+from pydantic import SecretStr
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.utilities.brave_search import BraveSearchWrapper
@@ -23,7 +24,7 @@ class BraveSearchLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         brave_client = BraveSearchWrapper(
-            api_key=self.api_key,
+            api_key=SecretStr(self.api_key),
             search_kwargs=self.search_kwargs,
         )
         return brave_client.download_documents(self.query)

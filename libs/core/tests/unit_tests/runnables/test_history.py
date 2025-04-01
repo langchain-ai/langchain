@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
+import pydantic
 import pytest
 from pydantic import BaseModel
 
@@ -18,6 +19,8 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 from langchain_core.tracers import Run
 from tests.unit_tests.pydantic_utils import _schema
+
+PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
 
 def test_interfaces() -> None:
@@ -484,10 +487,13 @@ def test_get_output_schema() -> None:
     )
     output_type = with_history.get_output_schema()
 
-    assert _schema(output_type) == {
+    expected_schema: dict = {
         "title": "RunnableWithChatHistoryOutput",
         "type": "object",
     }
+    if PYDANTIC_VERSION >= (2, 11):
+        expected_schema["additionalProperties"] = True
+    assert _schema(output_type) == expected_schema
 
 
 def test_get_input_schema_input_messages() -> None:
@@ -862,7 +868,7 @@ def test_get_output_messages_with_value_error() -> None:
         with_history.bound.invoke([HumanMessage(content="hello")], config)
     excepted = (
         "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
-        + (f" Got {illegal_bool_message}.")
+        f" Got {illegal_bool_message}."
     )
     assert excepted in str(excinfo.value)
 
@@ -874,6 +880,6 @@ def test_get_output_messages_with_value_error() -> None:
         with_history.bound.invoke([HumanMessage(content="hello")], config)
     excepted = (
         "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
-        + (f" Got {illegal_int_message}.")
+        f" Got {illegal_int_message}."
     )
     assert excepted in str(excinfo.value)
