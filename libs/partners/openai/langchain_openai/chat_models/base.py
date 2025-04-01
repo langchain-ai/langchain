@@ -1532,6 +1532,46 @@ class BaseChatOpenAI(BaseChatModel):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
+            tools:
+                A list of tool-like objects to bind to the chat model. Requires that
+                ``strict=True`` and ``include_raw=True``. If a model elects to call a
+                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+
+                .. dropdown:: Example
+
+                    .. code-block:: python
+
+                        from langchain.chat_models import init_chat_model
+                        from pydantic import BaseModel
+
+
+                        class ResponseSchema(BaseModel):
+                            response: str
+
+
+                        def get_weather(location: str) -> str:
+                            \"\"\"Get weather at a location.\"\"\"
+                            pass
+
+                        llm = init_chat_model("openai:gpt-4o-mini")
+
+                        structured_llm = llm.with_structured_output(
+                            ResponseSchema,
+                            tools=[get_weather],
+                            strict=True,
+                            include_raw=True,
+                        )
+
+                        structured_llm.invoke("What's the weather in Boston?")
+
+                    .. code-block:: python
+
+                        {
+                            "raw": AIMessage(content="", tool_calls=[...], ...),
+                            "parsing_error": ValueError(...),
+                            "parsed": None,
+                        }
+
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1645,7 +1685,9 @@ class BaseChatOpenAI(BaseChatModel):
                 },
             )
             if tools:
-                bind_kwargs["tools"] = [convert_to_openai_tool(t, strict=strict) for t in tools]
+                bind_kwargs["tools"] = [
+                    convert_to_openai_tool(t, strict=strict) for t in tools
+                ]
             llm = self.bind(**bind_kwargs)
             if is_pydantic_schema:
                 output_parser = RunnableLambda(
@@ -2774,7 +2816,7 @@ def _convert_to_openai_response_format(
 
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: Type[_BM]
-) -> PydanticBaseModel:
+) -> Optional[PydanticBaseModel]:
     if parsed := ai_msg.additional_kwargs.get("parsed"):
         if isinstance(parsed, dict):
             return schema(**parsed)
@@ -2782,6 +2824,8 @@ def _oai_structured_outputs_parser(
             return parsed
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
+    elif ai_msg.tool_calls:
+        return None
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "
