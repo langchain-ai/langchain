@@ -1,4 +1,5 @@
 import json
+import logging
 import operator
 from typing import Any, Literal, Optional, Union, cast
 
@@ -29,6 +30,8 @@ from langchain_core.messages.tool import (
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
+
+logger = logging.getLogger(__name__)
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -218,7 +221,7 @@ class AIMessage(BaseMessage):
                     values["tool_calls"] = parsed_tool_calls
                     values["invalid_tool_calls"] = parsed_invalid_tool_calls
             except Exception:
-                pass
+                logger.debug("Failed to parse tool calls", exc_info=True)
 
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):

@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from abc import ABC
 from typing import (
     Any,
@@ -12,6 +13,8 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
 from typing_extensions import NotRequired
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSerialized(TypedDict):
@@ -355,7 +358,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         elif hasattr(obj, "__class__"):
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
-        pass
+        logger.debug("Failed to serialize object", exc_info=True)
 
     result: SerializedNotImplemented = {
         "lc": 1,
