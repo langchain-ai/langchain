@@ -1298,6 +1298,12 @@ class BaseChatOpenAI(BaseChatModel):
                                 encoding.encode(val["function"]["arguments"])
                             )
                             num_tokens += len(encoding.encode(val["function"]["name"]))
+                        elif val["type"] == "file":
+                            warnings.warn(
+                                "Token counts for file inputs are not supported. "
+                                "Ignoring file inputs."
+                            )
+                            pass
                         else:
                             raise ValueError(
                                 f"Unrecognized content block type\n\n{val}"
