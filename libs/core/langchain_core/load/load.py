@@ -89,77 +89,77 @@ class Reviver:
         )
 
     def __call__(self, value: dict[str, Any]) -> Any:
-        """Revive the value."""
-        if (
+        if not isinstance(value, dict):
+            return value
+        if self._is_secret(value):
+            return self._handle_secret(value)
+        if self._is_not_implemented(value):
+            self._handle_not_implemented(value)
+        if self._is_constructor(value):
+            return self._handle_constructor(value)
+
+        return value
+        
+    def _is_secret(self, value: dict[str, Any]) -> bool:
+        return (
             value.get("lc") == 1
             and value.get("type") == "secret"
             and value.get("id") is not None
-        ):
-            [key] = value["id"]
-            if key in self.secrets_map:
-                return self.secrets_map[key]
-            else:
-                if self.secrets_from_env and key in os.environ and os.environ[key]:
-                    return os.environ[key]
-                return None
+        )
 
-        if (
+    def _is_not_implemented(self, value: dict[str, Any]) -> bool:
+        return (
             value.get("lc") == 1
             and value.get("type") == "not_implemented"
             and value.get("id") is not None
-        ):
-            msg = (
-                "Trying to load an object that doesn't implement "
-                f"serialization: {value}"
-            )
-            raise NotImplementedError(msg)
+        )
 
-        if (
+    def _is_constructor(self, value: dict[str, Any]) -> bool:
+        return (
             value.get("lc") == 1
             and value.get("type") == "constructor"
             and value.get("id") is not None
-        ):
-            [*namespace, name] = value["id"]
-            mapping_key = tuple(value["id"])
+        )
 
-            if (
-                namespace[0] not in self.valid_namespaces
-                # The root namespace ["langchain"] is not a valid identifier.
-                or namespace == ["langchain"]
-            ):
-                msg = f"Invalid namespace: {value}"
-                raise ValueError(msg)
-            # Has explicit import path.
-            elif mapping_key in self.import_mappings:
-                import_path = self.import_mappings[mapping_key]
-                # Split into module and name
-                import_dir, name = import_path[:-1], import_path[-1]
-                # Import module
-                mod = importlib.import_module(".".join(import_dir))
-            elif namespace[0] in DISALLOW_LOAD_FROM_PATH:
-                msg = (
-                    "Trying to deserialize something that cannot "
-                    "be deserialized in current version of langchain-core: "
-                    f"{mapping_key}."
-                )
-                raise ValueError(msg)
-            # Otherwise, treat namespace as path.
-            else:
-                mod = importlib.import_module(".".join(namespace))
+    def _handle_secret(self, value: dict[str, Any]) -> Optional[str]:
+        [key] = value["id"]
+        if key in self.secrets_map:
+            return self.secrets_map[key]
+        if self.secrets_from_env and key in os.environ and os.environ[key]:
+            return os.environ[key]
+        return None
 
-            cls = getattr(mod, name)
+    def _handle_not_implemented(self, value: dict[str, Any]) -> None:
+        msg = (
+            "Trying to load an object that doesn't implement "
+            f"serialization: {value}"
+        )
+        raise NotImplementedError(msg)
 
-            # The class must be a subclass of Serializable.
-            if not issubclass(cls, Serializable):
-                msg = f"Invalid namespace: {value}"
-                raise ValueError(msg)
+    def _handle_constructor(self, value: dict[str, Any]) -> Any:
+        *namespace, name = value["id"]
+        mapping_key = tuple(value["id"])
 
-            # We don't need to recurse on kwargs
-            # as json.loads will do that for us.
-            kwargs = value.get("kwargs", {})
-            return cls(**kwargs)
-
-        return value
+        if namespace[0] not in self.valid_namespaces or namespace == ["langchain"]:
+            raise ValueError(f"Invalid namespace: {value}")
+        if mapping_key in self.import_mappings:
+            import_path = self.import_mappings[mapping_key]
+            import_dir, class_name = import_path[:-1], import_path[-1]
+            mod = importlib.import_module(".".join(import_dir))
+        elif namespace[0] in DISALLOW_LOAD_FROM_PATH:
+            raise ValueError(
+                f"Cannot deserialize in current version: {mapping_key}."
+            )
+        else:
+            mod = importlib.import_module(".".join(namespace))
+            class_name = name
+        cls = getattr(mod, class_name, None)
+        if cls is None:
+            raise ValueError(f"Cannot find class {class_name} in {namespace}")
+        if not issubclass(cls, Serializable):
+            raise ValueError(f"Invalid namespace (not a Serializable subclass): {value}")
+        kwargs = value.get("kwargs", {})
+        return cls(**kwargs)
 
 
 @beta()
