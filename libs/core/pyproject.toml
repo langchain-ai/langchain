@@ -77,8 +77,42 @@ target-version = "py39"
 
 
 [tool.ruff.lint]
-select = [ "AIR", "ANN", "ASYNC", "B", "C4", "COM", "DJ", "E", "EM", "EXE", "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INP","INT", "ISC", "LOG", "N", "NPY", "PD", "PIE", "PLW", "PTH", "Q", "RSE", "S", "SIM", "SLOT", "T10", "T20", "TC", "TID", "TRY", "UP", "W", "YTT",]
-ignore = [ "ANN401", "COM812", "FA100", "ISC001", "S110", "S112", "TC001", "TC002", "TC003", "UP007",]
+select = [ "ALL",]
+ignore = [
+    "C90", # McCabe complexity
+    "COM812", # Messes with the formatter
+    "FA100", # Can't activate since we exclude UP007 for now
+    "ISC001", # Messes with the formatter
+    "PLR09", # Too many something (arg, statements, etc)
+    "TC001", # Doesn't play well with Pydantic
+    "TC002", # Doesn't play well with Pydantic
+    "TC003", # Doesn't play well with Pydantic
+    "UP007", # Doesn't play well with Pydantic in Python 3.9
+
+    # TODO rules
+    "A",
+    "ANN401",
+    "ARG",
+    "BLE",
+    "D",
+    "ERA",
+    "DTZ",
+    "FBT",
+    "FIX",
+    "PERF",
+    "PGH",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PT",
+    "PYI",
+    "RET",
+    "RUF",
+    "S110",
+    "S112",
+    "SLF",
+    "TD",
+]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
