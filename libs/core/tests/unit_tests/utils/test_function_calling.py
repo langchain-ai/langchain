@@ -37,7 +37,7 @@ from langchain_core.utils.function_calling import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -48,7 +48,7 @@ def pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def annotated_function() -> Callable:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
@@ -59,7 +59,7 @@ def annotated_function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -72,7 +72,7 @@ def function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function_docstring_annotations() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -85,7 +85,7 @@ def function_docstring_annotations() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def runnable() -> Runnable:
     class Args(ExtensionsTypedDict):
         arg1: ExtensionsAnnotated[int, "foo"]
@@ -97,7 +97,7 @@ def runnable() -> Runnable:
     return RunnableLambda(dummy_function)
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -114,7 +114,7 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_structured_tool() -> StructuredTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -128,7 +128,7 @@ def dummy_structured_tool() -> StructuredTool:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_structured_tool_args_schema_dict() -> StructuredTool:
     args_schema = {
         "type": "object",
@@ -150,7 +150,7 @@ def dummy_structured_tool_args_schema_dict() -> StructuredTool:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -161,7 +161,7 @@ def dummy_pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     class dummy_function(BaseModelV2Maybe):  # noqa: N801
         """Dummy function."""
@@ -174,7 +174,7 @@ def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
@@ -185,7 +185,7 @@ def dummy_typing_typed_dict() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_typing_typed_dict_docstring() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function.
@@ -201,7 +201,7 @@ def dummy_typing_typed_dict_docstring() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_extensions_typed_dict() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function."""
@@ -212,7 +212,7 @@ def dummy_extensions_typed_dict() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_extensions_typed_dict_docstring() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function.
@@ -228,7 +228,7 @@ def dummy_extensions_typed_dict_docstring() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
@@ -246,7 +246,7 @@ def json_schema() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def anthropic_tool() -> dict:
     return {
         "name": "dummy_function",
@@ -266,7 +266,7 @@ def anthropic_tool() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def bedrock_converse_tool() -> dict:
     return {
         "toolSpec": {

@@ -1,3 +1,5 @@
+"""Parsers for OpenAI functions output."""
+
 import copy
 import json
 from types import GenericAlias

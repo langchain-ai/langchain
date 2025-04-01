@@ -1,4 +1,7 @@
+"""Serializable base class."""
+
 import contextlib
+import logging
 from abc import ABC
 from typing import (
     Any,
@@ -11,7 +14,9 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSerialized(TypedDict):
@@ -121,7 +126,7 @@ class Serializable(BaseModel, ABC):
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""
+        """"""  # noqa: D419
         super().__init__(*args, **kwargs)
 
     @classmethod
@@ -187,6 +192,7 @@ class Serializable(BaseModel, ABC):
         extra="ignore",
     )
 
+    @override
     def __repr_args__(self) -> Any:
         return [
             (k, v)
@@ -270,6 +276,7 @@ class Serializable(BaseModel, ABC):
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
+        """Serialize a "not implemented" object."""
         return to_json_not_implemented(self)
 
 
@@ -355,7 +362,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         elif hasattr(obj, "__class__"):
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
-        pass
+        logger.debug("Failed to serialize object", exc_info=True)
 
     result: SerializedNotImplemented = {
         "lc": 1,

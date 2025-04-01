@@ -1,3 +1,4 @@
+import re
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
@@ -864,22 +865,24 @@ def test_get_output_messages_with_value_error() -> None:
         "configurable": {"session_id": "1", "message_history": get_session_history("1")}
     }
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
+            f" Got {illegal_bool_message}."
+        ),
+    ):
         with_history.bound.invoke([HumanMessage(content="hello")], config)
-    excepted = (
-        "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
-        f" Got {illegal_bool_message}."
-    )
-    assert excepted in str(excinfo.value)
 
     illegal_int_message = 123
     runnable = _RunnableLambdaWithRaiseError(lambda messages: illegal_int_message)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
+            f" Got {illegal_int_message}."
+        ),
+    ):
         with_history.bound.invoke([HumanMessage(content="hello")], config)
-    excepted = (
-        "Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]."
-        f" Got {illegal_int_message}."
-    )
-    assert excepted in str(excinfo.value)

@@ -1,6 +1,4 @@
-"""**sys_info** prints information about the system and langchain packages
-for debugging purposes.
-"""
+"""**sys_info** prints information about the system and langchain packages for debugging purposes."""  # noqa: E501
 
 from collections.abc import Sequence
 
@@ -22,11 +20,7 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
             continue
 
         for req in required:
-            try:
-                cleaned_req = req.split(" ")[0]
-            except Exception:  # In case parsing of requirement spec fails
-                continue
-
+            cleaned_req = req.split(" ")[0]
             if cleaned_req.replace("-", "_") not in _underscored_packages:
                 sub_deps.add(cleaned_req)
 

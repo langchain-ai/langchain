@@ -83,6 +83,7 @@ ignore = [
     "COM812", # Messes with the formatter
     "FA100", # Can't activate since we exclude UP007 for now
     "ISC001", # Messes with the formatter
+    "PERF203", # Rarely useful
     "PLR09", # Too many something (arg, statements, etc)
     "TC001", # Doesn't play well with Pydantic
     "TC002", # Doesn't play well with Pydantic
@@ -94,29 +95,26 @@ ignore = [
     "ANN401",
     "ARG",
     "BLE",
-    "D",
     "ERA",
     "DTZ",
     "FBT001",
     "FBT002",
     "FIX",
-    "PERF",
     "PGH",
     "PLC",
     "PLE",
     "PLR",
-    "PT",
     "PYI",
     "RET",
     "RUF",
-    "S110",
-    "S112",
     "SLF",
     "TD",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+pydocstyle.convention = "google"
+pydocstyle.ignore-var-parameters = true
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -136,5 +134,5 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
-"tests/**" = [ "S",]
+"tests/**" = [ "D", "S",]
 "scripts/**" = [ "INP", "S",]
