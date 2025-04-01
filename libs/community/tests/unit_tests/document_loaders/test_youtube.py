@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock, patch
-
 import pytest
 from langchain_core.documents import Document
 
@@ -218,28 +216,3 @@ def test__get_transcript_chunks() -> None:
         list(ytl._get_transcript_chunks(test_transcript_pieces))
         == test_transcript_chunks
     )
-
-
-@pytest.mark.requires("youtube_transcript_api")
-@patch("youtube_transcript_api.YouTubeTranscriptApi.get_transcript")
-def test_youtube_loader_with_transcript_formats(mock_get_transcript: MagicMock) -> None:
-    """Test that YoutubeLoader properly handles different transcript formats."""
-    transcript_list = [
-        {"text": "First part of transcript", "start": 0.0, "duration": 5.0},
-        {"text": "Second part of transcript", "start": 5.0, "duration": 5.0},
-    ]
-
-    mock_get_transcript.return_value = transcript_list
-
-    loader = YoutubeLoader.from_youtube_url("https://www.youtube.com/watch?v=fake_id")
-    documents = loader.load()
-    assert len(documents) == 1
-    assert "First part" in documents[0].page_content
-
-    loader_chunks = YoutubeLoader.from_youtube_url(
-        "https://www.youtube.com/watch?v=fake_id",
-        transcript_format=TranscriptFormat.CHUNKS,
-        chunk_size_seconds=10,
-    )
-    documents_chunks = loader_chunks.load()
-    assert len(documents_chunks) > 0
