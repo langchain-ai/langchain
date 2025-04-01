@@ -1,3 +1,5 @@
+"""Image prompt template for a multimodal model."""
+
 from typing import Any
 
 from pydantic import Field
@@ -21,6 +23,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """Create an image prompt template."""
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 

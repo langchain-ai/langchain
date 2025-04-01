@@ -1,3 +1,5 @@
+"""Usage utilities."""
+
 from typing import Callable
 
 

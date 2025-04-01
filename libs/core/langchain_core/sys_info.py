@@ -1,6 +1,4 @@
-"""**sys_info** prints information about the system and langchain packages
-for debugging purposes.
-"""
+"""**sys_info** prints information about the system and langchain packages for debugging purposes."""  # noqa: E501
 
 from collections.abc import Sequence
 

@@ -1,3 +1,5 @@
+"""Mermaid graph drawing utilities."""
+
 import asyncio
 import base64
 import re
@@ -52,8 +54,10 @@ def draw_mermaid(
 
             See more here: https://mermaid.js.org/config/configuration.html.
 
-            Example:
-            ```python
+            Example config:
+
+            .. code-block:: python
+
             {
                 "config": {
                     "theme": "neutral",
@@ -61,7 +65,6 @@ def draw_mermaid(
                     "themeVariables": { "primaryColor": "#e2e2e2"},
                 }
             }
-            ```
 
     Returns:
         str: Mermaid graph syntax.
