@@ -1645,7 +1645,7 @@ class BaseChatOpenAI(BaseChatModel):
                 },
             )
             if tools:
-                bind_kwargs["tools"] = [convert_to_openai_tool(t) for t in tools]
+                bind_kwargs["tools"] = [convert_to_openai_tool(t, strict=strict) for t in tools]
             llm = self.bind(**bind_kwargs)
             if is_pydantic_schema:
                 output_parser = RunnableLambda(
