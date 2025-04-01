@@ -1533,8 +1533,13 @@ class BaseChatOpenAI(BaseChatModel):
                     ``strict`` argument will not be passed to the model.
 
             tools:
-                A list of tool-like objects to bind to the chat model. Requires that
-                ``strict=True`` and ``include_raw=True``. If a model elects to call a
+                A list of tool-like objects to bind to the chat model. Requires that:
+
+                - ``method`` is ``"json_schema"`` (default).
+                - ``strict=True``
+                - ``include_raw=True``
+
+                If a model elects to call a
                 tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
 
                 .. dropdown:: Example
@@ -1568,7 +1573,7 @@ class BaseChatOpenAI(BaseChatModel):
 
                         {
                             "raw": AIMessage(content="", tool_calls=[...], ...),
-                            "parsing_error": ValueError(...),
+                            "parsing_error": None,
                             "parsed": None,
                         }
 
@@ -1593,6 +1598,9 @@ class BaseChatOpenAI(BaseChatModel):
 
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
