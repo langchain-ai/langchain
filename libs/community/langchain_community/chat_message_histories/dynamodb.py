@@ -1,7 +1,5 @@
-# https://github.com/langchain-ai/langchain/pull/26562
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
@@ -14,8 +12,6 @@ from langchain_core.messages import (
 
 if TYPE_CHECKING:
     from boto3.session import Session
-
-logger = logging.getLogger(__name__)
 
 
 def convert_messages(item: List) -> List:
@@ -131,13 +127,6 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
-        try:
-            from botocore.exceptions import ClientError
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import botocore, please install with `pip install botocore`."
-            ) from e
-
         response = None
         response = self.table.get_item(Key=self.key)
 
@@ -158,13 +147,6 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Append the message to the record in DynamoDB"""
-        try:
-            from botocore.exceptions import ClientError
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import botocore, please install with `pip install botocore`."
-            ) from e
-
         existing_messages = messages_to_dict(self.messages)
         existing_messages.extend(messages_to_dict(messages))
         if self.coerce_float_to_decimal:
@@ -194,11 +176,4 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
-        try:
-            from botocore.exceptions import ClientError
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import botocore, please install with `pip install botocore`."
-            ) from e
-
         self.table.delete_item(Key=self.key)
