@@ -113,7 +113,7 @@ def _get_filtered_args(
 
 
 def _parse_python_function_docstring(
-    function: Callable, annotations: dict, error_on_invalid_docstring: bool = False
+    function: Callable, annotations: dict, *, error_on_invalid_docstring: bool = False
 ) -> tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
@@ -1134,7 +1134,7 @@ def get_all_basemodel_annotations(
             generic_map = dict(zip(generic_type_vars, get_args(parent)))
             for field in getattr(parent_origin, "__annotations__", {}):
                 annotations[field] = _replace_type_vars(
-                    annotations[field], generic_map, default_to_bound
+                    annotations[field], generic_map, default_to_bound=default_to_bound
                 )
 
     return {
@@ -1146,6 +1146,7 @@ def get_all_basemodel_annotations(
 def _replace_type_vars(
     type_: type,
     generic_map: Optional[dict[TypeVar, type]] = None,
+    *,
     default_to_bound: bool = True,
 ) -> type:
     generic_map = generic_map or {}
@@ -1158,7 +1159,8 @@ def _replace_type_vars(
             return type_
     elif (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(
-            _replace_type_vars(arg, generic_map, default_to_bound) for arg in args
+            _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
+            for arg in args
         )
         return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
     else:

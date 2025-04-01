@@ -135,7 +135,7 @@ def get_usage_metadata_callback(
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
         ContextVar(name, default=None)
     )
-    register_configure_hook(usage_metadata_callback_var, True)
+    register_configure_hook(usage_metadata_callback_var, inheritable=True)
     cb = UsageMetadataCallbackHandler()
     usage_metadata_callback_var.set(cb)
     yield cb

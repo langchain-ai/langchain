@@ -575,7 +575,7 @@ class ParentRunManager(RunManager):
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
         if tag is not None:
-            manager.add_tags([tag], False)
+            manager.add_tags([tag], inherit=False)
         return manager
 
 
@@ -656,7 +656,7 @@ class AsyncParentRunManager(AsyncRunManager):
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
         if tag is not None:
-            manager.add_tags([tag], False)
+            manager.add_tags([tag], inherit=False)
         return manager
 
 
@@ -1578,11 +1578,11 @@ class CallbackManager(BaseCallbackManager):
             cls,
             inheritable_callbacks,
             local_callbacks,
-            verbose,
             inheritable_tags,
             local_tags,
             inheritable_metadata,
             local_metadata,
+            verbose=verbose,
         )
 
 
@@ -2102,11 +2102,11 @@ class AsyncCallbackManager(BaseCallbackManager):
             cls,
             inheritable_callbacks,
             local_callbacks,
-            verbose,
             inheritable_tags,
             local_tags,
             inheritable_metadata,
             local_metadata,
+            verbose=verbose,
         )
 
 
@@ -2251,11 +2251,12 @@ def _configure(
     callback_manager_cls: type[T],
     inheritable_callbacks: Callbacks = None,
     local_callbacks: Callbacks = None,
-    verbose: bool = False,
     inheritable_tags: Optional[list[str]] = None,
     local_tags: Optional[list[str]] = None,
     inheritable_metadata: Optional[dict[str, Any]] = None,
     local_metadata: Optional[dict[str, Any]] = None,
+    *,
+    verbose: bool = False,
 ) -> T:
     """Configure the callback manager.
 
@@ -2329,13 +2330,13 @@ def _configure(
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
-            callback_manager.add_handler(handler, False)
+            callback_manager.add_handler(handler, inherit=False)
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
-        callback_manager.add_tags(local_tags or [], False)
+        callback_manager.add_tags(local_tags or [], inherit=False)
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
-        callback_manager.add_metadata(local_metadata or {}, False)
+        callback_manager.add_metadata(local_metadata or {}, inherit=False)
     if tracing_metadata:
         callback_manager.add_metadata(tracing_metadata.copy())
     if tracing_tags:
@@ -2370,18 +2371,18 @@ def _configure(
             if debug:
                 pass
             else:
-                callback_manager.add_handler(StdOutCallbackHandler(), False)
+                callback_manager.add_handler(StdOutCallbackHandler(), inherit=False)
         if debug and not any(
             isinstance(handler, ConsoleCallbackHandler)
             for handler in callback_manager.handlers
         ):
-            callback_manager.add_handler(ConsoleCallbackHandler(), True)
+            callback_manager.add_handler(ConsoleCallbackHandler())
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
             if tracer_v2:
-                callback_manager.add_handler(tracer_v2, True)
+                callback_manager.add_handler(tracer_v2)
             else:
                 try:
                     handler = LangChainTracer(
@@ -2393,7 +2394,7 @@ def _configure(
                         ),
                         tags=tracing_tags,
                     )
-                    callback_manager.add_handler(handler, True)
+                    callback_manager.add_handler(handler)
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."

@@ -332,6 +332,7 @@ def _html_escape(string: str) -> str:
 def _get_key(
     key: str,
     scopes: Scopes,
+    *,
     warn: bool,
     keep: bool,
     def_ldel: str,

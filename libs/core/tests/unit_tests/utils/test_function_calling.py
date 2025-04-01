@@ -741,7 +741,7 @@ def test_tool_outputs() -> None:
 @pytest.mark.parametrize("use_extension_typed_dict", [True, False])
 @pytest.mark.parametrize("use_extension_annotated", [True, False])
 def test__convert_typed_dict_to_openai_function(
-    use_extension_typed_dict: bool, use_extension_annotated: bool
+    *, use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
     typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
     annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated

@@ -44,10 +44,11 @@ T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
-    pending: bool,
     removal: str,
     alternative: str,
     alternative_import: str,
+    *,
+    pending: bool,
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
@@ -134,7 +135,9 @@ def deprecated(
             def the_function_to_deprecate():
                 pass
     """
-    _validate_deprecation_params(pending, removal, alternative, alternative_import)
+    _validate_deprecation_params(
+        removal, alternative, alternative_import, pending=pending
+    )
 
     def deprecate(
         obj: T,
