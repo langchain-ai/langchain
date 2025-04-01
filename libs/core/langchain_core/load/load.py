@@ -87,6 +87,9 @@ class Reviver:
         )
 
     def __call__(self, value: dict[str, Any]) -> Any:
+        if not isinstance(value, dict):
+            return value
+        
         if (self._is_secret(value)):
             [key] = value["id"]
             if key in self.secrets_map:
