@@ -697,10 +697,11 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     When drawing the graph, this node would be the origin.
     """
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
-    found: list[Node] = []
-    for node in graph.nodes.values():
-        if node.id not in exclude and node.id not in targets:
-            found.append(node)
+    found: list[Node] = [
+        node
+        for node in graph.nodes.values()
+        if node.id not in exclude and node.id not in targets
+    ]
     return found[0] if len(found) == 1 else None
 
 
@@ -712,8 +713,9 @@ def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     When drawing the graph, this node would be the destination.
     """
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}
-    found: list[Node] = []
-    for node in graph.nodes.values():
-        if node.id not in exclude and node.id not in sources:
-            found.append(node)
+    found: list[Node] = [
+        node
+        for node in graph.nodes.values()
+        if node.id not in exclude and node.id not in sources
+    ]
     return found[0] if len(found) == 1 else None

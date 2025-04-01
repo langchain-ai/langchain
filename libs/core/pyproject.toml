@@ -83,6 +83,7 @@ ignore = [
     "COM812", # Messes with the formatter
     "FA100", # Can't activate since we exclude UP007 for now
     "ISC001", # Messes with the formatter
+    "PERF203", # Rarely useful
     "PLR09", # Too many something (arg, statements, etc)
     "TC001", # Doesn't play well with Pydantic
     "TC002", # Doesn't play well with Pydantic
@@ -98,7 +99,6 @@ ignore = [
     "DTZ",
     "FBT",
     "FIX",
-    "PERF",
     "PGH",
     "PLC",
     "PLE",

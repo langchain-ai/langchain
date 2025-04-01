@@ -1014,13 +1014,12 @@ def test_chat_prompt_template_variable_names() -> None:
         prompt.get_input_schema()
 
     if record:
-        error_msg = []
-        for warning in record:
-            error_msg.append(
-                f"Warning type: {warning.category.__name__}, "
-                f"Warning message: {warning.message}, "
-                f"Warning location: {warning.filename}:{warning.lineno}"
-            )
+        error_msg = [
+            f"Warning type: {warning.category.__name__}, "
+            f"Warning message: {warning.message}, "
+            f"Warning location: {warning.filename}:{warning.lineno}"
+            for warning in record
+        ]
         msg = "\n".join(error_msg)
     else:
         msg = ""

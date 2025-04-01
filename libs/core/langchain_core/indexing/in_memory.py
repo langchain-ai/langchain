@@ -66,13 +66,7 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
         """Get by ids."""
-        found_documents = []
-
-        for id_ in ids:
-            if id_ in self.store:
-                found_documents.append(self.store[id_])
-
-        return found_documents
+        return [self.store[id_] for id_ in ids if id_ in self.store]
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

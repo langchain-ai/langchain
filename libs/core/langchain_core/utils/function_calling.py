@@ -672,21 +672,21 @@ def tool_example_to_messages(
                 )
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]
-    openai_tool_calls = []
-    for tool_call in tool_calls:
-        openai_tool_calls.append(
-            {
-                "id": str(uuid.uuid4()),
-                "type": "function",
-                "function": {
-                    # The name of the function right now corresponds to the name
-                    # of the pydantic model. This is implicit in the API right now,
-                    # and will be improved over time.
-                    "name": tool_call.__class__.__name__,
-                    "arguments": tool_call.model_dump_json(),
-                },
-            }
-        )
+    openai_tool_calls = [
+        {
+            "id": str(uuid.uuid4()),
+            "type": "function",
+            "function": {
+                # The name of the function right now corresponds to the name
+                # of the pydantic model. This is implicit in the API right now,
+                # and will be improved over time.
+                "name": tool_call.__class__.__name__,
+                "arguments": tool_call.model_dump_json(),
+            },
+        }
+        for tool_call in tool_calls
+    ]
+
     messages.append(
         AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
     )

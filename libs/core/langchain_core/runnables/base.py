@@ -557,11 +557,11 @@ class Runnable(Generic[Input, Output], ABC):
         """Return a list of prompts used by this Runnable."""
         from langchain_core.prompts.base import BasePromptTemplate
 
-        prompts = []
-        for _, node in self.get_graph(config=config).nodes.items():
-            if isinstance(node.data, BasePromptTemplate):
-                prompts.append(node.data)
-        return prompts
+        return [
+            node.data
+            for node in self.get_graph(config=config).nodes.values()
+            if isinstance(node.data, BasePromptTemplate)
+        ]
 
     def __or__(
         self,
@@ -3183,9 +3183,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         **(kwargs if stepidx == 0 else {}),
                     )
                     # If an input failed, add it to the map
-                    for i, inp in zip(remaining_idxs, inputs):
-                        if isinstance(inp, Exception):
-                            failed_inputs_map[i] = inp
+                    failed_inputs_map.update(
+                        {
+                            i: inp
+                            for i, inp in zip(remaining_idxs, inputs)
+                            if isinstance(inp, Exception)
+                        }
+                    )
                     inputs = [inp for inp in inputs if not isinstance(inp, Exception)]
                     # If all inputs have failed, stop processing
                     if len(failed_inputs_map) == len(configs):
@@ -3314,9 +3318,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         **(kwargs if stepidx == 0 else {}),
                     )
                     # If an input failed, add it to the map
-                    for i, inp in zip(remaining_idxs, inputs):
-                        if isinstance(inp, Exception):
-                            failed_inputs_map[i] = inp
+                    failed_inputs_map.update(
+                        {
+                            i: inp
+                            for i, inp in zip(remaining_idxs, inputs)
+                            if isinstance(inp, Exception)
+                        }
+                    )
                     inputs = [inp for inp in inputs if not isinstance(inp, Exception)]
                     # If all inputs have failed, stop processing
                     if len(failed_inputs_map) == len(configs):

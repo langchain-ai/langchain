@@ -674,10 +674,12 @@ async def _astream_log_implementation(
                             "value": copy.deepcopy(chunk),
                         }
                     )
-                for op in jsonpatch.JsonPatch.from_diff(
-                    prev_final_output, final_output, dumps=dumps
-                ):
-                    patches.append({**op, "path": f"/final_output{op['path']}"})
+                patches.extend(
+                    {**op, "path": f"/final_output{op['path']}"}
+                    for op in jsonpatch.JsonPatch.from_diff(
+                        prev_final_output, final_output, dumps=dumps
+                    )
+                )
                 await stream.send_stream.send(RunLogPatch(*patches))
         finally:
             await stream.send_stream.aclose()

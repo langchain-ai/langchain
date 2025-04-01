@@ -217,31 +217,21 @@ class AIMessage(BaseMessage):
 
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):
-            updated: list = []
-            for tc in tool_calls:
-                updated.append(
-                    create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
-                )
-            values["tool_calls"] = updated
+            values["tool_calls"] = [
+                create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                for tc in tool_calls
+            ]
         if invalid_tool_calls := values.get("invalid_tool_calls"):
-            updated = []
-            for tc in invalid_tool_calls:
-                updated.append(
-                    create_invalid_tool_call(
-                        **{k: v for k, v in tc.items() if k != "type"}
-                    )
-                )
-            values["invalid_tool_calls"] = updated
+            values["invalid_tool_calls"] = [
+                create_invalid_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                for tc in invalid_tool_calls
+            ]
 
         if tool_call_chunks := values.get("tool_call_chunks"):
-            updated = []
-            for tc in tool_call_chunks:
-                updated.append(
-                    create_tool_call_chunk(
-                        **{k: v for k, v in tc.items() if k != "type"}
-                    )
-                )
-            values["tool_call_chunks"] = updated
+            values["tool_call_chunks"] = [
+                create_tool_call_chunk(**{k: v for k, v in tc.items() if k != "type"})
+                for tc in tool_call_chunks
+            ]
 
         return values
 
