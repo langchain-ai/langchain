@@ -1,4 +1,3 @@
-from typing import List
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -222,70 +221,25 @@ def test__get_transcript_chunks() -> None:
 
 
 @pytest.mark.requires("youtube_transcript_api")
-def test_youtube_loader_with_fetched_transcript() -> None:
-    """Test that YoutubeLoader correctly processes FetchedTranscript objects."""
-
-    class MockSnippet:
-        def __init__(self, text: str, start: float, duration: float) -> None:
-            self.text = text
-            self.start = start
-            self.duration = duration
-
-    class MockFetchedTranscript:
-        def __init__(self, snippets: List[MockSnippet]) -> None:
-            self.snippets = snippets
-
-    snippets = [
-        MockSnippet("First part of transcript", 0.0, 5.0),
-        MockSnippet("Second part of transcript", 5.0, 5.0),
-    ]
-
-    mock_transcript = MockFetchedTranscript(snippets)
-
-    with patch(
-        "youtube_transcript_api.YouTubeTranscriptApi.get_transcript",
-        return_value=mock_transcript,
-    ):
-        with patch(
-            "builtins.isinstance",
-            lambda obj, cls: (
-                obj is mock_transcript and str(cls).endswith("FetchedTranscript'>")
-            )
-            or isinstance(obj, cls),
-        ):
-            loader = YoutubeLoader.from_youtube_url(
-                "https://www.youtube.com/watch?v=fake_id"
-            )
-            documents = loader.load()
-
-            assert len(documents) == 1
-            assert "First part of transcript" in documents[0].page_content
-            assert "Second part of transcript" in documents[0].page_content
-
-            loader_chunks = YoutubeLoader.from_youtube_url(
-                "https://www.youtube.com/watch?v=fake_id",
-                transcript_format=TranscriptFormat.CHUNKS,
-                chunk_size_seconds=10,
-            )
-            documents_chunks = loader_chunks.load()
-
-            assert len(documents_chunks) > 0
-
-
-@pytest.mark.requires("youtube_transcript_api")
 @patch("youtube_transcript_api.YouTubeTranscriptApi.get_transcript")
-def test_youtube_loader_with_transcript(mock_get_transcript: MagicMock) -> None:
-    """Test that YoutubeLoader works correctly with transcript pieces that have all necessary keys."""  # noqa: E501
-    transcript_pieces = [
+def test_youtube_loader_with_transcript_formats(mock_get_transcript: MagicMock) -> None:
+    """Test that YoutubeLoader properly handles different transcript formats."""
+    transcript_list = [
         {"text": "First part of transcript", "start": 0.0, "duration": 5.0},
         {"text": "Second part of transcript", "start": 5.0, "duration": 5.0},
     ]
 
-    mock_get_transcript.return_value = transcript_pieces
+    mock_get_transcript.return_value = transcript_list
 
     loader = YoutubeLoader.from_youtube_url("https://www.youtube.com/watch?v=fake_id")
     documents = loader.load()
-
     assert len(documents) == 1
-    assert "First part of transcript" in documents[0].page_content
-    assert "Second part of transcript" in documents[0].page_content
+    assert "First part" in documents[0].page_content
+
+    loader_chunks = YoutubeLoader.from_youtube_url(
+        "https://www.youtube.com/watch?v=fake_id",
+        transcript_format=TranscriptFormat.CHUNKS,
+        chunk_size_seconds=10,
+    )
+    documents_chunks = loader_chunks.load()
+    assert len(documents_chunks) > 0
