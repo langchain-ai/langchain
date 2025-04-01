@@ -20,6 +20,8 @@ class GremlinGraph(GraphStore):
     traversal_source (str): The traversal source to use for queries. Defaults to 'g'.
     message_serializer (Optional[Any]): The message serializer to use for requests.
                                         Defaults to serializer.GraphSONSerializersV2d0()
+    include_edge_properties (bool): Whether to include edge properties in
+                                    the gremlin graph schema. Defaults to False
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
         Failure to do so may result in data corruption or loss, since the calling
@@ -46,6 +48,7 @@ class GremlinGraph(GraphStore):
         password: Optional[str] = None,
         traversal_source: str = "g",
         message_serializer: Optional[Any] = None,
+        include_edge_properties: bool = False,
     ) -> None:
         """Create a new Gremlin graph wrapper instance."""
         try:
@@ -70,6 +73,7 @@ class GremlinGraph(GraphStore):
             else serializer.GraphSONSerializersV2d0(),
         )
         self.schema: str = ""
+        self.include_edge_properties = include_edge_properties
 
     @property
     def get_schema(self) -> str:
@@ -102,11 +106,27 @@ class GremlinGraph(GraphStore):
             [
                 "Vertex labels are the following:",
                 ",".join(vertex_schema),
-                "Edge labes are the following:",
+                "Edge labels are the following:",
                 ",".join(edge_schema),
                 f"Vertices have following properties:\n{vertex_properties}",
             ]
         )
+        if self.include_edge_properties:
+            edge_properties = (
+                self.client.submit(
+                    "g.E().group().by(label)"
+                    ".by(project('inVLabel', 'outVLabel','properties')"
+                    ".by(inV().label()).by(outV().label()).by(properties().key().dedup()"
+                    ".fold()).dedup().fold())"
+                )
+                .all()
+                .result()[0]
+            )
+            self.structured_schema["edge_props"] = edge_properties
+            self.schema += (
+                f"\nEdges have the following properties, grouped by label and"
+                f" the distinct inV and outV labels:\n {edge_properties}"
+            )
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         q = self.client.submit(query)

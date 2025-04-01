@@ -65,7 +65,10 @@ from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
-from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
+    convert_to_openai_tool,
+)
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
@@ -114,6 +117,25 @@ async def agenerate_from_stream(
     """
     chunks = [chunk async for chunk in stream]
     return await run_in_executor(None, generate_from_stream, iter(chunks))
+
+
+def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) -> dict:
+    if ls_structured_output_format:
+        try:
+            ls_structured_output_format_dict = {
+                "ls_structured_output_format": {
+                    "kwargs": ls_structured_output_format.get("kwargs", {}),
+                    "schema": convert_to_json_schema(
+                        ls_structured_output_format["schema"]
+                    ),
+                }
+            }
+        except ValueError:
+            ls_structured_output_format_dict = {}
+    else:
+        ls_structured_output_format_dict = {}
+
+    return ls_structured_output_format_dict
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -281,7 +303,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> BaseMessage:
         config = ensure_config(config)
         return cast(
-            ChatGeneration,
+            "ChatGeneration",
             self.generate_prompt(
                 [self._convert_input(input)],
                 stop=stop,
@@ -313,7 +335,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=config.pop("run_id", None),
             **kwargs,
         )
-        return cast(ChatGeneration, llm_result.generations[0][0]).message
+        return cast("ChatGeneration", llm_result.generations[0][0]).message
 
     def _should_stream(
         self,
@@ -361,33 +383,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+                "BaseMessageChunk",
+                self.invoke(input, config=config, stop=stop, **kwargs),
             )
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
-            structured_output_format = kwargs.pop("structured_output_format", None)
-            if structured_output_format:
-                try:
-                    structured_output_format_dict = {
-                        "structured_output_format": {
-                            "kwargs": structured_output_format.get("kwargs", {}),
-                            "schema": convert_to_openai_tool(
-                                structured_output_format["schema"]
-                            ),
-                        }
-                    }
-                except ValueError:
-                    structured_output_format_dict = {}
-            else:
-                structured_output_format_dict = {}
+            ls_structured_output_format = kwargs.pop(
+                "ls_structured_output_format", None
+            ) or kwargs.pop("structured_output_format", None)
+            ls_structured_output_format_dict = _format_ls_structured_output(
+                ls_structured_output_format
+            )
 
             params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs}
+            options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params(stop=stop, **kwargs),
-                **structured_output_format_dict,
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -418,7 +431,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         chunk.message.id = f"run-{run_manager.run_id}"
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     run_manager.on_llm_new_token(
-                        cast(str, chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content), chunk=chunk
                     )
                     yield chunk.message
                     if generation is None:
@@ -452,7 +465,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
-                BaseMessageChunk,
+                "BaseMessageChunk",
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
             return
@@ -460,28 +473,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
 
-        structured_output_format = kwargs.pop("structured_output_format", None)
-        if structured_output_format:
-            try:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
-                        ),
-                    }
-                }
-            except ValueError:
-                structured_output_format_dict = {}
-        else:
-            structured_output_format_dict = {}
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs}
+        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params(stop=stop, **kwargs),
-            **structured_output_format_dict,
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -516,7 +519,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     chunk.message.id = f"run-{run_manager.run_id}"
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 await run_manager.on_llm_new_token(
-                    cast(str, chunk.message.content), chunk=chunk
+                    cast("str", chunk.message.content), chunk=chunk
                 )
                 yield chunk.message
                 if generation is None:
@@ -642,28 +645,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        structured_output_format = kwargs.pop("structured_output_format", None)
-        if structured_output_format:
-            try:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
-                        ),
-                    }
-                }
-            except ValueError:
-                structured_output_format_dict = {}
-        else:
-            structured_output_format_dict = {}
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop}
+        options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
-            **structured_output_format_dict,
         }
 
         callback_manager = CallbackManager.configure(
@@ -750,28 +743,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        structured_output_format = kwargs.pop("structured_output_format", None)
-        if structured_output_format:
-            try:
-                structured_output_format_dict = {
-                    "structured_output_format": {
-                        "kwargs": structured_output_format.get("kwargs", {}),
-                        "schema": convert_to_openai_tool(
-                            structured_output_format["schema"]
-                        ),
-                    }
-                }
-            except ValueError:
-                structured_output_format_dict = {}
-        else:
-            structured_output_format_dict = {}
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop}
+        options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params(stop=stop, **kwargs),
-            **structured_output_format_dict,
         }
 
         callback_manager = AsyncCallbackManager.configure(
@@ -917,7 +900,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = f"run-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
-                        cast(str, chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content), chunk=chunk
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
@@ -990,7 +973,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = f"run-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
-                        cast(str, chunk.message.content), chunk=chunk
+                        cast("str", chunk.message.content), chunk=chunk
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
@@ -1185,6 +1168,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tools: Sequence[
             Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
         ],
+        *,
+        tool_choice: Optional[Union[str, Literal["any"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError
@@ -1298,6 +1283,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 Added support for TypedDict class.
         """  # noqa: E501
+        _ = kwargs.pop("method", None)
+        _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
@@ -1314,11 +1301,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm = self.bind_tools(
             [schema],
             tool_choice="any",
-            structured_output_format={"kwargs": {}, "schema": schema},
+            ls_structured_output_format={
+                "kwargs": {"method": "function_calling"},
+                "schema": schema,
+            },
         )
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[cast(TypeBaseModel, schema)], first_tool_only=True
+                tools=[cast("TypeBaseModel", schema)], first_tool_only=True
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

@@ -232,7 +232,7 @@ def shielded(func: Func) -> Func:
     async def wrapped(*args: Any, **kwargs: Any) -> Any:
         return await asyncio.shield(func(*args, **kwargs))
 
-    return cast(Func, wrapped)
+    return cast("Func", wrapped)
 
 
 def handle_event(
@@ -282,13 +282,17 @@ def handle_event(
                 else:
                     handler_name = handler.__class__.__name__
                     logger.warning(
-                        f"NotImplementedError in {handler_name}.{event_name}"
-                        f" callback: {repr(e)}"
+                        "NotImplementedError in %s.%s callback: %s",
+                        handler_name,
+                        event_name,
+                        repr(e),
                     )
             except Exception as e:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback:"
-                    f" {repr(e)}"
+                    "Error in %s.%s callback: %s",
+                    handler.__class__.__name__,
+                    event_name,
+                    repr(e),
                 )
                 if handler.raise_error:
                     raise
@@ -308,7 +312,7 @@ def handle_event(
                 # The solution is to create a new loop in a new thread.
                 with ThreadPoolExecutor(1) as executor:
                     executor.submit(
-                        cast(Callable, copy_context().run), _run_coros, coros
+                        cast("Callable", copy_context().run), _run_coros, coros
                     ).result()
             else:
                 _run_coros(coros)
@@ -328,7 +332,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
                 try:
                     runner.run(coro)
                 except Exception as e:
-                    logger.warning(f"Error in callback coroutine: {repr(e)}")
+                    logger.warning("Error in callback coroutine: %s", repr(e))
 
             # Run pending tasks scheduled by coros until they are all done
             while pending := asyncio.all_tasks(runner.get_loop()):
@@ -340,7 +344,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
             try:
                 asyncio.run(coro)
             except Exception as e:
-                logger.warning(f"Error in callback coroutine: {repr(e)}")
+                logger.warning("Error in callback coroutine: %s", repr(e))
 
 
 async def _ahandle_event_for_handler(
@@ -362,7 +366,7 @@ async def _ahandle_event_for_handler(
                     await asyncio.get_event_loop().run_in_executor(
                         None,
                         cast(
-                            Callable,
+                            "Callable",
                             functools.partial(
                                 copy_context().run, event, *args, **kwargs
                             ),
@@ -382,12 +386,17 @@ async def _ahandle_event_for_handler(
             )
         else:
             logger.warning(
-                f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                f" callback: {repr(e)}"
+                "NotImplementedError in %s.%s callback: %s",
+                handler.__class__.__name__,
+                event_name,
+                repr(e),
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback: {repr(e)}"
+            "Error in %s.%s callback: %s",
+            handler.__class__.__name__,
+            event_name,
+            repr(e),
         )
         if handler.raise_error:
             raise
@@ -2386,7 +2395,8 @@ def _configure(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
                         " unset the LANGCHAIN_TRACING_V2 environment variables.\n"
-                        f"{repr(e)}",
+                        "%s",
+                        repr(e),
                     )
         if run_tree is not None:
             for handler in callback_manager.handlers:
@@ -2395,7 +2405,7 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
+                    handler.run_map[str(run_tree.id)] = cast("Run", run_tree)
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
@@ -2403,7 +2413,9 @@ def _configure(
             and handler_class is not None
         )
         if var.get() is not None or create_one:
-            var_handler = var.get() or cast(type[BaseCallbackHandler], handler_class)()
+            var_handler = (
+                var.get() or cast("type[BaseCallbackHandler]", handler_class)()
+            )
             if handler_class is None:
                 if not any(
                     handler is var_handler  # direct pointer comparison

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import ssl
 import uuid
 from operator import itemgetter
 from typing import (
@@ -24,6 +25,7 @@ from typing import (
     cast,
 )
 
+import certifi
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core.callbacks import (
@@ -85,6 +87,11 @@ logger = logging.getLogger(__name__)
 
 # Mistral enforces a specific pattern for tool call IDs
 TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
+
+
+# This SSL context is equivelent to the default `verify=True`.
+# https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
+global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def _create_retry_decorator(
@@ -229,13 +236,15 @@ async def acompletion_with_retry(
 def _convert_chunk_to_message_chunk(
     chunk: Dict, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    _delta = chunk["choices"][0]["delta"]
+    _choice = chunk["choices"][0]
+    _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
+        response_metadata = {}
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
@@ -265,11 +274,16 @@ def _convert_chunk_to_message_chunk(
             }
         else:
             usage_metadata = None
+        if _choice.get("finish_reason") is not None and isinstance(
+            chunk.get("model"), str
+        ):
+            response_metadata["model_name"] = chunk.get("model")
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata=response_metadata,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -450,9 +464,9 @@ class ChatMistralAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
-        # retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
-        # @retry_decorator
+        @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
             if "stream" not in kwargs:
                 kwargs["stream"] = False
@@ -518,6 +532,7 @@ class ChatMistralAI(BaseChatModel):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                verify=global_ssl_context,
             )
         # todo: handle retries and max_concurrency
         if not self.async_client:
@@ -529,6 +544,7 @@ class ChatMistralAI(BaseChatModel):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                verify=global_ssl_context,
             )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
@@ -676,6 +692,7 @@ class ChatMistralAI(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -696,6 +713,22 @@ class ChatMistralAI(BaseChatModel):
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            tool_names = []
+            for tool in formatted_tools:
+                if "function" in tool and (name := tool["function"].get("name")):
+                    tool_names.append(name)
+                elif name := tool.get("name"):
+                    tool_names.append(name)
+                else:
+                    pass
+            if tool_choice in tool_names:
+                kwargs["tool_choice"] = {
+                    "type": "function",
+                    "function": {"name": tool_choice},
+                }
+            else:
+                kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -936,6 +969,7 @@ class ChatMistralAI(BaseChatModel):
                 # }
 
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
@@ -950,7 +984,7 @@ class ChatMistralAI(BaseChatModel):
             llm = self.bind_tools(
                 [schema],
                 tool_choice="any",
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
                     "schema": schema,
                 },
@@ -968,7 +1002,7 @@ class ChatMistralAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {
                         # this is correct - name difference with mistral api
                         "method": "json_mode"
@@ -990,7 +1024,7 @@ class ChatMistralAI(BaseChatModel):
             response_format = _convert_to_openai_response_format(schema, strict=True)
             llm = self.bind(
                 response_format=response_format,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": "json_schema"},
                     "schema": schema,
                 },

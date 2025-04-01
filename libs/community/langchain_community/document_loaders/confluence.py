@@ -448,6 +448,7 @@ class ConfluenceLoader(BaseLoader):
                     content_format,
                     ocr_languages,
                     keep_markdown_format,
+                    keep_newlines=keep_newlines,
                 )
 
     def load(self, **kwargs: Any) -> List[Document]:

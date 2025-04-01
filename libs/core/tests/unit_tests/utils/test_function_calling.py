@@ -31,6 +31,7 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
+    convert_to_json_schema,
     convert_to_openai_function,
     tool_example_to_messages,
 )
@@ -993,7 +994,7 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 )
 def test_convert_union_type_py_39() -> None:
     @tool
-    def magic_function(input: int | float) -> str:
+    def magic_function(input: int | float) -> str:  # noqa: FA102
         """Compute a magic function."""
 
     result = convert_to_openai_function(magic_function)
@@ -1019,3 +1020,46 @@ def test_convert_to_openai_function_no_args() -> None:
         },
         "strict": True,
     }
+
+
+def test_convert_to_json_schema(
+    pydantic: type[BaseModel],
+    function: Callable,
+    function_docstring_annotations: Callable,
+    dummy_structured_tool: StructuredTool,
+    dummy_structured_tool_args_schema_dict: StructuredTool,
+    dummy_tool: BaseTool,
+    json_schema: dict,
+    anthropic_tool: dict,
+    bedrock_converse_tool: dict,
+    annotated_function: Callable,
+    dummy_pydantic: type[BaseModel],
+    dummy_typing_typed_dict: type,
+    dummy_typing_typed_dict_docstring: type,
+    dummy_extensions_typed_dict: type,
+    dummy_extensions_typed_dict_docstring: type,
+) -> None:
+    expected = json_schema
+
+    for fn in (
+        pydantic,
+        function,
+        function_docstring_annotations,
+        dummy_structured_tool,
+        dummy_structured_tool_args_schema_dict,
+        dummy_tool,
+        json_schema,
+        anthropic_tool,
+        bedrock_converse_tool,
+        expected,
+        Dummy.dummy_function,
+        DummyWithClassMethod.dummy_function,
+        annotated_function,
+        dummy_pydantic,
+        dummy_typing_typed_dict,
+        dummy_typing_typed_dict_docstring,
+        dummy_extensions_typed_dict,
+        dummy_extensions_typed_dict_docstring,
+    ):
+        actual = convert_to_json_schema(fn)  # type: ignore
+        assert actual == expected

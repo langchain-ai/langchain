@@ -38,6 +38,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -59,24 +60,106 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
+def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+    input_tokens = token_usage.get("prompt_tokens", 0)
+    output_tokens = token_usage.get("completion_tokens", 0)
+    total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+    )
+
+
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``PPLX_API_KEY`` set to your API key.
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+    Setup:
+        To use, you should have the ``openai`` python package installed, and the
+        environment variable ``PPLX_API_KEY`` set to your API key.
+        Any parameters that are valid to be passed to the openai.create call
+        can be passed in, even if not explicitly saved on this class.
 
-    Example:
-        .. code-block:: python
+        .. code-block:: bash
 
-            from langchain_community.chat_models import ChatPerplexity
+            pip install openai
+            export PPLX_API_KEY=your_api_key
 
-            chat = ChatPerplexity(
-                model="llama-3.1-sonar-small-128k-online",
-                temperature=0.7,
-            )
-    """
+        Key init args - completion params:
+            model: str
+                Name of the model to use. e.g. "llama-3.1-sonar-small-128k-online"
+            temperature: float
+                Sampling temperature to use. Default is 0.7
+            max_tokens: Optional[int]
+                Maximum number of tokens to generate.
+            streaming: bool
+                Whether to stream the results or not.
+
+        Key init args - client params:
+            pplx_api_key: Optional[str]
+                API key for PerplexityChat API. Default is None.
+            request_timeout: Optional[Union[float, Tuple[float, float]]]
+                Timeout for requests to PerplexityChat completion API. Default is None.
+            max_retries: int
+                Maximum number of retries to make when generating.
+
+        See full list of supported init args and their descriptions in the params section.
+
+        Instantiate:
+            .. code-block:: python
+
+                from langchain_community.chat_models import ChatPerplexity
+
+                llm = ChatPerplexity(
+                    model="llama-3.1-sonar-small-128k-online",
+                    temperature=0.7,
+                )
+
+        Invoke:
+            .. code-block:: python
+
+                messages = [
+                    ("system", "You are a chatbot."),
+                    ("user", "Hello!")
+                ]
+                llm.invoke(messages)
+
+        Invoke with structured output:
+            .. code-block:: python
+
+                from pydantic import BaseModel
+
+                class StructuredOutput(BaseModel):
+                    role: str
+                    content: str
+
+                llm.with_structured_output(StructuredOutput)
+                llm.invoke(messages)
+
+        Invoke with perplexity-specific params:
+            .. code-block:: python
+
+                llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+
+        Stream:
+            .. code-block:: python
+
+                for chunk in llm.stream(messages):
+                    print(chunk.content)
+
+        Token usage:
+            .. code-block:: python
+
+                response = llm.invoke(messages)
+                response.usage_metadata
+
+        Response metadata:
+            .. code-block:: python
+
+                response = llm.invoke(messages)
+                response.response_metadata
+
+    """  # noqa: E501
 
     client: Any = None  #: :meta private:
     model: str = "llama-3.1-sonar-small-128k-online"
@@ -238,20 +321,49 @@ class ChatPerplexity(BaseChatModel):
             messages=message_dicts, stream=True, **params
         )
         first_chunk = True
+        prev_total_usage: Optional[UsageMetadata] = None
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
+            # Collect standard usage metadata (transform from aggregate to delta)
+            if total_usage := chunk.get("usage"):
+                lc_total_usage = _create_usage_metadata(total_usage)
+                if prev_total_usage:
+                    usage_metadata: Optional[UsageMetadata] = {
+                        "input_tokens": lc_total_usage["input_tokens"]
+                        - prev_total_usage["input_tokens"],
+                        "output_tokens": lc_total_usage["output_tokens"]
+                        - prev_total_usage["output_tokens"],
+                        "total_tokens": lc_total_usage["total_tokens"]
+                        - prev_total_usage["total_tokens"],
+                    }
+                else:
+                    usage_metadata = lc_total_usage
+                prev_total_usage = lc_total_usage
+            else:
+                usage_metadata = None
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            citations = chunk.get("citations", [])
+
+            additional_kwargs = {}
+            if first_chunk:
+                additional_kwargs["citations"] = chunk.get("citations", [])
+                for attr in ["images", "related_questions"]:
+                    if attr in chunk:
+                        additional_kwargs[attr] = chunk[attr]
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
+
+            if isinstance(chunk, AIMessageChunk) and usage_metadata:
+                chunk.usage_metadata = usage_metadata
+
             if first_chunk:
-                chunk.additional_kwargs |= {"citations": citations}
+                chunk.additional_kwargs |= additional_kwargs
                 first_chunk = False
+
             finish_reason = choice.get("finish_reason")
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
@@ -278,9 +390,20 @@ class ChatPerplexity(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(messages=message_dicts, **params)
+        if usage := getattr(response, "usage", None):
+            usage_metadata = _create_usage_metadata(usage.model_dump())
+        else:
+            usage_metadata = None
+
+        additional_kwargs = {"citations": response.citations}
+        for attr in ["images", "related_questions"]:
+            if hasattr(response, attr):
+                additional_kwargs[attr] = getattr(response, attr)
+
         message = AIMessage(
             content=response.choices[0].message.content,
-            additional_kwargs={"citations": response.citations},
+            additional_kwargs=additional_kwargs,
+            usage_metadata=usage_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -345,6 +468,8 @@ class ChatPerplexity(BaseChatModel):
             - "parsing_error": Optional[BaseException]
 
         """  # noqa: E501
+        if method in ("function_calling", "json_mode"):
+            method = "json_schema"
         if method == "json_schema":
             if schema is None:
                 raise ValueError(
