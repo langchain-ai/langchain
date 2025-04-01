@@ -419,7 +419,7 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
 
-@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+@pytest.mark.parametrize("parent_type", ["ls", "lc"])
 def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(

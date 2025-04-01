@@ -1,5 +1,6 @@
 """Test functionality related to prompts."""
 
+import re
 from typing import Any, Union
 from unittest import mock
 
@@ -264,7 +265,10 @@ def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
     input_variables: list = []
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         PromptTemplate(
             input_variables=input_variables, template=template, validate_template=True
         )
@@ -275,7 +279,10 @@ def test_prompt_missing_input_variables() -> None:
 
 def test_prompt_empty_input_variable() -> None:
     """Test error is raised when empty string input variable."""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from ['']"),
+    ):
         PromptTemplate(input_variables=[""], template="{}", validate_template=True)
 
 
@@ -283,7 +290,13 @@ def test_prompt_wrong_input_variables() -> None:
     """Test error is raised when name of input variable is wrong."""
     template = "This is a {foo} test."
     input_variables = ["bar"]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Invalid prompt schema; "
+            "check for mismatched or missing input parameters from ['bar']"
+        ),
+    ):
         PromptTemplate(
             input_variables=input_variables, template=template, validate_template=True
         )
@@ -330,7 +343,7 @@ def test_prompt_invalid_template_format() -> None:
     """Test initializing a prompt with invalid template format."""
     template = "This is a {foo} test."
     input_variables = ["foo"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported template format: bar"):
         PromptTemplate(
             input_variables=input_variables,
             template=template,
@@ -580,7 +593,7 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    "value, expected",
+    ("value", "expected"),
     [
         ("0", "0"),
         (0, "0"),

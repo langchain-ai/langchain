@@ -28,7 +28,7 @@ def test_initialization() -> None:
     assert cache_with_maxsize._cache == {}
     assert cache_with_maxsize._maxsize == 2
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="maxsize must be greater than 0"):
         InMemoryCache(maxsize=0)
 
 
