@@ -15,6 +15,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
     get_buffer_string,
 )
 from langchain_core.prompt_values import ChatPromptValue
@@ -28,11 +29,13 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    _convert_to_message,
+    _convert_to_message_template,
 )
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
+
+CUR_DIR = Path(__file__).parent.absolute().resolve()
 
 
 @pytest.fixture
@@ -510,7 +513,7 @@ def test_convert_to_message(
     args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
 ) -> None:
     """Test convert to message."""
-    assert _convert_to_message(args) == expected
+    assert _convert_to_message_template(args) == expected
 
 
 def test_chat_prompt_template_indexing() -> None:
@@ -555,7 +558,7 @@ def test_convert_to_message_is_strict() -> None:
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
-        _convert_to_message(("meow", "question"))
+        _convert_to_message_template(("meow", "question"))
 
 
 def test_chat_message_partial() -> None:
@@ -841,25 +844,6 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
         assert optional_prompt.format_messages() == []
 
 
-def test_chat_prompt_message_placeholder_dict() -> None:
-    prompt = ChatPromptTemplate([{"role": "placeholder", "content": "{convo}"}])
-    assert prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
-
-    assert prompt.format_messages() == []
-
-    # Is optional = True
-    optional_prompt = ChatPromptTemplate(
-        [{"role": "placeholder", "content": ["{convo}", False]}]
-    )
-    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
-    with pytest.raises(KeyError):
-        assert optional_prompt.format_messages() == []
-
-
 def test_chat_prompt_message_dict() -> None:
     prompt = ChatPromptTemplate(
         [{"role": "system", "content": "foo"}, {"role": "user", "content": "bar"}]
@@ -869,11 +853,8 @@ def test_chat_prompt_message_dict() -> None:
         HumanMessage(content="bar"),
     ]
 
-    with pytest.raises(ValueError):
-        ChatPromptTemplate([{"role": "system", "content": False}])
-
-    with pytest.raises(ValueError):
-        ChatPromptTemplate([{"role": "foo", "content": "foo"}])
+    ChatPromptTemplate([{"role": "system", "content": False}])
+    ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 
 async def test_messages_prompt_accepts_list() -> None:
@@ -938,7 +919,7 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
     assert load(dumpd(prompt)) == prompt
 
 
-async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
+def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     """Test chat prompt template ser/des."""
     template = ChatPromptTemplate(
         [
@@ -978,15 +959,101 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
                             "image_url": {"url": "data:image/jpeg;base64,foobar"},
                         },
                         {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
+                        # {"random_type": {"foo": "{bar}"}},
                     ],
                 ),
             ),
             ("placeholder", "{chat_history}"),
             MessagesPlaceholder("more_history", optional=False),
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_image",
+                        "src": "{file_path}",
+                        "details": {"resolution": "{res}"},
+                    }
+                ],
+            },
         ]
     )
     assert dumpd(template) == snapshot()
     assert load(dumpd(template)) == template
+
+
+def test_chat_tmpl_dict_msg() -> None:
+    template = ChatPromptTemplate(
+        [
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "{text1}",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                ],
+                "name": "{name1}",
+                "tool_calls": [
+                    {
+                        "name": "{tool_name1}",
+                        "args": {"arg1": "{tool_arg1}"},
+                        "id": "1",
+                        "type": "tool_call",
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "content": "{tool_content2}",
+                "tool_call_id": "1",
+                "name": "{tool_name1}",
+            },
+        ]
+    )
+    expected = [
+        AIMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "important message",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            name="foo",
+            tool_calls=[
+                {
+                    "name": "do_stuff",
+                    "args": {"arg1": "important arg1"},
+                    "id": "1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("foo", name="do_stuff", tool_call_id="1"),
+    ]
+
+    actual = template.invoke(
+        {
+            "text1": "important message",
+            "name1": "foo",
+            "tool_arg1": "important arg1",
+            "tool_name1": "do_stuff",
+            "tool_content2": "foo",
+        }
+    ).to_messages()
+    assert actual == expected
+
+    partial_ = template.partial(text1="important message")
+    actual = partial_.invoke(
+        {
+            "name1": "foo",
+            "tool_arg1": "important arg1",
+            "tool_name1": "do_stuff",
+            "tool_content2": "foo",
+        }
+    ).to_messages()
+    assert actual == expected
 
 
 def test_chat_prompt_template_variable_names() -> None:

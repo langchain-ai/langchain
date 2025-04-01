@@ -2976,11 +2976,13 @@
     ]),
     'kwargs': dict({
       'input_variables': list([
+        'file_path',
         'foo',
         'more_history',
         'my_image',
         'my_other_image',
         'name',
+        'res',
       ]),
       'messages': list([
         dict({
@@ -3301,6 +3303,31 @@
           ]),
           'kwargs': dict({
             'variable_name': 'more_history',
+          }),
+          'lc': 1,
+          'type': 'constructor',
+        }),
+        dict({
+          'id': list([
+            'langchain_core',
+            'prompts',
+            'message',
+            '_DictMessagePromptTemplate',
+          ]),
+          'kwargs': dict({
+            'template': dict({
+              'content': list([
+                dict({
+                  'details': dict({
+                    'resolution': '{res}',
+                  }),
+                  'src': '{file_path}',
+                  'type': 'input_image',
+                }),
+              ]),
+              'role': 'user',
+            }),
+            'template_format': 'f-string',
           }),
           'lc': 1,
           'type': 'constructor',
