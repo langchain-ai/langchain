@@ -162,8 +162,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             self.table.update_item(
                 Key={**self.key},
                 UpdateExpression=(
-                    f"set {self.history_messages_key} = :h, "
-                    f"{self.ttl_key_name} = :t"
+                    f"set {self.history_messages_key} = :h, {self.ttl_key_name} = :t"
                 ),
                 ExpressionAttributeValues={":h": existing_messages, ":t": expireAt},
             )
