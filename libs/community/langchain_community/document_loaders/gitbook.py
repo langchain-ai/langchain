@@ -21,6 +21,7 @@ class GitbookLoader(WebBaseLoader):
         content_selector: str = "main",
         continue_on_failure: bool = False,
         show_progress: bool = True,
+        *,
         sitemap_url: Optional[str] = None,
     ):
         """Initialize with web page and whether to load all paths.
