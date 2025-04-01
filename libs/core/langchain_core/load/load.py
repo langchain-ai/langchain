@@ -87,11 +87,7 @@ class Reviver:
         )
 
     def __call__(self, value: dict[str, Any]) -> Any:
-        if (
-            value.get("lc") == 1
-            and value.get("type") == "secret"
-            and value.get("id") is not None
-        ):
+        if (self._is_secret(value)):
             [key] = value["id"]
             if key in self.secrets_map:
                 return self.secrets_map[key]
@@ -100,22 +96,14 @@ class Reviver:
                     return os.environ[key]
                 return None
 
-        if (
-            value.get("lc") == 1
-            and value.get("type") == "not_implemented"
-            and value.get("id") is not None
-        ):
+        if (self._is_not_implemented(value)):
             msg = (
                 "Trying to load an object that doesn't implement "
                 f"serialization: {value}"
             )
             raise NotImplementedError(msg)
 
-        if (
-            value.get("lc") == 1
-            and value.get("type") == "constructor"
-            and value.get("id") is not None
-        ):
+        if (self._is_constructor(value)):
             [*namespace, name] = value["id"]
             mapping_key = tuple(value["id"])
 
@@ -158,6 +146,26 @@ class Reviver:
 
         return value
 
+    def _is_secret(self, value: dict[str, Any]) -> bool:
+        return (
+            value.get("lc") == 1
+            and value.get("type") == "secret"
+            and value.get("id") is not None
+        )
+
+    def _is_not_implemented(self, value: dict[str, Any]) -> bool:
+        return (
+            value.get("lc") == 1
+            and value.get("type") == "not_implemented"
+            and value.get("id") is not None
+        )
+
+    def _is_constructor(self, value: dict[str, Any]) -> bool:
+        return (
+            value.get("lc") == 1
+            and value.get("type") == "constructor"
+            and value.get("id") is not None
+        )
 
 @beta()
 def loads(
