@@ -73,6 +73,5 @@ class TestGitbookLoader:
     ) -> None:
         """Test that the custom sitemap URL is correctly used when provided."""
         loader = GitbookLoader(web_page, load_all_paths=True, sitemap_url=sitemap_url)
-        print(loader.__dict__)  # noqa: T201
         assert loader.web_path == expected_web_path
         assert loader.load_all_paths
