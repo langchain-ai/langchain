@@ -107,8 +107,6 @@ ignore = [
     "PYI",
     "RET",
     "RUF",
-    "S110",
-    "S112",
     "SLF",
     "TD",
 ]

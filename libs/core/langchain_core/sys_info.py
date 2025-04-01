@@ -20,11 +20,7 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
             continue
 
         for req in required:
-            try:
-                cleaned_req = req.split(" ")[0]
-            except Exception:  # In case parsing of requirement spec fails
-                continue
-
+            cleaned_req = req.split(" ")[0]
             if cleaned_req.replace("-", "_") not in _underscored_packages:
                 sub_deps.add(cleaned_req)
 
