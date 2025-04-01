@@ -288,9 +288,9 @@ class AzureSearch(VectorStore):
     def __init__(
         self,
         azure_search_endpoint: str,
-        azure_search_key: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
+        azure_search_key: Optional[str] = None,
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
