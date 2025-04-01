@@ -761,7 +761,7 @@ def test_get_num_tokens_from_messages() -> None:
                     "type": "file",
                     "file": {
                         "filename": "my file",
-                        "file_data": f"data:application/pdf;base64,<data>",
+                        "file_data": "data:application/pdf;base64,<data>",
                     },
                 },
             ]
