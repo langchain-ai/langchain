@@ -54,3 +54,24 @@ class TestGitbookLoader:
         result = loader.load()
         print(len(result))  # noqa: T201
         assert len(result) > 10
+
+    @pytest.mark.parametrize(
+        "web_page, sitemap_url, expected_web_path",
+        [
+            (
+                "https://example.com/",
+                "https://example.com/custom-sitemap.xml",
+                "https://example.com/custom-sitemap.xml",
+            ),
+        ],
+    )
+    def test_init_with_custom_sitemap(
+        self,
+        web_page: str,
+        sitemap_url: str,
+        expected_web_path: str,
+    ) -> None:
+        """Test that the custom sitemap URL is correctly used when provided."""
+        loader = GitbookLoader(web_page, load_all_paths=True, sitemap_url=sitemap_url)
+        assert loader.web_path == expected_web_path
+        assert loader.load_all_paths

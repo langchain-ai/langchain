@@ -313,7 +313,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.47"
+version = "0.3.49"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -343,7 +343,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.9.2,<1.0.0" }]
+lint = [{ name = "ruff", specifier = ">=0.11.2,<0.12.0" }]
 test = [
     { name = "blockbuster", specifier = "~=1.5.18" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -371,7 +371,7 @@ typing = [
 
 [[package]]
 name = "langchain-groq"
-version = "0.3.1"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "groq" },
@@ -430,7 +430,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.15"
+version = "0.3.17"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },

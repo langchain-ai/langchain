@@ -2514,11 +2514,12 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
+        model_fields = type(self).model_fields
         for key in kwargs:
-            if key not in self.model_fields:
+            if key not in model_fields:
                 msg = (
                     f"Configuration key {key} not found in {self}: "
-                    f"available keys are {self.model_fields.keys()}"
+                    f"available keys are {model_fields.keys()}"
                 )
                 raise ValueError(msg)
 
