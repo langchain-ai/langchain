@@ -440,11 +440,10 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                     for part in kk.split(".")[1:]:
                         if vv is None:
                             break
-                        else:
-                            try:
-                                vv = getattr(vv, part)
-                            except AttributeError:
-                                break
+                        try:
+                            vv = getattr(vv, part)
+                        except AttributeError:
+                            break
                     else:
                         values.append(vv)
     except (SyntaxError, TypeError, OSError, SystemError):

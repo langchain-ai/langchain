@@ -84,8 +84,7 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         # Then the next tag could be a standalone
         # Otherwise it can't be
         return padding.isspace() or padding == ""
-    else:
-        return False
+    return False
 
 
 def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
@@ -107,8 +106,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
-    else:
-        return False
+    return False
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:

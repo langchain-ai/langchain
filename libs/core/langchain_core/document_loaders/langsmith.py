@@ -128,8 +128,7 @@ class LangSmithLoader(BaseLoader):
 def _stringify(x: Union[str, dict]) -> str:
     if isinstance(x, str):
         return x
-    else:
-        try:
-            return json.dumps(x, indent=2)
-        except Exception:
-            return str(x)
+    try:
+        return json.dumps(x, indent=2)
+    except Exception:
+        return str(x)

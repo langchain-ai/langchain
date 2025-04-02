@@ -466,8 +466,7 @@ def warn_deprecated(
                 f"{removal}"
             )
             raise NotImplementedError(msg)
-        else:
-            removal = f"in {removal}"
+        removal = f"in {removal}"
 
     if not message:
         message = ""

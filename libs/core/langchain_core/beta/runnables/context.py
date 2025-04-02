@@ -59,11 +59,10 @@ def _key_from_id(id_: str) -> str:
     wout_prefix = id_.split(CONTEXT_CONFIG_PREFIX, maxsplit=1)[1]
     if wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_GET):
         return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_GET)]
-    elif wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_SET):
+    if wout_prefix.endswith(CONTEXT_CONFIG_SUFFIX_SET):
         return wout_prefix[: -len(CONTEXT_CONFIG_SUFFIX_SET)]
-    else:
-        msg = f"Invalid context config id {id_}"
-        raise ValueError(msg)
+    msg = f"Invalid context config id {id_}"
+    raise ValueError(msg)
 
 
 def _config_with_context(
@@ -197,8 +196,7 @@ class ContextGet(RunnableSerializable):
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
-        else:
-            return configurable[self.ids[0]]()
+        return configurable[self.ids[0]]()
 
     @override
     async def ainvoke(
@@ -209,8 +207,7 @@ class ContextGet(RunnableSerializable):
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
             return dict(zip(self.key, values))
-        else:
-            return await configurable[self.ids[0]]()
+        return await configurable[self.ids[0]]()
 
 
 SetValue = Union[
@@ -447,5 +444,4 @@ class PrefixContext:
 def _print_keys(keys: Union[str, Sequence[str]]) -> str:
     if isinstance(keys, str):
         return f"'{keys}'"
-    else:
-        return ", ".join(f"'{k}'" for k in keys)
+    return ", ".join(f"'{k}'" for k in keys)
