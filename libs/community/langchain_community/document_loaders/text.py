@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional, Union, List
 
 from langchain_core.documents import Document
 
@@ -9,6 +9,7 @@ from langchain_community.document_loaders.helpers import detect_file_encodings
 
 logger = logging.getLogger(__name__)
 
+COMMON_ENCODINGS = ["utf-8", "gb18030", "gbk", "gb2312", "iso-8859-1", "latin1", "cp936", "big5"]
 
 class TextLoader(BaseLoader):
     """Load text file.
@@ -22,6 +23,8 @@ class TextLoader(BaseLoader):
 
         autodetect_encoding: Whether to try to autodetect the file encoding
             if the specified encoding fails.
+            
+        fallback_encodings: List of encodings to try if the specified encoding fails.
     """
 
     def __init__(
@@ -29,11 +32,13 @@ class TextLoader(BaseLoader):
         file_path: Union[str, Path],
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
+        fallback_encodings: Optional[List[str]] = None,
     ):
         """Initialize with file path."""
         self.file_path = file_path
         self.encoding = encoding
         self.autodetect_encoding = autodetect_encoding
+        self.fallback_encodings = fallback_encodings or COMMON_ENCODINGS
 
     def lazy_load(self) -> Iterator[Document]:
         """Load from file path."""
@@ -45,15 +50,29 @@ class TextLoader(BaseLoader):
             if self.autodetect_encoding:
                 detected_encodings = detect_file_encodings(self.file_path)
                 for encoding in detected_encodings:
-                    logger.debug(f"Trying encoding: {encoding.encoding}")
+                    logger.debug(f"Trying detected encoding: {encoding.encoding}")
                     try:
                         with open(self.file_path, encoding=encoding.encoding) as f:
                             text = f.read()
                         break
                     except UnicodeDecodeError:
                         continue
-            else:
-                raise RuntimeError(f"Error loading {self.file_path}") from e
+            
+            if not text and self.fallback_encodings:
+                for encoding in self.fallback_encodings:
+                    if encoding == self.encoding:
+                        continue 
+                    logger.debug(f"Trying fallback encoding: {encoding}")
+                    try:
+                        with open(self.file_path, encoding=encoding) as f:
+                            text = f.read()
+                        logger.info(f"Successfully loaded file with encoding: {encoding}")
+                        break
+                    except UnicodeDecodeError:
+                        continue
+
+            if not text:
+                raise RuntimeError(f"Error loading {self.file_path}: Unable to decode with any encoding") from e
         except Exception as e:
             raise RuntimeError(f"Error loading {self.file_path}") from e
 
