@@ -43,10 +43,15 @@ from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import from_env, get_pydantic_field_names
-from langchain_core.utils.pydantic import (
-    is_basemodel_subclass,
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    TypeAdapter,
+    model_validator,
 )
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from typing_extensions import Self
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -111,17 +116,13 @@ class ChatPerplexity(BaseChatModel):
                 from langchain_community.chat_models import ChatPerplexity
 
                 llm = ChatPerplexity(
-                    model="llama-3.1-sonar-small-128k-online",
-                    temperature=0.7,
+                    model="llama-3.1-sonar-small-128k-online", temperature=0.7
                 )
 
         Invoke:
             .. code-block:: python
 
-                messages = [
-                    ("system", "You are a chatbot."),
-                    ("user", "Hello!")
-                ]
+                messages = [("system", "You are a chatbot."), ("user", "Hello!")]
                 llm.invoke(messages)
 
         Invoke with structured output:
@@ -129,9 +130,11 @@ class ChatPerplexity(BaseChatModel):
 
                 from pydantic import BaseModel
 
+
                 class StructuredOutput(BaseModel):
                     role: str
                     content: str
+
 
                 llm.with_structured_output(StructuredOutput)
                 llm.invoke(messages)
@@ -168,7 +171,7 @@ class ChatPerplexity(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[str] = Field(
+    pplx_api_key: Optional[SecretStr] = Field(
         default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
     """Base URL path for API requests,
@@ -184,9 +187,7 @@ class ChatPerplexity(BaseChatModel):
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
+    model_config = ConfigDict(populate_by_name=True)
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -410,9 +411,7 @@ class ChatPerplexity(BaseChatModel):
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
-        pplx_creds: Dict[str, Any] = {
-            "model": self.model,
-        }
+        pplx_creds: Dict[str, Any] = {"model": self.model}
         return {**pplx_creds, **self._default_params}
 
     @property

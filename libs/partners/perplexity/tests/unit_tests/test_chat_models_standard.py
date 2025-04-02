@@ -10,9 +10,7 @@ from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_tests.unit_tests import ChatModelUnitTests
 from pytest_mock import MockerFixture
 
-from langchain_community.chat_models import ChatPerplexity
-
-os.environ["PPLX_API_KEY"] = "foo"
+from langchain_perplexity import ChatPerplexity
 
 
 @pytest.mark.requires("openai")
@@ -23,11 +21,7 @@ class TestPerplexityStandard(ChatModelUnitTests):
 
     @property
     def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-        return (
-            {"PPLX_API_KEY": "api_key"},
-            {},
-            {"pplx_api_key": "api_key"},
-        )
+        return ({"PPLX_API_KEY": "api_key"}, {}, {"pplx_api_key": "api_key"})
 
 
 @pytest.mark.requires("openai")
@@ -60,37 +54,19 @@ def test_perplexity_initialization() -> None:
         ),
     ]:
         assert model.request_timeout == 1
-        assert model.pplx_api_key == "test"
+        assert model.pplx_api_key.get_secret_value() == "test"
 
 
 @pytest.mark.requires("openai")
 def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
     """Test that the stream method includes citations in the additional_kwargs."""
-    llm = ChatPerplexity(
-        model="test",
-        timeout=30,
-        verbose=True,
-    )
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
     mock_chunk_0 = {
-        "choices": [
-            {
-                "delta": {
-                    "content": "Hello ",
-                },
-                "finish_reason": None,
-            }
-        ],
+        "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
     }
     mock_chunk_1 = {
-        "choices": [
-            {
-                "delta": {
-                    "content": "Perplexity",
-                },
-                "finish_reason": None,
-            }
-        ],
+        "choices": [{"delta": {"content": "Perplexity"}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
     }
     mock_chunks: List[Dict[str, Any]] = [mock_chunk_0, mock_chunk_1]
@@ -121,20 +97,9 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
 @pytest.mark.requires("openai")
 def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) -> None:
     """Test that the stream method includes citations in the additional_kwargs."""
-    llm = ChatPerplexity(
-        model="test",
-        timeout=30,
-        verbose=True,
-    )
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
     mock_chunk_0 = {
-        "choices": [
-            {
-                "delta": {
-                    "content": "Hello ",
-                },
-                "finish_reason": None,
-            }
-        ],
+        "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
         "images": [
             {
@@ -146,14 +111,7 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
         ],
     }
     mock_chunk_1 = {
-        "choices": [
-            {
-                "delta": {
-                    "content": "Perplexity",
-                },
-                "finish_reason": None,
-            }
-        ],
+        "choices": [{"delta": {"content": "Perplexity"}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
         "images": [
             {
@@ -213,32 +171,14 @@ def test_perplexity_stream_includes_citations_and_related_questions(
     mocker: MockerFixture,
 ) -> None:
     """Test that the stream method includes citations in the additional_kwargs."""
-    llm = ChatPerplexity(
-        model="test",
-        timeout=30,
-        verbose=True,
-    )
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
     mock_chunk_0 = {
-        "choices": [
-            {
-                "delta": {
-                    "content": "Hello ",
-                },
-                "finish_reason": None,
-            }
-        ],
+        "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
         "related_questions": ["example_question_1", "example_question_2"],
     }
     mock_chunk_1 = {
-        "choices": [
-            {
-                "delta": {
-                    "content": "Perplexity",
-                },
-                "finish_reason": None,
-            }
-        ],
+        "choices": [{"delta": {"content": "Perplexity"}, "finish_reason": None}],
         "citations": ["example.com", "example2.com"],
         "related_questions": ["example_question_1", "example_question_2"],
     }

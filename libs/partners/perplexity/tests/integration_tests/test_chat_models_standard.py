@@ -6,7 +6,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
-from langchain_community.chat_models import ChatPerplexity
+from langchain_perplexity import ChatPerplexity
 
 
 class TestPerplexityStandard(ChatModelIntegrationTests):
