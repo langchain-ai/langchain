@@ -1535,7 +1535,12 @@ class PDFPlumberParser(BaseBlobParser):
             # The new 'standard' version must use lower case key.
             if self.metadata_format == "legacy":
                 doc_metadata = (
-                    doc.metadata  # Add parser metdata
+                    {
+                        "producer": "PDFPlumber",
+                        "creator": "PDFPlumber",
+                        "creationdate": "",
+                    }
+                    | doc.metadata  # Add parser metdata
                     | {  # with more keys
                         "source": blob.source,
                         "file_path": blob.source,
