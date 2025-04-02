@@ -1,12 +1,9 @@
-import logging
 from pathlib import Path
 from typing import Iterator, List, Optional, Union
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.helpers import detect_file_encodings
 from langchain_core.documents import Document
-
-logger = logging.getLogger(__name__)
 
 COMMON_ENCODINGS = [
     "utf-8",
