@@ -571,3 +571,4 @@ packages:
 - name: langchain-qwq
   path: .
   repo: yigit353/langchain-qwq
+  provider_page: alibaba_cloud
