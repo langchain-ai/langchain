@@ -328,7 +328,7 @@ class ChatPerplexity(BaseChatModel):
         prev_total_usage: Optional[UsageMetadata] = None
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+                chunk = chunk.model_dump()
             # Collect standard usage metadata (transform from aggregate to delta)
             if total_usage := chunk.get("usage"):
                 lc_total_usage = _create_usage_metadata(total_usage)
