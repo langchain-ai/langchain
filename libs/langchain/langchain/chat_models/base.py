@@ -118,6 +118,7 @@ def init_chat_model(
             - 'together'            -> langchain-together
             - 'mistralai'           -> langchain-mistralai
             - 'huggingface'         -> langchain-huggingface
+            - 'gigachat'            -> langchain-gigachat
             - 'groq'                -> langchain-groq
             - 'ollama'              -> langchain-ollama
             - 'google_anthropic_vertex'    -> langchain-google-vertexai
@@ -138,6 +139,7 @@ def init_chat_model(
             - 'mistral...'                      -> 'mistralai'
             - 'deepseek...'                     -> 'deepseek'
             - 'grok...'                         -> 'xai'
+            - 'Giga...'                         -> 'gigachat'
         configurable_fields: Which model parameters are
             configurable:
 
@@ -412,6 +414,11 @@ def _init_chat_model_helper(
         from langchain_huggingface import ChatHuggingFace
 
         return ChatHuggingFace(model_id=model, **kwargs)
+    elif model_provider == "gigachat":
+        _check_pkg("langchain_gigachat")
+        from langchain_gigachat import GigaChat
+
+        return GigaChat(model=model, **kwargs)
     elif model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
@@ -503,6 +510,8 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
         return "deepseek"
     elif model_name.startswith("grok"):
         return "xai"
+    elif model_name.startswith("Giga"):
+        return "gigachat"
     else:
         return None
 
