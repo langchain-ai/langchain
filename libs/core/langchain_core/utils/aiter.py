@@ -1,4 +1,6 @@
-"""Adapted from
+"""Asynchronous iterator utilities.
+
+Adapted from
 https://github.com/maxfischer2781/asyncstdlib/blob/master/asyncstdlib/itertools.py
 MIT License.
 """
@@ -23,6 +25,8 @@ from typing import (
     cast,
     overload,
 )
+
+from typing_extensions import override
 
 T = TypeVar("T")
 
@@ -55,7 +59,7 @@ def py_anext(
     """
     try:
         __anext__ = cast(
-            Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
+            "Callable[[AsyncIterator[T]], Awaitable[T]]", type(iterator).__anext__
         )
     except AttributeError as e:
         msg = f"{iterator!r} is not an async iterator"
@@ -82,9 +86,10 @@ class NoLock:
     """Dummy lock that provides the proper interface but no protection."""
 
     async def __aenter__(self) -> None:
-        pass
+        """Do nothing."""
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        """Exception not handled."""
         return False
 
 
@@ -188,6 +193,14 @@ class Tee(Generic[T]):
         *,
         lock: Optional[AbstractAsyncContextManager[Any]] = None,
     ):
+        """Create a ``tee``.
+
+        Args:
+            iterable: The iterable to split.
+            n: The number of iterators to create. Defaults to 2.
+            lock: The lock to synchronise access to the shared buffers.
+                Defaults to None.
+        """
         self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
@@ -201,6 +214,7 @@ class Tee(Generic[T]):
         )
 
     def __len__(self) -> int:
+        """Return the number of child iterators."""
         return len(self._children)
 
     @overload
@@ -212,15 +226,19 @@ class Tee(Generic[T]):
     def __getitem__(
         self, item: Union[int, slice]
     ) -> Union[AsyncIterator[T], tuple[AsyncIterator[T], ...]]:
+        """Return the child iterator(s) for the given index or slice."""
         return self._children[item]
 
     def __iter__(self) -> Iterator[AsyncIterator[T]]:
+        """Iterate over the child iterators."""
         yield from self._children
 
     async def __aenter__(self) -> "Tee[T]":
+        """Return the tee instance."""
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        """Close all child iterators."""
         await self.aclose()
         return False
 
@@ -234,8 +252,7 @@ atee = Tee
 
 
 class aclosing(AbstractAsyncContextManager):  # noqa: N801
-    """Async context manager for safely finalizing an asynchronously cleaned-up
-    resource such as an async generator, calling its ``aclose()`` method.
+    """Async context manager to wrap an AsyncGenerator that has a ``aclose()`` method.
 
     Code like this:
 
@@ -255,11 +272,18 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
     def __init__(
         self, thing: Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]
     ) -> None:
+        """Create the context manager.
+
+        Args:
+            thing: The resource to wrap.
+        """
         self.thing = thing
 
+    @override
     async def __aenter__(self) -> Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]:
         return self.thing
 
+    @override
     async def __aexit__(
         self,
         exc_type: Optional[type[BaseException]],

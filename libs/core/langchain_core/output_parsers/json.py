@@ -1,3 +1,5 @@
+"""Parser for JSON output."""
+
 from __future__ import annotations
 
 import json
@@ -125,5 +127,11 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
 # For backwards compatibility
 SimpleJsonOutputParser = JsonOutputParser
-parse_partial_json = parse_partial_json
-parse_and_check_json_markdown = parse_and_check_json_markdown
+
+
+__all__ = [
+    "JsonOutputParser",
+    "SimpleJsonOutputParser",  # For backwards compatibility
+    "parse_partial_json",  # For backwards compatibility
+    "parse_and_check_json_markdown",  # For backwards compatibility
+]

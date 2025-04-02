@@ -69,7 +69,7 @@ class TestDocumentDBVectorSearch:
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-        # insure the test collection is empty
+        # ensure the test collection is empty
         collection = prepare_collection()
         assert collection.count_documents({}) == 0  # type: ignore[index]
 

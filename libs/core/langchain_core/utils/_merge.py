@@ -4,7 +4,9 @@ from typing import Any, Optional
 
 
 def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
-    """Merge many dicts, handling specific scenarios where a key exists in both
+    r"""Merge dictionaries.
+
+    Merge many dicts, handling specific scenarios where a key exists in both
     dictionaries but has a value of None in 'left'. In such cases, the method uses the
     value from 'right' for that key in the merged dictionary.
 
@@ -96,9 +98,12 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        if "type" in e:
-                            e = {k: v for k, v in e.items() if k != "type"}
-                        merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
+                        new_e = (
+                            {k: v for k, v in e.items() if k != "type"}
+                            if "type" in e
+                            else e
+                        )
+                        merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)
                 else:

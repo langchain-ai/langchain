@@ -1,3 +1,5 @@
+"""Base classes for media and documents."""
+
 from __future__ import annotations
 
 import contextlib
@@ -45,6 +47,11 @@ class BaseMedia(Serializable):
 
     @field_validator("id", mode="before")
     def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        """Coerce the id field to a string.
+
+        Args:
+            id_value: The id value to coerce.
+        """
         if id_value is not None:
             return str(id_value)
         else:
@@ -136,7 +143,7 @@ class Blob(BaseMedia):
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
-            return cast(Optional[str], self.metadata["source"])
+            return cast("Optional[str]", self.metadata["source"])
         return str(self.path) if self.path else None
 
     @model_validator(mode="before")
@@ -291,7 +298,10 @@ class Document(BaseMedia):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Default namespace is ["langchain", "schema", "document"].
+        """
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:

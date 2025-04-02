@@ -80,8 +80,7 @@ def create_base_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Create a retry decorator for a given LLM and provided
-     a list of error types.
+    """Create a retry decorator for a given LLM and provided a list of error types.
 
     Args:
         error_types: List of error types to retry on.
@@ -377,6 +376,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         return ls_params
 
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
@@ -401,6 +401,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             .text
         )
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
@@ -422,6 +423,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return llm_result.generations[0][0].text
 
+    @override
     def batch(
         self,
         inputs: list[LanguageModelInput],
@@ -449,7 +451,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(list[str], [e for _ in inputs])
+                    return cast("list[str]", [e for _ in inputs])
                 else:
                     raise
         else:
@@ -469,6 +471,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ]
 
+    @override
     async def abatch(
         self,
         inputs: list[LanguageModelInput],
@@ -495,7 +498,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(list[str], [e for _ in inputs])
+                    return cast("list[str]", [e for _ in inputs])
                 else:
                     raise
         else:
@@ -515,6 +518,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ]
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
@@ -581,6 +585,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
             run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
@@ -752,6 +757,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 break
             yield item  # type: ignore[misc]
 
+    @override
     def generate_prompt(
         self,
         prompts: list[PromptValue],
@@ -762,6 +768,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompt_strings = [p.to_string() for p in prompts]
         return self.generate(prompt_strings, stop=stop, callbacks=callbacks, **kwargs)
 
+    @override
     async def agenerate_prompt(
         self,
         prompts: list[PromptValue],
@@ -779,6 +786,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompts: list[str],
         stop: Optional[list[str]],
         run_managers: list[CallbackManagerForLLMRun],
+        *,
         new_arg_supported: bool,
         **kwargs: Any,
     ) -> LLMResult:
@@ -901,13 +909,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast(list[Callbacks], callbacks)
-            tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
+            callbacks = cast("list[Callbacks]", callbacks)
+            tags_list = cast(
+                "list[Optional[list[str]]]", tags or ([None] * len(prompts))
+            )
             metadata_list = cast(
-                list[Optional[dict[str, Any]]], metadata or ([{}] * len(prompts))
+                "list[Optional[dict[str, Any]]]", metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                list[Optional[str]], ([None] * len(prompts))
+                "list[Optional[str]]", ([None] * len(prompts))
             )
             callback_managers = [
                 CallbackManager.configure(
@@ -925,16 +935,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 CallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                    cast("Callbacks", callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(list[str], tags),
+                    cast("list[str]", tags),
                     self.tags,
-                    cast(dict[str, Any], metadata),
+                    cast("dict[str, Any]", metadata),
                     self.metadata,
                 )
             ] * len(prompts)
-            run_name_list = [cast(Optional[str], run_name)] * len(prompts)
+            run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
@@ -964,7 +974,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ]
             output = self._generate_helper(
-                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                prompts,
+                stop,
+                run_managers,
+                new_arg_supported=bool(new_arg_supported),
+                **kwargs,
             )
             return output
         if len(missing_prompts) > 0:
@@ -980,7 +994,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 for idx in missing_prompt_idxs
             ]
             new_results = self._generate_helper(
-                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                missing_prompts,
+                stop,
+                run_managers,
+                new_arg_supported=bool(new_arg_supported),
+                **kwargs,
             )
             llm_output = update_cache(
                 self.cache,
@@ -1022,6 +1040,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompts: list[str],
         stop: Optional[list[str]],
         run_managers: list[AsyncCallbackManagerForLLMRun],
+        *,
         new_arg_supported: bool,
         **kwargs: Any,
     ) -> LLMResult:
@@ -1143,13 +1162,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast(list[Callbacks], callbacks)
-            tags_list = cast(list[Optional[list[str]]], tags or ([None] * len(prompts)))
+            callbacks = cast("list[Callbacks]", callbacks)
+            tags_list = cast(
+                "list[Optional[list[str]]]", tags or ([None] * len(prompts))
+            )
             metadata_list = cast(
-                list[Optional[dict[str, Any]]], metadata or ([{}] * len(prompts))
+                "list[Optional[dict[str, Any]]]", metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                list[Optional[str]], ([None] * len(prompts))
+                "list[Optional[str]]", ([None] * len(prompts))
             )
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1167,16 +1188,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 AsyncCallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                    cast("Callbacks", callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(list[str], tags),
+                    cast("list[str]", tags),
                     self.tags,
-                    cast(dict[str, Any], metadata),
+                    cast("dict[str, Any]", metadata),
                     self.metadata,
                 )
             ] * len(prompts)
-            run_name_list = [cast(Optional[str], run_name)] * len(prompts)
+            run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
@@ -1215,7 +1236,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
-                bool(new_arg_supported),
+                new_arg_supported=bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )
             return output
@@ -1238,7 +1259,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 missing_prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
-                bool(new_arg_supported),
+                new_arg_supported=bool(new_arg_supported),
                 **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(
@@ -1332,6 +1353,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return result.generations[0][0].text
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1339,6 +1361,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return self(text, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
     def predict_messages(
         self,
         messages: list[BaseMessage],
@@ -1352,6 +1375,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return AIMessage(content=content)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1359,6 +1383,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return await self._call_async(text, stop=_stop, **kwargs)
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
     async def apredict_messages(
         self,
         messages: list[BaseMessage],

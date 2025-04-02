@@ -1,4 +1,6 @@
-"""**Language Model** is a type of model that can generate text or complete
+"""Language models.
+
+**Language Model** is a type of model that can generate text or complete
 text prompts.
 
 LangChain has two main classes to work with language models: **Chat Models**

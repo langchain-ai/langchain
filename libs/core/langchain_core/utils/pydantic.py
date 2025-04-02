@@ -473,7 +473,7 @@ def _create_root_model(
         except TypeError:
             pass
         custom_root_type = type(name, (RootModel,), base_class_attributes)
-    return cast(type[BaseModel], custom_root_type)
+    return cast("type[BaseModel]", custom_root_type)
 
 
 @lru_cache(maxsize=256)
@@ -598,7 +598,7 @@ def create_model_v2(
     Returns:
         Type[BaseModel]: The created model.
     """
-    field_definitions = cast(dict[str, Any], field_definitions or {})  # type: ignore[no-redef]
+    field_definitions = cast("dict[str, Any]", field_definitions or {})  # type: ignore[no-redef]
 
     if root:
         if field_definitions:

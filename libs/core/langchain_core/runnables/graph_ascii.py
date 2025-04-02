@@ -1,4 +1,5 @@
 """Draws DAG in ASCII.
+
 Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py.
 """
 
@@ -11,17 +12,21 @@ from langchain_core.runnables.graph import Edge as LangEdge
 
 
 class VertexViewer:
-    """Class to define vertex box boundaries that will be accounted for during
-    graph building by grandalf.
+    """VertexViewer class.
 
-    Args:
-        name (str): name of the vertex.
+    Class to define vertex box boundaries that will be accounted for during
+    graph building by grandalf.
     """
 
     HEIGHT = 3  # top and bottom box edges + text
     """Height of the box."""
 
     def __init__(self, name: str) -> None:
+        """Create a VertexViewer.
+
+        Args:
+            name: name of the vertex.
+        """
         self._h = self.HEIGHT  # top and bottom box edges + text
         self._w = len(name) + 2  # right and left bottom edges + text
 
@@ -37,16 +42,17 @@ class VertexViewer:
 
 
 class AsciiCanvas:
-    """Class for drawing in ASCII.
-
-    Args:
-        cols (int): number of columns in the canvas. Should be > 1.
-        lines (int): number of lines in the canvas. Should be > 1.
-    """
+    """Class for drawing in ASCII."""
 
     TIMEOUT = 10
 
     def __init__(self, cols: int, lines: int) -> None:
+        """Create an ASCII canvas.
+
+        Args:
+            cols (int): number of columns in the canvas. Should be > 1.
+            lines (int): number of lines in the canvas. Should be > 1.
+        """
         if cols <= 1 or lines <= 1:
             msg = "Canvas dimensions should be > 1"
             raise ValueError(msg)

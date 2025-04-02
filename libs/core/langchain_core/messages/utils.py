@@ -83,7 +83,7 @@ AnyMessage = Annotated[
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
-    """Convert a sequence of Messages to strings and concatenate them into one string.
+    r"""Convert a sequence of Messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
@@ -504,7 +504,7 @@ def filter_messages(
                         )
                     ]
 
-                msg = msg.model_copy(
+                msg = msg.model_copy(  # noqa: PLW2901
                     update={"tool_calls": tool_calls, "content": content}
                 )
             elif (
@@ -532,7 +532,7 @@ def merge_message_runs(
     *,
     chunk_separator: str = "\n",
 ) -> list[BaseMessage]:
-    """Merge consecutive Messages of the same type.
+    r"""Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
     can't be merged.
@@ -681,6 +681,12 @@ def trim_messages(
             BaseMessage. If a BaseLanguageModel is passed in then
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
             Set to `len` to count the number of **messages** in the chat history.
+
+            .. note::
+                Use `count_tokens_approximately` to get fast, approximate token counts.
+                This is recommended for using `trim_messages` on the hot path, where
+                exact token counting is not necessary.
+
         strategy: Strategy for trimming.
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
@@ -902,7 +908,7 @@ def trim_messages(
     try:
         from langchain_text_splitters import TextSplitter
     except ImportError:
-        text_splitter_fn: Optional[Callable] = cast(Optional[Callable], text_splitter)
+        text_splitter_fn: Optional[Callable] = cast("Optional[Callable]", text_splitter)
     else:
         if isinstance(text_splitter, TextSplitter):
             text_splitter_fn = text_splitter.split_text
@@ -1142,7 +1148,7 @@ def convert_to_openai_messages(
                             raise ValueError(err)
                         if not any(
                             tool_call["id"] == block["id"]
-                            for tool_call in cast(AIMessage, message).tool_calls
+                            for tool_call in cast("AIMessage", message).tool_calls
                         ):
                             oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
                             oai_msg["tool_calls"].append(

@@ -1,3 +1,5 @@
+"""Base for Tools."""
+
 from __future__ import annotations
 
 import asyncio
@@ -35,6 +37,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -110,7 +113,7 @@ def _get_filtered_args(
 
 
 def _parse_python_function_docstring(
-    function: Callable, annotations: dict, error_on_invalid_docstring: bool = False
+    function: Callable, annotations: dict, *, error_on_invalid_docstring: bool = False
 ) -> tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
@@ -451,6 +454,7 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
+        """The arguments of the tool."""
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
         else:
@@ -460,6 +464,7 @@ class ChildTool(BaseTool):
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
+        """The schema for a tool call."""
         if isinstance(self.args_schema, dict):
             if self.description:
                 return {
@@ -480,6 +485,7 @@ class ChildTool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -498,6 +504,7 @@ class ChildTool(BaseTool):
         else:
             return create_schema_from_function(self.name, self._run)
 
+    @override
     def invoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -507,6 +514,7 @@ class ChildTool(BaseTool):
         tool_input, kwargs = _prep_run_args(input, config, **kwargs)
         return self.run(tool_input, **kwargs)
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -525,6 +533,7 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
+            tool_call_id: The id of the tool call.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -650,8 +659,17 @@ class ChildTool(BaseTool):
         # pass as a positional argument.
         if isinstance(tool_input, str):
             return (tool_input,), {}
+        elif isinstance(tool_input, dict):
+            # Make a shallow copy of the input to allow downstream code
+            # to modify the root level of the input without affecting the
+            # original input.
+            # This is used by the tool to inject run time information like
+            # the callback manager.
+            return (), tool_input.copy()
         else:
-            return (), tool_input
+            # This code path is not expected to be reachable.
+            msg = f"Invalid tool input type: {type(tool_input)}"
+            raise TypeError(msg)
 
     def run(
         self,
@@ -941,11 +959,11 @@ def _prep_run_args(
 ) -> tuple[Union[str, dict], dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
+        tool_call_id: Optional[str] = cast("ToolCall", input)["id"]
+        tool_input: Union[str, dict] = cast("ToolCall", input)["args"].copy()
     else:
         tool_call_id = None
-        tool_input = cast(Union[str, dict], input)
+        tool_input = cast("Union[str, dict]", input)
     return (
         tool_input,
         dict(
@@ -1031,7 +1049,7 @@ class InjectedToolArg:
 
 
 class InjectedToolCallId(InjectedToolArg):
-    r'''Annotation for injecting the tool_call_id.
+    """Annotation for injecting the tool_call_id.
 
     Example:
         ..code-block:: python
@@ -1043,9 +1061,9 @@ class InjectedToolCallId(InjectedToolArg):
 
             @tool
             def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallID]) -> ToolMessage:
-                """Return x."""
+                \"\"\"Return x.\"\"\"
                 return ToolMessage(str(x), artifact=x, name="foo", tool_call_id=tool_call_id)
-    '''  # noqa: E501
+    """  # noqa: E501
 
 
 def _is_injected_arg_type(
@@ -1062,6 +1080,12 @@ def _is_injected_arg_type(
 def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> dict[str, type]:
+    """Get all annotations from a Pydantic BaseModel and its parents.
+
+    Args:
+        cls: The Pydantic BaseModel class.
+        default_to_bound: Whether to default to the bound of a TypeVar if it exists.
+    """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         annotations: dict[str, type] = {}
@@ -1110,7 +1134,7 @@ def get_all_basemodel_annotations(
             generic_map = dict(zip(generic_type_vars, get_args(parent)))
             for field in getattr(parent_origin, "__annotations__", {}):
                 annotations[field] = _replace_type_vars(
-                    annotations[field], generic_map, default_to_bound
+                    annotations[field], generic_map, default_to_bound=default_to_bound
                 )
 
     return {
@@ -1122,6 +1146,7 @@ def get_all_basemodel_annotations(
 def _replace_type_vars(
     type_: type,
     generic_map: Optional[dict[TypeVar, type]] = None,
+    *,
     default_to_bound: bool = True,
 ) -> type:
     generic_map = generic_map or {}
@@ -1134,7 +1159,8 @@ def _replace_type_vars(
             return type_
     elif (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(
-            _replace_type_vars(arg, generic_map, default_to_bound) for arg in args
+            _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
+            for arg in args
         )
         return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
     else:

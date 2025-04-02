@@ -221,7 +221,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, enabled: bool, env: str
+    mock_get_client: MagicMock, *, enabled: bool, env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -419,7 +419,7 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
 
-@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+@pytest.mark.parametrize("parent_type", ["ls", "lc"])
 def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(

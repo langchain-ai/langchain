@@ -34,7 +34,10 @@ from openai.types.responses.response_function_web_search import (
 )
 from openai.types.responses.response_output_refusal import ResponseOutputRefusal
 from openai.types.responses.response_output_text import ResponseOutputText
-from openai.types.responses.response_usage import OutputTokensDetails
+from openai.types.responses.response_usage import (
+    InputTokensDetails,
+    OutputTokensDetails,
+)
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
@@ -749,6 +752,25 @@ def test_get_num_tokens_from_messages() -> None:
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
 
+    # Test file inputs
+    messages = [
+        HumanMessage(
+            [
+                "Summarize this document.",
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "my file",
+                        "file_data": "data:application/pdf;base64,<data>",
+                    },
+                },
+            ]
+        )
+    ]
+    with pytest.warns(match="file inputs are not supported"):
+        actual = llm.get_num_tokens_from_messages(messages)
+        assert actual == 13
+
 
 class Foo(BaseModel):
     bar: int
@@ -1002,6 +1024,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
             input_tokens=10,
             output_tokens=3,
             total_tokens=13,
+            input_tokens_details=InputTokensDetails(cached_tokens=0),
             output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
         ),
     )

@@ -1,4 +1,8 @@
+"""Function Message."""
+
 from typing import Any, Literal
+
+from typing_extensions import override
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -25,13 +29,6 @@ class FunctionMessage(BaseMessage):
     type: Literal["function"] = "function"
     """The type of the message (used for serialization). Defaults to "function"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
 
 FunctionMessage.model_rebuild()
 
@@ -46,13 +43,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """The type of the message (used for serialization).
     Defaults to "FunctionMessageChunk"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
+    @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:

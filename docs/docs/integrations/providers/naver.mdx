@@ -12,10 +12,15 @@ Please refer to [NCP User Guide](https://guide.ncloud-docs.com/docs/clovastudio-
 
 - Get a CLOVA Studio API Key by [issuing it](https://api.ncloud-docs.com/docs/ai-naver-clovastudio-summary#API%ED%82%A4) and set it as an environment variable (`NCP_CLOVASTUDIO_API_KEY`).
     - If you are using a legacy API Key (that doesn't start with `nv-*` prefix), you might need to get an additional API Key by [creating your app](https://guide.ncloud-docs.com/docs/en/clovastudio-playground01#create-test-app) and set it as `NCP_APIGW_API_KEY`.
-- Install the integration Python package with:
+
+Naver integrations live in two packages:
+
+- `langchain-naver-community`: a dedicated integration package for Naver. It is a community-maintained package and is not officially maintained by Naver or LangChain.
+- `langchain-community`: a collection of [third-party integrations](https://python.langchain.com/docs/concepts/architecture/#langchain-community),
+including Naver. **New features should be implemented in the dedicated `langchain-naver-community` package**.
 
 ```bash
-pip install -U langchain-community
+pip install -U langchain-community langchain-naver-community
 ```
 
 ## Chat models
@@ -37,3 +42,41 @@ See a [usage example](/docs/integrations/text_embedding/naver).
 ```python
 from langchain_community.embeddings import ClovaXEmbeddings
 ```
+
+## Tools
+
+### Naver Search
+
+The Naver Search integration allows your LangChain applications to retrieve information from Naver's search engine. This is particularly useful for Korean language queries and getting up-to-date information about Korean topics.
+
+To use the Naver Search tools, you need to:
+
+1. Sign in to the [Naver Developers portal](https://developers.naver.com/main/)
+2. Create a new application and enable the Search API
+3. Obtain your **NAVER_CLIENT_ID** and **NAVER_CLIENT_SECRET** from the "Application List" section
+4. Set these as environment variables in your application
+
+```python
+from langchain_naver_community.tool import NaverSearchResults
+from langchain_naver_community.utils import NaverSearchAPIWrapper
+
+# Set up the search wrapper
+search = NaverSearchAPIWrapper()
+
+# Create a tool
+tool = NaverSearchResults(api_wrapper=search)
+```
+
+See a [usage example](/docs/integrations/tools/naver_search) for more details.
+
+### Specialized Search Tools
+
+The package also provides specialized search tools for different types of content:
+
+```python
+from langchain_naver_community.tool import NaverNewsSearch  # For news articles
+from langchain_naver_community.tool import NaverBlogSearch  # For blog posts
+from langchain_naver_community.tool import NaverImageSearch  # For images
+```
+
+Each of these can be used within LangChain agents to provide more targeted search capabilities.
