@@ -54,6 +54,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+plugins = ['pydantic.mypy']
 [[tool.mypy.overrides]]
 module = "transformers"
 ignore_missing_imports = true
