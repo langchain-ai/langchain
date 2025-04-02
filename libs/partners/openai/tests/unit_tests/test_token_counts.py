@@ -10,8 +10,8 @@ _EXPECTED_NUM_TOKENS = {
     "gpt-4": 12,
     "gpt-4-32k": 12,
     "gpt-3.5-turbo": 12,
-    "o1": 12,
-    "o3": 12,
+    "o1": 11,
+    "o3": 11,
     "gpt-4o": 11,
 }
 
