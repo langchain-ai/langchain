@@ -5,7 +5,6 @@ import sys
 from collections.abc import AsyncIterator, Sequence
 from itertools import cycle
 from typing import Any, cast
-from typing import Optional as Optional
 
 import pytest
 from pydantic import BaseModel

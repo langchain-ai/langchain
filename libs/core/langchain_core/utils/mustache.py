@@ -324,8 +324,8 @@ def _html_escape(string: str) -> str:
 
     # & must be handled first
     string = string.replace("&", "&amp;")
-    for char in html_codes:
-        string = string.replace(char, html_codes[char])
+    for char, code in html_codes.items():
+        string = string.replace(char, code)
     return string
 
 
