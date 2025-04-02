@@ -101,8 +101,6 @@ ignore = [
     "FBT002",
     "FIX",
     "PGH",
-    "PLC",
-    "PLE",
     "PLR",
     "PYI",
     "RET",
