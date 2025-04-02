@@ -89,8 +89,8 @@ def _generate_response_from_error(error: BaseException) -> LLMResult:
             metadata["headers"] = response.headers
         if hasattr(response, "status_code"):
             metadata["status_code"] = response.status_code
-        if hasattr(response, "request_id"):
-            metadata["request_id"] = response.request_id
+        if hasattr(error, "request_id"):
+            metadata["request_id"] = error.request_id
         generations = [
             [ChatGeneration(message=AIMessage(content="", response_metadata=metadata))]
         ]
