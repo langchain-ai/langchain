@@ -1,6 +1,5 @@
 """Test Perplexity Chat API wrapper."""
 
-import os
 from typing import Any, Dict, List, Optional, Tuple, Type
 from unittest.mock import MagicMock
 
@@ -43,18 +42,25 @@ def test_perplexity_initialization() -> None:
     # as a parameter rather than an environment variable.
     for model in [
         ChatPerplexity(  # type: ignore[call-arg]
-            model="test", timeout=1, api_key="test", temperature=0.7, verbose=True
+            model="test",
+            timeout=1,
+            api_key="test",  # type: ignore[arg-type]
+            temperature=0.7,
+            verbose=True,
         ),
         ChatPerplexity(  # type: ignore[call-arg]
             model="test",
             request_timeout=1,
-            pplx_api_key="test",
+            pplx_api_key="test",  # type: ignore[arg-type]
             temperature=0.7,
             verbose=True,
         ),
     ]:
         assert model.request_timeout == 1
-        assert model.pplx_api_key.get_secret_value() == "test"
+        assert (
+            model.pplx_api_key is not None
+            and model.pplx_api_key.get_secret_value() == "test"
+        )
 
 
 @pytest.mark.requires("openai")

@@ -42,7 +42,7 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names, secret_from_env
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import (
     BaseModel,
@@ -172,7 +172,7 @@ class ChatPerplexity(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     pplx_api_key: Optional[SecretStr] = Field(
-        default_factory=from_env("PPLX_API_KEY", default=None), alias="api_key"
+        default_factory=secret_from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
@@ -232,7 +232,10 @@ class ChatPerplexity(BaseChatModel):
             )
         try:
             self.client = openai.OpenAI(
-                api_key=self.pplx_api_key, base_url="https://api.perplexity.ai"
+                api_key=self.pplx_api_key.get_secret_value()
+                if self.pplx_api_key
+                else None,
+                base_url="https://api.perplexity.ai",
             )
         except AttributeError:
             raise ValueError(
