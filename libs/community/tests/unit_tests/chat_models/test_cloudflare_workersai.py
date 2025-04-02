@@ -9,7 +9,7 @@ from langchain_community.chat_models.cloudflare_workersai import (
 )
 
 
-def test_convert_human_message():
+def test_convert_human_message() -> None:
     """Test converting a simple HumanMessage."""
     message = HumanMessage(content="Hello, AI!")
     result = _convert_message_to_dict(message)

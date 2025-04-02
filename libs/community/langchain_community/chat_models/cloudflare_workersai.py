@@ -8,10 +8,8 @@ import warnings
 from operator import itemgetter
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
     Dict,
-    Iterator,
     List,
     Literal,
     Mapping,
@@ -35,7 +33,6 @@ from langchain_core.language_models.chat_models import (
 )
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     FunctionMessage,
@@ -49,12 +46,11 @@ from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
 )
-from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -260,7 +256,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
             if not self.client:
                 self.client = httpx.Client(
                     base_url=base_url,
-                    timeout=self.request_timeout,
+                    timeout=self.request_timeout,  # type: ignore
                     headers={
                         "Authorization": f"Bearer "
                         f"{self.cloudflare_api_token.get_secret_value()}",
@@ -271,7 +267,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
             if not self.async_client:
                 self.async_client = httpx.AsyncClient(
                     base_url=base_url,
-                    timeout=self.request_timeout,
+                    timeout=self.request_timeout,  # type: ignore
                     headers={
                         "Authorization": f"Bearer "
                         f"{self.cloudflare_api_token.get_secret_value()}",
@@ -344,7 +340,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
 
     def _extract_tool_calls_from_content(self, content: str) -> List[Dict[str, Any]]:
         """Extract tool calls from content if it appears to be a JSON tool call."""
-        tool_calls = []
+        tool_calls: List[Dict[str, Any]] = []
 
         # Only attempt to parse if content looks like JSON
         if (
@@ -586,327 +582,6 @@ class ChatCloudflareWorkersAI(BaseChatModel):
 
         return self._create_chat_result(response_data)
 
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        """Stream completion for Cloudflare Workers AI."""
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
-        # Construct the Cloudflare Workers AI API URL
-        if self.cloudflare_gateway:
-            api_url = f"workers-ai/run/{self.model_name}"
-        else:
-            api_url = f"accounts/{self.cloudflare_account_id}/ai/run/{self.model_name}"
-
-        # Create the request payload
-        payload = {"messages": message_dicts, **params}
-
-        # Make the streaming API request
-        with self.client.stream("POST", api_url, json=payload) as response:
-            response.raise_for_status()
-            accumulated_content = ""
-            tool_calls_detected = False
-
-            for line in response.iter_lines():
-                # Handle both string and bytes cases
-                if isinstance(line, bytes):
-                    # Convert bytes to string if needed
-                    line_str = line.decode("utf-8")
-                else:
-                    line_str = line
-
-                if not line_str or line_str.startswith("data: [DONE]"):
-                    continue
-
-                if line_str.startswith("data: "):
-                    line_str = line_str[6:]  # Remove "data: " prefix
-
-                try:
-                    chunk = json.loads(line_str)
-                except json.JSONDecodeError:
-                    continue
-
-                # Process streaming response
-                if "streamed_data" in chunk:
-                    # Handle streamed_data format from Cloudflare
-                    for stream_chunk in chunk["streamed_data"]:
-                        response_text = stream_chunk.get("response", "")
-                        accumulated_content += response_text
-
-                        # Initialize generation_info
-                        generation_info = {}
-                        if "usage" in stream_chunk:
-                            generation_info["usage"] = stream_chunk["usage"]
-
-                        # Check for tool calls in accumulated content
-                        tool_calls = []
-
-                        # Only try to extract tool calls
-                        # if we haven't already detected them
-                        if not tool_calls_detected:
-                            tool_calls = self._extract_tool_calls_from_content(
-                                accumulated_content
-                            )
-                            if tool_calls:
-                                tool_calls_detected = True
-
-                        # Create the message chunk -
-                        # if tool calls exist, don't include content
-                        if tool_calls:
-                            message_chunk = AIMessageChunk(
-                                content=None,
-                                tool_calls=tool_calls,
-                            )
-                        else:
-                            message_chunk = AIMessageChunk(
-                                content=response_text
-                                if not tool_calls_detected
-                                else "",
-                            )
-
-                        generation_chunk = ChatGenerationChunk(
-                            message=message_chunk,
-                            generation_info=generation_info or None,
-                        )
-
-                        if run_manager:
-                            run_manager.on_llm_new_token(
-                                "" if tool_calls else generation_chunk.text,
-                                chunk=generation_chunk,
-                            )
-
-                        yield generation_chunk
-
-                elif "response" in chunk:
-                    # Handle direct response format
-                    response_text = chunk.get("response", "")
-                    accumulated_content += response_text
-
-                    # Check for tool calls
-                    tool_calls = []
-
-                    # Only try to extract tool calls if we haven't already detected them
-                    if not tool_calls_detected:
-                        # First check if there are explicit tool_calls in the response
-                        if "tool_calls" in chunk:
-                            for tc in chunk["tool_calls"]:
-                                if "name" in tc and "arguments" in tc:
-                                    tool_id = tc.get("id", str(uuid.uuid4()))
-                                    tool_calls.append(
-                                        {
-                                            "id": tool_id,
-                                            "name": tc["name"],
-                                            "args": tc["arguments"],
-                                            "type": "function",
-                                        }
-                                    )
-                            tool_calls_detected = True
-                        else:
-                            # Try to extract from content
-                            tool_calls = self._extract_tool_calls_from_content(
-                                accumulated_content
-                            )
-                            if tool_calls:
-                                tool_calls_detected = True
-
-                    # Create message chunk based on whether we have tool calls
-                    if tool_calls:
-                        message_chunk = AIMessageChunk(
-                            content=None,  # Use None, not empty string
-                            tool_calls=tool_calls,
-                        )
-                    else:
-                        message_chunk = AIMessageChunk(
-                            content=response_text if not tool_calls_detected else "",
-                        )
-
-                    generation_info = {}
-                    if "usage" in chunk:
-                        generation_info["usage"] = chunk["usage"]
-
-                    generation_chunk = ChatGenerationChunk(
-                        message=message_chunk, generation_info=generation_info or None
-                    )
-
-                    if run_manager:
-                        run_manager.on_llm_new_token(
-                            "" if tool_calls else generation_chunk.text,
-                            chunk=generation_chunk,
-                        )
-
-                    yield generation_chunk
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-
-        params = {**params, **kwargs, "stream": True}
-
-        # Construct the Cloudflare Workers AI API URL
-        api_url = f"accounts/{self.cloudflare_account_id}/ai/run/{self.model_name}"
-
-        # Create the request payload
-        payload = {"messages": message_dicts, **params}
-
-        # Make the streaming API request
-        async with self.async_client.stream("POST", api_url, json=payload) as response:
-            response.raise_for_status()
-
-            accumulated_content = ""
-
-            async for line in response.aiter_lines():
-                # Handle both string and bytes cases
-                if isinstance(line, bytes):
-                    # Convert bytes to string if needed
-                    line_str = line.decode("utf-8")
-                else:
-                    line_str = line
-
-                if not line_str or line_str.startswith("data: [DONE]"):
-                    continue
-
-                if line_str.startswith("data: "):
-                    line_str = line_str[6:]  # Remove "data: " prefix
-
-                try:
-                    chunk = json.loads(line_str)
-                except json.JSONDecodeError:
-                    continue
-
-                # Handle the streamed_data format
-                if "streamed_data" in chunk:
-                    for stream_chunk in chunk["streamed_data"]:
-                        response_text = stream_chunk.get("response", "")
-                        accumulated_content += response_text
-
-                        # Check if this is the final chunk with usage data
-                        generation_info = {}
-                        if "usage" in stream_chunk:
-                            generation_info["usage"] = stream_chunk["usage"]
-
-                        # Check for tool calls in accumulated content
-                        tool_calls = []
-                        try:
-                            if (
-                                accumulated_content.startswith("{")
-                                and accumulated_content.endswith("}")
-                            ) or (
-                                accumulated_content.startswith("[")
-                                and accumulated_content.endswith("]")
-                            ):
-                                content_json = json.loads(accumulated_content)
-                                if (
-                                    isinstance(content_json, dict)
-                                    and "name" in content_json
-                                    and "parameters" in content_json
-                                ):
-                                    # Found a tool call in JSON format
-                                    tool_call_id = content_json.get(
-                                        "id", f"call_{hash(str(content_json))}"
-                                    )
-                                    tool_calls = [
-                                        {
-                                            "id": tool_call_id,
-                                            "name": content_json["name"],
-                                            "args": content_json["parameters"],
-                                        }
-                                    ]
-                        except json.JSONDecodeError:
-                            # Not a complete JSON yet, continue streaming
-                            pass
-
-                        message_chunk = AIMessageChunk(
-                            content=response_text if response_text is not None else "",
-                            tool_calls=tool_calls,  # Always pass a list, even if empty
-                        )
-
-                        generation_chunk = ChatGenerationChunk(
-                            message=message_chunk,
-                            generation_info=generation_info or None,
-                        )
-
-                        if run_manager:
-                            await run_manager.on_llm_new_token(
-                                token=generation_chunk.text,
-                                chunk=generation_chunk,
-                            )
-
-                        yield generation_chunk
-
-                # Handle direct response format (as in previous implementation)
-                elif "response" in chunk:
-                    # Accumulate content to check for potential tool calls
-                    response_text = chunk.get("response", "")
-                    accumulated_content += response_text
-
-                    # Check if the response is a complete
-                    # JSON that might contain a tool call
-                    tool_calls = []
-                    try:
-                        if (
-                            accumulated_content.startswith("{")
-                            and accumulated_content.endswith("}")
-                        ) or (
-                            accumulated_content.startswith("[")
-                            and accumulated_content.endswith("]")
-                        ):
-                            content_json = json.loads(accumulated_content)
-                            if (
-                                isinstance(content_json, dict)
-                                and "name" in content_json
-                                and "parameters" in content_json
-                            ):
-                                # Found a tool call in JSON format
-                                tool_call_id = content_json.get(
-                                    "id", f"call_{hash(str(content_json))}"
-                                )
-                                tool_calls = [
-                                    {
-                                        "id": tool_call_id,
-                                        "name": content_json["name"],
-                                        "args": content_json["parameters"],
-                                    }
-                                ]
-                                response_text = (
-                                    ""  # Empty the response text since it's a tool call
-                                )
-                    except json.JSONDecodeError:
-                        # Not a complete JSON yet, continue streaming
-                        pass
-
-                    message_chunk = AIMessageChunk(
-                        content=response_text if response_text is not None else "",
-                        tool_calls=tool_calls,  # Always pass a list, even if empty
-                    )
-
-                    generation_info = {}
-
-                    # Include usage stats when available
-                    if "usage" in chunk:
-                        generation_info["usage"] = chunk["usage"]
-
-                    generation_chunk = ChatGenerationChunk(
-                        message=message_chunk, generation_info=generation_info or None
-                    )
-
-                    if run_manager:
-                        await run_manager.on_llm_new_token(
-                            token=generation_chunk.text,
-                            chunk=generation_chunk,
-                        )
-
-                    yield generation_chunk
-
     #
     # Internal methods
     #
@@ -1047,7 +722,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
             }
 
         # Create generation and return result
-        generation_info = {}
+        generation_info = {}  # type: ignore
         gen = ChatGeneration(
             message=message,
             generation_info=generation_info,
@@ -1280,48 +955,33 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (supported added in 0.1.9),
-                    - or a Pydantic class.
-                If ``schema`` is a Pydantic class then the model output will be a
-                Pydantic instance of that class, and the model-generated fields will be
-                validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated.
-            method:
-                The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API.
-                If "json_mode" then Cloudflare Workers AI JSON mode will be used.
-            include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+            schema: The output schema (OpenAI function/tool schema, JSON Schema,
+                   TypedDict class, or Pydantic class)
+            method: Method for steering model generation
+            ("function_calling" or "json_mode")
+            include_raw: If True, return both raw and parsed responses
 
         Returns:
-            A Runnable that takes same inputs as a
-            :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a BaseChatModel
         """
         _ = kwargs.pop("strict", None)
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
+
         is_pydantic_schema = _is_pydantic_class(schema)
+
+        # Handle special case for json_schema method
         if method == "json_schema":
-            # Some applications require that incompatible parameters (e.g., unsupported
-            # methods) be handled.
             method = "function_calling"
+
+        # Configure LLM and create appropriate parser based on method
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
-                    "schema must be specified when method is 'function_calling'. "
-                    "Received None."
+                    "schema must be specified when method "
+                    "is 'function_calling'. Received None."
                 )
+
             formatted_tool = convert_to_openai_tool(schema)
             tool_name = formatted_tool["function"]["name"]
             llm = self.bind_tools(
@@ -1333,270 +993,15 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                 },
             )
 
-            # Custom parser for handling Cloudflare specific output format
-            if is_pydantic_schema:
-
-                class CloudflarePydanticToolsParser(PydanticToolsParser):
-                    """Custom parser for handling Cloudflare Workers AI
-                    tool outputs in various formats."""
-
-                    def parse(self, message: BaseMessage) -> Any:
-                        """Parse the message specifically for Cloudflare format."""
-                        # First attempt: check tool_calls in the message
-                        if message.tool_calls:
-                            for tool_call in message.tool_calls:
-                                if (
-                                    self.tools
-                                    and self.first_tool_only
-                                    and len(self.tools) > 0
-                                ):
-                                    tool_class = self.tools[0]
-                                    # Handle different args formats
-                                    args = tool_call.get("args", {})
-
-                                    # If args is a string, try to parse it as JSON first
-                                    if isinstance(args, str):
-                                        try:
-                                            args = json.loads(args)
-                                        except json.JSONDecodeError:
-                                            # Keep as is if not valid JSON
-                                            args = {"raw_args": args}
-
-                                    # Attempt to instantiate the model with the args
-                                    try:
-                                        # For Pydantic v2
-                                        if hasattr(tool_class, "model_validate"):
-                                            return tool_class.model_validate(args)
-                                        # For Pydantic v1
-                                        else:
-                                            return tool_class.parse_obj(args)
-                                    except Exception:
-                                        # If first attempt fails,
-                                        # continue to next approach
-                                        pass
-
-                        # Second attempt: check if content is
-                        # JSON that contains tool call data
-                        content = message.content
-                        if content and isinstance(content, str):
-                            # Only try parsing if it looks like JSON
-                            if (content.startswith("{") and content.endswith("}")) or (
-                                content.startswith("[") and content.endswith("[")
-                            ):
-                                try:
-                                    content_json = json.loads(content)
-
-                                    # Handle different formats
-                                    # that Cloudflare might return
-                                    if (
-                                        self.tools
-                                        and self.first_tool_only
-                                        and len(self.tools) > 0
-                                    ):
-                                        tool_class = self.tools[0]
-
-                                        # Try direct parsing first
-                                        # (if content is the actual structure)
-                                        try:
-                                            # For Pydantic v2
-                                            if hasattr(tool_class, "model_validate"):
-                                                return tool_class.model_validate(
-                                                    content_json
-                                                )
-                                            # For Pydantic v1
-                                            else:
-                                                return tool_class.parse_obj(
-                                                    content_json
-                                                )
-                                        except Exception:
-                                            # Check if it's wrapped
-                                            # in a function call format
-                                            # 1. Format:
-                                            # {"name": "tool_name", "parameters": {...}}
-                                            if (
-                                                isinstance(content_json, dict)
-                                                and "parameters" in content_json
-                                            ):
-                                                try:
-                                                    params = content_json["parameters"]
-                                                    if hasattr(
-                                                        tool_class, "model_validate"
-                                                    ):
-                                                        return (
-                                                            tool_class.model_validate(
-                                                                params
-                                                            )
-                                                        )
-                                                    else:
-                                                        return tool_class.parse_obj(
-                                                            params
-                                                        )
-                                                except Exception:
-                                                    pass
-
-                                            # 2. OpenAI format with function property
-                                            if (
-                                                isinstance(content_json, dict)
-                                                and "function" in content_json
-                                            ):
-                                                try:
-                                                    func_data = content_json["function"]
-                                                    if "arguments" in func_data:
-                                                        args = func_data["arguments"]
-                                                        # Parse arguments
-                                                        # if they're a string
-                                                        if isinstance(args, str):
-                                                            try:
-                                                                args = json.loads(args)
-                                                            except Exception:
-                                                                args = {"raw": args}
-
-                                                        if hasattr(
-                                                            tool_class, "model_validate"
-                                                        ):
-                                                            return tool_class.model_validate(
-                                                                args
-                                                            )
-                                                        else:
-                                                            return tool_class.parse_obj(
-                                                                args
-                                                            )
-                                                except Exception:
-                                                    pass
-
-                                except json.JSONDecodeError:
-                                    pass
-
-                        # Last resort: try standard parsing
-                        try:
-                            return super().parse(message)
-                        except Exception as e:
-                            # Final fallback for complex cases
-                            if (
-                                self.tools
-                                and self.first_tool_only
-                                and len(self.tools) > 0
-                            ):
-                                tool_class = self.tools[0]
-
-                                # Try different approaches based on API version
-                                if isinstance(content, str) and content:
-                                    try:
-                                        # Try extracting JSON from string with regex
-                                        import re
-
-                                        json_match = re.search(
-                                            r"{.*}", content, re.DOTALL
-                                        )
-                                        if json_match:
-                                            json_str = json_match.group(0)
-                                            try:
-                                                data = json.loads(json_str)
-                                                if hasattr(
-                                                    tool_class, "model_validate"
-                                                ):
-                                                    return tool_class.model_validate(
-                                                        data
-                                                    )
-                                                else:
-                                                    return tool_class.parse_obj(data)
-                                            except Exception:
-                                                pass
-                                    except Exception:
-                                        pass
-
-                            # If all attempts failed, raise the original error
-                            raise e
-
-                output_parser: OutputParserLike = CloudflarePydanticToolsParser(
-                    tools=[schema],  # type: ignore[list-item]
-                    first_tool_only=True,  # type: ignore[list-item]
-                )
-            else:
-
-                class CloudflareJsonOutputKeyToolsParser(JsonOutputKeyToolsParser):
-                    """Custom parser for handling
-                    Cloudflare Workers AI JSON tool outputs."""
-
-                    def parse(self, message: BaseMessage) -> Any:
-                        """Parse the message specifically for Cloudflare format."""
-                        # First check tool_calls in the message (preferred path)
-                        if message.tool_calls:
-                            for tool_call in message.tool_calls:
-                                if tool_call.get("name") == self.key_name:
-                                    args = tool_call.get("args", {})
-                                    # If args is a string, try parsing it
-                                    if isinstance(args, str):
-                                        try:
-                                            return json.loads(args)
-                                        except json.JSONDecodeError:
-                                            return {"raw": args}
-                                    return args
-
-                        # Check if content has JSON that might contain our data
-                        content = message.content
-                        if content and isinstance(content, str):
-                            # Only try parsing if it looks like JSON
-                            if (content.startswith("{") and content.endswith("}")) or (
-                                content.startswith("[") and content.endswith("]")
-                            ):
-                                try:
-                                    content_json = json.loads(content)
-
-                                    # Look for key in different formats
-                                    # 1. Direct key access
-                                    if isinstance(content_json, dict):
-                                        if self.key_name in content_json:
-                                            return content_json[self.key_name]
-
-                                        # 2. Tool call format:
-                                        # {"name": key_name, "parameters": {...}}
-                                        if (
-                                            "name" in content_json
-                                            and content_json.get("name")
-                                            == self.key_name
-                                        ):
-                                            return content_json.get("parameters", {})
-
-                                        # 3. OpenAI format with function property
-                                        if "function" in content_json:
-                                            func_data = content_json["function"]
-                                            if func_data.get("name") == self.key_name:
-                                                args = func_data.get("arguments")
-                                                if isinstance(args, str):
-                                                    try:
-                                                        return json.loads(args)
-                                                    except Exception:
-                                                        return {"raw": args}
-                                                return args
-
-                                    # 4. If it's not a specific format we recognize,
-                                    # but content is a dict, return it as-is
-                                    if isinstance(content_json, dict):
-                                        return content_json
-
-                                except json.JSONDecodeError:
-                                    pass
-
-                        # Try standard parsing
-                        try:
-                            return super().parse(message)
-                        except Exception as e:
-                            # Last resort: try to extract JSON from the content
-                            if content and isinstance(content, str):
-                                import re
-
-                                json_match = re.search(r"{.*}", content, re.DOTALL)
-                                if json_match:
-                                    try:
-                                        return json.loads(json_match.group(0))
-                                    except Exception:
-                                        pass
-                            raise e
-
-                output_parser = CloudflareJsonOutputKeyToolsParser(
+            # Create parser based on schema type
+            output_parser = (
+                CloudflarePydanticToolsParser(tools=[schema], first_tool_only=True)  # type: ignore
+                if is_pydantic_schema
+                else CloudflareJsonOutputKeyToolsParser(
                     key_name=tool_name, first_tool_only=True
                 )
+            )
+
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
@@ -1606,99 +1011,20 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                 },
             )
 
-            # Custom JSON mode parser for Cloudflare
-            if is_pydantic_schema:
+            # Create parser based on schema type
+            output_parser = (
+                CloudflarePydanticOutputParser(pydantic_object=schema)  # type: ignore
+                if is_pydantic_schema
+                else CloudflareJsonOutputParser()
+            )
 
-                class CloudflarePydanticOutputParser(PydanticOutputParser):
-                    def parse(self, text: str) -> Any:
-                        """Parse the output of an LLM call
-                        specifically for Cloudflare."""
-                        if text and isinstance(text, str):
-                            # Try to extract JSON from the text
-                            json_str = None
-
-                            # Check if it's already a valid JSON
-                            if (text.startswith("{") and text.endswith("}")) or (
-                                text.startswith("[") and text.endswith("]")
-                            ):
-                                json_str = text
-
-                            # Try to parse the JSON if found
-                            if json_str:
-                                try:
-                                    data = json.loads(json_str)
-                                    # Try direct parsing
-                                    try:
-                                        if hasattr(
-                                            self.pydantic_object, "model_validate"
-                                        ):
-                                            return self.pydantic_object.model_validate(
-                                                data
-                                            )
-                                        else:
-                                            return self.pydantic_object.parse_obj(data)
-                                    except Exception:
-                                        # If direct parsing fails,
-                                        # check if data might be nested
-                                        if (
-                                            isinstance(data, dict)
-                                            and "parameters" in data
-                                        ):
-                                            try:
-                                                if hasattr(
-                                                    self.pydantic_object,
-                                                    "model_validate",
-                                                ):
-                                                    return self.pydantic_object.model_validate(
-                                                        data["parameters"]
-                                                    )
-                                                else:
-                                                    return (
-                                                        self.pydantic_object.parse_obj(
-                                                            data["parameters"]
-                                                        )
-                                                    )
-                                            except Exception:
-                                                pass
-                                except json.JSONDecodeError:
-                                    pass
-
-                        # Fallback to standard parsing behavior
-                        return super().parse(text)
-
-                output_parser = CloudflarePydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-            else:
-
-                class CloudflareJsonOutputParser(JsonOutputParser):
-                    def parse(self, text: str) -> Any:
-                        """Parse the output specifically for Cloudflare."""
-                        if text and isinstance(text, str):
-                            # Try to extract JSON from the text
-                            json_str = None
-
-                            # Check if it's already a valid JSON
-                            if (text.startswith("{") and text.endswith("}")) or (
-                                text.startswith("[") and text.endswith("]")
-                            ):
-                                json_str = text
-
-                            # Try to parse the JSON if found
-                            if json_str:
-                                try:
-                                    return json.loads(json_str)
-                                except json.JSONDecodeError:
-                                    pass
-
-                        # Fallback to standard parsing
-                        return super().parse(text)
-
-                output_parser = CloudflareJsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
                 f"'json_mode'. Received: '{method}'"
             )
 
+        # Configure final output structure based on include_raw flag
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
@@ -1762,7 +1088,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             content = message.content
             # Important: if content is empty string, convert to null
             if content == "":
-                content = None
+                content = None  # type: ignore
 
             message_dict = {"role": "assistant", "content": content}
 
@@ -1827,3 +1153,314 @@ def _lc_invalid_tool_call_to_cf_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+class CloudflarePydanticToolsParser(PydanticToolsParser):
+    """Parser for Cloudflare Workers AI tool outputs with Pydantic validation."""
+
+    def parse(self, message: BaseMessage) -> Any:  # type: ignore
+        """Parse the message with multiple strategies."""
+        # Try each parsing strategy in sequence
+        result = self._try_parse_tool_calls(message)
+        if result is not None:
+            return result
+
+        result = self._try_parse_json_content(message)
+        if result is not None:
+            return result
+
+        # Try parent class parsing
+        try:
+            return super().parse(message)  # type: ignore
+        except Exception as e:
+            # Last resort: try regex extraction
+            result = self._try_regex_extraction(message)
+            if result is not None:
+                return result
+            raise e
+
+    def _try_parse_tool_calls(self, message: BaseMessage) -> Optional[Any]:
+        """Parse from tool_calls in the message."""
+        if not message.tool_calls or not self.tools or not self.first_tool_only:  # type: ignore
+            return None
+
+        tool_class = self.tools[0]
+        for tool_call in message.tool_calls:  # type: ignore
+            args = tool_call.get("args", {})
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args)
+                except json.JSONDecodeError:
+                    args = {"raw_args": args}
+
+            # Try to instantiate the model
+            try:
+                if hasattr(tool_class, "model_validate"):
+                    return tool_class.model_validate(args)
+                else:
+                    return tool_class.parse_obj(args)
+            except Exception:
+                continue  # Try next tool call
+        return None
+
+    def _try_parse_json_content(self, message: BaseMessage) -> Optional[Any]:
+        """Parse from JSON content in the message."""
+        if not self.tools or not self.first_tool_only:
+            return None
+
+        content = message.content
+        if not content or not isinstance(content, str):
+            return None
+
+        # Only try parsing if it looks like JSON
+        if not (
+            (content.startswith("{") and content.endswith("}"))
+            or (content.startswith("[") and content.endswith("]"))
+        ):
+            return None
+
+        tool_class = self.tools[0]
+        try:
+            content_json = json.loads(content)
+
+            # Try different JSON formats
+            # 1. Direct parsing
+            try:
+                if hasattr(tool_class, "model_validate"):
+                    return tool_class.model_validate(content_json)
+                else:
+                    return tool_class.parse_obj(content_json)
+            except Exception:
+                pass
+
+            # 2. Parameters format
+            if isinstance(content_json, dict) and "parameters" in content_json:
+                try:
+                    params = content_json["parameters"]
+                    if hasattr(tool_class, "model_validate"):
+                        return tool_class.model_validate(params)
+                    else:
+                        return tool_class.parse_obj(params)
+                except Exception:
+                    pass
+
+            # 3. OpenAI function format
+            if isinstance(content_json, dict) and "function" in content_json:
+                try:
+                    func_data = content_json["function"]
+                    if "arguments" in func_data:
+                        args = func_data["arguments"]
+                        if isinstance(args, str):
+                            try:
+                                args = json.loads(args)
+                            except Exception:
+                                args = {"raw": args}
+
+                        if hasattr(tool_class, "model_validate"):
+                            return tool_class.model_validate(args)
+                        else:
+                            return tool_class.parse_obj(args)
+                except Exception:
+                    pass
+        except json.JSONDecodeError:
+            pass
+
+        return None
+
+    def _try_regex_extraction(self, message: BaseMessage) -> Optional[Any]:
+        """Extract JSON with regex as last resort."""
+        if not self.tools or not self.first_tool_only:
+            return None
+
+        content = message.content
+        if not content or not isinstance(content, str):
+            return None
+
+        tool_class = self.tools[0]
+        try:
+            import re
+
+            json_match = re.search(r"{.*}", content, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                try:
+                    data = json.loads(json_str)
+                    if hasattr(tool_class, "model_validate"):
+                        return tool_class.model_validate(data)
+                    else:
+                        return tool_class.parse_obj(data)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        return None
+
+
+class CloudflareJsonOutputKeyToolsParser(JsonOutputKeyToolsParser):
+    """Parser for Cloudflare Workers AI JSON tool outputs."""
+
+    def parse(self, message: BaseMessage) -> Any:  # type: ignore
+        """Parse the message with multiple strategies."""
+        # Try each parsing strategy in sequence
+        result = self._try_parse_tool_calls(message)
+        if result is not None:
+            return result
+
+        result = self._try_parse_json_content(message)
+        if result is not None:
+            return result
+
+        # Try parent class parsing
+        try:
+            return super().parse(message)  # type: ignore
+        except Exception as e:
+            # Last resort: try regex extraction
+            result = self._try_regex_extraction(message.content)
+            if result is not None:
+                return result
+            raise e
+
+    def _try_parse_tool_calls(self, message: BaseMessage) -> Optional[Any]:
+        """Parse from tool_calls in the message."""
+        if not message.tool_calls:  # type: ignore
+            return None
+
+        for tool_call in message.tool_calls:  # type: ignore
+            if tool_call.get("name") == self.key_name:
+                args = tool_call.get("args", {})
+                if isinstance(args, str):
+                    try:
+                        return json.loads(args)
+                    except json.JSONDecodeError:
+                        return {"raw": args}
+                return args
+        return None
+
+    def _try_parse_json_content(self, message: BaseMessage) -> Optional[Any]:
+        """Parse from JSON content in the message."""
+        content = message.content
+        if not content or not isinstance(content, str):
+            return None
+
+        # Only try parsing if it looks like JSON
+        if not (
+            (content.startswith("{") and content.endswith("}"))
+            or (content.startswith("[") and content.endswith("]"))
+        ):
+            return None
+
+        try:
+            content_json = json.loads(content)
+
+            # Try different formats
+            if isinstance(content_json, dict):
+                # 1. Direct key access
+                if self.key_name in content_json:
+                    return content_json[self.key_name]
+
+                # 2. Tool call format
+                if "name" in content_json and content_json.get("name") == self.key_name:
+                    return content_json.get("parameters", {})
+
+                # 3. OpenAI function format
+                if "function" in content_json:
+                    func_data = content_json["function"]
+                    if func_data.get("name") == self.key_name:
+                        args = func_data.get("arguments")
+                        if isinstance(args, str):
+                            try:
+                                return json.loads(args)
+                            except Exception:
+                                return {"raw": args}
+                        return args
+
+                # 4. Generic dict fallback
+                return content_json
+        except json.JSONDecodeError:
+            pass
+
+        return None
+
+    def _try_regex_extraction(self, content) -> Optional[Any]:  # type: ignore
+        """Extract JSON with regex as last resort."""
+        if not content or not isinstance(content, str):
+            return None
+
+        try:
+            import re
+
+            json_match = re.search(r"{.*}", content, re.DOTALL)
+            if json_match:
+                try:
+                    return json.loads(json_match.group(0))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        return None
+
+
+class CloudflarePydanticOutputParser(PydanticOutputParser):
+    """Parser for Cloudflare JSON mode with Pydantic validation."""
+
+    def parse(self, text: str) -> Any:
+        """Parse text with multiple strategies."""
+        if not text or not isinstance(text, str):
+            return super().parse(text)
+
+        # Only try parsing if it looks like JSON
+        if not (
+            (text.startswith("{") and text.endswith("}"))
+            or (text.startswith("[") and text.endswith("]"))
+        ):
+            return super().parse(text)
+
+        try:
+            data = json.loads(text)
+
+            # Try direct parsing
+            try:
+                if hasattr(self.pydantic_object, "model_validate"):
+                    return self.pydantic_object.model_validate(data)
+                else:
+                    return self.pydantic_object.parse_obj(data)
+            except Exception:
+                # Try parameters format
+                if isinstance(data, dict) and "parameters" in data:
+                    try:
+                        if hasattr(self.pydantic_object, "model_validate"):
+                            return self.pydantic_object.model_validate(
+                                data["parameters"]
+                            )
+                        else:
+                            return self.pydantic_object.parse_obj(data["parameters"])
+                    except Exception:
+                        pass
+        except json.JSONDecodeError:
+            pass
+
+        # Fallback to standard parsing
+        return super().parse(text)
+
+
+class CloudflareJsonOutputParser(JsonOutputParser):
+    """Parser for Cloudflare JSON mode outputs."""
+
+    def parse(self, text: str) -> Any:
+        """Parse text to extract JSON."""
+        if not text or not isinstance(text, str):
+            return super().parse(text)
+
+        # Extract JSON if present
+        if (text.startswith("{") and text.endswith("}")) or (
+            text.startswith("[") and text.endswith("]")
+        ):
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                pass
+
+        # Fallback to standard parsing
+        return super().parse(text)
