@@ -152,18 +152,8 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": True,
         "pricing": "Free trial, with pay-as-you-go and flat rate plans after",
     },
-    "Hyperbrowser Claude Computer Use Toolkit": {
-        "link": "/docs/integrations/tools/hyperbrowser_claude_computer_use_tool",
-        "interactions": True,
-        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
-    },
-    "Hyperbrowser OpenAI CUA Toolkit": {
-        "link": "/docs/integrations/tools/openai_cua_tool",
-        "interactions": True,
-        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
-    },
-    "Hyperbrowser Browser Use Toolkit": {
-        "link": "/docs/integrations/tools/browser_use_tool",
+    "Hyperbrowser Browser Agent Tools": {
+        "link": "/docs/integrations/tools/hyperbrowser_browser_agent_tools",
         "interactions": True,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
