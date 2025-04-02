@@ -155,9 +155,7 @@ class Reviver:
             msg = f"Cannot find class {class_name} in {namespace}"
             raise ValueError(msg)
         if not issubclass(cls, Serializable):
-            msg = (
-                f"Invalid namespace (not a Serializable subclass): {value}"
-            )
+            msg = f"Invalid namespace (not a Serializable subclass): {value}"
             raise TypeError(msg)
         kwargs = value.get("kwargs", {})
         return cls(**kwargs)
