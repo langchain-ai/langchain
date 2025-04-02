@@ -292,7 +292,7 @@ class DuckDB(VectorStore):
                         DUCKDB_FETCHALL_SIMILARITY_SCORE_INDEX
                     ],
                 }
-                if docs[idx]
+                if docs[idx][DUCKDB_FETCHALL_METADATA_INDEX]
                 else {},
             )
             for idx in range(len(docs))
