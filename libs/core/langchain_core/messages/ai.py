@@ -372,7 +372,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
-        elif isinstance(other, (list, tuple)) and all(
+        if isinstance(other, (list, tuple)) and all(
             isinstance(o, AIMessageChunk) for o in other
         ):
             return add_ai_message_chunks(self, *other)

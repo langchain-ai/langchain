@@ -53,8 +53,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _get_schema(self, pydantic_object: type[TBaseModel]) -> dict[str, Any]:
         if issubclass(pydantic_object, pydantic.BaseModel):
             return pydantic_object.model_json_schema()
-        elif issubclass(pydantic_object, pydantic.v1.BaseModel):
+        if issubclass(pydantic_object, pydantic.v1.BaseModel):
             return pydantic_object.schema()
+        return None
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
@@ -106,19 +107,18 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         """
         if self.pydantic_object is None:
             return "Return a JSON object."
-        else:
-            # Copy schema to avoid altering original Pydantic schema.
-            schema = dict(self._get_schema(self.pydantic_object).items())
+        # Copy schema to avoid altering original Pydantic schema.
+        schema = dict(self._get_schema(self.pydantic_object).items())
 
-            # Remove extraneous fields.
-            reduced_schema = schema
-            if "title" in reduced_schema:
-                del reduced_schema["title"]
-            if "type" in reduced_schema:
-                del reduced_schema["type"]
-            # Ensure json in context is well-formed with double quotes.
-            schema_str = json.dumps(reduced_schema, ensure_ascii=False)
-            return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
+        # Remove extraneous fields.
+        reduced_schema = schema
+        if "title" in reduced_schema:
+            del reduced_schema["title"]
+        if "type" in reduced_schema:
+            del reduced_schema["type"]
+        # Ensure json in context is well-formed with double quotes.
+        schema_str = json.dumps(reduced_schema, ensure_ascii=False)
+        return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
     @property
     def _type(self) -> str:

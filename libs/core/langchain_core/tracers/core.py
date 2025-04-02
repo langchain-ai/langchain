@@ -335,25 +335,23 @@ class _TracerCore(ABC):
         """Get the inputs for a chain run."""
         if self._schema_format in ("original", "original+chat"):
             return inputs if isinstance(inputs, dict) else {"input": inputs}
-        elif self._schema_format == "streaming_events":
+        if self._schema_format == "streaming_events":
             return {
                 "input": inputs,
             }
-        else:
-            msg = f"Invalid format: {self._schema_format}"
-            raise ValueError(msg)
+        msg = f"Invalid format: {self._schema_format}"
+        raise ValueError(msg)
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
         if self._schema_format in ("original", "original+chat"):
             return outputs if isinstance(outputs, dict) else {"output": outputs}
-        elif self._schema_format == "streaming_events":
+        if self._schema_format == "streaming_events":
             return {
                 "output": outputs,
             }
-        else:
-            msg = f"Invalid format: {self._schema_format}"
-            raise ValueError(msg)
+        msg = f"Invalid format: {self._schema_format}"
+        raise ValueError(msg)
 
     def _complete_chain_run(
         self,

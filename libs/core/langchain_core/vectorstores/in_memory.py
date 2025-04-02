@@ -431,24 +431,22 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         embedding = self.embedding.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
+        return self.similarity_search_with_score_by_vector(
             embedding,
             k,
             **kwargs,
         )
-        return docs
 
     @override
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[tuple[Document, float]]:
         embedding = await self.embedding.aembed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
+        return self.similarity_search_with_score_by_vector(
             embedding,
             k,
             **kwargs,
         )
-        return docs
 
     @override
     def similarity_search_by_vector(

@@ -103,7 +103,6 @@ ignore = [
     "PGH",
     "PLR",
     "PYI",
-    "RET",
     "RUF",
     "SLF",
     "TD",

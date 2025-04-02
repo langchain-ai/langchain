@@ -314,8 +314,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
             return wrapper
 
-        else:
-            return attr
+        return attr
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
@@ -462,8 +461,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 self.default.__class__(**{**init_params, **configurable}),
                 config,
             )
-        else:
-            return (self.default, config)
+        return (self.default, config)
 
 
 RunnableConfigurableFields.model_rebuild()
@@ -638,15 +636,13 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         # return the chosen alternative
         if which == self.default_key:
             return (self.default, config)
-        elif which in self.alternatives:
+        if which in self.alternatives:
             alt = self.alternatives[which]
             if isinstance(alt, Runnable):
                 return (alt, config)
-            else:
-                return (alt(), config)
-        else:
-            msg = f"Unknown alternative: {which}"
-            raise ValueError(msg)
+            return (alt(), config)
+        msg = f"Unknown alternative: {which}"
+        raise ValueError(msg)
 
 
 def _strremoveprefix(s: str, prefix: str) -> str:
@@ -714,12 +710,11 @@ def make_options_spec(
             default=spec.default,
             is_shared=spec.is_shared,
         )
-    else:
-        return ConfigurableFieldSpec(
-            id=spec.id,
-            name=spec.name,
-            description=spec.description or description,
-            annotation=Sequence[enum],  # type: ignore[valid-type]
-            default=spec.default,
-            is_shared=spec.is_shared,
-        )
+    return ConfigurableFieldSpec(
+        id=spec.id,
+        name=spec.name,
+        description=spec.description or description,
+        annotation=Sequence[enum],  # type: ignore[valid-type]
+        default=spec.default,
+        is_shared=spec.is_shared,
+    )
