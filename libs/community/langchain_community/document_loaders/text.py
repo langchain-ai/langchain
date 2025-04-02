@@ -56,7 +56,6 @@ class TextLoader(BaseLoader):
             if self.autodetect_encoding:
                 detected_encodings = detect_file_encodings(self.file_path)
                 for encoding in detected_encodings:
-                    logger.debug(f"Trying detected encoding: {encoding.encoding}")
                     try:
                         with open(self.file_path, encoding=encoding.encoding) as f:
                             text = f.read()
@@ -68,13 +67,9 @@ class TextLoader(BaseLoader):
                 for encoding in self.fallback_encodings:
                     if encoding == self.encoding:
                         continue
-                    logger.debug(f"Trying fallback encoding: {encoding}")
                     try:
                         with open(self.file_path, encoding=encoding) as f:
                             text = f.read()
-                        logger.info(
-                            f"Successfully loaded file with encoding: {encoding}"
-                        )
                         break
                     except UnicodeDecodeError:
                         continue
