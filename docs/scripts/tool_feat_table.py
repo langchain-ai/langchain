@@ -157,6 +157,11 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": True,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
+    "Hyperbrowser Web Scraping Tools": {
+        "link": "/docs/integrations/tools/hyperbrowser_web_scraping_tools",
+        "interactions": False,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
