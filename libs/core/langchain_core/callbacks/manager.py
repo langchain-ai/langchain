@@ -445,9 +445,6 @@ async def ahandle_event(
     )
 
 
-BRM = TypeVar("BRM", bound="BaseRunManager")
-
-
 class BaseRunManager(RunManagerMixin):
     """Base class for run manager (a bound callback manager)."""
 

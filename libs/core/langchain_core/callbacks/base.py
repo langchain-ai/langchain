@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from typing_extensions import Self
 
@@ -879,9 +879,6 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
         .. versionadded:: 0.2.15
         """
-
-
-T = TypeVar("T", bound="BaseCallbackManager")
 
 
 class BaseCallbackManager(CallbackManagerMixin):
