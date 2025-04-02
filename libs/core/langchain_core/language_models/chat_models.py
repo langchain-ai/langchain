@@ -81,6 +81,25 @@ if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
 
 
+def _generate_response_from_error(error: BaseException) -> LLMResult:
+    if hasattr(error, "response"):
+        response = error.response
+        metadata = {}
+        if hasattr(response, "headers"):
+            metadata["headers"] = response.headers
+        if hasattr(response, "status_code"):
+            metadata["status_code"] = response.status_code
+        if hasattr(response, "request_id"):
+            metadata["request_id"] = response.request_id
+        generations = [
+            [ChatGeneration(message=AIMessage(content="", response_metadata=metadata))]
+        ]
+    else:
+        generations = []
+
+    return LLMResult(generations=generations)
+
+
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     """Generate from a stream.
 
@@ -700,7 +719,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             except BaseException as e:
                 if run_managers:
-                    run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))
+                    response = _generate_response_from_error(e)
+                    run_managers[i].on_llm_error(e, response=response)
                 raise
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
