@@ -93,9 +93,7 @@ class FunctionCallbackHandler(BaseTracer):
         parents = self.get_parents(run)[::-1]
         return " > ".join(
             f"{parent.run_type}:{parent.name}"
-            if i != len(parents) - 1
-            else f"{parent.run_type}:{parent.name}"
-            for i, parent in enumerate(parents + [run])
+            for i, parent in enumerate([*parents, run])
         )
 
     # logging methods
