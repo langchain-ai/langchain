@@ -442,7 +442,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             if self.input_messages_key:
                 key = self.input_messages_key
             elif len(input_val) == 1:
-                key = list(input_val.keys())[0]
+                key = next(iter(input_val.keys()))
             else:
                 key = "input"
             input_val = input_val[key]
@@ -472,7 +472,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
             f"Got {input_val}."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
@@ -484,7 +484,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             if self.output_messages_key:
                 key = self.output_messages_key
             elif len(output_val) == 1:
-                key = list(output_val.keys())[0]
+                key = next(iter(output_val.keys()))
             else:
                 key = "output"
             # If you are wrapping a chat model directly
@@ -507,7 +507,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
             f"Got {output_val}."
         )
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
