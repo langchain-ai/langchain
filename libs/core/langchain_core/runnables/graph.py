@@ -195,10 +195,7 @@ def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
 
     if not is_uuid(id):
         return id
-    elif isinstance(data, Runnable):
-        data_str = data.get_name()
-    else:
-        data_str = data.__name__
+    data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
     return data_str if not data_str.startswith("Runnable") else data_str[8:]
 
 
@@ -449,8 +446,7 @@ class Graph:
             label = unique_labels[node_id]
             if is_uuid(node_id):
                 return label
-            else:
-                return node_id
+            return node_id
 
         return Graph(
             nodes={

@@ -320,25 +320,24 @@ def default_tool_parser(
     for raw_tool_call in raw_tool_calls:
         if "function" not in raw_tool_call:
             continue
-        else:
-            function_name = raw_tool_call["function"]["name"]
-            try:
-                function_args = json.loads(raw_tool_call["function"]["arguments"])
-                parsed = tool_call(
-                    name=function_name or "",
-                    args=function_args or {},
+        function_name = raw_tool_call["function"]["name"]
+        try:
+            function_args = json.loads(raw_tool_call["function"]["arguments"])
+            parsed = tool_call(
+                name=function_name or "",
+                args=function_args or {},
+                id=raw_tool_call.get("id"),
+            )
+            tool_calls.append(parsed)
+        except json.JSONDecodeError:
+            invalid_tool_calls.append(
+                invalid_tool_call(
+                    name=function_name,
+                    args=raw_tool_call["function"]["arguments"],
                     id=raw_tool_call.get("id"),
+                    error=None,
                 )
-                tool_calls.append(parsed)
-            except json.JSONDecodeError:
-                invalid_tool_calls.append(
-                    invalid_tool_call(
-                        name=function_name,
-                        args=raw_tool_call["function"]["arguments"],
-                        id=raw_tool_call.get("id"),
-                        error=None,
-                    )
-                )
+            )
     return tool_calls, invalid_tool_calls
 
 

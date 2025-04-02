@@ -501,8 +501,7 @@ class ChildTool(BaseTool):
             if isinstance(self.args_schema, dict):
                 return super().get_input_schema(config)
             return self.args_schema
-        else:
-            return create_schema_from_function(self.name, self._run)
+        return create_schema_from_function(self.name, self._run)
 
     @override
     def invoke(
@@ -550,58 +549,54 @@ class ChildTool(BaseTool):
                 else:
                     input_args.parse_obj({key_: tool_input})
             return tool_input
-        else:
-            if input_args is not None:
-                if isinstance(input_args, dict):
-                    return tool_input
-                elif issubclass(input_args, BaseModel):
-                    for k, v in get_all_basemodel_annotations(input_args).items():
-                        if (
-                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                            and k not in tool_input
-                        ):
-                            if tool_call_id is None:
-                                msg = (
-                                    "When tool includes an InjectedToolCallId "
-                                    "argument, tool must always be invoked with a full "
-                                    "model ToolCall of the form: {'args': {...}, "
-                                    "'name': '...', 'type': 'tool_call', "
-                                    "'tool_call_id': '...'}"
-                                )
-                                raise ValueError(msg)
-                            tool_input[k] = tool_call_id
-                    result = input_args.model_validate(tool_input)
-                    result_dict = result.model_dump()
-                elif issubclass(input_args, BaseModelV1):
-                    for k, v in get_all_basemodel_annotations(input_args).items():
-                        if (
-                            _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                            and k not in tool_input
-                        ):
-                            if tool_call_id is None:
-                                msg = (
-                                    "When tool includes an InjectedToolCallId "
-                                    "argument, tool must always be invoked with a full "
-                                    "model ToolCall of the form: {'args': {...}, "
-                                    "'name': '...', 'type': 'tool_call', "
-                                    "'tool_call_id': '...'}"
-                                )
-                                raise ValueError(msg)
-                            tool_input[k] = tool_call_id
-                    result = input_args.parse_obj(tool_input)
-                    result_dict = result.dict()
-                else:
-                    msg = (
-                        "args_schema must be a Pydantic BaseModel, "
-                        f"got {self.args_schema}"
-                    )
-                    raise NotImplementedError(msg)
-                return {
-                    k: getattr(result, k)
-                    for k, v in result_dict.items()
-                    if k in tool_input
-                }
-            return tool_input
+        if input_args is not None:
+            if isinstance(input_args, dict):
+                return tool_input
+            if issubclass(input_args, BaseModel):
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if (
+                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                        and k not in tool_input
+                    ):
+                        if tool_call_id is None:
+                            msg = (
+                                "When tool includes an InjectedToolCallId "
+                                "argument, tool must always be invoked with a full "
+                                "model ToolCall of the form: {'args': {...}, "
+                                "'name': '...', 'type': 'tool_call', "
+                                "'tool_call_id': '...'}"
+                            )
+                            raise ValueError(msg)
+                        tool_input[k] = tool_call_id
+                result = input_args.model_validate(tool_input)
+                result_dict = result.model_dump()
+            elif issubclass(input_args, BaseModelV1):
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if (
+                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
+                        and k not in tool_input
+                    ):
+                        if tool_call_id is None:
+                            msg = (
+                                "When tool includes an InjectedToolCallId "
+                                "argument, tool must always be invoked with a full "
+                                "model ToolCall of the form: {'args': {...}, "
+                                "'name': '...', 'type': 'tool_call', "
+                                "'tool_call_id': '...'}"
+                            )
+                            raise ValueError(msg)
+                        tool_input[k] = tool_call_id
+                result = input_args.parse_obj(tool_input)
+                result_dict = result.dict()
+            else:
+                msg = (
+                    f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
+                )
+                raise NotImplementedError(msg)
+            return {
+                k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
+            }
+        return tool_input
 
     @model_validator(mode="before")
     @classmethod
@@ -659,17 +654,16 @@ class ChildTool(BaseTool):
         # pass as a positional argument.
         if isinstance(tool_input, str):
             return (tool_input,), {}
-        elif isinstance(tool_input, dict):
+        if isinstance(tool_input, dict):
             # Make a shallow copy of the input to allow downstream code
             # to modify the root level of the input without affecting the
             # original input.
             # This is used by the tool to inject run time information like
             # the callback manager.
             return (), tool_input.copy()
-        else:
-            # This code path is not expected to be reachable.
-            msg = f"Invalid tool input type: {type(tool_input)}"
-            raise TypeError(msg)
+        # This code path is not expected to be reachable.
+        msg = f"Invalid tool input type: {type(tool_input)}"
+        raise TypeError(msg)
 
     def run(
         self,
@@ -1012,10 +1006,9 @@ def _is_message_content_block(obj: Any) -> bool:
     """Check for OpenAI or Anthropic format tool message content blocks."""
     if isinstance(obj, str):
         return True
-    elif isinstance(obj, dict):
+    if isinstance(obj, dict):
         return obj.get("type", None) in ("text", "image_url", "image", "json")
-    else:
-        return False
+    return False
 
 
 def _stringify(content: Any) -> str:
@@ -1153,18 +1146,16 @@ def _replace_type_vars(
     if isinstance(type_, TypeVar):
         if type_ in generic_map:
             return generic_map[type_]
-        elif default_to_bound:
+        if default_to_bound:
             return type_.__bound__ or Any
-        else:
-            return type_
-    elif (origin := get_origin(type_)) and (args := get_args(type_)):
+        return type_
+    if (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(
             _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
             for arg in args
         )
         return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
-    else:
-        return type_
+    return type_
 
 
 class BaseToolkit(BaseModel, ABC):
