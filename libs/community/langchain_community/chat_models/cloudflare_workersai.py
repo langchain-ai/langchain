@@ -1454,10 +1454,8 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                                                         if hasattr(
                                                             tool_class, "model_validate"
                                                         ):
-                                                            return (
-                                                                tool_class.model_validate(
-                                                                    args
-                                                                )
+                                                            return tool_class.model_validate(
+                                                                args
                                                             )
                                                         else:
                                                             return tool_class.parse_obj(
@@ -1651,10 +1649,8 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                                                     self.pydantic_object,
                                                     "model_validate",
                                                 ):
-                                                    return (
-                                                        self.pydantic_object.model_validate(
-                                                            data["parameters"]
-                                                        )
+                                                    return self.pydantic_object.model_validate(
+                                                        data["parameters"]
                                                     )
                                                 else:
                                                     return (
