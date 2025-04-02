@@ -568,3 +568,6 @@ packages:
 - name: langchain-oxylabs
   path: .
   repo: oxylabs/langchain-oxylabs
+- name: langchain-qwq
+  path: .
+  repo: yigit353/langchain-qwq
