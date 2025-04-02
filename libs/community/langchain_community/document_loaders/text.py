@@ -1,15 +1,24 @@
 import logging
 from pathlib import Path
-from typing import Iterator, Optional, Union, List
-
-from langchain_core.documents import Document
+from typing import Iterator, List, Optional, Union
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.helpers import detect_file_encodings
+from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
-COMMON_ENCODINGS = ["utf-8", "gb18030", "gbk", "gb2312", "iso-8859-1", "latin1", "cp936", "big5"]
+COMMON_ENCODINGS = [
+    "utf-8",
+    "gb18030",
+    "gbk",
+    "gb2312",
+    "iso-8859-1",
+    "latin1",
+    "cp936",
+    "big5",
+]
+
 
 class TextLoader(BaseLoader):
     """Load text file.
@@ -23,7 +32,7 @@ class TextLoader(BaseLoader):
 
         autodetect_encoding: Whether to try to autodetect the file encoding
             if the specified encoding fails.
-            
+
         fallback_encodings: List of encodings to try if the specified encoding fails.
     """
 
@@ -57,22 +66,26 @@ class TextLoader(BaseLoader):
                         break
                     except UnicodeDecodeError:
                         continue
-            
+
             if not text and self.fallback_encodings:
                 for encoding in self.fallback_encodings:
                     if encoding == self.encoding:
-                        continue 
+                        continue
                     logger.debug(f"Trying fallback encoding: {encoding}")
                     try:
                         with open(self.file_path, encoding=encoding) as f:
                             text = f.read()
-                        logger.info(f"Successfully loaded file with encoding: {encoding}")
+                        logger.info(
+                            f"Successfully loaded file with encoding: {encoding}"
+                        )
                         break
                     except UnicodeDecodeError:
                         continue
 
             if not text:
-                raise RuntimeError(f"Error loading {self.file_path}: Unable to decode with any encoding") from e
+                raise RuntimeError(
+                    f"Error loading {self.file_path}: Unable to decode with any encoding"
+                ) from e
         except Exception as e:
             raise RuntimeError(f"Error loading {self.file_path}") from e
 
