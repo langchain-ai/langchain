@@ -1,7 +1,6 @@
 """Test Perplexity Chat API wrapper."""
 
 from typing import Tuple, Type
-from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.language_models import BaseChatModel

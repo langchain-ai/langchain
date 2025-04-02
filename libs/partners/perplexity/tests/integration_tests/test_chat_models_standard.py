@@ -17,10 +17,10 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": "sonar"}
-    
+
     @property
     def has_structured_output(self) -> bool:
-        """Temporary, we don't have a high enough tier of Perplexity to test structured output."""
+        """We don't have a high enough tier of Perplexity to test structured output."""
         return False
 
     @pytest.mark.xfail(reason=("Not implemented"))
