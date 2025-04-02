@@ -63,6 +63,7 @@ langchain-chroma = { path = "./libs/partners/chroma", editable = true }
 langchain-fireworks = { path = "./libs/partners/fireworks", editable = true }
 langchain-groq = { path = "./libs/partners/groq", editable = true }
 langchain-mistralai = { path = "./libs/partners/mistralai", editable = true }
+langchain-perplexity = { path = "./libs/partners/perplexity", editable = true }
 
 [build-system]
 requires = ["pdm-backend"]
