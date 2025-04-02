@@ -5,8 +5,12 @@ from __future__ import annotations
 import enum
 import threading
 from abc import abstractmethod
-from collections.abc import AsyncIterator, Iterator, Sequence
-from collections.abc import Mapping as Mapping
+from collections.abc import (
+    AsyncIterator,
+    Iterator,
+    Mapping,  # noqa: F401 Needed by pydantic
+    Sequence,
+)
 from functools import wraps
 from typing import (
     TYPE_CHECKING,

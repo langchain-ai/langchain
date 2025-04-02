@@ -8,7 +8,6 @@ from abc import abstractmethod
 from collections import deque
 from io import StringIO
 from typing import TYPE_CHECKING, TypeVar, Union
-from typing import Optional as Optional
 
 from typing_extensions import override
 
