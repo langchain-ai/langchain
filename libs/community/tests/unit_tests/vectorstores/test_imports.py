@@ -103,6 +103,9 @@ EXPECTED_ALL = [
     "VLite",
     "Weaviate",
     "Yellowbrick",
+    "YDB",
+    "YDBSearchStrategy",
+    "YDBSettings",
     "ZepVectorStore",
     "ZepCloudVectorStore",
     "Zilliz",
@@ -120,6 +123,8 @@ def test_all_imports_exclusive() -> None:
             "DistanceStrategy",
             "KineticaSettings",
             "ManticoreSearchSettings",
+            "YDBSearchStrategy",
+            "YDBSettings",
         ]:
             assert issubclass(getattr(vectorstores, cls), VectorStore)
 

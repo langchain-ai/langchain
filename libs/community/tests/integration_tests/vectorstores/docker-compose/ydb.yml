@@ -1,0 +1,10 @@
+version: "3.3"
+services:
+  ydb:
+    image: ydbplatform/local-ydb:trunk
+    restart: always
+    ports:
+      - 2136:2136
+    hostname: localhost
+    environment:
+      - YDB_USE_IN_MEMORY_PDISKS=true

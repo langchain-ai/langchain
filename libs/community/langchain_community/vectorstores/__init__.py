@@ -300,6 +300,11 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.weaviate import (
         Weaviate,
     )
+    from langchain_community.vectorstores.ydb import (
+        YDB,
+        YDBSearchStrategy,
+        YDBSettings,
+    )
     from langchain_community.vectorstores.yellowbrick import (
         Yellowbrick,
     )
@@ -412,6 +417,9 @@ __all__ = [
     "VespaStore",
     "VLite",
     "Weaviate",
+    "YDB",
+    "YDBSearchStrategy",
+    "YDBSettings",
     "Yellowbrick",
     "ZepVectorStore",
     "ZepCloudVectorStore",
@@ -517,6 +525,9 @@ _module_lookup = {
     "VespaStore": "langchain_community.vectorstores.vespa",
     "VLite": "langchain_community.vectorstores.vlite",
     "Weaviate": "langchain_community.vectorstores.weaviate",
+    "YDB": "langchain_community.vectorstores.ydb",
+    "YDBSearchStrategy": "langchain_community.vectorstores.ydb",
+    "YDBSettings": "langchain_community.vectorstores.ydb",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",
     "ZepCloudVectorStore": "langchain_community.vectorstores.zep_cloud",
