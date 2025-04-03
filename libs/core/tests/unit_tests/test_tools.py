@@ -80,8 +80,7 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict:
 
     if hasattr(tool_schema, "model_json_schema"):
         return tool_schema.model_json_schema()
-    else:
-        return tool_schema.schema()
+    return tool_schema.schema()
 
 
 def test_unnamed_decorator() -> None:

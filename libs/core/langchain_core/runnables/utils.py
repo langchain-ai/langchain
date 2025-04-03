@@ -23,7 +23,7 @@ from typing import (
 from typing_extensions import TypeGuard, override
 
 # Re-export create-model for backwards compatibility
-from langchain_core.utils.pydantic import create_model as create_model
+from langchain_core.utils.pydantic import create_model  # noqa: F401
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -38,9 +38,9 @@ if TYPE_CHECKING:
 
     from langchain_core.runnables.schema import StreamEvent
 
-Input = TypeVar("Input", contravariant=True)
+Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 # Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output", covariant=True)
+Output = TypeVar("Output", covariant=True)  # noqa: PLC0105
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
@@ -440,11 +440,10 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                     for part in kk.split(".")[1:]:
                         if vv is None:
                             break
-                        else:
-                            try:
-                                vv = getattr(vv, part)
-                            except AttributeError:
-                                break
+                        try:
+                            vv = getattr(vv, part)
+                        except AttributeError:
+                            break
                     else:
                         values.append(vv)
     except (SyntaxError, TypeError, OSError, SystemError):

@@ -154,8 +154,7 @@ class PromptTemplate(StringPromptTemplate):
                 if k in partial_variables:
                     msg = "Cannot have same variable partialed twice."
                     raise ValueError(msg)
-                else:
-                    partial_variables[k] = v
+                partial_variables[k] = v
             return PromptTemplate(
                 template=template,
                 input_variables=input_variables,
@@ -163,12 +162,11 @@ class PromptTemplate(StringPromptTemplate):
                 template_format="f-string",
                 validate_template=validate_template,
             )
-        elif isinstance(other, str):
+        if isinstance(other, str):
             prompt = PromptTemplate.from_template(other)
             return self + prompt
-        else:
-            msg = f"Unsupported operand type for +: {type(other)}"
-            raise NotImplementedError(msg)
+        msg = f"Unsupported operand type for +: {type(other)}"
+        raise NotImplementedError(msg)
 
     @property
     def _prompt_type(self) -> str:
