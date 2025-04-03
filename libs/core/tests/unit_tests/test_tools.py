@@ -65,7 +65,8 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
-    PYDANTIC_MAJOR_VERSION,
+    IS_PYDANTIC_V1,
+    IS_PYDANTIC_V2,
     _create_subset_model,
     create_model_v2,
 )
@@ -2017,7 +2018,7 @@ def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
 def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
@@ -2086,7 +2087,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     assert actual == expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Testing pydantic v1.")
+@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Testing pydantic v1.")
 def test__get_all_basemodel_annotations_v1() -> None:
     A = TypeVar("A")
 
@@ -2214,7 +2215,7 @@ def test_create_retriever_tool() -> None:
     )
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Testing pydantic v2.")
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     from pydantic import BaseModel as BaseModelV2
     from pydantic import Field as FieldV2
