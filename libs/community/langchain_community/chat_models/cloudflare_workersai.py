@@ -986,7 +986,6 @@ class ChatCloudflareWorkersAI(BaseChatModel):
             tool_name = formatted_tool["function"]["name"]
             llm = self.bind_tools(
                 [schema],
-                tool_choice=tool_name,
                 ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
                     "schema": formatted_tool,
