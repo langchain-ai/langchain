@@ -2244,9 +2244,6 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 
-H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
-
-
 def _configure(
     callback_manager_cls: type[T],
     inheritable_callbacks: Callbacks = None,

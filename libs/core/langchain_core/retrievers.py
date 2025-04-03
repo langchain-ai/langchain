@@ -208,8 +208,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             default_retriever_name = default_retriever_name[:-9]
         default_retriever_name = default_retriever_name.lower()
 
-        ls_params = LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
-        return ls_params
+        return LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any

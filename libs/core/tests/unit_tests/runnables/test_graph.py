@@ -219,8 +219,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     def conditional_str_parser(input: str) -> Runnable:
         if input == "a":
             return str_parser
-        else:
-            return xml_parser
+        return xml_parser
 
     sequence: Runnable = (
         prompt

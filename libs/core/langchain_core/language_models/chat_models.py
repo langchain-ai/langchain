@@ -284,16 +284,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
         if isinstance(input, PromptValue):
             return input
-        elif isinstance(input, str):
+        if isinstance(input, str):
             return StringPromptValue(text=input)
-        elif isinstance(input, Sequence):
+        if isinstance(input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(input))
-        else:
-            msg = (
-                f"Invalid input type {type(input)}. "
-                "Must be a PromptValue, str, or list of BaseMessages."
-            )
-            raise ValueError(msg)  # noqa: TRY004
+        msg = (
+            f"Invalid input type {type(input)}. "
+            "Must be a PromptValue, str, or list of BaseMessages."
+        )
+        raise ValueError(msg)  # noqa: TRY004
 
     @override
     def invoke(
@@ -610,10 +609,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _cleanup_llm_representation(serialized_repr, 1)
             llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
-        else:
-            params = self._get_invocation_params(stop=stop, **kwargs)
-            params = {**params, **kwargs}
-            return str(sorted(params.items()))
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        params = {**params, **kwargs}
+        return str(sorted(params.items()))
 
     def generate(
         self,
@@ -1107,9 +1105,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         ).generations[0][0]
         if isinstance(generation, ChatGeneration):
             return generation.message
-        else:
-            msg = "Unexpected generation type"
-            raise ValueError(msg)  # noqa: TRY004
+        msg = "Unexpected generation type"
+        raise ValueError(msg)  # noqa: TRY004
 
     async def _call_async(
         self,
@@ -1124,9 +1121,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         generation = result.generations[0][0]
         if isinstance(generation, ChatGeneration):
             return generation.message
-        else:
-            msg = "Unexpected generation type"
-            raise ValueError(msg)  # noqa: TRY004
+        msg = "Unexpected generation type"
+        raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
@@ -1167,9 +1163,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         result = self([HumanMessage(content=text)], stop=_stop, **kwargs)
         if isinstance(result.content, str):
             return result.content
-        else:
-            msg = "Cannot use predict when output is not a string."
-            raise ValueError(msg)  # noqa: TRY004
+        msg = "Cannot use predict when output is not a string."
+        raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @override
@@ -1194,9 +1189,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         if isinstance(result.content, str):
             return result.content
-        else:
-            msg = "Cannot use predict when output is not a string."
-            raise ValueError(msg)  # noqa: TRY004
+        msg = "Cannot use predict when output is not a string."
+        raise ValueError(msg)  # noqa: TRY004
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @override
@@ -1391,8 +1385,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+        return llm | output_parser
 
 
 class SimpleChatModel(BaseChatModel):

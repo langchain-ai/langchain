@@ -266,9 +266,9 @@ def _convert_any_typed_dicts_to_pydantic(
 
     if type_ in visited:
         return visited[type_]
-    elif depth >= _MAX_TYPED_DICT_RECURSION:
+    if depth >= _MAX_TYPED_DICT_RECURSION:
         return type_
-    elif is_typeddict(type_):
+    if is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
         annotations_ = typed_dict.__annotations__
@@ -292,7 +292,7 @@ def _convert_any_typed_dicts_to_pydantic(
                         f"type {type(field_desc)}."
                     )
                     raise ValueError(msg)
-                elif arg_desc := arg_descriptions.get(arg):
+                if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 else:
                     pass
@@ -309,15 +309,14 @@ def _convert_any_typed_dicts_to_pydantic(
         model.__doc__ = description
         visited[typed_dict] = model
         return model
-    elif (origin := get_origin(type_)) and (type_args := get_args(type_)):
+    if (origin := get_origin(type_)) and (type_args := get_args(type_)):
         subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args  # type: ignore[index]
         )
         return subscriptable_origin[type_args]  # type: ignore[index]
-    else:
-        return type_
+    return type_
 
 
 def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
@@ -337,33 +336,31 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_json_schema_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        elif issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+        if issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        else:
-            error_msg = (
-                f"Unsupported tool call schema: {tool.tool_call_schema}. "
-                "Tool call schema must be a JSON schema dict or a Pydantic model."
-            )
-            raise ValueError(error_msg)
-    else:
-        return {
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": {
-                # This is a hack to get around the fact that some tools
-                # do not expose an args_schema, and expect an argument
-                # which is a string.
-                # And Open AI does not support an array type for the
-                # parameters.
-                "properties": {
-                    "__arg1": {"title": "__arg1", "type": "string"},
-                },
-                "required": ["__arg1"],
-                "type": "object",
+        error_msg = (
+            f"Unsupported tool call schema: {tool.tool_call_schema}. "
+            "Tool call schema must be a JSON schema dict or a Pydantic model."
+        )
+        raise ValueError(error_msg)
+    return {
+        "name": tool.name,
+        "description": tool.description,
+        "parameters": {
+            # This is a hack to get around the fact that some tools
+            # do not expose an args_schema, and expect an argument
+            # which is a string.
+            # And Open AI does not support an array type for the
+            # parameters.
+            "properties": {
+                "__arg1": {"title": "__arg1", "type": "string"},
             },
-        }
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
 
 
 format_tool_to_openai_function = deprecated(
@@ -730,7 +727,7 @@ def _parse_google_docstring(
             if block.startswith("Args:"):
                 args_block = block
                 break
-            elif block.startswith(("Returns:", "Example:")):
+            if block.startswith(("Returns:", "Example:")):
                 # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
