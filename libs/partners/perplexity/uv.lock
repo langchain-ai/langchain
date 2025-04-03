@@ -522,7 +522,7 @@ typing = [
 
 [[package]]
 name = "langchain-perplexity"
-version = "0.0.1"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -543,7 +543,6 @@ test = [
     { name = "freezegun" },
     { name = "langchain-core" },
     { name = "langchain-tests" },
-    { name = "numpy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -556,7 +555,6 @@ test = [
 ]
 test-integration = [
     { name = "httpx" },
-    { name = "numpy" },
     { name = "pillow" },
 ]
 typing = [
@@ -579,8 +577,6 @@ test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
@@ -593,8 +589,6 @@ test = [
 ]
 test-integration = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1,<2" },
-    { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.26.0,<2.0.0" },
     { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
 ]
 typing = [

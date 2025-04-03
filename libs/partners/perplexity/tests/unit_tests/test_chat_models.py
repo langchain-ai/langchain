@@ -1,26 +1,22 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
-import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from pytest_mock import MockerFixture
 
 from langchain_perplexity import ChatPerplexity
 
 
-@pytest.mark.requires("openai")
 def test_perplexity_model_name_param() -> None:
     llm = ChatPerplexity(model="foo")
     assert llm.model == "foo"
 
 
-@pytest.mark.requires("openai")
 def test_perplexity_model_kwargs() -> None:
     llm = ChatPerplexity(model="test", model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-@pytest.mark.requires("openai")
 def test_perplexity_initialization() -> None:
     """Test perplexity initialization."""
     # Verify that chat perplexity can be initialized using a secret key provided
@@ -44,7 +40,6 @@ def test_perplexity_initialization() -> None:
         )
 
 
-@pytest.mark.requires("openai")
 def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
     """Test that the stream method includes citations in the additional_kwargs."""
     llm = ChatPerplexity(model="test", timeout=30, verbose=True)
@@ -81,7 +76,6 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
     patcher.assert_called_once()
 
 
-@pytest.mark.requires("openai")
 def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) -> None:
     """Test that the stream method includes citations in the additional_kwargs."""
     llm = ChatPerplexity(model="test", timeout=30, verbose=True)
@@ -153,7 +147,6 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
     patcher.assert_called_once()
 
 
-@pytest.mark.requires("openai")
 def test_perplexity_stream_includes_citations_and_related_questions(
     mocker: MockerFixture,
 ) -> None:

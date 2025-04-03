@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+import openai
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
@@ -223,13 +224,6 @@ class ChatPerplexity(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
         try:
             self.client = openai.OpenAI(
                 api_key=self.pplx_api_key.get_secret_value()

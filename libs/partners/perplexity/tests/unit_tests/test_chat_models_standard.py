@@ -2,14 +2,12 @@
 
 from typing import Tuple, Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_perplexity import ChatPerplexity
 
 
-@pytest.mark.requires("openai")
 class TestPerplexityStandard(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
