@@ -543,9 +543,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             await run_manager.on_llm_error(err, response=LLMResult(generations=[]))
             raise err
 
-        await run_manager.on_llm_end(
-            LLMResult(generations=[[generation]]),
-        )
+        await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     # --- Custom methods ---
 
