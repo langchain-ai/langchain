@@ -26,7 +26,7 @@ class RaindropRetriever(BaseRetriever, BaseModel):
 
     Args:
         api_key (str, optional): Raindrop API key. If not provided, will try to get from RAINDROP_API_KEY env var.
-            You can obtain an API key by signing up at https://raindrop.run
+            You can obtain an API key by signing up at https://raindrop.run/
     """
 
     api_key: str = Field(default_factory=lambda: os.getenv("RAINDROP_API_KEY"))
