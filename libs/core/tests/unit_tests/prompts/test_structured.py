@@ -18,9 +18,8 @@ def _fake_runnable(
 ) -> Union[BaseModel, dict]:
     if isclass(schema) and is_basemodel_subclass(schema):
         return schema(name="yo", value=value)
-    else:
-        params = cast("dict", schema)["parameters"]
-        return {k: 1 if k != "value" else value for k, v in params.items()}
+    params = cast("dict", schema)["parameters"]
+    return {k: 1 if k != "value" else value for k, v in params.items()}
 
 
 class FakeStructuredChatModel(FakeListChatModel):

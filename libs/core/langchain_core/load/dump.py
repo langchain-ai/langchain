@@ -19,8 +19,7 @@ def default(obj: Any) -> Any:
     """
     if isinstance(obj, Serializable):
         return obj.to_json()
-    else:
-        return to_json_not_implemented(obj)
+    return to_json_not_implemented(obj)
 
 
 def _dump_pydantic_models(obj: Any) -> Any:
@@ -36,8 +35,7 @@ def _dump_pydantic_models(obj: Any) -> Any:
         obj_copy = obj.model_copy(deep=True)
         obj_copy.message.additional_kwargs["parsed"] = parsed.model_dump()
         return obj_copy
-    else:
-        return obj
+    return obj
 
 
 def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
@@ -64,14 +62,12 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
         if pretty:
             indent = kwargs.pop("indent", 2)
             return json.dumps(obj, default=default, indent=indent, **kwargs)
-        else:
-            return json.dumps(obj, default=default, **kwargs)
+        return json.dumps(obj, default=default, **kwargs)
     except TypeError:
         if pretty:
             indent = kwargs.pop("indent", 2)
             return json.dumps(to_json_not_implemented(obj), indent=indent, **kwargs)
-        else:
-            return json.dumps(to_json_not_implemented(obj), **kwargs)
+        return json.dumps(to_json_not_implemented(obj), **kwargs)
 
 
 def dumpd(obj: Any) -> Any:

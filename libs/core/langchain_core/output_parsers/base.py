@@ -97,13 +97,12 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return self._call_with_config(
-                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return self._call_with_config(
+            lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
     @override
     async def ainvoke(
@@ -121,13 +120,12 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return await self._acall_with_config(
+            lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
 
 class BaseOutputParser(
@@ -203,13 +201,12 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return self._call_with_config(
-                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return self._call_with_config(
+            lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
     @override
     async def ainvoke(
@@ -227,13 +224,12 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return await self._acall_with_config(
+            lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.

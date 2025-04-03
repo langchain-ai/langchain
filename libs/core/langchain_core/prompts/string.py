@@ -100,8 +100,7 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
     # noqa for insecure warning elsewhere
     env = Environment()  # noqa: S701
     ast = env.parse(template)
-    variables = meta.find_undeclared_variables(ast)
-    return variables
+    return meta.find_undeclared_variables(ast)
 
 
 def mustache_formatter(template: str, /, **kwargs: Any) -> str:

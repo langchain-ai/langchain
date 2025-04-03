@@ -1,5 +1,4 @@
 import time
-from typing import Optional as Optional
 
 import pytest
 from blockbuster import BlockBuster
