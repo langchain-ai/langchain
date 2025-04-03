@@ -568,6 +568,9 @@ packages:
 - name: langchain-oxylabs
   path: .
   repo: oxylabs/langchain-oxylabs
+- name: langchain-perplexity
+  path: libs/partners/perplexity
+  repo: langchain-ai/langchain
 - name: langchain-qwq
   path: .
   repo: yigit353/langchain-qwq
