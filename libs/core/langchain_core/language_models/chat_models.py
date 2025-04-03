@@ -84,9 +84,12 @@ if TYPE_CHECKING:
 def _generate_response_from_error(error: BaseException) -> LLMResult:
     if hasattr(error, "response"):
         response = error.response
-        metadata = {}
+        metadata: dict = {}
         if hasattr(response, "headers"):
-            metadata["headers"] = response.headers
+            try:
+                metadata["headers"] = dict(response.headers)
+            except Exception:
+                metadata["headers"] = None
         if hasattr(response, "status_code"):
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
@@ -97,7 +100,7 @@ def _generate_response_from_error(error: BaseException) -> LLMResult:
     else:
         generations = []
 
-    return LLMResult(generations=generations)
+    return LLMResult(generations=generations)  # type: ignore[arg-type]
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -827,9 +830,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         for i, res in enumerate(results):
             if isinstance(res, BaseException):
                 if run_managers:
-                    await run_managers[i].on_llm_error(
-                        res, response=LLMResult(generations=[])
-                    )
+                    response = _generate_response_from_error(res)
+                    await run_managers[i].on_llm_error(res, response=response)
                 exceptions.append(res)
         if exceptions:
             if run_managers:
