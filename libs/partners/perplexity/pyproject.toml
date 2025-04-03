@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = "<4.0,>=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.49",
+    "langchain-core<1.0.0,>=0.3.50",
     "openai<2.0.0,>=1.68.2",
 ]
 name = "langchain-perplexity"
