@@ -73,7 +73,7 @@ test = [
     "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
-    "numpy<3,>=1.26.4",
+    "numpy>=1.26.4",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
@@ -102,7 +102,8 @@ typing = [
     "mypy-protobuf<4.0.0,>=3.0.0",
     "langchain-core",
     "langchain-text-splitters",
-    "numpy<3,>=1.26.4",
+    "numpy>=1.26.4; python_version < \"3.12\"",
+    "numpy>2; python_version >= \"3.12\"",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",

@@ -19,4 +19,3 @@ runs:
       with:
         version: ${{ env.UV_VERSION }}
         python-version: ${{ inputs.python-version }}
-        enable-cache: true

@@ -38,8 +38,7 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
-    "numpy<2,>=1; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4",
 ]
 lint = ["ruff<1.0,>=0.5"]
 typing = ["mypy<2.0,>=1.10", "types-requests<3,>=2", "langchain-core"]
