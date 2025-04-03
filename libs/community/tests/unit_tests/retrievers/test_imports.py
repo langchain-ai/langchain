@@ -31,6 +31,7 @@ EXPECTED_ALL = [
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "QdrantSparseVectorRetriever",
+    "RaindropRetriever",
     "RemoteLangChainRetriever",
     "RememberizerRetriever",
     "SVMRetriever",

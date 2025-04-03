@@ -38,6 +38,7 @@ def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "httpx-sse",
             "langchain-core",
             "langsmith",
+            "lm_raindrop",
             "numpy",
             "requests",
             "pydantic-settings",
