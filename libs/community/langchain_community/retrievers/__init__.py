@@ -112,6 +112,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.remote_retriever import (
         RemoteLangChainRetriever,
     )
+    from langchain_community.retrievers.smartbuckets import (
+        RaindropRetriever,
+    )
     from langchain_community.retrievers.svm import (
         SVMRetriever,
     )
@@ -179,6 +182,7 @@ _module_lookup = {
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
     "PubMedRetriever": "langchain_community.retrievers.pubmed",
     "QdrantSparseVectorRetriever": "langchain_community.retrievers.qdrant_sparse_vector_retriever",  # noqa: E501
+    "RaindropRetriever": "langchain_community.retrievers.smartbuckets",
     "RememberizerRetriever": "langchain_community.retrievers.rememberizer",
     "RemoteLangChainRetriever": "langchain_community.retrievers.remote_retriever",
     "SVMRetriever": "langchain_community.retrievers.svm",
@@ -237,6 +241,7 @@ __all__ = [
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "QdrantSparseVectorRetriever",
+    "RaindropRetriever",
     "RememberizerRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",

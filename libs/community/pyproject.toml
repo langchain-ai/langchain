@@ -19,6 +19,7 @@ dependencies = [
     "langsmith<0.4,>=0.1.125",
     "httpx-sse<1.0.0,>=0.4.0",
     "numpy<3,>=1.26.2",
+    "lm_raindrop>=0.1.0",
 ]
 name = "langchain-community"
 version = "0.3.20"

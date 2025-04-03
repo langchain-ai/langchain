@@ -1,50 +1,63 @@
 """Retriever wrapper for Raindrop API."""
-from typing import List
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
+
+import json
+import os
+import uuid
+from typing import Any, List, Optional
+
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from lm_raindrop import AsyncRaindrop, Raindrop
 from pydantic import BaseModel, Field
-from lm_raindrop import Raindrop, AsyncRaindrop
-import os
-import json
-import uuid
+
 
 class RaindropRetriever(BaseRetriever, BaseModel):
     """Retriever that uses the Raindrop API for semantic search.
-    
-    This retriever uses the Raindrop API to perform semantic search across your saved documents.
-    For more information about the API, see: https://docs.liquidmetal.ai/
+
+    This retriever uses the Raindrop API to perform semantic search across your
+    saved documents. For more information about the API, see:
+    https://docs.liquidmetal.ai/
 
     Example:
         .. code-block:: python
 
             from raindrop_retriever import RaindropRetriever
-            
+
             # Will try to get API key from RAINDROP_API_KEY env var if not provided
-            retriever = RaindropRetriever(api_key="your-api-key")  # or just RaindropRetriever()
-            documents = retriever.invoke("your query")  # Use invoke instead of get_relevant_documents
+            retriever = RaindropRetriever(api_key="your-api-key")  # or just
+            # RaindropRetriever()
+            documents = retriever.invoke("your query")  # Use invoke instead of
+            # get_relevant_documents
 
     Args:
-        api_key (str, optional): Raindrop API key. If not provided, will try to get from RAINDROP_API_KEY env var.
-            You can obtain an API key by signing up at https://raindrop.run/
+        api_key (str, optional): Raindrop API key. If not provided, will try to get
+            from RAINDROP_API_KEY env var. You can obtain an API key by signing up
+            at https://raindrop.run/
     """
 
-    api_key: str = Field(default_factory=lambda: os.getenv("RAINDROP_API_KEY"))
-    client: Raindrop = None
-    async_client: AsyncRaindrop = None
+    api_key: Optional[str] = Field(
+        default_factory=lambda: os.getenv("RAINDROP_API_KEY")
+    )
+    client: Optional[Raindrop] = None
+    async_client: Optional[AsyncRaindrop] = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         # First call the parent class's __init__ to set up the model
         super().__init__(**kwargs)
-        
+
         # Then check for API key
         api_key = kwargs.get("api_key") or self.api_key
         if not api_key:
             raise ValueError(
-                "No API key provided. Please provide an API key either through the constructor "
-                "or by setting the RAINDROP_API_KEY environment variable."
+                "No API key provided. Please provide an API key either through "
+                "the constructor or by setting the RAINDROP_API_KEY environment "
+                "variable."
             )
-        
+
         # Initialize the clients
         self.client = Raindrop(api_key=api_key)
         self.async_client = AsyncRaindrop(api_key=api_key)
@@ -61,6 +74,9 @@ class RaindropRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
+        if self.client is None:
+            raise ValueError("Client not initialized")
+
         # Create a unique request ID for this search
         request_id = str(uuid.uuid4())
 
@@ -91,18 +107,18 @@ class RaindropRetriever(BaseRetriever, BaseModel):
                     "payload_signature": result.payload_signature,
                     "score": result.score,
                     "type": result.type,
-                    "source": source
-                }
+                    "source": source,
+                },
             )
             documents.append(doc)
 
         return documents
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
-        
+
         This implementation uses the AsyncRaindrop client for better performance.
 
         Args:
@@ -112,6 +128,9 @@ class RaindropRetriever(BaseRetriever, BaseModel):
         Returns:
             List of relevant documents
         """
+        if self.async_client is None:
+            raise ValueError("Async client not initialized")
+
         # Create a unique request ID for this search
         request_id = str(uuid.uuid4())
 
@@ -142,9 +161,9 @@ class RaindropRetriever(BaseRetriever, BaseModel):
                     "payload_signature": result.payload_signature,
                     "score": result.score,
                     "type": result.type,
-                    "source": source
-                }
+                    "source": source,
+                },
             )
             documents.append(doc)
 
-        return documents 
+        return documents
