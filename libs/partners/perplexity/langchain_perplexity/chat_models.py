@@ -397,11 +397,14 @@ class ChatPerplexity(BaseChatModel):
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
+        print(response)
         message = AIMessage(
             content=response.choices[0].message.content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,
-            response_metadata={"model_name": self.model},
+            response_metadata={
+                "model_name": getattr(response, "model", self.model)
+            },
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
