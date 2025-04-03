@@ -1402,7 +1402,7 @@ class CloudflareJsonOutputKeyToolsParser(JsonOutputKeyToolsParser):
         return None
 
 
-class CloudflarePydanticOutputParser(PydanticOutputParser):
+class CloudflarePydanticOutputParser(PydanticOutputParser):  # type: ignore
     """Parser for Cloudflare JSON mode with Pydantic validation."""
 
     def parse(self, text: str) -> Any:  # type: ignore
