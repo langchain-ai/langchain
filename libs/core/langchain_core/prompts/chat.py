@@ -1212,7 +1212,23 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         result = []
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):
-                result.extend([message_template])
+                content = message_template.content
+                if isinstance(content, str) and "{" in content and "}" in content:
+                    variables = get_template_variables(content, "f-string")
+
+                    if variables and all(var in kwargs for var in variables):
+                        formatted_content = PromptTemplate.from_template(
+                            content
+                        ).format(**kwargs)
+
+                        result.append(
+                            type(message_template)(
+                                content=formatted_content,
+                                additional_kwargs=message_template.additional_kwargs,
+                            )
+                        )
+                        continue
+                result.append(message_template)
             elif isinstance(
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
@@ -1240,7 +1256,23 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         result = []
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):
-                result.extend([message_template])
+                content = message_template.content
+                if isinstance(content, str) and "{" in content and "}" in content:
+                    variables = get_template_variables(content, "f-string")
+
+                    if variables and all(var in kwargs for var in variables):
+                        formatted_content = await PromptTemplate.from_template(
+                            content
+                        ).aformat(**kwargs)
+
+                        result.append(
+                            type(message_template)(
+                                content=formatted_content,
+                                additional_kwargs=message_template.additional_kwargs,
+                            )
+                        )
+                        continue
+                result.append(message_template)
             elif isinstance(
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
