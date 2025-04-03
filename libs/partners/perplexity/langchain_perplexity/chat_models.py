@@ -39,7 +39,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.ai import UsageMetadata, subtract_usage
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -290,7 +290,11 @@ class ChatPerplexity(BaseChatModel):
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
         elif role == "assistant" or default_class == AIMessageChunk:
-            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+            return AIMessageChunk(
+                content=content,
+                response_metadata={"model_name": self.model},
+                additional_kwargs=additional_kwargs,
+            )
         elif role == "system" or default_class == SystemMessageChunk:
             return SystemMessageChunk(content=content)
         elif role == "function" or default_class == FunctionMessageChunk:
@@ -327,14 +331,9 @@ class ChatPerplexity(BaseChatModel):
             if total_usage := chunk.get("usage"):
                 lc_total_usage = _create_usage_metadata(total_usage)
                 if prev_total_usage:
-                    usage_metadata: Optional[UsageMetadata] = {
-                        "input_tokens": lc_total_usage["input_tokens"]
-                        - prev_total_usage["input_tokens"],
-                        "output_tokens": lc_total_usage["output_tokens"]
-                        - prev_total_usage["output_tokens"],
-                        "total_tokens": lc_total_usage["total_tokens"]
-                        - prev_total_usage["total_tokens"],
-                    }
+                    usage_metadata: Optional[UsageMetadata] = subtract_usage(
+                        lc_total_usage, prev_total_usage
+                    )
                 else:
                     usage_metadata = lc_total_usage
                 prev_total_usage = lc_total_usage
@@ -402,6 +401,7 @@ class ChatPerplexity(BaseChatModel):
             content=response.choices[0].message.content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,
+            response_metadata={"model_name": self.model},
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 

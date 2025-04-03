@@ -23,14 +23,6 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
         """We don't have a high enough tier of Perplexity to test structured output."""
         return False
 
-    @pytest.mark.xfail(reason=("Not implemented"))
-    def test_usage_metadata(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata(model)
-
-    @pytest.mark.xfail(reason=("Not implemented"))
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata_streaming(model)
-
     @pytest.mark.xfail(reason="TODO: handle in integration.")
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
         super().test_double_messages_conversation(model)
