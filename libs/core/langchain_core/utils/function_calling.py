@@ -244,10 +244,9 @@ convert_python_function_to_openai_function = deprecated(
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
     visited: dict = {}
-    from pydantic.v1 import BaseModel
 
     model = cast(
-        type[BaseModel],
+        "type[BaseModel]",
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
     return _convert_pydantic_to_openai_function(model)  # type: ignore
@@ -267,9 +266,9 @@ def _convert_any_typed_dicts_to_pydantic(
 
     if type_ in visited:
         return visited[type_]
-    elif depth >= _MAX_TYPED_DICT_RECURSION:
+    if depth >= _MAX_TYPED_DICT_RECURSION:
         return type_
-    elif is_typeddict(type_):
+    if is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
         annotations_ = typed_dict.__annotations__
@@ -293,7 +292,7 @@ def _convert_any_typed_dicts_to_pydantic(
                         f"type {type(field_desc)}."
                     )
                     raise ValueError(msg)
-                elif arg_desc := arg_descriptions.get(arg):
+                if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 else:
                     pass
@@ -310,15 +309,14 @@ def _convert_any_typed_dicts_to_pydantic(
         model.__doc__ = description
         visited[typed_dict] = model
         return model
-    elif (origin := get_origin(type_)) and (type_args := get_args(type_)):
+    if (origin := get_origin(type_)) and (type_args := get_args(type_)):
         subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args  # type: ignore[index]
         )
         return subscriptable_origin[type_args]  # type: ignore[index]
-    else:
-        return type_
+    return type_
 
 
 def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
@@ -338,33 +336,31 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_json_schema_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        elif issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+        if issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        else:
-            error_msg = (
-                f"Unsupported tool call schema: {tool.tool_call_schema}. "
-                "Tool call schema must be a JSON schema dict or a Pydantic model."
-            )
-            raise ValueError(error_msg)
-    else:
-        return {
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": {
-                # This is a hack to get around the fact that some tools
-                # do not expose an args_schema, and expect an argument
-                # which is a string.
-                # And Open AI does not support an array type for the
-                # parameters.
-                "properties": {
-                    "__arg1": {"title": "__arg1", "type": "string"},
-                },
-                "required": ["__arg1"],
-                "type": "object",
+        error_msg = (
+            f"Unsupported tool call schema: {tool.tool_call_schema}. "
+            "Tool call schema must be a JSON schema dict or a Pydantic model."
+        )
+        raise ValueError(error_msg)
+    return {
+        "name": tool.name,
+        "description": tool.description,
+        "parameters": {
+            # This is a hack to get around the fact that some tools
+            # do not expose an args_schema, and expect an argument
+            # which is a string.
+            # And Open AI does not support an array type for the
+            # parameters.
+            "properties": {
+                "__arg1": {"title": "__arg1", "type": "string"},
             },
-        }
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
 
 
 format_tool_to_openai_function = deprecated(
@@ -471,15 +467,17 @@ def convert_to_openai_function(
         if function_copy and "properties" in function_copy:
             oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast(dict, _convert_pydantic_to_openai_function(function))
+        oai_function = cast("dict", _convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
         oai_function = cast(
-            dict, _convert_typed_dict_to_openai_function(cast(type, function))
+            "dict", _convert_typed_dict_to_openai_function(cast("type", function))
         )
     elif isinstance(function, BaseTool):
-        oai_function = cast(dict, _format_tool_to_openai_function(function))
+        oai_function = cast("dict", _format_tool_to_openai_function(function))
     elif callable(function):
-        oai_function = cast(dict, _convert_python_function_to_openai_function(function))
+        oai_function = cast(
+            "dict", _convert_python_function_to_openai_function(function)
+        )
     else:
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -671,21 +669,21 @@ def tool_example_to_messages(
                 )
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]
-    openai_tool_calls = []
-    for tool_call in tool_calls:
-        openai_tool_calls.append(
-            {
-                "id": str(uuid.uuid4()),
-                "type": "function",
-                "function": {
-                    # The name of the function right now corresponds to the name
-                    # of the pydantic model. This is implicit in the API right now,
-                    # and will be improved over time.
-                    "name": tool_call.__class__.__name__,
-                    "arguments": tool_call.model_dump_json(),
-                },
-            }
-        )
+    openai_tool_calls = [
+        {
+            "id": str(uuid.uuid4()),
+            "type": "function",
+            "function": {
+                # The name of the function right now corresponds to the name
+                # of the pydantic model. This is implicit in the API right now,
+                # and will be improved over time.
+                "name": tool_call.__class__.__name__,
+                "arguments": tool_call.model_dump_json(),
+            },
+        }
+        for tool_call in tool_calls
+    ]
+
     messages.append(
         AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
     )
@@ -729,7 +727,7 @@ def _parse_google_docstring(
             if block.startswith("Args:"):
                 args_block = block
                 break
-            elif block.startswith(("Returns:", "Example:")):
+            if block.startswith(("Returns:", "Example:")):
                 # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
@@ -775,7 +773,7 @@ def _py_38_safe_origin(origin: type) -> type:
         collections.abc.MutableMapping: typing.MutableMapping,
         **origin_union_type_map,
     }
-    return cast(type, origin_map.get(origin, origin))
+    return cast("type", origin_map.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

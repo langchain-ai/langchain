@@ -1,3 +1,5 @@
+"""Runnable that routes to a set of Runnables."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -12,7 +14,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain_core.runnables.base import (
     Input,
@@ -50,28 +52,27 @@ class RouterInput(TypedDict):
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """Runnable that routes to a set of Runnables based on Input['key'].
+
     Returns the output of the selected Runnable.
 
-    Parameters:
-        runnables: A mapping of keys to Runnables.
+    Example:
 
-    For example,
+        .. code-block:: python
 
-    .. code-block:: python
+            from langchain_core.runnables.router import RouterRunnable
+            from langchain_core.runnables import RunnableLambda
 
-        from langchain_core.runnables.router import RouterRunnable
-        from langchain_core.runnables import RunnableLambda
+            add = RunnableLambda(func=lambda x: x + 1)
+            square = RunnableLambda(func=lambda x: x**2)
 
-        add = RunnableLambda(func=lambda x: x + 1)
-        square = RunnableLambda(func=lambda x: x**2)
-
-        router = RouterRunnable(runnables={"add": add, "square": square})
-        router.invoke({"key": "square", "input": 3})
+            router = RouterRunnable(runnables={"add": add, "square": square})
+            router.invoke({"key": "square", "input": 3})
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             spec for step in self.runnables.values() for spec in step.config_specs
@@ -81,6 +82,11 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         self,
         runnables: Mapping[str, Union[Runnable[Any, Output], Callable[[Any], Output]]],
     ) -> None:
+        """Create a RouterRunnable.
+
+        Args:
+            runnables: A mapping of keys to Runnables.
+        """
         super().__init__(  # type: ignore[call-arg]
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
@@ -90,15 +96,18 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable."""
         return True
 
     @classmethod
+    @override
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
+    @override
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -111,6 +120,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         runnable = self.runnables[key]
         return runnable.invoke(actual_input, config)
 
+    @override
     async def ainvoke(
         self,
         input: RouterInput,
@@ -126,6 +136,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         runnable = self.runnables[key]
         return await runnable.ainvoke(actual_input, config)
 
+    @override
     def batch(
         self,
         inputs: list[RouterInput],
@@ -158,10 +169,11 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         configs = get_config_list(config, len(inputs))
         with get_executor_for_config(configs[0]) as executor:
             return cast(
-                list[Output],
+                "list[Output]",
                 list(executor.map(invoke, runnables, actual_inputs, configs)),
             )
 
+    @override
     async def abatch(
         self,
         inputs: list[RouterInput],
@@ -197,6 +209,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             *starmap(ainvoke, zip(runnables, actual_inputs, configs)),
         )
 
+    @override
     def stream(
         self,
         input: RouterInput,
@@ -212,6 +225,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         runnable = self.runnables[key]
         yield from runnable.stream(actual_input, config)
 
+    @override
     async def astream(
         self,
         input: RouterInput,

@@ -1,3 +1,5 @@
+"""Output parsers using Pydantic."""
+
 import json
 from typing import Annotated, Generic, Optional
 
@@ -26,12 +28,11 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             try:
                 if issubclass(self.pydantic_object, pydantic.BaseModel):
                     return self.pydantic_object.model_validate(obj)
-                elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
+                if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
-                else:
-                    msg = f"Unsupported model version for PydanticOutputParser: \
+                msg = f"Unsupported model version for PydanticOutputParser: \
                             {self.pydantic_object.__class__}"
-                    raise OutputParserException(msg)
+                raise OutputParserException(msg)
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
                 raise self._parser_exception(e, obj) from e
         else:  # pydantic v1

@@ -456,6 +456,12 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
+    stream_usage: bool = False
+    """Whether to include usage metadata in streaming output. If True, an additional
+    message chunk will be generated during the stream including usage metadata.
+
+    .. versionadded:: 0.3.9
+    """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
     presence_penalty: Optional[float] = None
@@ -811,14 +817,38 @@ class BaseChatOpenAI(BaseChatModel):
                     is_first_chunk = False
                     yield generation_chunk
 
+    def _should_stream_usage(
+        self, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of precedence
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
     def _stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
@@ -1005,9 +1035,14 @@ class BaseChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
@@ -1263,6 +1298,12 @@ class BaseChatOpenAI(BaseChatModel):
                                 encoding.encode(val["function"]["arguments"])
                             )
                             num_tokens += len(encoding.encode(val["function"]["name"]))
+                        elif val["type"] == "file":
+                            warnings.warn(
+                                "Token counts for file inputs are not supported. "
+                                "Ignoring file inputs."
+                            )
+                            pass
                         else:
                             raise ValueError(
                                 f"Unrecognized content block type\n\n{val}"
@@ -1436,6 +1477,7 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
+        tools: Optional[list] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1496,6 +1538,51 @@ class BaseChatOpenAI(BaseChatModel):
                 - None:
                     ``strict`` argument will not be passed to the model.
 
+            tools:
+                A list of tool-like objects to bind to the chat model. Requires that:
+
+                - ``method`` is ``"json_schema"`` (default).
+                - ``strict=True``
+                - ``include_raw=True``
+
+                If a model elects to call a
+                tool, the resulting ``AIMessage`` in ``"raw"`` will include tool calls.
+
+                .. dropdown:: Example
+
+                    .. code-block:: python
+
+                        from langchain.chat_models import init_chat_model
+                        from pydantic import BaseModel
+
+
+                        class ResponseSchema(BaseModel):
+                            response: str
+
+
+                        def get_weather(location: str) -> str:
+                            \"\"\"Get weather at a location.\"\"\"
+                            pass
+
+                        llm = init_chat_model("openai:gpt-4o-mini")
+
+                        structured_llm = llm.with_structured_output(
+                            ResponseSchema,
+                            tools=[get_weather],
+                            strict=True,
+                            include_raw=True,
+                        )
+
+                        structured_llm.invoke("What's the weather in Boston?")
+
+                    .. code-block:: python
+
+                        {
+                            "raw": AIMessage(content="", tool_calls=[...], ...),
+                            "parsing_error": None,
+                            "parsed": None,
+                        }
+
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1517,6 +1604,9 @@ class BaseChatOpenAI(BaseChatModel):
 
             Support for ``strict`` argument added.
             Support for ``method`` = "json_schema" added.
+
+        .. versionchanged:: 0.3.12
+            Support for ``tools`` added.
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
@@ -1601,13 +1691,18 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(
+            bind_kwargs = dict(
                 response_format=response_format,
                 ls_structured_output_format={
                     "kwargs": {"method": method, "strict": strict},
                     "schema": convert_to_openai_tool(schema),
                 },
             )
+            if tools:
+                bind_kwargs["tools"] = [
+                    convert_to_openai_tool(t, strict=strict) for t in tools
+                ]
+            llm = self.bind(**bind_kwargs)
             if is_pydantic_schema:
                 output_parser = RunnableLambda(
                     partial(_oai_structured_outputs_parser, schema=cast(type, schema))
@@ -2202,11 +2297,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     """  # noqa: E501
 
-    stream_usage: bool = False
-    """Whether to include usage metadata in streaming output. If True, additional
-    message chunks will be generated during the stream including usage metadata.
-    """
-
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
@@ -2268,55 +2358,21 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     message["role"] = "developer"
         return payload
 
-    def _should_stream_usage(
-        self, stream_usage: Optional[bool] = None, **kwargs: Any
-    ) -> bool:
-        """Determine whether to include usage metadata in streaming output.
-
-        For backwards compatibility, we check for `stream_options` passed
-        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
-        """
-        stream_usage_sources = [  # order of preference
-            stream_usage,
-            kwargs.get("stream_options", {}).get("include_usage"),
-            self.model_kwargs.get("stream_options", {}).get("include_usage"),
-            self.stream_usage,
-        ]
-        for source in stream_usage_sources:
-            if isinstance(source, bool):
-                return source
-        return self.stream_usage
-
-    def _stream(
-        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
-    ) -> Iterator[ChatGenerationChunk]:
-        """Set default stream_options."""
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
             return super()._stream_responses(*args, **kwargs)
         else:
-            stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-            # Note: stream_options is not a valid parameter for Azure OpenAI.
-            # To support users proxying Azure through ChatOpenAI, here we only specify
-            # stream_options if include_usage is set to True.
-            # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
-            # for release notes.
-            if stream_usage:
-                kwargs["stream_options"] = {"include_usage": stream_usage}
-
             return super()._stream(*args, **kwargs)
 
     async def _astream(
-        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> AsyncIterator[ChatGenerationChunk]:
-        """Set default stream_options."""
+        """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
         else:
-            stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-            if stream_usage:
-                kwargs["stream_options"] = {"include_usage": stream_usage}
-
             async for chunk in super()._astream(*args, **kwargs):
                 yield chunk
 
@@ -2774,7 +2830,7 @@ def _convert_to_openai_response_format(
 
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: Type[_BM]
-) -> PydanticBaseModel:
+) -> Optional[PydanticBaseModel]:
     if parsed := ai_msg.additional_kwargs.get("parsed"):
         if isinstance(parsed, dict):
             return schema(**parsed)
@@ -2782,6 +2838,8 @@ def _oai_structured_outputs_parser(
             return parsed
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
+    elif ai_msg.tool_calls:
+        return None
     else:
         raise ValueError(
             "Structured Output response does not have a 'parsed' field nor a 'refusal' "

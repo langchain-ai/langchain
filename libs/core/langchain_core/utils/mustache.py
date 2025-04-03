@@ -1,4 +1,5 @@
-"""Adapted from https://github.com/noahmorrison/chevron
+"""Adapted from https://github.com/noahmorrison/chevron.
+
 MIT License.
 """
 
@@ -83,8 +84,7 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         # Then the next tag could be a standalone
         # Otherwise it can't be
         return padding.isspace() or padding == ""
-    else:
-        return False
+    return False
 
 
 def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
@@ -106,8 +106,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
-    else:
-        return False
+    return False
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
@@ -125,8 +124,6 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         ChevronError: If the tag is unclosed.
         ChevronError: If the set delimiter tag is unclosed.
     """
-    global _CURRENT_LINE, _LAST_TAG_LINE
-
     tag_types = {
         "!": "comment",
         "#": "section",
@@ -325,14 +322,15 @@ def _html_escape(string: str) -> str:
 
     # & must be handled first
     string = string.replace("&", "&amp;")
-    for char in html_codes:
-        string = string.replace(char, html_codes[char])
+    for char, code in html_codes.items():
+        string = string.replace(char, code)
     return string
 
 
 def _get_key(
     key: str,
     scopes: Scopes,
+    *,
     warn: bool,
     keep: bool,
     def_ldel: str,
@@ -352,32 +350,33 @@ def _get_key(
             if scope in (0, False):
                 return scope
 
+            resolved_scope = scope
             # For every dot separated key
             for child in key.split("."):
                 # Return an empty string if falsy, with two exceptions
                 # 0 should return 0, and False should return False
-                if scope in (0, False):
-                    return scope
+                if resolved_scope in (0, False):
+                    return resolved_scope
                 # Move into the scope
                 try:
                     # Try subscripting (Normal dictionaries)
-                    scope = cast(dict[str, Any], scope)[child]
+                    resolved_scope = cast("dict[str, Any]", resolved_scope)[child]
                 except (TypeError, AttributeError):
                     try:
-                        scope = getattr(scope, child)
+                        resolved_scope = getattr(resolved_scope, child)
                     except (TypeError, AttributeError):
                         # Try as a list
-                        scope = scope[int(child)]  # type: ignore
+                        resolved_scope = resolved_scope[int(child)]  # type: ignore
 
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if scope._CHEVRON_return_scope_when_falsy:  # type: ignore
-                    return scope
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore
+                    return resolved_scope
             except AttributeError:
-                if scope in (0, False):
-                    return scope
-                return scope or ""
+                if resolved_scope in (0, False):
+                    return resolved_scope
+                return resolved_scope or ""
         except (AttributeError, KeyError, IndexError, ValueError):
             # We couldn't find the key in the current scope
             # We'll try again on the next pass
@@ -386,7 +385,7 @@ def _get_key(
     # We couldn't find the key in any of the scopes
 
     if warn:
-        logger.warn(f"Could not find key '{key}'")
+        logger.warning("Could not find key '%s'", key)
 
     if keep:
         return f"{def_ldel} {key} {def_rdel}"
@@ -619,7 +618,7 @@ def render(
             scope = _get_key(
                 key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel
             )
-            scopes.insert(0, cast(Literal[False], not scope))
+            scopes.insert(0, cast("Literal[False]", not scope))
 
         # If we're a partial
         elif tag == "partial":

@@ -1,3 +1,5 @@
+"""Configuration utilities for Runnables."""
+
 from __future__ import annotations
 
 import asyncio
@@ -200,7 +202,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if var_config := var_child_runnable_config.get():
         empty.update(
             cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
                     for k, v in var_config.items()
@@ -211,7 +213,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if config is not None:
         empty.update(
             cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
                     for k, v in config.items()
@@ -271,7 +273,7 @@ def get_config_list(
             stacklevel=3,
         )
         subsequent = cast(
-            RunnableConfig, {k: v for k, v in config.items() if k != "run_id"}
+            "RunnableConfig", {k: v for k, v in config.items() if k != "run_id"}
         )
         return [
             ensure_config(subsequent) if i else ensure_config(config)
@@ -407,18 +409,14 @@ def call_func_with_variable_args(
     """Call function that may optionally accept a run_manager and/or config.
 
     Args:
-        func (Union[Callable[[Input], Output],
-          Callable[[Input, CallbackManagerForChainRun], Output],
-          Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output]]):
-           The function to call.
-        input (Input): The input to the function.
-        config (RunnableConfig): The config to pass to the function.
-        run_manager (CallbackManagerForChainRun): The run manager to
-          pass to the function. Defaults to None.
-        **kwargs (Any): The keyword arguments to pass to the function.
+        func: The function to call.
+        input: The input to the function.
+        config: The config to pass to the function.
+        run_manager: The run manager to pass to the function. Defaults to None.
+        **kwargs: The keyword arguments to pass to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
     if accepts_config(func):
         if run_manager is not None:
@@ -448,18 +446,14 @@ def acall_func_with_variable_args(
     """Async call function that may optionally accept a run_manager and/or config.
 
     Args:
-        func (Union[Callable[[Input], Awaitable[Output]], Callable[[Input,
-            AsyncCallbackManagerForChainRun], Awaitable[Output]], Callable[[Input,
-            AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]]]):
-            The function to call.
-        input (Input): The input to the function.
-        config (RunnableConfig): The config to pass to the function.
-        run_manager (AsyncCallbackManagerForChainRun): The run manager
-          to pass to the function. Defaults to None.
-        **kwargs (Any): The keyword arguments to pass to the function.
+        func: The function to call.
+        input: The input to the function.
+        config: The config to pass to the function.
+        run_manager: The run manager to pass to the function. Defaults to None.
+        **kwargs: The keyword arguments to pass to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
     if accepts_config(func):
         if run_manager is not None:
@@ -533,7 +527,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             Future[T]: The future for the function.
         """
         return super().submit(
-            cast(Callable[..., T], partial(copy_context().run, func, *args, **kwargs))
+            cast("Callable[..., T]", partial(copy_context().run, func, *args, **kwargs))
         )
 
     def map(
@@ -621,7 +615,7 @@ async def run_in_executor(
         # Use default executor with context copied from current context
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            cast(Callable[..., T], partial(copy_context().run, wrapper)),
+            cast("Callable[..., T]", partial(copy_context().run, wrapper)),
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)

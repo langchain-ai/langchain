@@ -1,3 +1,5 @@
+"""Base classes for media and documents."""
+
 from __future__ import annotations
 
 import contextlib
@@ -45,10 +47,14 @@ class BaseMedia(Serializable):
 
     @field_validator("id", mode="before")
     def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
+        """Coerce the id field to a string.
+
+        Args:
+            id_value: The id value to coerce.
+        """
         if id_value is not None:
             return str(id_value)
-        else:
-            return id_value
+        return id_value
 
 
 class Blob(BaseMedia):
@@ -136,7 +142,7 @@ class Blob(BaseMedia):
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
-            return cast(Optional[str], self.metadata["source"])
+            return cast("Optional[str]", self.metadata["source"])
         return str(self.path) if self.path else None
 
     @model_validator(mode="before")
@@ -152,25 +158,23 @@ class Blob(BaseMedia):
         """Read data as a string."""
         if self.data is None and self.path:
             return Path(self.path).read_text(encoding=self.encoding)
-        elif isinstance(self.data, bytes):
+        if isinstance(self.data, bytes):
             return self.data.decode(self.encoding)
-        elif isinstance(self.data, str):
+        if isinstance(self.data, str):
             return self.data
-        else:
-            msg = f"Unable to get string for blob {self}"
-            raise ValueError(msg)
+        msg = f"Unable to get string for blob {self}"
+        raise ValueError(msg)
 
     def as_bytes(self) -> bytes:
         """Read data as bytes."""
         if isinstance(self.data, bytes):
             return self.data
-        elif isinstance(self.data, str):
+        if isinstance(self.data, str):
             return self.data.encode(self.encoding)
-        elif self.data is None and self.path:
+        if self.data is None and self.path:
             return Path(self.path).read_bytes()
-        else:
-            msg = f"Unable to get bytes for blob {self}"
-            raise ValueError(msg)
+        msg = f"Unable to get bytes for blob {self}"
+        raise ValueError(msg)
 
     @contextlib.contextmanager
     def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
@@ -291,7 +295,10 @@ class Document(BaseMedia):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Default namespace is ["langchain", "schema", "document"].
+        """
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:
@@ -306,5 +313,4 @@ class Document(BaseMedia):
         # a more general solution of formatting content directly inside the prompts.
         if self.metadata:
             return f"page_content='{self.page_content}' metadata={self.metadata}"
-        else:
-            return f"page_content='{self.page_content}'"
+        return f"page_content='{self.page_content}'"

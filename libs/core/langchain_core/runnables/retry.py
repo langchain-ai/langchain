@@ -1,3 +1,5 @@
+"""Runnable that retries a Runnable if it fails."""
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,6 +18,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import override
 
 from langchain_core.runnables.base import Input, Output, RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
@@ -109,11 +112,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     max_attempt_number: int = 3
     """The maximum number of attempts to retry the Runnable."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
     @property
     def _kwargs_retrying(self) -> dict[str, Any]:
         kwargs: dict[str, Any] = {}
@@ -173,6 +171,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -196,6 +195,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -245,7 +245,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
         for idx in range(len(inputs)):
@@ -255,6 +255,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 outputs.append(result.pop(0))
         return outputs
 
+    @override
     def batch(
         self,
         inputs: list[Input],
@@ -311,7 +312,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
         for idx in range(len(inputs)):
@@ -321,6 +322,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 outputs.append(result.pop(0))
         return outputs
 
+    @override
     async def abatch(
         self,
         inputs: list[Input],

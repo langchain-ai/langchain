@@ -1,3 +1,5 @@
+"""Chat generation output classes."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
@@ -58,11 +60,9 @@ class ChatGeneration(Generation):
                     if isinstance(block, str):
                         text = block
                         break
-                    elif isinstance(block, dict) and "text" in block:
+                    if isinstance(block, dict) and "text" in block:
                         text = block["text"]
                         break
-                    else:
-                        pass
             else:
                 pass
             self.text = text
@@ -71,15 +71,11 @@ class ChatGeneration(Generation):
             raise ValueError(msg) from e
         return self
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "output"]
-
 
 class ChatGenerationChunk(ChatGeneration):
-    """ChatGeneration chunk, which can be concatenated with other
-    ChatGeneration chunks.
+    """ChatGeneration chunk.
+
+    ChatGeneration chunks can be concatenated with other ChatGeneration chunks.
     """
 
     message: BaseMessageChunk
@@ -88,14 +84,15 @@ class ChatGenerationChunk(ChatGeneration):
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "output"]
-
     def __add__(
         self, other: Union[ChatGenerationChunk, list[ChatGenerationChunk]]
     ) -> ChatGenerationChunk:
+        """Concatenate two ChatGenerationChunks.
+
+        Args:
+            other: The other ChatGenerationChunk or list of ChatGenerationChunks to
+                concatenate.
+        """
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
                 self.generation_info or {},
@@ -105,7 +102,7 @@ class ChatGenerationChunk(ChatGeneration):
                 message=self.message + other.message,
                 generation_info=generation_info or None,
             )
-        elif isinstance(other, list) and all(
+        if isinstance(other, list) and all(
             isinstance(x, ChatGenerationChunk) for x in other
         ):
             generation_info = merge_dicts(
@@ -116,8 +113,5 @@ class ChatGenerationChunk(ChatGeneration):
                 message=self.message + [chunk.message for chunk in other],
                 generation_info=generation_info or None,
             )
-        else:
-            msg = (
-                f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
-            )
-            raise TypeError(msg)
+        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        raise TypeError(msg)

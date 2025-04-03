@@ -1,3 +1,5 @@
+"""Mermaid graph drawing utilities."""
+
 import asyncio
 import base64
 import re
@@ -52,8 +54,10 @@ def draw_mermaid(
 
             See more here: https://mermaid.js.org/config/configuration.html.
 
-            Example:
-            ```python
+            Example config:
+
+            .. code-block:: python
+
             {
                 "config": {
                     "theme": "neutral",
@@ -61,7 +65,6 @@ def draw_mermaid(
                     "themeVariables": { "primaryColor": "#e2e2e2"},
                 }
             }
-            ```
 
     Returns:
         str: Mermaid graph syntax.
@@ -192,13 +195,13 @@ def draw_mermaid(
             )
 
         # Recursively add nested subgraphs
-        for nested_prefix in edge_groups:
+        for nested_prefix, edges_ in edge_groups.items():
             if not nested_prefix.startswith(prefix + ":") or nested_prefix == prefix:
                 continue
             # only go to first level subgraphs
             if ":" in nested_prefix[len(prefix) + 1 :]:
                 continue
-            add_subgraph(edge_groups[nested_prefix], nested_prefix)
+            add_subgraph(edges_, nested_prefix)
 
         if prefix and not self_loop:
             mermaid_graph += "\tend\n"
@@ -207,20 +210,20 @@ def draw_mermaid(
     add_subgraph(edge_groups.get("", []), "")
 
     # Add remaining subgraphs with edges
-    for prefix in edge_groups:
+    for prefix, edges_ in edge_groups.items():
         if ":" in prefix or prefix == "":
             continue
-        add_subgraph(edge_groups[prefix], prefix)
+        add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
 
     # Add empty subgraphs (subgraphs with no internal edges)
     if with_styles:
-        for prefix in subgraph_nodes:
+        for prefix, subgraph_node in subgraph_nodes.items():
             if ":" not in prefix and prefix not in seen_subgraphs:
                 mermaid_graph += f"\tsubgraph {prefix}\n"
 
                 # Add nodes that belong to this subgraph
-                for key, node in subgraph_nodes[prefix].items():
+                for key, node in subgraph_node.items():
                     mermaid_graph += render_node(key, node)
 
                 mermaid_graph += "\tend\n"
@@ -404,9 +407,8 @@ def _render_mermaid_using_api(
             Path(output_file_path).write_bytes(response.content)
 
         return img_bytes
-    else:
-        msg = (
-            f"Failed to render the graph using the Mermaid.INK API. "
-            f"Status code: {response.status_code}."
-        )
-        raise ValueError(msg)
+    msg = (
+        f"Failed to render the graph using the Mermaid.INK API. "
+        f"Status code: {response.status_code}."
+    )
+    raise ValueError(msg)

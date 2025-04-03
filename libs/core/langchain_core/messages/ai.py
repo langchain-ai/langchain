@@ -1,9 +1,12 @@
+"""AI message."""
+
 import json
+import logging
 import operator
 from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -29,6 +32,8 @@ from langchain_core.messages.tool import (
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
+
+logger = logging.getLogger(__name__)
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -178,16 +183,6 @@ class AIMessage(BaseMessage):
         """
         super().__init__(content=content, **kwargs)
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-
-        Returns:
-            The namespace of the langchain object.
-            Defaults to ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
-
     @property
     def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
@@ -218,35 +213,25 @@ class AIMessage(BaseMessage):
                     values["tool_calls"] = parsed_tool_calls
                     values["invalid_tool_calls"] = parsed_invalid_tool_calls
             except Exception:
-                pass
+                logger.debug("Failed to parse tool calls", exc_info=True)
 
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):
-            updated: list = []
-            for tc in tool_calls:
-                updated.append(
-                    create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
-                )
-            values["tool_calls"] = updated
+            values["tool_calls"] = [
+                create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                for tc in tool_calls
+            ]
         if invalid_tool_calls := values.get("invalid_tool_calls"):
-            updated = []
-            for tc in invalid_tool_calls:
-                updated.append(
-                    create_invalid_tool_call(
-                        **{k: v for k, v in tc.items() if k != "type"}
-                    )
-                )
-            values["invalid_tool_calls"] = updated
+            values["invalid_tool_calls"] = [
+                create_invalid_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                for tc in invalid_tool_calls
+            ]
 
         if tool_call_chunks := values.get("tool_call_chunks"):
-            updated = []
-            for tc in tool_call_chunks:
-                updated.append(
-                    create_tool_call_chunk(
-                        **{k: v for k, v in tc.items() if k != "type"}
-                    )
-                )
-            values["tool_call_chunks"] = updated
+            values["tool_call_chunks"] = [
+                create_tool_call_chunk(**{k: v for k, v in tc.items() if k != "type"})
+                for tc in tool_call_chunks
+            ]
 
         return values
 
@@ -305,16 +290,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-
-        Returns:
-            The namespace of the langchain object.
-            Defaults to ["langchain", "schema", "messages"].
-        """
-        return ["langchain", "schema", "messages"]
 
     @property
     def lc_attributes(self) -> dict:
@@ -393,10 +368,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         self.invalid_tool_calls = invalid_tool_calls
         return self
 
+    @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
-        elif isinstance(other, (list, tuple)) and all(
+        if isinstance(other, (list, tuple)) and all(
             isinstance(o, AIMessageChunk) for o in other
         ):
             return add_ai_message_chunks(self, *other)
@@ -500,14 +476,14 @@ def add_usage(
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
-        return cast(UsageMetadata, left or right)
+        return cast("UsageMetadata", left or right)
 
     return UsageMetadata(
         **cast(
-            UsageMetadata,
+            "UsageMetadata",
             _dict_int_op(
-                cast(dict, left),
-                cast(dict, right),
+                cast("dict", left),
+                cast("dict", right),
                 operator.add,
             ),
         )
@@ -557,14 +533,14 @@ def subtract_usage(
     if not (left or right):
         return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
     if not (left and right):
-        return cast(UsageMetadata, left or right)
+        return cast("UsageMetadata", left or right)
 
     return UsageMetadata(
         **cast(
-            UsageMetadata,
+            "UsageMetadata",
             _dict_int_op(
-                cast(dict, left),
-                cast(dict, right),
+                cast("dict", left),
+                cast("dict", right),
                 (lambda le, ri: max(le - ri, 0)),
             ),
         )

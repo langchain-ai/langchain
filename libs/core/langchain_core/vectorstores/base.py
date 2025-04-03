@@ -117,8 +117,8 @@ class VectorStore(ABC):
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
         logger.debug(
-            f"The embeddings property has not been "
-            f"implemented for {self.__class__.__name__}"
+            "The embeddings property has not been implemented for %s",
+            self.__class__.__name__,
         )
         return None
 
@@ -294,8 +294,7 @@ class VectorStore(ABC):
     async def aadd_documents(
         self, documents: list[Document], **kwargs: Any
     ) -> list[str]:
-        """Async run more documents through the embeddings and add to
-        the vectorstore.
+        """Async run more documents through the embeddings and add to the vectorstore.
 
         Args:
             documents: Documents to add to the vectorstore.
@@ -341,20 +340,19 @@ class VectorStore(ABC):
         """
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
-        elif search_type == "similarity_score_threshold":
+        if search_type == "similarity_score_threshold":
             docs_and_similarities = self.similarity_search_with_relevance_scores(
                 query, **kwargs
             )
             return [doc for doc, _ in docs_and_similarities]
-        elif search_type == "mmr":
+        if search_type == "mmr":
             return self.max_marginal_relevance_search(query, **kwargs)
-        else:
-            msg = (
-                f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity', 'similarity_score_threshold'"
-                " or 'mmr'."
-            )
-            raise ValueError(msg)
+        msg = (
+            f"search_type of {search_type} not allowed. Expected "
+            "search_type to be 'similarity', 'similarity_score_threshold'"
+            " or 'mmr'."
+        )
+        raise ValueError(msg)
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
@@ -376,19 +374,18 @@ class VectorStore(ABC):
         """
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
-        elif search_type == "similarity_score_threshold":
+        if search_type == "similarity_score_threshold":
             docs_and_similarities = await self.asimilarity_search_with_relevance_scores(
                 query, **kwargs
             )
             return [doc for doc, _ in docs_and_similarities]
-        elif search_type == "mmr":
+        if search_type == "mmr":
             return await self.amax_marginal_relevance_search(query, **kwargs)
-        else:
-            msg = (
-                f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
-            )
-            raise ValueError(msg)
+        msg = (
+            f"search_type of {search_type} not allowed. Expected "
+            "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
+        )
+        raise ValueError(msg)
 
     @abstractmethod
     def similarity_search(
@@ -434,7 +431,8 @@ class VectorStore(ABC):
         return -1.0 * distance
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """The 'correct' relevance function
+        """The 'correct' relevance function.
+
         may differ depending on a few things, including:
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
@@ -484,8 +482,9 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """Default similarity search with relevance scores. Modify if necessary
-        in subclass.
+        """Default similarity search with relevance scores.
+
+        Modify if necessary in subclass.
         Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -510,8 +509,9 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """Default similarity search with relevance scores. Modify if necessary
-        in subclass.
+        """Default similarity search with relevance scores.
+
+        Modify if necessary in subclass.
         Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -573,8 +573,9 @@ class VectorStore(ABC):
             ]
             if len(docs_and_similarities) == 0:
                 logger.warning(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
+                    "No relevant docs were retrieved using the "
+                    "relevance score threshold %s",
+                    score_threshold,
                 )
         return docs_and_similarities
 
@@ -621,8 +622,9 @@ class VectorStore(ABC):
             ]
             if len(docs_and_similarities) == 0:
                 logger.warning(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
+                    "No relevant docs were retrieved using the "
+                    "relevance score threshold %s",
+                    score_threshold,
                 )
         return docs_and_similarities
 
@@ -730,6 +732,7 @@ class VectorStore(ABC):
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
