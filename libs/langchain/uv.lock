@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -2400,6 +2401,9 @@ ollama = [
 openai = [
     { name = "langchain-openai" },
 ]
+perplexity = [
+    { name = "langchain-perplexity" },
+]
 together = [
     { name = "langchain-together" },
 ]
@@ -2493,6 +2497,7 @@ requires-dist = [
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
+    { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
@@ -2502,6 +2507,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -2659,7 +2665,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.49"
+version = "0.3.50"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2836,7 +2842,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.11"
+version = "0.3.12"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2881,6 +2887,19 @@ typing = [
     { name = "langchain-core", editable = "../core" },
     { name = "mypy", specifier = ">=1.10,<2.0" },
     { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
+]
+
+[[package]]
+name = "langchain-perplexity"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "openai" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fb/66/ccdce60458111a1118d8107c106c65fa40e93fe358c61f9cb2b87b9a5eca/langchain_perplexity-0.1.0.tar.gz", hash = "sha256:947648a223cf1cbbc5b26efcf29d5483443be222fd803da1cff9c2923d6063d6", size = 10069 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/31/82/d6bad72aed8dde4c3cdba5e51554f8978fc5d1ec43ba2f23611474673079/langchain_perplexity-0.1.0-py3-none-any.whl", hash = "sha256:7e18fa4c28e25240a9e57c613bf75737d2767d63dc92979de2db51f4e40127e0", size = 8669 },
 ]
 
 [[package]]
