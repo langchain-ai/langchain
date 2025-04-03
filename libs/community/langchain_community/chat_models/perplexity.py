@@ -73,7 +73,7 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
 
 
 @deprecated(
-    since="0.3.20",
+    since="0.3.21",
     removal="1.0",
     alternative_import="langchain_perplexity.ChatPerplexity",
 )
