@@ -18,11 +18,6 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {"model": "sonar"}
 
-    @property
-    def has_structured_output(self) -> bool:
-        """We don't have a high enough tier of Perplexity to test structured output."""
-        return False
-
     @pytest.mark.xfail(reason="TODO: handle in integration.")
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
         super().test_double_messages_conversation(model)

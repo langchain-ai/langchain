@@ -44,15 +44,9 @@ from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
+from langchain_core.utils.function_calling import convert_to_json_schema
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    TypeAdapter,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -473,23 +467,16 @@ class ChatPerplexity(BaseChatModel):
                     "Received None."
                 )
             is_pydantic_schema = _is_pydantic_class(schema)
-            if is_pydantic_schema and hasattr(
-                schema, "model_json_schema"
-            ):  # accounting for pydantic v1 and v2
-                response_format = schema.model_json_schema()  # type: ignore[union-attr]
-            elif is_pydantic_schema:
-                response_format = schema.schema()  # type: ignore[union-attr]
-            elif isinstance(schema, dict):
-                response_format = schema
-            elif type(schema).__name__ == "_TypedDictMeta":
-                adapter = TypeAdapter(schema)  # if use passes typeddict
-                response_format = adapter.json_schema()
-
+            response_format = convert_to_json_schema(schema)
             llm = self.bind(
                 response_format={
                     "type": "json_schema",
                     "json_schema": {"schema": response_format},
-                }
+                },
+                ls_structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": response_format,
+                },
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
