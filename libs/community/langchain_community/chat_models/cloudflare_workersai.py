@@ -1405,7 +1405,7 @@ class CloudflareJsonOutputKeyToolsParser(JsonOutputKeyToolsParser):
 class CloudflarePydanticOutputParser(PydanticOutputParser):
     """Parser for Cloudflare JSON mode with Pydantic validation."""
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Any:  # type: ignore
         """Parse text with multiple strategies."""
         if not text or not isinstance(text, str):
             return super().parse(text)
@@ -1448,7 +1448,7 @@ class CloudflarePydanticOutputParser(PydanticOutputParser):
 class CloudflareJsonOutputParser(JsonOutputParser):
     """Parser for Cloudflare JSON mode outputs."""
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Any:  # type: ignore
         """Parse text to extract JSON."""
         if not text or not isinstance(text, str):
             return super().parse(text)
