@@ -15,7 +15,7 @@ from typing import (
 from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain_core.exceptions import TracerException  # noqa
+from langchain_core.exceptions import TracerException  # noqa: F401
 from langchain_core.tracers.core import _TracerCore
 
 if TYPE_CHECKING:
