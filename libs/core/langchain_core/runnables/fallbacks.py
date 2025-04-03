@@ -661,7 +661,6 @@ def _is_runnable_type(type_: Any) -> bool:
     origin = getattr(type_, "__origin__", None)
     if inspect.isclass(origin):
         return issubclass(origin, Runnable)
-    elif origin is typing.Union:
+    if origin is typing.Union:
         return all(_is_runnable_type(t) for t in type_.__args__)
-    else:
-        return False
+    return False

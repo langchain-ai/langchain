@@ -183,11 +183,10 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Returns:
             The run.
         """
-        llm_run = self._llm_run_with_retry_event(
+        return self._llm_run_with_retry_event(
             retry_state=retry_state,
             run_id=run_id,
         )
-        return llm_run
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for an LLM run.

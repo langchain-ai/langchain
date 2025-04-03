@@ -459,7 +459,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             return create_model_v2(  # type: ignore[call-overload]
                 "RunnableAssignOutput", field_definitions=fields
             )
-        elif not issubclass(map_output_schema, RootModel):
+        if not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly
             return map_output_schema
@@ -741,12 +741,10 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
         if isinstance(self.keys, str):
             return input.get(self.keys)
-        else:
-            picked = {k: input.get(k) for k in self.keys if k in input}
-            if picked:
-                return AddableDict(picked)
-            else:
-                return None
+        picked = {k: input.get(k) for k in self.keys if k in input}
+        if picked:
+            return AddableDict(picked)
+        return None
 
     def _invoke(
         self,

@@ -565,3 +565,6 @@ packages:
 - name: langchain-vectara
   path: libs/vectara
   repo: vectara/langchain-vectara
+- name: langchain-oxylabs
+  path: .
+  repo: oxylabs/langchain-oxylabs

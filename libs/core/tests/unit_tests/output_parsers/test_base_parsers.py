@@ -1,7 +1,5 @@
 """Module to test base parser implementations."""
 
-from typing import Optional as Optional
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
