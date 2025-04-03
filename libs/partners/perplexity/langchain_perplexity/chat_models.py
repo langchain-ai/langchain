@@ -284,11 +284,7 @@ class ChatPerplexity(BaseChatModel):
         if role == "user" or default_class == HumanMessageChunk:
             return HumanMessageChunk(content=content)
         elif role == "assistant" or default_class == AIMessageChunk:
-            return AIMessageChunk(
-                content=content,
-                response_metadata={"model_name": self.model},
-                additional_kwargs=additional_kwargs,
-            )
+            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
         elif role == "system" or default_class == SystemMessageChunk:
             return SystemMessageChunk(content=content)
         elif role == "function" or default_class == FunctionMessageChunk:
@@ -318,6 +314,8 @@ class ChatPerplexity(BaseChatModel):
         )
         first_chunk = True
         prev_total_usage: Optional[UsageMetadata] = None
+
+        added_model_name: bool = False
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -344,6 +342,11 @@ class ChatPerplexity(BaseChatModel):
                     if attr in chunk:
                         additional_kwargs[attr] = chunk[attr]
 
+            generation_info = {}
+            if (model_name := chunk.get("model")) and not added_model_name:
+                generation_info["model_name"] = model_name
+                added_model_name = True
+
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -355,10 +358,9 @@ class ChatPerplexity(BaseChatModel):
                 chunk.additional_kwargs |= additional_kwargs
                 first_chunk = False
 
-            finish_reason = choice.get("finish_reason")
-            generation_info = (
-                dict(finish_reason=finish_reason) if finish_reason is not None else None
-            )
+            if finish_reason := choice.get("finish_reason"):
+                generation_info["finish_reason"] = finish_reason
+
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
