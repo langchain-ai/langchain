@@ -53,7 +53,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 ),
                 id=self.id,
             )
-        elif isinstance(other, BaseMessageChunk):
+        if isinstance(other, BaseMessageChunk):
             return self.__class__(
                 role=self.role,
                 content=merge_content(self.content, other.content),
@@ -65,5 +65,4 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 ),
                 id=self.id,
             )
-        else:
-            return super().__add__(other)
+        return super().__add__(other)

@@ -89,7 +89,7 @@ def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the installed Pydantic version is 1.x-like."""
     if PYDANTIC_MAJOR_VERSION == 1:
         return True
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    if PYDANTIC_MAJOR_VERSION == 2:
         from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(cls, BaseModelV1):
@@ -335,7 +335,7 @@ def _create_subset_model(
             descriptions=descriptions,
             fn_description=fn_description,
         )
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    if PYDANTIC_MAJOR_VERSION == 2:
         from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(model, BaseModelV1):
@@ -346,17 +346,15 @@ def _create_subset_model(
                 descriptions=descriptions,
                 fn_description=fn_description,
             )
-        else:
-            return _create_subset_model_v2(
-                name,
-                model,
-                field_names,
-                descriptions=descriptions,
-                fn_description=fn_description,
-            )
-    else:
-        msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
-        raise NotImplementedError(msg)
+        return _create_subset_model_v2(
+            name,
+            model,
+            field_names,
+            descriptions=descriptions,
+            fn_description=fn_description,
+        )
+    msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    raise NotImplementedError(msg)
 
 
 if PYDANTIC_MAJOR_VERSION == 2:
@@ -387,11 +385,10 @@ if PYDANTIC_MAJOR_VERSION == 2:
         if hasattr(model, "model_fields"):
             return model.model_fields  # type: ignore
 
-        elif hasattr(model, "__fields__"):
+        if hasattr(model, "__fields__"):
             return model.__fields__  # type: ignore
-        else:
-            msg = f"Expected a Pydantic model. Got {type(model)}"
-            raise TypeError(msg)
+        msg = f"Expected a Pydantic model. Got {type(model)}"
+        raise TypeError(msg)
 
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
