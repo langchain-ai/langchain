@@ -1,9 +1,12 @@
+"""Structured tool."""
+
 from __future__ import annotations
 
 import textwrap
 from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -13,12 +16,12 @@ from typing import (
 )
 
 from pydantic import Field, SkipValidation
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
@@ -28,6 +31,9 @@ from langchain_core.tools.base import (
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class StructuredTool(BaseTool):
@@ -46,6 +52,7 @@ class StructuredTool(BaseTool):
     # --- Runnable ---
 
     # TODO: Is this needed?
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],

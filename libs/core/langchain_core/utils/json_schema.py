@@ -1,8 +1,12 @@
+"""Utilities for JSON Schema."""
+
 from __future__ import annotations
 
-from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
@@ -56,13 +60,12 @@ def _dereference_refs_helper(
             else:
                 obj_out[k] = v
         return obj_out
-    elif isinstance(obj, list):
+    if isinstance(obj, list):
         return [
             _dereference_refs_helper(el, full_schema, skip_keys, processed_refs)
             for el in obj
         ]
-    else:
-        return obj
+    return obj
 
 
 def _infer_skip_keys(

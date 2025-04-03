@@ -59,6 +59,7 @@ def check_response(resp: Any) -> Any:
         return resp
     elif resp["status_code"] in [400, 401]:
         raise ValueError(
+            f"request_id: {resp['request_id']} \n "
             f"status_code: {resp['status_code']} \n "
             f"code: {resp['code']} \n message: {resp['message']}"
         )

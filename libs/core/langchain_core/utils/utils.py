@@ -115,8 +115,9 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
 def guard_import(
     module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
 ) -> Any:
-    """Dynamically import a module and raise an exception if the module is not
-    installed.
+    """Dynamically import a module.
+
+    Raise an exception if the module is not installed.
 
     Args:
         module_name (str): The name of the module to import.
@@ -391,16 +392,14 @@ def from_env(
 
         if isinstance(default, (str, type(None))):
             return default
-        else:
-            if error_message:
-                raise ValueError(error_message)
-            else:
-                msg = (
-                    f"Did not find {key}, please add an environment variable"
-                    f" `{key}` which contains it, or pass"
-                    f" `{key}` as a named parameter."
-                )
-                raise ValueError(msg)
+        if error_message:
+            raise ValueError(error_message)
+        msg = (
+            f"Did not find {key}, please add an environment variable"
+            f" `{key}` which contains it, or pass"
+            f" `{key}` as a named parameter."
+        )
+        raise ValueError(msg)
 
     return get_from_env_fn
 
@@ -453,17 +452,15 @@ def secret_from_env(
             return SecretStr(os.environ[key])
         if isinstance(default, str):
             return SecretStr(default)
-        elif default is None:
+        if default is None:
             return None
-        else:
-            if error_message:
-                raise ValueError(error_message)
-            else:
-                msg = (
-                    f"Did not find {key}, please add an environment variable"
-                    f" `{key}` which contains it, or pass"
-                    f" `{key}` as a named parameter."
-                )
-                raise ValueError(msg)
+        if error_message:
+            raise ValueError(error_message)
+        msg = (
+            f"Did not find {key}, please add an environment variable"
+            f" `{key}` which contains it, or pass"
+            f" `{key}` as a named parameter."
+        )
+        raise ValueError(msg)
 
     return get_secret_from_env

@@ -91,7 +91,7 @@ For more information, please see:
 
 #### Usage with LCEL
 
-If you compose multiple Runnables using [LangChain’s Expression Language (LCEL)](/docs/concepts/lcel), the `stream()` and `astream()` methods will, by convention, stream the output of the last step in the chain. This allows the final processed result to be streamed incrementally. **LCEL** tries to optimize streaming latency in pipelines such that the streaming results from the last step are available as soon as possible.
+If you compose multiple Runnables using [LangChain’s Expression Language (LCEL)](/docs/concepts/lcel), the `stream()` and `astream()` methods will, by convention, stream the output of the last step in the chain. This allows the final processed result to be streamed incrementally. **LCEL** tries to optimize streaming latency in pipelines so that the streaming results from the last step are available as soon as possible.
 
 
 
@@ -104,7 +104,7 @@ Use the `astream_events` API to access custom data and intermediate outputs from
 While this API is available for use with [LangGraph](/docs/concepts/architecture#langgraph) as well, it is usually not necessary when working with LangGraph, as the `stream` and `astream` methods provide comprehensive streaming capabilities for LangGraph graphs.
 :::
 
-For chains constructed using **LCEL**, the `.stream()` method only streams the output of the final step from te chain. This might be sufficient for some applications, but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of the chain alongside the final output. For example, you may want to return sources alongside the final generation when building a chat-over-documents app.
+For chains constructed using **LCEL**, the `.stream()` method only streams the output of the final step from the chain. This might be sufficient for some applications, but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of the chain alongside the final output. For example, you may want to return sources alongside the final generation when building a chat-over-documents app.
 
 There are ways to do this [using callbacks](/docs/concepts/callbacks), or by constructing your chain in such a way that it passes intermediate
 values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an

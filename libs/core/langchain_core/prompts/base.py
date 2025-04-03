@@ -1,3 +1,5 @@
+"""Base class for prompt templates."""
+
 from __future__ import annotations
 
 import contextlib
@@ -98,6 +100,7 @@ class BasePromptTemplate(
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         Returns ["langchain", "schema", "prompt_template"].
         """
         return ["langchain", "schema", "prompt_template"]
@@ -105,6 +108,7 @@ class BasePromptTemplate(
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable.
+
         Returns True.
         """
         return True
@@ -190,6 +194,7 @@ class BasePromptTemplate(
         _inner_input = self._validate_input(inner_input)
         return await self.aformat_prompt(**_inner_input)
 
+    @override
     def invoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
@@ -215,6 +220,7 @@ class BasePromptTemplate(
             serialized=self._serialized,
         )
 
+    @override
     async def ainvoke(
         self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
@@ -368,16 +374,16 @@ class BasePromptTemplate(
             raise NotImplementedError(msg)
 
         # Convert file to Path object.
-        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+        save_path = Path(file_path)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

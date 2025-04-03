@@ -1,6 +1,7 @@
+"""Base classes for output parsers that can handle streaming input."""
+
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +20,8 @@ from langchain_core.outputs import (
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_core.runnables import RunnableConfig
 
 
@@ -96,8 +99,9 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     """
 
     def _diff(self, prev: Optional[T], next: T) -> T:
-        """Convert parsed outputs into a diff format. The semantics of this are
-        up to the output parser.
+        """Convert parsed outputs into a diff format.
+
+        The semantics of this are up to the output parser.
 
         Args:
             prev: The previous parsed output.

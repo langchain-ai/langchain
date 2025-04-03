@@ -31,12 +31,13 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
+    convert_to_json_schema,
     convert_to_openai_function,
     tool_example_to_messages,
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -47,7 +48,7 @@ def pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def annotated_function() -> Callable:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
@@ -58,7 +59,7 @@ def annotated_function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -71,7 +72,7 @@ def function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function_docstring_annotations() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -84,7 +85,7 @@ def function_docstring_annotations() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def runnable() -> Runnable:
     class Args(ExtensionsTypedDict):
         arg1: ExtensionsAnnotated[int, "foo"]
@@ -96,7 +97,7 @@ def runnable() -> Runnable:
     return RunnableLambda(dummy_function)
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -113,7 +114,7 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_structured_tool() -> StructuredTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -127,7 +128,7 @@ def dummy_structured_tool() -> StructuredTool:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_structured_tool_args_schema_dict() -> StructuredTool:
     args_schema = {
         "type": "object",
@@ -149,7 +150,7 @@ def dummy_structured_tool_args_schema_dict() -> StructuredTool:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
@@ -160,7 +161,7 @@ def dummy_pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     class dummy_function(BaseModelV2Maybe):  # noqa: N801
         """Dummy function."""
@@ -173,7 +174,7 @@ def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
@@ -184,7 +185,7 @@ def dummy_typing_typed_dict() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_typing_typed_dict_docstring() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function.
@@ -200,7 +201,7 @@ def dummy_typing_typed_dict_docstring() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_extensions_typed_dict() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function."""
@@ -211,7 +212,7 @@ def dummy_extensions_typed_dict() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_extensions_typed_dict_docstring() -> type:
     class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function.
@@ -227,7 +228,7 @@ def dummy_extensions_typed_dict_docstring() -> type:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
@@ -245,7 +246,7 @@ def json_schema() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def anthropic_tool() -> dict:
     return {
         "name": "dummy_function",
@@ -265,7 +266,7 @@ def anthropic_tool() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def bedrock_converse_tool() -> dict:
     return {
         "toolSpec": {
@@ -740,7 +741,7 @@ def test_tool_outputs() -> None:
 @pytest.mark.parametrize("use_extension_typed_dict", [True, False])
 @pytest.mark.parametrize("use_extension_annotated", [True, False])
 def test__convert_typed_dict_to_openai_function(
-    use_extension_typed_dict: bool, use_extension_annotated: bool
+    *, use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
     typed_dict = ExtensionsTypedDict if use_extension_typed_dict else TypingTypedDict
     annotated = TypingAnnotated if use_extension_annotated else TypingAnnotated
@@ -993,7 +994,7 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 )
 def test_convert_union_type_py_39() -> None:
     @tool
-    def magic_function(input: int | float) -> str:
+    def magic_function(input: int | float) -> str:  # noqa: FA102
         """Compute a magic function."""
 
     result = convert_to_openai_function(magic_function)
@@ -1019,3 +1020,46 @@ def test_convert_to_openai_function_no_args() -> None:
         },
         "strict": True,
     }
+
+
+def test_convert_to_json_schema(
+    pydantic: type[BaseModel],
+    function: Callable,
+    function_docstring_annotations: Callable,
+    dummy_structured_tool: StructuredTool,
+    dummy_structured_tool_args_schema_dict: StructuredTool,
+    dummy_tool: BaseTool,
+    json_schema: dict,
+    anthropic_tool: dict,
+    bedrock_converse_tool: dict,
+    annotated_function: Callable,
+    dummy_pydantic: type[BaseModel],
+    dummy_typing_typed_dict: type,
+    dummy_typing_typed_dict_docstring: type,
+    dummy_extensions_typed_dict: type,
+    dummy_extensions_typed_dict_docstring: type,
+) -> None:
+    expected = json_schema
+
+    for fn in (
+        pydantic,
+        function,
+        function_docstring_annotations,
+        dummy_structured_tool,
+        dummy_structured_tool_args_schema_dict,
+        dummy_tool,
+        json_schema,
+        anthropic_tool,
+        bedrock_converse_tool,
+        expected,
+        Dummy.dummy_function,
+        DummyWithClassMethod.dummy_function,
+        annotated_function,
+        dummy_pydantic,
+        dummy_typing_typed_dict,
+        dummy_typing_typed_dict_docstring,
+        dummy_extensions_typed_dict,
+        dummy_extensions_typed_dict_docstring,
+    ):
+        actual = convert_to_json_schema(fn)  # type: ignore
+        assert actual == expected

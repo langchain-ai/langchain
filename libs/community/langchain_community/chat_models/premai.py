@@ -244,7 +244,7 @@ def _messages_to_prompt_dict(
         else:
             raise ChatPremAPIError("No such role explicitly exists")
 
-    # do a seperate search for tool calls
+    # do a separate search for tool calls
     tool_prompt = ""
     for input_msg in input_messages:
         if isinstance(input_msg, ToolMessage):

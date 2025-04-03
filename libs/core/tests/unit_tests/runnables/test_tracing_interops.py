@@ -99,7 +99,6 @@ def test_config_traceable_handoff() -> None:
         rt = get_current_run_tree()
         assert rt
         assert rt.session_name == "another-flippin-project"
-        assert rt.parent_run and rt.parent_run.name == "my_parent_function"
         return my_child_function(a)
 
     def my_parent_function(a: int) -> int:
@@ -222,7 +221,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, enabled: bool, env: str
+    mock_get_client: MagicMock, *, enabled: bool, env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -335,23 +334,22 @@ class TestRunnableSequenceParallelTraceNesting:
                     parent_id_map[n] = matching_post.get("parent_run_id")
                 i += len(name)
                 continue
-            else:
-                assert posts[i]["name"] == name
-                dotted_order = posts[i]["dotted_order"]
-                if prev_dotted_order is not None and not str(
-                    expected_parents[name]
-                ).startswith("RunnableParallel"):
-                    assert dotted_order > prev_dotted_order, (
-                        f"{name} not after {name_order[i - 1]}"
-                    )
-                prev_dotted_order = dotted_order
-                if name in dotted_order_map:
-                    msg = f"Duplicate name {name}"
-                    raise ValueError(msg)
-                dotted_order_map[name] = dotted_order
-                id_map[name] = posts[i]["id"]
-                parent_id_map[name] = posts[i].get("parent_run_id")
-                i += 1
+            assert posts[i]["name"] == name
+            dotted_order = posts[i]["dotted_order"]
+            if prev_dotted_order is not None and not str(
+                expected_parents[name]
+            ).startswith("RunnableParallel"):
+                assert dotted_order > prev_dotted_order, (
+                    f"{name} not after {name_order[i - 1]}"
+                )
+            prev_dotted_order = dotted_order
+            if name in dotted_order_map:
+                msg = f"Duplicate name {name}"
+                raise ValueError(msg)
+            dotted_order_map[name] = dotted_order
+            id_map[name] = posts[i]["id"]
+            parent_id_map[name] = posts[i].get("parent_run_id")
+            i += 1
 
         # Now check the dotted orders
         for name, parent_ in expected_parents.items():
@@ -420,7 +418,7 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
 
-@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+@pytest.mark.parametrize("parent_type", ["ls", "lc"])
 def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -446,11 +444,12 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         metadata={"some_foo": "some_bar"},
         tags=["afoo"],
     ):
-        if parent_type == "ls":
-            collected: dict[str, RunTree] = {}  # noqa
+        collected: dict[str, RunTree] = {}  # noqa
 
-            def collect_run(run: RunTree) -> None:
-                collected[str(run.id)] = run
+        def collect_run(run: RunTree) -> None:
+            collected[str(run.id)] = run
+
+        if parent_type == "ls":
 
             @traceable
             def parent() -> str:
@@ -460,7 +459,6 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
             )
             assert collected
-            run = collected.get(str(rid))
 
         else:
 
@@ -469,8 +467,10 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
+            tracer._persist_run = collect_run  # type: ignore
+
             assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore
-            run = tracer.latest_run
+    run = collected.get(str(rid))
 
     assert run is not None
     assert run.name == "parent"

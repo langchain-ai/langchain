@@ -9,6 +9,7 @@ from contextlib import nullcontext
 from functools import lru_cache, wraps
 from types import GenericAlias
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -29,13 +30,16 @@ from pydantic import (
 from pydantic import (
     create_model as _create_model_base,
 )
+from pydantic.fields import FieldInfo as FieldInfoV2
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from pydantic_core import core_schema
+
+if TYPE_CHECKING:
+    from pydantic_core import core_schema
 
 
 def get_pydantic_major_version() -> int:
@@ -71,8 +75,8 @@ elif PYDANTIC_MAJOR_VERSION == 2:
     from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
-    TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
+    TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore[misc]
 else:
     msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
     raise ValueError(msg)
@@ -85,7 +89,7 @@ def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the installed Pydantic version is 1.x-like."""
     if PYDANTIC_MAJOR_VERSION == 1:
         return True
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    if PYDANTIC_MAJOR_VERSION == 2:
         from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(cls, BaseModelV1):
@@ -331,7 +335,7 @@ def _create_subset_model(
             descriptions=descriptions,
             fn_description=fn_description,
         )
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    if PYDANTIC_MAJOR_VERSION == 2:
         from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(model, BaseModelV1):
@@ -342,22 +346,19 @@ def _create_subset_model(
                 descriptions=descriptions,
                 fn_description=fn_description,
             )
-        else:
-            return _create_subset_model_v2(
-                name,
-                model,
-                field_names,
-                descriptions=descriptions,
-                fn_description=fn_description,
-            )
-    else:
-        msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
-        raise NotImplementedError(msg)
+        return _create_subset_model_v2(
+            name,
+            model,
+            field_names,
+            descriptions=descriptions,
+            fn_description=fn_description,
+        )
+    msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    raise NotImplementedError(msg)
 
 
 if PYDANTIC_MAJOR_VERSION == 2:
     from pydantic import BaseModel as BaseModelV2
-    from pydantic.fields import FieldInfo as FieldInfoV2
     from pydantic.v1 import BaseModel as BaseModelV1
 
     @overload
@@ -384,11 +385,10 @@ if PYDANTIC_MAJOR_VERSION == 2:
         if hasattr(model, "model_fields"):
             return model.model_fields  # type: ignore
 
-        elif hasattr(model, "__fields__"):
+        if hasattr(model, "__fields__"):
             return model.__fields__  # type: ignore
-        else:
-            msg = f"Expected a Pydantic model. Got {type(model)}"
-            raise TypeError(msg)
+        msg = f"Expected a Pydantic model. Got {type(model)}"
+        raise TypeError(msg)
 
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
@@ -470,7 +470,7 @@ def _create_root_model(
         except TypeError:
             pass
         custom_root_type = type(name, (RootModel,), base_class_attributes)
-    return cast(type[BaseModel], custom_root_type)
+    return cast("type[BaseModel]", custom_root_type)
 
 
 @lru_cache(maxsize=256)
@@ -595,7 +595,7 @@ def create_model_v2(
     Returns:
         Type[BaseModel]: The created model.
     """
-    field_definitions = cast(dict[str, Any], field_definitions or {})  # type: ignore[no-redef]
+    field_definitions = cast("dict[str, Any]", field_definitions or {})  # type: ignore[no-redef]
 
     if root:
         if field_definitions:

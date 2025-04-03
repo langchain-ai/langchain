@@ -1,20 +1,24 @@
+"""Retriever tool."""
+
 from __future__ import annotations
 
 from functools import partial
-from typing import Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from langchain_core.callbacks import Callbacks
-from langchain_core.documents import Document
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
     aformat_document,
     format_document,
 )
-from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools.simple import Tool
+
+if TYPE_CHECKING:
+    from langchain_core.callbacks import Callbacks
+    from langchain_core.documents import Document
+    from langchain_core.retrievers import BaseRetriever
 
 
 class RetrieverInput(BaseModel):
@@ -69,7 +73,7 @@ def create_retriever_tool(
     document_separator: str = "\n\n",
     response_format: Literal["content", "content_and_artifact"] = "content",
 ) -> Tool:
-    """Create a tool to do retrieval of documents.
+    r"""Create a tool to do retrieval of documents.
 
     Args:
         retriever: The retriever to use for the retrieval
@@ -80,10 +84,10 @@ def create_retriever_tool(
         document_prompt: The prompt to use for the document. Defaults to None.
         document_separator: The separator to use between documents. Defaults to "\n\n".
         response_format: The tool response format. If "content" then the output of
-                the tool is interpreted as the contents of a ToolMessage. If
-                "content_and_artifact" then the output is expected to be a two-tuple
-                corresponding to the (content, artifact) of a ToolMessage (artifact
-                being a list of documents in this case). Defaults to "content".
+            the tool is interpreted as the contents of a ToolMessage. If
+            "content_and_artifact" then the output is expected to be a two-tuple
+            corresponding to the (content, artifact) of a ToolMessage (artifact
+            being a list of documents in this case). Defaults to "content".
 
     Returns:
         Tool class to pass to an agent.

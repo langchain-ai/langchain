@@ -62,18 +62,28 @@ class AgentAction(Serializable):
     def __init__(
         self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
     ):
+        """Create an AgentAction.
+
+        Args:
+            tool: The name of the tool to execute.
+            tool_input: The input to pass in to the Tool.
+            log: Additional information to log about the action.
+        """
         super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable.
-        Default is True.
+        """AgentAction is serializable.
+
+        Returns:
+            True
         """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         Default is ["langchain", "schema", "agent"].
         """
         return ["langchain", "schema", "agent"]
@@ -148,7 +158,10 @@ class AgentFinish(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Default namespace is ["langchain", "schema", "agent"].
+        """
         return ["langchain", "schema", "agent"]
 
     @property
@@ -172,8 +185,7 @@ def _convert_agent_action_to_messages(
     """
     if isinstance(agent_action, AgentActionMessageLog):
         return agent_action.message_log
-    else:
-        return [AIMessage(content=agent_action.log)]
+    return [AIMessage(content=agent_action.log)]
 
 
 def _convert_agent_observation_to_messages(
@@ -192,14 +204,13 @@ def _convert_agent_observation_to_messages(
     """
     if isinstance(agent_action, AgentActionMessageLog):
         return [_create_function_message(agent_action, observation)]
-    else:
-        content = observation
-        if not isinstance(observation, str):
-            try:
-                content = json.dumps(observation, ensure_ascii=False)
-            except Exception:
-                content = str(observation)
-        return [HumanMessage(content=content)]
+    content = observation
+    if not isinstance(observation, str):
+        try:
+            content = json.dumps(observation, ensure_ascii=False)
+        except Exception:
+            content = str(observation)
+    return [HumanMessage(content=content)]
 
 
 def _create_function_message(

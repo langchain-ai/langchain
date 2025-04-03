@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
-from uuid import UUID
-
-from tenacity import RetryCallState
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from uuid import UUID
+
+    from tenacity import RetryCallState
+
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
@@ -906,6 +907,8 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_tags (Optional[List[str]]): The inheritable tags.
                 Default is None.
             metadata (Optional[Dict[str, Any]]): The metadata. Default is None.
+            inheritable_metadata (Optional[Dict[str, Any]]): The inheritable metadata.
+                Default is None.
         """
         self.handlers: list[BaseCallbackHandler] = handlers
         self.inheritable_handlers: list[BaseCallbackHandler] = (

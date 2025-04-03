@@ -18,12 +18,6 @@ class TestPerplexityStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {"model": "sonar"}
 
-    @property
-    def returns_usage_metadata(self) -> bool:
-        # TODO: add usage metadata and delete this property
-        # https://docs.perplexity.ai/api-reference/chat-completions#response-usage
-        return False
-
     @pytest.mark.xfail(reason="TODO: handle in integration.")
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
         super().test_double_messages_conversation(model)

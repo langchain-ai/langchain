@@ -1,3 +1,5 @@
+"""Parsers for OpenAI functions output."""
+
 import copy
 import json
 from types import GenericAlias
@@ -97,9 +99,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         except KeyError as exc:
             if partial:
                 return None
-            else:
-                msg = f"Could not parse function call: {exc}"
-                raise OutputParserException(msg) from exc
+            msg = f"Could not parse function call: {exc}"
+            raise OutputParserException(msg) from exc
         try:
             if partial:
                 try:
@@ -107,13 +108,12 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                         return parse_partial_json(
                             function_call["arguments"], strict=self.strict
                         )
-                    else:
-                        return {
-                            **function_call,
-                            "arguments": parse_partial_json(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
+                    return {
+                        **function_call,
+                        "arguments": parse_partial_json(
+                            function_call["arguments"], strict=self.strict
+                        ),
+                    }
                 except json.JSONDecodeError:
                     return None
             else:

@@ -6,6 +6,8 @@ import time
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Optional, Union, cast
 
+from typing_extensions import override
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -26,6 +28,7 @@ class FakeMessagesListChatModel(BaseChatModel):
     i: int = 0
     """Internally incremented after every model invocation."""
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -42,12 +45,13 @@ class FakeMessagesListChatModel(BaseChatModel):
         return ChatResult(generations=[generation])
 
     @property
+    @override
     def _llm_type(self) -> str:
         return "fake-messages-list-chat-model"
 
 
 class FakeListChatModelError(Exception):
-    pass
+    """Fake error for testing purposes."""
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -62,9 +66,11 @@ class FakeListChatModel(SimpleChatModel):
     """Internally incremented after every model invocation."""
 
     @property
+    @override
     def _llm_type(self) -> str:
         return "fake-list-chat-model"
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
@@ -80,6 +86,7 @@ class FakeListChatModel(SimpleChatModel):
             self.i = 0
         return response
 
+    @override
     def _stream(
         self,
         messages: list[BaseMessage],
@@ -103,6 +110,7 @@ class FakeListChatModel(SimpleChatModel):
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
+    @override
     async def _astream(
         self,
         messages: list[BaseMessage],
@@ -126,9 +134,11 @@ class FakeListChatModel(SimpleChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property
+    @override
     def _identifying_params(self) -> dict[str, Any]:
         return {"responses": self.responses}
 
+    @override
     # manually override batch to preserve batch ordering with no concurrency
     def batch(
         self,
@@ -142,6 +152,7 @@ class FakeListChatModel(SimpleChatModel):
             return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
         return [self.invoke(m, config, **kwargs) for m in inputs]
 
+    @override
     async def abatch(
         self,
         inputs: list[Any],
@@ -262,7 +273,7 @@ class GenericFakeChatModel(BaseChatModel):
                 msg = "Expected content to be a string."
                 raise ValueError(msg)
 
-            content_chunks = cast(list[str], re.split(r"(\s)", content))
+            content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
@@ -280,7 +291,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = cast(list[str], re.split(r"(,)", fvalue))
+                            fvalue_chunks = cast("list[str]", re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(

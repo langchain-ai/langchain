@@ -1,3 +1,8 @@
+"""This module is deprecated and will be removed in a future release.
+
+Please use LangChainTracer instead.
+"""
+
 from typing import Any
 
 
