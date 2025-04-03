@@ -550,7 +550,7 @@ packages:
 - name: langchain-zotero-retriever
   name_title: Zotero
   path: .
-  repo:   
+  repo: TimBMK/langchain-zotero-retriever
   provider_page: zotero
   downloads: 153
   downloads_updated_at: '2025-03-22T21:59:15.663971+00:00'
