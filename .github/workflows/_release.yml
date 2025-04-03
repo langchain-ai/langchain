@@ -327,6 +327,7 @@ jobs:
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
