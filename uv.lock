@@ -2184,6 +2184,7 @@ requires-dist = [
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "libs/partners/openai" },
+    { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
@@ -2193,7 +2194,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai"]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
