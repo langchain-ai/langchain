@@ -723,7 +723,8 @@ class PDFMinerParser(BaseBlobParser):
             pages = PDFPage.get_pages(pdf_file_obj, password=self.password or "")
             rsrcmgr = PDFResourceManager()
             doc_metadata = _purge_metadata(
-                self._get_metadata(pdf_file_obj, password=self.password or "")
+                {"producer": "PDFMiner", "creator": "PDFMiner", "creationdate": ""}
+                | self._get_metadata(pdf_file_obj, password=self.password or "")
             )
             doc_metadata["source"] = blob.source
 
@@ -996,7 +997,11 @@ class PyMuPDFParser(BaseBlobParser):
                     doc = pymupdf.open(stream=file_path, filetype="pdf")
                 if doc.is_encrypted:
                     doc.authenticate(self.password)
-                doc_metadata = self._extract_metadata(doc, blob)
+                doc_metadata = {
+                    "producer": "PyMuPDF",
+                    "creator": "PyMuPDF",
+                    "creationdate": "",
+                } | self._extract_metadata(doc, blob)
                 full_content = []
                 for page in doc:
                     all_text = self._get_page_content(doc, page, text_kwargs).strip()
@@ -1302,7 +1307,11 @@ class PyPDFium2Parser(BaseBlobParser):
                     )
                     full_content = []
 
-                    doc_metadata = _purge_metadata(pdf_reader.get_metadata_dict())
+                    doc_metadata = {
+                        "producer": "PyPDFium2",
+                        "creator": "PyPDFium2",
+                        "creationdate": "",
+                    } | _purge_metadata(pdf_reader.get_metadata_dict())
                     doc_metadata["source"] = blob.source
                     doc_metadata["total_pages"] = len(pdf_reader)
 

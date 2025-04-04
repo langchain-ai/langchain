@@ -66,8 +66,11 @@ class ExecPython(BaseTool):  # type: ignore[override, override]
     handle_tool_error: bool = True
 
     client: Any = None
+    runtime_revision_id: Optional[str] = None
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(
+        self, runtime_revision_id: Optional[str] = None, **kwargs: Any
+    ) -> None:
         try:
             from rizaio import Riza
         except ImportError as e:
@@ -77,11 +80,14 @@ class ExecPython(BaseTool):  # type: ignore[override, override]
             ) from e
         super().__init__(**kwargs)
         self.client = Riza()
+        self.runtime_revision_id = runtime_revision_id
 
     def _run(
         self, code: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        output = self.client.command.exec(language="PYTHON", code=code)
+        output = self.client.command.exec(
+            runtime_revision_id=self.runtime_revision_id, language="python", code=code
+        )
         if output.exit_code > 0:
             raise ToolException(
                 f"Riza code execution returned a non-zero exit code. "
@@ -107,8 +113,11 @@ class ExecJavaScript(BaseTool):  # type: ignore[override, override]
     handle_tool_error: bool = True
 
     client: Any = None
+    runtime_revision_id: Optional[str] = None
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(
+        self, runtime_revision_id: Optional[str] = None, **kwargs: Any
+    ) -> None:
         try:
             from rizaio import Riza
         except ImportError as e:
@@ -118,11 +127,16 @@ class ExecJavaScript(BaseTool):  # type: ignore[override, override]
             ) from e
         super().__init__(**kwargs)
         self.client = Riza()
+        self.runtime_revision_id = runtime_revision_id
 
     def _run(
         self, code: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
-        output = self.client.command.exec(language="JAVASCRIPT", code=code)
+        output = self.client.command.exec(
+            runtime_revision_id=self.runtime_revision_id,
+            language="javascript",
+            code=code,
+        )
         if output.exit_code > 0:
             raise ToolException(
                 f"Riza code execution returned a non-zero exit code. "
