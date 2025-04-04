@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -879,9 +881,6 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """
 
 
-T = TypeVar("T", bound="BaseCallbackManager")
-
-
 class BaseCallbackManager(CallbackManagerMixin):
     """Base callback manager for LangChain."""
 
@@ -920,7 +919,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.metadata = metadata or {}
         self.inheritable_metadata = inheritable_metadata or {}
 
-    def copy(self: T) -> T:
+    def copy(self) -> Self:
         """Copy the callback manager."""
         return self.__class__(
             handlers=self.handlers.copy(),
@@ -932,7 +931,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_metadata=self.inheritable_metadata.copy(),
         )
 
-    def merge(self: T, other: BaseCallbackManager) -> T:
+    def merge(self, other: BaseCallbackManager) -> Self:
         """Merge the callback manager with another callback manager.
 
         May be overwritten in subclasses. Primarily used internally
@@ -1007,8 +1006,10 @@ class BaseCallbackManager(CallbackManagerMixin):
         Args:
             handler (BaseCallbackHandler): The handler to remove.
         """
-        self.handlers.remove(handler)
-        self.inheritable_handlers.remove(handler)
+        if handler in self.handlers:
+            self.handlers.remove(handler)
+        if handler in self.inheritable_handlers:
+            self.inheritable_handlers.remove(handler)
 
     def set_handlers(
         self, handlers: list[BaseCallbackHandler], inherit: bool = True

@@ -152,6 +152,16 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": True,
         "pricing": "Free trial, with pay-as-you-go and flat rate plans after",
     },
+    "Hyperbrowser Browser Agent Tools": {
+        "link": "/docs/integrations/tools/hyperbrowser_browser_agent_tools",
+        "interactions": True,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
+    "Hyperbrowser Web Scraping Tools": {
+        "link": "/docs/integrations/tools/hyperbrowser_web_scraping_tools",
+        "interactions": False,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {

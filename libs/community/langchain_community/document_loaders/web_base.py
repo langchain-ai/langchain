@@ -367,9 +367,6 @@ class WebBaseLoader(BaseLoader):
     def scrape(self, parser: Union[str, None] = None) -> Any:
         """Scrape data from webpage and return it in BeautifulSoup format."""
 
-        if parser is None:
-            parser = self.default_parser
-
         return self._scrape(self.web_path, parser=parser, bs_kwargs=self.bs_kwargs)
 
     def lazy_load(self) -> Iterator[Document]:

@@ -16,7 +16,10 @@ from langchain_core.utils import (
     guard_import,
 )
 from langchain_core.utils._merge import merge_dicts
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_core.utils.pydantic import (
+    IS_PYDANTIC_V1,
+    IS_PYDANTIC_V2,
+)
 from langchain_core.utils.utils import secret_from_env
 
 
@@ -211,7 +214,7 @@ def test_guard_import_failure(
         guard_import(module_name, pip_name=pip_name, package=package)
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
+@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v1_in_2() -> None:
     from pydantic.v1 import BaseModel as PydanticV1BaseModel
     from pydantic.v1 import Field
@@ -226,7 +229,7 @@ def test_get_pydantic_field_names_v1_in_2() -> None:
     assert result == expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
+@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v2_in_2() -> None:
     from pydantic import BaseModel, Field
 
@@ -240,7 +243,7 @@ def test_get_pydantic_field_names_v2_in_2() -> None:
     assert result == expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Requires pydantic 1")
+@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Requires pydantic 1")
 def test_get_pydantic_field_names_v1() -> None:
     from pydantic import BaseModel, Field
 

@@ -1,4 +1,4 @@
-# flake8: noqa
+"""Format instructions."""
 
 JSON_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.
 
@@ -8,4 +8,4 @@ the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of the schema.
 Here is the output schema:
 ```
 {schema}
-```"""
+```"""  # noqa: E501

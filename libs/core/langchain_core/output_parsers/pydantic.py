@@ -11,7 +11,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
-    PYDANTIC_MAJOR_VERSION,
+    IS_PYDANTIC_V2,
     PydanticBaseModel,
     TBaseModel,
 )
@@ -24,7 +24,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
-        if PYDANTIC_MAJOR_VERSION == 2:
+        if IS_PYDANTIC_V2:
             try:
                 if issubclass(self.pydantic_object, pydantic.BaseModel):
                     return self.pydantic_object.model_validate(obj)

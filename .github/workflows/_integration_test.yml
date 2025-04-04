@@ -76,6 +76,7 @@ jobs:
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
         run: |
           make integration_tests
 

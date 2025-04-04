@@ -994,12 +994,12 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 )
 def test_convert_union_type_py_39() -> None:
     @tool
-    def magic_function(input: int | float) -> str:  # noqa: FA102
+    def magic_function(input: int | str) -> str:  # noqa: FA102
         """Compute a magic function."""
 
     result = convert_to_openai_function(magic_function)
     assert result["parameters"]["properties"]["input"] == {
-        "anyOf": [{"type": "integer"}, {"type": "number"}]
+        "anyOf": [{"type": "integer"}, {"type": "string"}]
     }
 
 

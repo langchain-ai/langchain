@@ -19,9 +19,9 @@ from langchain_core.utils.json import (
     parse_json_markdown,
     parse_partial_json,
 )
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_core.utils.pydantic import IS_PYDANTIC_V1
 
-if PYDANTIC_MAJOR_VERSION < 2:
+if IS_PYDANTIC_V1:
     PydanticBaseModel = pydantic.BaseModel
 
 else:

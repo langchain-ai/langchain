@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
@@ -71,6 +72,11 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     )
 
 
+@deprecated(
+    since="0.3.21",
+    removal="1.0",
+    alternative_import="langchain_perplexity.ChatPerplexity",
+)
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 

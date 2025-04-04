@@ -145,6 +145,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests
