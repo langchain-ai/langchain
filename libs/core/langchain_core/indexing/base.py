@@ -1,15 +1,20 @@
+"""Base classes for indexing."""
+
 from __future__ import annotations
 
 import abc
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
 from langchain_core._api import beta
-from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import run_in_executor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.documents import Document
 
 
 class RecordManager(ABC):
@@ -249,9 +254,7 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """Async in-memory schema creation is simply ensuring
-        the structure is initialized.
-        """
+        """Async in-memory schema creation is simply ensuring the structure is initialized."""  # noqa: E501
 
     def get_time(self) -> float:
         """Get the current server time as a high resolution timestamp!"""
@@ -288,13 +291,14 @@ class InMemoryRecordManager(RecordManager):
                 ids.
             ValueError: If time_at_least is in the future.
         """
-
         if group_ids and len(keys) != len(group_ids):
-            raise ValueError("Length of keys must match length of group_ids")
+            msg = "Length of keys must match length of group_ids"
+            raise ValueError(msg)
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
             if time_at_least and time_at_least > self.get_time():
-                raise ValueError("time_at_least must be in the past")
+                msg = "time_at_least must be in the past"
+                raise ValueError(msg)
             self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
 
     async def aupdate(
@@ -465,26 +469,26 @@ class DeleteResponse(TypedDict, total=False):
 
     num_deleted: int
     """The number of items that were successfully deleted.
-    
+
     If returned, this should only include *actual* deletions.
-    
-    If the ID did not exist to begin with, 
+
+    If the ID did not exist to begin with,
     it should not be included in this count.
     """
 
     succeeded: Sequence[str]
     """The IDs that were successfully deleted.
-    
+
     If returned, this should only include *actual* deletions.
-    
+
     If the ID did not exist to begin with,
     it should not be included in this list.
     """
 
     failed: Sequence[str]
     """The IDs that failed to be deleted.
-    
-    Please note that deleting an ID that 
+
+    Please note that deleting an ID that
     does not exist is **NOT** considered a failure.
     """
 

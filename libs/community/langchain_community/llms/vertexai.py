@@ -11,7 +11,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import pre_init
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utilities.vertexai import (
     create_retry_decorator,
@@ -100,6 +100,8 @@ async def acompletion_with_retry(
 
 
 class _VertexAIBase(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     project: Optional[str] = None
     "The default GCP project to use when making Vertex API calls."
     location: str = "us-central1"
@@ -122,7 +124,7 @@ class _VertexAIBase(BaseModel):
         return cls.task_executor
 
 
-class _VertexAICommon(_VertexAIBase):
+class _VertexAICommon(_VertexAIBase):  # type: ignore[override]
     client: "_LanguageModel" = None  #: :meta private:
     client_preview: "_LanguageModel" = None  #: :meta private:
     model_name: str
@@ -206,7 +208,7 @@ class _VertexAICommon(_VertexAIBase):
     removal="1.0",
     alternative_import="langchain_google_vertexai.VertexAI",
 )
-class VertexAI(_VertexAICommon, BaseLLM):
+class VertexAI(_VertexAICommon, BaseLLM):  # type: ignore[override]
     """Google Vertex AI large language models."""
 
     model_name: str = "text-bison"
@@ -399,8 +401,12 @@ class VertexAI(_VertexAICommon, BaseLLM):
 class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     """Vertex AI Model Garden large language models."""
 
-    client: "PredictionServiceClient" = None  #: :meta private:
-    async_client: "PredictionServiceAsyncClient" = None  #: :meta private:
+    client: "PredictionServiceClient" = (
+        None  #: :meta private:  # type: ignore[assignment]
+    )
+    async_client: "PredictionServiceAsyncClient" = (
+        None  #: :meta private:  # type: ignore[assignment]
+    )
     endpoint_id: str
     "A name of an endpoint where the model has been deployed."
     allowed_model_args: Optional[List[str]] = None
@@ -442,7 +448,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,
+            project=self.project,  # type: ignore[arg-type]
             location=self.location,
             endpoint=self.endpoint_id,
         )

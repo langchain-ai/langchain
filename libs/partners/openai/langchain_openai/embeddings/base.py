@@ -573,7 +573,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         chunk_size_ = chunk_size or self.chunk_size
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
-            for i in range(0, len(texts), self.chunk_size):
+            for i in range(0, len(texts), chunk_size_):
                 response = self.client.create(
                     input=texts[i : i + chunk_size_], **self._invocation_params
                 )

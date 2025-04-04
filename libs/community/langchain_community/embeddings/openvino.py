@@ -166,19 +166,19 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             import numpy as np
         except ImportError as e:
             raise ImportError(
-                "Unable to import numpy, please install with " "`pip install -U numpy`."
+                "Unable to import numpy, please install with `pip install -U numpy`."
             ) from e
         try:
             from tqdm import trange
         except ImportError as e:
             raise ImportError(
-                "Unable to import tqdm, please install with " "`pip install -U tqdm`."
+                "Unable to import tqdm, please install with `pip install -U tqdm`."
             ) from e
         try:
             import torch
         except ImportError as e:
             raise ImportError(
-                "Unable to import torch, please install with " "`pip install -U torch`."
+                "Unable to import torch, please install with `pip install -U torch`."
             ) from e
 
         def run_mean_pooling(model_output: Any, attention_mask: Any) -> Any:

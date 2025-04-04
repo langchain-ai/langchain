@@ -27,7 +27,7 @@ class ClosestAirportSchema(BaseModel):
     )
 
 
-class AmadeusClosestAirport(AmadeusBaseTool):
+class AmadeusClosestAirport(AmadeusBaseTool):  # type: ignore[override, override, override]
     """Tool for finding the closest airport to a particular location."""
 
     name: str = "closest_airport"

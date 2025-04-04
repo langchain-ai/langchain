@@ -11,6 +11,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -47,6 +48,7 @@ from langchain_core.messages import (
     ToolCallChunk,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -133,6 +135,8 @@ def _convert_delta_to_message_chunk(
     content = _dict.get("content") or ""
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
+    elif _dict.get("reasoning_content"):
+        additional_kwargs = {"reasoning_content": _dict["reasoning_content"]}
     else:
         additional_kwargs = {}
 
@@ -212,6 +216,33 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
+_OPENAI_MODELS = [
+    "o1-mini",
+    "o1-preview",
+    "gpt-4o-mini",
+    "gpt-4o-mini-2024-07-18",
+    "gpt-4o",
+    "gpt-4o-2024-08-06",
+    "gpt-4o-2024-05-13",
+    "gpt-4-turbo",
+    "gpt-4-turbo-preview",
+    "gpt-4-0125-preview",
+    "gpt-4-1106-preview",
+    "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0301",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-16k-0613",
+    "gpt-4",
+    "gpt-4-0314",
+    "gpt-4-0613",
+    "gpt-4-32k",
+    "gpt-4-32k-0314",
+    "gpt-4-32k-0613",
+]
+
+
 class ChatLiteLLM(BaseChatModel):
     """Chat model that uses the LiteLLM API."""
 
@@ -225,27 +256,29 @@ class ChatLiteLLM(BaseChatModel):
     replicate_api_key: Optional[str] = None
     cohere_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
+    api_key: Optional[str] = None
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
     custom_llm_provider: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    temperature: Optional[float] = 1
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    temperature: Optional[float] = None
     """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for API call not explicitly specified."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     top_k: Optional[int] = None
     """Decode using top-k sampling: consider the set of top_k most probable tokens.
        Must be positive."""
-    n: int = 1
+    n: Optional[int] = None
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
     max_tokens: Optional[int] = None
 
-    max_retries: int = 6
+    max_retries: int = 1
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -271,6 +304,21 @@ class ChatLiteLLM(BaseChatModel):
         if self.model_name is not None:
             set_model_value = self.model_name
         self.client.api_base = self.api_base
+        self.client.api_key = self.api_key
+        for named_api_key in [
+            "openai_api_key",
+            "azure_api_key",
+            "anthropic_api_key",
+            "replicate_api_key",
+            "cohere_api_key",
+            "openrouter_api_key",
+        ]:
+            if api_key_value := getattr(self, named_api_key):
+                setattr(
+                    self.client,
+                    named_api_key.replace("_api_key", "_key"),
+                    api_key_value,
+                )
         self.client.organization = self.organization
         creds: Dict[str, Any] = {
             "model": set_model_value,
@@ -363,14 +411,19 @@ class ChatLiteLLM(BaseChatModel):
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
+        token_usage = response.get("usage", {})
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
+            if isinstance(message, AIMessage):
+                message.response_metadata = {
+                    "model_name": self.model_name or self.model
+                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.get("finish_reason")),
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
         set_model_value = self.model
         if self.model_name is not None:
             set_model_value = self.model_name
@@ -465,6 +518,9 @@ class ChatLiteLLM(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -476,17 +532,47 @@ class ChatLiteLLM(BaseChatModel):
                 Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
                 models, callables, and BaseTools will be automatically converted to
                 their schema dictionary representation.
-            tool_choice: Which tool to require the model to call.
-                Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
-                (if any), or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
+            tool_choice: Which tool to require the model to call. Options are:
+                - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
+                - ``"auto"``:
+                    automatically selects a tool (including no tool).
+                - ``"none"``:
+                    does not call a tool.
+                - ``"any"`` or ``"required"`` or ``True``:
+                    forces least one tool to be called.
+                - dict of the form:
+                ``{"type": "function", "function": {"name": <<tool_name>>}}``
+                - ``False`` or ``None``: no effect
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        return super().bind(tools=formatted_tools, **kwargs)
+
+        # In case of openai if tool_choice is `any` or if bool has been provided we
+        # change it to `required` as that is suppored by openai.
+        if (
+            (self.model is not None and "azure" in self.model)
+            or (self.model_name is not None and "azure" in self.model_name)
+            or (self.model is not None and self.model in _OPENAI_MODELS)
+            or (self.model_name is not None and self.model_name in _OPENAI_MODELS)
+        ) and (tool_choice == "any" or isinstance(tool_choice, bool)):
+            tool_choice = "required"
+        # If tool_choice is bool apart from openai we make it `any`
+        elif isinstance(tool_choice, bool):
+            tool_choice = "any"
+        elif isinstance(tool_choice, dict):
+            tool_names = [
+                formatted_tool["function"]["name"] for formatted_tool in formatted_tools
+            ]
+            if not any(
+                tool_name == tool_choice["function"]["name"] for tool_name in tool_names
+            ):
+                raise ValueError(
+                    f"Tool choice {tool_choice} was specified, but the only "
+                    f"provided tools were {tool_names}."
+                )
+        return super().bind(tools=formatted_tools, tool_choice=tool_choice, **kwargs)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -505,3 +591,13 @@ class ChatLiteLLM(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "litellm-chat"
+
+
+def _create_usage_metadata(token_usage: Mapping[str, Any]) -> UsageMetadata:
+    input_tokens = token_usage.get("prompt_tokens", 0)
+    output_tokens = token_usage.get("completion_tokens", 0)
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=input_tokens + output_tokens,
+    )

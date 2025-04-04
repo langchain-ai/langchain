@@ -223,7 +223,7 @@ class EnsembleRetriever(BaseRetriever):
             retriever.invoke(
                 query,
                 patch_config(
-                    config, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+                    config, callbacks=run_manager.get_child(tag=f"retriever_{i + 1}")
                 ),
             )
             for i, retriever in enumerate(self.retrievers)
@@ -265,7 +265,8 @@ class EnsembleRetriever(BaseRetriever):
                 retriever.ainvoke(
                     query,
                     patch_config(
-                        config, callbacks=run_manager.get_child(tag=f"retriever_{i+1}")
+                        config,
+                        callbacks=run_manager.get_child(tag=f"retriever_{i + 1}"),
                     ),
                 )
                 for i, retriever in enumerate(self.retrievers)

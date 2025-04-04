@@ -244,6 +244,11 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         return embedding.tolist()
 
 
+@deprecated(
+    since="0.2.2",
+    removal="1.0",
+    alternative_import="langchain_huggingface.HuggingFaceEmbeddings",
+)
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
@@ -322,11 +327,25 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
+                "Please install it with `pip install sentence-transformers`."
             ) from exc
-
+        extra_model_kwargs = [
+            "torch_dtype",
+            "attn_implementation",
+            "provider",
+            "file_name",
+            "export",
+        ]
+        extra_model_kwargs_dict = {
+            k: self.model_kwargs.pop(k)
+            for k in extra_model_kwargs
+            if k in self.model_kwargs
+        }
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            self.model_name,
+            cache_folder=self.cache_folder,
+            **self.model_kwargs,
+            model_kwargs=extra_model_kwargs_dict,
         )
 
         if "-zh" in self.model_name:

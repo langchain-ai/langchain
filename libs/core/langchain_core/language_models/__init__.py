@@ -1,4 +1,6 @@
-"""**Language Model** is a type of model that can generate text or complete
+"""Language models.
+
+**Language Model** is a type of model that can generate text or complete
 text prompts.
 
 LangChain has two main classes to work with language models: **Chat Models**
@@ -19,7 +21,7 @@ information on how to implement a custom chat model.
 To implement a custom Chat Model, inherit from `BaseChatModel`. See
 the following guide for more information on how to implement a custom Chat Model:
 
-https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/
+https://python.langchain.com/docs/how_to/custom_chat_model/
 
 **LLMs**
 
@@ -34,7 +36,7 @@ string under the hood before being passed to the underlying model.
 To implement a custom LLM, inherit from `BaseLLM` or `LLM`.
 Please see the following guide for more information on how to implement a custom LLM:
 
-https://python.langchain.com/v0.2/docs/how_to/custom_llm/
+https://python.langchain.com/docs/how_to/custom_llm/
 
 
 """  # noqa: E501

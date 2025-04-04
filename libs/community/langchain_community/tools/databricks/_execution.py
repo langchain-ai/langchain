@@ -1,5 +1,8 @@
 import inspect
 import json
+import logging
+import os
+import time
 from dataclasses import dataclass
 from io import StringIO
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
@@ -7,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
-    from databricks.sdk.service.sql import StatementParameterListItem
+    from databricks.sdk.service.sql import StatementParameterListItem, StatementState
 
 EXECUTE_FUNCTION_ARG_NAME = "__execution_args__"
 DEFAULT_EXECUTE_FUNCTION_ARGS = {
@@ -15,6 +18,9 @@ DEFAULT_EXECUTE_FUNCTION_ARGS = {
     "row_limit": 100,
     "byte_limit": 4096,
 }
+UC_TOOL_CLIENT_EXECUTION_TIMEOUT = "UC_TOOL_CLIENT_EXECUTION_TIMEOUT"
+DEFAULT_UC_TOOL_CLIENT_EXECUTION_TIMEOUT = "120"
+_logger = logging.getLogger(__name__)
 
 
 def is_scalar(function: "FunctionInfo") -> bool:
@@ -60,9 +66,9 @@ def get_execute_function_sql_stmt(
     else:
         parts.append(f"SELECT * FROM {function.full_name}(")
     if function.input_params is None or function.input_params.parameters is None:
-        assert (
-            not json_params
-        ), "Function has no parameters but parameters were provided."
+        assert not json_params, (
+            "Function has no parameters but parameters were provided."
+        )
     else:
         args = []
         use_named_args = False
@@ -174,21 +180,50 @@ def execute_function(
         parameters=parametrized_statement.parameters,
         **execute_statement_args,  # type: ignore
     )
-    status = response.status
-    assert status is not None, f"Statement execution failed: {response}"
-    if status.state != StatementState.SUCCEEDED:
-        error = status.error
-        assert (
-            error is not None
-        ), "Statement execution failed but no error message was provided."
+    if response.status and job_pending(response.status.state) and response.statement_id:
+        statement_id = response.statement_id
+        wait_time = 0
+        retry_cnt = 0
+        client_execution_timeout = int(
+            os.environ.get(
+                UC_TOOL_CLIENT_EXECUTION_TIMEOUT,
+                DEFAULT_UC_TOOL_CLIENT_EXECUTION_TIMEOUT,
+            )
+        )
+        while wait_time < client_execution_timeout:
+            wait = min(2**retry_cnt, client_execution_timeout - wait_time)
+            _logger.debug(
+                f"Retrying {retry_cnt} time to get statement execution "
+                f"status after {wait} seconds."
+            )
+            time.sleep(wait)
+            response = ws.statement_execution.get_statement(statement_id)  # type: ignore
+            if response.status is None or not job_pending(response.status.state):
+                break
+            wait_time += wait
+            retry_cnt += 1
+        if response.status and job_pending(response.status.state):
+            return FunctionExecutionResult(
+                error=f"Statement execution is still pending after {wait_time} "
+                "seconds. Please increase the wait_timeout argument for executing "
+                f"the function or increase {UC_TOOL_CLIENT_EXECUTION_TIMEOUT} "
+                "environment variable for increasing retrying time, default is "
+                f"{DEFAULT_UC_TOOL_CLIENT_EXECUTION_TIMEOUT} seconds."
+            )
+    assert response.status is not None, f"Statement execution failed: {response}"
+    if response.status.state != StatementState.SUCCEEDED:
+        error = response.status.error
+        assert error is not None, (
+            f"Statement execution failed but no error message was provided: {response}"
+        )
         return FunctionExecutionResult(error=f"{error.error_code}: {error.message}")
     manifest = response.manifest
     assert manifest is not None
     truncated = manifest.truncated
     result = response.result
-    assert (
-        result is not None
-    ), "Statement execution succeeded but no result was provided."
+    assert result is not None, (
+        "Statement execution succeeded but no result was provided."
+    )
     data_array = result.data_array
     if is_scalar(function):
         value = None
@@ -199,9 +234,9 @@ def execute_function(
         )
     else:
         schema = manifest.schema
-        assert (
-            schema is not None and schema.columns is not None
-        ), "Statement execution succeeded but no schema was provided."
+        assert schema is not None and schema.columns is not None, (
+            "Statement execution succeeded but no schema was provided."
+        )
         columns = [c.name for c in schema.columns]
         if data_array is None:
             data_array = []
@@ -211,3 +246,9 @@ def execute_function(
         return FunctionExecutionResult(
             format="CSV", value=csv_buffer.getvalue(), truncated=truncated
         )
+
+
+def job_pending(state: Optional["StatementState"]) -> bool:
+    from databricks.sdk.service.sql import StatementState
+
+    return state in (StatementState.PENDING, StatementState.RUNNING)

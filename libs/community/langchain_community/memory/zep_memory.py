@@ -7,7 +7,7 @@ from langchain_community.chat_message_histories import ZepChatMessageHistory
 try:
     from langchain.memory import ConversationBufferMemory
 
-    class ZepMemory(ConversationBufferMemory):
+    class ZepMemory(ConversationBufferMemory):  # type: ignore[override]
         """Persist your chain history to the Zep MemoryStore.
 
         The number of messages returned by Zep and when the Zep server summarizes chat
@@ -123,6 +123,7 @@ try:
             input_str, output_str = self._get_input_output(inputs, outputs)
             self.chat_memory.add_user_message(input_str, metadata=metadata)
             self.chat_memory.add_ai_message(output_str, metadata=metadata)
+
 except ImportError:
     # Placeholder object
     class ZepMemory:  # type: ignore[no-redef]

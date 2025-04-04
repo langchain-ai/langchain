@@ -1,4 +1,5 @@
-"""
+"""Cache classes.
+
 .. warning::
   Beta Feature!
 
@@ -160,7 +161,8 @@ class InMemoryCache(BaseCache):
         """
         self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
         if maxsize is not None and maxsize <= 0:
-            raise ValueError("maxsize must be greater than 0")
+            msg = "maxsize must be greater than 0"
+            raise ValueError(msg)
         self._maxsize = maxsize
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:

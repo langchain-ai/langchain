@@ -1,3 +1,5 @@
+"""Human message."""
+
 from typing import Any, Literal, Union
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -30,19 +32,13 @@ class HumanMessage(BaseMessage):
 
     example: bool = False
     """Use to denote that a message is part of an example conversation.
-    
+
     At the moment, this is ignored by most models. Usage is discouraged.
     Defaults to False.
     """
 
     type: Literal["human"] = "human"
     """The type of the message (used for serialization). Defaults to "human"."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -66,11 +62,5 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization). 
+    """The type of the message (used for serialization).
     Defaults to "HumanMessageChunk"."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]

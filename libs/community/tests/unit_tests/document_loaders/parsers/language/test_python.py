@@ -25,8 +25,8 @@ hello("Hello!")"""
 hello("Hello!")"""
 
         self.expected_extracted_code = [
-            "def hello(text):\n" "    print(text)",
-            "class Simple:\n" "    def __init__(self):\n" "        self.a = 1",
+            "def hello(text):\n    print(text)",
+            "class Simple:\n    def __init__(self):\n        self.a = 1",
         ]
 
     def test_extract_functions_classes(self) -> None:

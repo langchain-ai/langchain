@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Literal, Optional, cast
 
 import voyageai  # type: ignore
 from langchain_core.embeddings import Embeddings
@@ -15,6 +15,11 @@ from pydantic import (
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_VOYAGE_2_BATCH_SIZE = 72
+DEFAULT_VOYAGE_3_LITE_BATCH_SIZE = 30
+DEFAULT_VOYAGE_3_BATCH_SIZE = 10
+DEFAULT_BATCH_SIZE = 7
 
 
 class VoyageAIEmbeddings(BaseModel, Embeddings):
@@ -32,8 +37,10 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
     _aclient: voyageai.client_async.AsyncClient = PrivateAttr()
     model: str
     batch_size: int
+
+    output_dimension: Optional[Literal[256, 512, 1024, 2048]] = None
     show_progress_bar: bool = False
-    truncation: Optional[bool] = None
+    truncation: bool = True
     voyage_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
@@ -55,7 +62,19 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         model = values.get("model")
         batch_size = values.get("batch_size")
         if batch_size is None:
-            values["batch_size"] = 72 if model in ["voyage-2", "voyage-02"] else 7
+            values["batch_size"] = (
+                DEFAULT_VOYAGE_2_BATCH_SIZE
+                if model in ["voyage-2", "voyage-02"]
+                else (
+                    DEFAULT_VOYAGE_3_LITE_BATCH_SIZE
+                    if model == "voyage-3-lite"
+                    else (
+                        DEFAULT_VOYAGE_3_BATCH_SIZE
+                        if model == "voyage-3"
+                        else DEFAULT_BATCH_SIZE
+                    )
+                )
+            )
         return values
 
     @model_validator(mode="after")
@@ -88,22 +107,26 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
 
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
-            embeddings.extend(
-                self._client.embed(
-                    texts[i : i + self.batch_size],
-                    model=self.model,
-                    input_type="document",
-                    truncation=self.truncation,
-                ).embeddings
-            )
-
+            r = self._client.embed(
+                texts[i : i + self.batch_size],
+                model=self.model,
+                input_type="document",
+                truncation=self.truncation,
+                output_dimension=self.output_dimension,
+            ).embeddings
+            embeddings.extend(cast(Iterable[List[float]], r))
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        return self._client.embed(
-            [text], model=self.model, input_type="query", truncation=self.truncation
+        r = self._client.embed(
+            [text],
+            model=self.model,
+            input_type="query",
+            truncation=self.truncation,
+            output_dimension=self.output_dimension,
         ).embeddings[0]
+        return cast(List[float], r)
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings: List[List[float]] = []
@@ -115,8 +138,9 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
                 model=self.model,
                 input_type="document",
                 truncation=self.truncation,
+                output_dimension=self.output_dimension,
             )
-            embeddings.extend(r.embeddings)
+            embeddings.extend(cast(Iterable[List[float]], r.embeddings))
 
         return embeddings
 
@@ -126,5 +150,6 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
             model=self.model,
             input_type="query",
             truncation=self.truncation,
+            output_dimension=self.output_dimension,
         )
-        return r.embeddings[0]
+        return cast(List[float], r.embeddings[0])

@@ -9,3 +9,4 @@ pyyaml
 sphinx-design
 sphinx-copybutton
 beautifulsoup4
+sphinxcontrib-googleanalytics

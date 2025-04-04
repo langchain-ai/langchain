@@ -26,6 +26,7 @@ class _OneNoteGraphSettings(BaseSettings):
         populate_by_name=True,
         env_file=".env",
         env_prefix="MS_GRAPH_",
+        extra="ignore",
     )
 
 

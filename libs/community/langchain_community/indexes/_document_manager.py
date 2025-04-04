@@ -27,7 +27,7 @@ def _get_pymongo_client(mongodb_url: str, **kwargs: Any) -> Any:
         client = pymongo(mongodb_url, **kwargs)
     except ValueError as e:
         raise ImportError(
-            f"MongoClient string provided is not in proper format. " f"Got error: {e} "
+            f"MongoClient string provided is not in proper format. Got error: {e} "
         )
     return client
 
@@ -221,11 +221,17 @@ class MongoDocumentManager(RecordManager):
     def delete_keys(self, keys: Sequence[str]) -> None:
         """Delete documents from the MongoDB collection."""
         self.sync_collection.delete_many(
-            {"namespace": self.namespace, "key": {"$in": keys}}
+            {
+                "namespace": self.namespace,
+                "key": {"$in": keys},
+            }
         )
 
     async def adelete_keys(self, keys: Sequence[str]) -> None:
         """Asynchronously delete documents from the MongoDB collection."""
         await self.async_collection.delete_many(
-            {"namespace": self.namespace, "key": {"$in": keys}}
+            {
+                "namespace": self.namespace,
+                "key": {"$in": keys},
+            }
         )

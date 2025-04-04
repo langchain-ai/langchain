@@ -576,8 +576,7 @@ class APIOperation(BaseModel):
                 prop_type = f"{{\n{nested_props}\n{' ' * indent}}}"
 
             formatted_props.append(
-                f"{prop_desc}\n{' ' * indent}{prop_name}"
-                f"{prop_required}: {prop_type},"
+                f"{prop_desc}\n{' ' * indent}{prop_name}{prop_required}: {prop_type},"
             )
 
         return "\n".join(formatted_props)

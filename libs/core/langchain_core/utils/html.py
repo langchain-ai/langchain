@@ -1,3 +1,5 @@
+"""Utilities for working with HTML."""
+
 import logging
 import re
 from collections.abc import Sequence
@@ -70,6 +72,7 @@ def extract_sub_links(
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
         continue_on_failure: If True, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
+
     Returns:
         List[str]: sub links.
     """
@@ -94,10 +97,11 @@ def extract_sub_links(
             absolute_paths.add(absolute_path)
         except Exception as e:
             if continue_on_failure:
-                logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
+                logger.warning(
+                    "Unable to load link %s. Raised exception:\n\n%s", link, e
+                )
                 continue
-            else:
-                raise e
+            raise
 
     results = []
     for path in absolute_paths:

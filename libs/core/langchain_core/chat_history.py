@@ -1,6 +1,5 @@
 """**Chat message history** stores a history of the message interactions in a chat.
 
-
 **Class hierarchy:**
 
 .. code-block::
@@ -18,8 +17,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 from pydantic import BaseModel, Field
 
@@ -29,6 +27,9 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class BaseChatMessageHistory(ABC):
@@ -157,10 +158,11 @@ class BaseChatMessageHistory(ABC):
             # method, so we should use it.
             self.add_messages([message])
         else:
-            raise NotImplementedError(
+            msg = (
                 "add_message is not implemented for this class. "
                 "Please implement add_message or add_messages."
             )
+            raise NotImplementedError(msg)
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Add a list of messages.
@@ -186,10 +188,10 @@ class BaseChatMessageHistory(ABC):
 
     @abstractmethod
     def clear(self) -> None:
-        """Remove all messages from the store"""
+        """Remove all messages from the store."""
 
     async def aclear(self) -> None:
-        """Async remove all messages from the store"""
+        """Async remove all messages from the store."""
         from langchain_core.runnables.config import run_in_executor
 
         await run_in_executor(None, self.clear)

@@ -4,6 +4,7 @@
 import hashlib
 
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.embeddings import Embeddings
 
@@ -53,11 +54,13 @@ class FakeEmbeddings(Embeddings, BaseModel):
     def _get_embedding(self) -> list[float]:
         import numpy as np  # type: ignore[import-not-found, import-untyped]
 
-        return list(np.random.normal(size=self.size))
+        return list(np.random.default_rng().normal(size=self.size))
 
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self._get_embedding() for _ in texts]
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         return self._get_embedding()
 
@@ -109,15 +112,17 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         import numpy as np  # type: ignore[import-not-found, import-untyped]
 
         # set the seed for the random generator
-        np.random.seed(seed)
-        return list(np.random.normal(size=self.size))
+        rng = np.random.default_rng(seed)
+        return list(rng.normal(size=self.size))
 
     def _get_seed(self, text: str) -> int:
         """Get a seed for the random generator, using the hash of the text."""
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         return self._get_embedding(seed=self._get_seed(text))

@@ -17,7 +17,7 @@ from pydantic import Field
 from langchain_community.utilities.gitlab import GitLabAPIWrapper
 
 
-class GitLabAction(BaseTool):
+class GitLabAction(BaseTool):  # type: ignore[override]
     """Tool for interacting with the GitLab API."""
 
     api_wrapper: GitLabAPIWrapper = Field(default_factory=GitLabAPIWrapper)  # type: ignore[arg-type]

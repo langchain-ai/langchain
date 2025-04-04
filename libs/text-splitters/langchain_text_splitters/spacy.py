@@ -8,7 +8,6 @@ from langchain_text_splitters.base import TextSplitter
 class SpacyTextSplitter(TextSplitter):
     """Splitting text using Spacy package.
 
-
     Per default, Spacy's `en_core_web_sm` model is used and
     its default max_length is 1000000 (it is the length of maximum character
     this model takes which can be increased for large files). For a faster, but

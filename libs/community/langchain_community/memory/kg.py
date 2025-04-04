@@ -134,6 +134,7 @@ try:
             """Clear memory contents."""
             super().clear()
             self.kg.clear()
+
 except ImportError:
     # Placeholder object
     class ConversationKGMemory:  # type: ignore[no-redef]

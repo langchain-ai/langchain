@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -11,7 +10,6 @@ from pydantic import (
     Field,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -26,6 +24,11 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from typing_extensions import Self
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -59,17 +62,15 @@ class _FewShotPromptTemplateMixin(BaseModel):
             ValueError: If neither or both examples and example_selector are provided.
             ValueError: If both examples and example_selector are provided.
         """
-        examples = values.get("examples", None)
-        example_selector = values.get("example_selector", None)
+        examples = values.get("examples")
+        example_selector = values.get("example_selector")
         if examples and example_selector:
-            raise ValueError(
-                "Only one of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "Only one of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         if examples is None and example_selector is None:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+            msg = "One of 'examples' and 'example_selector' should be provided"
+            raise ValueError(msg)
 
         return values
 
@@ -87,12 +88,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
         """
         if self.examples is not None:
             return self.examples
-        elif self.example_selector is not None:
+        if self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
-        else:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+        msg = "One of 'examples' and 'example_selector' should be provided"
+        raise ValueError(msg)
 
     async def _aget_examples(self, **kwargs: Any) -> list[dict]:
         """Async get the examples to use for formatting the prompt.
@@ -108,12 +107,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
         """
         if self.examples is not None:
             return self.examples
-        elif self.example_selector is not None:
+        if self.example_selector is not None:
             return await self.example_selector.aselect_examples(kwargs)
-        else:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
+        msg = "One of 'examples' and 'example_selector' should be provided"
+        raise ValueError(msg)
 
 
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
@@ -243,7 +240,8 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
             ValueError: If example_selector is provided.
         """
         if self.example_selector:
-            raise ValueError("Saving an example selector is not currently supported")
+            msg = "Saving an example selector is not currently supported"
+            raise ValueError(msg)
         return super().save(file_path)
 
 
@@ -268,7 +266,6 @@ class FewShotChatMessagePromptTemplate(
     to dynamically select examples based on the input.
 
     Examples:
-
         Prompt template with a fixed list of examples (matching the sample
         conversation above):
 
@@ -285,7 +282,7 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [('human', '{input}'), ('ai', '{output}')]
+            [('human', 'What is {input}?'), ('ai', '{output}')]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
@@ -395,12 +392,11 @@ class FewShotChatMessagePromptTemplate(
             {k: e[k] for k in self.example_prompt.input_variables} for e in examples
         ]
         # Format the examples.
-        messages = [
+        return [
             message
             for example in examples
             for message in self.example_prompt.format_messages(**example)
         ]
-        return messages
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Async format kwargs into a list of messages.
@@ -417,12 +413,11 @@ class FewShotChatMessagePromptTemplate(
             {k: e[k] for k in self.example_prompt.input_variables} for e in examples
         ]
         # Format the examples.
-        messages = [
+        return [
             message
             for example in examples
             for message in await self.example_prompt.aformat_messages(**example)
         ]
-        return messages
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
@@ -467,4 +462,4 @@ class FewShotChatMessagePromptTemplate(
         Returns:
             A pretty representation of the prompt template.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

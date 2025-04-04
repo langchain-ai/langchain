@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 from typing import Any, Dict
 
 import pytest
@@ -12,7 +13,7 @@ pytestmark = pytest.mark.requires("jq")
 
 
 def test_load_valid_string_content(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="value1",
@@ -37,7 +38,7 @@ def test_load_valid_string_content(mocker: MockerFixture) -> None:
 
 
 def test_load_valid_dict_content(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content='{"text": "value1"}',
@@ -64,7 +65,7 @@ def test_load_valid_dict_content(mocker: MockerFixture) -> None:
 
 
 def test_load_valid_bool_content(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="False",
@@ -93,7 +94,7 @@ def test_load_valid_bool_content(mocker: MockerFixture) -> None:
 
 
 def test_load_valid_numeric_content(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="99",
@@ -122,7 +123,7 @@ def test_load_valid_numeric_content(mocker: MockerFixture) -> None:
 
 
 def test_load_invalid_test_content(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
 
     mocker.patch("builtins.open", mocker.mock_open())
     mocker.patch(
@@ -139,7 +140,7 @@ def test_load_invalid_test_content(mocker: MockerFixture) -> None:
 
 
 def test_load_jsonlines(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="value1",
@@ -177,7 +178,7 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
     ),
 )
 def test_load_jsonlines_list(params: Dict, mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="value1",
@@ -250,7 +251,7 @@ def test_json_meta_01(
     mocker.patch("builtins.open", mocker.mock_open())
     mocker.patch(patch_func, return_value=patch_func_value)
 
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="value1",
@@ -300,7 +301,7 @@ def test_json_meta_02(
     mocker.patch("builtins.open", mocker.mock_open())
     mocker.patch(patch_func, return_value=patch_func_value)
 
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="value1",
@@ -336,7 +337,7 @@ def test_json_meta_02(
 def test_load_json_with_jq_parsable_content_key(
     params: Dict, mocker: MockerFixture
 ) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="value1",
@@ -364,7 +365,7 @@ def test_load_json_with_jq_parsable_content_key(
 
 
 def test_load_json_with_nested_jq_parsable_content_key(mocker: MockerFixture) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="message1",
@@ -401,7 +402,7 @@ def test_load_json_with_nested_jq_parsable_content_key(mocker: MockerFixture) ->
 def test_load_json_with_nested_jq_parsable_content_key_with_metadata(
     mocker: MockerFixture,
 ) -> None:
-    file_path = "/workspaces/langchain/test.json"
+    file_path = str(Path("/workspaces/langchain/test.json").resolve())
     expected_docs = [
         Document(
             page_content="message1",

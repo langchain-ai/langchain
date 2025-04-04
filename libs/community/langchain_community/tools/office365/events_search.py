@@ -53,7 +53,7 @@ class SearchEventsInput(BaseModel):
     )
 
 
-class O365SearchEvents(O365BaseTool):
+class O365SearchEvents(O365BaseTool):  # type: ignore[override, override]
     """Search calendar events in Office 365.
 
     Free, but setup is required

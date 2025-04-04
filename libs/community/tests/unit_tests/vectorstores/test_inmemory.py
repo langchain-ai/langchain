@@ -3,10 +3,7 @@ from typing import Any
 
 import pytest
 from langchain_core.documents import Document
-from langchain_standard_tests.integration_tests.vectorstores import (
-    AsyncReadWriteTestSuite,
-    ReadWriteTestSuite,
-)
+from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -26,15 +23,9 @@ def _AnyDocument(**kwargs: Any) -> Document:
     return doc
 
 
-class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
+class TestInMemoryStandard(VectorStoreIntegrationTests):
     @pytest.fixture
     def vectorstore(self) -> InMemoryVectorStore:
-        return InMemoryVectorStore(embedding=self.get_embeddings())
-
-
-class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
-    @pytest.fixture
-    async def vectorstore(self) -> InMemoryVectorStore:
         return InMemoryVectorStore(embedding=self.get_embeddings())
 
 
@@ -81,17 +72,17 @@ async def test_inmemory_mmr() -> None:
     assert output[1] == _AnyDocument(page_content="foy")
 
 
-async def test_inmemory_dump_load(tmp_path: Path) -> None:
+def test_inmemory_dump_load(tmp_path: Path) -> None:
     """Test end to end construction and search."""
     embedding = ConsistentFakeEmbeddings()
-    store = await InMemoryVectorStore.afrom_texts(["foo", "bar", "baz"], embedding)
-    output = await store.asimilarity_search("foo", k=1)
+    store = InMemoryVectorStore.from_texts(["foo", "bar", "baz"], embedding)
+    output = store.similarity_search("foo", k=1)
 
     test_file = str(tmp_path / "test.json")
     store.dump(test_file)
 
     loaded_store = InMemoryVectorStore.load(test_file, embedding)
-    loaded_output = await loaded_store.asimilarity_search("foo", k=1)
+    loaded_output = loaded_store.similarity_search("foo", k=1)
 
     assert output == loaded_output
 

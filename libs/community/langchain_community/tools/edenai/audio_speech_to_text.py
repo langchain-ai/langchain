@@ -18,7 +18,7 @@ class SpeechToTextInput(BaseModel):
     query: HttpUrl = Field(description="url of the audio to analyze")
 
 
-class EdenAiSpeechToTextTool(EdenaiTool):
+class EdenAiSpeechToTextTool(EdenaiTool):  # type: ignore[override, override, override]
     """Tool that queries the Eden AI Speech To Text API.
 
     for api reference check edenai documentation:
@@ -70,7 +70,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
                 if temp["results"][self.providers[0]]["error"] is not None:
                     raise Exception(
                         f"""EdenAI returned an unexpected response 
-                        {temp['results'][self.providers[0]]['error']}"""
+                        {temp["results"][self.providers[0]]["error"]}"""
                     )
                 else:
                     return audio_analysis_result

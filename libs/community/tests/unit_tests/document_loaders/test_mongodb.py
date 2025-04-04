@@ -50,11 +50,12 @@ async def test_load_mocked_with_filters(expected_documents: List[Document]) -> N
     mock_collection.find = mock_find
     mock_collection.count_documents = mock_count_documents
 
-    with patch(
-        "motor.motor_asyncio.AsyncIOMotorClient", return_value=MagicMock()
-    ), patch(
-        "langchain_community.document_loaders.mongodb.MongodbLoader.aload",
-        new=mock_async_load,
+    with (
+        patch("motor.motor_asyncio.AsyncIOMotorClient", return_value=MagicMock()),
+        patch(
+            "langchain_community.document_loaders.mongodb.MongodbLoader.aload",
+            new=mock_async_load,
+        ),
     ):
         loader = MongodbLoader(
             "mongodb://localhost:27017",

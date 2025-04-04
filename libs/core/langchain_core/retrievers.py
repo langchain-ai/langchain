@@ -27,7 +27,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import ConfigDict
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -88,7 +88,8 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         .. code-block:: python
 
-            from langchain_core import Document, BaseRetriever
+            from langchain_core.documents import Document
+            from langchain_core.retrievers import BaseRetriever
             from typing import List
 
             class SimpleRetriever(BaseRetriever):
@@ -136,17 +137,18 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Optional list of tags associated with the retriever. Defaults to None.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: Optional[dict[str, Any]] = None
     """Optional metadata associated with the retriever. Defaults to None.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a retriever with its 
+    You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
 
+    @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         # Version upgrade for old retrievers that implemented the public
@@ -180,6 +182,18 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             cls._aget_relevant_documents = aswap  # type: ignore[assignment]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
+        if (
+            not cls._new_arg_supported
+            and cls._aget_relevant_documents == BaseRetriever._aget_relevant_documents
+        ):
+            # we need to tolerate no run_manager in _aget_relevant_documents signature
+            async def _aget_relevant_documents(
+                self: Self, query: str
+            ) -> list[Document]:
+                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore
+
+            cls._aget_relevant_documents = _aget_relevant_documents  # type: ignore[assignment]
+
         # If a V1 retriever broke the interface and expects additional arguments
         cls._expects_other_args = (
             len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
@@ -187,7 +201,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
-
         default_retriever_name = self.get_name()
         if default_retriever_name.startswith("Retriever"):
             default_retriever_name = default_retriever_name[9:]
@@ -195,8 +208,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             default_retriever_name = default_retriever_name[:-9]
         default_retriever_name = default_retriever_name.lower()
 
-        ls_params = LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
-        return ls_params
+        return LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -251,7 +263,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 result = self._get_relevant_documents(input, **_kwargs)
         except Exception as e:
             run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             run_manager.on_retriever_end(
                 result,
@@ -314,7 +326,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 result = await self._aget_relevant_documents(input, **_kwargs)
         except Exception as e:
             await run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             await run_manager.on_retriever_end(
                 result,
@@ -330,6 +342,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             query: String to find relevant documents for.
             run_manager: The callback handler to use.
+
         Returns:
             List of relevant documents.
         """

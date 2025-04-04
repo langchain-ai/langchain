@@ -13,13 +13,23 @@ from langchain.chains.llm import LLMChain
 
 
 class ModelLaboratory:
-    """Experiment with different models."""
+    """A utility to experiment with and compare the performance of different models."""
 
     def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):
-        """Initialize with chains to experiment with.
+        """Initialize the ModelLaboratory with chains to experiment with.
 
         Args:
-            chains: list of chains to experiment with.
+            chains (Sequence[Chain]): A sequence of chains to experiment with.
+            Each chain must have exactly one input and one output variable.
+        names (Optional[List[str]]): Optional list of names corresponding to each chain.
+            If provided, its length must match the number of chains.
+
+
+        Raises:
+            ValueError: If any chain is not an instance of `Chain`.
+            ValueError: If a chain does not have exactly one input variable.
+            ValueError: If a chain does not have exactly one output variable.
+            ValueError: If the length of `names` does not match the number of chains.
         """
         for chain in chains:
             if not isinstance(chain, Chain):
@@ -50,12 +60,15 @@ class ModelLaboratory:
     def from_llms(
         cls, llms: List[BaseLLM], prompt: Optional[PromptTemplate] = None
     ) -> ModelLaboratory:
-        """Initialize with LLMs to experiment with and optional prompt.
+        """Initialize the ModelLaboratory with LLMs and an optional prompt.
 
         Args:
-            llms: list of LLMs to experiment with
-            prompt: Optional prompt to use to prompt the LLMs. Defaults to None.
-                If a prompt was provided, it should only have one input variable.
+            llms (List[BaseLLM]): A list of LLMs to experiment with.
+            prompt (Optional[PromptTemplate]): An optional prompt to use with the LLMs.
+                If provided, the prompt must contain exactly one input variable.
+
+        Returns:
+            ModelLaboratory: An instance of `ModelLaboratory` initialized with LLMs.
         """
         if prompt is None:
             prompt = PromptTemplate(input_variables=["_input"], template="{_input}")

@@ -471,7 +471,7 @@ def test_neo4jvector_missing_keyword() -> None:
         )
     except ValueError as e:
         assert str(e) == (
-            "keyword_index name has to be specified when " "using hybrid search option"
+            "keyword_index name has to be specified when using hybrid search option"
         )
     drop_vector_indexes(docsearch)
 
@@ -522,7 +522,7 @@ def test_neo4jvector_from_existing_graph() -> None:
 
     graph.query("MATCH (n) DETACH DELETE n")
 
-    graph.query("CREATE (:Test {name:'Foo'})," "(:Test {name:'Bar'})")
+    graph.query("CREATE (:Test {name:'Foo'}),(:Test {name:'Bar'})")
 
     existing = Neo4jVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),
@@ -558,7 +558,7 @@ def test_neo4jvector_from_existing_graph_hybrid() -> None:
 
     graph.query("MATCH (n) DETACH DELETE n")
 
-    graph.query("CREATE (:Test {name:'foo'})," "(:Test {name:'Bar'})")
+    graph.query("CREATE (:Test {name:'foo'}),(:Test {name:'Bar'})")
 
     existing = Neo4jVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),
@@ -594,7 +594,7 @@ def test_neo4jvector_from_existing_graph_multiple_properties() -> None:
     )
     graph.query("MATCH (n) DETACH DELETE n")
 
-    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'})," "(:Test {name:'Bar'})")
+    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'}),(:Test {name:'Bar'})")
 
     existing = Neo4jVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),
@@ -629,7 +629,7 @@ def test_neo4jvector_from_existing_graph_multiple_properties_hybrid() -> None:
     )
     graph.query("MATCH (n) DETACH DELETE n")
 
-    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'})," "(:Test {name:'Bar'})")
+    graph.query("CREATE (:Test {name:'Foo', name2: 'Fooz'}),(:Test {name:'Bar'})")
 
     existing = Neo4jVector.from_existing_graph(
         embedding=FakeEmbeddingsWithOsDimension(),

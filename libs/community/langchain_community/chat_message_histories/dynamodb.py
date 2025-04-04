@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Dict, List, Optional
+from decimal import Decimal
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
-    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
@@ -14,7 +13,15 @@ from langchain_core.messages import (
 if TYPE_CHECKING:
     from boto3.session import Session
 
-logger = logging.getLogger(__name__)
+
+def convert_messages(item: List) -> List:
+    if isinstance(item, list):
+        return [convert_messages(i) for i in item]
+    elif isinstance(item, dict):
+        return {k: convert_messages(v) for k, v in item.items()}
+    elif isinstance(item, float):
+        return Decimal(str(item))
+    return item
 
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
@@ -47,6 +54,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             limit. If not None then only the latest `history_size` messages are stored.
         history_messages_key: Key for the chat history where the messages
             are stored and updated
+        coerce_float_to_decimal: If True, all float values in the messages will be
+            converted to Decimal.
     """
 
     def __init__(
@@ -62,6 +71,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         ttl_key_name: str = "expireAt",
         history_size: Optional[int] = None,
         history_messages_key: Optional[str] = "History",
+        *,
+        coerce_float_to_decimal: bool = False,
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -83,6 +94,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.ttl_key_name = ttl_key_name
         self.history_size = history_size
         self.history_messages_key = history_messages_key
+        self.coerce_float_to_decimal = coerce_float_to_decimal
 
         if kms_key_id:
             try:
@@ -115,21 +127,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
-        try:
-            from botocore.exceptions import ClientError
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import botocore, please install with `pip install botocore`."
-            ) from e
-
         response = None
-        try:
-            response = self.table.get_item(Key=self.key)
-        except ClientError as error:
-            if error.response["Error"]["Code"] == "ResourceNotFoundException":
-                logger.warning("No record found with session id: %s", self.session_id)
-            else:
-                logger.error(error)
+        response = self.table.get_item(Key=self.key)
 
         if response and "Item" in response:
             items = response["Item"][self.history_messages_key]
@@ -146,51 +145,34 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             " Use the 'add_messages' instead."
         )
 
-    def add_message(self, message: BaseMessage) -> None:
+    def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Append the message to the record in DynamoDB"""
-        try:
-            from botocore.exceptions import ClientError
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import botocore, please install with `pip install botocore`."
-            ) from e
-
-        messages = messages_to_dict(self.messages)
-        _message = message_to_dict(message)
-        messages.append(_message)
+        existing_messages = messages_to_dict(self.messages)
+        existing_messages.extend(messages_to_dict(messages))
+        if self.coerce_float_to_decimal:
+            existing_messages = convert_messages(existing_messages)
 
         if self.history_size:
-            messages = messages[-self.history_size :]
+            existing_messages = existing_messages[-self.history_size :]
 
-        try:
-            if self.ttl:
-                import time
+        if self.ttl:
+            import time
 
-                expireAt = int(time.time()) + self.ttl
-                self.table.put_item(
-                    Item={
-                        **self.key,
-                        self.history_messages_key: messages,
-                        self.ttl_key_name: expireAt,
-                    }
-                )
-            else:
-                self.table.put_item(
-                    Item={**self.key, self.history_messages_key: messages}
-                )
-        except ClientError as err:
-            logger.error(err)
+            expireAt = int(time.time()) + self.ttl
+            self.table.update_item(
+                Key={**self.key},
+                UpdateExpression=(
+                    f"set {self.history_messages_key} = :h, {self.ttl_key_name} = :t"
+                ),
+                ExpressionAttributeValues={":h": existing_messages, ":t": expireAt},
+            )
+        else:
+            self.table.update_item(
+                Key={**self.key},
+                UpdateExpression=f"set {self.history_messages_key} = :h",
+                ExpressionAttributeValues={":h": existing_messages},
+            )
 
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
-        try:
-            from botocore.exceptions import ClientError
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import botocore, please install with `pip install botocore`."
-            ) from e
-
-        try:
-            self.table.delete_item(Key=self.key)
-        except ClientError as err:
-            logger.error(err)
+        self.table.delete_item(Key=self.key)

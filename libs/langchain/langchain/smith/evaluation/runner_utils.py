@@ -247,8 +247,7 @@ def _get_prompt(inputs: Dict[str, Any]) -> str:
     if "prompt" in inputs:
         if not isinstance(inputs["prompt"], str):
             raise InputFormatError(
-                "Expected string for 'prompt', got"
-                f" {type(inputs['prompt']).__name__}"
+                f"Expected string for 'prompt', got {type(inputs['prompt']).__name__}"
             )
         prompts = [inputs["prompt"]]
     elif "prompts" in inputs:

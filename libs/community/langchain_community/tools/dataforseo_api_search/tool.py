@@ -12,7 +12,7 @@ from pydantic import Field
 from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 
-class DataForSeoAPISearchRun(BaseTool):
+class DataForSeoAPISearchRun(BaseTool):  # type: ignore[override]
     """Tool that queries the DataForSeo Google search API."""
 
     name: str = "dataforseo_api_search"
@@ -40,7 +40,7 @@ class DataForSeoAPISearchRun(BaseTool):
         return (await self.api_wrapper.arun(query)).__str__()
 
 
-class DataForSeoAPISearchResults(BaseTool):
+class DataForSeoAPISearchResults(BaseTool):  # type: ignore[override]
     """Tool that queries the DataForSeo Google Search API
     and get back json."""
 

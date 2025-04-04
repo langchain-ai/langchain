@@ -1,3 +1,5 @@
+"""Output parsers using Pydantic."""
+
 import json
 from typing import Annotated, Generic, Optional
 
@@ -26,13 +28,11 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             try:
                 if issubclass(self.pydantic_object, pydantic.BaseModel):
                     return self.pydantic_object.model_validate(obj)
-                elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
+                if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
-                else:
-                    raise OutputParserException(
-                        f"Unsupported model version for PydanticOutputParser: \
+                msg = f"Unsupported model version for PydanticOutputParser: \
                             {self.pydantic_object.__class__}"
-                    )
+                raise OutputParserException(msg)
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
                 raise self._parser_exception(e, obj) from e
         else:  # pydantic v1
@@ -67,10 +67,10 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         try:
             json_object = super().parse_result(result)
             return self._parse_obj(json_object)
-        except OutputParserException as e:
+        except OutputParserException:
             if partial:
                 return None
-            raise e
+            raise
 
     def parse(self, text: str) -> TBaseModel:
         """Parse the output of an LLM call to a pydantic object.
@@ -90,7 +90,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = {k: v for k, v in self.pydantic_object.model_json_schema().items()}
+        schema = dict(self.pydantic_object.model_json_schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema

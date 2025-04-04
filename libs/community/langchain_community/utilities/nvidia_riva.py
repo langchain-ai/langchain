@@ -401,7 +401,7 @@ ASRInputType = AudioStream
 ASROutputType = str
 
 
-class RivaASR(
+class RivaASR(  # type: ignore[override]
     RivaAuthMixin,
     RivaCommonConfigMixin,
     RunnableSerializable[ASRInputType, ASROutputType],
@@ -471,7 +471,8 @@ class RivaASR(
     def invoke(
         self,
         input: ASRInputType,
-        _: Optional[RunnableConfig] = None,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> ASROutputType:
         """Transcribe the audio bytes into a string with Riva."""
         # create an output text generator with Riva
@@ -508,7 +509,7 @@ TTSInputType = Union[str, AnyMessage, PromptValue]
 TTSOutputType = bytes
 
 
-class RivaTTS(
+class RivaTTS(  # type: ignore[override]
     RivaAuthMixin,
     RivaCommonConfigMixin,
     RunnableSerializable[TTSInputType, TTSOutputType],
@@ -567,7 +568,10 @@ class RivaTTS(
             ) from err
 
     def invoke(
-        self, input: TTSInputType, _: Union[RunnableConfig, None] = None
+        self,
+        input: TTSInputType,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> TTSOutputType:
         """Perform TTS by taking a string and outputting the entire audio file."""
         return b"".join(self.transform(iter([input])))

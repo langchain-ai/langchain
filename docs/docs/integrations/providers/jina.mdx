@@ -1,20 +1,39 @@
-# Jina
+# Jina AI
 
-This page covers how to use the Jina Embeddings within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Jina wrappers.
+>[Jina AI](https://jina.ai/about-us) is a search AI company. `Jina` helps businesses and developers unlock multimodal data with a better search.
+
+:::caution
+For proper compatibility, please ensure you are using the `openai` SDK at version **0.x**.
+:::
 
 ## Installation and Setup
 - Get a Jina AI API token from [here](https://jina.ai/embeddings/) and set it as an environment variable (`JINA_API_TOKEN`)
 
-There exists a Jina Embeddings wrapper, which you can access with 
+## Chat Models
 
 ```python
-from langchain_community.embeddings import JinaEmbeddings
-
-# you can pas jina_api_key, if none is passed it will be taken from `JINA_API_TOKEN` environment variable
-embeddings = JinaEmbeddings(jina_api_key='jina_**', model_name='jina-embeddings-v2-base-en')
+from langchain_community.chat_models import JinaChat
 ```
+
+See a [usage examples](/docs/integrations/chat/jinachat).
+
+## Embedding Models
 
 You can check the list of available models from [here](https://jina.ai/embeddings/)
 
-For a more detailed walkthrough of this, see [this notebook](/docs/integrations/text_embedding/jina)
+```python
+from langchain_community.embeddings import JinaEmbeddings
+```
+
+See a [usage examples](/docs/integrations/text_embedding/jina).
+
+## Document Transformers
+
+### Jina Rerank
+
+```python
+from langchain_community.document_compressors import JinaRerank
+```
+
+See a [usage examples](/docs/integrations/document_transformers/jina_rerank).
+

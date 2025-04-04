@@ -68,7 +68,7 @@ class ChatMlflow(BaseChatModel):
             chat = ChatMlflow(
                 target_uri="http://localhost:5000",
                 endpoint="chat",
-                temperature-0.1,
+                temperature=0.1,
             )
     """
 

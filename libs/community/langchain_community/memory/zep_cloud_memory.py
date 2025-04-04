@@ -8,7 +8,7 @@ try:
     from langchain.memory import ConversationBufferMemory
     from zep_cloud import MemoryGetRequestMemoryType
 
-    class ZepCloudMemory(ConversationBufferMemory):
+    class ZepCloudMemory(ConversationBufferMemory):  # type: ignore[override]
         """Persist your chain history to the Zep MemoryStore.
 
         Documentation: https://help.getzep.com
@@ -118,6 +118,7 @@ try:
             input_str, output_str = self._get_input_output(inputs, outputs)
             self.chat_memory.add_user_message(input_str, metadata=metadata)
             self.chat_memory.add_ai_message(output_str, metadata=metadata)
+
 except ImportError:
     # Placeholder object
     class ZepCloudMemory:  # type: ignore[no-redef]

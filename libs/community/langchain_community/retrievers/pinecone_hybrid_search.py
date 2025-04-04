@@ -31,6 +31,7 @@ def create_index(
     ids: Optional[List[str]] = None,
     metadatas: Optional[List[dict]] = None,
     namespace: Optional[str] = None,
+    text_key: str = "context",
 ) -> None:
     """Create an index from a list of contexts.
 
@@ -69,7 +70,7 @@ def create_index(
         )
         # add context passages as metadata
         meta = [
-            {"context": context, **metadata}
+            {text_key: context, **metadata}
             for context, metadata in zip(context_batch, metadata_batch)
         ]
 
@@ -114,7 +115,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Alpha value for hybrid search."""
     namespace: Optional[str] = None
     """Namespace value for index partition."""
-
+    text_key: str = "context"
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="forbid",
@@ -135,6 +136,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             ids=ids,
             metadatas=metadatas,
             namespace=namespace,
+            text_key=self.text_key,
         )
 
     @pre_init
@@ -174,7 +176,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         )
         final_result = []
         for res in result["matches"]:
-            context = res["metadata"].pop("context")
+            context = res["metadata"].pop(self.text_key)
             metadata = res["metadata"]
             if "score" not in metadata and "score" in res:
                 metadata["score"] = res["score"]

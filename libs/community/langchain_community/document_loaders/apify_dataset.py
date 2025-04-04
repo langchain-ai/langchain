@@ -1,11 +1,22 @@
 from typing import Any, Callable, Dict, List
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from pydantic import BaseModel, model_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
+@deprecated(
+    since="0.3.18",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "You can swap to using the `ApifyDatasetLoader`"
+        " implementation in `langchain_apify` package. "
+        "See <https://github.com/apify/langchain-apify>"
+    ),
+    alternative_import="langchain_apify.ApifyDatasetLoader",
+)
 class ApifyDatasetLoader(BaseLoader, BaseModel):
     """Load datasets from `Apify` web scraping, crawling, and data extraction platform.
 

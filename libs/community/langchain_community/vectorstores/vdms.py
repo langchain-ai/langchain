@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -105,10 +106,13 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
                 }
 
                 final_res.append(
-                    (Document(page_content=txt_contents, metadata=props), distance)
+                    (
+                        Document(page_content=txt_contents, metadata=props),
+                        distance,
+                    )
                 )
     except Exception as e:
-        logger.warn(f"No results returned. Error while parsing results: {e}")
+        logger.warning(f"No results returned. Error while parsing results: {e}")
     return final_res
 
 
@@ -132,6 +136,7 @@ def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
     return client
 
 
+@deprecated(since="0.3.18", removal="1.0.0", alternative_import="langchain_vdms.VDMS")
 class VDMS(VectorStore):
     """Intel Lab's VDMS for vector-store workloads.
 
@@ -232,8 +237,7 @@ class VDMS(VectorStore):
             return self.embedding.embed_query(text)
         else:
             raise ValueError(
-                "Must provide `embedding` which is expected"
-                " to be an Embeddings object"
+                "Must provide `embedding` which is expected to be an Embeddings object"
             )
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
@@ -284,7 +288,10 @@ class VDMS(VectorStore):
                 docs_and_rel_scores.append((doc, score))
             else:
                 docs_and_rel_scores.append(
-                    (doc, self.override_relevance_score_fn(score))
+                    (
+                        doc,
+                        self.override_relevance_score_fn(score),
+                    )
                 )
         return docs_and_rel_scores
 
@@ -1099,7 +1106,7 @@ class VDMS(VectorStore):
         """
         if self.embedding is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         # embedding_vector: List[float] = self._embed_query(query)
@@ -1208,7 +1215,7 @@ class VDMS(VectorStore):
         """
         if self.embedding is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):

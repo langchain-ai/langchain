@@ -122,9 +122,7 @@ class BigQueryVectorSearch(VectorStore):
         self.text_embedding_field = text_embedding_field
         self.doc_id_field = doc_id_field
         self.distance_strategy = distance_strategy
-        self._full_table_id = (
-            f"{self.project_id}." f"{self.dataset_name}." f"{self.table_name}"
-        )
+        self._full_table_id = f"{self.project_id}.{self.dataset_name}.{self.table_name}"
         self._logger.debug("Using table `%s`", self.full_table_id)
         with _vector_table_lock:
             self.vectors_table = self._initialize_table()
@@ -149,7 +147,7 @@ class BigQueryVectorSearch(VectorStore):
             columns[self.doc_id_field].field_type != "STRING"
             or columns[self.doc_id_field].mode == "REPEATED"
         ):
-            raise ValueError(f"Column {self.doc_id_field} must be of " "STRING type")
+            raise ValueError(f"Column {self.doc_id_field} must be of STRING type")
         if self.metadata_field not in columns:
             changed_schema = True
             schema.append(
@@ -171,7 +169,7 @@ class BigQueryVectorSearch(VectorStore):
             columns[self.content_field].field_type != "STRING"
             or columns[self.content_field].mode == "REPEATED"
         ):
-            raise ValueError(f"Column {self.content_field} must be of " "STRING type")
+            raise ValueError(f"Column {self.content_field} must be of STRING type")
         if self.text_embedding_field not in columns:
             changed_schema = True
             schema.append(
@@ -186,7 +184,7 @@ class BigQueryVectorSearch(VectorStore):
             or columns[self.text_embedding_field].mode != "REPEATED"
         ):
             raise ValueError(
-                f"Column {self.text_embedding_field} must be of " "ARRAY<FLOAT64> type"
+                f"Column {self.text_embedding_field} must be of ARRAY<FLOAT64> type"
             )
         if changed_schema:
             self._logger.debug("Updated table `%s` schema.", self.full_table_id)
@@ -389,9 +387,7 @@ class BigQueryVectorSearch(VectorStore):
                     )
                 else:
                     val = str(i[1]).replace('"', '\\"')
-                    expr = (
-                        f"JSON_VALUE(`{self.metadata_field}`,'$.{i[0]}')" f' = "{val}"'
-                    )
+                    expr = f"JSON_VALUE(`{self.metadata_field}`,'$.{i[0]}') = \"{val}\""
                 filter_expressions.append(expr)
             filter_expression_str = " AND ".join(filter_expressions)
             where_filter_expr = f" AND ({filter_expression_str})"
@@ -520,7 +516,7 @@ class BigQueryVectorSearch(VectorStore):
         elif fraction_lists_to_search:
             if fraction_lists_to_search == 0 or fraction_lists_to_search >= 1.0:
                 raise ValueError(
-                    "`fraction_lists_to_search` must be between " "0.0 and 1.0"
+                    "`fraction_lists_to_search` must be between 0.0 and 1.0"
                 )
             options_string = (
                 ',options => \'{"fraction_lists_to_search":'
@@ -560,7 +556,11 @@ class BigQueryVectorSearch(VectorStore):
             metadata["__job_id"] = job.job_id
             doc = Document(page_content=row[self.content_field], metadata=metadata)
             document_tuples.append(
-                (doc, row[self.text_embedding_field], row["_vector_search_distance"])
+                (
+                    doc,
+                    row[self.text_embedding_field],
+                    row["_vector_search_distance"],
+                )
             )
         return document_tuples
 

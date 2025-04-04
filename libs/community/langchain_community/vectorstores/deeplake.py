@@ -15,6 +15,7 @@ try:
 except ImportError:
     _DEEPLAKE_INSTALLED = False
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -24,6 +25,18 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.3.3",
+    removal="1.0",
+    message=(
+        "This class is deprecated and will be removed in a future version. "
+        "You can swap to using the `DeeplakeVectorStore`"
+        " implementation in `langchain-deeplake`. "
+        "Please do not submit further PRs to this class."
+        "See <https://github.com/activeloopai/langchain-deeplake>"
+    ),
+    alternative_import="langchain_deeplake.DeeplakeVectorStore",
+)
 class DeepLake(VectorStore):
     """`Activeloop Deep Lake` vector store.
 
@@ -168,7 +181,7 @@ class DeepLake(VectorStore):
         if _DEEPLAKE_INSTALLED is False:
             raise ImportError(
                 "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake[enterprise]`."
+                "Please install it with `pip install deeplake[enterprise]<4.0.0`."
             )
 
         if (
@@ -425,8 +438,7 @@ class DeepLake(VectorStore):
         if embedding is None:
             if _embedding_function is None:
                 raise ValueError(
-                    "Either `embedding` or `embedding_function` needs to be"
-                    " specified."
+                    "Either `embedding` or `embedding_function` needs to be specified."
                 )
 
             embedding = _embedding_function(query) if query else None

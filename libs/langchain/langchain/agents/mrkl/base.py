@@ -12,6 +12,7 @@ from langchain_core.tools import BaseTool, Tool
 from langchain_core.tools.render import render_text_description
 from pydantic import Field
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.output_parser import MRKLOutputParser
@@ -34,7 +35,11 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="1.0")
+@deprecated(
+    "0.1.0",
+    message=AGENT_DEPRECATION_WARNING,
+    removal="1.0",
+)
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain.
 
@@ -168,7 +173,11 @@ class ZeroShotAgent(Agent):
         super()._validate_tools(tools)
 
 
-@deprecated("0.1.0", removal="1.0")
+@deprecated(
+    "0.1.0",
+    message=AGENT_DEPRECATION_WARNING,
+    removal="1.0",
+)
 class MRKLChain(AgentExecutor):
     """Chain that implements the MRKL system."""
 

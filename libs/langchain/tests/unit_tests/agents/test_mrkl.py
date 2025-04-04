@@ -24,9 +24,7 @@ def get_action_and_input(text: str) -> Tuple[str, str]:
 
 def test_get_action_and_input() -> None:
     """Test getting an action from text."""
-    llm_output = (
-        "Thought: I need to search for NBA\n" "Action: Search\n" "Action Input: NBA"
-    )
+    llm_output = "Thought: I need to search for NBA\nAction: Search\nAction Input: NBA"
     action, action_input = get_action_and_input(llm_output)
     assert action == "Search"
     assert action_input == "NBA"
@@ -91,7 +89,7 @@ def test_get_action_and_input_sql_query() -> None:
 
 def test_get_final_answer() -> None:
     """Test getting final answer."""
-    llm_output = "Thought: I can now answer the question\n" "Final Answer: 1994"
+    llm_output = "Thought: I can now answer the question\nFinal Answer: 1994"
     action, action_input = get_action_and_input(llm_output)
     assert action == "Final Answer"
     assert action_input == "1994"
@@ -99,7 +97,7 @@ def test_get_final_answer() -> None:
 
 def test_get_final_answer_new_line() -> None:
     """Test getting final answer."""
-    llm_output = "Thought: I can now answer the question\n" "Final Answer:\n1994"
+    llm_output = "Thought: I can now answer the question\nFinal Answer:\n1994"
     action, action_input = get_action_and_input(llm_output)
     assert action == "Final Answer"
     assert action_input == "1994"
@@ -107,7 +105,7 @@ def test_get_final_answer_new_line() -> None:
 
 def test_get_final_answer_multiline() -> None:
     """Test getting final answer that is multiline."""
-    llm_output = "Thought: I can now answer the question\n" "Final Answer: 1994\n1993"
+    llm_output = "Thought: I can now answer the question\nFinal Answer: 1994\n1993"
     action, action_input = get_action_and_input(llm_output)
     assert action == "Final Answer"
     assert action_input == "1994\n1993"
@@ -115,7 +113,7 @@ def test_get_final_answer_multiline() -> None:
 
 def test_bad_action_input_line() -> None:
     """Test handling when no action input found."""
-    llm_output = "Thought: I need to search for NBA\n" "Action: Search\n" "Thought: NBA"
+    llm_output = "Thought: I need to search for NBA\nAction: Search\nThought: NBA"
     with pytest.raises(OutputParserException) as e_info:
         get_action_and_input(llm_output)
     assert e_info.value.observation is not None
@@ -123,9 +121,7 @@ def test_bad_action_input_line() -> None:
 
 def test_bad_action_line() -> None:
     """Test handling when no action found."""
-    llm_output = (
-        "Thought: I need to search for NBA\n" "Thought: Search\n" "Action Input: NBA"
-    )
+    llm_output = "Thought: I need to search for NBA\nThought: Search\nAction Input: NBA"
     with pytest.raises(OutputParserException) as e_info:
         get_action_and_input(llm_output)
     assert e_info.value.observation is not None

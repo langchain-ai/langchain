@@ -1,3 +1,5 @@
+"""Parse tools for OpenAI tools output."""
+
 import copy
 import json
 from json import JSONDecodeError
@@ -52,11 +54,12 @@ def parse_tool_call(
                 raw_tool_call["function"]["arguments"], strict=strict
             )
         except JSONDecodeError as e:
-            raise OutputParserException(
+            msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
                 f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
-            ) from e
+            )
+            raise OutputParserException(msg) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
@@ -142,12 +145,12 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list 
+    If False, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
-    and the other tool calls will be ignored. 
-    If no tool calls are found, None will be returned. 
+    and the other tool calls will be ignored.
+    If no tool calls are found, None will be returned.
     """
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
@@ -167,12 +170,10 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         if isinstance(message, AIMessage) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
@@ -207,7 +208,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed tool calls.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonOutputKeyToolsParser(JsonOutputToolsParser):
@@ -240,10 +241,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             )
             if self.return_id:
                 return single_result
-            elif single_result:
+            if single_result:
                 return single_result["args"]
-            else:
-                return None
+            return None
         parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
         if not self.return_id:
             parsed_result = [res["args"] for res in parsed_result]
@@ -283,19 +283,20 @@ class PydanticToolsParser(JsonOutputToolsParser):
         name_dict = {tool.__name__: tool for tool in self.tools}
         pydantic_objects = []
         for res in json_results:
-            try:
-                if not isinstance(res["args"], dict):
-                    raise ValueError(
-                        f"Tool arguments must be specified as a dict, received: "
-                        f"{res['args']}"
-                    )
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
-            except (ValidationError, ValueError) as e:
+            if not isinstance(res["args"], dict):
                 if partial:
                     continue
-                else:
-                    raise e
+                msg = (
+                    f"Tool arguments must be specified as a dict, received: "
+                    f"{res['args']}"
+                )
+                raise ValueError(msg)
+            try:
+                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+            except (ValidationError, ValueError):
+                if partial:
+                    continue
+                raise
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
-        else:
-            return pydantic_objects
+        return pydantic_objects

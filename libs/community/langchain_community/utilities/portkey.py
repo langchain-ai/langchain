@@ -26,9 +26,9 @@ class Portkey:
         cache_force_refresh: Optional[str] = None,
         cache_age: Optional[int] = None,
     ) -> Dict[str, str]:
-        assert retry_count is None or retry_count in range(
-            1, 6
-        ), "retry_count must be an integer and in range [1, 2, 3, 4, 5]"
+        assert retry_count is None or retry_count in range(1, 6), (
+            "retry_count must be an integer and in range [1, 2, 3, 4, 5]"
+        )
         assert cache is None or cache in [
             "simple",
             "semantic",
@@ -37,9 +37,9 @@ class Portkey:
             isinstance(cache_force_refresh, str)
             and cache_force_refresh in ["True", "False"]
         ), "cache_force_refresh must be 'True' or 'False'"
-        assert cache_age is None or isinstance(
-            cache_age, int
-        ), "cache_age must be an integer"
+        assert cache_age is None or isinstance(cache_age, int), (
+            "cache_age must be an integer"
+        )
 
         os.environ["OPENAI_API_BASE"] = Portkey.base
 

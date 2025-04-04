@@ -6,8 +6,10 @@
 const { ProvidePlugin } = require("webpack");
 require("dotenv").config();
 
-const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
-const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
+const prism = require("prism-react-renderer");
+
+const baseLightCodeBlockTheme = prism.themes.vsLight;
+const baseDarkCodeBlockTheme = prism.themes.vsDark;
 
 const baseUrl = "/";
 
@@ -24,6 +26,7 @@ const config = {
   trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
+  onBrokenAnchors: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
@@ -124,13 +127,6 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      announcementBar: {
-        content:
-          'Share your thoughts on AI agents. <a target="_blank" href="https://langchain.typeform.com/state-of-agents">Take the 3-min survey</a>.',
-        isCloseable: true,
-        backgroundColor: "rgba(53, 151, 147, 0.1)",
-        textColor: "rgb(53, 151, 147)",
-      },
       docs: {
         sidebar: {
           hideable: true,
@@ -140,6 +136,11 @@ const config = {
       colorMode: {
         disableSwitch: false,
         respectPrefersColorScheme: true,
+      },
+      announcementBar: {
+        content:
+          '<strong>Join us at <a href="https://interrupt.langchain.com/" target="_blank" rel="noopener noreferrer"> Interrupt: The Agent AI Conference by LangChain</a> on May 13 & 14 in San Francisco!</strong>',
+          backgroundColor: '#d0c9fe'
       },
       prism: {
         theme: {
@@ -185,6 +186,11 @@ const config = {
                 type: "doc",
                 docId: "people",
                 label: "People",
+              },
+              {
+                type: "doc",
+                docId: "troubleshooting/errors/index",
+                label: "Error reference",
               },
               {
                 type: 'html',

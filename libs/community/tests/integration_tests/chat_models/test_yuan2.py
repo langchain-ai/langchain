@@ -100,7 +100,6 @@ def test_chat_yuan2_streaming() -> None:
     assert isinstance(response, BaseMessage)
 
 
-@pytest.mark.asyncio
 async def test_async_chat_yuan2() -> None:
     """Test async generation."""
     chat = ChatYuan2(  # type: ignore[call-arg]
@@ -124,7 +123,6 @@ async def test_async_chat_yuan2() -> None:
         assert generation.text == generation.message.content
 
 
-@pytest.mark.asyncio
 async def test_async_chat_yuan2_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

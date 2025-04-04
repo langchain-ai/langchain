@@ -20,7 +20,7 @@ def test_translate_filter() -> None:
             assert False
     else:
         result = translate_filter(raw_filter)
-        expr = '(artist = "Taylor Swift" or artist = "Katy Perry") ' "and length < 180"
+        expr = '(artist = "Taylor Swift" or artist = "Katy Perry") and length < 180'
         assert expr == result
 
 

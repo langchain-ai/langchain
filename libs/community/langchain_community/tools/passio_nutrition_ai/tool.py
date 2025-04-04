@@ -17,7 +17,7 @@ class NutritionAIInputs(BaseModel):
     )
 
 
-class NutritionAI(BaseTool):
+class NutritionAI(BaseTool):  # type: ignore[override, override]
     """Tool that queries the Passio Nutrition AI API."""
 
     name: str = "nutritionai_advanced_search"

@@ -41,10 +41,7 @@ data = json.loads(Path(file_path).read_text())
 ```python
 pprint(data)
 ```
-
-<CodeOutputBlock lang="python">
-
-```
+```output
     {'image': {'creation_timestamp': 1675549016, 'uri': 'image_of_the_chat.jpg'},
      'is_still_participant': True,
      'joinable_mode': {'link': '', 'mode': 1},
@@ -91,7 +88,6 @@ pprint(data)
      'title': 'User 1 and User 2 chat'}
 ```
 
-</CodeOutputBlock>
 
 
 ## Using `JSONLoader`
@@ -115,9 +111,7 @@ data = loader.load()
 pprint(data)
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     [Document(page_content='Bye!', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 1}),
      Document(page_content='Oh no worries! Bye', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 2}),
      Document(page_content='No Im sorry it was my mistake, the blue one is not for sale', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 3}),
@@ -131,7 +125,6 @@ pprint(data)
      Document(page_content='Hi! Im interested in your bag. Im offering $50. Let me know if you are interested. Thanks!', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 11})]
 ```
 
-</CodeOutputBlock>
 
 
 ### JSON Lines file
@@ -144,9 +137,7 @@ file_path = './example_data/facebook_chat_messages.jsonl'
 pprint(Path(file_path).read_text())
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     ('{"sender_name": "User 2", "timestamp_ms": 1675597571851, "content": "Bye!"}\n'
      '{"sender_name": "User 1", "timestamp_ms": 1675597435669, "content": "Oh no '
      'worries! Bye"}\n'
@@ -154,7 +145,6 @@ pprint(Path(file_path).read_text())
      'sorry it was my mistake, the blue one is not for sale"}\n')
 ```
 
-</CodeOutputBlock>
 
 
 ```python
@@ -171,15 +161,12 @@ data = loader.load()
 pprint(data)
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     [Document(page_content='Bye!', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 1}),
      Document(page_content='Oh no worries! Bye', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 2}),
      Document(page_content='No Im sorry it was my mistake, the blue one is not for sale', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 3})]
 ```
 
-</CodeOutputBlock>
 
 
 Another option is to set `jq_schema='.'` and provide `content_key`:
@@ -198,15 +185,12 @@ data = loader.load()
 pprint(data)
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     [Document(page_content='User 2', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 1}),
      Document(page_content='User 1', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 2}),
      Document(page_content='User 2', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat_messages.jsonl', 'seq_num': 3})]
 ```
 
-</CodeOutputBlock>
 
 ### JSON file with jq schema `content_key`
 
@@ -218,9 +202,7 @@ file_path = './sample.json'
 pprint(Path(file_path).read_text())
 ```
 
-<CodeOutputBlock lang="python">
-
-```json
+```outputjson
     {"data": [
         {"attributes": {
             "message": "message1",
@@ -234,7 +216,6 @@ pprint(Path(file_path).read_text())
         "id": "2"}]}
 ```
 
-</CodeOutputBlock>
 
 
 ```python
@@ -252,14 +233,11 @@ data = loader.load()
 pprint(data)
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     [Document(page_content='message1', metadata={'source': '/path/to/sample.json', 'seq_num': 1}),
      Document(page_content='message2', metadata={'source': '/path/to/sample.json', 'seq_num': 2})]
 ```
 
-</CodeOutputBlock>
 
 ## Extracting metadata
 
@@ -309,9 +287,7 @@ data = loader.load()
 pprint(data)
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     [Document(page_content='Bye!', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 1, 'sender_name': 'User 2', 'timestamp_ms': 1675597571851}),
      Document(page_content='Oh no worries! Bye', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 2, 'sender_name': 'User 1', 'timestamp_ms': 1675597435669}),
      Document(page_content='No Im sorry it was my mistake, the blue one is not for sale', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 3, 'sender_name': 'User 2', 'timestamp_ms': 1675596277579}),
@@ -325,7 +301,6 @@ pprint(data)
      Document(page_content='Hi! Im interested in your bag. Im offering $50. Let me know if you are interested. Thanks!', metadata={'source': '/Users/avsolatorio/WBG/langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 11, 'sender_name': 'User 1', 'timestamp_ms': 1675549022673})]
 ```
 
-</CodeOutputBlock>
 
 Now, you will see that the documents contain the metadata associated with the content we extracted.
 
@@ -368,9 +343,7 @@ data = loader.load()
 pprint(data)
 ```
 
-<CodeOutputBlock lang="python">
-
-```
+```output
     [Document(page_content='Bye!', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 1, 'sender_name': 'User 2', 'timestamp_ms': 1675597571851}),
      Document(page_content='Oh no worries! Bye', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 2, 'sender_name': 'User 1', 'timestamp_ms': 1675597435669}),
      Document(page_content='No Im sorry it was my mistake, the blue one is not for sale', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 3, 'sender_name': 'User 2', 'timestamp_ms': 1675596277579}),
@@ -384,7 +357,6 @@ pprint(data)
      Document(page_content='Hi! Im interested in your bag. Im offering $50. Let me know if you are interested. Thanks!', metadata={'source': 'langchain/docs/modules/indexes/document_loaders/examples/example_data/facebook_chat.json', 'seq_num': 11, 'sender_name': 'User 1', 'timestamp_ms': 1675549022673})]
 ```
 
-</CodeOutputBlock>
 
 ## Common JSON structures with jq schema
 

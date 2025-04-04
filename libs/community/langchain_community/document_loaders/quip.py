@@ -40,7 +40,7 @@ class QuipLoader(BaseLoader):
             from quip_api.quip import QuipClient
         except ImportError:
             raise ImportError(
-                "`quip_api` package not found, please run " "`pip install quip_api`"
+                "`quip_api` package not found, please run `pip install quip_api`"
             )
 
         self.quip_client = QuipClient(

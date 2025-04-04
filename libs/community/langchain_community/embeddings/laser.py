@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
@@ -73,7 +73,7 @@ class LaserEmbeddings(BaseModel, Embeddings):
         embeddings: np.ndarray
         embeddings = self._encoder_pipeline.encode_sentences(texts)
 
-        return embeddings.tolist()
+        return cast(List[List[float]], embeddings.tolist())
 
     def embed_query(self, text: str) -> List[float]:
         """Generate single query text embeddings using LASER.
@@ -86,4 +86,4 @@ class LaserEmbeddings(BaseModel, Embeddings):
         """
         query_embeddings: np.ndarray
         query_embeddings = self._encoder_pipeline.encode_sentences([text])
-        return query_embeddings.tolist()[0]
+        return cast(List[List[float]], query_embeddings.tolist())[0]

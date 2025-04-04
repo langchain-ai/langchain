@@ -230,6 +230,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.sklearn import (
         SKLearnVectorStore,
     )
+    from langchain_community.vectorstores.sqlitevec import (
+        SQLiteVec,
+    )
     from langchain_community.vectorstores.sqlitevss import (
         SQLiteVSS,
     )
@@ -241,6 +244,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.vectorstores.surrealdb import (
         SurrealDBStore,
+    )
+    from langchain_community.vectorstores.tablestore import (
+        TablestoreVectorStore,
     )
     from langchain_community.vectorstores.tair import (
         Tair,
@@ -380,6 +386,7 @@ __all__ = [
     "Relyt",
     "Rockset",
     "SKLearnVectorStore",
+    "SQLiteVec",
     "SQLiteVSS",
     "ScaNN",
     "SemaDB",
@@ -387,6 +394,7 @@ __all__ = [
     "StarRocks",
     "SupabaseVectorStore",
     "SurrealDBStore",
+    "TablestoreVectorStore",
     "Tair",
     "TencentVectorDB",
     "TiDBVectorStore",
@@ -483,6 +491,7 @@ _module_lookup = {
     "Relyt": "langchain_community.vectorstores.relyt",
     "Rockset": "langchain_community.vectorstores.rocksetdb",
     "SKLearnVectorStore": "langchain_community.vectorstores.sklearn",
+    "SQLiteVec": "langchain_community.vectorstores.sqlitevec",
     "SQLiteVSS": "langchain_community.vectorstores.sqlitevss",
     "ScaNN": "langchain_community.vectorstores.scann",
     "SemaDB": "langchain_community.vectorstores.semadb",
@@ -490,6 +499,7 @@ _module_lookup = {
     "StarRocks": "langchain_community.vectorstores.starrocks",
     "SupabaseVectorStore": "langchain_community.vectorstores.supabase",
     "SurrealDBStore": "langchain_community.vectorstores.surrealdb",
+    "TablestoreVectorStore": "langchain_community.vectorstores.tablestore",
     "Tair": "langchain_community.vectorstores.tair",
     "TencentVectorDB": "langchain_community.vectorstores.tencentvectordb",
     "TiDBVectorStore": "langchain_community.vectorstores.tidb_vector",

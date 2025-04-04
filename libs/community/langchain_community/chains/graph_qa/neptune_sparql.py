@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
@@ -75,6 +76,11 @@ def extract_sparql(query: str) -> str:
     return query
 
 
+@deprecated(
+    since="0.3.15",
+    removal="1.0",
+    alternative_import="langchain_aws.create_neptune_sparql_qa_chain",
+)
 class NeptuneSparqlQAChain(Chain):
     """Chain for question-answering against a Neptune graph
     by generating SPARQL statements.

@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple, cast
 from uuid import uuid4
 
 import numpy as np
@@ -111,7 +111,7 @@ class SemaDB(VectorStore):
             embed_matrix = embed_matrix / np.linalg.norm(
                 embed_matrix, axis=1, keepdims=True
             )
-            embeddings = embed_matrix.tolist()
+            embeddings = cast(List[List[float]], embed_matrix.tolist())
         # Create points
         ids: List[str] = []
         points = []
@@ -186,7 +186,7 @@ class SemaDB(VectorStore):
         if self.distance_strategy == DistanceStrategy.COSINE:
             vec = np.array(embedding)
             vec = vec / np.linalg.norm(vec)
-            embedding = vec.tolist()
+            embedding = cast(List[float], vec.tolist())
         # Perform search request
         payload = {
             "vector": embedding,

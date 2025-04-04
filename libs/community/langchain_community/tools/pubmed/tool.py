@@ -7,7 +7,7 @@ from pydantic import Field
 from langchain_community.utilities.pubmed import PubMedAPIWrapper
 
 
-class PubmedQueryRun(BaseTool):
+class PubmedQueryRun(BaseTool):  # type: ignore[override]
     """Tool that searches the PubMed API."""
 
     name: str = "pub_med"

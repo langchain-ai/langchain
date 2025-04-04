@@ -36,8 +36,7 @@ class PySparkDataFrameLoader(BaseLoader):
             from pyspark.sql import DataFrame, SparkSession
         except ImportError:
             raise ImportError(
-                "pyspark is not installed. "
-                "Please install it with `pip install pyspark`"
+                "pyspark is not installed. Please install it with `pip install pyspark`"
             )
 
         self.spark = (

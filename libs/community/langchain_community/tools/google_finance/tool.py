@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 
 
-class GoogleFinanceQueryRun(BaseTool):
+class GoogleFinanceQueryRun(BaseTool):  # type: ignore[override]
     """Tool that queries the Google Finance API."""
 
     name: str = "google_finance"

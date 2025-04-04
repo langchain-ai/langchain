@@ -1,3 +1,7 @@
+"""Serializable base class."""
+
+import contextlib
+import logging
 from abc import ABC
 from typing import (
     Any,
@@ -9,7 +13,10 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
-from typing_extensions import NotRequired
+from pydantic.fields import FieldInfo
+from typing_extensions import NotRequired, override
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSerialized(TypedDict):
@@ -76,10 +83,23 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Raises:
         Exception: If the key is not in the model.
     """
+    field = type(model).model_fields[key]
+    return _try_neq_default(value, field)
+
+
+def _try_neq_default(value: Any, field: FieldInfo) -> bool:
+    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
+    # Pandas DataFrames).
     try:
-        return model.model_fields[key].get_default() != value
-    except Exception:
-        return True
+        return bool(field.get_default() != value)
+    except Exception as _:
+        try:
+            return all(field.get_default() != value)
+        except Exception as _:
+            try:
+                return value is not field.default
+            except Exception as _:
+                return False
 
 
 class Serializable(BaseModel, ABC):
@@ -106,7 +126,7 @@ class Serializable(BaseModel, ABC):
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""
+        """"""  # noqa: D419
         super().__init__(*args, **kwargs)
 
     @classmethod
@@ -138,7 +158,7 @@ class Serializable(BaseModel, ABC):
         For example,
             {"openai_api_key": "OPENAI_API_KEY"}
         """
-        return dict()
+        return {}
 
     @property
     def lc_attributes(self) -> dict:
@@ -172,11 +192,12 @@ class Serializable(BaseModel, ABC):
         extra="ignore",
     )
 
+    @override
     def __repr_args__(self) -> Any:
         return [
             (k, v)
             for k, v in super().__repr_args__()
-            if (k not in self.model_fields or try_neq_default(v, k, self))
+            if (k not in type(self).model_fields or try_neq_default(v, k, self))
         ]
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
@@ -188,14 +209,15 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
-        secrets = dict()
+        model_fields = type(self).model_fields
+        secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
         for k, v in self:
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
-            if k in self.model_fields and self.model_fields[k].exclude:
+            if k in model_fields and model_fields[k].exclude:
                 continue
 
             lc_kwargs[k] = getattr(self, k, v)
@@ -214,14 +236,15 @@ class Serializable(BaseModel, ABC):
 
                 for attr in deprecated_attributes:
                     if hasattr(cls, attr):
-                        raise ValueError(
+                        msg = (
                             f"Class {self.__class__} has a deprecated "
                             f"attribute {attr}. Please use the corresponding "
                             f"classmethod instead."
                         )
+                        raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
-            this = cast(Serializable, self if cls is None else super(cls, self))
+            this = cast("Serializable", self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
             # Now also add the aliases for the secrets
@@ -230,15 +253,15 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this.model_fields:
-                    alias = this.model_fields[key].alias
-                    if alias is not None:
-                        secrets[alias] = value
+                if (key in model_fields) and (
+                    alias := model_fields[key].alias
+                ) is not None:
+                    secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
-        for key in secrets.keys():
+        for key in secrets:
             secret_value = getattr(self, key, None) or lc_kwargs.get(key)
             if secret_value is not None:
                 lc_kwargs.update({key: secret_value})
@@ -253,6 +276,7 @@ class Serializable(BaseModel, ABC):
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
+        """Serialize a "not implemented" object."""
         return to_json_not_implemented(self)
 
 
@@ -270,7 +294,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
         If the field is not required and the value is None, it is useful if the
         default value is different from the value.
     """
-    field = inst.model_fields.get(key)
+    field = type(inst).model_fields.get(key)
     if not field:
         return False
 
@@ -295,18 +319,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     if field.default_factory is list and isinstance(value, list):
         return False
 
-    # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
-    # Pandas DataFrames).
-    try:
-        value_neq_default = bool(field.get_default() != value)
-    except Exception as _:
-        try:
-            value_neq_default = all(field.get_default() != value)
-        except Exception as _:
-            try:
-                value_neq_default = value is not field.default
-            except Exception as _:
-                value_neq_default = False
+    value_neq_default = _try_neq_default(value, field)
 
     # If value is falsy and does not match the default
     return value_is_truthy or value_neq_default
@@ -349,7 +362,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         elif hasattr(obj, "__class__"):
             _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
-        pass
+        logger.debug("Failed to serialize object", exc_info=True)
 
     result: SerializedNotImplemented = {
         "lc": 1,
@@ -357,8 +370,6 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
         "id": _id,
         "repr": None,
     }
-    try:
+    with contextlib.suppress(Exception):
         result["repr"] = repr(obj)
-    except Exception:
-        pass
     return result

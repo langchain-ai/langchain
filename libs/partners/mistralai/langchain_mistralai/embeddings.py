@@ -4,6 +4,7 @@ import warnings
 from typing import Iterable, List
 
 import httpx
+from httpx import Response
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import (
     secret_from_env,
@@ -15,6 +16,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore
 from typing_extensions import Self
 
@@ -30,7 +32,8 @@ documents/chunks)"""
 class DummyTokenizer:
     """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
 
-    def encode_batch(self, texts: List[str]) -> List[List[str]]:
+    @staticmethod
+    def encode_batch(texts: List[str]) -> List[List[str]]:
         return [list(text) for text in texts]
 
 
@@ -58,6 +61,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         The number of times to retry a request if it fails.
       timeout: int
         The number of seconds to wait for a response before timing out.
+      wait_time: int
+        The number of seconds to wait before retrying a request in case of 429 error.
       max_concurrent_requests: int
         The maximum number of concurrent requests to make to the Mistral API.
 
@@ -113,8 +118,14 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    # The type for client and async_client is ignored because the type is not
+    # an Optional after the model is initialized and the model_validator
+    # is run.
+    client: httpx.Client = Field(default=None)  # type: ignore # : :meta private:
+
+    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
+        default=None
+    )
     mistral_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
@@ -122,6 +133,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     endpoint: str = "https://api.mistral.ai/v1/"
     max_retries: int = 5
     timeout: int = 120
+    wait_time: int = 30
     max_concurrent_requests: int = 64
     tokenizer: Tokenizer = Field(default=None)
 
@@ -209,16 +221,28 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         try:
-            batch_responses = (
-                self.client.post(
+            batch_responses = []
+
+            @retry(
+                retry=retry_if_exception_type(
+                    (httpx.TimeoutException, httpx.HTTPStatusError)
+                ),
+                wait=wait_fixed(self.wait_time),
+                stop=stop_after_attempt(self.max_retries),
+            )
+            def _embed_batch(batch: List[str]) -> Response:
+                response = self.client.post(
                     url="/embeddings",
                     json=dict(
                         model=self.model,
                         input=batch,
                     ),
                 )
-                for batch in self._get_batches(texts)
-            )
+                response.raise_for_status()
+                return response
+
+            for batch in self._get_batches(texts):
+                batch_responses.append(_embed_batch(batch))
             return [
                 list(map(float, embedding_obj["embedding"]))
                 for response in batch_responses

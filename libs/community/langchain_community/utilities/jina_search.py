@@ -1,17 +1,33 @@
 import json
-from typing import List
+from typing import Any, Dict, List
 
 import requests
 from langchain_core.documents import Document
-from pydantic import BaseModel
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 from yarl import URL
 
 
 class JinaSearchAPIWrapper(BaseModel):
     """Wrapper around the Jina search engine."""
 
+    api_key: SecretStr
+
     base_url: str = "https://s.jina.ai/"
     """The base URL for the Jina search engine."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
+        """Validate that api key and endpoint exists in environment."""
+        api_key = get_from_dict_or_env(values, "api_key", "JINA_API_KEY")
+        values["api_key"] = api_key
+
+        return values
 
     def run(self, query: str) -> str:
         """Query the Jina search engine and return the results as a JSON string.
@@ -59,6 +75,7 @@ class JinaSearchAPIWrapper(BaseModel):
     def _search_request(self, query: str) -> List[dict]:
         headers = {
             "Accept": "application/json",
+            "Authorization": f"Bearer {self.api_key.get_secret_value()}",
         }
         url = str(URL(self.base_url + query))
         response = requests.get(url, headers=headers)

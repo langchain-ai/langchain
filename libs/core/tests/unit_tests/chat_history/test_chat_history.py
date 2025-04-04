@@ -17,7 +17,7 @@ def test_add_message_implementation_only() -> None:
 
         def clear(self) -> None:
             """Clear the store."""
-            raise NotImplementedError()
+            raise NotImplementedError
 
     store: list[BaseMessage] = []
     chat_history = SampleChatHistory(store=store)
@@ -29,7 +29,10 @@ def test_add_message_implementation_only() -> None:
     assert store[1] == HumanMessage(content="World")
 
     chat_history.add_messages(
-        [HumanMessage(content="Hello"), HumanMessage(content="World")]
+        [
+            HumanMessage(content="Hello"),
+            HumanMessage(content="World"),
+        ]
     )
     assert len(store) == 4
     assert store[2] == HumanMessage(content="Hello")
@@ -50,7 +53,7 @@ def test_bulk_message_implementation_only() -> None:
 
         def clear(self) -> None:
             """Clear the store."""
-            raise NotImplementedError()
+            raise NotImplementedError
 
     chat_history = BulkAddHistory(store=store)
     chat_history.add_message(HumanMessage(content="Hello"))
@@ -61,7 +64,10 @@ def test_bulk_message_implementation_only() -> None:
     assert store[1] == HumanMessage(content="World")
 
     chat_history.add_messages(
-        [HumanMessage(content="Hello"), HumanMessage(content="World")]
+        [
+            HumanMessage(content="Hello"),
+            HumanMessage(content="World"),
+        ]
     )
     assert len(store) == 4
     assert store[2] == HumanMessage(content="Hello")
@@ -85,7 +91,10 @@ async def test_async_interface() -> None:
 
     chat_history = BulkAddHistory()
     await chat_history.aadd_messages(
-        [HumanMessage(content="Hello"), HumanMessage(content="World")]
+        [
+            HumanMessage(content="Hello"),
+            HumanMessage(content="World"),
+        ]
     )
     assert await chat_history.aget_messages() == [
         HumanMessage(content="Hello"),

@@ -39,7 +39,7 @@ class _MoonshotClient(BaseModel):
 class MoonshotCommon(BaseModel):
     """Common parameters for Moonshot LLMs."""
 
-    client: _MoonshotClient
+    client: Any
     base_url: str = MOONSHOT_SERVICE_URL_BASE
     moonshot_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Moonshot API key. Get it here: https://platform.moonshot.cn/console/api-keys"""

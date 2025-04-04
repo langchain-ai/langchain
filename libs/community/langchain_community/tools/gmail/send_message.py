@@ -36,12 +36,12 @@ class SendMessageSchema(BaseModel):
     )
 
 
-class GmailSendMessage(GmailBaseTool):
+class GmailSendMessage(GmailBaseTool):  # type: ignore[override, override]
     """Tool that sends a message to Gmail."""
 
     name: str = "send_gmail_message"
     description: str = (
-        "Use this tool to send email messages." " The input is the message, recipients"
+        "Use this tool to send email messages. The input is the message, recipients"
     )
     args_schema: Type[SendMessageSchema] = SendMessageSchema
 
@@ -86,6 +86,6 @@ class GmailSendMessage(GmailBaseTool):
                 .send(userId="me", body=create_message)
             )
             sent_message = send_message.execute()
-            return f'Message sent. Message Id: {sent_message["id"]}'
+            return f"Message sent. Message Id: {sent_message['id']}"
         except Exception as error:
             raise Exception(f"An error occurred: {error}")

@@ -1,5 +1,7 @@
 """Test vector store utility functions."""
 
+from typing import cast
+
 import numpy as np
 from langchain_core.documents import Document
 
@@ -53,7 +55,7 @@ def test_maximal_marginal_relevance() -> None:
 def test_maximal_marginal_relevance_query_dim() -> None:
     query_embedding = np.random.random(size=5)
     query_embedding_2d = query_embedding.reshape((1, 5))
-    embedding_list = np.random.random(size=(4, 5)).tolist()
+    embedding_list = cast(list[list[float]], np.random.random(size=(4, 5)).tolist())
     first = maximal_marginal_relevance(query_embedding, embedding_list)
     second = maximal_marginal_relevance(query_embedding_2d, embedding_list)
     assert first == second

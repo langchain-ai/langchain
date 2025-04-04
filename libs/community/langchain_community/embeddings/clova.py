@@ -3,11 +3,17 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, cast
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, SecretStr, model_validator
 
 
+@deprecated(
+    since="0.3.4",
+    removal="1.0.0",
+    alternative_import="langchain_community.ClovaXEmbeddings",
+)
 class ClovaEmbeddings(BaseModel, Embeddings):
     """
     Clova's embedding service.

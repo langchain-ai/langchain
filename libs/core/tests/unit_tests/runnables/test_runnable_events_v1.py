@@ -1,10 +1,10 @@
 """Module that contains tests for runnable.astream_events API."""
 
+import asyncio
 import sys
 from collections.abc import AsyncIterator, Sequence
 from itertools import cycle
 from typing import Any, cast
-from typing import Optional as Optional
 
 import pytest
 from pydantic import BaseModel
@@ -41,7 +41,7 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
         assert "parent_ids" in event, "Parent ids should be present in the event."
         assert event["parent_ids"] == [], "Parent ids should be empty."
 
-    return cast(list[StreamEvent], [{**event, "run_id": ""} for event in events])
+    return cast("list[StreamEvent]", [{**event, "run_id": ""} for event in events])
 
 
 async def _as_async_iterator(iterable: list) -> AsyncIterator:
@@ -80,15 +80,15 @@ def _assert_events_equal_allow_superset_metadata(events: list, expected: list) -
 
 
 async def test_event_stream_with_simple_function_tool() -> None:
-    """Test the event stream with a function and tool"""
+    """Test the event stream with a function and tool."""
 
     def foo(x: int) -> dict:
-        """Foo"""
+        """Foo."""
         return {"x": 5}
 
     @tool
     def get_docs(x: int) -> list[Document]:
-        """Hello Doc"""
+        """Hello Doc."""
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
@@ -345,7 +345,7 @@ async def test_event_stream_with_triple_lambda() -> None:
 
 
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
-    """Test filtering based on tags / names"""
+    """Test filtering based on tags / names."""
 
     def reverse(s: str) -> str:
         """Reverse a string."""
@@ -545,8 +545,7 @@ async def test_astream_events_from_model() -> None:
     def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
             return model.invoke(input)
-        else:
-            return model.invoke(input, config)
+        return model.invoke(input, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -670,8 +669,7 @@ async def test_astream_events_from_model() -> None:
     async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
             return await model.ainvoke(input)
-        else:
-            return await model.ainvoke(input, config)
+        return await model.ainvoke(input, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -795,7 +793,10 @@ async def test_astream_events_from_model() -> None:
 async def test_event_stream_with_simple_chain() -> None:
     """Test as event stream."""
     template = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
     infinite_cycle = cycle(
@@ -1489,12 +1490,12 @@ async def test_chain_ordering() -> None:
 
     events = []
 
-    for _ in range(10):
-        try:
+    try:
+        for _ in range(10):
             next_chunk = await iterable.__anext__()
             events.append(next_chunk)
-        except Exception:
-            break
+    except Exception:
+        pass
 
     events = _with_nulled_run_id(events)
     for event in events:
@@ -1596,7 +1597,8 @@ async def test_event_stream_with_retry() -> None:
 
     def fail(inputs: str) -> None:
         """Simple func."""
-        raise Exception("fail")
+        msg = "fail"
+        raise ValueError(msg)
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1605,12 +1607,12 @@ async def test_event_stream_with_retry() -> None:
 
     events = []
 
-    for _ in range(10):
-        try:
+    try:
+        for _ in range(10):
             next_chunk = await iterable.__anext__()
             events.append(next_chunk)
-        except Exception:
-            break
+    except Exception:
+        pass
 
     events = _with_nulled_run_id(events)
     for event in events:
@@ -1680,7 +1682,10 @@ async def test_event_stream_with_retry() -> None:
 async def test_with_llm() -> None:
     """Test with regular llm."""
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "You are Cat Agent 007"), ("human", "{question}")]
+        [
+            ("system", "You are Cat Agent 007"),
+            ("human", "{question}"),
+        ]
     ).with_config({"run_name": "my_template", "tags": ["my_template"]})
     llm = FakeStreamingListLLM(responses=["abc"])
 
@@ -1729,7 +1734,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     }
                 },
                 "event": "on_llm_start",
@@ -1742,7 +1747,7 @@ async def test_with_llm() -> None:
             {
                 "data": {
                     "input": {
-                        "prompts": ["System: You are Cat Agent 007\n" "Human: hello"]
+                        "prompts": ["System: You are Cat Agent 007\nHuman: hello"]
                     },
                     "output": {
                         "generations": [
@@ -1816,12 +1821,11 @@ async def test_runnable_each() -> None:
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
-        async for _ in add_one_map.astream_events([1, 2, 3], version="v1"):
-            pass
+        _ = [_ async for _ in add_one_map.astream_events([1, 2, 3], version="v1")]
 
 
 async def test_events_astream_config() -> None:
-    """Test that astream events support accepting config"""
+    """Test that astream events support accepting config."""
     infinite_cycle = cycle([AIMessage(content="hello world!", id="ai1")])
     good_world_on_repeat = cycle([AIMessage(content="Goodbye world", id="ai2")])
     model = GenericFakeChatModel(messages=infinite_cycle).configurable_fields(
@@ -1911,13 +1915,16 @@ async def test_runnable_with_message_history() -> None:
     store: dict = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
-        """Get a chat message history"""
+        """Get a chat message history."""
         if session_id not in store:
             store[session_id] = []
         return InMemoryHistory(messages=store[session_id])
 
     infinite_cycle = cycle(
-        [AIMessage(content="hello", id="ai3"), AIMessage(content="world", id="ai4")]
+        [
+            AIMessage(content="hello", id="ai3"),
+            AIMessage(content="world", id="ai4"),
+        ]
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -1947,9 +1954,12 @@ async def test_runnable_with_message_history() -> None:
         ]
     }
 
-    with_message_history.with_config(
-        {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "meow"})
+    await asyncio.to_thread(
+        with_message_history.with_config(
+            {"configurable": {"session_id": "session-123"}}
+        ).invoke,
+        {"question": "meow"},
+    )
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
@@ -2033,7 +2043,7 @@ async def test_sync_in_async_stream_lambdas() -> None:
 
     async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
         streaming = add_one.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
@@ -2078,7 +2088,7 @@ async def test_sync_in_sync_lambdas() -> None:
     def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
         streaming = add_one_.stream(x, config)
-        results = [result for result in streaming]
+        results = list(streaming)
         return results[0]
 
     add_one_proxy_ = RunnableLambda(add_one_proxy)

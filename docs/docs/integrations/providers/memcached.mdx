@@ -1,0 +1,34 @@
+# Memcached
+
+> [Memcached](https://www.memcached.org/) is a free & open source, high-performance, distributed memory object caching system,
+> generic in nature, but intended for use in speeding up dynamic web applications by alleviating database load.
+
+This page covers how to use Memcached with langchain, using [pymemcache](https://github.com/pinterest/pymemcache) as
+a client to connect to an already running Memcached instance.
+
+## Installation and Setup
+```bash
+pip install pymemcache
+```
+
+## LLM Cache
+
+To integrate a Memcached Cache into your application:
+```python3
+from langchain.globals import set_llm_cache
+from langchain_openai import OpenAI
+
+from langchain_community.cache import MemcachedCache
+from pymemcache.client.base import Client
+
+llm = OpenAI(model="gpt-3.5-turbo-instruct", n=2, best_of=2)
+set_llm_cache(MemcachedCache(Client('localhost')))
+
+# The first time, it is not yet in cache, so it should take longer
+llm.invoke("Which city is the most crowded city in the USA?")
+
+# The second time it is, so it goes faster
+llm.invoke("Which city is the most crowded city in the USA?")
+```
+
+Learn more in the [example notebook](/docs/integrations/llm_caching#memcached-cache)

@@ -82,8 +82,7 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
             import oracledb
         except ImportError as e:
             raise ImportError(
-                "Could not import oracledb, "
-                "please install with 'pip install oracledb'"
+                "Could not import oracledb, please install with 'pip install oracledb'"
             ) from e
         connect_param = {"user": self.user, "password": self.password, "dsn": self.dsn}
         if self.dsn == self.tns_name:
@@ -100,7 +99,13 @@ class OracleAutonomousDatabaseLoader(BaseLoader):
             cursor.execute(self.query)
             columns = [col[0] for col in cursor.description]
             data = cursor.fetchall()
-            data = [dict(zip(columns, row)) for row in data]
+            data = [
+                {
+                    i: (j if not isinstance(j, oracledb.LOB) else j.read())
+                    for i, j in zip(columns, row)
+                }
+                for row in data
+            ]
         except oracledb.DatabaseError as e:
             print("Got error while connecting: " + str(e))  # noqa: T201
             data = []

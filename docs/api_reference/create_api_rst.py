@@ -72,13 +72,20 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
     Returns:
         list: A list of loaded module objects.
     """
+
     classes_: List[ClassInfo] = []
     functions: List[FunctionInfo] = []
     module = importlib.import_module(module_path)
+
+    if ":private:" in (module.__doc__ or ""):
+        return ModuleMembers(classes_=[], functions=[])
+
     for name, type_ in inspect.getmembers(module):
         if not hasattr(type_, "__module__"):
             continue
         if type_.__module__ != module_path:
+            continue
+        if ":private:" in (type_.__doc__ or ""):
             continue
 
         if inspect.isclass(type_):
@@ -479,11 +486,11 @@ def _package_namespace(package_name: str) -> str:
     Returns:
         modified package_name: Can be either "langchain" or "langchain_{package_name}"
     """
-    return (
-        package_name
-        if package_name == "langchain"
-        else f"langchain_{package_name.replace('-', '_')}"
-    )
+    if package_name == "langchain":
+        return "langchain"
+    if package_name == "standard-tests":
+        return "langchain_tests"
+    return f"langchain_{package_name.replace('-', '_')}"
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
@@ -495,6 +502,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "core",
         "cli",
         "text-splitters",
+        "standard-tests",
     ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
@@ -520,7 +528,12 @@ def _get_package_version(package_dir: Path) -> str:
             "Aborting the build."
         )
         exit(1)
-    return pyproject["tool"]["poetry"]["version"]
+    try:
+        # uses uv
+        return pyproject["project"]["version"]
+    except KeyError:
+        # uses poetry
+        return pyproject["tool"]["poetry"]["version"]
 
 
 def _out_file_path(package_name: str) -> Path:
@@ -530,9 +543,9 @@ def _out_file_path(package_name: str) -> Path:
 
 def _build_index(dirs: List[str]) -> None:
     custom_names = {
-        "airbyte": "Airbyte",
         "aws": "AWS",
         "ai21": "AI21",
+        "ibm": "IBM",
     }
     ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
@@ -600,9 +613,11 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
         ]
         for header_name, dir_ in sorted(
             zip(integration_headers, integrations),
-            key=lambda h_d: integrations_to_show.index(h_d[1])
-            if h_d[1] in integrations_to_show
-            else len(integrations_to_show),
+            key=lambda h_d: (
+                integrations_to_show.index(h_d[1])
+                if h_d[1] in integrations_to_show
+                else len(integrations_to_show)
+            ),
         )[: len(integrations_to_show)]:
             integration_grid += f'\n- header: "**{header_name}**"\n  content: {_package_namespace(dir_).replace("_", "-")} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
         doc += f"""## Integrations
@@ -647,7 +662,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners", "standard-tests")
+            if dir_ not in ("cli", "partners", "packages.yml")
         ]
         dirs += [
             dir_

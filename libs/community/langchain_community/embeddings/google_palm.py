@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env, pre_init
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from tenacity import (
     before_sleep_log,
     retry,
@@ -61,6 +61,8 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     show_progress_bar: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

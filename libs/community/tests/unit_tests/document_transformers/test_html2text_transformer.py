@@ -25,10 +25,7 @@ def test_extract_paragraphs() -> None:
     documents = [Document(page_content=paragraphs_html)]
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# Header\n\n"
-        "First paragraph.\n\n"
-        "Second paragraph.\n\n"
-        "# Ignore at end\n\n"
+        "# Header\n\nFirst paragraph.\n\nSecond paragraph.\n\n# Ignore at end\n\n"
     )
 
 
@@ -78,14 +75,13 @@ def test_ignore_links() -> None:
 
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# First heading.\n\n"
-        "First paragraph with an [example](http://example.com)\n\n"
+        "# First heading.\n\nFirst paragraph with an [example](http://example.com)\n\n"
     )
 
     html2text_transformer = Html2TextTransformer(ignore_links=True)
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# First heading.\n\n" "First paragraph with an example\n\n"
+        "# First heading.\n\nFirst paragraph with an example\n\n"
     )
 
 
@@ -101,12 +97,11 @@ def test_ignore_images() -> None:
 
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# First heading.\n\n"
-        "First paragraph with an ![Example image](example.jpg)\n\n"
+        "# First heading.\n\nFirst paragraph with an ![Example image](example.jpg)\n\n"
     )
 
     html2text_transformer = Html2TextTransformer(ignore_images=True)
     docs_transformed = html2text_transformer.transform_documents(documents)
     assert docs_transformed[0].page_content == (
-        "# First heading.\n\n" "First paragraph with an\n\n"
+        "# First heading.\n\nFirst paragraph with an\n\n"
     )

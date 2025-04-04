@@ -97,8 +97,7 @@ class DeepInfra(LLM):
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:
             raise Exception(
-                f"DeepInfra returned an unexpected response with status "
-                f"{code}: {text}"
+                f"DeepInfra returned an unexpected response with status {code}: {text}"
             )
 
     def _call(

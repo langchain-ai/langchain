@@ -6,7 +6,7 @@ import functools
 import importlib
 import os
 import warnings
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib.metadata import version
 from typing import Any, Callable, Optional, Union, overload
 
@@ -20,7 +20,7 @@ from langchain_core.utils.pydantic import (
 
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
-    """Validate specified keyword args are mutually exclusive."
+    """Validate specified keyword args are mutually exclusive.".
 
     Args:
         *arg_groups (Tuple[str, ...]): Groups of mutually exclusive keyword args.
@@ -44,11 +44,12 @@ def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
             invalid_groups = [i for i, count in enumerate(counts) if count != 1]
             if invalid_groups:
                 invalid_group_names = [", ".join(arg_groups[i]) for i in invalid_groups]
-                raise ValueError(
+                msg = (
                     "Exactly one argument in each of the following"
                     " groups must be defined:"
                     f" {', '.join(invalid_group_names)}"
                 )
+                raise ValueError(msg)
             return func(*args, **kwargs)
 
         return wrapper
@@ -72,7 +73,7 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 @contextlib.contextmanager
-def mock_now(dt_value):  # type: ignore
+def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
     """Context manager for mocking out datetime.now() in unit tests.
 
     Args:
@@ -90,9 +91,9 @@ def mock_now(dt_value):  # type: ignore
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
-        def now(cls):  # type: ignore
+        def now(cls, tz: Union[datetime.tzinfo, None] = None) -> "MockDateTime":
             # Create a copy of dt_value.
-            return datetime.datetime(
+            return MockDateTime(
                 dt_value.year,
                 dt_value.month,
                 dt_value.day,
@@ -104,18 +105,19 @@ def mock_now(dt_value):  # type: ignore
             )
 
     real_datetime = datetime.datetime
-    datetime.datetime = MockDateTime
+    datetime.datetime = MockDateTime  # type: ignore[misc]
     try:
         yield datetime.datetime
     finally:
-        datetime.datetime = real_datetime
+        datetime.datetime = real_datetime  # type: ignore[misc]
 
 
 def guard_import(
     module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
 ) -> Any:
-    """Dynamically import a module and raise an exception if the module is not
-    installed.
+    """Dynamically import a module.
+
+    Raise an exception if the module is not installed.
 
     Args:
         module_name (str): The name of the module to import.
@@ -134,10 +136,11 @@ def guard_import(
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError) as e:
         pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
-        raise ImportError(
+        msg = (
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
-        ) from e
+        )
+        raise ImportError(msg) from e
     return module
 
 
@@ -166,25 +169,29 @@ def check_package_version(
     """
     imported_version = parse(version(package))
     if lt_version is not None and imported_version >= parse(lt_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be < {lt_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
     if lte_version is not None and imported_version > parse(lte_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be <= {lte_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
     if gt_version is not None and imported_version <= parse(gt_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be > {gt_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
     if gte_version is not None and imported_version < parse(gte_version):
-        raise ValueError(
+        msg = (
             f"Expected {package} version to be >= {gte_version}. Received "
             f"{imported_version}."
         )
+        raise ValueError(msg)
 
 
 def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
@@ -210,6 +217,52 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
     return all_required_field_names
 
 
+def _build_model_kwargs(
+    values: dict[str, Any],
+    all_required_field_names: set[str],
+) -> dict[str, Any]:
+    """Build "model_kwargs" param from Pydanitc constructor values.
+
+    Args:
+        values: All init args passed in by user.
+        all_required_field_names: All required field names for the pydantic class.
+
+    Returns:
+        Dict[str, Any]: Extra kwargs.
+
+    Raises:
+        ValueError: If a field is specified in both values and extra_kwargs.
+        ValueError: If a field is specified in model_kwargs.
+    """
+    extra_kwargs = values.get("model_kwargs", {})
+    for field_name in list(values):
+        if field_name in extra_kwargs:
+            msg = f"Found {field_name} supplied twice."
+            raise ValueError(msg)
+        if field_name not in all_required_field_names:
+            warnings.warn(
+                f"""WARNING! {field_name} is not default parameter.
+                {field_name} was transferred to model_kwargs.
+                Please confirm that {field_name} is what you intended.""",
+                stacklevel=7,
+            )
+            extra_kwargs[field_name] = values.pop(field_name)
+
+    invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
+    if invalid_model_kwargs:
+        warnings.warn(
+            f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+            f"Instead they were passed in as part of `model_kwargs` parameter.",
+            stacklevel=7,
+        )
+        for k in invalid_model_kwargs:
+            values[k] = extra_kwargs.pop(k)
+
+    values["model_kwargs"] = extra_kwargs
+    return values
+
+
+# DON'T USE! Kept for backwards-compatibility but should never have been public.
 def build_extra_kwargs(
     extra_kwargs: dict[str, Any],
     values: dict[str, Any],
@@ -231,7 +284,8 @@ def build_extra_kwargs(
     """
     for field_name in list(values):
         if field_name in extra_kwargs:
-            raise ValueError(f"Found {field_name} supplied twice.")
+            msg = f"Found {field_name} supplied twice."
+            raise ValueError(msg)
         if field_name not in all_required_field_names:
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
@@ -243,10 +297,11 @@ def build_extra_kwargs(
 
     invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
     if invalid_model_kwargs:
-        raise ValueError(
+        msg = (
             f"Parameters {invalid_model_kwargs} should be specified explicitly. "
             f"Instead they were passed in as part of `model_kwargs` parameter."
         )
+        raise ValueError(msg)
 
     return extra_kwargs
 
@@ -267,8 +322,6 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
 
 class _NoDefaultType:
     """Type to indicate no default value is provided."""
-
-    pass
 
 
 _NoDefault = _NoDefaultType()
@@ -334,21 +387,19 @@ def from_env(
             for k in key:
                 if k in os.environ:
                     return os.environ[k]
-        if isinstance(key, str):
-            if key in os.environ:
-                return os.environ[key]
+        if isinstance(key, str) and key in os.environ:
+            return os.environ[key]
 
         if isinstance(default, (str, type(None))):
             return default
-        else:
-            if error_message:
-                raise ValueError(error_message)
-            else:
-                raise ValueError(
-                    f"Did not find {key}, please add an environment variable"
-                    f" `{key}` which contains it, or pass"
-                    f" `{key}` as a named parameter."
-                )
+        if error_message:
+            raise ValueError(error_message)
+        msg = (
+            f"Did not find {key}, please add an environment variable"
+            f" `{key}` which contains it, or pass"
+            f" `{key}` as a named parameter."
+        )
+        raise ValueError(msg)
 
     return get_from_env_fn
 
@@ -397,21 +448,19 @@ def secret_from_env(
             for k in key:
                 if k in os.environ:
                     return SecretStr(os.environ[k])
-        if isinstance(key, str):
-            if key in os.environ:
-                return SecretStr(os.environ[key])
+        if isinstance(key, str) and key in os.environ:
+            return SecretStr(os.environ[key])
         if isinstance(default, str):
             return SecretStr(default)
-        elif isinstance(default, type(None)):
+        if default is None:
             return None
-        else:
-            if error_message:
-                raise ValueError(error_message)
-            else:
-                raise ValueError(
-                    f"Did not find {key}, please add an environment variable"
-                    f" `{key}` which contains it, or pass"
-                    f" `{key}` as a named parameter."
-                )
+        if error_message:
+            raise ValueError(error_message)
+        msg = (
+            f"Did not find {key}, please add an environment variable"
+            f" `{key}` which contains it, or pass"
+            f" `{key}` as a named parameter."
+        )
+        raise ValueError(msg)
 
     return get_secret_from_env

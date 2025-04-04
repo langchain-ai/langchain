@@ -15,12 +15,16 @@ from langchain_community.tools.playwright.utils import (
 )
 
 
-class ExtractTextTool(BaseBrowserTool):
+class ExtractTextToolInput(BaseModel):
+    """Explicit no-args input for ExtractTextTool."""
+
+
+class ExtractTextTool(BaseBrowserTool):  # type: ignore[override, override]
     """Tool for extracting all the text on the current webpage."""
 
     name: str = "extract_text"
     description: str = "Extract all the text on the current webpage"
-    args_schema: Type[BaseModel] = BaseModel
+    args_schema: Type[BaseModel] = ExtractTextToolInput
 
     @model_validator(mode="before")
     @classmethod

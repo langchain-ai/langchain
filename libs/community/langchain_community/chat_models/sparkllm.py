@@ -302,34 +302,6 @@ class ChatSparkLLM(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
-        """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        for field_name in list(values):
-            if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
-            if field_name not in all_required_field_names:
-                logger.warning(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
-                extra[field_name] = values.pop(field_name)
-
-        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
-        if invalid_model_kwargs:
-            raise ValueError(
-                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-                f"Instead they were passed in as part of `model_kwargs` parameter."
-            )
-
-        values["model_kwargs"] = extra
-
-        return values
-
-    @model_validator(mode="before")
-    @classmethod
     def validate_environment(cls, values: Dict) -> Any:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
@@ -376,6 +348,38 @@ class ChatSparkLLM(BaseChatModel):
             spark_domain=values["spark_llm_domain"],
             model_kwargs=values["model_kwargs"],
         )
+        return values
+
+    # When using Pydantic V2
+    # The execution order of multiple @model_validator decorators is opposite to
+    # their declaration order. https://github.com/pydantic/pydantic/discussions/7434
+
+    @model_validator(mode="before")
+    @classmethod
+    def build_extra(cls, values: Dict[str, Any]) -> Any:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
+            if field_name in extra:
+                raise ValueError(f"Found {field_name} supplied twice.")
+            if field_name not in all_required_field_names:
+                logger.warning(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transferred to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
+                extra[field_name] = values.pop(field_name)
+
+        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
+        if invalid_model_kwargs:
+            raise ValueError(
+                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+                f"Instead they were passed in as part of `model_kwargs` parameter."
+            )
+
+        values["model_kwargs"] = extra
+
         return values
 
     def _stream(

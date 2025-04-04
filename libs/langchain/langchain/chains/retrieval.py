@@ -52,7 +52,7 @@ def create_retrieval_chain(
             )
             retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
-            chain.invoke({"input": "..."})
+            retrieval_chain.invoke({"input": "..."})
 
     """
     if not isinstance(retriever, BaseRetriever):

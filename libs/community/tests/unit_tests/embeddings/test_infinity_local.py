@@ -13,7 +13,6 @@ except ImportError:
 
 
 @pytest.mark.skipif(not IMPORTED_TORCH, reason="torch not installed")
-@pytest.mark.asyncio
 async def test_local_infinity_embeddings() -> None:
     embedder = InfinityEmbeddingsLocal(
         model="TaylorAI/bge-micro-v2",

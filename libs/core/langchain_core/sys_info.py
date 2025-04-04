@@ -1,6 +1,4 @@
-"""**sys_info** prints information about the system and langchain packages
-for debugging purposes.
-"""
+"""**sys_info** prints information about the system and langchain packages for debugging purposes."""  # noqa: E501
 
 from collections.abc import Sequence
 
@@ -10,7 +8,7 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
     from importlib import metadata
 
     sub_deps = set()
-    _underscored_packages = set(pkg.replace("-", "_") for pkg in packages)
+    _underscored_packages = {pkg.replace("-", "_") for pkg in packages}
 
     for pkg in packages:
         try:
@@ -22,18 +20,14 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
             continue
 
         for req in required:
-            try:
-                cleaned_req = req.split(" ")[0]
-            except Exception:  # In case parsing of requirement spec fails
-                continue
-
+            cleaned_req = req.split(" ")[0]
             if cleaned_req.replace("-", "_") not in _underscored_packages:
                 sub_deps.add(cleaned_req)
 
     return sorted(sub_deps, key=lambda x: x.lower())
 
 
-def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
+def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     """Print information about the environment for debugging purposes.
 
     Args:
@@ -47,7 +41,6 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
         "langserve",
-        "langgraph",
         "langsmith",
     ]
 
@@ -55,8 +48,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
+    langgraph_pkgs = [
+        name for _, name, _ in pkgutil.iter_modules() if name.startswith("langgraph")
+    ]
+
     all_packages = sorted(
-        set(langchain_pkgs + other_langchain_packages + list(additional_pkgs))
+        set(
+            langchain_pkgs
+            + langgraph_pkgs
+            + other_langchain_packages
+            + list(additional_pkgs)
+        )
     )
 
     # Always surface these packages to the top

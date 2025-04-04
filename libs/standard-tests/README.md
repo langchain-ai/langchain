@@ -1,23 +1,27 @@
-# langchain-standard-tests
+# langchain-tests
 
-This is an INTERNAL library for the LangChain project. It contains the base classes for
+This is a testing library for LangChain integrations. It contains the base classes for
 a standard set of tests.
 
 ## Installation
 
-This package will NOT be regularly published to pypi. It is intended to be installed
-directly from github at test time.
+We encourage pinning your version to a specific version in order to avoid breaking
+your CI when we publish new tests. We recommend upgrading to the latest version
+periodically to make sure you have the latest tests.
+
+Not pinning your version will ensure you always have the latest tests, but it may
+also break your CI if we introduce tests that your integration doesn't pass.
 
 Pip:
     
     ```bash
-    pip install git+https://github.com/langchain-ai/langchain.git#subdirectory=libs/standard-tests
+    pip install -U langchain-tests
     ```
 
 Poetry:
     
     ```bash
-    poetry add git+https://github.com/langchain-ai/langchain.git#subdirectory=libs/standard-tests
+    poetry add langchain-tests
     ```
 
 ## Usage
@@ -36,7 +40,7 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_parrot_chain import ChatParrotChain
 
@@ -56,7 +60,7 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_parrot_chain import ChatParrotChain
 

@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.bing_search import BingSearchAPIWrapper
 
 
-class BingSearchRun(BaseTool):
+class BingSearchRun(BaseTool):  # type: ignore[override]
     """Tool that queries the Bing search API."""
 
     name: str = "bing_search"
@@ -28,7 +28,7 @@ class BingSearchRun(BaseTool):
         return self.api_wrapper.run(query)
 
 
-class BingSearchResults(BaseTool):
+class BingSearchResults(BaseTool):  # type: ignore[override, override]
     """Bing Search tool.
 
     Setup:

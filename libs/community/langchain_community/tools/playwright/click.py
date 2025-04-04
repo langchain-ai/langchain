@@ -21,7 +21,7 @@ class ClickToolInput(BaseModel):
     selector: str = Field(..., description="CSS selector for the element to click")
 
 
-class ClickTool(BaseBrowserTool):
+class ClickTool(BaseBrowserTool):  # type: ignore[override, override, override]
     """Tool for clicking on an element with the given CSS selector."""
 
     name: str = "click_element"

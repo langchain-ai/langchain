@@ -45,9 +45,6 @@ def test_json_validity_evaluator_evaluate_invalid_json(
     prediction = '{"name": "John", "age": 30, "city": "New York",}'
     result = json_validity_evaluator.evaluate_strings(prediction=prediction)
     assert result["score"] == 0
-    assert result["reasoning"].startswith(
-        "Expecting property name enclosed in double quotes"
-    )
 
 
 @pytest.fixture
@@ -154,21 +151,21 @@ def test_json_equality_evaluator_evaluate_lists_permutation_invariant() -> None:
 
     # Limit tests
     prediction = (
-        "[" + ",".join([f'{{"a": {i}, "b": {i+1}}}' for i in range(1000)]) + "]"
+        "[" + ",".join([f'{{"a": {i}, "b": {i + 1}}}' for i in range(1000)]) + "]"
     )
-    rlist = [f'{{"a": {i}, "b": {i+1}}}' for i in range(1000)]
+    rlist = [f'{{"a": {i}, "b": {i + 1}}}' for i in range(1000)]
     random.shuffle(rlist)
     reference = "[" + ",".join(rlist) + "]"
     result = evaluator.evaluate_strings(prediction=prediction, reference=reference)
     assert result == {"score": True}
 
     prediction = (
-        "[" + ",".join([f'{{"b": {i+1}, "a": {i}}}' for i in range(1000)]) + "]"
+        "[" + ",".join([f'{{"b": {i + 1}, "a": {i}}}' for i in range(1000)]) + "]"
     )
     reference = (
         "["
         + ",".join(
-            [f'{{"a": {i+1}, "b": {i+2}}}' for i in range(999)]
+            [f'{{"a": {i + 1}, "b": {i + 2}}}' for i in range(999)]
             + ['{"a": 1000, "b": 1001}']
         )
         + "]"

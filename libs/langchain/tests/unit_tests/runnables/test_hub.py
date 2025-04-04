@@ -10,7 +10,10 @@ from langchain.runnables.hub import HubRunnable
 @patch("langchain.hub.pull")
 def test_hub_runnable(mock_pull: Mock) -> None:
     mock_pull.return_value = ChatPromptTemplate.from_messages(
-        [("system", "a"), ("user", "b")]
+        [
+            ("system", "a"),
+            ("user", "b"),
+        ]
     )
 
     basic: HubRunnable = HubRunnable("efriis/my-prompt")
@@ -21,10 +24,16 @@ def test_hub_runnable(mock_pull: Mock) -> None:
 
 repo_dict = {
     "efriis/my-prompt-1": ChatPromptTemplate.from_messages(
-        [("system", "a"), ("user", "1")]
+        [
+            ("system", "a"),
+            ("user", "1"),
+        ]
     ),
     "efriis/my-prompt-2": ChatPromptTemplate.from_messages(
-        [("system", "a"), ("user", "2")]
+        [
+            ("system", "a"),
+            ("user", "2"),
+        ]
     ),
 }
 

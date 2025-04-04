@@ -68,3 +68,27 @@ new contents
 DELETE_FILE_PROMPT = """
 This tool is a wrapper for the GitLab API, useful when you need to delete a file in a GitLab repository. Simply pass in the full file path of the file you would like to delete. **IMPORTANT**: the path must not start with a slash
 """
+
+GET_REPO_FILES_IN_MAIN = """
+This tool will provide an overview of all existing files in the main branch of the GitLab repository repository. It will list the file names. No input parameters are required.
+"""
+
+GET_REPO_FILES_IN_BOT_BRANCH = """
+This tool will provide an overview of all files in your current working branch where you should implement changes. No input parameters are required.
+"""
+
+GET_REPO_FILES_FROM_DIRECTORY = """
+This tool will provide an overview of all files in your current working branch from a specific directory. **VERY IMPORTANT**: You must specify the path of the directory as a string input parameter.
+"""
+
+LIST_REPO_BRANCES = """
+This tool is a wrapper for the GitLab API, useful when you need to read the branches names in a GitLab repository. No input parameters are required.
+"""
+
+CREATE_REPO_BRANCH = """
+This tool will create a new branch in the repository. **VERY IMPORTANT**: You must specify the name of the new branch as a string input parameter.
+"""
+
+SET_ACTIVE_BRANCH = """
+This tool will set the active branch in the repository, similar to `git checkout <branch_name>` and `git switch -c <branch_name>`. **VERY IMPORTANT**: You must specify the name of the branch as a string input parameter.
+"""

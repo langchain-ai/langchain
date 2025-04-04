@@ -33,7 +33,7 @@ from langchain_community.document_loaders.couchbase import CouchbaseLoader
 ### CouchbaseCache
 Use Couchbase as a cache for prompts and responses.
 
-See a [usage example](/docs/integrations/llm_caching/#couchbase-cache).
+See a [usage example](/docs/integrations/llm_caching/#couchbase-caches).
 
 To import this cache:
 ```python
@@ -61,7 +61,7 @@ set_llm_cache(
 Semantic caching allows users to retrieve cached prompts based on the semantic similarity between the user input and previously cached inputs. Under the hood it uses Couchbase as both a cache and a vectorstore.
 The CouchbaseSemanticCache needs a Search Index defined to work. Please look at the [usage example](/docs/integrations/vectorstores/couchbase) on how to set up the index.
 
-See a [usage example](/docs/integrations/llm_caching/#couchbase-semantic-cache).
+See a [usage example](/docs/integrations/llm_caching/#couchbase-caches).
 
 To import this cache:
 ```python

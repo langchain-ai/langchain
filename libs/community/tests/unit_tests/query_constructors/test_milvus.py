@@ -45,7 +45,7 @@ def test_visit_operation() -> None:
         ],
     )
 
-    expected = '(( foo < 2 ) and ( bar == "baz" ) ' 'and ( abc < "4" ))'
+    expected = '(( foo < 2 ) and ( bar == "baz" ) and ( abc < "4" ))'
     actual = DEFAULT_TRANSLATOR.visit_operation(op)
 
     assert expected == actual
@@ -122,7 +122,7 @@ def test_visit_structured_query() -> None:
 
     expected = (
         query,
-        {"expr": "(( foo < 2 ) " 'and ( bar == "baz" ) ' "and ( abc < 50 ))"},
+        {"expr": '(( foo < 2 ) and ( bar == "baz" ) and ( abc < 50 ))'},
     )
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)

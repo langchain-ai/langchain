@@ -60,6 +60,7 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
     # LLM call kwargs
     model_config = ConfigDict(
         extra="forbid",
+        protected_namespaces=(),
     )
 
     @model_validator(mode="after")

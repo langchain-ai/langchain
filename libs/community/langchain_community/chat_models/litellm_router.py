@@ -1,13 +1,6 @@
 """LiteLLM Router as LangChain Model."""
 
-from typing import (
-    Any,
-    AsyncIterator,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -17,15 +10,8 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import (
-    AIMessageChunk,
-    BaseMessage,
-)
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-)
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain_community.chat_models.litellm import (
     ChatLiteLLM,
@@ -33,8 +19,8 @@ from langchain_community.chat_models.litellm import (
     _convert_dict_to_message,
 )
 
-token_usage_key_name = "token_usage"
-model_extra_key_name = "model_extra"
+token_usage_key_name = "token_usage"  # nosec # incorrectly flagged as password
+model_extra_key_name = "model_extra"  # nosec # incorrectly flagged as password
 
 
 def get_llm_output(usage: Any, **params: Any) -> dict:
@@ -56,21 +42,14 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
     def __init__(self, *, router: Any, **kwargs: Any) -> None:
         """Construct Chat LiteLLM Router."""
-        super().__init__(**kwargs)
+        super().__init__(router=router, **kwargs)  # type: ignore
         self.router = router
 
     @property
     def _llm_type(self) -> str:
         return "LiteLLMRouter"
 
-    def _set_model_for_completion(self) -> None:
-        # use first model name (aka: model group),
-        # since we can only pass one to the router completion functions
-        self.model = self.router.model_list[0]["model_name"]
-
     def _prepare_params_for_router(self, params: Any) -> None:
-        params["model"] = self.model
-
         # allow the router to set api_base based on its model choice
         api_base_key_name = "api_base"
         if api_base_key_name in params and params[api_base_key_name] is None:
@@ -78,6 +57,22 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
         # add metadata so router can fill it below
         params.setdefault("metadata", {})
+
+    def set_default_model(self, model_name: str) -> None:
+        """Set the default model to use for completion calls.
+
+        Sets `self.model` to `model_name` if it is in the litellm router's
+        (`self.router`) model list. This provides the default model to use
+        for completion calls if no `model` kwarg is provided.
+        """
+        model_list = self.router.model_list
+        if not model_list:
+            raise ValueError("model_list is None or empty.")
+        for entry in model_list:
+            if entry["model_name"] == model_name:
+                self.model = model_name
+                return
+        raise ValueError(f"Model {model_name} not found in model_list.")
 
     def _generate(
         self,
@@ -96,7 +91,6 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
         response = self.router.completion(
@@ -115,7 +109,6 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         default_chunk_class = AIMessageChunk
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
-        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
         for chunk in self.router.completion(messages=message_dicts, **params):
@@ -139,7 +132,6 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         default_chunk_class = AIMessageChunk
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
-        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
         async for chunk in await self.router.acompletion(
@@ -174,7 +166,6 @@ class ChatLiteLLMRouter(ChatLiteLLM):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
         response = await self.router.acompletion(
@@ -196,14 +187,14 @@ class ChatLiteLLMRouter(ChatLiteLLM):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 # get dict from LiteLLM Usage class
-                for k, v in token_usage.dict().items():
-                    if k in overall_token_usage:
+                for k, v in token_usage.model_dump().items():
+                    if k in overall_token_usage and overall_token_usage[k] is not None:
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
                 system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
         return combined

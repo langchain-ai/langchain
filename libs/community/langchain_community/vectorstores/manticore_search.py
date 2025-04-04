@@ -57,7 +57,10 @@ class ManticoreSearchSettings(BaseSettings):
         return getattr(self, item)
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", env_prefix="manticore_"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="manticore_",
+        extra="ignore",
     )
 
 
@@ -147,16 +150,16 @@ class ManticoreSearch(VectorStore):
         # Initialize the schema
         self.schema = f"""\
 CREATE TABLE IF NOT EXISTS {self.config.table}(
-    {self.config.column_map['id']} bigint,
-    {self.config.column_map['document']} text indexed stored,
-    {self.config.column_map['embedding']} \
+    {self.config.column_map["id"]} bigint,
+    {self.config.column_map["document"]} text indexed stored,
+    {self.config.column_map["embedding"]} \
         float_vector knn_type='{self.config.knn_type}' \
         knn_dims='{self.dim}' \
         hnsw_similarity='{self.config.hnsw_similarity}' \
         hnsw_m='{self.config.hnsw_m}' \
         hnsw_ef_construction='{self.config.hnsw_ef_construction}',
-    {self.config.column_map['metadata']} json,
-    {self.config.column_map['uuid']} text indexed stored
+    {self.config.column_map["metadata"]} json,
+    {self.config.column_map["uuid"]} text indexed stored
 )\
 """
 

@@ -87,6 +87,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.blob_loaders import (
         Blob,
         BlobLoader,
+        CloudBlobLoader,
         FileSystemBlobLoader,
         YoutubeAudioLoader,
     )
@@ -298,6 +299,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.mongodb import (
         MongodbLoader,
+    )
+    from langchain_community.document_loaders.needle import (
+        NeedleLoader,
     )
     from langchain_community.document_loaders.news import (
         NewsURLLoader,
@@ -571,6 +575,7 @@ _module_lookup = {
     "CSVLoader": "langchain_community.document_loaders.csv_loader",
     "CassandraLoader": "langchain_community.document_loaders.cassandra",
     "ChatGPTLoader": "langchain_community.document_loaders.chatgpt",
+    "CloudBlobLoader": "langchain_community.document_loaders.blob_loaders",
     "CoNLLULoader": "langchain_community.document_loaders.conllu",
     "CollegeConfidentialLoader": "langchain_community.document_loaders.college_confidential",  # noqa: E501
     "ConcurrentLoader": "langchain_community.document_loaders.concurrent",
@@ -631,6 +636,7 @@ _module_lookup = {
     "MergedDataLoader": "langchain_community.document_loaders.merge",
     "ModernTreasuryLoader": "langchain_community.document_loaders.modern_treasury",
     "MongodbLoader": "langchain_community.document_loaders.mongodb",
+    "NeedleLoader": "langchain_community.document_loaders.needle",
     "NewsURLLoader": "langchain_community.document_loaders.news",
     "NotebookLoader": "langchain_community.document_loaders.notebook",
     "NotionDBLoader": "langchain_community.document_loaders.notiondb",
@@ -777,6 +783,7 @@ __all__ = [
     "CSVLoader",
     "CassandraLoader",
     "ChatGPTLoader",
+    "CloudBlobLoader",
     "CoNLLULoader",
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
@@ -837,6 +844,7 @@ __all__ = [
     "MergedDataLoader",
     "ModernTreasuryLoader",
     "MongodbLoader",
+    "NeedleLoader",
     "NewsURLLoader",
     "NotebookLoader",
     "NotionDBLoader",

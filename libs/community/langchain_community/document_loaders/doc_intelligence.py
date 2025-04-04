@@ -1,4 +1,6 @@
-from typing import Iterator, List, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -8,6 +10,9 @@ from langchain_community.document_loaders.parsers import (
     AzureAIDocumentIntelligenceParser,
 )
 
+if TYPE_CHECKING:
+    from azure.core.credentials import TokenCredential
+
 
 class AzureAIDocumentIntelligenceLoader(BaseLoader):
     """Load a PDF with Azure Document Intelligence."""
@@ -15,14 +20,16 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
     def __init__(
         self,
         api_endpoint: str,
-        api_key: str,
+        api_key: Optional[str] = None,
         file_path: Optional[str] = None,
         url_path: Optional[str] = None,
+        bytes_source: Optional[bytes] = None,
         api_version: Optional[str] = None,
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
         *,
         analysis_features: Optional[List[str]] = None,
+        azure_credential: Optional["TokenCredential"] = None,
     ) -> None:
         """
         Initialize the object for file processing with Azure Document Intelligence
@@ -41,10 +48,13 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             The API key to use for DocumentIntelligenceClient construction.
         file_path : Optional[str]
             The path to the file that needs to be loaded.
-            Either file_path or url_path must be specified.
+            Either file_path, url_path or bytes_source must be specified.
         url_path : Optional[str]
             The URL to the file that needs to be loaded.
-            Either file_path or url_path must be specified.
+            Either file_path, url_path or bytes_source must be specified.
+        bytes_source : Optional[bytes]
+            The bytes array of the file that needs to be loaded.
+            Either file_path, url_path or bytes_source must be specified.
         api_version: Optional[str]
             The API version for DocumentIntelligenceClient. Setting None to use
             the default value from `azure-ai-documentintelligence` package.
@@ -59,6 +69,9 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             List of optional analysis features, each feature should be passed
             as a str that conforms to the enum `DocumentAnalysisFeature` in
             `azure-ai-documentintelligence` package. Default value is None.
+        azure_credential: Optional[TokenCredential]
+            The credentials to use for DocumentIntelligenceClient construction, when
+            using credentials other than api_key (like AD).
 
         Examples:
         ---------
@@ -73,10 +86,20 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         """
 
         assert (
-            file_path is not None or url_path is not None
-        ), "file_path or url_path must be provided"
+            file_path is not None or url_path is not None or bytes_source is not None
+        ), "file_path, url_path or bytes_source must be provided"
+
+        assert api_key is not None or azure_credential is not None, (
+            "Either api_key or azure_credential must be provided."
+        )
+
+        assert api_key is None or azure_credential is None, (
+            "Only one of api_key or azure_credential should be provided."
+        )
+
         self.file_path = file_path
         self.url_path = url_path
+        self.bytes_source = bytes_source
 
         self.parser = AzureAIDocumentIntelligenceParser(  # type: ignore[misc]
             api_endpoint=api_endpoint,
@@ -85,14 +108,19 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             api_model=api_model,
             mode=mode,
             analysis_features=analysis_features,
+            azure_credential=azure_credential,
         )
 
     def lazy_load(
         self,
     ) -> Iterator[Document]:
-        """Lazy load given path as pages."""
+        """Lazy load the document as pages."""
         if self.file_path is not None:
             blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
             yield from self.parser.parse(blob)
-        else:
+        elif self.url_path is not None:
             yield from self.parser.parse_url(self.url_path)  # type: ignore[arg-type]
+        elif self.bytes_source is not None:
+            yield from self.parser.parse_bytes(self.bytes_source)
+        else:
+            raise ValueError("No data source provided.")

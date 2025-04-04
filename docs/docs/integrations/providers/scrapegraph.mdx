@@ -1,0 +1,41 @@
+# ScrapeGraph AI
+
+>[ScrapeGraph AI](https://scrapegraphai.com) is a service that provides AI-powered web scraping capabilities.
+>It offers tools for extracting structured data, converting webpages to markdown, and processing local HTML content
+>using natural language prompts.
+
+## Installation and Setup
+
+Install the required packages:
+
+```bash
+pip install langchain-scrapegraph
+```
+
+Set up your API key:
+
+```bash
+export SGAI_API_KEY="your-scrapegraph-api-key"
+```
+
+## Tools
+
+See a [usage example](/docs/integrations/tools/scrapegraph).
+
+There are four tools available:
+
+```python
+from langchain_scrapegraph.tools import (
+    SmartScraperTool,    # Extract structured data from websites
+    MarkdownifyTool,     # Convert webpages to markdown
+    LocalScraperTool,    # Process local HTML content
+    GetCreditsTool,      # Check remaining API credits
+)
+```
+
+Each tool serves a specific purpose:
+
+- `SmartScraperTool`: Extract structured data from websites given a URL, prompt and optional output schema
+- `MarkdownifyTool`: Convert any webpage to clean markdown format
+- `LocalScraperTool`: Extract structured data from a local HTML file given a prompt and optional output schema
+- `GetCreditsTool`: Check your remaining ScrapeGraph AI credits 

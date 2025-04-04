@@ -3,100 +3,79 @@
 This page covers how to use the Prediction Guard ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Prediction Guard wrappers.
 
+This integration is maintained in the [langchain-predictionguard](https://github.com/predictionguard/langchain-predictionguard)
+package.
+
 ## Installation and Setup
-- Install the Python SDK with `pip install predictionguard`
-- Get a Prediction Guard access token (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_TOKEN`)
 
-## LLM Wrapper
-
-There exists a Prediction Guard LLM wrapper, which you can access with 
-```python
-from langchain_community.llms import PredictionGuard
+- Install the PredictionGuard Langchain partner package:
+```
+pip install langchain-predictionguard
 ```
 
-You can provide the name of the Prediction Guard model as an argument when initializing the LLM:
+- Get a Prediction Guard API key (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_API_KEY`)
+
+## Prediction Guard Langchain Integrations
+|API|Description|Endpoint Docs| Import                                                  | Example Usage                                                                 |
+|---|---|---|---------------------------------------------------------|-------------------------------------------------------------------------------|
+|Chat|Build Chat Bots|[Chat](https://docs.predictionguard.com/api-reference/api-reference/chat-completions)| `from langchain_predictionguard import ChatPredictionGuard` | [ChatPredictionGuard.ipynb](/docs/integrations/chat/predictionguard)             |
+|Completions|Generate Text|[Completions](https://docs.predictionguard.com/api-reference/api-reference/completions)| `from langchain_predictionguard import PredictionGuard` | [PredictionGuard.ipynb](/docs/integrations/llms/predictionguard)                     |
+|Text Embedding|Embed String to Vectores|[Embeddings](https://docs.predictionguard.com/api-reference/api-reference/embeddings)| `from langchain_predictionguard import PredictionGuardEmbeddings` | [PredictionGuardEmbeddings.ipynb](/docs/integrations/text_embedding/predictionguard) |
+
+## Getting Started
+
+## Chat Models
+
+### Prediction Guard Chat
+
+See a [usage example](/docs/integrations/chat/predictionguard)
+
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct")
+from langchain_predictionguard import ChatPredictionGuard
 ```
 
-You can also provide your access token directly as an argument:
+#### Usage
+
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct", token="<your access token>")
+# If predictionguard_api_key is not passed, default behavior is to use the `PREDICTIONGUARD_API_KEY` environment variable.
+chat = ChatPredictionGuard(model="Hermes-3-Llama-3.1-8B")
+
+chat.invoke("Tell me a joke")
 ```
 
-Finally, you can provide an "output" argument that is used to structure/ control the output of the LLM:
+## Embedding Models
+
+### Prediction Guard Embeddings
+
+See a [usage example](/docs/integrations/text_embedding/predictionguard)
+
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct", output={"type": "boolean"})
+from langchain_predictionguard import PredictionGuardEmbeddings
 ```
 
-## Example usage
-
-Basic usage of the controlled or guarded LLM wrapper:
+#### Usage
 ```python
-import os
+# If predictionguard_api_key is not passed, default behavior is to use the `PREDICTIONGUARD_API_KEY` environment variable.
+embeddings = PredictionGuardEmbeddings(model="bridgetower-large-itm-mlm-itc")
 
-import predictionguard as pg
-from langchain_community.llms import PredictionGuard
-from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
-
-# Your Prediction Guard API key. Get one at predictionguard.com
-os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
-
-# Define a prompt template
-template = """Respond to the following query based on the context.
-
-Context: EVERY comment, DM + email suggestion has led us to this EXCITING announcement! 🎉 We have officially added TWO new candle subscription box options! 📦
-Exclusive Candle Box - $80 
-Monthly Candle Box - $45 (NEW!)
-Scent of The Month Box - $28 (NEW!)
-Head to stories to get ALL the deets on each box! 👆 BONUS: Save 50% on your first box with code 50OFF! 🎉
-
-Query: {query}
-
-Result: """
-prompt = PromptTemplate.from_template(template)
-
-# With "guarding" or controlling the output of the LLM. See the 
-# Prediction Guard docs (https://docs.predictionguard.com) to learn how to 
-# control the output with integer, float, boolean, JSON, and other types and
-# structures.
-pgllm = PredictionGuard(model="MPT-7B-Instruct", 
-                        output={
-                                "type": "categorical",
-                                "categories": [
-                                    "product announcement", 
-                                    "apology", 
-                                    "relational"
-                                    ]
-                                })
-pgllm(prompt.format(query="What kind of post is this?"))
+text = "This is an embedding example."
+output = embeddings.embed_query(text)
 ```
 
-Basic LLM Chaining with the Prediction Guard wrapper:
+## LLMs
+
+### Prediction Guard LLM
+
+See a [usage example](/docs/integrations/llms/predictionguard)
+
 ```python
-import os
+from langchain_predictionguard import PredictionGuard
+```
 
-from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain_community.llms import PredictionGuard
+#### Usage
+```python
+# If predictionguard_api_key is not passed, default behavior is to use the `PREDICTIONGUARD_API_KEY` environment variable.
+llm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
 
-# Optional, add your OpenAI API Key. This is optional, as Prediction Guard allows
-# you to access all the latest open access models (see https://docs.predictionguard.com)
-os.environ["OPENAI_API_KEY"] = "<your OpenAI api key>"
-
-# Your Prediction Guard API key. Get one at predictionguard.com
-os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
-
-pgllm = PredictionGuard(model="OpenAI-gpt-3.5-turbo-instruct")
-
-template = """Question: {question}
-
-Answer: Let's think step by step."""
-prompt = PromptTemplate.from_template(template)
-llm_chain = LLMChain(prompt=prompt, llm=pgllm, verbose=True)
-
-question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
-
-llm_chain.predict(question=question)
+llm.invoke("Tell me a joke about bears")
 ```

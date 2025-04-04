@@ -1,0 +1,18 @@
+# MODEL_AUTHENTICATION
+
+Your model provider is denying you access to their service.
+
+## Troubleshooting
+
+The following may help resolve this error:
+
+- Confirm that your API key or other credentials are correct.
+- If you are relying on an environment variable to authenticate, confirm that the variable name is correct and that it has a value set.
+  - Note that environment variables can also be set by packages like `dotenv`.
+  - For models, you can try explicitly passing an `api_key` parameter to rule out any environment variable issues like this:
+
+```python
+model = ChatOpenAI(api_key="YOUR_KEY_HERE")
+```
+
+- If you are using a proxy or other custom endpoint, make sure that your custom provider does not expect an alternative authentication scheme.

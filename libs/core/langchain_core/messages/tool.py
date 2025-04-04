@@ -1,15 +1,26 @@
+"""Messages for tools."""
+
 import json
 from typing import Any, Literal, Optional, Union
 from uuid import UUID
 
 from pydantic import Field, model_validator
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
-class ToolMessage(BaseMessage):
+class ToolOutputMixin:
+    """Mixin for objects that tools can return directly.
+
+    If a custom BaseTool is invoked with a ToolCall and the output of custom code is
+    not an instance of ToolOutputMixin, the output will automatically be coerced to a
+    string and wrapped in a ToolMessage.
+    """
+
+
+class ToolMessage(BaseMessage, ToolOutputMixin):
     """Message for passing the result of executing a tool back to a model.
 
     ToolMessages contain the result of a tool invocation. Typically, the result
@@ -58,11 +69,11 @@ class ToolMessage(BaseMessage):
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
-    
-    Should only be specified if it is different from the message content, e.g. if only 
+
+    Should only be specified if it is different from the message content, e.g. if only
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
-    
+
     .. versionadded:: 0.2.17
     """
 
@@ -77,15 +88,14 @@ class ToolMessage(BaseMessage):
     response_metadata: dict = Field(default_factory=dict, repr=False)
     """Currently inherited from BaseMessage, but not used."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]
-
     @model_validator(mode="before")
     @classmethod
     def coerce_args(cls, values: dict) -> dict:
+        """Coerce the model arguments to the correct types.
+
+        Args:
+            values: The model arguments.
+        """
         content = values["content"]
         if isinstance(content, tuple):
             content = list(content)
@@ -94,11 +104,12 @@ class ToolMessage(BaseMessage):
             try:
                 values["content"] = str(content)
             except ValueError as e:
-                raise ValueError(
+                msg = (
                     "ToolMessage content should be a string or a list of string/dicts. "
                     f"Received:\n\n{content=}\n\n which could not be coerced into a "
                     "string."
-                ) from e
+                )
+                raise ValueError(msg) from e
         elif isinstance(content, list):
             values["content"] = []
             for i, x in enumerate(content):
@@ -106,12 +117,13 @@ class ToolMessage(BaseMessage):
                     try:
                         values["content"].append(str(x))
                     except ValueError as e:
-                        raise ValueError(
+                        msg = (
                             "ToolMessage content should be a string or a list of "
                             "string/dicts. Received a list but "
                             f"element ToolMessage.content[{i}] is not a dict and could "
                             f"not be coerced to a string.:\n\n{x}"
-                        ) from e
+                        )
+                        raise ValueError(msg) from e
                 else:
                     values["content"].append(x)
         else:
@@ -125,6 +137,12 @@ class ToolMessage(BaseMessage):
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
+        """Create a ToolMessage.
+
+        Args:
+            content: The string contents of the message.
+            **kwargs: Additional fields.
+        """
         super().__init__(content=content, **kwargs)
 
 
@@ -139,17 +157,12 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
-
+    @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
-                raise ValueError(
-                    "Cannot concatenate ToolMessageChunks with different names."
-                )
+                msg = "Cannot concatenate ToolMessageChunks with different names."
+                raise ValueError(msg)
 
             return self.__class__(
                 tool_call_id=self.tool_call_id,
@@ -191,7 +204,7 @@ class ToolCall(TypedDict):
     """The arguments to the tool call."""
     id: Optional[str]
     """An identifier associated with the tool call.
-    
+
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
@@ -199,6 +212,13 @@ class ToolCall(TypedDict):
 
 
 def tool_call(*, name: str, args: dict[str, Any], id: Optional[str]) -> ToolCall:
+    """Create a tool call.
+
+    Args:
+        name: The name of the tool to be called.
+        args: The arguments to the tool call.
+        id: An identifier associated with the tool call.
+    """
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
@@ -240,6 +260,14 @@ def tool_call_chunk(
     id: Optional[str] = None,
     index: Optional[int] = None,
 ) -> ToolCallChunk:
+    """Create a tool call chunk.
+
+    Args:
+        name: The name of the tool to be called.
+        args: The arguments to the tool call.
+        id: An identifier associated with the tool call.
+        index: The index of the tool call in a sequence.
+    """
     return ToolCallChunk(
         name=name, args=args, id=id, index=index, type="tool_call_chunk"
     )
@@ -270,6 +298,14 @@ def invalid_tool_call(
     id: Optional[str] = None,
     error: Optional[str] = None,
 ) -> InvalidToolCall:
+    """Create an invalid tool call.
+
+    Args:
+        name: The name of the tool to be called.
+        args: The arguments to the tool call.
+        id: An identifier associated with the tool call.
+        error: An error message associated with the tool call.
+    """
     return InvalidToolCall(
         name=name, args=args, id=id, error=error, type="invalid_tool_call"
     )
@@ -284,25 +320,24 @@ def default_tool_parser(
     for raw_tool_call in raw_tool_calls:
         if "function" not in raw_tool_call:
             continue
-        else:
-            function_name = raw_tool_call["function"]["name"]
-            try:
-                function_args = json.loads(raw_tool_call["function"]["arguments"])
-                parsed = tool_call(
-                    name=function_name or "",
-                    args=function_args or {},
+        function_name = raw_tool_call["function"]["name"]
+        try:
+            function_args = json.loads(raw_tool_call["function"]["arguments"])
+            parsed = tool_call(
+                name=function_name or "",
+                args=function_args or {},
+                id=raw_tool_call.get("id"),
+            )
+            tool_calls.append(parsed)
+        except json.JSONDecodeError:
+            invalid_tool_calls.append(
+                invalid_tool_call(
+                    name=function_name,
+                    args=raw_tool_call["function"]["arguments"],
                     id=raw_tool_call.get("id"),
+                    error=None,
                 )
-                tool_calls.append(parsed)
-            except json.JSONDecodeError:
-                invalid_tool_calls.append(
-                    invalid_tool_call(
-                        name=function_name,
-                        args=raw_tool_call["function"]["arguments"],
-                        id=raw_tool_call.get("id"),
-                        error=None,
-                    )
-                )
+            )
     return tool_calls, invalid_tool_calls
 
 

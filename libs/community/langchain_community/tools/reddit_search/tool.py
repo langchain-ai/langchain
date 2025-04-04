@@ -34,7 +34,7 @@ class RedditSearchSchema(BaseModel):
     )
 
 
-class RedditSearchRun(BaseTool):
+class RedditSearchRun(BaseTool):  # type: ignore[override, override]
     """Tool that queries for posts on a subreddit."""
 
     name: str = "reddit_search"

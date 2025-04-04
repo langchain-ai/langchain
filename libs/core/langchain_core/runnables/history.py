@@ -1,3 +1,5 @@
+"""Runnable that manages chat message history for another Runnable."""
+
 from __future__ import annotations
 
 import inspect
@@ -236,11 +238,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     history_messages_key: Optional[str] = None
     history_factory_config: Sequence[ConfigurableFieldSpec]
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
     def __init__(
         self,
         runnable: Union[
@@ -365,12 +362,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self._history_chain = history_chain
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         """Get the configuration specs for the RunnableWithMessageHistory."""
         return get_unique_config_specs(
             super().config_specs + list(self.history_factory_config)
         )
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -399,8 +398,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     @property
     @override
     def OutputType(self) -> type[Output]:
-        output_type = self._history_chain.OutputType
-        return output_type
+        return self._history_chain.OutputType
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
@@ -461,10 +459,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             return [HumanMessage(content=input_val)]
         # If value is a single message, convert to a list
-        elif isinstance(input_val, BaseMessage):
+        if isinstance(input_val, BaseMessage):
             return [input_val]
         # If value is a list or tuple...
-        elif isinstance(input_val, (list, tuple)):
+        if isinstance(input_val, (list, tuple)):
             # Handle empty case
             if len(input_val) == 0:
                 return list(input_val)
@@ -472,16 +470,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             # This occurs for chat models - since we batch inputs
             if isinstance(input_val[0], list):
                 if len(input_val) != 1:
-                    raise ValueError(
-                        f"Expected a single list of messages. Got {input_val}."
-                    )
+                    msg = f"Expected a single list of messages. Got {input_val}."
+                    raise ValueError(msg)
                 return input_val[0]
             return list(input_val)
-        else:
-            raise ValueError(
-                f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
-                f"Got {input_val}."
-            )
+        msg = (
+            f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+            f"Got {input_val}."
+        )
+        raise ValueError(msg)  # noqa: TRY004
 
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
@@ -508,15 +505,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             return [AIMessage(content=output_val)]
         # If value is a single message, convert to a list
-        elif isinstance(output_val, BaseMessage):
+        if isinstance(output_val, BaseMessage):
             return [output_val]
-        elif isinstance(output_val, (list, tuple)):
+        if isinstance(output_val, (list, tuple)):
             return list(output_val)
-        else:
-            raise ValueError(
-                f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
-                f"Got {output_val}."
-            )
+        msg = (
+            f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+            f"Got {output_val}."
+        )
+        raise ValueError(msg)  # noqa: TRY004
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
@@ -589,16 +586,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         if missing_keys and parameter_names:
             example_input = {self.input_messages_key: "foo"}
-            example_configurable = {
-                missing_key: "[your-value-here]" for missing_key in missing_keys
-            }
+            example_configurable = dict.fromkeys(missing_keys, "[your-value-here]")
             example_config = {"configurable": example_configurable}
-            raise ValueError(
+            msg = (
                 f"Missing keys {sorted(missing_keys)} in config['configurable'] "
                 f"Expected keys are {sorted(expected_keys)}."
                 f"When using via .invoke() or .stream(), pass in a config; "
                 f"e.g., chain.invoke({example_input}, {example_config})"
             )
+            raise ValueError(msg)
 
         if len(expected_keys) == 1:
             if parameter_names:
@@ -613,10 +609,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         else:
             # otherwise verify that names of keys patch and invoke by named arguments
             if set(expected_keys) != set(parameter_names):
-                raise ValueError(
+                msg = (
                     f"Expected keys {sorted(expected_keys)} do not match parameter "
                     f"names {sorted(parameter_names)} of get_session_history."
                 )
+                raise ValueError(msg)
 
             message_history = self.get_session_history(
                 **{key: configurable[key] for key in expected_keys}

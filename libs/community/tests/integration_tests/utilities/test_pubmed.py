@@ -130,7 +130,12 @@ def test_load_returns_full_set_of_metadata() -> None:
     for doc in docs:
         assert doc.metadata
         assert set(doc.metadata).issuperset(
-            {"Copyright Information", "Published", "Title", "uid"}
+            {
+                "Copyright Information",
+                "Published",
+                "Title",
+                "uid",
+            }
         )
 
 

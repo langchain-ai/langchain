@@ -2,7 +2,7 @@
 Unit tests for the PebbloRetrievalQA chain
 """
 
-from typing import List
+from typing import Any, List
 from unittest.mock import Mock
 
 import pytest
@@ -35,12 +35,16 @@ class FakeRetriever(VectorStoreRetriever):
     vectorstore: VectorStore = Mock()
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         return [Document(page_content=query)]
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         return [Document(page_content=query)]
 

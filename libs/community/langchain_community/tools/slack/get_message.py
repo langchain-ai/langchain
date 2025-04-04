@@ -17,7 +17,7 @@ class SlackGetMessageSchema(BaseModel):
     )
 
 
-class SlackGetMessage(SlackBaseTool):
+class SlackGetMessage(SlackBaseTool):  # type: ignore[override, override]
     """Tool that gets Slack messages."""
 
     name: str = "get_messages"

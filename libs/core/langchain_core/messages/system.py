@@ -1,3 +1,5 @@
+"""System message."""
+
 from typing import Any, Literal, Union
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -32,12 +34,6 @@ class SystemMessage(BaseMessage):
     type: Literal["system"] = "system"
     """The type of the message (used for serialization). Defaults to "system"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]
-
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
     ) -> None:
@@ -60,11 +56,5 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization). 
+    """The type of the message (used for serialization).
     Defaults to "SystemMessageChunk"."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]

@@ -107,13 +107,13 @@ def create_sql_agent(
 
         .. code-block:: python
 
-        from langchain_openai import ChatOpenAI
-        from langchain_community.agent_toolkits import create_sql_agent
-        from langchain_community.utilities import SQLDatabase
+            from langchain_openai import ChatOpenAI
+            from langchain_community.agent_toolkits import create_sql_agent
+            from langchain_community.utilities import SQLDatabase
 
-        db = SQLDatabase.from_uri("sqlite:///Chinook.db")
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True)
+            db = SQLDatabase.from_uri("sqlite:///Chinook.db")
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+            agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True)
 
     """  # noqa: E501
     from langchain.agents import (

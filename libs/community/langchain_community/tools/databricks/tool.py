@@ -4,6 +4,7 @@ from decimal import Decimal
 from hashlib import md5
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
+from langchain_core._api import deprecated
 from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.tools.base import BaseToolkit
 from pydantic import BaseModel, Field, create_model
@@ -131,6 +132,11 @@ def _get_default_workspace_client() -> Any:
     return WorkspaceClient()
 
 
+@deprecated(
+    since="0.3.18",
+    removal="1.0",
+    alternative_import="databricks_langchain.uc_ai.UCFunctionToolkit",
+)
 class UCFunctionToolkit(BaseToolkit):
     warehouse_id: str = Field(
         description="The ID of a Databricks SQL Warehouse to execute functions."

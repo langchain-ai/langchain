@@ -198,7 +198,9 @@ try:
         api_docs: str
         question_key: str = "question"  #: :meta private:
         output_key: str = "output"  #: :meta private:
-        limit_to_domains: Optional[Sequence[str]] = Field(default_factory=list)
+        limit_to_domains: Optional[Sequence[str]] = Field(
+            default_factory=list  # type: ignore
+        )
         """Use to limit the domains that can be accessed by the API chain.
         
         * For example, to limit to just the domain `https://www.example.com`, set
@@ -368,6 +370,7 @@ try:
         @property
         def _chain_type(self) -> str:
             return "api_chain"
+
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]

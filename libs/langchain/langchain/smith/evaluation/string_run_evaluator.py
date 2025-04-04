@@ -239,7 +239,7 @@ class StringExampleMapper(Serializable):
         return self.map(example)
 
 
-class StringRunEvaluatorChain(Chain, RunEvaluator):
+class StringRunEvaluatorChain(Chain, RunEvaluator):  # type: ignore[override, override]
     """Evaluate Run and optional examples."""
 
     run_mapper: StringRunMapper

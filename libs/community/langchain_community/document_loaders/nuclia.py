@@ -19,7 +19,12 @@ class NucliaLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         data = self.nua.run(
-            {"action": "pull", "id": self.id, "path": None, "text": None}
+            {
+                "action": "pull",
+                "id": self.id,
+                "path": None,
+                "text": None,
+            }
         )
         if not data:
             return []

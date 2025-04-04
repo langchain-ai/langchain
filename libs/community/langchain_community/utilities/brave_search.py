@@ -3,13 +3,16 @@ from typing import List
 
 import requests
 from langchain_core.documents import Document
-from pydantic import BaseModel, Field
+from langchain_core.utils import secret_from_env
+from pydantic import BaseModel, Field, SecretStr
 
 
 class BraveSearchWrapper(BaseModel):
     """Wrapper around the Brave search engine."""
 
-    api_key: str
+    api_key: SecretStr = Field(
+        default_factory=secret_from_env(["BRAVE_SEARCH_API_KEY"])
+    )
     """The API key to use for the Brave search engine."""
     search_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the search request."""
@@ -64,7 +67,7 @@ class BraveSearchWrapper(BaseModel):
 
     def _search_request(self, query: str) -> List[dict]:
         headers = {
-            "X-Subscription-Token": self.api_key,
+            "X-Subscription-Token": self.api_key.get_secret_value(),
             "Accept": "application/json",
         }
         req = requests.PreparedRequest()

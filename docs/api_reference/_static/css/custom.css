@@ -80,6 +80,8 @@
 html {
     --pst-font-family-base: 'Inter';
     --pst-font-family-heading: 'Inter Tight', sans-serif;
+
+    --pst-icon-versionmodified-deprecated: var(--pst-icon-exclamation-triangle);
 }
 
 /*******************************************************************************
@@ -92,7 +94,7 @@ html {
  * https://sass-lang.com/documentation/interpolation
  */
 /* Defaults to light mode if data-theme is not set */
-html:not([data-theme]) {
+html:not([data-theme]), html[data-theme=light] {
   --pst-color-primary: #287977;
   --pst-color-primary-bg: #80D6D3;
   --pst-color-secondary: #6F3AED;
@@ -122,58 +124,8 @@ html:not([data-theme]) {
   --pst-color-on-background: #F4F9F8;
   --pst-color-surface: #F4F9F8;
   --pst-color-on-surface: #222832;
-}
-html:not([data-theme]) {
-  --pst-color-link: var(--pst-color-primary);
-  --pst-color-link-hover: var(--pst-color-secondary);
-}
-html:not([data-theme]) .only-dark,
-html:not([data-theme]) .only-dark ~ figcaption {
-  display: none !important;
-}
-
-/* NOTE: @each {...} is like a for-loop
- * https://sass-lang.com/documentation/at-rules/control/each
- */
-html[data-theme=light] {
-  --pst-color-primary: #287977;
-  --pst-color-primary-bg: #80D6D3;
-  --pst-color-secondary: #6F3AED;
-  --pst-color-secondary-bg: #DAD6FE;
-  --pst-color-accent: #c132af;
-  --pst-color-accent-bg: #f8dff5;
-  --pst-color-info: #276be9;
-  --pst-color-info-bg: #dce7fc;
-  --pst-color-warning: #f66a0a;
-  --pst-color-warning-bg: #f8e3d0;
-  --pst-color-success: #00843f;
-  --pst-color-success-bg: #d6ece1;
-  --pst-color-attention: var(--pst-color-warning);
-  --pst-color-attention-bg: var(--pst-color-warning-bg);
-  --pst-color-danger: #d72d47;
-  --pst-color-danger-bg: #f9e1e4;
-  --pst-color-text-base: #222832;
-  --pst-color-text-muted: #48566b;
-  --pst-color-heading-color: #ffffff;
-  --pst-color-shadow: rgba(0, 0, 0, 0.1);
-  --pst-color-border: #d1d5da;
-  --pst-color-border-muted: rgba(23, 23, 26, 0.2);
-  --pst-color-inline-code: #912583;
-  --pst-color-inline-code-links: #246161;
-  --pst-color-target: #f3cf95;
-  --pst-color-background: #ffffff;
-  --pst-color-on-background: #F4F9F8;
-  --pst-color-surface: #F4F9F8;
-  --pst-color-on-surface: #222832;
-  color-scheme: light;
-}
-html[data-theme=light] {
-  --pst-color-link: var(--pst-color-primary);
-  --pst-color-link-hover: var(--pst-color-secondary);
-}
-html[data-theme=light] .only-dark,
-html[data-theme=light] .only-dark ~ figcaption {
-  display: none !important;
+  --pst-color-deprecated: #f47d2e;
+  --pst-color-deprecated-bg: #fff3e8;
 }
 
 html[data-theme=dark] {
@@ -206,6 +158,8 @@ html[data-theme=dark] {
   --pst-color-on-background: #222832;
   --pst-color-surface: #29313d;
   --pst-color-on-surface: #f3f4f5;
+  --pst-color-deprecated: #b46f3e;
+  --pst-color-deprecated-bg: #341906;
   /* Adjust images in dark mode (unless they have class .only-dark or
    * .dark-light, in which case assume they're already optimized for dark
    * mode).
@@ -215,6 +169,30 @@ html[data-theme=dark] {
   *  which case assume they're already optimized for dark mode).
   */
   color-scheme: dark;
+}
+
+html:not([data-theme]) {
+  --pst-color-link: var(--pst-color-primary);
+  --pst-color-link-hover: var(--pst-color-secondary);
+}
+html:not([data-theme]) .only-dark,
+html:not([data-theme]) .only-dark ~ figcaption {
+  display: none !important;
+}
+
+/* NOTE: @each {...} is like a for-loop
+ * https://sass-lang.com/documentation/at-rules/control/each
+ */
+html[data-theme=light] {
+  color-scheme: light;
+}
+html[data-theme=light] {
+  --pst-color-link: var(--pst-color-primary);
+  --pst-color-link-hover: var(--pst-color-secondary);
+}
+html[data-theme=light] .only-dark,
+html[data-theme=light] .only-dark ~ figcaption {
+  display: none !important;
 }
 html[data-theme=dark] {
   --pst-color-link: var(--pst-color-primary);
@@ -350,7 +328,7 @@ html[data-theme=dark] .MathJax_SVG * {
 }
 
 .bd-sidebar-primary {
-    width: 22%;  /* Adjust this value to your preference */
+    width: max-content;  /* Adjust this value to your preference */
     line-height: 1.4;
 }
 
@@ -389,6 +367,13 @@ html[data-theme=dark] .MathJax_SVG * {
 div.deprecated {
   margin-top: 0.5em;
   margin-bottom: 2em;
+
+  background-color: var(--pst-color-deprecated-bg);
+  border-color: var(--pst-color-deprecated);
+}
+
+span.versionmodified.deprecated:before {
+  color: var(--pst-color-deprecated);
 }
 
 .admonition-beta.admonition, div.admonition-beta.admonition {

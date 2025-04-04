@@ -211,8 +211,7 @@ class OpenAPISpec(OpenAPI):
             )
         else:
             raise ValueError(
-                "Attempting to load an unsupported spec:"
-                f"\n\n{obj}\n{warning_message}"
+                f"Attempting to load an unsupported spec:\n\n{obj}\n{warning_message}"
             )
 
     @classmethod

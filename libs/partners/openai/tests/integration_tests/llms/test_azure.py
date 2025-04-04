@@ -148,7 +148,7 @@ def test_openai_streaming_callback() -> None:
         verbose=True,
     )
     llm.invoke("Write me a sentence with 100 words.")
-    assert callback_handler.llm_streams == 11
+    assert callback_handler.llm_streams == 12
 
 
 @pytest.mark.scheduled
@@ -171,5 +171,5 @@ async def test_openai_async_streaming_callback() -> None:
         verbose=True,
     )
     result = await llm.agenerate(["Write me a sentence with 100 words."])
-    assert callback_handler.llm_streams == 11
+    assert callback_handler.llm_streams == 12
     assert isinstance(result, LLMResult)

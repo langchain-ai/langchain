@@ -44,7 +44,7 @@ class GrobidParser(BaseBlobParser):
             from bs4 import BeautifulSoup
         except ImportError:
             raise ImportError(
-                "`bs4` package not found, please install it with " "`pip install bs4`"
+                "`bs4` package not found, please install it with `pip install bs4`"
             )
         soup = BeautifulSoup(xml_data, "xml")
         sections = soup.find_all("div")

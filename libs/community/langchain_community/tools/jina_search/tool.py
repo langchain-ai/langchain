@@ -15,7 +15,7 @@ class JinaInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
-class JinaSearch(BaseTool):
+class JinaSearch(BaseTool):  # type: ignore[override]
     """Tool that queries the JinaSearch.
 
     ..versionadded:: 0.2.16
@@ -30,7 +30,7 @@ class JinaSearch(BaseTool):
         "each in clean, LLM-friendly text. This way, you can always keep your LLM "
         "up-to-date, improve its factuality, and reduce hallucinations."
     )
-    search_wrapper: JinaSearchAPIWrapper = Field(default_factory=JinaSearchAPIWrapper)
+    search_wrapper: JinaSearchAPIWrapper = Field(default_factory=JinaSearchAPIWrapper)  # type: ignore[arg-type]
 
     def _run(
         self,

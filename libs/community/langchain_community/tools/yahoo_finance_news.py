@@ -16,7 +16,7 @@ class YahooFinanceNewsInput(BaseModel):
     query: str = Field(description="company ticker query to look up")
 
 
-class YahooFinanceNewsTool(BaseTool):
+class YahooFinanceNewsTool(BaseTool):  # type: ignore[override, override]
     """Tool that searches financial news on Yahoo Finance."""
 
     name: str = "yahoo_finance_news"
@@ -36,7 +36,16 @@ class YahooFinanceNewsTool(BaseTool):
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Use the Yahoo Finance News tool."""
+        """
+        Use the Yahoo Finance News tool.
+
+        Args:
+            query: Company ticker symbol (e.g., 'AAPL' for Apple).
+            run_manager: Optional callback manager.
+
+        Returns:
+            str: Formatted news results or error message.
+        """
         try:
             import yfinance
         except ImportError:
@@ -53,7 +62,11 @@ class YahooFinanceNewsTool(BaseTool):
 
         links = []
         try:
-            links = [n["link"] for n in company.news if n["type"] == "STORY"]
+            links = [
+                n["content"]["canonicalUrl"]["url"]
+                for n in company.news
+                if n["content"]["contentType"] == "STORY"
+            ]
         except (HTTPError, ReadTimeout, ConnectionError):
             if not links:
                 return f"No news found for company that searched with {query} ticker."
@@ -69,8 +82,9 @@ class YahooFinanceNewsTool(BaseTool):
     @staticmethod
     def _format_results(docs: Iterable[Document], query: str) -> str:
         doc_strings = [
-            "\n".join([doc.metadata["title"], doc.metadata["description"]])
+            "\n".join([doc.metadata["title"], doc.metadata.get("description", "")])
             for doc in docs
-            if query in doc.metadata["description"] or query in doc.metadata["title"]
+            if query in doc.metadata.get("description", "")
+            or query in doc.metadata["title"]
         ]
         return "\n\n".join(doc_strings)

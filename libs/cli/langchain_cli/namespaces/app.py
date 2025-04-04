@@ -5,6 +5,7 @@ Manage LangChain apps
 import shutil
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -162,6 +163,12 @@ def add(
     langchain app add extraction-openai-functions
     langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
     """
+
+    if not branch and not repo:
+        warnings.warn(
+            "Adding templates from the default branch and repo is deprecated."
+            " At a minimum, you will have to add `--branch v0.2` for this to work"
+        )
 
     parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
 

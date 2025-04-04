@@ -217,7 +217,7 @@ class RdfGraph:
         try:
             res = self.graph.query(query)
         except ParserError as e:
-            raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
+            raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
         return [r for r in res if isinstance(r, ResultRow)]
 
     def update(
@@ -232,7 +232,7 @@ class RdfGraph:
         try:
             self.graph.update(query)
         except ParserError as e:
-            raise ValueError("Generated SPARQL statement is invalid\n" f"{e}")
+            raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
         if self.local_copy:
             self.graph.serialize(
                 destination=self.local_copy, format=self.local_copy.split(".")[-1]
@@ -274,9 +274,9 @@ class RdfGraph:
                 f"In the following, each IRI is followed by the local name and "
                 f"optionally its description in parentheses. \n"
                 f"The RDF graph supports the following node types:\n"
-                f'{", ".join([self._res_to_str(r, "cls") for r in classes])}\n'
+                f"{', '.join([self._res_to_str(r, 'cls') for r in classes])}\n"
                 f"The RDF graph supports the following relationships:\n"
-                f'{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n'
+                f"{', '.join([self._res_to_str(r, 'rel') for r in relationships])}\n"
             )
 
         if self.standard == "rdf":
@@ -295,13 +295,13 @@ class RdfGraph:
                 f"In the following, each IRI is followed by the local name and "
                 f"optionally its description in parentheses. \n"
                 f"The OWL graph supports the following node types:\n"
-                f'{", ".join([self._res_to_str(r, "cls") for r in clss])}\n'
+                f"{', '.join([self._res_to_str(r, 'cls') for r in clss])}\n"
                 f"The OWL graph supports the following object properties, "
                 f"i.e., relationships between objects:\n"
-                f'{", ".join([self._res_to_str(r, "op") for r in ops])}\n'
+                f"{', '.join([self._res_to_str(r, 'op') for r in ops])}\n"
                 f"The OWL graph supports the following data properties, "
                 f"i.e., relationships between objects and literals:\n"
-                f'{", ".join([self._res_to_str(r, "dp") for r in dps])}\n'
+                f"{', '.join([self._res_to_str(r, 'dp') for r in dps])}\n"
             )
         else:
             raise ValueError(f"Mode '{self.standard}' is currently not supported.")

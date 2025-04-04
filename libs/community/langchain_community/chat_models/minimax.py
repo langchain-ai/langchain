@@ -370,7 +370,7 @@ class MiniMaxChat(BaseChatModel):
         }
 
     _client: Any = None
-    model: str = "abab6.5-chat"
+    model: str = "abab6.5s-chat"
     """Model name to use."""
     max_tokens: int = 256
     """Denotes the number of tokens to predict per generation."""
@@ -381,7 +381,7 @@ class MiniMaxChat(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     minimax_api_host: str = Field(
-        default="https://api.minimax.chat/v1/text/chatcompletion_v2", alias="base_url"
+        default="https://api.minimaxi.chat/v1/text/chatcompletion_v2", alias="base_url"
     )
     minimax_group_id: Optional[str] = Field(default=None, alias="group_id")
     """[DEPRECATED, keeping it for for backward compatibility] Group Id"""
@@ -511,7 +511,13 @@ class MiniMaxChat(BaseChatModel):
         with httpx.Client(headers=headers, timeout=60) as client:
             response = client.post(self.minimax_api_host, json=payload)
             response.raise_for_status()
-
+        final_response = response.json()
+        if (
+            "base_resp" in final_response
+            and "status_msg" in final_response["base_resp"]
+            and final_response["base_resp"]["status_msg"] == "invalid api key"
+        ):
+            raise Exception("Invalid API Key Provided")
         return self._create_chat_result(response.json())
 
     def _stream(

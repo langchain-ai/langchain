@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, Optional, Sequence
 
 import requests
+from langchain_core._api.deprecation import deprecated
 
 # Query to find OWL datatype properties
 DTPROP_QUERY = """
@@ -28,6 +29,11 @@ ELEM_TYPES = {
 }
 
 
+@deprecated(
+    since="0.3.15",
+    removal="1.0",
+    alternative_import="langchain_aws.NeptuneRdfGraph",
+)
 class NeptuneRdfGraph:
     """Neptune wrapper for RDF graph operations.
 
@@ -243,7 +249,7 @@ class NeptuneRdfGraph:
             return [f"{tokens[0]}#", tokens[-1]]
         elif "/" in iri:
             tokens = iri.split("/")
-            return [f"{'/'.join(tokens[0:len(tokens)-1])}/", tokens[-1]]
+            return [f"{'/'.join(tokens[0 : len(tokens) - 1])}/", tokens[-1]]
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
 

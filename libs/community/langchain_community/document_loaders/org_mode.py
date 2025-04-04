@@ -45,10 +45,11 @@ class UnstructuredOrgModeLoader(UnstructuredFileLoader):
             **unstructured_kwargs: Any additional keyword arguments to pass
                 to the unstructured.
         """
+        file_path = str(file_path)
         validate_unstructured_version(min_unstructured_version="0.7.9")
         super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         from unstructured.partition.org import partition_org
 
-        return partition_org(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_org(filename=self.file_path, **self.unstructured_kwargs)  # type: ignore[arg-type]

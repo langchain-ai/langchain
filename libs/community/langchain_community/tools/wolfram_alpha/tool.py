@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
-class WolframAlphaQueryRun(BaseTool):
+class WolframAlphaQueryRun(BaseTool):  # type: ignore[override]
     """Tool that queries using the Wolfram Alpha SDK."""
 
     name: str = "wolfram_alpha"

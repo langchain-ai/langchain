@@ -173,21 +173,23 @@ class GradientLLM(BaseLLM):
                 "content-type": "application/json",
             },
             json=dict(
-                samples=tuple(
-                    {
-                        "inputs": input,
-                    }
-                    for input in inputs
-                )
-                if multipliers is None
-                else tuple(
-                    {
-                        "inputs": input,
-                        "fineTuningParameters": {
-                            "multiplier": multiplier,
-                        },
-                    }
-                    for input, multiplier in zip(inputs, multipliers)
+                samples=(
+                    tuple(
+                        {
+                            "inputs": input,
+                        }
+                        for input in inputs
+                    )
+                    if multipliers is None
+                    else tuple(
+                        {
+                            "inputs": input,
+                            "fineTuningParameters": {
+                                "multiplier": multiplier,
+                            },
+                        }
+                        for input, multiplier in zip(inputs, multipliers)
+                    )
                 ),
             ),
         )
@@ -338,9 +340,11 @@ class GradientLLM(BaseLLM):
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         generations = []
-        for generation in asyncio.gather(
-            [self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)]
-            for prompt in prompts
+        for generation in await asyncio.gather(
+            *[
+                self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)
+                for prompt in prompts
+            ]
         ):
             generations.append([Generation(text=generation)])
         return LLMResult(generations=generations)

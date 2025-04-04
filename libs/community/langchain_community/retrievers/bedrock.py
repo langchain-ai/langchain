@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -18,6 +19,11 @@ class RetrievalConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]
     vectorSearchConfiguration: VectorSearchConfig
 
 
+@deprecated(
+    since="0.3.16",
+    removal="1.0",
+    alternative_import="langchain_aws.AmazonKnowledgeBasesRetriever",
+)
 class AmazonKnowledgeBasesRetriever(BaseRetriever):
     """Amazon Bedrock Knowledge Bases retriever.
 

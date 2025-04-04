@@ -10,7 +10,11 @@ from langchain_community.graphs.graph_document import GraphDocument, Node, Relat
 
 test_data = [
     GraphDocument(
-        nodes=[Node(id="foo", type="foo"), Node(id="bar", type="bar")],
+        nodes=[
+            Node(id="foo", type="foo"),
+            Node(id="bar", type="bar"),
+            Node(id="foo", type="foo", properties={"property_a": "a"}),
+        ],
         relationships=[
             Relationship(
                 source=Node(id="foo", type="foo"),

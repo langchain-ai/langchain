@@ -135,7 +135,9 @@ def load_evaluator(
                 from langchain_openai import ChatOpenAI
             except ImportError:
                 try:
-                    from langchain_community.chat_models.openai import ChatOpenAI
+                    from langchain_community.chat_models.openai import (  # type: ignore[no-redef]
+                        ChatOpenAI,
+                    )
                 except ImportError:
                     raise ImportError(
                         "Could not import langchain_openai or fallback onto "

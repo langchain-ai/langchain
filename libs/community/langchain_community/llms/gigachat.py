@@ -311,9 +311,9 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         for chunk in self._client.stream(payload):
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                yield GenerationChunk(text=content)
                 if run_manager:
                     run_manager.on_llm_new_token(content)
+                yield GenerationChunk(text=content)
 
     async def _astream(
         self,
@@ -327,9 +327,9 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         async for chunk in self._client.astream(payload):
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                yield GenerationChunk(text=content)
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
+                yield GenerationChunk(text=content)
 
     model_config = ConfigDict(
         extra="allow",

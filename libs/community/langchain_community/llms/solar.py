@@ -44,7 +44,7 @@ class SolarCommon(BaseModel):
     base_url: str = SOLAR_SERVICE_URL_BASE
     solar_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Solar API key. Get it here: https://console.upstage.ai/services/solar"""
-    model_name: str = Field(default="solar-1-mini-chat", alias="model")
+    model_name: str = Field(default="solar-mini", alias="model")
     """Model name. Available models listed here: https://console.upstage.ai/services/solar"""
     max_tokens: int = Field(default=1024)
     temperature: float = 0.3

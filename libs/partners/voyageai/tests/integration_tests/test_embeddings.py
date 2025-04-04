@@ -51,3 +51,12 @@ async def test_langchain_voyageai_async_embedding_query() -> None:
     embedding = VoyageAIEmbeddings(model=MODEL)  # type: ignore[call-arg]
     output = await embedding.aembed_query(document)
     assert len(output) == 1024
+
+
+def test_langchain_voyageai_embedding_documents_with_output_dimension() -> None:
+    """Test voyage embeddings."""
+    documents = ["foo bar"]
+    embedding = VoyageAIEmbeddings(model="voyage-3-large", output_dimension=256)  # type: ignore[call-arg]
+    output = embedding.embed_documents(documents)
+    assert len(output) == 1
+    assert len(output[0]) == 256

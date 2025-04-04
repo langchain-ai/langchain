@@ -3,7 +3,8 @@ from uuid import uuid4
 
 import numpy as np
 import pytest
-from langchain_core.outputs import LLMResult
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.callbacks import OpenAICallbackHandler
@@ -32,6 +33,43 @@ def test_on_llm_end(handler: OpenAICallbackHandler) -> None:
     assert handler.total_tokens == 3
     assert handler.prompt_tokens == 2
     assert handler.completion_tokens == 1
+    assert handler.total_cost > 0
+
+
+def test_on_llm_end_with_chat_generation(handler: OpenAICallbackHandler) -> None:
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    text="Hello, world!",
+                    message=AIMessage(
+                        content="Hello, world!",
+                        usage_metadata={
+                            "input_tokens": 2,
+                            "output_tokens": 2,
+                            "total_tokens": 4,
+                            "input_token_details": {
+                                "cache_read": 1,
+                            },
+                            "output_token_details": {
+                                "reasoning": 1,
+                            },
+                        },
+                    ),
+                )
+            ]
+        ],
+        llm_output={
+            "model_name": get_fields(BaseOpenAI)["model_name"].default,
+        },
+    )
+    handler.on_llm_end(response)
+    assert handler.successful_requests == 1
+    assert handler.total_tokens == 4
+    assert handler.prompt_tokens == 2
+    assert handler.prompt_tokens_cached == 1
+    assert handler.completion_tokens == 2
+    assert handler.reasoning_tokens == 1
     assert handler.total_cost > 0
 
 

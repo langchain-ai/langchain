@@ -1,3 +1,5 @@
+"""Parsers for OpenAI functions output."""
+
 import copy
 import json
 from types import GenericAlias
@@ -36,16 +38,14 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         """
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         try:
             func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
-            raise OutputParserException(
-                f"Could not parse function call: {exc}"
-            ) from exc
+            msg = f"Could not parse function call: {exc}"
+            raise OutputParserException(msg) from exc
 
         if self.args_only:
             return func_call["arguments"]
@@ -57,9 +57,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
 
     strict: bool = False
     """Whether to allow non-JSON-compliant strings.
-    
+
     See: https://docs.python.org/3/library/json.html#encoders-and-decoders
-    
+
     Useful when the parsed output may include unicode characters or new lines.
     """
 
@@ -86,26 +86,21 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         if len(result) != 1:
-            raise OutputParserException(
-                f"Expected exactly one result, but got {len(result)}"
-            )
+            msg = f"Expected exactly one result, but got {len(result)}"
+            raise OutputParserException(msg)
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
-            raise OutputParserException(
-                "This output parser can only be used with a chat generation."
-            )
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
         message = generation.message
         try:
             function_call = message.additional_kwargs["function_call"]
         except KeyError as exc:
             if partial:
                 return None
-            else:
-                raise OutputParserException(
-                    f"Could not parse function call: {exc}"
-                ) from exc
+            msg = f"Could not parse function call: {exc}"
+            raise OutputParserException(msg) from exc
         try:
             if partial:
                 try:
@@ -113,13 +108,12 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                         return parse_partial_json(
                             function_call["arguments"], strict=self.strict
                         )
-                    else:
-                        return {
-                            **function_call,
-                            "arguments": parse_partial_json(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
+                    return {
+                        **function_call,
+                        "arguments": parse_partial_json(
+                            function_call["arguments"], strict=self.strict
+                        ),
+                    }
                 except json.JSONDecodeError:
                     return None
             else:
@@ -129,9 +123,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                             function_call["arguments"], strict=self.strict
                         )
                     except (json.JSONDecodeError, TypeError) as exc:
-                        raise OutputParserException(
-                            f"Could not parse function call data: {exc}"
-                        ) from exc
+                        msg = f"Could not parse function call data: {exc}"
+                        raise OutputParserException(msg) from exc
                 else:
                     try:
                         return {
@@ -141,9 +134,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                             ),
                         }
                     except (json.JSONDecodeError, TypeError) as exc:
-                        raise OutputParserException(
-                            f"Could not parse function call data: {exc}"
-                        ) from exc
+                        msg = f"Could not parse function call data: {exc}"
+                        raise OutputParserException(msg) from exc
         except KeyError:
             return None
 
@@ -158,7 +150,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Returns:
             The parsed JSON object.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
@@ -196,7 +188,6 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     the provided schema.
 
     Example:
-
         ... code-block:: python
 
             message = AIMessage(
@@ -226,7 +217,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
     """The pydantic schema to parse the output with.
-    
+
     If multiple schemas are provided, then the function name will be used to
     determine which schema to use.
     """
@@ -253,10 +244,11 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
                 and issubclass(schema, BaseModel)
             )
         elif values["args_only"] and isinstance(schema, dict):
-            raise ValueError(
+            msg = (
                 "If multiple pydantic schemas are provided then args_only should be"
                 " False."
             )
+            raise ValueError(msg)
         return values
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:

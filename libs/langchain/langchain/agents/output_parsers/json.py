@@ -50,9 +50,10 @@ class JSONAgentOutputParser(AgentOutputParser):
             if response["action"] == "Final Answer":
                 return AgentFinish({"output": response["action_input"]}, text)
             else:
-                return AgentAction(
-                    response["action"], response.get("action_input", {}), text
-                )
+                action_input = response.get("action_input", {})
+                if action_input is None:
+                    action_input = {}
+                return AgentAction(response["action"], action_input, text)
         except Exception as e:
             raise OutputParserException(f"Could not parse LLM output: {text}") from e
 

@@ -150,7 +150,6 @@ def test_model_garden_generate(
     assert len(output.generations) == 2
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "endpoint_os_variable_name,result_arg",
     [("FALCON_ENDPOINT_ID", "generated_text"), ("LLAMA_ENDPOINT_ID", None)],

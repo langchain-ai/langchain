@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, create_model, model_validator
 from langchain_community.tools.connery.models import Action, Parameter
 
 
-class ConneryAction(BaseTool):
+class ConneryAction(BaseTool):  # type: ignore[override, override]
     """Connery Action tool."""
 
     name: str

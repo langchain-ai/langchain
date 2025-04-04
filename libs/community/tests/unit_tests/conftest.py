@@ -1,10 +1,26 @@
 """Configuration for unit tests."""
 
+from collections.abc import Iterator
 from importlib import util
 from typing import Dict, Sequence
 
 import pytest
+from blockbuster import blockbuster_ctx
 from pytest import Config, Function, Parser
+
+
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[None]:
+    with blockbuster_ctx("langchain_community") as bb:
+        (
+            bb.functions["os.stat"]
+            .can_block_in("langchain_community/utils/openai.py", "is_openai_v1")
+            .can_block_in("httpx/_client.py", "_init_transport")
+        )
+        bb.functions["os.path.abspath"].can_block_in(
+            "sqlalchemy/dialects/sqlite/pysqlite.py", "create_connect_args"
+        )
+        yield
 
 
 def pytest_addoption(parser: Parser) -> None:

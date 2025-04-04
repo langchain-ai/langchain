@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, patch
 
-import pytest
 import responses
 from langchain_core.documents import Document
 
@@ -189,7 +188,6 @@ def test_results_news() -> None:
     assert raw_results == expected_result
 
 
-@pytest.mark.asyncio
 async def test_raw_results_async() -> None:
     instance = YouSearchAPIWrapper(ydc_api_key="test_api_key")
 
@@ -208,7 +206,6 @@ async def test_raw_results_async() -> None:
         assert results == MOCK_RESPONSE_RAW
 
 
-@pytest.mark.asyncio
 async def test_results_async() -> None:
     instance = YouSearchAPIWrapper(ydc_api_key="test_api_key")
 
@@ -227,7 +224,6 @@ async def test_results_async() -> None:
         assert results == MOCK_PARSED_OUTPUT
 
 
-@pytest.mark.asyncio
 async def test_results_news_async() -> None:
     instance = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test_api_key")
 

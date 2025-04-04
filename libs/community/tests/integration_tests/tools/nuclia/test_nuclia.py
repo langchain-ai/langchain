@@ -83,7 +83,12 @@ def test_nuclia_tool() -> None:
                 )
                 assert uuid == "fake_uuid"
                 data = nua.run(
-                    {"action": "pull", "id": "1", "path": None, "text": None}
+                    {
+                        "action": "pull",
+                        "id": "1",
+                        "path": None,
+                        "text": None,
+                    }
                 )
                 assert json.loads(data)["uuid"] == "fake_uuid"
 

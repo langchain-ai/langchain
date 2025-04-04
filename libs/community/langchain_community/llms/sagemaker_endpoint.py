@@ -5,6 +5,7 @@ import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVar, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.utils import pre_init
@@ -124,6 +125,11 @@ class LLMContentHandler(ContentHandlerBase[str, str]):
     """Content handler for LLM class."""
 
 
+@deprecated(
+    since="0.3.16",
+    removal="1.0",
+    alternative_import="langchain_aws.llms.SagemakerEndpoint",
+)
 class SagemakerEndpoint(LLM):
     """Sagemaker Inference Endpoint models.
 

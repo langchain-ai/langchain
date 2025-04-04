@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import logging
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -23,12 +22,12 @@ from tenacity import (
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
@@ -42,7 +41,6 @@ def log_error_once(method: str, exception: Exception) -> None:
         method: The method that raised the exception.
         exception: The exception that was raised.
     """
-    global _LOGGED
     if (method, type(exception)) in _LOGGED:
         return
     _LOGGED.add((method, type(exception)))
@@ -51,8 +49,8 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
-        rt._CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None:
+        rt._CLIENT.flush()
 
 
 def get_client() -> Client:
@@ -62,27 +60,31 @@ def get_client() -> Client:
 
 def _get_executor() -> ThreadPoolExecutor:
     """Get the executor."""
-    global _EXECUTOR
+    global _EXECUTOR  # noqa: PLW0603
     if _EXECUTOR is None:
         _EXECUTOR = ThreadPoolExecutor()
     return _EXECUTOR
 
 
-def _run_to_dict(run: Run) -> dict:
+def _run_to_dict(run: Run, *, exclude_inputs: bool = False) -> dict:
     # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
     # run.model_dump
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
 
-        return {
+        res = {
             **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-            "inputs": run.inputs.copy() if run.inputs is not None else None,
-            "outputs": run.outputs.copy() if run.outputs is not None else None,
+            "outputs": run.outputs,
         }
+        if not exclude_inputs:
+            res["inputs"] = run.inputs
+    return res
 
 
 class LangChainTracer(BaseTracer):
     """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
+
+    run_inline = True
 
     def __init__(
         self,
@@ -121,7 +123,7 @@ class LangChainTracer(BaseTracer):
 
         super()._start_trace(run)
         if run._client is None:
-            run._client = self.client
+            run._client = self.client  # type: ignore
 
     def on_chat_model_start(
         self,
@@ -170,13 +172,13 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
-        # run.model_copy
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            run_ = copy.copy(run)
-        run_.reference_example_id = self.example_id
-        self.latest_run = run_
+        # We want to free up more memory by avoiding keeping a reference to the
+        # whole nested run tree.
+        self.latest_run = Run.construct(
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            inputs=run.inputs,
+            outputs=run.outputs,
+        )
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.
@@ -189,7 +191,8 @@ class LangChainTracer(BaseTracer):
             ValueError: If the run URL cannot be found.
         """
         if not self.latest_run:
-            raise ValueError("No traced run found.")
+            msg = "No traced run found."
+            raise ValueError(msg)
         # If this is the first run in a project, the project may not yet be created.
         # This method is only really useful for debugging flows, so we will assume
         # there is some tolerace for latency.
@@ -202,7 +205,8 @@ class LangChainTracer(BaseTracer):
                 return self.client.get_run_url(
                     run=self.latest_run, project_name=self.project_name
                 )
-        raise ValueError("Failed to get run URL.")
+        msg = "Failed to get run URL."
+        raise ValueError(msg)
 
     def _get_tags(self, run: Run) -> list[str]:
         """Get combined tags for a run."""
@@ -212,12 +216,18 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        run_dict = _run_to_dict(run)
-        run_dict["tags"] = self._get_tags(run)
-        extra = run_dict.get("extra", {})
-        extra["runtime"] = get_runtime_environment()
-        run_dict["extra"] = extra
         try:
+            run_dict = _run_to_dict(run)
+            run_dict["tags"] = self._get_tags(run)
+            extra = run_dict.get("extra", {})
+            extra["runtime"] = get_runtime_environment()
+            run_dict["extra"] = extra
+            inputs_ = run_dict.get("inputs")
+            if inputs_ and (len(inputs_) > 1 or bool(next(iter(inputs_.values())))):
+                inputs_is_truthy = True
+            else:
+                inputs_is_truthy = False
+            run.extra["inputs_is_truthy"] = inputs_is_truthy
             self.client.create_run(**run_dict, project_name=self.project_name)
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
@@ -227,7 +237,8 @@ class LangChainTracer(BaseTracer):
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
         try:
-            run_dict = _run_to_dict(run)
+            exclude_inputs = run.extra.get("inputs_is_truthy", False)
+            run_dict = _run_to_dict(run, exclude_inputs=exclude_inputs)
             run_dict["tags"] = self._get_tags(run)
             self.client.update_run(run.id, **run_dict)
         except Exception as e:
@@ -249,9 +260,7 @@ class LangChainTracer(BaseTracer):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        """Append token event to LLM run and return the run."""
         return super()._llm_run_with_token_event(
             # Drop the chunk; we don't need to save it
             token,
@@ -319,5 +328,5 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        if self.client is not None and self.client.tracing_queue is not None:
-            self.client.tracing_queue.join()
+        if self.client is not None:
+            self.client.flush()

@@ -7,9 +7,17 @@ sidebar_class_name: hidden
 
 import { CategoryTable, IndexTable } from "@theme/FeatureTables";
 
-[Embedding models](/docs/concepts#embedding-models) create a vector representation of a piece of text.
+[Embedding models](/docs/concepts/embedding_models) create a vector representation of a piece of text.
 
 This page documents integrations with various model providers that allow you to use embeddings in LangChain.
+
+import EmbeddingTabs from "@theme/EmbeddingTabs";
+
+<EmbeddingTabs/>
+
+```python
+embeddings.embed_query("Hello, world!")
+```
 
 <CategoryTable category="text_embedding" />
 

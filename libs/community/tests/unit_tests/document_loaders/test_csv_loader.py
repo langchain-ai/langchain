@@ -113,11 +113,11 @@ class TestCSVLoader:
         file_path = self._get_csv_file_path("test_none_col.csv")
         expected_docs = [
             Document(
-                page_content="column1: value1\n" "column3: value3",
+                page_content="column1: value1\ncolumn3: value3",
                 metadata={"source": file_path, "row": 0},
             ),
             Document(
-                page_content="column1: value6\n" "column3: value8",
+                page_content="column1: value6\ncolumn3: value8",
                 metadata={"source": file_path, "row": 1},
             ),
         ]

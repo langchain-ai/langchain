@@ -9,7 +9,7 @@ yfinance = pytest.importorskip("yfinance")
 def test_success() -> None:
     """Test that the tool runs successfully."""
     tool = YahooFinanceNewsTool()
-    query = "Microsoft"
+    query = "AAPL"
     result = tool.run(query)
     assert result is not None
     assert f"Company ticker {query} not found." not in result

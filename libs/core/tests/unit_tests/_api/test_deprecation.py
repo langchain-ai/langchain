@@ -13,7 +13,7 @@ from langchain_core._api.deprecation import (
 
 
 @pytest.mark.parametrize(
-    "kwargs, expected_message",
+    ("kwargs", "expected_message"),
     [
         (
             {
@@ -75,47 +75,46 @@ def test_undefined_deprecation_schedule() -> None:
 
 @deprecated(since="2.0.0", removal="3.0.0", pending=False)
 def deprecated_function() -> str:
-    """original doc"""
+    """Original doc."""
     return "This is a deprecated function."
 
 
 @deprecated(since="2.0.0", removal="3.0.0", pending=False)
 async def deprecated_async_function() -> str:
-    """original doc"""
+    """Original doc."""
     return "This is a deprecated async function."
 
 
 class ClassWithDeprecatedMethods:
     def __init__(self) -> None:
-        """original doc"""
-        pass
+        """Original doc."""
 
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_method(self) -> str:
-        """original doc"""
+        """Original doc."""
         return "This is a deprecated method."
 
     @deprecated(since="2.0.0", removal="3.0.0")
     async def deprecated_async_method(self) -> str:
-        """original doc"""
+        """Original doc."""
         return "This is a deprecated async method."
 
     @classmethod
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_classmethod(cls) -> str:
-        """original doc"""
+        """Original doc."""
         return "This is a deprecated classmethod."
 
     @staticmethod
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_staticmethod() -> str:
-        """original doc"""
+        """Original doc."""
         return "This is a deprecated staticmethod."
 
     @property
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_property(self) -> str:
-        """original doc"""
+        """Original doc."""
         return "This is a deprecated property."
 
 
@@ -138,7 +137,6 @@ def test_deprecated_function() -> None:
     assert not inspect.iscoroutinefunction(deprecated_function)
 
 
-@pytest.mark.asyncio
 async def test_deprecated_async_function() -> None:
     """Test deprecated async function."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -180,7 +178,6 @@ def test_deprecated_method() -> None:
     assert not inspect.iscoroutinefunction(obj.deprecated_method)
 
 
-@pytest.mark.asyncio
 async def test_deprecated_async_method() -> None:
     """Test deprecated async method."""
     with warnings.catch_warnings(record=True) as warning_list:
@@ -267,12 +264,11 @@ def test_whole_class_deprecation() -> None:
     @deprecated(since="2.0.0", removal="3.0.0")
     class DeprecatedClass:
         def __init__(self) -> None:
-            """original doc"""
-            pass
+            """Original doc."""
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
-            """original doc"""
+            """Original doc."""
             return "This is a deprecated method."
 
     with warnings.catch_warnings(record=True) as warning_list:
@@ -310,12 +306,11 @@ def test_whole_class_inherited_deprecation() -> None:
     @deprecated(since="2.0.0", removal="3.0.0")
     class DeprecatedClass:
         def __init__(self) -> None:
-            """original doc"""
-            pass
+            """Original doc."""
 
         @deprecated(since="2.0.0", removal="3.0.0")
         def deprecated_method(self) -> str:
-            """original doc"""
+            """Original doc."""
             return "This is a deprecated method."
 
     @deprecated(since="2.2.0", removal="3.2.0")
@@ -323,12 +318,11 @@ def test_whole_class_inherited_deprecation() -> None:
         """Inherited deprecated class."""
 
         def __init__(self) -> None:
-            """original doc"""
-            pass
+            """Original doc."""
 
         @deprecated(since="2.2.0", removal="3.2.0")
         def deprecated_method(self) -> str:
-            """original doc"""
+            """Original doc."""
             return "This is a deprecated method."
 
     with warnings.catch_warnings(record=True) as warning_list:
@@ -385,7 +379,7 @@ def test_whole_class_inherited_deprecation() -> None:
 class MyModel(BaseModel):
     @deprecated(since="2.0.0", removal="3.0.0")
     def deprecated_method(self) -> str:
-        """original doc"""
+        """Original doc."""
         return "This is a deprecated method."
 
 
@@ -410,11 +404,13 @@ def test_deprecated_method_pydantic() -> None:
 def test_raise_error_for_bad_decorator() -> None:
     """Verify that errors raised on init rather than on use."""
     # Should not specify both `alternative` and `alternative_import`
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Cannot specify both alternative and alternative_import"
+    ):
 
         @deprecated(since="2.0.0", alternative="NewClass", alternative_import="hello")
         def deprecated_function() -> str:
-            """original doc"""
+            """Original doc."""
             return "This is a deprecated function."
 
 
@@ -423,7 +419,7 @@ def test_rename_parameter() -> None:
 
     @rename_parameter(since="2.0.0", removal="3.0.0", old="old_name", new="new_name")
     def foo(new_name: str) -> str:
-        """original doc"""
+        """Original doc."""
         return new_name
 
     with warnings.catch_warnings(record=True) as warning_list:
@@ -433,7 +429,7 @@ def test_rename_parameter() -> None:
 
         assert foo(new_name="hello") == "hello"
         assert foo("hello") == "hello"
-        assert foo.__doc__ == "original doc"
+        assert foo.__doc__ == "Original doc."
         with pytest.raises(TypeError):
             foo(meow="hello")  # type: ignore[call-arg]
         with pytest.raises(TypeError):
@@ -448,7 +444,7 @@ async def test_rename_parameter_for_async_func() -> None:
 
     @rename_parameter(since="2.0.0", removal="3.0.0", old="old_name", new="new_name")
     async def foo(new_name: str) -> str:
-        """original doc"""
+        """Original doc."""
         return new_name
 
     with warnings.catch_warnings(record=True) as warning_list:
@@ -457,7 +453,7 @@ async def test_rename_parameter_for_async_func() -> None:
         assert len(warning_list) == 1
         assert await foo(new_name="hello") == "hello"
         assert await foo("hello") == "hello"
-        assert foo.__doc__ == "original doc"
+        assert foo.__doc__ == "Original doc."
         with pytest.raises(TypeError):
             await foo(meow="hello")  # type: ignore[call-arg]
         with pytest.raises(TypeError):

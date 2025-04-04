@@ -316,12 +316,15 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         proj.id = "123"
         return proj
 
-    with mock.patch.object(
-        Client, "read_dataset", new=mock_read_dataset
-    ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
-        "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
-        new=mock_arun_chain,
-    ), mock.patch.object(Client, "create_project", new=mock_create_project):
+    with (
+        mock.patch.object(Client, "read_dataset", new=mock_read_dataset),
+        mock.patch.object(Client, "list_examples", new=mock_list_examples),
+        mock.patch(
+            "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
+            new=mock_arun_chain,
+        ),
+        mock.patch.object(Client, "create_project", new=mock_create_project),
+    ):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]

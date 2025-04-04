@@ -34,6 +34,7 @@ Example::
     - :class:`How to link Documents on hyperlinks in HTML <langchain_community.graph_vectorstores.extractors.html_link_extractor.HtmlLinkExtractor>`
     - :class:`How to link Documents on common keywords (using KeyBERT) <langchain_community.graph_vectorstores.extractors.keybert_link_extractor.KeybertLinkExtractor>`
     - :class:`How to link Documents on common named entities (using GliNER) <langchain_community.graph_vectorstores.extractors.gliner_link_extractor.GLiNERLinkExtractor>`
+    - `langchain-jieba: link extraction tailored for Chinese language <https://github.com/cqzyys/langchain-jieba>`_
 
 Get started
 -----------
@@ -144,6 +145,7 @@ from langchain_community.graph_vectorstores.cassandra import CassandraGraphVecto
 from langchain_community.graph_vectorstores.links import (
     Link,
 )
+from langchain_community.graph_vectorstores.mmr_helper import MmrHelper
 
 __all__ = [
     "GraphVectorStore",
@@ -151,4 +153,5 @@ __all__ = [
     "Node",
     "Link",
     "CassandraGraphVectorStore",
+    "MmrHelper",
 ]

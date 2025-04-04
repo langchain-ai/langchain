@@ -22,10 +22,30 @@ See a [usage example](/docs/integrations/vectorstores/mongodb_atlas).
 from langchain_mongodb import MongoDBAtlasVectorSearch
 ```
 
+## Retrievers
 
-## LLM Caches
+### Full Text Search Retriever
+
+>`Hybrid Search Retriever` performs full-text searches using 
+> Lucene’s standard (`BM25`) analyzer.
+
+```python
+from langchain_mongodb.retrievers import MongoDBAtlasFullTextSearchRetriever
+```
+
+### Hybrid Search Retriever
+
+>`Hybrid Search Retriever` combines vector and full-text searches weighting 
+> them the via `Reciprocal Rank Fusion` (`RRF`) algorithm.
+ 
+```python
+from langchain_mongodb.retrievers import MongoDBAtlasHybridSearchRetriever
+```
+
+## Model Caches
 
 ### MongoDBCache
+
 An abstraction to store a simple cache in MongoDB. This does not use Semantic Caching, nor does it require an index to be made on the collection before generation.
 
 To import this cache:

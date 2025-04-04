@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Sized,
     Tuple,
     Union,
@@ -284,7 +285,6 @@ class FAISS(VectorStore):
         ids: Optional[List[str]] = None,
     ) -> List[str]:
         faiss = dependable_faiss_import()
-
         if not isinstance(self.docstore, AddableMixin):
             raise ValueError(
                 "If trying to add texts, the underlying docstore should support "
@@ -292,17 +292,20 @@ class FAISS(VectorStore):
             )
 
         _len_check_if_sized(texts, metadatas, "texts", "metadatas")
+
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
+        _len_check_if_sized(texts, ids, "texts", "ids")
+
         _metadatas = metadatas or ({} for _ in texts)
         documents = [
-            Document(page_content=t, metadata=m) for t, m in zip(texts, _metadatas)
+            Document(id=id_, page_content=t, metadata=m)
+            for id_, t, m in zip(ids, texts, _metadatas)
         ]
 
         _len_check_if_sized(documents, embeddings, "documents", "embeddings")
-        _len_check_if_sized(documents, ids, "documents", "ids")
 
         if ids and len(ids) != len(set(ids)):
             raise ValueError("Duplicate ids found in the ids list.")
-
         # Add to the index.
         vector = np.array(embeddings, dtype=np.float32)
         if self._normalize_L2:
@@ -310,7 +313,6 @@ class FAISS(VectorStore):
         self.index.add(vector)
 
         # Add information to docstore and index.
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
         self.docstore.add({id_: doc for id_, doc in zip(ids, documents)})
         starting_len = len(self.index_to_docstore_id)
         index_to_id = {starting_len + j: id_ for j, id_ in enumerate(ids)}
@@ -1346,8 +1348,11 @@ class FAISS(VectorStore):
             conditions for documents.
 
         Returns:
-            Callable[[Dict[str, Any]], bool]: A function that takes Document's metadata
-            and returns True if it satisfies the filter conditions, otherwise False.
+            A function that takes Document's metadata and returns True if it
+            satisfies the filter conditions, otherwise False.
+
+        Raises:
+            ValueError: If the filter is invalid or contains unsupported operators.
         """
         if callable(filter):
             return filter
@@ -1357,12 +1362,122 @@ class FAISS(VectorStore):
                 f"filter must be a dict of metadata or a callable, not {type(filter)}"
             )
 
-        def filter_func(metadata: Dict[str, Any]) -> bool:
-            return all(
-                metadata.get(key) in value
-                if isinstance(value, list)
-                else metadata.get(key) == value
-                for key, value in filter.items()  # type: ignore
-            )
+        from operator import eq, ge, gt, le, lt, ne
 
-        return filter_func
+        COMPARISON_OPERATORS = {
+            "$eq": eq,
+            "$neq": ne,
+            "$gt": gt,
+            "$lt": lt,
+            "$gte": ge,
+            "$lte": le,
+        }
+        SEQUENCE_OPERATORS = {
+            "$in": lambda a, b: a in b,
+            "$nin": lambda a, b: a not in b,
+        }
+        OPERATIONS = COMPARISON_OPERATORS | SEQUENCE_OPERATORS
+        VALID_OPERATORS = frozenset(list(OPERATIONS) + ["$and", "$or", "$not"])
+        SET_CONVERT_THRESHOLD = 10
+
+        # Validate top-level filter operators.
+        for op in filter:
+            if op and op.startswith("$") and op not in VALID_OPERATORS:
+                raise ValueError(f"filter contains unsupported operator: {op}")
+
+        def filter_func_cond(
+            field: str, condition: Union[Dict[str, Any], List[Any], Any]
+        ) -> Callable[[Dict[str, Any]], bool]:
+            """
+            Creates a filter function based on field and condition.
+
+            Args:
+                field: The document field to filter on
+                condition: Filter condition (dict for operators, list for in,
+                           or direct value for equality)
+
+            Returns:
+                A filter function that takes a document and returns boolean
+            """
+            if isinstance(condition, dict):
+                operators = []
+                for op, value in condition.items():
+                    if op not in OPERATIONS:
+                        raise ValueError(f"filter contains unsupported operator: {op}")
+                    operators.append((OPERATIONS[op], value))
+
+                def filter_fn(doc: Dict[str, Any]) -> bool:
+                    """
+                    Evaluates a document against a set of predefined operators
+                    and their values. This function applies multiple
+                    comparison/sequence operators to a specific field value
+                    from the document. All conditions must be satisfied for the
+                    function to return True.
+
+                    Args:
+                        doc (Dict[str, Any]): The document to evaluate, containing
+                        key-value pairs where keys are field names and values
+                        are the field values. The document must contain the field
+                        being filtered.
+
+                    Returns:
+                        bool: True if the document's field value satisfies all
+                            operator conditions, False otherwise.
+                    """
+                    doc_value = doc.get(field)
+                    return all(op(doc_value, value) for op, value in operators)
+
+                return filter_fn
+
+            if isinstance(condition, list):
+                if len(condition) > SET_CONVERT_THRESHOLD:
+                    condition_set = frozenset(condition)
+                    return lambda doc: doc.get(field) in condition_set
+                return lambda doc: doc.get(field) in condition
+
+            return lambda doc: doc.get(field) == condition
+
+        def filter_func(filter: Dict[str, Any]) -> Callable[[Dict[str, Any]], bool]:
+            """
+            Creates a filter function that evaluates documents against specified
+            filter conditions.
+
+            This function processes a dictionary of filter conditions and returns
+            a callable that can evaluate documents against these conditions. It
+            supports logical operators ($and, $or, $not) and field-level filtering.
+
+            Args:
+                filter (Dict[str, Any]): A dictionary containing filter conditions.
+                Can include:
+                    - Logical operators ($and, $or, $not) with lists of sub-filters
+                    - Field-level conditions with comparison or sequence operators
+                    - Direct field-value mappings for equality comparison
+
+            Returns:
+                Callable[[Dict[str, Any]], bool]: A function that takes a document
+                (as a dictionary) and returns True if the document matches all
+                filter conditions, False otherwise.
+            """
+            if "$and" in filter:
+                filters = [filter_func(sub_filter) for sub_filter in filter["$and"]]
+                return lambda doc: all(f(doc) for f in filters)
+
+            if "$or" in filter:
+                filters = [filter_func(sub_filter) for sub_filter in filter["$or"]]
+                return lambda doc: any(f(doc) for f in filters)
+
+            if "$not" in filter:
+                cond = filter_func(filter["$not"])
+                return lambda doc: not cond(doc)
+
+            conditions = [
+                filter_func_cond(field, condition)
+                for field, condition in filter.items()
+            ]
+            return lambda doc: all(condition(doc) for condition in conditions)
+
+        return filter_func(filter)
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        docs = [self.docstore.search(id_) for id_ in ids]
+        return [doc for doc in docs if isinstance(doc, Document)]

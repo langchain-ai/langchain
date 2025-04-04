@@ -54,5 +54,5 @@ def test_lazy_load() -> None:
         expected.append(
             Document(example.inputs["first"]["second"].upper(), metadata=metadata)
         )
-    actual = [doc for doc in loader.lazy_load()]
+    actual = list(loader.lazy_load())
     assert expected == actual

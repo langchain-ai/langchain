@@ -34,8 +34,8 @@ def test_dria_retriever(dria_retriever: DriaRetriever) -> None:
     doc = docs[0]
     assert isinstance(doc, Document), "Expected a Document instance"
     assert isinstance(doc.page_content, str), (
-        "Expected document content type " "to be string"
+        "Expected document content type to be string"
     )
-    assert isinstance(
-        doc.metadata, dict
-    ), "Expected document metadata content to be a dictionary"
+    assert isinstance(doc.metadata, dict), (
+        "Expected document metadata content to be a dictionary"
+    )

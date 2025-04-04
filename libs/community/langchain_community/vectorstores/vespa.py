@@ -96,7 +96,7 @@ class VespaStore(VectorStore):
             embeddings = self._embedding_function.embed_documents(list(texts))
 
         if ids is None:
-            ids = [str(f"{i+1}") for i, _ in enumerate(texts)]
+            ids = [str(f"{i + 1}") for i, _ in enumerate(texts)]
 
         batch = []
         for i, text in enumerate(texts):

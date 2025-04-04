@@ -7,6 +7,7 @@ if it's unchanged.
 
 from langchain_core.indexing.api import IndexingResult, aindex, index
 from langchain_core.indexing.base import (
+    DeleteResponse,
     DocumentIndex,
     InMemoryRecordManager,
     RecordManager,
@@ -15,6 +16,7 @@ from langchain_core.indexing.base import (
 
 __all__ = [
     "aindex",
+    "DeleteResponse",
     "DocumentIndex",
     "index",
     "IndexingResult",

@@ -184,7 +184,12 @@ async def test_callback_handlers() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
     tokens: List[str] = []
     # New model
-    results = list(model.stream("meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}))
+    results = [
+        chunk
+        async for chunk in model.astream(
+            "meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}
+        )
+    ]
     assert results == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),

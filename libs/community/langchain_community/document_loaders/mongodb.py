@@ -98,7 +98,10 @@ class MongodbLoader(BaseLoader):
             # Optionally add database and collection names to metadata
             if self.include_db_collection_in_metadata:
                 metadata.update(
-                    {"database": self.db_name, "collection": self.collection_name}
+                    {
+                        "database": self.db_name,
+                        "collection": self.collection_name,
+                    }
                 )
 
             # Extract text content from filtered fields or use the entire document

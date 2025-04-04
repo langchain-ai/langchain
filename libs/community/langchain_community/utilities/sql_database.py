@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 
 import sqlalchemy
@@ -24,8 +25,8 @@ from sqlalchemy.types import NullType
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
-        f'Name: {index["name"]}, Unique: {index["unique"]},'
-        f' Columns: {str(index["column_names"])}'
+        f"Name: {index['name']}, Unique: {index['unique']},"
+        f" Columns: {str(index['column_names'])}"
     )
 
 
@@ -42,6 +43,16 @@ def truncate_word(content: Any, *, length: int, suffix: str = "...") -> str:
         return content
 
     return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+
+
+def sanitize_schema(schema: str) -> str:
+    """Sanitize a schema name to only contain letters, digits, and underscores."""
+    if not re.match(r"^[a-zA-Z0-9_]+$", schema):
+        raise ValueError(
+            f"Schema name '{schema}' contains invalid characters. "
+            "Schema names must contain only letters, digits, and underscores."
+        )
+    return schema
 
 
 class SQLDatabase:
@@ -72,7 +83,7 @@ class SQLDatabase:
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=schema)
+            list(self._inspector.get_table_names(schema=schema))
             + (self._inspector.get_view_names(schema=schema) if view_support else [])
         )
 
@@ -139,6 +150,14 @@ class SQLDatabase:
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     @classmethod
+    @deprecated(
+        "0.3.18",
+        message="For performing structured retrieval using Databricks SQL, "
+        "see the latest best practices and recommended APIs at "
+        "https://docs.unitycatalog.io/ai/integrations/langchain/ "  # noqa: E501
+        "instead",
+        removal="1.0",
+    )
     def from_databricks(
         cls,
         catalog: str,
@@ -455,6 +474,11 @@ class SQLDatabase:
                     connection.exec_driver_sql(
                         "SET search_path TO %s",
                         (self._schema,),
+                        execution_options=execution_options,
+                    )
+                elif self.dialect == "hana":
+                    connection.exec_driver_sql(
+                        f"SET SCHEMA {sanitize_schema(self._schema)}",
                         execution_options=execution_options,
                     )
 

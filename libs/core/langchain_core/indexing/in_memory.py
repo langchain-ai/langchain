@@ -1,3 +1,6 @@
+"""In memory document index."""
+
+import operator
 import uuid
 from collections.abc import Sequence
 from typing import Any, Optional, cast
@@ -40,14 +43,15 @@ class InMemoryDocumentIndex(DocumentIndex):
                 id_ = item.id
 
             self.store[id_] = item_
-            ok_ids.append(cast(str, item_.id))
+            ok_ids.append(cast("str", item_.id))
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
     def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
         """Delete by ID."""
         if ids is None:
-            raise ValueError("IDs must be provided for deletion")
+            msg = "IDs must be provided for deletion"
+            raise ValueError(msg)
 
         ok_ids = []
 
@@ -62,13 +66,7 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
         """Get by ids."""
-        found_documents = []
-
-        for id_ in ids:
-            if id_ in self.store:
-                found_documents.append(self.store[id_])
-
-        return found_documents
+        return [self.store[id_] for id_ in ids if id_ in self.store]
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -79,5 +77,5 @@ class InMemoryDocumentIndex(DocumentIndex):
             count = document.page_content.count(query)
             counts_by_doc.append((document, count))
 
-        counts_by_doc.sort(key=lambda x: x[1], reverse=True)
+        counts_by_doc.sort(key=operator.itemgetter(1), reverse=True)
         return [doc.model_copy() for doc, count in counts_by_doc[: self.top_k]]

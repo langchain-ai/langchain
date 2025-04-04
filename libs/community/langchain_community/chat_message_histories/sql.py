@@ -177,9 +177,9 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             engine_args: Additional configuration for creating database engines.
             async_mode: Whether it is an asynchronous connection.
         """
-        assert not (
-            connection_string and connection
-        ), "connection_string and connection are mutually exclusive"
+        assert not (connection_string and connection), (
+            "connection_string and connection are mutually exclusive"
+        )
         if connection_string:
             global _warned_once_already
             if not _warned_once_already:

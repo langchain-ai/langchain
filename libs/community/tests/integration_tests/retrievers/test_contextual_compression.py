@@ -1,4 +1,3 @@
-import pytest
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 
@@ -27,7 +26,6 @@ def test_contextual_compression_retriever_get_relevant_docs() -> None:
     assert texts[-1] not in [d.page_content for d in actual]
 
 
-@pytest.mark.asyncio
 async def test_acontextual_compression_retriever_get_relevant_docs() -> None:
     """Test get_relevant_docs."""
     texts = [

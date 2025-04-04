@@ -40,6 +40,9 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_instance_url"] = jira_instance_url
 
+        if "jira_cloud" in values and values["jira_cloud"] is not None:
+            values["jira_cloud"] = str(values["jira_cloud"])
+
         jira_cloud_str = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
         jira_cloud = jira_cloud_str.lower() == "true"
         values["jira_cloud"] = jira_cloud
@@ -84,7 +87,10 @@ class JiraAPIWrapper(BaseModel):
             key = issue["key"]
             summary = issue["fields"]["summary"]
             created = issue["fields"]["created"][0:10]
-            priority = issue["fields"]["priority"]["name"]
+            if "priority" in issue["fields"]:
+                priority = issue["fields"]["priority"]["name"]
+            else:
+                priority = None
             status = issue["fields"]["status"]["name"]
             try:
                 assignee = issue["fields"]["assignee"]["displayName"]
@@ -121,7 +127,7 @@ class JiraAPIWrapper(BaseModel):
             key = project["key"]
             name = project["name"]
             type = project["projectTypeKey"]
-            style = project["style"]
+            style = project.get("style", None)
             parsed.append(
                 {"id": id, "key": key, "name": name, "type": type, "style": style}
             )

@@ -3,7 +3,7 @@
 import math
 import os
 import tempfile
-from typing import List
+from typing import List, cast
 
 import numpy as np
 import pytest
@@ -60,13 +60,13 @@ class RandomEmbeddings(Embeddings):
     """Fake embeddings with random vectors. For testing purposes."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [np.random.rand(100).tolist() for _ in texts]
+        return [cast(list[float], np.random.rand(100).tolist()) for _ in texts]
 
     def embed_query(self, text: str) -> List[float]:
-        return np.random.rand(100).tolist()
+        return cast(list[float], np.random.rand(100).tolist())
 
     def embed_image(self, uris: List[str]) -> List[List[float]]:
-        return [np.random.rand(100).tolist() for _ in uris]
+        return [cast(list[float], np.random.rand(100).tolist()) for _ in uris]
 
 
 class IncrementalEmbeddings(Embeddings):
@@ -557,7 +557,7 @@ def test_singestoredb_add_image2() -> None:
     table_name = "test_singlestoredb_add_images"
     drop(table_name)
     docsearch = SingleStoreDB(
-        OpenCLIPEmbeddings(),
+        OpenCLIPEmbeddings(),  # type: ignore[call-arg, call-arg, call-arg]
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )

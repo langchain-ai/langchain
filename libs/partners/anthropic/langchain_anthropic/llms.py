@@ -25,7 +25,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.utils import (
-    build_extra_kwargs,
+    _build_model_kwargs,
     from_env,
     secret_from_env,
 )
@@ -88,11 +88,8 @@ class _AnthropicCommon(BaseLanguageModel):
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: Dict) -> Any:
-        extra = values.get("model_kwargs", {})
         all_required_field_names = get_pydantic_field_names(cls)
-        values["model_kwargs"] = build_extra_kwargs(
-            extra, values, all_required_field_names
-        )
+        values = _build_model_kwargs(values, all_required_field_names)
         return values
 
     @model_validator(mode="after")
@@ -112,7 +109,6 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         self.HUMAN_PROMPT = anthropic.HUMAN_PROMPT
         self.AI_PROMPT = anthropic.AI_PROMPT
-        self.count_tokens = self.client.count_tokens
         return self
 
     @property
@@ -378,12 +374,14 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        if not self.count_tokens:
-            raise NameError("Please ensure the anthropic package is loaded")
-        return self.count_tokens(text)
+        raise NotImplementedError(
+            "Anthropic's legacy count_tokens method was removed in anthropic 0.39.0 "
+            "and langchain-anthropic 0.3.0. Please use "
+            "ChatAnthropic.get_num_tokens_from_messages instead."
+        )
 
 
-@deprecated(since="0.1.0", removal="0.3.0", alternative="AnthropicLLM")
+@deprecated(since="0.1.0", removal="1.0.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
     """Anthropic large language model."""
 

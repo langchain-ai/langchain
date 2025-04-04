@@ -6,7 +6,6 @@ import logging
 import sys
 import traceback
 from abc import ABC, abstractmethod
-from collections.abc import Coroutine, Sequence
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
@@ -16,13 +15,9 @@ from typing import (
     Union,
     cast,
 )
-from uuid import UUID
-
-from tenacity import RetryCallState
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -32,7 +27,13 @@ from langchain_core.outputs import (
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine, Sequence
+    from uuid import UUID
+
+    from tenacity import RetryCallState
+
     from langchain_core.documents import Document
+    from langchain_core.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,7 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 
 class _TracerCore(ABC):
-    """
-    Abstract base class for tracers.
+    """Abstract base class for tracers.
 
     This class provides common methods, and reusable methods for tracers.
     """
@@ -118,9 +118,10 @@ class _TracerCore(ABC):
                     self._add_child_run(parent_run, run)
             else:
                 if self.log_missing_parent:
-                    logger.warning(
-                        f"Parent run {run.parent_run_id} not found for run {run.id}."
-                        " Treating as a root run."
+                    logger.debug(
+                        "Parent run %s not found for run %s. Treating as a root run.",
+                        run.parent_run_id,
+                        run.id,
                     )
                 run.parent_run_id = None
                 run.trace_id = run.id
@@ -137,17 +138,19 @@ class _TracerCore(ABC):
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:
-            raise TracerException(f"No indexed run ID {run_id}.") from exc
+            msg = f"No indexed run ID {run_id}."
+            raise TracerException(msg) from exc
 
         if isinstance(run_type, str):
             run_types: Union[set[str], None] = {run_type}
         else:
             run_types = run_type
         if run_types is not None and run.run_type not in run_types:
-            raise TracerException(
+            msg = (
                 f"Found {run.run_type} run at ID {run_id}, "
                 f"but expected {run_types} run."
             )
+            raise TracerException(msg)
         return run
 
     def _create_chat_model_run(
@@ -170,10 +173,11 @@ class _TracerCore(ABC):
             # This can eventually be cleaned up by writing a "modern" tracer
             # that has all the updated schema changes corresponding to
             # the "streaming_events" format.
-            raise NotImplementedError(
+            msg = (
                 f"Chat model tracing is not supported in "
                 f"for {self._schema_format} format."
             )
+            raise NotImplementedError(msg)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -230,9 +234,7 @@ class _TracerCore(ABC):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        """Append token event to LLM run and return the run."""
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: dict[str, Any] = {"token": token}
         if chunk:
@@ -284,16 +286,27 @@ class _TracerCore(ABC):
                 output_generation = llm_run.outputs["generations"][i][j]
                 if "message" in output_generation:
                     output_generation["message"] = dumpd(
-                        cast(ChatGeneration, generation).message
+                        cast("ChatGeneration", generation).message
                     )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
         return llm_run
 
-    def _errored_llm_run(self, error: BaseException, run_id: UUID) -> Run:
+    def _errored_llm_run(
+        self, error: BaseException, run_id: UUID, response: Optional[LLMResult] = None
+    ) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.error = self._get_stacktrace(error)
+        if response:
+            llm_run.outputs = response.model_dump()
+            for i, generations in enumerate(response.generations):
+                for j, generation in enumerate(generations):
+                    output_generation = llm_run.outputs["generations"][i][j]
+                    if "message" in output_generation:
+                        output_generation["message"] = dumpd(
+                            cast("ChatGeneration", generation).message
+                        )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
@@ -333,23 +346,23 @@ class _TracerCore(ABC):
         """Get the inputs for a chain run."""
         if self._schema_format in ("original", "original+chat"):
             return inputs if isinstance(inputs, dict) else {"input": inputs}
-        elif self._schema_format == "streaming_events":
+        if self._schema_format == "streaming_events":
             return {
                 "input": inputs,
             }
-        else:
-            raise ValueError(f"Invalid format: {self._schema_format}")
+        msg = f"Invalid format: {self._schema_format}"
+        raise ValueError(msg)
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
         if self._schema_format in ("original", "original+chat"):
             return outputs if isinstance(outputs, dict) else {"output": outputs}
-        elif self._schema_format == "streaming_events":
+        if self._schema_format == "streaming_events":
             return {
                 "output": outputs,
             }
-        else:
-            raise ValueError(f"Invalid format: {self._schema_format}")
+        msg = f"Invalid format: {self._schema_format}"
+        raise ValueError(msg)
 
     def _complete_chain_run(
         self,
@@ -404,7 +417,8 @@ class _TracerCore(ABC):
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
         else:
-            raise AssertionError(f"Invalid format: {self._schema_format}")
+            msg = f"Invalid format: {self._schema_format}"
+            raise AssertionError(msg)
 
         return Run(
             id=run_id,

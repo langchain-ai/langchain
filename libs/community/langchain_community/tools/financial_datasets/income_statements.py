@@ -20,11 +20,11 @@ class IncomeStatementsSchema(BaseModel):
         "Default is 'annual'.",
     )
     limit: int = Field(
-        description="The number of income statements to return. " "Default is 10.",
+        description="The number of income statements to return. Default is 10.",
     )
 
 
-class IncomeStatements(BaseTool):
+class IncomeStatements(BaseTool):  # type: ignore[override, override]
     """
     Tool that gets income statements for a given ticker over a given period.
     """

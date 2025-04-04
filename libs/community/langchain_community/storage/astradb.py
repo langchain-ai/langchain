@@ -70,7 +70,10 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
         await self.astra_env.aensure_db_setup()
         for k, v in key_value_pairs:
             await self.async_collection.upsert(
-                {"_id": k, "value": self.encode_value(v)}
+                {
+                    "_id": k,
+                    "value": self.encode_value(v),
+                }
             )
 
     def mdelete(self, keys: Sequence[str]) -> None:

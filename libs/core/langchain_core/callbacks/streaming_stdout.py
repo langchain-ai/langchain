@@ -112,7 +112,6 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
             action (AgentAction): The agent action.
             **kwargs (Any): Additional keyword arguments.
         """
-        pass
 
     def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running.

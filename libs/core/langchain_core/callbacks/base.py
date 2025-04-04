@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
-from uuid import UUID
-
-from tenacity import RetryCallState
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from uuid import UUID
+
+    from tenacity import RetryCallState
+
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
@@ -131,7 +132,8 @@ class ChainManagerMixin:
             outputs (Dict[str, Any]): The outputs of the chain.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_chain_error(
         self,
@@ -147,7 +149,8 @@ class ChainManagerMixin:
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_agent_action(
         self,
@@ -163,7 +166,8 @@ class ChainManagerMixin:
             action (AgentAction): The agent action.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_agent_finish(
         self,
@@ -179,7 +183,8 @@ class ChainManagerMixin:
             finish (AgentFinish): The agent finish.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class ToolManagerMixin:
@@ -199,7 +204,8 @@ class ToolManagerMixin:
             output (Any): The output of the tool.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_tool_error(
         self,
@@ -215,7 +221,8 @@ class ToolManagerMixin:
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class CallbackManagerMixin:
@@ -275,9 +282,8 @@ class CallbackManagerMixin:
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        )
+        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        raise NotImplementedError(msg)
 
     def on_retriever_start(
         self,
@@ -523,9 +529,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not implement `on_chat_model_start`"
-        )
+        msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
+        raise NotImplementedError(msg)
 
     async def on_llm_new_token(
         self,
@@ -826,7 +831,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             tags (Optional[List[str]]): The tags.
-            kwargs (Any): Additional keyword arguments."""
+            kwargs (Any): Additional keyword arguments.
+        """
 
     async def on_retriever_error(
         self,
@@ -901,6 +907,8 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_tags (Optional[List[str]]): The inheritable tags.
                 Default is None.
             metadata (Optional[Dict[str, Any]]): The metadata. Default is None.
+            inheritable_metadata (Optional[Dict[str, Any]]): The inheritable metadata.
+                Default is None.
         """
         self.handlers: list[BaseCallbackHandler] = handlers
         self.inheritable_handlers: list[BaseCallbackHandler] = (

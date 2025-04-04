@@ -109,7 +109,7 @@ def test_visit_structured_query_with_one_arg_filter() -> None:
         filter=comp,
     )
 
-    expected = (query, {"filters": {"country": "France"}})
+    expected = (query, {"filter": {"country": "France"}})
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -134,7 +134,7 @@ def test_visit_structured_query_with_multiple_arg_filter_and_operator() -> None:
 
     expected = (
         query,
-        {"filters": {"country": "France", "year >=": 1888, "year <=": 1900}},
+        {"filter": {"country": "France", "year >=": 1888, "year <=": 1900}},
     )
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)

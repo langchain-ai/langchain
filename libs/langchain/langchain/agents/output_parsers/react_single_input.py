@@ -9,7 +9,7 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
-    "Invalid Format: Missing 'Action:' after 'Thought:"
+    "Invalid Format: Missing 'Action:' after 'Thought:'"
 )
 MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = (
     "Invalid Format: Missing 'Action Input:' after 'Action:'"

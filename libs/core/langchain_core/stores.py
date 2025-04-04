@@ -258,7 +258,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         if prefix is None:
             yield from self.store.keys()
         else:
-            for key in self.store.keys():
+            for key in self.store:
                 if key.startswith(prefix):
                     yield key
 
@@ -272,10 +272,10 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
             AsyncIterator[str]: An async iterator over keys that match the given prefix.
         """
         if prefix is None:
-            for key in self.store.keys():
+            for key in self.store:
                 yield key
         else:
-            for key in self.store.keys():
+            for key in self.store:
                 if key.startswith(prefix):
                     yield key
 

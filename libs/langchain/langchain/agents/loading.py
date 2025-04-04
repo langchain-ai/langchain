@@ -58,8 +58,7 @@ def load_agent_from_config(
     if load_from_tools:
         if llm is None:
             raise ValueError(
-                "If `load_from_llm_and_tools` is set to True, "
-                "then LLM must be provided"
+                "If `load_from_llm_and_tools` is set to True, then LLM must be provided"
             )
         if tools is None:
             raise ValueError(

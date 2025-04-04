@@ -15,7 +15,6 @@
       }),
       'max_retries': 2,
       'max_tokens': 100,
-      'n': 1,
       'openai_api_key': dict({
         'id': list([
           'AZURE_OPENAI_API_KEY',

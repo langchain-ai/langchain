@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class GPT4AllEmbeddings(BaseModel, Embeddings):
@@ -27,6 +27,8 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
     device: Optional[str] = "cpu"
     gpt4all_kwargs: Optional[dict] = {}
     client: Any  #: :meta private:
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @model_validator(mode="before")
     @classmethod

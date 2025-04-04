@@ -1,3 +1,5 @@
+"""Runnable that retries a Runnable if it fails."""
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,6 +18,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import override
 
 from langchain_core.runnables.base import Input, Output, RunnableBindingBase
 from langchain_core.runnables.config import RunnableConfig, patch_config
@@ -43,7 +46,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     way to use it is through the `.with_retry()` method on all Runnables.
 
     Example:
-
     Here's an example that uses a RunnableLambda to raise an exception
 
         .. code-block:: python
@@ -96,10 +98,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.
-    
+
     In general you should only retry on exceptions that are likely to be
     transient, such as network errors.
-    
+
     Good exceptions to retry are all server errors (5xx) and selected client
     errors (4xx) such as 429 Too Many Requests.
     """
@@ -110,14 +112,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     max_attempt_number: int = 3
     """The maximum number of attempts to retry the Runnable."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
     @property
     def _kwargs_retrying(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = dict()
+        kwargs: dict[str, Any] = {}
 
         if self.max_attempt_number:
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
@@ -136,8 +133,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     def _async_retrying(self, **kwargs: Any) -> AsyncRetrying:
         return AsyncRetrying(**self._kwargs_retrying, **kwargs)
 
+    @staticmethod
     def _patch_config(
-        self,
         config: RunnableConfig,
         run_manager: "T",
         retry_state: RetryCallState,
@@ -174,6 +171,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -197,6 +195,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 attempt.retry_state.set_result(result)
         return result
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -246,16 +245,17 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs
 
+    @override
     def batch(
         self,
         inputs: list[Input],
@@ -312,16 +312,17 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
             if result is not_set:
-                result = cast(list[Output], [e] * len(inputs))
+                result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Union[Output, Exception]] = []
-        for idx, _ in enumerate(inputs):
+        for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs
 
+    @override
     async def abatch(
         self,
         inputs: list[Input],

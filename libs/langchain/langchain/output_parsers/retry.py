@@ -57,7 +57,10 @@ class RetryOutputParser(BaseOutputParser[T]):
     parser: Annotated[BaseOutputParser[T], SkipValidation()]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
-    retry_chain: Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any]
+    retry_chain: Annotated[
+        Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any],
+        SkipValidation(),
+    ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
@@ -187,8 +190,11 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     parser: Annotated[BaseOutputParser[T], SkipValidation()]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
-    retry_chain: Union[
-        RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str], Any
+    retry_chain: Annotated[
+        Union[
+            RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str], Any
+        ],
+        SkipValidation(),
     ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1

@@ -211,9 +211,9 @@ class LLMThought:
     def complete(self, final_label: Optional[str] = None) -> None:
         """Finish the thought."""
         if final_label is None and self._state == LLMThoughtState.RUNNING_TOOL:
-            assert (
-                self._last_tool is not None
-            ), "_last_tool should never be null when _state == RUNNING_TOOL"
+            assert self._last_tool is not None, (
+                "_last_tool should never be null when _state == RUNNING_TOOL"
+            )
             final_label = self._labeler.get_tool_label(
                 self._last_tool, is_complete=True
             )

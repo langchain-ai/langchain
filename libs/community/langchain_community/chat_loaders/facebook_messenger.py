@@ -37,7 +37,7 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
             if "content" not in m:
                 logger.info(
                     f"""Skipping Message No.
-                    {index+1} as no content is present in the message"""
+                    {index + 1} as no content is present in the message"""
                 )
                 continue
             messages.append(

@@ -23,9 +23,9 @@ def test_imessage_chat_loader_upgrade_osx11() -> None:
 
     # time parsed correctly
     expected_message_time = 720845450393148160
-    assert (
-        first_message.additional_kwargs["message_time"] == expected_message_time
-    ), "unexpected time"
+    assert first_message.additional_kwargs["message_time"] == expected_message_time, (
+        "unexpected time"
+    )
 
     expected_parsed_time = datetime.datetime(2023, 11, 5, 2, 50, 50, 393148)
     assert (
@@ -34,9 +34,9 @@ def test_imessage_chat_loader_upgrade_osx11() -> None:
     ), "date failed to parse"
 
     # is_from_me parsed correctly
-    assert (
-        first_message.additional_kwargs["is_from_me"] is False
-    ), "is_from_me failed to parse"
+    assert first_message.additional_kwargs["is_from_me"] is False, (
+        "is_from_me failed to parse"
+    )
 
 
 def test_imessage_chat_loader() -> None:
@@ -57,9 +57,9 @@ def test_imessage_chat_loader() -> None:
 
     # time parsed correctly
     expected_message_time = 720845450393148160
-    assert (
-        first_message.additional_kwargs["message_time"] == expected_message_time
-    ), "unexpected time"
+    assert first_message.additional_kwargs["message_time"] == expected_message_time, (
+        "unexpected time"
+    )
 
     expected_parsed_time = datetime.datetime(2023, 11, 5, 2, 50, 50, 393148)
     assert (
@@ -68,14 +68,14 @@ def test_imessage_chat_loader() -> None:
     ), "date failed to parse"
 
     # is_from_me parsed correctly
-    assert (
-        first_message.additional_kwargs["is_from_me"] is False
-    ), "is_from_me failed to parse"
+    assert first_message.additional_kwargs["is_from_me"] is False, (
+        "is_from_me failed to parse"
+    )
 
     # short message content in attributedBody field
-    assert (
-        "John is the almighty" in chat_sessions[0]["messages"][16].content
-    ), "Chat content mismatch"
+    assert "John is the almighty" in chat_sessions[0]["messages"][16].content, (
+        "Chat content mismatch"
+    )
 
     # long message content in attributedBody field
     long_msg = "aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbba"

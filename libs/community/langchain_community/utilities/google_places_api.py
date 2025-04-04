@@ -84,7 +84,7 @@ class GooglePlacesAPIWrapper(BaseModel):
             if details is not None:
                 places.append(details)
 
-        return "\n".join([f"{i+1}. {item}" for i, item in enumerate(places)])
+        return "\n".join([f"{i + 1}. {item}" for i, item in enumerate(places)])
 
     def fetch_place_details(self, place_id: str) -> Optional[str]:
         try:

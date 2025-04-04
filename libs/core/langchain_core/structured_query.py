@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class Visitor(ABC):
@@ -19,18 +21,26 @@ class Visitor(ABC):
     """Allowed operators for the visitor."""
 
     def _validate_func(self, func: Union[Operator, Comparator]) -> None:
-        if isinstance(func, Operator) and self.allowed_operators is not None:
-            if func not in self.allowed_operators:
-                raise ValueError(
-                    f"Received disallowed operator {func}. Allowed "
-                    f"comparators are {self.allowed_operators}"
-                )
-        if isinstance(func, Comparator) and self.allowed_comparators is not None:
-            if func not in self.allowed_comparators:
-                raise ValueError(
-                    f"Received disallowed comparator {func}. Allowed "
-                    f"comparators are {self.allowed_comparators}"
-                )
+        if (
+            isinstance(func, Operator)
+            and self.allowed_operators is not None
+            and func not in self.allowed_operators
+        ):
+            msg = (
+                f"Received disallowed operator {func}. Allowed "
+                f"comparators are {self.allowed_operators}"
+            )
+            raise ValueError(msg)
+        if (
+            isinstance(func, Comparator)
+            and self.allowed_comparators is not None
+            and func not in self.allowed_comparators
+        ):
+            msg = (
+                f"Received disallowed comparator {func}. Allowed "
+                f"comparators are {self.allowed_comparators}"
+            )
+            raise ValueError(msg)
 
     @abstractmethod
     def visit_operation(self, operation: Operation) -> Any:
@@ -113,21 +123,25 @@ class FilterDirective(Expr, ABC):
 
 
 class Comparison(FilterDirective):
-    """Comparison to a value.
-
-    Parameters:
-        comparator: The comparator to use.
-        attribute: The attribute to compare.
-        value: The value to compare to.
-    """
+    """Comparison to a value."""
 
     comparator: Comparator
+    """The comparator to use."""
     attribute: str
+    """The attribute to compare."""
     value: Any
+    """The value to compare to."""
 
     def __init__(
         self, comparator: Comparator, attribute: str, value: Any, **kwargs: Any
     ) -> None:
+        """Create a Comparison.
+
+        Args:
+            comparator: The comparator to use.
+            attribute: The attribute to compare.
+            value: The value to compare to.
+        """
         # super exists from BaseModel
         super().__init__(  # type: ignore[call-arg]
             comparator=comparator, attribute=attribute, value=value, **kwargs
@@ -135,19 +149,22 @@ class Comparison(FilterDirective):
 
 
 class Operation(FilterDirective):
-    """Logical operation over other directives.
-
-    Parameters:
-        operator: The operator to use.
-        arguments: The arguments to the operator.
-    """
+    """Logical operation over other directives."""
 
     operator: Operator
+    """The operator to use."""
     arguments: list[FilterDirective]
+    """The arguments to the operator."""
 
     def __init__(
         self, operator: Operator, arguments: list[FilterDirective], **kwargs: Any
     ) -> None:
+        """Create an Operation.
+
+        Args:
+            operator: The operator to use.
+            arguments: The arguments to the operator.
+        """
         # super exists from BaseModel
         super().__init__(  # type: ignore[call-arg]
             operator=operator, arguments=arguments, **kwargs
@@ -171,6 +188,13 @@ class StructuredQuery(Expr):
         limit: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
+        """Create a StructuredQuery.
+
+        Args:
+            query: The query string.
+            filter: The filtering expression.
+            limit: The limit on the number of results.
+        """
         # super exists from BaseModel
         super().__init__(  # type: ignore[call-arg]
             query=query, filter=filter, limit=limit, **kwargs

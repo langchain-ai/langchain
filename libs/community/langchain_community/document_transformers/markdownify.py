@@ -74,10 +74,3 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
             )
 
         return converted_documents
-
-    async def atransform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
-    ) -> Sequence[Document]:
-        raise NotImplementedError

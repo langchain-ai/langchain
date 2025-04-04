@@ -75,12 +75,12 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
             from langchain_community.chat_models import FriendliChat
 
             chat = Friendli(
-                model="llama-2-13b-chat", friendli_token="YOUR FRIENDLI TOKEN"
+                model="meta-llama-3.1-8b-instruct", friendli_token="YOUR FRIENDLI TOKEN"
             )
             chat.invoke("What is generative AI?")
     """
 
-    model: str = "llama-2-13b-chat"
+    model: str = "meta-llama-3.1-8b-instruct"
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

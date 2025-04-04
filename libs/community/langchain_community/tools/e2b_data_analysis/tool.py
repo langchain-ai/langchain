@@ -93,7 +93,7 @@ class E2BDataAnalysisToolArguments(BaseModel):
     )
 
 
-class E2BDataAnalysisTool(BaseTool):
+class E2BDataAnalysisTool(BaseTool):  # type: ignore[override, override]
     """Tool for running python code in a sandboxed environment for data analysis."""
 
     name: str = "e2b_data_analysis"

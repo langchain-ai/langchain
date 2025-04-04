@@ -120,6 +120,7 @@ class QuantizedBgeEmbeddings(BaseModel, Embeddings):
 
     model_config = ConfigDict(
         extra="allow",
+        protected_namespaces=(),
     )
 
     def _embed(self, inputs: Any) -> Any:

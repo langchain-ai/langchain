@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import (
     Any,
     AsyncIterator,
@@ -96,7 +97,10 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
 
     """
     name = tool_call["function"].get("name", "")
-    args = json.loads(tool_call["function"]["arguments"])
+    try:
+        args = json.loads(tool_call["function"]["arguments"])
+    except (JSONDecodeError, TypeError):
+        args = {}
     id = tool_call.get("id")
     return create_tool_call(name=name, args=args, id=id)
 
@@ -144,13 +148,12 @@ def _convert_delta_to_message_chunk(
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
+    tool_calls = _dict.get("tool_calls") or []
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        tool_calls = [
-            _parse_tool_calling(tool_call) for tool_call in _dict.get("tool_calls", [])
-        ]
+        tool_calls = [_parse_tool_calling(tool_call) for tool_call in tool_calls]
         return AIMessageChunk(content=content, tool_calls=tool_calls)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -204,12 +207,17 @@ class ChatDeepInfra(BaseChatModel):
     # client: Any  #: :meta private:
     model_name: str = Field(default="meta-llama/Llama-2-70b-chat-hf", alias="model")
     """Model name to use."""
+
+    url: str = "https://api.deepinfra.com/v1/openai/chat/completions"
+    """URL to use for the API call."""
+
     deepinfra_api_token: Optional[str] = None
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for API call not explicitly specified."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
@@ -283,7 +291,7 @@ class ChatDeepInfra(BaseChatModel):
                 async with request.apost(
                     url=self._url(), data=self._body(kwargs), timeout=request_timeout
                 ) as response:
-                    self._handle_status(response.status, response.text)
+                    self._handle_status(response.status, await response.text())
                     return await response.json()
             except Exception as e:
                 print("EX", e)  # noqa: T201
@@ -461,12 +469,11 @@ class ChatDeepInfra(BaseChatModel):
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:
             raise Exception(
-                f"DeepInfra returned an unexpected response with status "
-                f"{code}: {text}"
+                f"DeepInfra returned an unexpected response with status {code}: {text}"
             )
 
     def _url(self) -> str:
-        return "https://stage.api.deepinfra.com/v1/openai/chat/completions"
+        return self.url
 
     def _headers(self) -> Dict:
         return {

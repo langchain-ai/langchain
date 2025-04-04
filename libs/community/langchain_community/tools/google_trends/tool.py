@@ -8,7 +8,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
 
 
-class GoogleTrendsQueryRun(BaseTool):
+class GoogleTrendsQueryRun(BaseTool):  # type: ignore[override]
     """Tool that queries the Google trends API."""
 
     name: str = "google_trends"
