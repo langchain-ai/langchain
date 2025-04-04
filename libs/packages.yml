@@ -568,3 +568,11 @@ packages:
 - name: langchain-oxylabs
   path: .
   repo: oxylabs/langchain-oxylabs
+- name: langchain-perplexity
+  path: libs/partners/perplexity
+  repo: langchain-ai/langchain
+- name: langchain-runpod
+  repo: runpod/langchain-runpod
+  path: .
+  name_title: RunPod
+  provider_page: runpod
