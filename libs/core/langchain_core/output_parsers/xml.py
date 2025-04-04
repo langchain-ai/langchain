@@ -49,7 +49,7 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                import defusedxml  # type: ignore
+                import defusedxml  # type: ignore[import-untyped]
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "
@@ -205,7 +205,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree  # type: ignore
+                from defusedxml import ElementTree
             except ImportError as e:
                 msg = (
                     "defusedxml is not installed. "

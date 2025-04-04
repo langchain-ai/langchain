@@ -200,7 +200,7 @@ def deprecated(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__init__  # type: ignore
+            wrapped = obj.__init__  # type: ignore[misc]
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 

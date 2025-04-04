@@ -1116,7 +1116,7 @@ class Runnable(Generic[Input, Output], ABC):
         # Mypy isn't resolving the overloads here
         # Likely an issue b/c `self` is being passed through
         # and it's can't map it to Runnable[Input,Output]?
-        async for item in _astream_log_implementation(  # type: ignore
+        async for item in _astream_log_implementation(  # type: ignore[call-overload]
             self,
             input,
             config,
@@ -1982,7 +1982,7 @@ class Runnable(Generic[Input, Output], ABC):
                     func, input, config, run_manager, **kwargs
                 )
                 if asyncio_accepts_context():
-                    output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
+                    output: Output = await asyncio.create_task(coro, context=context)  # type: ignore[arg-type]
                 else:
                     output = await coro
         except BaseException as e:
@@ -2208,14 +2208,14 @@ class Runnable(Generic[Input, Output], ABC):
                     )
                 try:
                     while True:
-                        chunk: Output = context.run(next, iterator)  # type: ignore
+                        chunk: Output = context.run(next, iterator)
                         yield chunk
                         if final_output_supported:
                             if final_output is None:
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -2229,7 +2229,7 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input = ichunk
                         else:
                             try:
-                                final_input = final_input + ichunk  # type: ignore
+                                final_input = final_input + ichunk  # type: ignore[operator]
                             except TypeError:
                                 final_input = ichunk
                                 final_input_supported = False
@@ -2328,7 +2328,7 @@ class Runnable(Generic[Input, Output], ABC):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = chunk
                                     final_output_supported = False
@@ -3086,7 +3086,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     else:
                         part = functools.partial(step.ainvoke, input, config)
                     if asyncio_accepts_context():
-                        input = await asyncio.create_task(part(), context=context)  # type: ignore
+                        input = await asyncio.create_task(part(), context=context)
                     else:
                         input = await asyncio.create_task(part())
             # finish the root run
@@ -3809,7 +3809,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             )
             with set_config_context(child_config) as context:
                 if asyncio_accepts_context():
-                    return await asyncio.create_task(  # type: ignore
+                    return await asyncio.create_task(
                         step.ainvoke(input, child_config), context=context
                     )
                 return await asyncio.create_task(step.ainvoke(input, child_config))
@@ -5057,7 +5057,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         return create_model_v2(
             self.get_name("Input"),
             root=(
-                list[self.bound.get_input_schema(config)],  # type: ignore
+                list[self.bound.get_input_schema(config)],  # type: ignore[misc]
                 None,
             ),
             # create model needs access to appropriate type annotations to be
@@ -5292,7 +5292,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     kwargs.
     """
 
-    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore
+    config: RunnableConfig = Field(default_factory=RunnableConfig)  # type: ignore[arg-type]
     """The config to bind to the underlying Runnable."""
 
     config_factories: list[Callable[[RunnableConfig], RunnableConfig]] = Field(

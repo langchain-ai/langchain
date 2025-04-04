@@ -142,7 +142,7 @@ def test_misannotated_base_tool_raises_error() -> None:
         class _MisAnnotatedTool(BaseTool):
             name: str = "structured_api"
             # This would silently be ignored without the custom metaclass
-            args_schema: BaseModel = _MockSchema  # type: ignore
+            args_schema: BaseModel = _MockSchema  # type: ignore[assignment]
             description: str = "A Structured Tool"
 
             def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
@@ -498,7 +498,7 @@ def test_structured_tool_lambda_multi_args_schema() -> None:
     tool = StructuredTool.from_function(
         name="tool",
         description="A tool",
-        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",  # type: ignore
+        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",
     )
     assert tool.args_schema is not None
     expected_args = {
@@ -1014,10 +1014,10 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
         }
 
     if expected is not None:
-        assert foo.invoke(inputs) == expected  # type: ignore
+        assert foo.invoke(inputs) == expected
     else:
         with pytest.raises(ValidationError):
-            foo.invoke(inputs)  # type: ignore
+            foo.invoke(inputs)
 
 
 def test_tool_pass_context() -> None:
@@ -1029,7 +1029,7 @@ def test_tool_pass_context() -> None:
         assert bar == "baz"
         return bar
 
-    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
 
 @pytest.mark.skipif(
@@ -1046,7 +1046,7 @@ async def test_async_tool_pass_context() -> None:
         return bar
 
     assert (
-        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
     )
 
 
@@ -1146,7 +1146,7 @@ def test_tool_description() -> None:
         return bar
 
     foo1 = tool(foo)
-    assert foo1.description == "The foo."  # type: ignore
+    assert foo1.description == "The foo."
 
     foo2 = StructuredTool.from_function(foo)
     assert foo2.description == "The foo."
@@ -1163,7 +1163,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = _schema(foo1.args_schema)  # type: ignore
+    args_schema = _schema(foo1.args_schema)
     assert args_schema == {
         "title": "foo",
         "type": "object",
@@ -1177,7 +1177,7 @@ def test_tool_arg_descriptions() -> None:
 
     # Test parses docstring
     foo2 = tool(foo, parse_docstring=True)
-    args_schema = _schema(foo2.args_schema)  # type: ignore
+    args_schema = _schema(foo2.args_schema)
     expected = {
         "title": "foo",
         "description": "The foo.",
@@ -1203,7 +1203,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     as_tool = tool(foo3, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
@@ -1214,7 +1214,7 @@ def test_tool_arg_descriptions() -> None:
         return "bar"
 
     as_tool = tool(foo4, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == expected["description"]
 
     def foo5(run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
@@ -1222,7 +1222,7 @@ def test_tool_arg_descriptions() -> None:
         return "bar"
 
     as_tool = tool(foo5, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == expected["description"]
 
 
@@ -1249,7 +1249,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo, parse_docstring=True)
-    args_schema = _schema(as_tool.args_schema)  # type: ignore
+    args_schema = _schema(as_tool.args_schema)
     assert args_schema["description"] == "The foo."
     assert args_schema["properties"] == expected["properties"]
 
@@ -1266,7 +1266,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo2, parse_docstring=True)
-    args_schema2 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema2 = _schema(as_tool.args_schema)
     assert args_schema2["description"] == "The foo. Additional description here."
     assert args_schema2["properties"] == expected["properties"]
 
@@ -1286,7 +1286,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo3, parse_docstring=True)
-    args_schema3 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema3 = _schema(as_tool.args_schema)
     args_schema3["title"] = "foo2"
     assert args_schema2 == args_schema3
 
@@ -1300,7 +1300,7 @@ def test_docstring_parsing() -> None:
         return bar
 
     as_tool = tool(foo4, parse_docstring=True)
-    args_schema4 = _schema(as_tool.args_schema)  # type: ignore
+    args_schema4 = _schema(as_tool.args_schema)
     assert args_schema4["description"] == "The foo."
     assert args_schema4["properties"] == {
         "bar": {"description": "The bar.", "title": "Bar", "type": "string"}
@@ -1353,7 +1353,7 @@ def test_tool_annotated_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = _schema(foo1.args_schema)  # type: ignore
+    args_schema = _schema(foo1.args_schema)
     assert args_schema == {
         "title": "foo",
         "type": "object",
@@ -2304,14 +2304,14 @@ def test_injected_arg_with_complex_type() -> None:
         """Tool that has an injected tool arg."""
         return foo.value
 
-    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"  # type: ignore
+    assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
 
 
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
 
     assert foo.invoke(
         {
@@ -2320,7 +2320,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
 
     with pytest.raises(
         ValueError,
@@ -2332,7 +2332,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
 
     assert foo2.invoke(
         {
@@ -2341,14 +2341,14 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
 
 
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
 
     with pytest.raises(ValueError, match="1 validation error for foo"):
         foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
@@ -2360,7 +2360,7 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore
+    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
 
 
 def test_tool_return_output_mixin() -> None:

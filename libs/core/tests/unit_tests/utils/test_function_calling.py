@@ -366,7 +366,7 @@ def test_convert_to_openai_function(
         dummy_extensions_typed_dict,
         dummy_extensions_typed_dict_docstring,
     ):
-        actual = convert_to_openai_function(fn)  # type: ignore
+        actual = convert_to_openai_function(fn)
         assert actual == expected
 
     # Test runnables
@@ -749,7 +749,7 @@ def test__convert_typed_dict_to_openai_function(
     class SubTool(typed_dict):
         """Subtool docstring."""
 
-        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
+        args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722
 
     class Tool(typed_dict):
         """Docstring.
@@ -774,7 +774,7 @@ def test__convert_typed_dict_to_openai_function(
         arg12: annotated[dict[str, SubTool], ...]
         arg13: annotated[Mapping[str, SubTool], ...]
         arg14: annotated[MutableMapping[str, SubTool], ...]
-        arg15: annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
+        arg15: annotated[bool, False, "flag"]  # noqa: F821
 
     expected = {
         "name": "Tool",
@@ -1061,5 +1061,5 @@ def test_convert_to_json_schema(
         dummy_extensions_typed_dict,
         dummy_extensions_typed_dict_docstring,
     ):
-        actual = convert_to_json_schema(fn)  # type: ignore
+        actual = convert_to_json_schema(fn)
         assert actual == expected
