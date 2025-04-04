@@ -15,6 +15,7 @@ _SUPPORTED_PROVIDERS = {
     "mistralai": "langchain_mistralai",
     "ollama": "langchain_ollama",
     "openai": "langchain_openai",
+    "gigachat": "langchain_gigachat",
 }
 
 
@@ -214,6 +215,10 @@ def init_embeddings(
         from langchain_ollama import OllamaEmbeddings
 
         return OllamaEmbeddings(model=model_name, **kwargs)
+    elif provider == "gigachat":
+        from langchain_gigachat import GigaChatEmbeddings
+
+        return GigaChatEmbeddings(model=model_name, **kwargs)
     else:
         raise ValueError(
             f"Provider '{provider}' is not supported.\n"
