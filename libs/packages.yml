@@ -576,3 +576,6 @@ packages:
   path: .
   name_title: RunPod
   provider_page: runpod
+- name: langchain-mariadb
+  path: .
+  repo: mariadb-corporation/langchain-mariadb
