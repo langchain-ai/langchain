@@ -79,7 +79,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
     """`Cloudflare Workers AI` Chat large language models API.
 
     To use, you should have the
-    environment variables ``CLOUDFLARE_API_TOKEN`` and ``CLOUDFLARE_ACCOUNT_ID``
+    environment variables ``API_TOKEN`` and ``ACCOUNT_ID``
     set with your API token and account ID.
 
     Any parameters that are valid to be passed to the Cloudflare Workers AI API call
@@ -91,8 +91,8 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         .. code-block:: bash
 
             pip install -U langchain-cloudflare
-            export CLOUDFLARE_API_TOKEN="your-api-token"
-            export CLOUDFLARE_ACCOUNT_ID="your-account-id"
+            export API_TOKEN="your-api-token"
+            export ACCOUNT_ID="your-account-id"
 
     Key init args — completion params:
         model: str
@@ -113,10 +113,10 @@ class ChatCloudflareWorkersAI(BaseChatModel):
             Max number of retries.
         api_token: Optional[str]
             Cloudflare API token. If not passed in will be read
-            from env var CLOUDFLARE_API_TOKEN.
+            from env var API_TOKEN.
         account_id: Optional[str]
             Cloudflare account ID. If not passed in will be read
-            from env var CLOUDFLARE_ACCOUNT_ID.
+            from env var ACCOUNT_ID.
         base_url: Optional[str]
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
@@ -124,7 +124,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(alias="model")
+    model: str = Field(alias="model_name")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -132,18 +132,18 @@ class ChatCloudflareWorkersAI(BaseChatModel):
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
-    cloudflare_api_token: Optional[SecretStr] = Field(
-        alias="api_token",
-        default_factory=secret_from_env("CLOUDFLARE_API_TOKEN", default=None),
+    api_token: Optional[SecretStr] = Field(
+        alias="cloudflare_api_token",
+        default_factory=secret_from_env("API_TOKEN", default=None),
     )
-    """Automatically inferred from env var `CLOUDFLARE_API_TOKEN` if not provided."""
-    cloudflare_account_id: Optional[str] = Field(
-        alias="account_id",
-        default_factory=from_env("CLOUDFLARE_ACCOUNT_ID", default=None),
+    """Automatically inferred from env var `API_TOKEN` if not provided."""
+    account_id: Optional[str] = Field(
+        alias="cloudflare_account_id",
+        default_factory=from_env("ACCOUNT_ID", default=None),
     )
-    """Automatically inferred from env var `CLOUDFLARE_ACCOUNT_ID` if not provided."""
-    cloudflare_api_base: Optional[str] = Field(
-        alias="base_url", default_factory=from_env("CLOUDFLARE_API_BASE", default=None)
+    """Automatically inferred from env var `ACCOUNT_ID` if not provided."""
+    base_url: Optional[str] = Field(
+        alias="cloudflare_api_base", default_factory=from_env("BASE_URL", default=None)
     )
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
@@ -151,9 +151,9 @@ class ChatCloudflareWorkersAI(BaseChatModel):
     cloudflare_proxy: Optional[str] = Field(
         default_factory=from_env("CLOUDFLARE_PROXY", default=None)
     )
-    cloudflare_gateway: Optional[str] = Field(
-        alias="ai_gateway",
-        default_factory=from_env("CLOUDFLARE_AI_GATEWAY", default=None),
+    ai_gateway: Optional[str] = Field(
+        alias="cloudflare_ai_gateway",
+        default_factory=from_env("AI_GATEWAY", default=None),
     )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
@@ -218,18 +218,18 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
-        if not self.cloudflare_api_token:
+        if not self.api_token:
             raise ValueError(
                 "A Cloudflare API token must be provided either through "
                 "the api_token parameter or "
-                "CLOUDFLARE_API_TOKEN environment variable."
+                "API_TOKEN environment variable."
             )
 
-        if not self.cloudflare_account_id:
+        if not self.account_id:
             raise ValueError(
                 "A Cloudflare account ID must be provided either through "
                 "the account_id parameter or "
-                "CLOUDFLARE_ACCOUNT_ID environment variable."
+                "ACCOUNT_ID environment variable."
             )
 
         default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
@@ -241,16 +241,14 @@ class ChatCloudflareWorkersAI(BaseChatModel):
 
             # Determine the base URL based on whether
             # we're using AI Gateway or direct API
-            if self.cloudflare_gateway:
+            if self.ai_gateway:
                 base_url = (
                     f"https://gateway.ai.cloudflare.com/v1/"
-                    f"{self.cloudflare_account_id}/{self.cloudflare_gateway}"
+                    f"{self.account_id}/{self.ai_gateway}"
                 )
             else:
                 # Use the custom base_url if provided, otherwise use the default
-                base_url = (
-                    self.cloudflare_api_base or "https://api.cloudflare.com/client/v4"
-                )
+                base_url = self.base_url or "https://api.cloudflare.com/client/v4"
 
             # Configure the httpx client
             if not self.client:
@@ -258,8 +256,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                     base_url=base_url,
                     timeout=self.request_timeout,  # type: ignore
                     headers={
-                        "Authorization": f"Bearer "
-                        f"{self.cloudflare_api_token.get_secret_value()}",
+                        "Authorization": f"Bearer {self.api_token.get_secret_value()}",
                         **default_headers,
                     },
                 )
@@ -269,8 +266,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                     base_url=base_url,
                     timeout=self.request_timeout,  # type: ignore
                     headers={
-                        "Authorization": f"Bearer "
-                        f"{self.cloudflare_api_token.get_secret_value()}",
+                        "Authorization": f"Bearer {self.api_token.get_secret_value()}",
                         **default_headers,
                     },
                 )
@@ -288,12 +284,12 @@ class ChatCloudflareWorkersAI(BaseChatModel):
     #
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {"cloudflare_api_token": "CLOUDFLARE_API_TOKEN"}
+        return {"api_token": "API_TOKEN"}
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
-        return True
+        return False
 
     #
     # BaseChatModel method overrides
@@ -310,7 +306,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="cloudflare-workers-ai",
-            ls_model_name=self.model_name,
+            ls_model_name=self.model,
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -530,12 +526,12 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         }
 
         # Construct the API URL
-        if self.cloudflare_gateway:
+        if self.ai_gateway:
             # If using AI Gateway
-            api_url = f"workers-ai/run/{self.model_name}"
+            api_url = f"workers-ai/run/{self.model}"
         else:
             # If using direct API
-            api_url = f"accounts/{self.cloudflare_account_id}/ai/run/{self.model_name}"
+            api_url = f"accounts/{self.account_id}/ai/run/{self.model}"
 
         # Create the request payload
         payload = {"messages": message_dicts, **params}
@@ -567,10 +563,10 @@ class ChatCloudflareWorkersAI(BaseChatModel):
         }
 
         # Construct the Cloudflare Workers AI API URL
-        if self.cloudflare_gateway:
-            api_url = f"workers-ai/run/{self.model_name}"
+        if self.ai_gateway:
+            api_url = f"workers-ai/run/{self.model}"
         else:
-            api_url = f"accounts/{self.cloudflare_account_id}/ai/run/{self.model_name}"
+            api_url = f"accounts/{self.account_id}/ai/run/{self.model}"
 
         # Create the request payload
         payload = {"messages": message_dicts, **params}
@@ -731,7 +727,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
 
         llm_output = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
+            "model_name": self.model,
         }
 
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -749,7 +745,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
             params["stop"] = stop
 
         # Check if this is a Llama model
-        is_llama_model = "llama" in self.model_name.lower()
+        is_llama_model = "llama" in self.model.lower()
 
         # Convert messages to Cloudflare format
         cloudflare_messages = []
@@ -881,7 +877,7 @@ class ChatCloudflareWorkersAI(BaseChatModel):
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
 
     def bind_tools(
