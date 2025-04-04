@@ -1007,8 +1007,10 @@ class BaseCallbackManager(CallbackManagerMixin):
         Args:
             handler (BaseCallbackHandler): The handler to remove.
         """
-        self.handlers.remove(handler)
-        self.inheritable_handlers.remove(handler)
+        if handler in self.handlers:
+            self.handlers.remove(handler)
+        if handler in self.inheritable_handlers:
+            self.inheritable_handlers.remove(handler)
 
     def set_handlers(
         self, handlers: list[BaseCallbackHandler], inherit: bool = True

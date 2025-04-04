@@ -229,8 +229,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         llm_run = self._errored_llm_run(
-            error=error,
-            run_id=run_id,
+            error=error, run_id=run_id, response=kwargs.pop("response", None)
         )
         self._end_trace(llm_run)
         self._on_llm_error(llm_run)
