@@ -316,7 +316,9 @@ class SQLDatabase:
         """Information about all tables in the database."""
         return self.get_table_info()
 
-    def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
+    def get_table_info(
+        self, table_names: Optional[List[str]] = None, get_col_comments: bool = False
+    ) -> str:
         """Get information about specified tables.
 
         Follows best practices as specified in: Rajkumar et al, 2022
@@ -364,6 +366,24 @@ class SQLDatabase:
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
+
+            # Add column comments as dictionary
+            if get_col_comments:
+                try:
+                    column_comments_dict = {}
+                    for column in table.columns:
+                        if column.comment:
+                            column_comments_dict[column.name] = column.comment
+
+                    if column_comments_dict:
+                        table_info += (
+                            f"\n\n/*\nColumn Comments: {column_comments_dict}\n*/"
+                        )
+                except Exception:
+                    raise ValueError(
+                        "Column comments are available on PostgreSQL, MySQL, Oracle"
+                    )
+
             has_extra_info = (
                 self._indexes_in_table_info or self._sample_rows_in_table_info
             )
