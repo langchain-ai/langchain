@@ -367,17 +367,18 @@ class SQLDatabase:
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
 
-            # Add column comments
+            # Add column comments as dictionary
             if get_col_comments:
                 try:
-                    column_comments = []
+                    column_comments_dict = {}
                     for column in table.columns:
                         if column.comment:
-                            column_comments.append(
-                                f"Column '{column.name}': {column.comment}"
-                            )
-                    if column_comments:
-                        table_info += "\n\n/*\n" + "\n".join(column_comments) + "\n*/"
+                            column_comments_dict[column.name] = column.comment
+
+                    if column_comments_dict:
+                        table_info += (
+                            f"\n\n/*\nColumn Comments: {column_comments_dict}\n*/"
+                        )
                 except Exception:
                     raise ValueError(
                         "Column comments are available on PostgreSQL, MySQL, Oracle"

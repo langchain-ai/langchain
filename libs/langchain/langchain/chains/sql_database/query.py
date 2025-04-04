@@ -35,6 +35,7 @@ def create_sql_query_chain(
     db: SQLDatabase,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
+    get_col_comments: bool = False,
 ) -> Runnable[Union[SQLInput, SQLInputWithTables, Dict[str, Any]], str]:
     """Create a chain that generates SQL queries.
 
@@ -126,11 +127,16 @@ def create_sql_query_chain(
         )
     if "dialect" in prompt_to_use.input_variables:
         prompt_to_use = prompt_to_use.partial(dialect=db.dialect)
+    if get_col_comments and db.dialect not in ("postgresql", "mysql", "oracle"):
+        # Disable column comments for unsupported dialects
+        get_col_comments = False 
+        
 
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",
         "table_info": lambda x: db.get_table_info(
-            table_names=x.get("table_names_to_use")
+            table_names=x.get("table_names_to_use"),
+            get_col_comments=get_col_comments,
         ),
     }
     return (
