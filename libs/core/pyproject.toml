@@ -104,7 +104,6 @@ ignore = [
     "PLR",
     "PYI",
     "RUF",
-    "SLF",
     "TD",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
@@ -131,5 +130,5 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
-"tests/**" = [ "D", "S",]
+"tests/**" = [ "D", "S", "SLF"]
 "scripts/**" = [ "INP", "S",]
