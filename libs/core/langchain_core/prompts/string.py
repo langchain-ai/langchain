@@ -97,7 +97,6 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg) from e
-    # noqa for insecure warning elsewhere
     env = Environment()  # noqa: S701
     ast = env.parse(template)
     return meta.find_undeclared_variables(ast)
