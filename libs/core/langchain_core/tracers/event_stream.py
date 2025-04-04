@@ -78,7 +78,7 @@ def _assign_name(name: Optional[str], serialized: Optional[dict[str, Any]]) -> s
     if serialized is not None:
         if "name" in serialized:
             return serialized["name"]
-        elif "id" in serialized:
+        if "id" in serialized:
             return serialized["id"][-1]
     return "Unnamed"
 
@@ -185,7 +185,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.get(run_id)
         if run_info is None:
             # run has finished, don't issue any stream events
-            yield cast(T, first)
+            yield cast("T", first)
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
@@ -199,7 +199,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
-            yield cast(T, first)
+            yield cast("T", first)
             # consume the rest of the output
             async for chunk in output:
                 self._send(
@@ -209,7 +209,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
         else:
             # otherwise just pass through
-            yield cast(T, first)
+            yield cast("T", first)
             # consume the rest of the output
             async for chunk in output:
                 yield chunk
@@ -235,7 +235,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.get(run_id)
         if run_info is None:
             # run has finished, don't issue any stream events
-            yield cast(T, first)
+            yield cast("T", first)
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
@@ -249,7 +249,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
-            yield cast(T, first)
+            yield cast("T", first)
             # consume the rest of the output
             for chunk in output:
                 self._send(
@@ -259,7 +259,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
         else:
             # otherwise just pass through
-            yield cast(T, first)
+            yield cast("T", first)
             # consume the rest of the output
             for chunk in output:
                 yield chunk
@@ -423,14 +423,14 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             if chunk is None:
                 chunk_ = AIMessageChunk(content=token)
             else:
-                chunk_ = cast(ChatGenerationChunk, chunk).message
+                chunk_ = cast("ChatGenerationChunk", chunk).message
 
         elif run_info["run_type"] == "llm":
             event = "on_llm_stream"
             if chunk is None:
                 chunk_ = GenerationChunk(text=token)
             else:
-                chunk_ = cast(GenerationChunk, chunk)
+                chunk_ = cast("GenerationChunk", chunk)
         else:
             msg = f"Unexpected run type: {run_info['run_type']}"
             raise ValueError(msg)
@@ -461,7 +461,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(list[list[ChatGenerationChunk]], response.generations)
+            generations = cast("list[list[ChatGenerationChunk]]", response.generations)
             for gen in generations:
                 if output != {}:
                     break
@@ -471,7 +471,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
-            generations = cast(list[list[GenerationChunk]], response.generations)
+            generations = cast("list[list[GenerationChunk]]", response.generations)
             output = {
                 "generations": [
                     [
@@ -942,7 +942,7 @@ async def _astream_events_implementation_v2(
 
     # Assign the stream handler to the config
     config = ensure_config(config)
-    run_id = cast(UUID, config.setdefault("run_id", uuid4()))
+    run_id = cast("UUID", config.setdefault("run_id", uuid4()))
     callbacks = config.get("callbacks")
     if callbacks is None:
         config["callbacks"] = [event_streamer]

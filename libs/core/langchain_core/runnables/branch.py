@@ -1,3 +1,5 @@
+"""Runnable that selects which branch to run based on a condition."""
+
 from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from typing import (
     Any,
@@ -8,6 +10,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
 from langchain_core.runnables.base import (
     Runnable,
@@ -105,7 +108,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise TypeError(msg)
 
         default_ = cast(
-            Runnable[Input, Output], coerce_to_runnable(cast(RunnableLike, default))
+            "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
         )
 
         _branches = []
@@ -125,7 +128,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 )
                 raise ValueError(msg)
             condition, runnable = branch
-            condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
+            condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
@@ -144,10 +147,11 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return True
 
     @classmethod
+    @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -167,6 +171,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         from langchain_core.beta.runnables.context import (
             CONTEXT_CONFIG_PREFIX,
@@ -203,9 +208,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Returns:
             The output of the branch that was run.
-
-        Raises:
-
         """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -306,8 +308,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """First evaluates the condition,
-        then delegate to true or false branch.
+        """First evaluates the condition, then delegate to true or false branch.
 
         Args:
             input: The input to the Runnable.
@@ -393,8 +394,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """First evaluates the condition,
-        then delegate to true or false branch.
+        """First evaluates the condition, then delegate to true or false branch.
 
         Args:
             input: The input to the Runnable.

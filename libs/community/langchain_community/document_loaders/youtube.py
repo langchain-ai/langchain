@@ -241,6 +241,7 @@ class YoutubeLoader(BaseLoader):
         """Load YouTube transcripts into `Document` objects."""
         try:
             from youtube_transcript_api import (
+                FetchedTranscript,
                 NoTranscriptFound,
                 TranscriptsDisabled,
                 YouTubeTranscriptApi,
@@ -269,8 +270,18 @@ class YoutubeLoader(BaseLoader):
 
         if self.translation is not None:
             transcript = transcript.translate(self.translation)
-
-        transcript_pieces: List[Dict[str, Any]] = transcript.fetch()
+        transcript_object = transcript.fetch()
+        if isinstance(transcript_object, FetchedTranscript):
+            transcript_pieces = [
+                {
+                    "text": snippet.text,
+                    "start": snippet.start,
+                    "duration": snippet.duration,
+                }
+                for snippet in transcript_object.snippets
+            ]
+        else:
+            transcript_pieces: List[Dict[str, Any]] = transcript_object  # type: ignore[no-redef]
 
         if self.transcript_format == TranscriptFormat.TEXT:
             transcript = " ".join(

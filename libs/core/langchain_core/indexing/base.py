@@ -1,3 +1,5 @@
+"""Base classes for indexing."""
+
 from __future__ import annotations
 
 import abc
@@ -252,9 +254,7 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """Async in-memory schema creation is simply ensuring
-        the structure is initialized.
-        """
+        """Async in-memory schema creation is simply ensuring the structure is initialized."""  # noqa: E501
 
     def get_time(self) -> float:
         """Get the current server time as a high resolution timestamp!"""

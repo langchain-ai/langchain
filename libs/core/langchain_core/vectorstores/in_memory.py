@@ -1,3 +1,5 @@
+"""In-memory vector store."""
+
 from __future__ import annotations
 
 import json
@@ -9,6 +11,8 @@ from typing import (
     Callable,
     Optional,
 )
+
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -165,17 +169,21 @@ class InMemoryVectorStore(VectorStore):
         self.embedding = embedding
 
     @property
+    @override
     def embeddings(self) -> Embeddings:
         return self.embedding
 
+    @override
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         self.delete(ids)
 
+    @override
     def add_documents(
         self,
         documents: list[Document],
@@ -212,6 +220,7 @@ class InMemoryVectorStore(VectorStore):
 
         return ids_
 
+    @override
     async def aadd_documents(
         self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
     ) -> list[str]:
@@ -244,6 +253,7 @@ class InMemoryVectorStore(VectorStore):
 
         return ids_
 
+    @override
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their ids.
 
@@ -276,6 +286,14 @@ class InMemoryVectorStore(VectorStore):
         removal="1.0",
     )
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+        """[DEPRECATED] Upsert documents into the store.
+
+        Args:
+            items: The documents to upsert.
+
+        Returns:
+            The upsert response.
+        """
         vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
         for item, vector in zip(items, vectors):
@@ -303,6 +321,14 @@ class InMemoryVectorStore(VectorStore):
     async def aupsert(
         self, items: Sequence[Document], /, **kwargs: Any
     ) -> UpsertResponse:
+        """[DEPRECATED] Upsert documents into the store.
+
+        Args:
+            items: The documents to upsert.
+
+        Returns:
+            The upsert response.
+        """
         vectors = await self.embedding.aembed_documents(
             [item.page_content for item in items]
         )
@@ -321,6 +347,7 @@ class InMemoryVectorStore(VectorStore):
             "failed": [],
         }
 
+    @override
     async def aget_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Async get documents by their ids.
 
@@ -379,6 +406,16 @@ class InMemoryVectorStore(VectorStore):
         filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
+        """Search for the most similar documents to the given embedding.
+
+        Args:
+            embedding: The embedding to search for.
+            k: The number of documents to return.
+            filter: A function to filter the documents.
+
+        Returns:
+            A list of tuples of Document objects and their similarity scores.
+        """
         return [
             (doc, similarity)
             for doc, similarity, _ in self._similarity_search_with_score_by_vector(
@@ -386,6 +423,7 @@ class InMemoryVectorStore(VectorStore):
             )
         ]
 
+    @override
     def similarity_search_with_score(
         self,
         query: str,
@@ -393,24 +431,24 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         embedding = self.embedding.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
+        return self.similarity_search_with_score_by_vector(
             embedding,
             k,
             **kwargs,
         )
-        return docs
 
+    @override
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[tuple[Document, float]]:
         embedding = await self.embedding.aembed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
+        return self.similarity_search_with_score_by_vector(
             embedding,
             k,
             **kwargs,
         )
-        return docs
 
+    @override
     def similarity_search_by_vector(
         self,
         embedding: list[float],
@@ -424,16 +462,19 @@ class InMemoryVectorStore(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    @override
     async def asimilarity_search_by_vector(
         self, embedding: list[float], k: int = 4, **kwargs: Any
     ) -> list[Document]:
         return self.similarity_search_by_vector(embedding, k, **kwargs)
 
+    @override
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
         return [doc for doc, _ in self.similarity_search_with_score(query, k, **kwargs)]
 
+    @override
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
@@ -442,6 +483,7 @@ class InMemoryVectorStore(VectorStore):
             for doc, _ in await self.asimilarity_search_with_score(query, k, **kwargs)
         ]
 
+    @override
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: list[float],
@@ -473,6 +515,7 @@ class InMemoryVectorStore(VectorStore):
         )
         return [prefetch_hits[idx][0] for idx in mmr_chosen_indices]
 
+    @override
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -490,6 +533,7 @@ class InMemoryVectorStore(VectorStore):
             **kwargs,
         )
 
+    @override
     async def amax_marginal_relevance_search(
         self,
         query: str,
@@ -508,6 +552,7 @@ class InMemoryVectorStore(VectorStore):
         )
 
     @classmethod
+    @override
     def from_texts(
         cls,
         texts: list[str],
@@ -522,6 +567,7 @@ class InMemoryVectorStore(VectorStore):
         return store
 
     @classmethod
+    @override
     async def afrom_texts(
         cls,
         texts: list[str],

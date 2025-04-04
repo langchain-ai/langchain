@@ -108,6 +108,7 @@ def init_chat_model(
             - 'openai'              -> langchain-openai
             - 'anthropic'           -> langchain-anthropic
             - 'azure_openai'        -> langchain-openai
+            - 'azure_ai'            -> langchain-azure-ai
             - 'google_vertexai'     -> langchain-google-vertexai
             - 'google_genai'        -> langchain-google-genai
             - 'bedrock'             -> langchain-aws
@@ -124,6 +125,7 @@ def init_chat_model(
             - 'ibm'                 -> langchain-ibm
             - 'nvidia'              -> langchain-nvidia-ai-endpoints
             - 'xai'                 -> langchain-xai
+            - 'perplexity'          -> langchain-perplexity
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -356,6 +358,11 @@ def _init_chat_model_helper(
         from langchain_openai import AzureChatOpenAI
 
         return AzureChatOpenAI(model=model, **kwargs)
+    elif model_provider == "azure_ai":
+        _check_pkg("langchain_azure_ai")
+        from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+
+        return AzureAIChatCompletionsModel(model=model, **kwargs)
     elif model_provider == "cohere":
         _check_pkg("langchain_cohere")
         from langchain_cohere import ChatCohere
@@ -447,6 +454,11 @@ def _init_chat_model_helper(
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
+    elif model_provider == "perplexity":
+        _check_pkg("langchain_perplexity")
+        from langchain_perplexity import ChatPerplexity
+
+        return ChatPerplexity(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -459,6 +471,7 @@ _SUPPORTED_PROVIDERS = {
     "openai",
     "anthropic",
     "azure_openai",
+    "azure_ai",
     "cohere",
     "google_vertexai",
     "google_genai",
@@ -474,6 +487,7 @@ _SUPPORTED_PROVIDERS = {
     "deepseek",
     "ibm",
     "xai",
+    "perplexity",
 }
 
 

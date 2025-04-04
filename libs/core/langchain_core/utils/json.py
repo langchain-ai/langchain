@@ -1,3 +1,5 @@
+"""Utilities for JSON."""
+
 from __future__ import annotations
 
 import json
@@ -18,7 +20,9 @@ def _replace_new_line(match: re.Match[str]) -> str:
 
 
 def _custom_parser(multiline_string: str) -> str:
-    """The LLM response for `action_input` may be a multiline
+    r"""Custom parser for multiline strings.
+
+    The LLM response for `action_input` may be a multiline
     string containing unescaped newlines, tabs or quotes. This function
     replaces those characters with their escaped counterparts.
     (newlines in JSON must be double-escaped: `\\n`).
@@ -26,14 +30,12 @@ def _custom_parser(multiline_string: str) -> str:
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
 
-    multiline_string = re.sub(
+    return re.sub(
         r'("action_input"\:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
     )
-
-    return multiline_string
 
 
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
@@ -64,11 +66,14 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     # Process each character in the string one at a time.
     for char in s:
+        new_char = char
         if is_inside_string:
             if char == '"' and not escaped:
                 is_inside_string = False
             elif char == "\n" and not escaped:
-                char = "\\n"  # Replace the newline character with the escape sequence.
+                new_char = (
+                    "\\n"  # Replace the newline character with the escape sequence.
+                )
             elif char == "\\":
                 escaped = not escaped
             else:
@@ -89,7 +94,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                     return None
 
         # Append the processed character to the new string.
-        new_chars.append(char)
+        new_chars.append(new_char)
 
     # If we're still inside a string at the end of processing,
     # we need to close the string.
@@ -129,6 +134,7 @@ def parse_json_markdown(
 
     Args:
         json_string: The Markdown string.
+        parser: The parser to use. Defaults to `parse_partial_json`.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -162,8 +168,9 @@ def _parse_json(
 
 
 def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
-    """Parse a JSON string from a Markdown string and check that it
-    contains the expected keys.
+    """Parse and check a JSON string from a Markdown string.
+
+    Checks that it contains the expected keys.
 
     Args:
         text: The Markdown string.

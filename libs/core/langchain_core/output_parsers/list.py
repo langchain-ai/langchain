@@ -1,3 +1,5 @@
+"""Parsers for list output."""
+
 from __future__ import annotations
 
 import csv
@@ -6,7 +8,8 @@ from abc import abstractmethod
 from collections import deque
 from io import StringIO
 from typing import TYPE_CHECKING, TypeVar, Union
-from typing import Optional as Optional
+
+from typing_extensions import override
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
@@ -73,9 +76,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -105,9 +109,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -188,6 +193,7 @@ class NumberedListOutputParser(ListOutputParser):
     pattern: str = r"\d+\.\s([^\n]+)"
     """The pattern to match a numbered list item."""
 
+    @override
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a numbered list with each item on a new line. "

@@ -9,7 +9,7 @@ from langchain_core._api.beta_decorator import beta, warn_beta
 
 
 @pytest.mark.parametrize(
-    "kwargs, expected_message",
+    ("kwargs", "expected_message"),
     [
         (
             {

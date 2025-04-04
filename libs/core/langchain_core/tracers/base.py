@@ -12,6 +12,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import override
+
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.exceptions import TracerException  # noqa
 from langchain_core.tracers.core import _TracerCore
@@ -181,11 +183,10 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Returns:
             The run.
         """
-        llm_run = self._llm_run_with_retry_event(
+        return self._llm_run_with_retry_event(
             retry_state=retry_state,
             run_id=run_id,
         )
-        return llm_run
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for an LLM run.
@@ -228,8 +229,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         llm_run = self._errored_llm_run(
-            error=error,
-            run_id=run_id,
+            error=error, run_id=run_id, response=kwargs.pop("response", None)
         )
         self._end_trace(llm_run)
         self._on_llm_error(llm_run)
@@ -528,9 +528,11 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     """Async Base interface for tracers."""
 
     @abstractmethod
+    @override
     async def _persist_run(self, run: Run) -> None:
         """Persist a run."""
 
+    @override
     async def _start_trace(self, run: Run) -> None:
         """Start a trace for a run.
 
@@ -540,6 +542,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         super()._start_trace(run)
         await self._on_run_create(run)
 
+    @override
     async def _end_trace(self, run: Run) -> None:
         """End a trace for a run.
 
@@ -551,6 +554,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         self.run_map.pop(str(run.id))
         await self._on_run_update(run)
 
+    @override
     async def on_chat_model_start(
         self,
         serialized: dict[str, Any],
@@ -580,6 +584,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         await asyncio.gather(*tasks)
         return chat_model_run
 
+    @override
     async def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -603,6 +608,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._start_trace(llm_run), self._on_llm_start(llm_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_llm_new_token(
         self,
         token: str,
@@ -621,6 +627,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         )
         await self._on_llm_new_token(llm_run, token, chunk)
 
+    @override
     async def on_retry(
         self,
         retry_state: RetryCallState,
@@ -633,6 +640,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
             run_id=run_id,
         )
 
+    @override
     async def on_llm_end(
         self,
         response: LLMResult,
@@ -649,6 +657,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._on_llm_end(llm_run), self._end_trace(llm_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_llm_error(
         self,
         error: BaseException,
@@ -665,6 +674,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._on_llm_error(llm_run), self._end_trace(llm_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_chain_start(
         self,
         serialized: dict[str, Any],
@@ -692,6 +702,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._start_trace(chain_run), self._on_chain_start(chain_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_chain_end(
         self,
         outputs: dict[str, Any],
@@ -709,6 +720,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._end_trace(chain_run), self._on_chain_end(chain_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_chain_error(
         self,
         error: BaseException,
@@ -726,6 +738,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._end_trace(chain_run), self._on_chain_error(chain_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_tool_start(
         self,
         serialized: dict[str, Any],
@@ -752,6 +765,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._start_trace(tool_run), self._on_tool_start(tool_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_tool_end(
         self,
         output: Any,
@@ -767,6 +781,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._end_trace(tool_run), self._on_tool_end(tool_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_tool_error(
         self,
         error: BaseException,
@@ -783,6 +798,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tasks = [self._end_trace(tool_run), self._on_tool_error(tool_run)]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_retriever_start(
         self,
         serialized: dict[str, Any],
@@ -810,6 +826,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         ]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_retriever_error(
         self,
         error: BaseException,
@@ -830,6 +847,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         ]
         await asyncio.gather(*tasks)
 
+    @override
     async def on_retriever_end(
         self,
         documents: Sequence[Document],
