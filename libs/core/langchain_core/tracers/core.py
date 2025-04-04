@@ -18,6 +18,7 @@ from typing import (
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
+from langchain_core.messages import AIMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -281,13 +282,18 @@ class _TracerCore(ABC):
     def _complete_llm_run(self, response: LLMResult, run_id: UUID) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.outputs = response.model_dump()
+        if "ls_tools_called" not in llm_run.metadata:
+            llm_run.metadata["ls_tools_called"] = []
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
                 if "message" in output_generation:
-                    output_generation["message"] = dumpd(
-                        cast("ChatGeneration", generation).message
-                    )
+                    msg = cast("ChatGeneration", generation).message
+                    output_generation["message"] = dumpd(msg)
+                    if i == 0 and j == 0 and isinstance(msg, AIMessage):
+                        llm_run.metadata["ls_tools_called"].extend(
+                            [tc["name"] for tc in msg.tool_calls]
+                        )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
