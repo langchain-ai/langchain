@@ -99,7 +99,6 @@ ignore = [
     "ARG",
     "BLE",
     "ERA",
-    "DTZ",
     "FBT001",
     "FBT002",
     "PGH",
