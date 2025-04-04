@@ -583,3 +583,6 @@ packages:
   path: .
   repo: yigit353/langchain-qwq
   provider_page: alibaba_cloud
+- name: langchain-litellm
+  path: .
+  repo: akshay-dongare/langchain-litellm
