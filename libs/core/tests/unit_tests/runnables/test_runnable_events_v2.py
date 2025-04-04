@@ -17,6 +17,7 @@ from typing import (
 import pytest
 from blockbuster import BlockBuster
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -612,10 +613,10 @@ async def test_astream_with_model_in_chain() -> None:
     )
 
     @RunnableLambda
-    def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
+    def i_dont_stream(value: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
-            return model.invoke(input)
-        return model.invoke(input, config)
+            return model.invoke(value)
+        return model.invoke(value, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
@@ -720,10 +721,10 @@ async def test_astream_with_model_in_chain() -> None:
     )
 
     @RunnableLambda
-    async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
+    async def ai_dont_stream(value: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
-            return await model.ainvoke(input)
-        return await model.ainvoke(input, config)
+            return await model.ainvoke(value)
+        return await model.ainvoke(value, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
@@ -2069,6 +2070,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         """Initialize the runnable."""
         self.iterable = iterable
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -2076,6 +2078,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         msg = "Server side error"
         raise ValueError(msg)
 
+    @override
     def stream(
         self,
         input: Input,
@@ -2084,6 +2087,7 @@ class StreamingRunnable(Runnable[Input, Output]):
     ) -> Iterator[Output]:
         raise NotImplementedError
 
+    @override
     async def astream(
         self,
         input: Input,
@@ -2411,14 +2415,14 @@ async def test_break_astream_events() -> None:
         def __init__(self) -> None:
             self.reset()
 
-        async def __call__(self, input: Any) -> Any:
+        async def __call__(self, value: Any) -> Any:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
-            return input
+            return value
 
         def reset(self) -> None:
             self.started = False
@@ -2431,11 +2435,11 @@ async def test_break_astream_events() -> None:
     outer_cancelled = False
 
     @chain
-    async def sequence(input: Any) -> Any:
+    async def sequence(value: Any) -> Any:
         try:
-            yield await alittlewhile(input)
-            yield await awhile(input)
-            yield await anotherwhile(input)
+            yield await alittlewhile(value)
+            yield await awhile(value)
+            yield await anotherwhile(value)
         except asyncio.CancelledError:
             nonlocal outer_cancelled
             outer_cancelled = True
@@ -2476,14 +2480,14 @@ async def test_cancel_astream_events() -> None:
         def __init__(self) -> None:
             self.reset()
 
-        async def __call__(self, input: Any) -> Any:
+        async def __call__(self, value: Any) -> Any:
             self.started = True
             try:
                 await asyncio.sleep(0.5)
             except asyncio.CancelledError:
                 self.cancelled = True
                 raise
-            return input
+            return value
 
         def reset(self) -> None:
             self.started = False
@@ -2496,11 +2500,11 @@ async def test_cancel_astream_events() -> None:
     outer_cancelled = False
 
     @chain
-    async def sequence(input: Any) -> Any:
+    async def sequence(value: Any) -> Any:
         try:
-            yield await alittlewhile(input)
-            yield await awhile(input)
-            yield await anotherwhile(input)
+            yield await alittlewhile(value)
+            yield await awhile(value)
+            yield await anotherwhile(value)
         except asyncio.CancelledError:
             nonlocal outer_cancelled
             outer_cancelled = True

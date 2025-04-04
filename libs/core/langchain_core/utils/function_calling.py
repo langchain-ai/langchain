@@ -596,7 +596,7 @@ def convert_to_json_schema(
 
 @beta()
 def tool_example_to_messages(
-    input: str,
+    input: str,  # noqa: A002
     tool_calls: list[BaseModel],
     tool_outputs: Optional[list[str]] = None,
     *,
