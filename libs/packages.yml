@@ -579,3 +579,7 @@ packages:
 - name: langchain-mariadb
   path: .
   repo: mariadb-corporation/langchain-mariadb
+- name: langchain-qwq
+  path: .
+  repo: yigit353/langchain-qwq
+  provider_page: alibaba_cloud
