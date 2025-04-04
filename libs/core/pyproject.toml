@@ -101,7 +101,6 @@ ignore = [
     "ERA",
     "FBT001",
     "FBT002",
-    "FIX",
     "PGH003",
     "PLR",
     "PYI",
