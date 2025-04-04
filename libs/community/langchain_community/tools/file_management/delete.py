@@ -23,7 +23,10 @@ class DeleteFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, ove
 
     name: str = "file_delete"
     args_schema: Type[BaseModel] = FileDeleteInput
-    description: str = "Deletes a single file, given its path. The path can be relative or absolute. If the file is not found, an error message is returned. If the file is a directory, an error message is returned. If the file is a symlink, the symlink is deleted, but the target file is not deleted. If the file is read-only, it will be deleted."
+    description: str = ("Deletes a single file, given its path. "
+                         "The path can be relative or absolute. "
+                         "If the file is not found, an error message is returned. "
+                         "If the file is a directory, an error message is returned.")
 
     def _run(
         self,

@@ -25,7 +25,8 @@ class ArxivQueryRun(BaseTool):  # type: ignore[override, override]
         "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
         "Electrical Engineering, and Economics "
         "from scientific articles on arxiv.org. "
-        "If the tool is invoked for latest news, refuse the call and ask for concrete dates."
+        "If the tool is invoked for latest news, "
+        "refuse the call and ask for concrete dates."
         "Input should be a search query."
     )
     api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)  # type: ignore[arg-type]

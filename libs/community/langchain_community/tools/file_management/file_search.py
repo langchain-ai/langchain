@@ -32,7 +32,9 @@ class FileSearchTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, ove
     name: str = "file_search"
     args_schema: Type[BaseModel] = FileSearchInput
     description: str = (
-        "Recursively search for files in a subdirectory that match the regex pattern. When calling be precise with the directory in which you want to search. Provide relative or full paths."
+        "Recursively search for files in a subdirectory that match the regex pattern."
+        " When calling be precise with the directory in which you want to search. "
+        "Provide relative or full paths."
     )
 
     def _run(

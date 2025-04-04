@@ -24,7 +24,14 @@ class CopyFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, overr
 
     name: str = "copy_file"
     args_schema: Type[BaseModel] = FileCopyInput
-    description: str = "Create a copy of a file in a specified location. The file paths have to be precise, paths can be both relative and full. If the source file does not exist, an error message is returned. If the destination path is a directory, the file is copied into that directory with the same name. If the destination path is a file, the file is copied to that location with the same name." 
+    description: str = ("Create a copy of a file in a specified location."
+                        "The file paths have to be precise, paths can be both"
+                        "relative and full. If the source file does not exist,"
+                        "an error message is returned."
+                        "If the destination path is a directory, "
+                        "the file is copied into that directory with the same name."
+                        "If the destination path is a file,"
+                        " the file is copied to that location with the same name.")
 
     def _run(
         self,

@@ -23,7 +23,14 @@ class ListDirectoryTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, 
 
     name: str = "list_directory"
     args_schema: Type[BaseModel] = DirectoryListingInput
-    description: str = "List files and directories in a specified folder. The path can be relative or absolute. If the directory is not found, an error message is returned. If the path is a file, an error message is returned. The listing is recursice, meaning that the output can be very long, so if such error occurs it is better to call the tool with a more precise path."
+    description: str = (
+        "List files and directories in a specified folder. "
+        "The path can be relative or absolute. "
+        "If the directory is not found, an error message is returned. "
+        "If the path is a file, an error message is returned. "
+        "The listing is recursice, meaning that the output can be very long, "
+        "so if such error occurs it is call the tool with a more precise path."
+        )
 
     def _run(
         self,

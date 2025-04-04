@@ -24,7 +24,9 @@ class MoveFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, overr
 
     name: str = "move_file"
     args_schema: Type[BaseModel] = FileMoveInput
-    description: str = "Move or rename a file from one location to another. The file paths have to be precise, paths can be both relative and full."
+    description: str = (
+        "Move or rename a file from one location to another. "
+        "The file paths have to be precise, paths can be both relative and full.")
 
     def _run(
         self,
