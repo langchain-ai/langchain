@@ -129,8 +129,7 @@ def create_sql_query_chain(
         prompt_to_use = prompt_to_use.partial(dialect=db.dialect)
     if get_col_comments and db.dialect not in ("postgresql", "mysql", "oracle"):
         # Disable column comments for unsupported dialects
-        get_col_comments = False 
-        
+        get_col_comments = False
 
     inputs = {
         "input": lambda x: x["question"] + "\nSQLQuery: ",
