@@ -575,6 +575,12 @@ packages:
   repo: vectara/langchain-vectara
   downloads: 227
   downloads_updated_at: '2025-04-04T17:04:16.538679+00:00'
+- name: langchain-oxylabs
+  path: .
+  repo: oxylabs/langchain-oxylabs
+- name: langchain-perplexity
+  path: libs/partners/perplexity
+  repo: langchain-ai/langchain
 - name: langchain-runpod
   name_title: RunPod
   path: .
