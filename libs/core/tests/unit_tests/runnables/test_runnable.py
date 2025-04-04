@@ -5294,22 +5294,22 @@ async def test_ainvoke_on_returned_runnable() -> None:
     be runthroughaasync path (issue #13407).
     """
 
-    def idchain_sync(__input: dict) -> bool:
+    def idchain_sync(_input: dict, /) -> bool:
         return False
 
-    async def idchain_async(__input: dict) -> bool:
+    async def idchain_async(_input: dict, /) -> bool:
         return True
 
     idchain = RunnableLambda(func=idchain_sync, afunc=idchain_async)
 
-    def func(__input: dict) -> Runnable:
+    def func(_input: dict, /) -> Runnable:
         return idchain
 
     assert await RunnableLambda(func).ainvoke({})
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:
-    def idchain_sync(__input: dict) -> bool:
+    def idchain_sync(_input: dict, /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)
@@ -5329,7 +5329,7 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
 
 
 async def test_ainvoke_astream_passthrough_assign_trace() -> None:
-    def idchain_sync(__input: dict) -> bool:
+    def idchain_sync(_input: dict, /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)

@@ -377,12 +377,7 @@ if IS_PYDANTIC_V2:
     def get_fields(model: BaseModelV1) -> dict[str, FieldInfoV1]: ...
 
     def get_fields(
-        model: Union[
-            BaseModelV2,
-            BaseModelV1,
-            type[BaseModelV2],
-            type[BaseModelV1],
-        ],
+        model: Union[type[Union[BaseModelV2, BaseModelV1]], BaseModelV2, BaseModelV1],
     ) -> Union[dict[str, FieldInfoV2], dict[str, FieldInfoV1]]:
         """Get the field names of a Pydantic model."""
         if hasattr(model, "model_fields"):
@@ -491,19 +486,21 @@ def _create_root_model_cached(
 
 @lru_cache(maxsize=256)
 def _create_model_cached(
-    __model_name: str,
+    model_name: str,
+    /,
     **field_definitions: Any,
 ) -> type[BaseModel]:
     return _create_model_base(
-        __model_name,
+        model_name,
         __config__=_SchemaConfig,
         **_remap_field_definitions(field_definitions),
     )
 
 
 def create_model(
-    __model_name: str,
-    __module_name: Optional[str] = None,
+    model_name: str,
+    module_name: Optional[str] = None,
+    /,
     **field_definitions: Any,
 ) -> type[BaseModel]:
     """Create a pydantic model with the given field definitions.
@@ -511,8 +508,8 @@ def create_model(
     Please use create_model_v2 instead of this function.
 
     Args:
-        __model_name: The name of the model.
-        __module_name: The name of the module where the model is defined.
+        model_name: The name of the model.
+        module_name: The name of the module where the model is defined.
             This is used by Pydantic to resolve any forward references.
         **field_definitions: The field definitions for the model.
 
@@ -524,8 +521,8 @@ def create_model(
         kwargs["root"] = field_definitions.pop("__root__")
 
     return create_model_v2(
-        __model_name,
-        module_name=__module_name,
+        model_name,
+        module_name=module_name,
         field_definitions=field_definitions,
         **kwargs,
     )
