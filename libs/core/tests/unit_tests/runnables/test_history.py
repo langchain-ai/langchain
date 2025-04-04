@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, Union
 
 import pydantic
 import pytest
+from packaging import version
 from pydantic import BaseModel
 
 from langchain_core.callbacks import (
@@ -21,7 +22,7 @@ from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 from langchain_core.tracers import Run
 from tests.unit_tests.pydantic_utils import _schema
 
-PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+PYDANTIC_VERSION = version.parse(pydantic.__version__)
 
 
 def test_interfaces() -> None:
@@ -492,7 +493,7 @@ def test_get_output_schema() -> None:
         "title": "RunnableWithChatHistoryOutput",
         "type": "object",
     }
-    if PYDANTIC_VERSION >= (2, 11):
+    if version.parse("2.11") <= PYDANTIC_VERSION:
         expected_schema["additionalProperties"] = True
     assert _schema(output_type) == expected_schema
 

@@ -10,13 +10,13 @@
 
 __all__ = [
     "BaseTracer",
+    "ConsoleCallbackHandler",
     "EvaluatorCallbackHandler",
     "LangChainTracer",
-    "ConsoleCallbackHandler",
+    "LogStreamCallbackHandler",
     "Run",
     "RunLog",
     "RunLogPatch",
-    "LogStreamCallbackHandler",
 ]
 
 from langchain_core.tracers.base import BaseTracer
