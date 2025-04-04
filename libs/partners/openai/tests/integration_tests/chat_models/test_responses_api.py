@@ -328,7 +328,7 @@ def test_computer_calls() -> None:
         "environment": "browser",
     }
     llm_with_tools = llm.bind_tools([tool], tool_choice="any")
-    response = llm_with_tools.invoke("Please wait a moment.")
+    response = llm_with_tools.invoke("Please open the browser.")
     assert response.additional_kwargs["tool_outputs"]
 
 

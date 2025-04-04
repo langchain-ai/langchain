@@ -568,9 +568,6 @@ packages:
 - name: langchain-oxylabs
   path: .
   repo: oxylabs/langchain-oxylabs
-- name: langchain-litellm
-  path: .
-  repo: akshay-dongare/langchain-litellm
 - name: langchain-perplexity
   path: libs/partners/perplexity
   repo: langchain-ai/langchain
@@ -579,3 +576,13 @@ packages:
   path: .
   name_title: RunPod
   provider_page: runpod
+- name: langchain-mariadb
+  path: .
+  repo: mariadb-corporation/langchain-mariadb
+- name: langchain-qwq
+  path: .
+  repo: yigit353/langchain-qwq
+  provider_page: alibaba_cloud
+- name: langchain-litellm
+  path: .
+  repo: akshay-dongare/langchain-litellm
