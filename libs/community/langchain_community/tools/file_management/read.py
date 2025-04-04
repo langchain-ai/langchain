@@ -27,7 +27,8 @@ class ReadFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, overr
         "cannot interpret binary formats, pdfs, xlsx etc. "
         "The file path can be relative or absolute. "
         "If the file is not found, an error message is returned. "
-        "If the file is a directory, an error message is returned.")
+        "If the file is a directory, an error message is returned."
+    )
 
     def _run(
         self,

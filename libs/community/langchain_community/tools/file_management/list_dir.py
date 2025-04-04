@@ -2,8 +2,8 @@ import os
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -30,7 +30,7 @@ class ListDirectoryTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, 
         "If the path is a file, an error message is returned. "
         "The listing is recursice, meaning that the output can be very long, "
         "so if such error occurs it is call the tool with a more precise path."
-        )
+    )
 
     def _run(
         self,

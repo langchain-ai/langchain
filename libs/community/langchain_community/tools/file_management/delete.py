@@ -2,8 +2,8 @@ import os
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -23,10 +23,12 @@ class DeleteFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, ove
 
     name: str = "file_delete"
     args_schema: Type[BaseModel] = FileDeleteInput
-    description: str = ("Deletes a single file, given its path. "
-                         "The path can be relative or absolute. "
-                         "If the file is not found, an error message is returned. "
-                         "If the file is a directory, an error message is returned.")
+    description: str = (
+        "Deletes a single file, given its path. "
+        "The path can be relative or absolute. "
+        "If the file is not found, an error message is returned. "
+        "If the file is a directory, an error message is returned."
+    )
 
     def _run(
         self,
