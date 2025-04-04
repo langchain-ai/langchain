@@ -20,6 +20,7 @@ from typing import (
 )
 
 import pydantic
+from packaging import version
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -41,44 +42,46 @@ from pydantic.json_schema import (
 if TYPE_CHECKING:
     from pydantic_core import core_schema
 
+try:
+    import pydantic
+
+    PYDANTIC_VERSION = version.parse(pydantic.__version__)
+except ImportError:
+    PYDANTIC_VERSION = version.parse("0.0.0")
+
 
 def get_pydantic_major_version() -> int:
-    """Get the major version of Pydantic."""
-    try:
-        import pydantic
+    """DEPRECATED - Get the major version of Pydantic.
 
-        return int(pydantic.__version__.split(".")[0])
-    except ImportError:
-        return 0
-
-
-def _get_pydantic_minor_version() -> int:
-    """Get the minor version of Pydantic."""
-    try:
-        import pydantic
-
-        return int(pydantic.__version__.split(".")[1])
-    except ImportError:
-        return 0
+    Use PYDANTIC_VERSION.major instead.
+    """
+    warnings.warn(
+        "get_pydantic_major_version is deprecated. Use PYDANTIC_VERSION.major instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return PYDANTIC_VERSION.major
 
 
-PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
-PYDANTIC_MINOR_VERSION = _get_pydantic_minor_version()
+PYDANTIC_MAJOR_VERSION = PYDANTIC_VERSION.major
+PYDANTIC_MINOR_VERSION = PYDANTIC_VERSION.minor
 
+IS_PYDANTIC_V1 = PYDANTIC_VERSION.major == 1
+IS_PYDANTIC_V2 = PYDANTIC_VERSION.major == 2
 
-if PYDANTIC_MAJOR_VERSION == 1:
+if IS_PYDANTIC_V1:
     from pydantic.fields import FieldInfo as FieldInfoV1
 
     PydanticBaseModel = pydantic.BaseModel
     TypeBaseModel = type[BaseModel]
-elif PYDANTIC_MAJOR_VERSION == 2:
+elif IS_PYDANTIC_V2:
     from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
     TypeBaseModel = Union[type[BaseModel], type[pydantic.BaseModel]]  # type: ignore[misc]
 else:
-    msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
     raise ValueError(msg)
 
 
@@ -87,9 +90,9 @@ TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the installed Pydantic version is 1.x-like."""
-    if PYDANTIC_MAJOR_VERSION == 1:
+    if IS_PYDANTIC_V1:
         return True
-    if PYDANTIC_MAJOR_VERSION == 2:
+    if IS_PYDANTIC_V2:
         from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(cls, BaseModelV1):
@@ -101,7 +104,7 @@ def is_pydantic_v2_subclass(cls: type) -> bool:
     """Check if the installed Pydantic version is 1.x-like."""
     from pydantic import BaseModel
 
-    return PYDANTIC_MAJOR_VERSION == 2 and issubclass(cls, BaseModel)
+    return IS_PYDANTIC_V2 and issubclass(cls, BaseModel)
 
 
 def is_basemodel_subclass(cls: type) -> bool:
@@ -117,12 +120,12 @@ def is_basemodel_subclass(cls: type) -> bool:
     if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
         return False
 
-    if PYDANTIC_MAJOR_VERSION == 1:
+    if IS_PYDANTIC_V1:
         from pydantic import BaseModel as BaseModelV1Proper
 
         if issubclass(cls, BaseModelV1Proper):
             return True
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    elif IS_PYDANTIC_V2:
         from pydantic import BaseModel as BaseModelV2
         from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -132,7 +135,7 @@ def is_basemodel_subclass(cls: type) -> bool:
         if issubclass(cls, BaseModelV1):
             return True
     else:
-        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
         raise ValueError(msg)
     return False
 
@@ -146,12 +149,12 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.BaseModel in Pydantic 2.x
     * pydantic.v1.BaseModel in Pydantic 2.x
     """
-    if PYDANTIC_MAJOR_VERSION == 1:
+    if IS_PYDANTIC_V1:
         from pydantic import BaseModel as BaseModelV1Proper
 
         if isinstance(obj, BaseModelV1Proper):
             return True
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    elif IS_PYDANTIC_V2:
         from pydantic import BaseModel as BaseModelV2
         from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -161,7 +164,7 @@ def is_basemodel_instance(obj: Any) -> bool:
         if isinstance(obj, BaseModelV1):
             return True
     else:
-        msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
         raise ValueError(msg)
     return False
 
@@ -245,12 +248,12 @@ def _create_subset_model_v1(
     fn_description: Optional[str] = None,
 ) -> type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
-    if PYDANTIC_MAJOR_VERSION == 1:
+    if IS_PYDANTIC_V1:
         from pydantic import create_model
-    elif PYDANTIC_MAJOR_VERSION == 2:
+    elif IS_PYDANTIC_V2:
         from pydantic.v1 import create_model  # type: ignore
     else:
-        msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        msg = f"Unsupported pydantic version: {PYDANTIC_VERSION.major}"
         raise NotImplementedError(msg)
 
     fields = {}
@@ -327,7 +330,7 @@ def _create_subset_model(
     fn_description: Optional[str] = None,
 ) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model."""
-    if PYDANTIC_MAJOR_VERSION == 1:
+    if IS_PYDANTIC_V1:
         return _create_subset_model_v1(
             name,
             model,
@@ -335,7 +338,7 @@ def _create_subset_model(
             descriptions=descriptions,
             fn_description=fn_description,
         )
-    if PYDANTIC_MAJOR_VERSION == 2:
+    if IS_PYDANTIC_V2:
         from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(model, BaseModelV1):
@@ -353,11 +356,11 @@ def _create_subset_model(
             descriptions=descriptions,
             fn_description=fn_description,
         )
-    msg = f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    msg = f"Unsupported pydantic version: {PYDANTIC_VERSION.major}"
     raise NotImplementedError(msg)
 
 
-if PYDANTIC_MAJOR_VERSION == 2:
+if IS_PYDANTIC_V2:
     from pydantic import BaseModel as BaseModelV2
     from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -390,7 +393,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
         msg = f"Expected a Pydantic model. Got {type(model)}"
         raise TypeError(msg)
 
-elif PYDANTIC_MAJOR_VERSION == 1:
+elif IS_PYDANTIC_V1:
     from pydantic import BaseModel as BaseModelV1_
 
     def get_fields(  # type: ignore[no-redef]
@@ -400,7 +403,7 @@ elif PYDANTIC_MAJOR_VERSION == 1:
         return model.__fields__  # type: ignore
 
 else:
-    msg = f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}"
+    msg = f"Unsupported Pydantic version: {PYDANTIC_VERSION.major}"
     raise ValueError(msg)
 
 _SchemaConfig = ConfigDict(

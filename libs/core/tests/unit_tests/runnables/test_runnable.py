@@ -15,9 +15,9 @@ from typing import (
 )
 from uuid import UUID
 
-import pydantic
 import pytest
 from freezegun import freeze_time
+from packaging import version
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
@@ -89,11 +89,14 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+)
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
-PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
+PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 
 
 class FakeTracer(BaseTracer):
@@ -227,7 +230,7 @@ class FakeRetriever(BaseRetriever):
 
 
 @pytest.mark.skipif(
-    (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10),
+    PYDANTIC_VERSION_AT_LEAST_210,
     reason=(
         "Only test with most recent version of pydantic. "
         "Pydantic introduced small fixes to generated JSONSchema on minor versions."
@@ -649,7 +652,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         }
     )
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
             RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore
         ) == snapshot(name="schema8")
@@ -764,7 +767,7 @@ def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
 
     assert fake_llm_configurable.invoke("...") == "a"
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
             fake_llm_configurable.get_config_jsonschema()
         ) == snapshot(name="schema2")
@@ -791,7 +794,7 @@ def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
         text="Hello, John!"
     )
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
             prompt_configurable.get_config_jsonschema()
         ) == snapshot(name="schema3")
@@ -820,7 +823,7 @@ def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
             chain_configurable.get_config_jsonschema()
         ) == snapshot(name="schema4")
@@ -865,7 +868,7 @@ def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
         "llm3": "a",
     }
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
             chain_with_map_configurable.get_config_jsonschema()
         ) == snapshot(name="schema5")
@@ -938,7 +941,7 @@ def test_configurable_fields_prefix_keys(snapshot: SnapshotAssertion) -> None:
 
     chain = prompt | fake_llm
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(_schema(chain.config_schema())) == snapshot(
             name="schema6"
         )
@@ -990,7 +993,7 @@ def test_configurable_fields_example(snapshot: SnapshotAssertion) -> None:
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
 
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
             chain_configurable.get_config_jsonschema()
         ) == snapshot(name="schema7")
@@ -3089,7 +3092,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.middle == [RunnableLambda(passthrough)]
     assert isinstance(chain.last, RunnableParallel)
 
-    if (PYDANTIC_MAJOR_VERSION, PYDANTIC_MINOR_VERSION) >= (2, 10):
+    if PYDANTIC_VERSION_AT_LEAST_210:
         assert dumps(chain, pretty=True) == snapshot
 
     # Test invoke
