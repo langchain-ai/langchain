@@ -2345,7 +2345,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "0.3.22"
+version = "0.3.23"
 source = { editable = "." }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2665,7 +2665,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.50"
+version = "0.3.51"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2939,7 +2939,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.7"
+version = "0.3.8"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
