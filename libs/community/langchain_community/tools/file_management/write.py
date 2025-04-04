@@ -26,7 +26,7 @@ class WriteFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, over
 
     name: str = "write_file"
     args_schema: Type[BaseModel] = WriteFileInput
-    description: str = "Write file to disk"
+    description: str = "Write file to disk. Keep in mind, that this tool can write only text, so if you want to write a specific format like pdf, excel or other non text formats this tool is not suitable. The file path can be relative or absolute."
 
     def _run(
         self,

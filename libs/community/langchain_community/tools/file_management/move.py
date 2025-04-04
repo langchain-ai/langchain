@@ -2,8 +2,8 @@ import shutil
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
 
 from langchain_community.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
@@ -24,7 +24,7 @@ class MoveFileTool(BaseFileToolMixin, BaseTool):  # type: ignore[override, overr
 
     name: str = "move_file"
     args_schema: Type[BaseModel] = FileMoveInput
-    description: str = "Move or rename a file from one location to another"
+    description: str = "Move or rename a file from one location to another. The file paths have to be precise, paths can be both relative and full."
 
     def _run(
         self,

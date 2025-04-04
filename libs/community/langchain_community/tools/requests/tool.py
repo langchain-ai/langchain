@@ -52,7 +52,7 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
 
     name: str = "requests_get"
     description: str = """A portal to the internet. Use this when you need to get specific
-    content from a website. Input should be a  url (i.e. https://www.google.com).
+    content from a website. Input should be a  url (i.e. https://www.google.com). The url has to be precise with correct protocol, with correct url structure, if the URL contains a port number it has to be numerical.
     The output will be the text response of the GET request.
     """
 
@@ -76,9 +76,9 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
 
     name: str = "requests_post"
     description: str = """Use this when you want to POST to a website.
-    Input should be a json string with two keys: "url" and "data".
-    The value of "url" should be a string, and the value of "data" should be a dictionary of 
-    key-value pairs you want to POST to the url.
+    Input parameter "text" has to be a json string with two keys: "url" and "data".
+    The value of "url" should be a string, it has to be precise, with correct protocol, with correct url structure, if the URL contains a port number it has to be numerical.
+    The value of "data" should be a dictionary of  key-value pairs you want to POST to the url.
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the POST request.
     """
@@ -113,9 +113,9 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
 
     name: str = "requests_patch"
     description: str = """Use this when you want to PATCH to a website.
-    Input should be a json string with two keys: "url" and "data".
-    The value of "url" should be a string, and the value of "data" should be a dictionary of 
-    key-value pairs you want to PATCH to the url.
+    Input parameter "text" has to be a json string with two keys: "url" and "data".
+    The value of "url" should be a string, it has to be precise, with correct protocol, with correct url structure, if the URL contains a port number it has to be numerical.
+    The value of "data" should be a dictionary of  key-value pairs you want to PATCH to the url.
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the PATCH request.
     """
@@ -150,8 +150,9 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
 
     name: str = "requests_put"
     description: str = """Use this when you want to PUT to a website.
-    Input should be a json string with two keys: "url" and "data".
-    The value of "url" should be a string, and the value of "data" should be a dictionary of 
+    Input parameter "text" has to be a json string with two keys: "url" and "data".
+    The value of "url" should be a string, it has to be precise, with correct protocol, with correct url structure, if the URL contains a port number it has to be numerical.
+    The value of "data" should be a dictionary of 
     key-value pairs you want to PUT to the url.
     Be careful to always use double quotes for strings in the json string.
     The output will be the text response of the PUT request.
@@ -188,8 +189,8 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):  # type: ignore[override]
     name: str = "requests_delete"
     description: str = """A portal to the internet.
     Use this when you need to make a DELETE request to a URL.
-    Input should be a specific url, and the output will be the text
-    response of the DELETE request.
+    Input should be a specific url. The URL has to be precise, with correct protocol, with correct url structure, if the URL contains a port number it has to be numerical.
+    The output will be the text response of the DELETE request.
     """
 
     def _run(
