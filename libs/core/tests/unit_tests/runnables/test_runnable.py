@@ -2373,6 +2373,7 @@ async def test_prompt_with_llm_parser(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakestreaminglist",
+                        "ls_tools_called": [],
                     },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
