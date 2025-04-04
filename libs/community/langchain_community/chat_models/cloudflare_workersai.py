@@ -85,15 +85,6 @@ class ChatCloudflareWorkersAI(BaseChatModel):
     Any parameters that are valid to be passed to the Cloudflare Workers AI API call
     can be passed in, even if not explicitly saved on this class.
 
-    Setup:
-        Install ``langchain-cloudflare`` and set environment variables:
-
-        .. code-block:: bash
-
-            pip install -U langchain-cloudflare
-            export API_TOKEN="your-api-token"
-            export ACCOUNT_ID="your-account-id"
-
     Key init args — completion params:
         model: str
             Name of Cloudflare Workers AI model to use. E.g.
@@ -147,10 +138,6 @@ class ChatCloudflareWorkersAI(BaseChatModel):
     )
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
-    # to support explicit proxy for Cloudflare
-    cloudflare_proxy: Optional[str] = Field(
-        default_factory=from_env("CLOUDFLARE_PROXY", default=None)
-    )
     ai_gateway: Optional[str] = Field(
         alias="cloudflare_ai_gateway",
         default_factory=from_env("AI_GATEWAY", default=None),
