@@ -304,7 +304,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk], extra_additional_fields: Optional[List[str]] = None
 ) -> BaseMessageChunk:
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
@@ -330,6 +330,11 @@ def _convert_delta_to_message_chunk(
             ]
         except KeyError:
             pass
+
+    if extra_additional_fields:
+        for field in extra_additional_fields:
+            if _value := _dict.get(field):
+                additional_kwargs[field] = _value
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
@@ -550,6 +555,16 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
+    extra_additional_fields: Optional[List[str]] = None
+    """Append additional keyword parameters or metadata to the message.
+    
+    Provides a flexible way to store supplementary information about a message, which can 
+    contain custom data that is not part of the standard message structure, allowing 
+    additional context or metadata to be carried in the message object.
+    
+    Can store additional information according to different APIs.
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -724,7 +739,7 @@ class BaseChatOpenAI(BaseChatModel):
             return None
 
         message_chunk = _convert_delta_to_message_chunk(
-            choice["delta"], default_chunk_class
+            choice["delta"], default_chunk_class, self.extra_additional_fields
         )
         generation_info = {**base_generation_info} if base_generation_info else {}
 
