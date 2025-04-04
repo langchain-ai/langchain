@@ -28,7 +28,7 @@ else:
     from pydantic.v1 import BaseModel
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore[assignment,misc]
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -43,7 +43,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore
+    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore[valid-type]
     """The Pydantic object to use for validation.
     If None, no validation is performed."""
 

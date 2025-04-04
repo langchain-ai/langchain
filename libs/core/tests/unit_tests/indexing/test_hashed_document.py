@@ -16,7 +16,7 @@ def test_hashing_with_missing_content() -> None:
     with pytest.raises(TypeError):
         _HashedDocument(
             metadata={"key": "value"},
-        )  # type: ignore
+        )  # type: ignore[call-arg]
 
 
 def test_uid_auto_assigned_to_hash() -> None:

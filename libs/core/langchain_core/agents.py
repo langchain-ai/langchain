@@ -113,7 +113,7 @@ class AgentActionMessageLog(AgentAction):
     # Ignoring type because we're overriding the type from AgentAction.
     # And this is the correct thing to do in this case.
     # The type literal is used for serialization purposes.
-    type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore
+    type: Literal["AgentActionMessageLog"] = "AgentActionMessageLog"  # type: ignore[assignment]
 
 
 class AgentStep(Serializable):

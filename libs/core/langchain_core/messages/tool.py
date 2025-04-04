@@ -158,7 +158,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
                 msg = "Cannot concatenate ToolMessageChunks with different names."

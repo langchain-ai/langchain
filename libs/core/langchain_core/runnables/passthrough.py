@@ -569,7 +569,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # start map output stream
             first_map_chunk_future = executor.submit(
                 next,
-                map_output,  # type: ignore
+                map_output,
                 None,
             )
             # consume passthrough stream

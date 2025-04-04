@@ -657,7 +657,7 @@ async def _astream_log_implementation(
                     final_output = chunk
                 else:
                     try:
-                        final_output = final_output + chunk  # type: ignore
+                        final_output = final_output + chunk  # type: ignore[operator]
                     except TypeError:
                         prev_final_output = None
                         final_output = chunk

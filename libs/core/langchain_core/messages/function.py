@@ -44,7 +44,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     Defaults to "FunctionMessageChunk"."""
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:
                 msg = "Cannot concatenate FunctionMessageChunks with different names."

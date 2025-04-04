@@ -242,7 +242,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 with set_config_context(child_config) as context:
                     coro = context.run(runnable.ainvoke, input, config, **kwargs)
                     if asyncio_accepts_context():
-                        output = await asyncio.create_task(coro, context=context)  # type: ignore
+                        output = await asyncio.create_task(coro, context=context)
                     else:
                         output = await coro
             except self.exceptions_to_handle as e:
@@ -335,7 +335,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input[self.exception_key] = output  # type: ignore
+                        input[self.exception_key] = output  # type: ignore[index]
                     handled_exceptions[i] = cast("BaseException", output)
                 else:
                     run_managers[i].on_chain_end(output)
@@ -432,7 +432,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input[self.exception_key] = output  # type: ignore
+                        input[self.exception_key] = output  # type: ignore[index]
                     handled_exceptions[i] = cast("BaseException", output)
                 else:
                     to_return[i] = output
@@ -455,7 +455,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if not return_exceptions and sorted_handled_exceptions:
             raise sorted_handled_exceptions[0][1]
         to_return.update(handled_exceptions)
-        return [output for _, output in sorted(to_return.items())]  # type: ignore
+        return [output for _, output in sorted(to_return.items())]  # type: ignore[misc]
 
     @override
     def stream(
@@ -493,7 +493,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)  # type: ignore
+                    chunk: Output = context.run(next, stream)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -513,7 +513,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             for chunk in stream:
                 yield chunk
                 try:
-                    output = output + chunk  # type: ignore
+                    output = output + chunk  # type: ignore[operator]
                 except TypeError:
                     output = None
         except BaseException as e:
@@ -583,7 +583,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             async for chunk in stream:
                 yield chunk
                 try:
-                    output = output + chunk  # type: ignore
+                    output = output + chunk  # type: ignore[operator]
                 except TypeError:
                     output = None
         except BaseException as e:

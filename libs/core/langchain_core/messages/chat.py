@@ -31,12 +31,12 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
+    type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore[assignment]
     """The type of the message (used during serialization).
     Defaults to "ChatMessageChunk"."""
 
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, ChatMessageChunk):
             if self.role != other.role:
                 msg = "Cannot concatenate ChatMessageChunks with different roles."

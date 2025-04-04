@@ -51,7 +51,7 @@ class CustomAddTextsVectorstore(VectorStore):
         return [self.store[id] for id in ids if id in self.store]
 
     @classmethod
-    def from_texts(  # type: ignore
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
@@ -95,7 +95,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
         return [self.store[id] for id in ids if id in self.store]
 
     @classmethod
-    def from_texts(  # type: ignore
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,

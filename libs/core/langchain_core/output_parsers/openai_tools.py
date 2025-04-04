@@ -66,7 +66,7 @@ def parse_tool_call(
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
-        parsed = create_tool_call(**parsed)  # type: ignore
+        parsed = create_tool_call(**parsed)  # type: ignore[assignment,arg-type]
     return parsed
 
 
