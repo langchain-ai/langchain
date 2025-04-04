@@ -2939,7 +2939,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.7"
+version = "0.3.8"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
