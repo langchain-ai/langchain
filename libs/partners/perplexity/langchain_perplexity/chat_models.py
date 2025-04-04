@@ -75,14 +75,12 @@ class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
     Setup:
-        To use, you should have the ``openai`` python package installed, and the
-        environment variable ``PPLX_API_KEY`` set to your API key.
+        To use, you should have the environment variable ``PPLX_API_KEY`` set to your API key.
         Any parameters that are valid to be passed to the openai.create call
         can be passed in, even if not explicitly saved on this class.
 
         .. code-block:: bash
 
-            pip install openai
             export PPLX_API_KEY=your_api_key
 
         Key init args - completion params:
