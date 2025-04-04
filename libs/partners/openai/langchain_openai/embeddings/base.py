@@ -239,8 +239,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     skip_tokenization: bool = False
-    """Set this to True to skip tokenization entirely and pass texts directly to the API.
-    Use this for OpenAI-compatible APIs that don't support tiktoken or huggingface tokenizers."""
+    """Whether to skip tokenization entirely and pass texts directly to the API.
+    Use this for OpenAI-compatible APIs that don't support tiktoken or
+    huggingface tokenizers."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -403,7 +404,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     "Could not import transformers python package. "
                     "This is needed for OpenAIEmbeddings to work without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
-                    "Alternatively, set `skip_tokenization=True` to bypass tokenization entirely."
+                    "Alternatively, set `skip_tokenization=True` to bypass "
+                    "tokenization entirely."
                 )
 
             tokenizer = AutoTokenizer.from_pretrained(
