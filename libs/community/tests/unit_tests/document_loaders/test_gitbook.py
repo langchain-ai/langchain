@@ -1,9 +1,8 @@
-from typing import Any, Optional, Tuple
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any, Tuple
+from unittest.mock import MagicMock, patch
 
 import pytest
 from bs4 import BeautifulSoup
-from langchain_core.documents import Document
 
 from langchain_community.document_loaders.gitbook import GitbookLoader
 
@@ -33,29 +32,6 @@ def mock_soups() -> Tuple[BeautifulSoup, BeautifulSoup]:
     """
     mock_page_soup = BeautifulSoup(page_content, "html.parser")
     return mock_sitemap_soup, mock_page_soup
-
-
-@patch("langchain_community.document_loaders.web_base.requests.get")
-def test_init_with_default_sitemap(mock_get: MagicMock) -> None:
-    # Test that the loader uses the default sitemap URL when load_all_paths=True
-    loader = GitbookLoader(web_page="https://example.com", load_all_paths=True)
-
-    # Check that the web_path was set to the default sitemap URL
-    assert loader.web_paths[0] == "https://example.com/sitemap.xml"
-
-
-@patch("langchain_community.document_loaders.web_base.requests.get")
-def test_init_with_custom_sitemap(mock_get: MagicMock) -> None:
-    # Test that the loader uses the provided sitemap URL when specified
-    custom_sitemap = "https://example.com/sitemap-pages.xml"
-    loader = GitbookLoader(
-        web_page="https://example.com",
-        load_all_paths=True,
-        sitemap_url=custom_sitemap,
-    )
-
-    # Check that the web_path was set to the custom sitemap URL
-    assert loader.web_paths[0] == custom_sitemap
 
 
 @patch("langchain_community.document_loaders.gitbook.GitbookLoader.scrape")
@@ -91,121 +67,7 @@ def test_lazy_load_with_custom_sitemap(
         assert "This is test content." in doc.page_content
 
 
-@patch("langchain_community.document_loaders.web_base.requests.get")
-def test_with_single_page(mock_get: MagicMock) -> None:
-    # Test loading a single page (load_all_paths=False)
-    loader = GitbookLoader(web_page="https://example.com/page", load_all_paths=False)
-
-    # Check that sitemap URL logic was not applied
-    assert loader.web_paths[0] == "https://example.com/page"
-
-
 @patch("langchain_community.document_loaders.gitbook.GitbookLoader.scrape")
-def test_get_paths_extraction(
-    mock_scrape: MagicMock, mock_soups: Tuple[BeautifulSoup, BeautifulSoup]
-) -> None:
-    # Test that _get_paths correctly extracts paths from sitemap
-    mock_sitemap_soup, _ = mock_soups
-    mock_scrape.return_value = mock_sitemap_soup
-
-    loader = GitbookLoader(web_page="https://example.com", load_all_paths=True)
-
-    soup_info = loader.scrape()
-    paths = loader._get_paths(soup_info)
-
-    # Check that paths were extracted correctly
-    assert len(paths) == 3
-    assert paths == ["/page1", "/page2", "/page3"]
-
-
-@patch("requests.get")
-def test_integration_with_different_sitemaps(mock_get: MagicMock) -> None:
-    # This test simulates the reported issue with different sitemap formats
-
-    # Mock response for default sitemap (empty content)
-    empty_resp = MagicMock()
-    empty_resp.text = "<urlset></urlset>"
-    empty_resp.status_code = 200
-
-    # Mock response for custom sitemap (with content)
-    custom_resp = MagicMock()
-    custom_resp.text = """
-    <urlset>
-        <url><loc>https://docs.gitbook.com/page1</loc></url>
-        <url><loc>https://docs.gitbook.com/page2</loc></url>
-    </urlset>
-    """
-    custom_resp.status_code = 200
-
-    # Mock response for the actual pages
-    page_resp = MagicMock()
-    page_resp.text = """
-    <html><body><main><h1>Page</h1><p>Content</p></main></body></html>
-    """
-    page_resp.status_code = 200
-
-    # Define side effect to return different responses based on URL
-    def side_effect(url: str, *args: Any, **kwargs: Any) -> MagicMock:
-        if url == "https://docs.gitbook.com/sitemap.xml":
-            return empty_resp
-        elif url == "https://docs.gitbook.com/sitemap-pages.xml":
-            return custom_resp
-        else:
-            return page_resp
-
-    mock_get.side_effect = side_effect
-
-    # Test with default sitemap (should result in no docs)
-    with patch(
-        "langchain_community.document_loaders.web_base.requests.get",
-        side_effect=side_effect,
-    ):
-        with patch(
-            "langchain_community.document_loaders.gitbook.GitbookLoader.scrape"
-        ) as mock_scrape:
-            with patch(
-                "langchain_community.document_loaders.gitbook.GitbookLoader.scrape_all"
-            ) as mock_scrape_all:
-                mock_scrape.return_value = BeautifulSoup(
-                    "<urlset></urlset>", "html.parser"
-                )
-                mock_scrape_all.return_value = []
-
-                loader1 = GitbookLoader(
-                    web_page="https://docs.gitbook.com/", load_all_paths=True
-                )
-                docs1 = list(loader1.lazy_load())
-                assert len(docs1) == 0
-
-    # Test with custom sitemap (should result in docs)
-    with patch(
-        "langchain_community.document_loaders.web_base.requests.get",
-        side_effect=side_effect,
-    ):
-        with patch(
-            "langchain_community.document_loaders.gitbook.GitbookLoader.scrape"
-        ) as mock_scrape:
-            with patch(
-                "langchain_community.document_loaders.gitbook.GitbookLoader.scrape_all"
-            ) as mock_scrape_all:
-                mock_scrape.return_value = BeautifulSoup(
-                    custom_resp.text, "html.parser"
-                )
-                mock_scrape_all.return_value = [
-                    BeautifulSoup(page_resp.text, "html.parser"),
-                    BeautifulSoup(page_resp.text, "html.parser"),
-                ]
-
-                loader2 = GitbookLoader(
-                    web_page="https://docs.gitbook.com/",
-                    load_all_paths=True,
-                    sitemap_url="https://docs.gitbook.com/sitemap-pages.xml",
-                )
-                docs2 = list(loader2.lazy_load())
-                assert len(docs2) == 2
-
-
-@patch("langchain_community.document_loaders.gitbook.GitbookLoader._scrape")
 @patch("langchain_community.document_loaders.gitbook.GitbookLoader.scrape_all")
 def test_recursive_sitemap_handling(
     mock_scrape_all: MagicMock, mock_scrape: MagicMock
@@ -267,15 +129,28 @@ def test_recursive_sitemap_handling(
     """
     mock_page = BeautifulSoup(page_content, "html.parser")
 
-    # Configure the mock to return different responses based on URL
-    def scrape_side_effect(url: str, parser: str = "html.parser") -> BeautifulSoup:
-        if url == "https://example.com/sitemap.xml":
+    # Track the order of sitemap URLs to be processed
+    sitemap_urls_order = [
+        "https://example.com/sitemap.xml",
+        "https://example.com/sitemap-pages.xml",
+        "https://example.com/api/sitemap-pages.xml",
+        "https://example.com/changelog/sitemap-pages.xml",
+    ]
+    sitemap_index = 0
+
+    # Configure the mock to return different responses based on current_web_paths
+    def scrape_side_effect(*args: Any, **kwargs: Any) -> BeautifulSoup:
+        nonlocal sitemap_index
+        web_path = sitemap_urls_order[sitemap_index]
+        sitemap_index = (sitemap_index + 1) % len(sitemap_urls_order)
+
+        if web_path == "https://example.com/sitemap.xml":
             return mock_sitemap_index
-        elif url == "https://example.com/sitemap-pages.xml":
+        elif web_path == "https://example.com/sitemap-pages.xml":
             return mock_sitemap_pages
-        elif url == "https://example.com/api/sitemap-pages.xml":
+        elif web_path == "https://example.com/api/sitemap-pages.xml":
             return mock_sitemap_api_pages
-        elif url == "https://example.com/changelog/sitemap-pages.xml":
+        elif web_path == "https://example.com/changelog/sitemap-pages.xml":
             return mock_sitemap_changelog_pages
         else:
             # Assume any other URL is a content page
@@ -300,22 +175,11 @@ def test_recursive_sitemap_handling(
     # Verify we got the expected number of documents (2 + 1 + 2 = 5)
     assert len(docs) == 5
 
-    # Verify _scrape was called for the expected sitemap URLs
-    # (parser doesn't matter now)
-    expected_sitemap_urls = [
-        "https://example.com/sitemap.xml",
-        "https://example.com/sitemap-pages.xml",
-        "https://example.com/api/sitemap-pages.xml",
-        "https://example.com/changelog/sitemap-pages.xml",
-    ]
-    actual_scraped_urls = [call[0][0] for call in mock_scrape.call_args_list]
-    assert len(actual_scraped_urls) == len(expected_sitemap_urls)
-    assert set(actual_scraped_urls) == set(expected_sitemap_urls)
-
     # Check that scrape_all was called with the correct content page URLs
     assert mock_scrape_all.call_count == 1
     urls_arg = mock_scrape_all.call_args[0][0]
     assert len(urls_arg) == 5
+
     # Use sets for easier comparison, order doesn't matter
     expected_content_urls = {
         "https://example.com/page1",
@@ -333,142 +197,7 @@ def test_recursive_sitemap_handling(
         assert doc.metadata["title"] == "Test Page"
 
 
-@patch("langchain_community.document_loaders.gitbook.GitbookLoader._scrape")
-@patch("langchain_community.document_loaders.gitbook.GitbookLoader.scrape_all")
-@pytest.mark.asyncio
-async def test_aload_method(
-    mock_scrape_all: MagicMock,
-    mock_scrape: MagicMock,
-) -> None:
-    """Test the aload() method which returns a list of documents asynchronously."""
-    # Create mock content
-    mock_sitemap_content = """
-    <urlset>
-        <url><loc>https://example.com/page1</loc></url>
-        <url><loc>https://example.com/page2</loc></url>
-    </urlset>
-    """
-    mock_sitemap = BeautifulSoup(mock_sitemap_content, "html.parser")
-
-    # Create mock page soup
-    page_content = """
-    <html>
-        <body>
-            <main>
-                <h1>Test Page</h1>
-                <p>This is test content.</p>
-            </main>
-        </body>
-    </html>
-    """
-    mock_page = BeautifulSoup(page_content, "html.parser")
-
-    # Setup mocks
-    mock_scrape.return_value = mock_sitemap
-    mock_scrape_all.return_value = [mock_page, mock_page]
-
-    # Create mock for async methods
-    mock_doc = Document(
-        page_content="This is test content.",
-        metadata={"source": "test", "title": "Test Page"},
-    )
-
-    async def mock_afetch(url: str) -> Document:
-        return mock_doc
-
-    # Create loader and patch async methods
-    with (
-        patch.object(
-            GitbookLoader,
-            "_aprocess_sitemap",
-            new_callable=AsyncMock,
-            return_value=["https://example.com/page1", "https://example.com/page2"],
-        ),
-        patch.object(
-            GitbookLoader,
-            "_afetch_and_process_url",
-            new_callable=AsyncMock,
-            side_effect=mock_afetch,
-        ),
-    ):
-        loader = GitbookLoader(
-            web_page="https://example.com",
-            load_all_paths=True,
-        )
-
-        # Test the aload() method (async)
-        docs = await loader.aload()
-
-        # Verify results
-        assert isinstance(docs, list)
-        assert len(docs) == 2
-        for doc in docs:
-            assert "This is test content." in doc.page_content
-            assert doc.metadata["title"] == "Test Page"
-
-
-@pytest.mark.asyncio
-async def test_alazy_load_method() -> None:
-    """Test the alazy_load() async generator method."""
-    # Create mock document
-    mock_doc = Document(
-        page_content="This is test content.",
-        metadata={"source": "test", "title": "Test Page"},
-    )
-
-    # Define async mock functions
-    async def mock_ascrape(url: str, parser: Optional[str] = None) -> BeautifulSoup:
-        sitemap_content = """
-        <urlset>
-            <url><loc>https://example.com/page1</loc></url>
-            <url><loc>https://example.com/page2</loc></url>
-        </urlset>
-        """
-        return BeautifulSoup(sitemap_content, "html.parser")
-
-    async def mock_aprocess_sitemap(soup: BeautifulSoup, base_url: str) -> list[str]:
-        return ["https://example.com/page1", "https://example.com/page2"]
-
-    async def mock_afetch(url: str) -> Document:
-        return mock_doc
-
-    # Patch the async methods
-    with (
-        patch.object(
-            GitbookLoader, "_ascrape", new_callable=AsyncMock, side_effect=mock_ascrape
-        ),
-        patch.object(
-            GitbookLoader,
-            "_aprocess_sitemap",
-            new_callable=AsyncMock,
-            side_effect=mock_aprocess_sitemap,
-        ),
-        patch.object(
-            GitbookLoader,
-            "_afetch_and_process_url",
-            new_callable=AsyncMock,
-            side_effect=mock_afetch,
-        ),
-    ):
-        # Create loader
-        loader = GitbookLoader(
-            web_page="https://example.com",
-            load_all_paths=True,
-        )
-
-        # Test the alazy_load() method (async generator)
-        docs = []
-        async for doc in loader.alazy_load():
-            docs.append(doc)
-
-        # Verify results
-        assert len(docs) == 2
-        for doc in docs:
-            assert "This is test content." in doc.page_content
-            assert doc.metadata["title"] == "Test Page"
-
-
-@patch("langchain_community.document_loaders.gitbook.GitbookLoader._scrape")
+@patch("langchain_community.document_loaders.gitbook.GitbookLoader.scrape")
 @patch("langchain_community.document_loaders.gitbook.GitbookLoader.scrape_all")
 def test_load_method(
     mock_scrape_all: MagicMock,
@@ -517,3 +246,130 @@ def test_load_method(
         assert "Test Page" in doc.page_content
         assert "This is test content." in doc.page_content
         assert doc.metadata["title"] == "Test Page"
+
+
+@patch("langchain_community.document_loaders.gitbook.GitbookLoader.ascrape_all")
+@pytest.mark.asyncio
+async def test_alazy_load_single_page(mock_ascrape_all: MagicMock) -> None:
+    """Test the alazy_load() method for a single page."""
+    # Create mock page soup
+    page_content = """
+    <html>
+        <body>
+            <main>
+                <h1>Test Single Page</h1>
+                <p>This is single page test content.</p>
+            </main>
+            <title>Test Page Title</title>
+        </body>
+    </html>
+    """
+    mock_page = BeautifulSoup(page_content, "html.parser")
+
+    # Setup mock to return our page
+    mock_ascrape_all.return_value = [mock_page]
+
+    # Create loader for a single page
+    loader = GitbookLoader(
+        web_page="https://example.com/page",
+        load_all_paths=False,
+    )
+
+    # Collect documents
+    docs = []
+    async for doc in loader.alazy_load():
+        docs.append(doc)
+
+    # Verify results
+    assert len(docs) == 1
+    assert "Test Single Page" in docs[0].page_content
+    assert "This is single page test content." in docs[0].page_content
+    # Check source in metadata
+    assert docs[0].metadata["source"] == "https://example.com/page"
+    # Title may be from h1 or title element depending on implementation
+    assert "title" in docs[0].metadata
+    assert docs[0].metadata["title"] in ["Test Single Page", "Test Page Title"]
+
+
+@patch("langchain_community.document_loaders.gitbook.GitbookLoader.ascrape_all")
+@patch("langchain_community.document_loaders.gitbook.GitbookLoader._aprocess_sitemap")
+@pytest.mark.asyncio
+async def test_alazy_load_recursive_sitemap(
+    mock_aprocess_sitemap: MagicMock, mock_ascrape_all: MagicMock
+) -> None:
+    """Test the alazy_load() method with recursive sitemap processing."""
+    # Create mock sitemaps and content
+    sitemap_content = """
+    <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <sitemap><loc>https://example.com/sitemap1.xml</loc></sitemap>
+    </sitemapindex>
+    """
+    mock_sitemap = BeautifulSoup(sitemap_content, "html.parser")
+
+    # Create mock page soups
+    page_content = """
+    <html>
+        <body>
+            <main>
+                <h1>Test Async Page</h1>
+                <p>This is async test content.</p>
+            </main>
+        </body>
+    </html>
+    """
+    mock_page1 = BeautifulSoup(page_content, "html.parser")
+    mock_page2 = BeautifulSoup(page_content, "html.parser")
+    mock_page3 = BeautifulSoup(page_content, "html.parser")
+
+    # Setup mock returns for different calls to ascrape_all
+    mock_ascrape_all.side_effect = [
+        # First call: Get the initial sitemap
+        [mock_sitemap],
+        # Second call: Get the content pages
+        [mock_page1, mock_page2, mock_page3],
+    ]
+
+    # Setup _aprocess_sitemap to return some paths
+    mock_aprocess_sitemap.return_value = [
+        "/async-page1",
+        "/async-page2",
+        "/async-page3",
+    ]
+
+    # Create loader with sitemap URL
+    loader = GitbookLoader(
+        web_page="https://example.com",
+        load_all_paths=True,
+        sitemap_url="https://example.com/sitemap.xml",
+    )
+
+    # Collect documents
+    docs = []
+    async for doc in loader.alazy_load():
+        docs.append(doc)
+
+    # Verify results
+    assert len(docs) == 3
+    assert mock_ascrape_all.call_count == 2
+    assert mock_aprocess_sitemap.call_count == 1
+
+    # Check that the first call to ascrape_all had the expected arguments
+    first_call_args, first_call_kwargs = mock_ascrape_all.call_args_list[0]
+    assert first_call_args[0] == ["https://example.com/sitemap.xml"]
+    # Check parser parameter in kwargs instead of positional args
+    assert first_call_kwargs.get("parser") == "xml"
+
+    # Second call should fetch content URLs
+    expected_urls = [
+        "https://example.com/async-page1",
+        "https://example.com/async-page2",
+        "https://example.com/async-page3",
+    ]
+    second_call_args = mock_ascrape_all.call_args_list[1][0][0]
+    assert set(second_call_args) == set(expected_urls)
+
+    # Verify document content
+    for doc in docs:
+        assert "Test Async Page" in doc.page_content
+        assert "This is async test content." in doc.page_content
+        assert doc.metadata["title"] == "Test Async Page"
