@@ -8,7 +8,7 @@ JIRA_ISSUE_CREATE_PROMPT = """
 
 JIRA_GET_ALL_PROJECTS_PROMPT = """
     This tool is a wrapper around atlassian-python-api's Jira project API, 
-    useful when you need to fetch all the projects the user has access to, find out how many projects there are, or as an intermediary step that involv searching by projects. 
+    useful when you need to fetch all the projects the user has access to, find out how many projects there are, or as an intermediary step that involve searching by projects. 
     there is no input to this tool.
     """
 
