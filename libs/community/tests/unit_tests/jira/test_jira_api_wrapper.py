@@ -60,3 +60,23 @@ class TestJiraAPIWrapper:
             password="test_token",
             cloud=False,
         )
+
+    def test_jira_api_wrapper_with_oauth_dict(self, mock_jira: MagicMock) -> None:
+        oauth_dict = """"{
+            "client_id": "test_client_id",
+            "token": {
+                "access_token": "test_access_token",
+                "token_type": "test_token_type", 
+            }
+        }"""
+
+        JiraAPIWrapper(
+            jira_oauth_dict=oauth_dict,
+            jira_instance_url="https://test.atlassian.net",
+            jira_cloud=False,
+        )
+        mock_jira.assert_called_once_with(
+            url="https://test.atlassian.net",
+            oauth2=oauth_dict,
+            cloud=False,
+        )
