@@ -1,6 +1,6 @@
 """Util that calls Jira."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -14,6 +14,7 @@ class JiraAPIWrapper(BaseModel):
     confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
+    jira_oauth_dict: Optional[Union[Dict[str, Union[str, Dict[str, str]]]]] = None
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
 
@@ -31,9 +32,29 @@ class JiraAPIWrapper(BaseModel):
         values["jira_username"] = jira_username
 
         jira_api_token = get_from_dict_or_env(
-            values, "jira_api_token", "JIRA_API_TOKEN"
+            values, "jira_api_token", "JIRA_API_TOKEN", default=""
         )
         values["jira_api_token"] = jira_api_token
+
+        jira_oauth_dict = get_from_dict_or_env(
+            values, "jira_oauth_dict", "JIRA_OAUTH_DICT", default=""
+        )
+        values["jira_oauth_dict"] = jira_oauth_dict
+
+        if isinstance(jira_oauth_dict, str):
+            try:
+                import json
+
+                jira_oauth_dict = json.loads(jira_oauth_dict)
+            except ImportError:
+                raise ImportError(
+                    "json is not installed. Please install it with `pip install json`"
+                )
+            except json.decoder.JSONDecodeError as e:
+                raise ValueError(
+                    f"The format of the JIRA_OAUTH_DICT string is "
+                    f"not a valid dictionary: {e}"
+                )
 
         jira_instance_url = get_from_dict_or_env(
             values, "jira_instance_url", "JIRA_INSTANCE_URL"
@@ -47,6 +68,12 @@ class JiraAPIWrapper(BaseModel):
         jira_cloud = jira_cloud_str.lower() == "true"
         values["jira_cloud"] = jira_cloud
 
+        if jira_api_token and jira_oauth_dict:
+            raise ValueError(
+                "You have to provide either a jira_api_token or a jira_oauth_dict. "
+                "Not both."
+            )
+
         try:
             from atlassian import Confluence, Jira
         except ImportError:
@@ -55,26 +82,38 @@ class JiraAPIWrapper(BaseModel):
                 "Please install it with `pip install atlassian-python-api`"
             )
 
-        if jira_username == "":
-            jira = Jira(
-                url=jira_instance_url,
-                token=jira_api_token,
-                cloud=jira_cloud,
-            )
-        else:
-            jira = Jira(
+        if jira_api_token:
+            if jira_username == "":
+                jira = Jira(
+                    url=jira_instance_url,
+                    token=jira_api_token,
+                    cloud=jira_cloud,
+                )
+            else:
+                jira = Jira(
+                    url=jira_instance_url,
+                    username=jira_username,
+                    password=jira_api_token,
+                    cloud=jira_cloud,
+                )
+
+            confluence = Confluence(
                 url=jira_instance_url,
                 username=jira_username,
                 password=jira_api_token,
                 cloud=jira_cloud,
             )
-
-        confluence = Confluence(
-            url=jira_instance_url,
-            username=jira_username,
-            password=jira_api_token,
-            cloud=jira_cloud,
-        )
+        elif jira_oauth_dict:
+            jira = Jira(
+                url=jira_instance_url,
+                oauth2=jira_oauth_dict,
+                cloud=jira_cloud,
+            )
+            confluence = Confluence(
+                url=jira_instance_url,
+                oauth2=jira_oauth_dict,
+                cloud=jira_cloud,
+            )
 
         values["jira"] = jira
         values["confluence"] = confluence
@@ -126,8 +165,8 @@ class JiraAPIWrapper(BaseModel):
             id = project["id"]
             key = project["key"]
             name = project["name"]
-            type = project["projectTypeKey"]
-            style = project.get("style", None)
+            type = project.get("projectTypeKey")
+            style = project.get("style")
             parsed.append(
                 {"id": id, "key": key, "name": name, "type": type, "style": style}
             )
