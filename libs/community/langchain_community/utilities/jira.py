@@ -14,7 +14,7 @@ class JiraAPIWrapper(BaseModel):
     confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
-    jira_oauth_dict: Optional[Union[Dict[str, Union[str, Dict[str, str]]]]] = None
+    jira_oauth_dict: Optional[Union[Dict[str, Union[str, Dict[str, str]]], str]] = None
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
 
@@ -41,7 +41,7 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_oauth_dict"] = jira_oauth_dict
 
-        if isinstance(jira_oauth_dict, str):
+        if jira_oauth_dict and isinstance(jira_oauth_dict, str):
             try:
                 import json
 
