@@ -22,7 +22,7 @@ from pydantic import (
     SkipValidation,
     model_validator,
 )
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
@@ -304,12 +304,12 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template(
-        cls: type[MessagePromptTemplateT],
+        cls,
         template: str,
         template_format: PromptTemplateFormat = "f-string",
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> MessagePromptTemplateT:
+    ) -> Self:
         """Create a class from a string template.
 
         Args:
@@ -335,11 +335,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     @classmethod
     def from_template_file(
-        cls: type[MessagePromptTemplateT],
+        cls,
         template_file: Union[str, Path],
         input_variables: list[str],
         **kwargs: Any,
-    ) -> MessagePromptTemplateT:
+    ) -> Self:
         """Create a class from a template file.
 
         Args:
@@ -456,11 +456,6 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
         )
 
 
-_StringImageMessagePromptTemplateT = TypeVar(
-    "_StringImageMessagePromptTemplateT", bound="_StringImageMessagePromptTemplate"
-)
-
-
 class _TextTemplateParam(TypedDict, total=False):
     text: Union[str, dict]
 
@@ -483,13 +478,13 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
     @classmethod
     def from_template(
-        cls: type[_StringImageMessagePromptTemplateT],
+        cls: type[Self],
         template: Union[str, list[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
         template_format: PromptTemplateFormat = "f-string",
         *,
         partial_variables: Optional[dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> _StringImageMessagePromptTemplateT:
+    ) -> Self:
         """Create a class from a string template.
 
         Args:
@@ -576,11 +571,11 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
     @classmethod
     def from_template_file(
-        cls: type[_StringImageMessagePromptTemplateT],
+        cls: type[Self],
         template_file: Union[str, Path],
         input_variables: list[str],
         **kwargs: Any,
-    ) -> _StringImageMessagePromptTemplateT:
+    ) -> Self:
         """Create a class from a template file.
 
         Args:
