@@ -1,4 +1,4 @@
-from typing import Optional as Optional
+"""String output parser."""
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
@@ -8,12 +8,19 @@ class StrOutputParser(BaseTransformOutputParser[str]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """StrOutputParser is serializable.
+
+        Returns:
+            True
+        """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Default is ["langchain", "schema", "output_parser"].
+        """
         return ["langchain", "schema", "output_parser"]
 
     @property

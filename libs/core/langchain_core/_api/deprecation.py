@@ -44,10 +44,11 @@ T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
 
 
 def _validate_deprecation_params(
-    pending: bool,
     removal: str,
     alternative: str,
     alternative_import: str,
+    *,
+    pending: bool,
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
@@ -109,6 +110,8 @@ def deprecated(
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
+        alternative_import: str, optional
+            An alternative import that the user may use instead.
         pending : bool, optional
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
@@ -121,6 +124,8 @@ def deprecated(
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
+        package: str, optional
+            The package of the deprecated object.
 
     Examples:
 
@@ -130,7 +135,9 @@ def deprecated(
             def the_function_to_deprecate():
                 pass
     """
-    _validate_deprecation_params(pending, removal, alternative, alternative_import)
+    _validate_deprecation_params(
+        removal, alternative, alternative_import, pending=pending
+    )
 
     def deprecate(
         obj: T,
@@ -434,6 +441,8 @@ def warn_deprecated(
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
+        alternative_import: str, optional
+            An alternative import that the user may use instead.
         pending : bool, optional
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
@@ -446,6 +455,8 @@ def warn_deprecated(
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
+        package: str, optional
+            The package of the deprecated object.
     """
     if not pending:
         if not removal:
@@ -455,8 +466,7 @@ def warn_deprecated(
                 f"{removal}"
             )
             raise NotImplementedError(msg)
-        else:
-            removal = f"in {removal}"
+        removal = f"in {removal}"
 
     if not message:
         message = ""

@@ -1,4 +1,5 @@
-"""Adapted from https://github.com/noahmorrison/chevron
+"""Adapted from https://github.com/noahmorrison/chevron.
+
 MIT License.
 """
 
@@ -83,8 +84,7 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
         # Then the next tag could be a standalone
         # Otherwise it can't be
         return padding.isspace() or padding == ""
-    else:
-        return False
+    return False
 
 
 def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
@@ -106,8 +106,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
         return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
-    else:
-        return False
+    return False
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
@@ -323,14 +322,15 @@ def _html_escape(string: str) -> str:
 
     # & must be handled first
     string = string.replace("&", "&amp;")
-    for char in html_codes:
-        string = string.replace(char, html_codes[char])
+    for char, code in html_codes.items():
+        string = string.replace(char, code)
     return string
 
 
 def _get_key(
     key: str,
     scopes: Scopes,
+    *,
     warn: bool,
     keep: bool,
     def_ldel: str,
@@ -385,7 +385,7 @@ def _get_key(
     # We couldn't find the key in any of the scopes
 
     if warn:
-        logger.warn(f"Could not find key '{key}'")
+        logger.warning("Could not find key '%s'", key)
 
     if keep:
         return f"{def_ldel} {key} {def_rdel}"

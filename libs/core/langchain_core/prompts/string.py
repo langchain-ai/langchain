@@ -65,6 +65,7 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
 
 def validate_jinja2(template: str, input_variables: list[str]) -> None:
     """Validate that the input variables are valid for the template.
+
     Issues a warning if missing or extra variables are found.
 
     Args:
@@ -96,11 +97,9 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
             "Please install it with `pip install jinja2`."
         )
         raise ImportError(msg) from e
-    # noqa for insecure warning elsewhere
     env = Environment()  # noqa: S701
     ast = env.parse(template)
-    variables = meta.find_undeclared_variables(ast)
-    return variables
+    return meta.find_undeclared_variables(ast)
 
 
 def mustache_formatter(template: str, /, **kwargs: Any) -> str:

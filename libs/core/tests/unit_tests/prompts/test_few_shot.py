@@ -1,5 +1,6 @@
 """Test few shot prompt template."""
 
+import re
 from collections.abc import Sequence
 from typing import Any
 
@@ -24,7 +25,7 @@ EXAMPLE_PROMPT = PromptTemplate(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 @pytest.mark.requires("jinja2")
 def example_jinja2_prompt() -> tuple[PromptTemplate, list[dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
@@ -74,7 +75,10 @@ def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     # Test when missing in suffix
     template = "This is a {foo} test."
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         FewShotPromptTemplate(
             input_variables=[],
             suffix=template,
@@ -91,7 +95,10 @@ def test_prompt_missing_input_variables() -> None:
 
     # Test when missing in prefix
     template = "This is a {foo} test."
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         FewShotPromptTemplate(
             input_variables=[],
             suffix="foo",

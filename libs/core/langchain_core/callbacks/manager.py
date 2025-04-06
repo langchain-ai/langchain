@@ -1,3 +1,5 @@
+"""Run managers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,6 +22,7 @@ from typing import (
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
+from typing_extensions import Self
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -68,6 +71,7 @@ def trace_as_chain_group(
     metadata: Optional[dict[str, Any]] = None,
 ) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
+
     Useful for grouping different calls together as a single run even if
     they aren't composed in a single chain.
 
@@ -148,6 +152,7 @@ async def atrace_as_chain_group(
     metadata: Optional[dict[str, Any]] = None,
 ) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
+
     Useful for grouping different async calls together as a single run even if
     they aren't composed in a single chain.
 
@@ -282,13 +287,17 @@ def handle_event(
                 else:
                     handler_name = handler.__class__.__name__
                     logger.warning(
-                        f"NotImplementedError in {handler_name}.{event_name}"
-                        f" callback: {repr(e)}"
+                        "NotImplementedError in %s.%s callback: %s",
+                        handler_name,
+                        event_name,
+                        repr(e),
                     )
             except Exception as e:
                 logger.warning(
-                    f"Error in {handler.__class__.__name__}.{event_name} callback:"
-                    f" {repr(e)}"
+                    "Error in %s.%s callback: %s",
+                    handler.__class__.__name__,
+                    event_name,
+                    repr(e),
                 )
                 if handler.raise_error:
                     raise
@@ -328,7 +337,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
                 try:
                     runner.run(coro)
                 except Exception as e:
-                    logger.warning(f"Error in callback coroutine: {repr(e)}")
+                    logger.warning("Error in callback coroutine: %s", repr(e))
 
             # Run pending tasks scheduled by coros until they are all done
             while pending := asyncio.all_tasks(runner.get_loop()):
@@ -340,7 +349,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
             try:
                 asyncio.run(coro)
             except Exception as e:
-                logger.warning(f"Error in callback coroutine: {repr(e)}")
+                logger.warning("Error in callback coroutine: %s", repr(e))
 
 
 async def _ahandle_event_for_handler(
@@ -382,12 +391,17 @@ async def _ahandle_event_for_handler(
             )
         else:
             logger.warning(
-                f"NotImplementedError in {handler.__class__.__name__}.{event_name}"
-                f" callback: {repr(e)}"
+                "NotImplementedError in %s.%s callback: %s",
+                handler.__class__.__name__,
+                event_name,
+                repr(e),
             )
     except Exception as e:
         logger.warning(
-            f"Error in {handler.__class__.__name__}.{event_name} callback: {repr(e)}"
+            "Error in %s.%s callback: %s",
+            handler.__class__.__name__,
+            event_name,
+            repr(e),
         )
         if handler.raise_error:
             raise
@@ -429,9 +443,6 @@ async def ahandle_event(
             if not handler.run_inline
         )
     )
-
-
-BRM = TypeVar("BRM", bound="BaseRunManager")
 
 
 class BaseRunManager(RunManagerMixin):
@@ -476,7 +487,7 @@ class BaseRunManager(RunManagerMixin):
         self.inheritable_metadata = inheritable_metadata or {}
 
     @classmethod
-    def get_noop_manager(cls: type[BRM]) -> BRM:
+    def get_noop_manager(cls) -> Self:
         """Return a manager that doesn't perform any operations.
 
         Returns:
@@ -562,7 +573,7 @@ class ParentRunManager(RunManager):
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
         if tag is not None:
-            manager.add_tags([tag], False)
+            manager.add_tags([tag], inherit=False)
         return manager
 
 
@@ -643,7 +654,7 @@ class AsyncParentRunManager(AsyncRunManager):
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
         if tag is not None:
-            manager.add_tags([tag], False)
+            manager.add_tags([tag], inherit=False)
         return manager
 
 
@@ -1565,11 +1576,11 @@ class CallbackManager(BaseCallbackManager):
             cls,
             inheritable_callbacks,
             local_callbacks,
-            verbose,
             inheritable_tags,
             local_tags,
             inheritable_metadata,
             local_metadata,
+            verbose=verbose,
         )
 
 
@@ -2089,11 +2100,11 @@ class AsyncCallbackManager(BaseCallbackManager):
             cls,
             inheritable_callbacks,
             local_callbacks,
-            verbose,
             inheritable_tags,
             local_tags,
             inheritable_metadata,
             local_metadata,
+            verbose=verbose,
         )
 
 
@@ -2231,18 +2242,16 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 
-H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
-
-
 def _configure(
     callback_manager_cls: type[T],
     inheritable_callbacks: Callbacks = None,
     local_callbacks: Callbacks = None,
-    verbose: bool = False,
     inheritable_tags: Optional[list[str]] = None,
     local_tags: Optional[list[str]] = None,
     inheritable_metadata: Optional[dict[str, Any]] = None,
     local_metadata: Optional[dict[str, Any]] = None,
+    *,
+    verbose: bool = False,
 ) -> T:
     """Configure the callback manager.
 
@@ -2316,13 +2325,13 @@ def _configure(
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
-            callback_manager.add_handler(handler, False)
+            callback_manager.add_handler(handler, inherit=False)
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
-        callback_manager.add_tags(local_tags or [], False)
+        callback_manager.add_tags(local_tags or [], inherit=False)
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
-        callback_manager.add_metadata(local_metadata or {}, False)
+        callback_manager.add_metadata(local_metadata or {}, inherit=False)
     if tracing_metadata:
         callback_manager.add_metadata(tracing_metadata.copy())
     if tracing_tags:
@@ -2357,18 +2366,18 @@ def _configure(
             if debug:
                 pass
             else:
-                callback_manager.add_handler(StdOutCallbackHandler(), False)
+                callback_manager.add_handler(StdOutCallbackHandler(), inherit=False)
         if debug and not any(
             isinstance(handler, ConsoleCallbackHandler)
             for handler in callback_manager.handlers
         ):
-            callback_manager.add_handler(ConsoleCallbackHandler(), True)
+            callback_manager.add_handler(ConsoleCallbackHandler())
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
             if tracer_v2:
-                callback_manager.add_handler(tracer_v2, True)
+                callback_manager.add_handler(tracer_v2)
             else:
                 try:
                     handler = LangChainTracer(
@@ -2380,13 +2389,14 @@ def _configure(
                         ),
                         tags=tracing_tags,
                     )
-                    callback_manager.add_handler(handler, True)
+                    callback_manager.add_handler(handler)
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
                         " unset the LANGCHAIN_TRACING_V2 environment variables.\n"
-                        f"{repr(e)}",
+                        "%s",
+                        repr(e),
                     )
         if run_tree is not None:
             for handler in callback_manager.handlers:

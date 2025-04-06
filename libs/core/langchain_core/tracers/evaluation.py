@@ -37,17 +37,6 @@ def wait_for_all_evaluators() -> None:
 class EvaluatorCallbackHandler(BaseTracer):
     """Tracer that runs a run evaluator whenever a run is persisted.
 
-    Args:
-        evaluators : Sequence[RunEvaluator]
-            The run evaluators to apply to all top level runs.
-        client : LangSmith Client, optional
-            The LangSmith client instance to use for evaluating the runs.
-            If not specified, a new instance will be created.
-        example_id : Union[UUID, str], optional
-            The example ID to be associated with the runs.
-        project_name : str, optional
-            The LangSmith project name to be organize eval chain runs under.
-
     Attributes:
         example_id : Union[UUID, None]
             The example ID associated with the runs.
@@ -78,6 +67,23 @@ class EvaluatorCallbackHandler(BaseTracer):
         max_concurrency: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
+        """Create an EvaluatorCallbackHandler.
+
+        Args:
+            evaluators : Sequence[RunEvaluator]
+                The run evaluators to apply to all top level runs.
+            client : LangSmith Client, optional
+                The LangSmith client instance to use for evaluating the runs.
+                If not specified, a new instance will be created.
+            example_id : Union[UUID, str], optional
+                The example ID to be associated with the runs.
+            skip_unfinished: bool, optional
+                Whether to skip unfinished runs.
+            project_name : str, optional
+                The LangSmith project name to be organize eval chain runs under.
+            max_concurrency : int, optional
+                The maximum number of concurrent evaluators to run.
+        """
         super().__init__(**kwargs)
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
@@ -134,11 +140,11 @@ class EvaluatorCallbackHandler(BaseTracer):
                     run,
                     source_run_id=cb.latest_run.id if cb.latest_run else None,
                 )
-        except Exception as e:
-            logger.error(
-                f"Error evaluating run {run.id} with "
-                f"{evaluator.__class__.__name__}: {repr(e)}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error evaluating run %s with %s",
+                run.id,
+                evaluator.__class__.__name__,
             )
             raise
         example_id = str(run.reference_example_id)
@@ -202,7 +208,7 @@ class EvaluatorCallbackHandler(BaseTracer):
 
         """
         if self.skip_unfinished and not run.outputs:
-            logger.debug(f"Skipping unfinished run {run.id}")
+            logger.debug("Skipping unfinished run %s", run.id)
             return
         run_ = run.copy()
         run_.reference_example_id = self.example_id

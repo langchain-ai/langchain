@@ -147,7 +147,7 @@ def test_dereference_refs_remote_ref() -> None:
             "first_name": {"$ref": "https://somewhere/else/name"},
         },
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="ref paths are expected to be URI fragments"):
         dereference_refs(schema)
 
 

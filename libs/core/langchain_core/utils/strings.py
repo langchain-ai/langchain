@@ -1,3 +1,5 @@
+"""String utilities."""
+
 from typing import Any
 
 
@@ -12,12 +14,11 @@ def stringify_value(val: Any) -> str:
     """
     if isinstance(val, str):
         return val
-    elif isinstance(val, dict):
+    if isinstance(val, dict):
         return "\n" + stringify_dict(val)
-    elif isinstance(val, list):
+    if isinstance(val, list):
         return "\n".join(stringify_value(v) for v in val)
-    else:
-        return str(val)
+    return str(val)
 
 
 def stringify_dict(data: dict) -> str:

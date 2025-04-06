@@ -221,7 +221,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, enabled: bool, env: str
+    mock_get_client: MagicMock, *, enabled: bool, env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -334,23 +334,22 @@ class TestRunnableSequenceParallelTraceNesting:
                     parent_id_map[n] = matching_post.get("parent_run_id")
                 i += len(name)
                 continue
-            else:
-                assert posts[i]["name"] == name
-                dotted_order = posts[i]["dotted_order"]
-                if prev_dotted_order is not None and not str(
-                    expected_parents[name]
-                ).startswith("RunnableParallel"):
-                    assert dotted_order > prev_dotted_order, (
-                        f"{name} not after {name_order[i - 1]}"
-                    )
-                prev_dotted_order = dotted_order
-                if name in dotted_order_map:
-                    msg = f"Duplicate name {name}"
-                    raise ValueError(msg)
-                dotted_order_map[name] = dotted_order
-                id_map[name] = posts[i]["id"]
-                parent_id_map[name] = posts[i].get("parent_run_id")
-                i += 1
+            assert posts[i]["name"] == name
+            dotted_order = posts[i]["dotted_order"]
+            if prev_dotted_order is not None and not str(
+                expected_parents[name]
+            ).startswith("RunnableParallel"):
+                assert dotted_order > prev_dotted_order, (
+                    f"{name} not after {name_order[i - 1]}"
+                )
+            prev_dotted_order = dotted_order
+            if name in dotted_order_map:
+                msg = f"Duplicate name {name}"
+                raise ValueError(msg)
+            dotted_order_map[name] = dotted_order
+            id_map[name] = posts[i]["id"]
+            parent_id_map[name] = posts[i].get("parent_run_id")
+            i += 1
 
         # Now check the dotted orders
         for name, parent_ in expected_parents.items():
@@ -419,7 +418,7 @@ class TestRunnableSequenceParallelTraceNesting:
         self._check_posts()
 
 
-@pytest.mark.parametrize("parent_type", ("ls", "lc"))
+@pytest.mark.parametrize("parent_type", ["ls", "lc"])
 def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -445,7 +444,7 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         metadata={"some_foo": "some_bar"},
         tags=["afoo"],
     ):
-        collected: dict[str, RunTree] = {}  # noqa
+        collected: dict[str, RunTree] = {}
 
         def collect_run(run: RunTree) -> None:
             collected[str(run.id)] = run

@@ -1,3 +1,5 @@
+"""Convert functions and runnables to tools."""
+
 import inspect
 from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
 
@@ -96,6 +98,7 @@ def tool(
                     (used even if `args_schema` is provided)
                 - `args_schema` description
                     (used only if `description` / docstring are not provided)
+        *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
         args_schema: optional argument schema for user to specify.
@@ -211,7 +214,7 @@ def tool(
                     monkey: The baz.
                 \"\"\"
                 return bar
-    """
+    """  # noqa: D214,D405,D410,D411,D412,D416
 
     def _create_tool_factory(
         tool_name: str,
@@ -307,14 +310,14 @@ def tool(
             msg = "Name must be a string for tool constructor"
             raise ValueError(msg)
         return _create_tool_factory(name_or_callable)(runnable)
-    elif name_or_callable is not None:
+    if name_or_callable is not None:
         if callable(name_or_callable) and hasattr(name_or_callable, "__name__"):
             # Used as a decorator without parameters
             # @tool
             # def my_tool():
             #    pass
             return _create_tool_factory(name_or_callable.__name__)(name_or_callable)
-        elif isinstance(name_or_callable, str):
+        if isinstance(name_or_callable, str):
             # Used with a new name for the tool
             # @tool("search")
             # def my_tool():
@@ -326,24 +329,23 @@ def tool(
             # def my_tool():
             #    pass
             return _create_tool_factory(name_or_callable)
-        else:
-            msg = (
-                f"The first argument must be a string or a callable with a __name__ "
-                f"for tool decorator. Got {type(name_or_callable)}"
-            )
-            raise ValueError(msg)
-    else:
-        # Tool is used as a decorator with parameters specified
-        # @tool(parse_docstring=True)
-        # def my_tool():
-        #    pass
-        def _partial(func: Union[Callable, Runnable]) -> BaseTool:
-            """Partial function that takes a callable and returns a tool."""
-            name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
-            tool_factory = _create_tool_factory(name_)
-            return tool_factory(func)
+        msg = (
+            f"The first argument must be a string or a callable with a __name__ "
+            f"for tool decorator. Got {type(name_or_callable)}"
+        )
+        raise ValueError(msg)
 
-        return _partial
+    # Tool is used as a decorator with parameters specified
+    # @tool(parse_docstring=True)
+    # def my_tool():
+    #    pass
+    def _partial(func: Union[Callable, Runnable]) -> BaseTool:
+        """Partial function that takes a callable and returns a tool."""
+        name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
+        tool_factory = _create_tool_factory(name_)
+        return tool_factory(func)
+
+    return _partial
 
 
 def _get_description_from_runnable(runnable: Runnable) -> str:
@@ -405,31 +407,30 @@ def convert_runnable_to_tool(
             coroutine=runnable.ainvoke,
             description=description,
         )
+
+    async def ainvoke_wrapper(
+        callbacks: Optional[Callbacks] = None, **kwargs: Any
+    ) -> Any:
+        return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
+
+    def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
+        return runnable.invoke(kwargs, config={"callbacks": callbacks})
+
+    if (
+        arg_types is None
+        and schema.get("type") == "object"
+        and schema.get("properties")
+    ):
+        args_schema = runnable.input_schema
     else:
-
-        async def ainvoke_wrapper(
-            callbacks: Optional[Callbacks] = None, **kwargs: Any
-        ) -> Any:
-            return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
-
-        def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
-            return runnable.invoke(kwargs, config={"callbacks": callbacks})
-
-        if (
-            arg_types is None
-            and schema.get("type") == "object"
-            and schema.get("properties")
-        ):
-            args_schema = runnable.input_schema
-        else:
-            args_schema = _get_schema_from_runnable_and_arg_types(
-                runnable, name, arg_types=arg_types
-            )
-
-        return StructuredTool.from_function(
-            name=name,
-            func=invoke_wrapper,
-            coroutine=ainvoke_wrapper,
-            description=description,
-            args_schema=args_schema,
+        args_schema = _get_schema_from_runnable_and_arg_types(
+            runnable, name, arg_types=arg_types
         )
+
+    return StructuredTool.from_function(
+        name=name,
+        func=invoke_wrapper,
+        coroutine=ainvoke_wrapper,
+        description=description,
+        args_schema=args_schema,
+    )

@@ -752,6 +752,25 @@ def test_get_num_tokens_from_messages() -> None:
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
 
+    # Test file inputs
+    messages = [
+        HumanMessage(
+            [
+                "Summarize this document.",
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "my file",
+                        "file_data": "data:application/pdf;base64,<data>",
+                    },
+                },
+            ]
+        )
+    ]
+    with pytest.warns(match="file inputs are not supported"):
+        actual = llm.get_num_tokens_from_messages(messages)
+        assert actual == 13
+
 
 class Foo(BaseModel):
     bar: int
