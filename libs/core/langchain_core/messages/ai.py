@@ -235,6 +235,7 @@ class AIMessage(BaseMessage):
 
         return values
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the message.
 

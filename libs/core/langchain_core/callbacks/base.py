@@ -988,7 +988,11 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Whether the callback manager is async."""
         return False
 
-    def add_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
+    def add_handler(
+        self,
+        handler: BaseCallbackHandler,
+        inherit: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
         """Add a handler to the callback manager.
 
         Args:
@@ -1012,7 +1016,9 @@ class BaseCallbackManager(CallbackManagerMixin):
             self.inheritable_handlers.remove(handler)
 
     def set_handlers(
-        self, handlers: list[BaseCallbackHandler], inherit: bool = True
+        self,
+        handlers: list[BaseCallbackHandler],
+        inherit: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
         """Set handlers as the only handlers on the callback manager.
 
@@ -1025,7 +1031,11 @@ class BaseCallbackManager(CallbackManagerMixin):
         for handler in handlers:
             self.add_handler(handler, inherit=inherit)
 
-    def set_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
+    def set_handler(
+        self,
+        handler: BaseCallbackHandler,
+        inherit: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
         """Set handler as the only handler on the callback manager.
 
         Args:
@@ -1034,7 +1044,11 @@ class BaseCallbackManager(CallbackManagerMixin):
         """
         self.set_handlers([handler], inherit=inherit)
 
-    def add_tags(self, tags: list[str], inherit: bool = True) -> None:
+    def add_tags(
+        self,
+        tags: list[str],
+        inherit: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
         """Add tags to the callback manager.
 
         Args:
@@ -1058,7 +1072,11 @@ class BaseCallbackManager(CallbackManagerMixin):
             self.tags.remove(tag)
             self.inheritable_tags.remove(tag)
 
-    def add_metadata(self, metadata: dict[str, Any], inherit: bool = True) -> None:
+    def add_metadata(
+        self,
+        metadata: dict[str, Any],
+        inherit: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
         """Add metadata to the callback manager.
 
         Args:

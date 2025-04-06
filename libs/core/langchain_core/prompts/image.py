@@ -133,7 +133,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """
         return await run_in_executor(None, self.format, **kwargs)
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Return a pretty representation of the prompt.
 
         Args:

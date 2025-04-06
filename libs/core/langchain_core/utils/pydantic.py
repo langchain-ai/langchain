@@ -420,7 +420,7 @@ def _create_root_model(
 
     def schema(
         cls: type[BaseModel],
-        by_alias: bool = True,
+        by_alias: bool = True,  # noqa: FBT001,FBT002
         ref_template: str = DEFAULT_REF_TEMPLATE,
     ) -> dict[str, Any]:
         # Complains about schema not being defined in superclass
@@ -432,7 +432,7 @@ def _create_root_model(
 
     def model_json_schema(
         cls: type[BaseModel],
-        by_alias: bool = True,
+        by_alias: bool = True,  # noqa: FBT001,FBT002
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = "validation",

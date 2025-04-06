@@ -68,7 +68,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
 def l_sa_check(
     template: str,  # noqa: ARG001
     literal: str,
-    is_standalone: bool,
+    is_standalone: bool,  # noqa: FBT001
 ) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
@@ -91,7 +91,11 @@ def l_sa_check(
     return False
 
 
-def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
+def r_sa_check(
+    template: str,
+    tag_type: str,
+    is_standalone: bool,  # noqa: FBT001
+) -> bool:
     """Do a final check to see if a tag could be a standalone.
 
     Args:
@@ -422,8 +426,8 @@ def render(
     def_ldel: str = "{{",
     def_rdel: str = "}}",
     scopes: Optional[Scopes] = None,
-    warn: bool = False,
-    keep: bool = False,
+    warn: bool = False,  # noqa: FBT001,FBT002
+    keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:
     """Render a mustache template.
 

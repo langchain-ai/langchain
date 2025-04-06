@@ -102,7 +102,10 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of input variables.
         """
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Human-readable representation.
 
         Args:
@@ -270,6 +273,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         """
         return [self.variable_name] if not self.optional else []
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 
@@ -406,6 +410,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         """
         return self.prompt.input_variables
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 
@@ -675,6 +680,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             content=content, additional_kwargs=self.additional_kwargs
         )
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 
@@ -777,7 +783,10 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """Async format kwargs into a list of messages."""
         return self.format_messages(**kwargs)
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Human-readable representation.
 
         Args:
@@ -1331,6 +1340,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         raise NotImplementedError
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation.
 

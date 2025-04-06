@@ -186,7 +186,7 @@ _configure_hooks: list[
 
 def register_configure_hook(
     context_var: ContextVar[Optional[Any]],
-    inheritable: bool,
+    inheritable: bool,  # noqa: FBT001
     handle_class: Optional[type[BaseCallbackHandler]] = None,
     env_var: Optional[str] = None,
 ) -> None:
