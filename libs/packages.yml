@@ -600,3 +600,6 @@ packages:
 - name: langchain-litellm
   path: .
   repo: akshay-dongare/langchain-litellm
+- name: langchain-ydb
+  path: .
+  repo: ydb-platform/langchain-ydb
