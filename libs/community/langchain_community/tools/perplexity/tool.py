@@ -11,8 +11,9 @@ from langchain_community.utilities.perplexity import PerplexityWrapper
 class Perplexity(BaseTool):
     """Tool that queries the Perplexity API for chat completions.
 
-    This tool leverages Perplexity's generative search capabilities powered by
-    Sonar and Sonar Pro models. It returns real-time, web-connected research with citations.
+    This tool uses Perplexity's generative search capabilities powered by
+    Sonar and Sonar Pro models. 
+    Returns real-time, web-connected research with citations.
     Input should be a user query.
     """
 
