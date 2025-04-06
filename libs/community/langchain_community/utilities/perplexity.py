@@ -90,14 +90,6 @@ class PerplexityWrapper(BaseModel):
         Returns:
             The API response as a string.
         """
-        if search_domain_filter is None:
-            search_domain_filter = []
-        if response_format is None:
-            response_format = {}
-        if web_search_options is None:
-            web_search_options = {}
-        if model is None:
-            model = self.model
 
         messages = [
             {"role": "system", "content": "Be precise and concise."},
