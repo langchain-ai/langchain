@@ -8,19 +8,27 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 class PerplexityWrapper(BaseModel):
     """Wrapper around the Perplexity API for chat completions using the Sonar models."""
-    
+
     api_key: str = Field(..., description="The API key to use for the Perplexity API.")
-    model: str = Field(default="sonar", description="The default model to use for chat completions.")
-    base_url: str = Field(default="https://api.perplexity.ai/chat/completions", description="The base URL for the Perplexity API.")
-    search_kwargs: dict = Field(default_factory=dict, description="Additional keyword arguments to pass to the API call.")
-    
+    model: str = Field(
+        default="sonar", description="The default model to use for chat completions."
+    )
+    base_url: str = Field(
+        default="https://api.perplexity.ai/chat/completions",
+        description="The base URL for the Perplexity API.",
+    )
+    search_kwargs: dict = Field(
+        default_factory=dict,
+        description="Additional keyword arguments to pass to the API call.",
+    )
+
     def run(self, query: str) -> str:
         """
         Query the Perplexity API and return the response as a JSON string.
-        
+
         Args:
             query: The query to send for a chat completion.
-        
+
         Returns:
             The API response as a JSON string.
         """
@@ -29,10 +37,10 @@ class PerplexityWrapper(BaseModel):
     def download_documents(self, query: str) -> List[Document]:
         """
         Query the Perplexity API and return the result as a list of Documents.
-        
+
         Args:
             query: The query to send for a chat completion.
-        
+
         Returns:
             A list of Documents containing the API response.
         """
@@ -61,7 +69,7 @@ class PerplexityWrapper(BaseModel):
     ) -> str:
         """
         Query the Perplexity API for a chat completion.
-        
+
         Args:
             query: The user query to send to the API.
             model: The model name to use (overrides default if provided).
@@ -78,7 +86,7 @@ class PerplexityWrapper(BaseModel):
             frequency_penalty: Frequency penalty.
             response_format: JSON output formatting options.
             web_search_options: Options for web search.
-        
+
         Returns:
             The API response as a string.
         """
@@ -118,7 +126,11 @@ class PerplexityWrapper(BaseModel):
             "Content-Type": "application/json",
         }
 
-        response = requests.request("POST", self.base_url, json=payload, headers=headers)
+        response = requests.request(
+            "POST", self.base_url, json=payload, headers=headers
+        )
         if not response.ok:
-            raise Exception(f"Perplexity API error {response.status_code}: {response.text}")
+            raise Exception(
+                f"Perplexity API error {response.status_code}: {response.text}"
+            )
         return response.text
