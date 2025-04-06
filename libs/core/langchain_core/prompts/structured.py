@@ -166,6 +166,5 @@ class StructuredPrompt(ChatPromptTemplate):
                 *others[1:],
                 name=name,
             )
-        else:
-            msg = "Structured prompts need to be piped to a language model."
-            raise NotImplementedError(msg)
+        msg = "Structured prompts need to be piped to a language model."
+        raise NotImplementedError(msg)

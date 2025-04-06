@@ -19,5 +19,5 @@ class TestLiteLLMStandard(ChatModelIntegrationTests):
         return {"model": "ollama/mistral"}
 
     @pytest.mark.xfail(reason="Not yet implemented.")
-    def test_usage_metadata(self, model: BaseChatModel) -> None:
-        super().test_usage_metadata(model)
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata_streaming(model)

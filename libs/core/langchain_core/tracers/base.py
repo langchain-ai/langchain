@@ -15,7 +15,7 @@ from typing import (
 from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain_core.exceptions import TracerException  # noqa
+from langchain_core.exceptions import TracerException  # noqa: F401
 from langchain_core.tracers.core import _TracerCore
 
 if TYPE_CHECKING:
@@ -183,11 +183,10 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Returns:
             The run.
         """
-        llm_run = self._llm_run_with_retry_event(
+        return self._llm_run_with_retry_event(
             retry_state=retry_state,
             run_id=run_id,
         )
-        return llm_run
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for an LLM run.
@@ -230,8 +229,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         llm_run = self._errored_llm_run(
-            error=error,
-            run_id=run_id,
+            error=error, run_id=run_id, response=kwargs.pop("response", None)
         )
         self._end_trace(llm_run)
         self._on_llm_error(llm_run)

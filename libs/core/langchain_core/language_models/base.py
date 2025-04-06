@@ -143,8 +143,7 @@ class BaseLanguageModel(
         """
         if verbose is None:
             return _get_verbosity()
-        else:
-            return verbose
+        return verbose
 
     @property
     @override
@@ -351,8 +350,7 @@ class BaseLanguageModel(
         """
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)
-        else:
-            return _get_token_ids_default_method(text)
+        return _get_token_ids_default_method(text)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.

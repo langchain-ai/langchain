@@ -440,11 +440,10 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                     for part in kk.split(".")[1:]:
                         if vv is None:
                             break
-                        else:
-                            try:
-                                vv = getattr(vv, part)
-                            except AttributeError:
-                                break
+                        try:
+                            vv = getattr(vv, part)
+                        except AttributeError:
+                            break
                     else:
                         values.append(vv)
     except (SyntaxError, TypeError, OSError, SystemError):
@@ -516,7 +515,7 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     """Protocol for objects that support addition."""
 
-    def __add__(self, __x: _T_contra) -> _T_co:
+    def __add__(self, x: _T_contra, /) -> _T_co:
         """Add the object to another object."""
 
 

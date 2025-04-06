@@ -60,13 +60,12 @@ def _dereference_refs_helper(
             else:
                 obj_out[k] = v
         return obj_out
-    elif isinstance(obj, list):
+    if isinstance(obj, list):
         return [
             _dereference_refs_helper(el, full_schema, skip_keys, processed_refs)
             for el in obj
         ]
-    else:
-        return obj
+    return obj
 
 
 def _infer_skip_keys(

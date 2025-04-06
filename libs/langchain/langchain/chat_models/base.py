@@ -126,6 +126,7 @@ def init_chat_model(
             - 'ibm'                 -> langchain-ibm
             - 'nvidia'              -> langchain-nvidia-ai-endpoints
             - 'xai'                 -> langchain-xai
+            - 'perplexity'          -> langchain-perplexity
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -460,6 +461,11 @@ def _init_chat_model_helper(
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
+    elif model_provider == "perplexity":
+        _check_pkg("langchain_perplexity")
+        from langchain_perplexity import ChatPerplexity
+
+        return ChatPerplexity(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -488,6 +494,7 @@ _SUPPORTED_PROVIDERS = {
     "deepseek",
     "ibm",
     "xai",
+    "perplexity",
 }
 
 
