@@ -102,7 +102,7 @@ ignore = [
     "FBT001",
     "FBT002",
     "PGH003",
-    "PLR",
+    "PLR2004",
     "RUF",
     "SLF",
 ]

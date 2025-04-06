@@ -316,7 +316,7 @@ def index(
         )
         raise ValueError(msg)
 
-    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+    if (cleanup in {"incremental", "scoped_full"}) and source_id_key is None:
         msg = (
             "Source id key is required when cleanup mode is incremental or scoped_full."
         )
@@ -379,7 +379,7 @@ def index(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental" or cleanup == "scoped_full":
+        if cleanup in {"incremental", "scoped_full"}:
             # source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:
@@ -622,7 +622,7 @@ async def aindex(
         )
         raise ValueError(msg)
 
-    if (cleanup == "incremental" or cleanup == "scoped_full") and source_id_key is None:
+    if (cleanup in {"incremental", "scoped_full"}) and source_id_key is None:
         msg = (
             "Source id key is required when cleanup mode is incremental or scoped_full."
         )
@@ -667,11 +667,10 @@ async def aindex(
             # In such a case, we use the load method and convert it to an async
             # iterator.
             async_doc_iterator = _to_async_iterator(docs_source.load())
+    elif hasattr(docs_source, "__aiter__"):
+        async_doc_iterator = docs_source  # type: ignore[assignment]
     else:
-        if hasattr(docs_source, "__aiter__"):
-            async_doc_iterator = docs_source  # type: ignore[assignment]
-        else:
-            async_doc_iterator = _to_async_iterator(docs_source)
+        async_doc_iterator = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -694,7 +693,7 @@ async def aindex(
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
-        if cleanup == "incremental" or cleanup == "scoped_full":
+        if cleanup in {"incremental", "scoped_full"}:
             # If the cleanup mode is incremental, source ids are required.
             for source_id, hashed_doc in zip(source_ids, hashed_docs):
                 if source_id is None:

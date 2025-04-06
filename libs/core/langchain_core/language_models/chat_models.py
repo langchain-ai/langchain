@@ -955,13 +955,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
+        elif inspect.signature(self._generate).parameters.get("run_manager"):
+            result = self._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            if inspect.signature(self._generate).parameters.get("run_manager"):
-                result = self._generate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                result = self._generate(messages, stop=stop, **kwargs)
+            result = self._generate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
@@ -1028,13 +1027,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     )
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
+        elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+            result = await self._agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
         else:
-            if inspect.signature(self._agenerate).parameters.get("run_manager"):
-                result = await self._agenerate(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-            else:
-                result = await self._agenerate(messages, stop=stop, **kwargs)
+            result = await self._agenerate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):

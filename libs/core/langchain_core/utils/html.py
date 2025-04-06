@@ -85,7 +85,7 @@ def extract_sub_links(
         try:
             parsed_link = urlparse(link)
             # Some may be absolute links like https://to/path
-            if parsed_link.scheme == "http" or parsed_link.scheme == "https":
+            if parsed_link.scheme in {"http", "https"}:
                 absolute_path = link
             # Some may have omitted the protocol like //to/path
             elif link.startswith("//"):
