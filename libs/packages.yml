@@ -600,3 +600,7 @@ packages:
 - name: langchain-litellm
   path: .
   repo: akshay-dongare/langchain-litellm
+- name: langchain-gel
+  path: .
+  repo: geldata/langchain-gel
+  provider_page: gel
