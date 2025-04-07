@@ -614,6 +614,8 @@ source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },
+    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
+    { name = "numpy", version = "2.2.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-socket" },
@@ -624,6 +626,8 @@ dependencies = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0,<1" },
     { name = "langchain-core", editable = "../../core" },
+    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.2" },
+    { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=7,<9" },
     { name = "pytest-asyncio", specifier = ">=0.20,<1" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1" },

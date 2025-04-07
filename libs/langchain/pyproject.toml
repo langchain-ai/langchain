@@ -74,8 +74,8 @@ test = [
     "langchain-openai",
     "toml>=0.10.2",
     "packaging>=24.2",
-    "numpy>=1.26.4; python_version < '3.13'",
-    "numpy>=2.1.0; python_version >= '3.13'",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
