@@ -1178,7 +1178,7 @@ class QdrantVectorStore(VectorStore):
         ):
             raise QdrantVectorStoreError(
                 f"Existing Qdrant collection {collection_name} does not "
-                f"contain sparse vectors named {sparse_vector_config}. "
+                f"contain sparse vectors named {sparse_vector_name}. "
                 f"If you want to recreate the collection, set `force_recreate` "
                 f"parameter to `True`."
             )
