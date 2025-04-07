@@ -10,12 +10,12 @@ _SUPPORTED_PROVIDERS = {
     "azure_openai": "langchain_openai",
     "bedrock": "langchain_aws",
     "cohere": "langchain_cohere",
+    "gigachat": "langchain_gigachat",
     "google_vertexai": "langchain_google_vertexai",
     "huggingface": "langchain_huggingface",
     "mistralai": "langchain_mistralai",
     "ollama": "langchain_ollama",
     "openai": "langchain_openai",
-    "gigachat": "langchain_gigachat",
 }
 
 
