@@ -627,6 +627,41 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "tool",
         )
 
+    async def on_tool_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when tool errors."""
+        run_info = self.run_map.pop(run_id)
+        if "inputs" not in run_info:
+            msg = (
+                f"Run ID {run_id} is a tool call and is expected to have "
+                f"inputs associated with it."
+            )
+            raise AssertionError(msg)
+        inputs = run_info["inputs"]
+
+        self._send(
+            {
+                "event": "on_tool_error",
+                "data": {
+                    "error": error,
+                    "input": inputs,
+                },
+                "run_id": str(run_id),
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
+            },
+            "tool",
+        )
+
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run."""
         run_info = self.run_map.pop(run_id)
