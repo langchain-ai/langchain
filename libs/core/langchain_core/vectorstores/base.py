@@ -36,7 +36,7 @@ from typing import (
 )
 
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
@@ -1070,6 +1070,7 @@ class VectorStoreRetriever(BaseRetriever):
 
         return ls_params
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> list[Document]:
@@ -1090,6 +1091,7 @@ class VectorStoreRetriever(BaseRetriever):
             raise ValueError(msg)
         return docs
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,

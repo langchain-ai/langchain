@@ -65,7 +65,11 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
     return (literal, template)
 
 
-def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
+def l_sa_check(
+    template: str,  # noqa: ARG001
+    literal: str,
+    is_standalone: bool,
+) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
     Args:

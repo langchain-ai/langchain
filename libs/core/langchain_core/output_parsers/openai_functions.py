@@ -7,6 +7,7 @@ from typing import Any, Optional, Union
 
 import jsonpatch  # type: ignore[import]
 from pydantic import BaseModel, model_validator
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -23,6 +24,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
@@ -251,6 +253,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             raise ValueError(msg)
         return values
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
@@ -287,6 +290,7 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 

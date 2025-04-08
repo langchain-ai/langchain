@@ -151,7 +151,7 @@ def _get_source_id_assigner(
 ) -> Callable[[Document], Union[str, None]]:
     """Get the source id from the document."""
     if source_id_key is None:
-        return lambda doc: None
+        return lambda _doc: None
     if isinstance(source_id_key, str):
         return lambda doc: doc.metadata[source_id_key]
     if callable(source_id_key):

@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any, Optional
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -106,6 +107,7 @@ async def test_error_callback() -> None:
             """Return type of llm."""
             return "failing-llm"
 
+        @override
         def _call(
             self,
             prompt: str,
@@ -136,6 +138,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
     """Test astream uses appropriate implementation."""
 
     class ModelWithGenerate(BaseLLM):
+        @override
         def _generate(
             self,
             prompts: list[str],
@@ -172,6 +175,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             """Top Level call."""
             raise NotImplementedError
 
+        @override
         def _stream(
             self,
             prompt: str,
@@ -209,6 +213,7 @@ async def test_astream_implementation_uses_astream() -> None:
             """Top Level call."""
             raise NotImplementedError
 
+        @override
         async def _astream(
             self,
             prompt: str,

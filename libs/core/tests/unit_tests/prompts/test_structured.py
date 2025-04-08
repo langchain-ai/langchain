@@ -14,7 +14,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    input: Any, *, schema: Union[dict, type[BaseModel]], value: Any = 42, **_: Any
+    _: Any, *, schema: Union[dict, type[BaseModel]], value: Any = 42, **_kwargs: Any
 ) -> Union[BaseModel, dict]:
     if isclass(schema) and is_basemodel_subclass(schema):
         return schema(name="yo", value=value)
