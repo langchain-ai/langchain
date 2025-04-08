@@ -26,7 +26,7 @@ VALID_TASKS = (
 
 class HuggingFaceEndpoint(LLM):
     """
-    HuggingFace Endpoint.
+    Hugging Face Endpoint. This works with any model that supports text generation (i.e. text completion) task.
 
     To use this class, you should have installed the ``huggingface_hub`` package, and
     the environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token,
@@ -65,7 +65,16 @@ class HuggingFaceEndpoint(LLM):
                 huggingfacehub_api_token="my-api-key"
             )
             print(llm.invoke("What is Deep Learning?"))
-
+            
+            # Basic Example (no streaming) with Mistral-Nemo-Base-2407 model using a third-party provider (Novita).
+            llm = HuggingFaceEndpoint(
+                repo_id="mistralai/Mistral-Nemo-Base-2407",
+                provider="novita",
+                max_new_tokens=100,
+                do_sample=False,
+                huggingfacehub_api_token="my-api-key"
+            )
+            print(llm.invoke("What is Deep Learning?"))
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
@@ -73,6 +82,9 @@ class HuggingFaceEndpoint(LLM):
     should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
+    provider: Optional[str] = None
+    """Name of the provider to use for inference with the model specified in `repo_id`. e.g. "cerebras". if not specified, defaults to "hf-inference" (HF Inference API).
+        available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     huggingfacehub_api_token: Optional[str] = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
@@ -119,8 +131,7 @@ class HuggingFaceEndpoint(LLM):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
     task: Optional[str] = None
-    """Task to call the model with.
-    Should be a task that returns `generated_text` or `summary_text`."""
+    """Task to call the model with. Should be a task that returns `generated_text`."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -219,6 +230,7 @@ class HuggingFaceEndpoint(LLM):
             model=self.model,
             timeout=self.timeout,
             token=huggingfacehub_api_token,
+            provider=self.provider,
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
@@ -231,13 +243,13 @@ class HuggingFaceEndpoint(LLM):
             model=self.model,
             timeout=self.timeout,
             token=huggingfacehub_api_token,
+            provider=self.provider,
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
                 if key in async_supported_kwargs
             },
         )
-
         ignored_kwargs = (
             set(self.server_kwargs.keys())
             - sync_supported_kwargs
@@ -263,7 +275,7 @@ class HuggingFaceEndpoint(LLM):
             "repetition_penalty": self.repetition_penalty,
             "return_full_text": self.return_full_text,
             "truncate": self.truncate,
-            "stop_sequences": self.stop_sequences,
+            "stop": self.stop_sequences,
             "seed": self.seed,
             "do_sample": self.do_sample,
             "watermark": self.watermark,
@@ -275,7 +287,7 @@ class HuggingFaceEndpoint(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.endpoint_url, "task": self.task},
+            **{"endpoint_url": self.endpoint_url, "task": self.task, "provider": self.provider},
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -288,7 +300,7 @@ class HuggingFaceEndpoint(LLM):
         self, runtime_stop: Optional[List[str]], **kwargs: Any
     ) -> Dict[str, Any]:
         params = {**self._default_params, **kwargs}
-        params["stop_sequences"] = params["stop_sequences"] + (runtime_stop or [])
+        params["stop"] = params["stop"] + (runtime_stop or [])
         return params
 
     def _call(
@@ -306,19 +318,16 @@ class HuggingFaceEndpoint(LLM):
                 completion += chunk.text
             return completion
         else:
-            invocation_params["stop"] = invocation_params[
-                "stop_sequences"
-            ]  # porting 'stop_sequences' into the 'stop' argument
-            response = self.client.post(
-                json={"inputs": prompt, "parameters": invocation_params},
-                stream=False,
-                task=self.task,
+            print(invocation_params)
+            response_text = self.client.text_generation(
+                prompt=prompt,
+                model=self.model,
+                **invocation_params,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then we remove this stop sequence from the end of the generated text
-            for stop_seq in invocation_params["stop_sequences"]:
+            for stop_seq in invocation_params["stop"]:
                 if response_text[-len(stop_seq) :] == stop_seq:
                     response_text = response_text[: -len(stop_seq)]
             return response_text
@@ -339,17 +348,17 @@ class HuggingFaceEndpoint(LLM):
                 completion += chunk.text
             return completion
         else:
-            invocation_params["stop"] = invocation_params["stop_sequences"]
-            response = await self.async_client.post(
-                json={"inputs": prompt, "parameters": invocation_params},
+            response_text = await self.async_client.text_generation(
+                prompt=prompt,
+                **invocation_params,
+                model=self.model,
                 stream=False,
-                task=self.task,
-            )
-            response_text = json.loads(response.decode())[0]["generated_text"]
 
+            )
+            
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text
-            for stop_seq in invocation_params["stop_sequences"]:
+            for stop_seq in invocation_params["stop"]:
                 if response_text[-len(stop_seq) :] == stop_seq:
                     response_text = response_text[: -len(stop_seq)]
             return response_text
@@ -368,7 +377,7 @@ class HuggingFaceEndpoint(LLM):
         ):
             # identify stop sequence in generated text, if any
             stop_seq_found: Optional[str] = None
-            for stop_seq in invocation_params["stop_sequences"]:
+            for stop_seq in invocation_params["stop"]:
                 if stop_seq in response:
                     stop_seq_found = stop_seq
 
@@ -404,7 +413,7 @@ class HuggingFaceEndpoint(LLM):
         ):
             # identify stop sequence in generated text, if any
             stop_seq_found: Optional[str] = None
-            for stop_seq in invocation_params["stop_sequences"]:
+            for stop_seq in invocation_params["stop"]:
                 if stop_seq in response:
                     stop_seq_found = stop_seq
 
