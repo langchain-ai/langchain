@@ -136,7 +136,11 @@ class AzureAISearchRetriever(BaseRetriever):
             values, "api_key", "AZURE_AI_SEARCH_API_KEY", default=""
         )
         if values["azure_ad_token"] == "" and values["api_key"] == "":
-            raise ValueError("Missing credentials. Please pass one of `api_key`, `azure_ad_token`, or the `AZURE_AI_SEARCH_API_KEY` or `AZURE_AI_SEARCH_AD_TOKEN` environment variables.")
+            raise ValueError(
+                "Missing credentials. Please pass one of `api_key`, `azure_ad_token`, "
+                "or the `AZURE_AI_SEARCH_API_KEY` or `AZURE_AI_SEARCH_AD_TOKEN` "
+                "environment variables."
+            )
 
         return values
 
