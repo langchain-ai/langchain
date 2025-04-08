@@ -663,6 +663,34 @@ def test_pdf_document_input() -> None:
     assert isinstance(result.content, str)
     assert len(result.content) > 0
 
+    # Test cache control with standard format
+    result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(
+        [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    {
+                        "type": "file",
+                        "source_type": "base64",
+                        "mime_type": "application/pdf",
+                        "source": data,
+                        "metadata": {"cache_control": {"type": "ephemeral"}},
+                    },
+                ]
+            )
+        ]
+    )
+    assert isinstance(result, AIMessage)
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+    cache_creation = result.usage_metadata["input_token_details"]["cache_creation"]
+    cache_read = result.usage_metadata["input_token_details"]["cache_read"]
+    assert cache_creation > 0 or cache_read > 0
+
 
 def test_citations() -> None:
     llm = ChatAnthropic(model="claude-3-5-haiku-latest")
@@ -698,6 +726,27 @@ def test_citations() -> None:
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
     assert not any("citation" in block for block in full.content)
+
+    # Test standard format
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "file",
+                    "source_type": "text",
+                    "source": "The grass is green. The sky is blue.",
+                    "mime_type": "text/plain",
+                    "metadata": {"citations": {"enabled": True}},
+                },
+                {"type": "text", "text": "What color is the grass and sky?"},
+            ],
+        }
+    ]
+    response = llm.invoke(messages)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+    assert any("citations" in block for block in response.content)
 
 
 def test_thinking() -> None:

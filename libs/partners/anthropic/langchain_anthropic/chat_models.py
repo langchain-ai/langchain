@@ -42,6 +42,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -184,6 +185,73 @@ def _merge_messages(
     return merged
 
 
+def _format_data_content_block(block: dict) -> dict:
+    """Format standard data content block to format expected by Anthropic."""
+    if block["type"] == "image":
+        if block["source_type"] == "url":
+            if block["source"].startswith("data:"):
+                # Data URI
+                formatted_block = {
+                    "type": "image",
+                    "source": _format_image(block["source"]),
+                }
+            else:
+                formatted_block = {
+                    "type": "image",
+                    "source": {"type": "url", "url": block["source"]},
+                }
+        elif block["source_type"] == "base64":
+            formatted_block = {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": block["mime_type"],
+                    "data": block["source"],
+                },
+            }
+        else:
+            raise ValueError(
+                "Anthropic only supports 'url' and 'base64' source_type for image "
+                "content blocks."
+            )
+
+    elif block["type"] == "file":
+        if block["source_type"] == "url":
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "url",
+                    "url": block["source"],
+                },
+            }
+        elif block["source_type"] == "base64":
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": block.get("mime_type") or "application/pdf",
+                    "data": block["source"],
+                },
+            }
+        elif block["source_type"] == "text":
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "text",
+                    "media_type": block.get("mime_type") or "text/plain",
+                    "data": block["source"],
+                },
+            }
+
+    else:
+        raise ValueError(f"Block of type {block['type']} is not supported.")
+
+    if formatted_block and (metadata := block.get("metadata")):
+        formatted_block = {**formatted_block, **metadata}
+
+    return formatted_block
+
+
 def _format_messages(
     messages: List[BaseMessage],
 ) -> Tuple[Union[str, List[Dict], None], List[Dict]]:
@@ -240,6 +308,8 @@ def _format_messages(
                         # convert format
                         source = _format_image(block["image_url"]["url"])
                         content.append({"type": "image", "source": source})
+                    elif is_data_content_block(block):
+                        content.append(_format_data_content_block(block))
                     elif block["type"] == "tool_use":
                         # If a tool_call with the same id as a tool_use content block
                         # exists, the tool_call is preferred.
