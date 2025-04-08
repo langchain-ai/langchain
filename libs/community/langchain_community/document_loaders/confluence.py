@@ -173,6 +173,7 @@ class ConfluenceLoader(BaseLoader):
         include_attachments: bool = False,
         include_comments: bool = False,
         include_labels: bool = False,
+        include_likes: bool = False,
         content_format: ContentFormat = ContentFormat.STORAGE,
         limit: Optional[int] = 50,
         max_pages: Optional[int] = 1000,
@@ -190,6 +191,7 @@ class ConfluenceLoader(BaseLoader):
         self.include_attachments = include_attachments
         self.include_comments = include_comments
         self.include_labels = include_labels
+        self.include_likes = include_likes
         self.content_format = content_format
         self.limit = limit
         self.max_pages = max_pages
@@ -345,6 +347,7 @@ class ConfluenceLoader(BaseLoader):
         include_attachments = self._resolve_param("include_attachments", kwargs)
         include_comments = self._resolve_param("include_comments", kwargs)
         include_labels = self._resolve_param("include_labels", kwargs)
+        include_likes = self._resolve_param("include_likes", kwargs)
         content_format = self._resolve_param("content_format", kwargs)
         limit = self._resolve_param("limit", kwargs)
         max_pages = self._resolve_param("max_pages", kwargs)
@@ -356,6 +359,7 @@ class ConfluenceLoader(BaseLoader):
                 content_format.value,
                 "version",
                 *(["metadata.labels"] if include_labels else []),
+                *(["metadata.likes"] if include_likes else []),
             ]
         )
 
@@ -379,6 +383,7 @@ class ConfluenceLoader(BaseLoader):
                 include_restricted_content,
                 include_attachments,
                 include_comments,
+                include_likes,
                 include_labels,
                 content_format,
                 ocr_languages=ocr_languages,
@@ -413,6 +418,7 @@ class ConfluenceLoader(BaseLoader):
                 include_restricted_content,
                 include_attachments,
                 include_comments,
+                include_likes,
                 include_labels,
                 content_format,
                 ocr_languages,
@@ -445,6 +451,7 @@ class ConfluenceLoader(BaseLoader):
                     include_attachments,
                     include_comments,
                     include_labels,
+                    include_likes,
                     content_format,
                     ocr_languages,
                     keep_markdown_format,
@@ -546,6 +553,7 @@ class ConfluenceLoader(BaseLoader):
         include_restricted_content: bool,
         include_attachments: bool,
         include_comments: bool,
+        include_likes: bool,
         include_labels: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
@@ -561,6 +569,7 @@ class ConfluenceLoader(BaseLoader):
                 include_attachments,
                 include_comments,
                 include_labels,
+                include_likes,
                 content_format,
                 ocr_languages=ocr_languages,
                 keep_markdown_format=keep_markdown_format,
@@ -573,6 +582,7 @@ class ConfluenceLoader(BaseLoader):
         include_attachments: bool,
         include_comments: bool,
         include_labels: bool,
+        include_likes: bool,
         content_format: ContentFormat,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: Optional[bool] = False,
@@ -626,20 +636,22 @@ class ConfluenceLoader(BaseLoader):
             ]
             text = text + "".join(comment_texts)
 
+        metadata = {
+            "title": page["title"],
+            "id": page["id"],
+            "source": self.base_url.strip("/") + page["_links"]["webui"],
+        }
+
         if include_labels:
-            labels = [
+            metadata["labels"] = [
                 label["name"]
                 for label in page.get("metadata", {})
                 .get("labels", {})
                 .get("results", [])
             ]
 
-        metadata = {
-            "title": page["title"],
-            "id": page["id"],
-            "source": self.base_url.strip("/") + page["_links"]["webui"],
-            **({"labels": labels} if include_labels else {}),
-        }
+        if include_likes:
+            metadata["likes"] = page.get("metadata", {}).get("likes", {}).get("meta", {}).get("count", 0)
 
         if "version" in page and "when" in page["version"]:
             metadata["when"] = page["version"]["when"]

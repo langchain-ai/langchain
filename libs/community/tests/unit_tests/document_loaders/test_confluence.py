@@ -235,6 +235,35 @@ class TestConfluenceLoader:
         assert documents[0].metadata["labels"] == ["l1", "l2"]
         assert documents[1].metadata["labels"] == []
 
+    def test_confluence_loader_when_include_likes_set_to_true(
+        self, mock_confluence: MagicMock
+    ) -> None:
+        # one response with two pages
+        mock_confluence.get_all_pages_from_space.return_value = [
+            self._get_mock_page("123", include_likes=True),
+            self._get_mock_page("456", include_likes=False),
+        ]
+        mock_confluence.get_all_restrictions_for_content.side_effect = [
+            self._get_mock_page_restrictions("123"),
+            self._get_mock_page_restrictions("456"),
+        ]
+
+        confluence_loader = self._get_mock_confluence_loader(
+            mock_confluence,
+            space_key=self.MOCK_SPACE_KEY,
+            include_likes=True,
+            max_pages=2,
+        )
+
+        documents = confluence_loader.load()
+
+        assert mock_confluence.get_all_pages_from_space.call_count == 1
+
+        assert len(documents) == 2
+        assert all(isinstance(doc, Document) for doc in documents)
+        assert documents[0].metadata["likes"] == 1
+        assert documents[1].metadata["likes"] == 0
+
     def _get_mock_confluence_loader(
         self, mock_confluence: MagicMock, **kwargs: Any
     ) -> ConfluenceLoader:
@@ -252,27 +281,26 @@ class TestConfluenceLoader:
         page_id: str,
         content_format: ContentFormat = ContentFormat.STORAGE,
         include_labels: bool = False,
+        include_likes: bool = False,
     ) -> Dict:
+        metadata = {}
+        if include_labels:
+            metadata["labels"] = {
+                "results": [
+                    {"prefix": "global", "name": "l1", "id": "111"},
+                    {"prefix": "global", "name": "l2", "id": "222"},
+                ]
+            }
+        if include_likes:
+            metadata["likes"] = {"meta": {"count": 1}}
+
         return {
             "id": f"{page_id}",
             "title": f"Page {page_id}",
             "body": {
                 f"{content_format.name.lower()}": {"value": f"<p>Content {page_id}</p>"}
             },
-            **(
-                {
-                    "metadata": {
-                        "labels": {
-                            "results": [
-                                {"prefix": "global", "name": "l1", "id": "111"},
-                                {"prefix": "global", "name": "l2", "id": "222"},
-                            ]
-                        }
-                    }
-                    if include_labels
-                    else {},
-                }
-            ),
+            **({"metadata": metadata} if metadata else {}),
             "status": "current",
             "type": "page",
             "_links": {
