@@ -283,7 +283,7 @@ class TestConfluenceLoader:
         include_labels: bool = False,
         include_likes: bool = False,
     ) -> Dict:
-        metadata = {}
+        metadata: Dict[str, Any] = {}
         if include_labels:
             metadata["labels"] = {
                 "results": [

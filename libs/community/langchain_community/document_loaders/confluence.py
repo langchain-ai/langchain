@@ -651,7 +651,12 @@ class ConfluenceLoader(BaseLoader):
             ]
 
         if include_likes:
-            metadata["likes"] = page.get("metadata", {}).get("likes", {}).get("meta", {}).get("count", 0)
+            metadata["likes"] = (
+                page.get("metadata", {})
+                .get("likes", {})
+                .get("meta", {})
+                .get("count", 0)
+            )
 
         if "version" in page and "when" in page["version"]:
             metadata["when"] = page["version"]["when"]
