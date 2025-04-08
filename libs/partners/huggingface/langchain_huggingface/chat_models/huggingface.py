@@ -856,7 +856,7 @@ class ChatHuggingFace(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Hugging Face
-            Inference Providers API."""
+        Inference Providers API."""
         params = {
             "model": self.model_id,
             "stream": self.streaming,
