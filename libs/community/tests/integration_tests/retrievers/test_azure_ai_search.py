@@ -33,7 +33,7 @@ async def test_azure_ai_search_ainvoke() -> None:
     """Test valid async call to Azure AI Search.
 
     In order to run this test, you should provide
-   a `service_name`, an 'index_name' and
+    a `service_name`, an 'index_name' and
     an azure search `api_key` or 'azure_ad_token'
     as arguments for the AzureAISearchRetriever.
     """
