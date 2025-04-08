@@ -31,8 +31,6 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "scipy<2,>=1; python_version < \"3.12\"",
     "scipy<2.0.0,>=1.7.0; python_version >= \"3.12\"",
-    "numpy<2,>=1; python_version < \"3.12\"",
-    "numpy<2.0.0,>=1.26.0; python_version >= \"3.12\"",
     "langchain-core",
     "langchain-tests",
     "langchain-community",
