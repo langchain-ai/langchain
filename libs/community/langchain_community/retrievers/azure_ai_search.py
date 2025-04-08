@@ -172,7 +172,7 @@ class AzureAISearchRetriever(BaseRetriever):
         if self.azure_ad_token != "":
             headers["Authorization"] = f"Bearer {self.azure_ad_token}"
         else:
-            headers["api-key"] = self.api_key
+            headers["api-key"] = f"{self.api_key}"
         return headers
 
     def _search(self, query: str) -> List[dict]:
