@@ -27,6 +27,10 @@ from langchain_core.messages.base import (
     messages_to_dict,
 )
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.content_blocks import (
+    DataContentBlock,
+    is_data_content_block,
+)
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -60,6 +64,7 @@ __all__ = [
     "BaseMessageChunk",
     "ChatMessage",
     "ChatMessageChunk",
+    "DataContentBlock",
     "FunctionMessage",
     "FunctionMessageChunk",
     "HumanMessage",
@@ -76,6 +81,7 @@ __all__ = [
     "_message_from_dict",
     "convert_to_messages",
     "get_buffer_string",
+    "is_data_content_block",
     "merge_content",
     "message_chunk_to_message",
     "message_to_dict",
