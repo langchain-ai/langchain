@@ -1891,6 +1891,26 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
+    def test_pdf_inputs(self, model: BaseChatModel) -> None:
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "mime_type": "application/pdf",
+                    "source": pdf_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
 
@@ -1932,6 +1952,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image message.")
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+        # OpenAI format, base64 data
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "describe the weather in this image"},
@@ -1942,6 +1964,33 @@ class ChatModelIntegrationTests(ChatModelTests):
             ],
         )
         model.invoke([message])
+
+        # Standard format, base64 data
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "mime_type": "image/jpeg",
+                    "source": image_data,
+                },
+            ],
+        )
+        _ = model.invoke([message])
+
+        # Standard format, URL  # TODO: gate this behind a property
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "source": image_url,
+                },
+            ],
+        )
+        _ = model.invoke([message])
 
     def test_image_tool_message(self, model: BaseChatModel) -> None:
         """Test that the model can process ToolMessages with image inputs.
