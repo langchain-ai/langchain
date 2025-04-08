@@ -1,5 +1,4 @@
 import inspect
-import json  # type: ignore[import-not-found]
 import logging
 import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
@@ -65,7 +64,7 @@ class HuggingFaceEndpoint(LLM):
                 huggingfacehub_api_token="my-api-key"
             )
             print(llm.invoke("What is Deep Learning?"))
-            
+
             # Basic Example (no streaming) with Mistral-Nemo-Base-2407 model using a third-party provider (Novita).
             llm = HuggingFaceEndpoint(
                 repo_id="mistralai/Mistral-Nemo-Base-2407",
@@ -83,7 +82,8 @@ class HuggingFaceEndpoint(LLM):
     repo_id: Optional[str] = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
     provider: Optional[str] = None
-    """Name of the provider to use for inference with the model specified in `repo_id`. e.g. "cerebras". if not specified, defaults to "hf-inference" (HF Inference API).
+    """Name of the provider to use for inference with the model specified in `repo_id`.
+        e.g. "cerebras". if not specified, defaults to HF Inference API. 
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     huggingfacehub_api_token: Optional[str] = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
@@ -287,7 +287,11 @@ class HuggingFaceEndpoint(LLM):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.endpoint_url, "task": self.task, "provider": self.provider},
+            **{
+                "endpoint_url": self.endpoint_url,
+                "task": self.task,
+                "provider": self.provider,
+            },
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -352,9 +356,8 @@ class HuggingFaceEndpoint(LLM):
                 **invocation_params,
                 model=self.model,
                 stream=False,
-
             )
-            
+
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text
             for stop_seq in invocation_params["stop"]:

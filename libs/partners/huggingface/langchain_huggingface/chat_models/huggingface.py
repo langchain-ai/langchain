@@ -3,40 +3,30 @@
 import json
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
+    Iterator,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
     Type,
     Union,
-    Mapping,
-    Iterator,
-    AsyncIterator,
     cast,
 )
-from collections.abc import Sequence
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.output_parsers.openai_tools import (
-    make_invalid_tool_call,
-    parse_tool_call,
-)
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
     generate_from_stream,
-)
-from langchain_core.messages.tool import (
-    ToolCallChunk,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -56,30 +46,30 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-    ToolMessage,
+from langchain_core.messages.tool import (
+    ToolCallChunk,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from langchain_core.messages.tool import (
+    tool_call_chunk as create_tool_call_chunk,
+)
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
+)
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    LLMResult,
+)
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import Field, model_validator
 from typing_extensions import Self
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
+
 from ..llms.huggingface_endpoint import HuggingFaceEndpoint
 from ..llms.huggingface_pipeline import HuggingFacePipeline
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
 def _lc_tool_call_to_hf_tool_call(tool_call: ToolCall) -> dict:
@@ -104,6 +94,7 @@ def _lc_invalid_tool_call_to_hf_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
@@ -212,7 +203,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         )
     else:
         return ChatMessage(content=_dict.get("content", ""), role=role or "")
-    
+
+
 def _is_huggingface_hub(llm: Any) -> bool:
     try:
         from langchain_community.llms.huggingface_hub import (  # type: ignore[import-not-found]
@@ -224,64 +216,65 @@ def _is_huggingface_hub(llm: Any) -> bool:
         # if no langchain community, it is not a HuggingFaceHub
         return False
 
+
 def _convert_chunk_to_message_chunk(
-        chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
-    ) -> BaseMessageChunk:
-        choice = chunk["choices"][0]
-        _dict = choice["delta"]
-        role = cast(str, _dict.get("role"))
-        content = cast(str, _dict.get("content") or "")
-        additional_kwargs: Dict = {}
-        tool_call_chunks: List[ToolCallChunk] = []
-        if _dict.get("function_call"):
-            function_call = dict(_dict["function_call"])
-            if "name" in function_call and function_call["name"] is None:
-                function_call["name"] = ""
-            additional_kwargs["function_call"] = function_call
-        if raw_tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = raw_tool_calls
-            for rtc in raw_tool_calls:
-                try:
-                    tool_call_chunks.append(
-                        create_tool_call_chunk(
-                            name=rtc["function"].get("name"),
-                            args=rtc["function"].get("arguments"),
-                            id=rtc.get("id"),
-                            index=rtc.get("index"),
-                        )
+    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    choice = chunk["choices"][0]
+    _dict = choice["delta"]
+    role = cast(str, _dict.get("role"))
+    content = cast(str, _dict.get("content") or "")
+    additional_kwargs: Dict = {}
+    tool_call_chunks: List[ToolCallChunk] = []
+    if _dict.get("function_call"):
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        for rtc in raw_tool_calls:
+            try:
+                tool_call_chunks.append(
+                    create_tool_call_chunk(
+                        name=rtc["function"].get("name"),
+                        args=rtc["function"].get("arguments"),
+                        id=rtc.get("id"),
+                        index=rtc.get("index"),
                     )
-                except KeyError:
-                    pass
-        if role == "user" or default_class == HumanMessageChunk:
-            return HumanMessageChunk(content=content)
-        elif role == "assistant" or default_class == AIMessageChunk:
-            if usage := chunk.get("usage"):
-                input_tokens = usage.get("prompt_tokens", 0)
-                output_tokens = usage.get("completion_tokens", 0)
-                usage_metadata = {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
-                }
-            else:
-                usage_metadata = None
-            return AIMessageChunk(
-                content=content,
-                additional_kwargs=additional_kwargs,
-                tool_call_chunks=tool_call_chunks,
-                usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            )
-        elif role == "system" or default_class == SystemMessageChunk:
-            return SystemMessageChunk(content=content)
-        elif role == "function" or default_class == FunctionMessageChunk:
-            return FunctionMessageChunk(content=content, name=_dict["name"])
-        elif role == "tool" or default_class == ToolMessageChunk:
-            return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
-        elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)
+                )
+            except KeyError:
+                pass
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        if usage := chunk.get("usage"):
+            input_tokens = usage.get("prompt_tokens", 0)
+            output_tokens = usage.get("completion_tokens", 0)
+            usage_metadata = {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+            }
         else:
-            return default_class(content=content)  # type: ignore
-    
+            usage_metadata = None
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+            usage_metadata=usage_metadata,  # type: ignore[arg-type]
+        )
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)  # type: ignore
+
 
 def _is_huggingface_textgen_inference(llm: Any) -> bool:
     try:
@@ -498,11 +491,10 @@ class ChatHuggingFace(BaseChatModel):
     """Maximum number of tokens to generate."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self._resolve_model_id()
-
-        
 
     @model_validator(mode="after")
     def validate_llm(self) -> Self:
@@ -544,7 +536,7 @@ class ChatHuggingFace(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
-    
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -554,7 +546,7 @@ class ChatHuggingFace(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
-        
+
         if _is_huggingface_textgen_inference(self.llm):
             message_dicts, params = self._create_message_dicts(messages, stop)
             answer = self.llm.client.chat(messages=message_dicts, **kwargs)
@@ -575,7 +567,7 @@ class ChatHuggingFace(BaseChatModel):
             return self._create_chat_result(answer)
         else:
             llm_input = self._to_chat_prompt(messages)
-            
+
             if should_stream:
                 stream_iter = self.llm._stream(
                     llm_input, stop=stop, run_manager=run_manager, **kwargs
@@ -612,11 +604,15 @@ class ChatHuggingFace(BaseChatModel):
                 **kwargs,
             }
 
-            answer = await self.llm.async_client.chat_completion(messages=message_dicts, **params)
+            answer = await self.llm.async_client.chat_completion(
+                messages=message_dicts, **params
+            )
             return self._create_chat_result(answer)
-           
+
         elif _is_huggingface_pipeline(self.llm):
-            raise NotImplementedError("async generation is not supported with HuggingFacePipeline")
+            raise NotImplementedError(
+                "async generation is not supported with HuggingFacePipeline"
+            )
         else:
             llm_input = self._to_chat_prompt(messages)
             llm_result = await self.llm._agenerate(
@@ -631,16 +627,20 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        if  _is_huggingface_endpoint(self.llm):
+        if _is_huggingface_endpoint(self.llm):
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {**params, **kwargs, "stream": True}
 
             default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-            for chunk in self.llm.client.chat_completion(messages=message_dicts, **params):
+            for chunk in self.llm.client.chat_completion(
+                messages=message_dicts, **params
+            ):
                 if len(chunk["choices"]) == 0:
                     continue
                 choice = chunk["choices"][0]
-                message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+                message_chunk = _convert_chunk_to_message_chunk(
+                    chunk, default_chunk_class
+                )
                 generation_info = {}
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
@@ -663,7 +663,7 @@ class ChatHuggingFace(BaseChatModel):
                 llm_input, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-    
+
     async def _astream(
         self,
         messages: List[BaseMessage],
@@ -676,7 +676,9 @@ class ChatHuggingFace(BaseChatModel):
 
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
 
-        async for chunk in await self.llm.async_client.chat_completion(messages=message_dicts, **params):
+        async for chunk in await self.llm.async_client.chat_completion(
+            messages=message_dicts, **params
+        ):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -699,8 +701,7 @@ class ChatHuggingFace(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
-        
-    
+
     def _to_chat_prompt(
         self,
         messages: List[BaseMessage],
@@ -760,11 +761,12 @@ class ChatHuggingFace(BaseChatModel):
             endpoint_url: Optional[str] = self.llm.inference_server_url
         elif _is_huggingface_pipeline(self.llm):
             from transformers import AutoTokenizer  # type: ignore[import]
+
             self.tokenizer = (
-            AutoTokenizer.from_pretrained(self.model_id)
-            if self.tokenizer is None
-            else self.tokenizer
-        )
+                AutoTokenizer.from_pretrained(self.model_id)
+                if self.tokenizer is None
+                else self.tokenizer
+            )
             self.model_id = self.llm.model_id
             return
         elif _is_huggingface_endpoint(self.llm):
@@ -784,7 +786,6 @@ class ChatHuggingFace(BaseChatModel):
                 "Make sure that your Hugging Face token has access to the endpoint."
             )
 
-    
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
@@ -828,7 +829,8 @@ class ChatHuggingFace(BaseChatModel):
                 tool_choice = formatted_tools[0]
             elif isinstance(tool_choice, dict):
                 if (
-                    formatted_tools[0]["function"]["name"] != tool_choice["function"]["name"]
+                    formatted_tools[0]["function"]["name"]
+                    != tool_choice["function"]["name"]
                 ):
                     raise ValueError(
                         f"Tool choice {tool_choice} was specified, but the only "
@@ -851,10 +853,10 @@ class ChatHuggingFace(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-   
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Hugging Face Inference Providers API."""
+        """Get the default parameters for calling Hugging Face
+            Inference Providers API."""
         params = {
             "model": self.model_id,
             "stream": self.streaming,
@@ -866,7 +868,7 @@ class ChatHuggingFace(BaseChatModel):
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         return params
-    
+
     @property
     def _llm_type(self) -> str:
         return "huggingface-chat-wrapper"

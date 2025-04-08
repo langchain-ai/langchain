@@ -6,20 +6,19 @@ You will need HF_TOKEN set in your environment to run these tests.
 import json
 from typing import Optional
 
-from langchain_huggingface.llms import HuggingFaceEndpoint
-
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
 from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import ChatHuggingFace
+from langchain_huggingface.llms import HuggingFaceEndpoint
 
 
 def test_chat_hf_call() -> None:
     """Test valid call to HF Inference Providers."""
     llm = HuggingFaceEndpoint(
-    endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
-    provider="novita",
+        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
+        provider="novita",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -34,9 +33,9 @@ def test_chat_hf_call() -> None:
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
     llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
-    task="conversational",
-    provider="together",
+        repo_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        task="conversational",
+        provider="together",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -71,13 +70,14 @@ def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
 
     llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
-    task="conversational",
-    provider="together",
+        repo_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        task="conversational",
+        provider="together",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
     )
+
     class MyTool(BaseModel):
         name: str
         age: int
@@ -101,9 +101,9 @@ def test_tool_choice_bool() -> None:
 def test_stream() -> None:
     """Test streaming tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-    endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
-    provider="novita",
+        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
+        provider="novita",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -116,9 +116,9 @@ def test_stream() -> None:
 async def test_astream() -> None:
     """Test streaming tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
-    provider="fireworks-ai",
+        repo_id="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
+        provider="fireworks-ai",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -149,9 +149,9 @@ async def test_astream() -> None:
 async def test_abatch() -> None:
     """Test abatch tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-    endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
-    provider="novita",
+        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
+        provider="novita",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -161,14 +161,12 @@ async def test_abatch() -> None:
         assert isinstance(token.content, str)
 
 
-
-
 def test_batch() -> None:
     """Test batch tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-    endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
-    provider="novita",
+        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
+        provider="novita",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -181,8 +179,8 @@ def test_batch() -> None:
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
+        repo_id="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
@@ -195,13 +193,11 @@ async def test_ainvoke() -> None:
 def test_invoke() -> None:
     """Test invoke tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    task="conversational",
+        repo_id="meta-llama/Llama-3.1-8B-Instruct",
+        task="conversational",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
         llm=llm, temperature=0, max_tokens=100
     )
     result = chat_hf.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
-
-
