@@ -318,7 +318,6 @@ class HuggingFaceEndpoint(LLM):
                 completion += chunk.text
             return completion
         else:
-            print(invocation_params)
             response_text = self.client.text_generation(
                 prompt=prompt,
                 model=self.model,
