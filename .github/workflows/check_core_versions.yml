@@ -1,4 +1,4 @@
-name: Check Version Equality
+name: Check `langchain-core` version equality
 
 on:
   pull_request:
