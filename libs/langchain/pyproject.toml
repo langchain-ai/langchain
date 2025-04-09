@@ -45,9 +45,6 @@ perplexity = ["langchain-perplexity"]
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
 
-[project.scripts]
-langchain-server = "langchain.server:main"
-
 [dependency-groups]
 test = [
     "pytest<9,>=8",
