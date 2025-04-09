@@ -124,7 +124,7 @@ def beta(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -190,7 +190,7 @@ def beta(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:  # noqa: ARG001
                 """Finalize the property."""
                 return _BetaProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc

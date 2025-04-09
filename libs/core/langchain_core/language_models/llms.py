@@ -1399,6 +1399,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
+    @override
     def dict(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)

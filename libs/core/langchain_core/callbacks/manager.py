@@ -22,7 +22,7 @@ from typing import (
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -1398,6 +1398,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    @override
     def on_tool_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -1453,6 +1454,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    @override
     def on_retriever_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -1924,6 +1926,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    @override
     async def on_tool_start(
         self,
         serialized: Optional[dict[str, Any]],
@@ -2014,6 +2017,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             metadata=self.metadata,
         )
 
+    @override
     async def on_retriever_start(
         self,
         serialized: Optional[dict[str, Any]],

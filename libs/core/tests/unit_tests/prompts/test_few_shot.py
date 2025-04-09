@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -383,6 +384,7 @@ class AsIsSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> Any:
         raise NotImplementedError
 
+    @override
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 
@@ -481,6 +483,7 @@ class AsyncAsIsSelector(BaseExampleSelector):
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         raise NotImplementedError
 
+    @override
     async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 
