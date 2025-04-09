@@ -16,6 +16,10 @@ from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore
             "from langchain_core.callbacks import CallbackManager", id="CallbackManager"
         ),
         pytest.param("from langchain_core.runnables import Runnable", id="Runnable"),
+        pytest.param(
+            "from langchain_core.language_models import BaseChatModel",
+            id="BaseChatModel",
+        ),
     ],
 )
 @pytest.mark.benchmark
