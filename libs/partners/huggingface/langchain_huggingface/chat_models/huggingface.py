@@ -775,7 +775,7 @@ class ChatHuggingFace(BaseChatModel):
             self.model_id = self.llm.model_id
             return
         elif _is_huggingface_endpoint(self.llm):
-            self.model_id = self.llm.repo_id
+            self.model_id = self.llm.repo_id or self.llm.model
             return
         else:
             endpoint_url = self.llm.endpoint_url

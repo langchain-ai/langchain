@@ -16,7 +16,7 @@ from langchain_huggingface.llms import HuggingFaceEndpoint
 def test_chat_hf_call() -> None:
     """Test valid call to HF Inference Providers."""
     llm = HuggingFaceEndpoint(
-        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
         provider="novita",
     )
@@ -33,7 +33,7 @@ def test_chat_hf_call() -> None:
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
     llm = HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
         task="conversational",
         provider="together",
     )
@@ -70,7 +70,7 @@ def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
 
     llm = HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
         task="conversational",
         provider="together",
     )
@@ -101,7 +101,7 @@ def test_tool_choice_bool() -> None:
 def test_stream() -> None:
     """Test streaming tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
         provider="novita",
     )
@@ -116,7 +116,7 @@ def test_stream() -> None:
 async def test_astream() -> None:
     """Test streaming tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
         provider="fireworks-ai",
     )
@@ -149,7 +149,7 @@ async def test_astream() -> None:
 async def test_abatch() -> None:
     """Test abatch tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
         provider="novita",
     )
@@ -164,7 +164,7 @@ async def test_abatch() -> None:
 def test_batch() -> None:
     """Test batch tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-        endpoint_url="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
         provider="novita",
     )
@@ -179,7 +179,7 @@ def test_batch() -> None:
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
@@ -193,7 +193,7 @@ async def test_ainvoke() -> None:
 def test_invoke() -> None:
     """Test invoke tokens from ChatHuggingFace."""
     llm = HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-3.1-8B-Instruct",
+        model="meta-llama/Llama-3.1-8B-Instruct",
         task="conversational",
     )
     chat_hf = ChatHuggingFace(  # type: ignore[call-arg]
