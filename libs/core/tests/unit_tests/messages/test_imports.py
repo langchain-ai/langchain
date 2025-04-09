@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "BaseMessageChunk",
     "ChatMessage",
     "ChatMessageChunk",
+    "DataContentBlock",
     "FunctionMessage",
     "FunctionMessageChunk",
     "HumanMessage",
@@ -24,6 +25,7 @@ EXPECTED_ALL = [
     "RemoveMessage",
     "convert_to_messages",
     "get_buffer_string",
+    "is_data_content_block",
     "merge_content",
     "message_chunk_to_message",
     "message_to_dict",
@@ -32,6 +34,7 @@ EXPECTED_ALL = [
     "filter_messages",
     "merge_message_runs",
     "trim_messages",
+    "convert_image_content_block_to_image_url",
     "convert_to_openai_messages",
 ]
 

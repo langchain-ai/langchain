@@ -33,3 +33,27 @@ def is_data_content_block(
     """
     required_keys = DataContentBlock.__required_keys__
     return all(required_key in content_block for required_key in required_keys)
+
+
+def convert_image_content_block_to_image_url(content_block: DataContentBlock) -> dict:
+    """Convert image content block to format expected by OpenAI Chat Completions API."""
+    if content_block["source_type"] == "url":
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": content_block["source"],
+            },
+        }
+    if content_block["source_type"] == "base64":
+        if "mime_type" not in content_block:
+            error_message = "mime_type key is required for base64 data."
+            raise ValueError(error_message)
+        mime_type = content_block["mime_type"]
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{mime_type};base64,{content_block['source']}",
+            },
+        }
+    error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
+    raise ValueError(error_message)

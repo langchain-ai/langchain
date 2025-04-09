@@ -52,7 +52,9 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    convert_image_content_block_to_image_url,
     convert_to_messages,
+    is_data_content_block,
     message_chunk_to_message,
 )
 from langchain_core.outputs import (
@@ -101,6 +103,36 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
         generations = []
 
     return generations
+
+
+def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Format messages for tracing in on_chat_model_start.
+
+    For backward compatibility, we update image content blocks to OpenAI Chat
+    Completions format.
+
+    Args:
+        messages: List of messages to format.
+
+    Returns:
+        List of messages formatted for tracing.
+    """
+    messages_to_trace = []
+    for message in messages:
+        message_to_trace = message
+        if isinstance(message.content, list):
+            for idx, block in enumerate(message.content):
+                if (
+                    isinstance(block, dict)
+                    and is_data_content_block(block)
+                    and block.get("type") == "image"
+                ):
+                    message_to_trace = message.model_copy(deep=True)
+                    message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
+                        convert_image_content_block_to_image_url(block)  # type: ignore[arg-type]
+                    )
+        messages_to_trace.append(message_to_trace)
+    return messages_to_trace
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -439,7 +471,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 self._serialized,
-                [messages],
+                [_format_for_tracing(messages)],
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
@@ -524,7 +556,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             self._serialized,
-            [messages],
+            [_format_for_tracing(messages)],
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
@@ -703,9 +735,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             inheritable_metadata,
             self.metadata,
         )
+        messages_to_trace = [
+            _format_for_tracing(message_list) for message_list in messages
+        ]
         run_managers = callback_manager.on_chat_model_start(
             self._serialized,
-            messages,
+            messages_to_trace,
             invocation_params=params,
             options=options,
             name=run_name,
@@ -812,9 +847,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.metadata,
         )
 
+        messages_to_trace = [
+            _format_for_tracing(message_list) for message_list in messages
+        ]
         run_managers = await callback_manager.on_chat_model_start(
             self._serialized,
-            messages,
+            messages_to_trace,
             invocation_params=params,
             options=options,
             name=run_name,
