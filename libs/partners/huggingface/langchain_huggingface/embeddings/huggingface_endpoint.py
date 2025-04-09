@@ -35,7 +35,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     provider: Optional[str] = None
     """Name of the provider to use for inference with the model specified in `repo_id`.
-        e.g. "cerebras". if not specified, defaults to HF Inference API. 
+        e.g. "sambanova". if not specified, defaults to HF Inference API. 
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     repo_id: Optional[str] = None
     """Huggingfacehub repository id, for backward compatibility."""
