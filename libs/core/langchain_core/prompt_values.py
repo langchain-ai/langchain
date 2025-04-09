@@ -16,6 +16,7 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
+    DataContentBlock,
     HumanMessage,
     get_buffer_string,
 )
@@ -128,6 +129,22 @@ class ImagePromptValue(PromptValue):
     def to_messages(self) -> list[BaseMessage]:
         """Return prompt (image URL) as messages."""
         return [HumanMessage(content=[cast("dict", self.image_url)])]
+
+
+class DataPromptValue(PromptValue):
+    """Prompt value for multi-modal data."""
+
+    content_block: DataContentBlock
+    """Multi-modal content block."""
+    type: Literal["DataPromptValue"] = "DataPromptValue"
+
+    def to_string(self) -> str:
+        """Return source data as a string."""
+        return self.content_block["source"]
+
+    def to_messages(self) -> list[BaseMessage]:
+        """Return prompt (image URL) as messages."""
+        return [HumanMessage(content=[cast("dict", self.content_block)])]
 
 
 class ChatPromptValueConcrete(ChatPromptValue):

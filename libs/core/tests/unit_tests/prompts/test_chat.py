@@ -11,7 +11,7 @@ from syrupy import SnapshotAssertion
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
 )
-from langchain_core.load import dumpd, load
+from langchain_core.load import dump, dumpd, load, loads
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -1049,3 +1049,75 @@ def test_chat_prompt_template_variable_names() -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_data_prompt_template_deserializable() -> None:
+    """Test that the image prompt template is serializable."""
+    loads(
+        dump.dumps(
+            ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        [{"type": "image", "source_type": "url", "source": "{url}"}],
+                    )
+                ]
+            )
+        )
+    )
+
+
+@pytest.mark.requires("jinja2")
+@pytest.mark.parametrize(
+    ("template_format", "mime_type_placeholder", "source_data_placeholder"),
+    [
+        ("f-string", "{media_type}", "{source_data}"),
+        ("mustache", "{{media_type}}", "{{source_data}}"),
+        ("jinja2", "{{ media_type }}", "{{ source_data }}"),
+    ],
+)
+def test_chat_prompt_template_data_prompt_from_message(
+    template_format: PromptTemplateFormat,
+    mime_type_placeholder: str,
+    source_data_placeholder: str,
+) -> None:
+    prompt = {
+        "type": "image",
+        "source_type": "base64",
+        "source": f"{source_data_placeholder}",
+    }
+
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(source_data="base64data") == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "source": "base64data",
+                }
+            ]
+        )
+    ]
+
+    # mime_type
+    prompt["mime_type"] = f"{mime_type_placeholder}"
+    template = ChatPromptTemplate.from_messages(
+        [("human", [prompt])], template_format=template_format
+    )
+    assert template.format_messages(
+        media_type="image/png", source_data="base64data"
+    ) == [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "source": "base64data",
+                    "mime_type": "image/png",
+                }
+            ]
+        )
+    ]

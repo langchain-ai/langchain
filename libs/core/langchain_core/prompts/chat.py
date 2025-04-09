@@ -31,13 +31,16 @@ from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
     ChatMessage,
+    DataContentBlock,
     HumanMessage,
     SystemMessage,
     convert_to_messages,
+    is_data_content_block,
 )
 from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.data import DataPromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
@@ -468,7 +471,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
-        StringPromptTemplate, list[Union[StringPromptTemplate, ImagePromptTemplate]]
+        StringPromptTemplate,
+        list[Union[StringPromptTemplate, ImagePromptTemplate, DataPromptTemplate]],
     ]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
@@ -479,7 +483,10 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     @classmethod
     def from_template(
         cls: type[Self],
-        template: Union[str, list[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
+        template: Union[
+            str,
+            list[Union[str, _TextTemplateParam, _ImageTemplateParam, DataContentBlock]],
+        ],
         template_format: PromptTemplateFormat = "f-string",
         *,
         partial_variables: Optional[dict[str, Any]] = None,
@@ -562,6 +569,23 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         msg = f"Invalid image template: {tmpl}"
                         raise ValueError(msg)
                     prompt.append(img_template_obj)
+                elif isinstance(tmpl, dict) and is_data_content_block(tmpl):  # type: ignore[arg-type]
+                    data_template = cast("DataContentBlock", tmpl)
+                    input_variables = []
+                    for key in ["source", "source_type", "mime_type"]:
+                        if key in data_template:
+                            input_variables.extend(
+                                get_template_variables(
+                                    data_template[key],  # type: ignore[literal-required]
+                                    template_format,
+                                )
+                            )
+                    data_template_obj = DataPromptTemplate(
+                        input_variables=input_variables,
+                        template=data_template,
+                        template_format=template_format,
+                    )
+                    prompt.append(data_template_obj)
                 else:
                     msg = f"Invalid template: {tmpl}"
                     raise ValueError(msg)
@@ -639,11 +663,16 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: Union[str, ImageURL] = prompt.format(**inputs)
+                formatted: Union[str, ImageURL, DataContentBlock] = prompt.format(
+                    **inputs
+                )
                 content.append({"type": "text", "text": formatted})
             elif isinstance(prompt, ImagePromptTemplate):
                 formatted = prompt.format(**inputs)
                 content.append({"type": "image_url", "image_url": formatted})
+            elif isinstance(prompt, DataPromptTemplate):
+                formatted = prompt.format(**inputs)
+                content.append(formatted)
         return self._msg_class(
             content=content, additional_kwargs=self.additional_kwargs
         )

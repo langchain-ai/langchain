@@ -146,6 +146,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "image",
         "ImagePromptTemplate",
     ),
+    ("langchain", "prompts", "data", "DataPromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "data",
+        "DataPromptTemplate",
+    ),
     ("langchain", "schema", "agent", "AgentActionMessageLog"): (
         "langchain_core",
         "agents",
