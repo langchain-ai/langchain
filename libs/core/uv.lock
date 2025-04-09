@@ -980,6 +980,7 @@ test = [
 typing = [
     { name = "langchain-text-splitters" },
     { name = "mypy" },
+    { name = "pytest-benchmark" },
     { name = "types-jinja2" },
     { name = "types-pyyaml" },
     { name = "types-requests" },
@@ -1026,6 +1027,7 @@ test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "../text-splitters" },
     { name = "mypy", specifier = ">=1.10,<1.11" },
+    { name = "pytest-benchmark" },
     { name = "types-jinja2", specifier = ">=2.11.9,<3.0.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },

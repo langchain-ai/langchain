@@ -36,6 +36,7 @@ typing = [
     "types-requests<3.0.0.0,>=2.28.11.5",
     "types-jinja2<3.0.0,>=2.11.9",
     "langchain-text-splitters",
+    "pytest-benchmark",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",
