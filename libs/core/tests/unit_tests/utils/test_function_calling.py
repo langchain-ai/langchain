@@ -121,7 +121,7 @@ def dummy_structured_tool() -> StructuredTool:
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
 
     return StructuredTool.from_function(
-        lambda x: None,
+        lambda _: None,
         name="dummy_function",
         description="Dummy function.",
         args_schema=Schema,
@@ -143,7 +143,7 @@ def dummy_structured_tool_args_schema_dict() -> StructuredTool:
         "required": ["arg1", "arg2"],
     }
     return StructuredTool.from_function(
-        lambda x: None,
+        lambda _: None,
         name="dummy_function",
         description="Dummy function.",
         args_schema=args_schema,

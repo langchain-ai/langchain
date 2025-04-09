@@ -41,7 +41,7 @@ run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVa
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default",
+    session_name: str = "default",  # noqa: ARG001
 ) -> Generator[TracerSessionV1, None, None]:
     """Throw an error because this has been replaced by tracing_v2_enabled."""
     msg = (

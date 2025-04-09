@@ -400,6 +400,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def OutputType(self) -> type[Output]:
         return self._history_chain.OutputType
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -431,12 +432,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             root=root_type,
             module_name=self.__class__.__module__,
         )
-
-    def _is_not_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
-        return False
-
-    async def _is_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
-        return True
 
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
