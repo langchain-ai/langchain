@@ -305,7 +305,7 @@ async def _render_mermaid_using_pyppeteer(
 ) -> bytes:
     """Renders Mermaid graph using Pyppeteer."""
     try:
-        from pyppeteer import launch  # type: ignore[import]
+        from pyppeteer import launch  # type: ignore[import-not-found]
     except ImportError as e:
         msg = "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
         raise ImportError(msg) from e
@@ -377,7 +377,7 @@ def _render_mermaid_using_api(
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
-        import requests  # type: ignore[import]
+        import requests
     except ImportError as e:
         msg = (
             "Install the `requests` module to use the Mermaid.INK API: "

@@ -135,7 +135,7 @@ class PngDrawer:
         :param output_path: The path to save the PNG. If None, PNG bytes are returned.
         """
         try:
-            import pygraphviz as pgv  # type: ignore[import]
+            import pygraphviz as pgv  # type: ignore[import-not-found]
         except ImportError as exc:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
             raise ImportError(msg) from exc

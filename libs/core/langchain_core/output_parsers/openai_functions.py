@@ -5,7 +5,7 @@ import json
 from types import GenericAlias
 from typing import Any, Optional, Union
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 from pydantic import BaseModel, model_validator
 from typing_extensions import override
 

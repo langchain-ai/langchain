@@ -17,7 +17,7 @@ from typing import (
     overload,
 )
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.load import dumps
@@ -618,7 +618,7 @@ async def _astream_log_implementation(
     The implementation has been factored out (at least temporarily) as both
     astream_log and astream_events relies on it.
     """
-    import jsonpatch  # type: ignore[import]
+    import jsonpatch
 
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.tracers.log_stream import (

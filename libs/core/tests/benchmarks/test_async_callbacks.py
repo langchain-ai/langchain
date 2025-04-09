@@ -49,7 +49,7 @@ async def test_async_callbacks(benchmark: BenchmarkFixture) -> None:
     infinite_cycle = cycle([AIMessage(content=" ".join(["hello", "goodbye"] * 1000))])
     model = GenericFakeChatModel(messages=infinite_cycle)
 
-    @benchmark
+    @benchmark  # type: ignore[misc]
     def async_callbacks() -> None:
         for _ in range(10):
             for _ in model.stream("meow", {"callbacks": [MyCustomAsyncHandler()]}):

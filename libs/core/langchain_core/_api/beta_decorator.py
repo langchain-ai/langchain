@@ -225,10 +225,8 @@ def beta(
         new_doc = f".. beta::\n   {details}\n\n{old_doc}\n"
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast("T", finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return beta
 

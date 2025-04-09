@@ -162,7 +162,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         if isinstance(results, EvaluationResult):
             results_ = [results]
         elif isinstance(results, dict) and "results" in results:
-            results_ = cast("list[EvaluationResult]", results["results"])
+            results_ = results["results"]
         else:
             msg = (
                 f"Invalid evaluation result type {type(results)}."

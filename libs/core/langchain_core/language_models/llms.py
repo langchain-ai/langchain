@@ -455,7 +455,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
-            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
+            config = [{**c, "max_concurrency": None} for c in config]
             return [
                 output
                 for i, batch in enumerate(batches)
@@ -501,7 +501,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
-            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
+            config = [{**c, "max_concurrency": None} for c in config]
             return [
                 output
                 for i, batch in enumerate(batches)
@@ -746,7 +746,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 None,
                 next,
                 iterator,
-                done,  # type: ignore[call-arg, arg-type]
+                done,
             )
             if item is done:
                 break
@@ -1231,7 +1231,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 stop,
                 run_managers,  # type: ignore[arg-type]
                 new_arg_supported=bool(new_arg_supported),
-                **kwargs,  # type: ignore[arg-type]
+                **kwargs,
             )
         if len(missing_prompts) > 0:
             run_managers = await asyncio.gather(
@@ -1253,7 +1253,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 stop,
                 run_managers,  # type: ignore[arg-type]
                 new_arg_supported=bool(new_arg_supported),
-                **kwargs,  # type: ignore[arg-type]
+                **kwargs,
             )
             llm_output = await aupdate_cache(
                 self.cache,

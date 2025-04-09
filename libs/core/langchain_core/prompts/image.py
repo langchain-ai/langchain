@@ -116,7 +116,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
-            output["detail"] = detail  # type: ignore[typeddict-item]
+            output["detail"] = detail
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:

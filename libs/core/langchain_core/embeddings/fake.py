@@ -52,7 +52,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self) -> list[float]:
-        import numpy as np  # type: ignore[import-not-found, import-untyped]
+        import numpy as np
 
         return list(np.random.default_rng().normal(size=self.size))
 
@@ -109,7 +109,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self, seed: int) -> list[float]:
-        import numpy as np  # type: ignore[import-not-found, import-untyped]
+        import numpy as np
 
         # set the seed for the random generator
         rng = np.random.default_rng(seed)

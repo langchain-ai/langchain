@@ -20,7 +20,7 @@ from freezegun import freeze_time
 from packaging import version
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks.manager import (
@@ -557,7 +557,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert RunnableLambda(second_lambda).get_input_jsonschema() == {  # type: ignore[arg-type]
+    assert RunnableLambda(second_lambda).get_input_jsonschema() == {
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
@@ -1012,7 +1012,7 @@ def test_passthrough_tap(mocker: MockerFixture) -> None:
 
     seq: Runnable = RunnablePassthrough(mock) | fake | RunnablePassthrough(mock)
 
-    assert seq.invoke("hello", my_kwarg="value") == 5  # type: ignore[call-arg]
+    assert seq.invoke("hello", my_kwarg="value") == 5
     assert mock.call_args_list == [
         mocker.call("hello", my_kwarg="value"),
         mocker.call(5),
@@ -4488,7 +4488,7 @@ def test_runnable_branch_invoke() -> None:
     branch = RunnableBranch[int, int](
         (lambda x: x > 100, raise_value_error),
         # mypy cannot infer types from the lambda
-        (lambda x: x > 0 and x < 5, lambda x: x + 1),  # type: ignore[misc]
+        (lambda x: x > 0 and x < 5, lambda x: x + 1),
         (lambda x: x > 5, lambda x: x * 10),
         lambda x: x - 1,
     )

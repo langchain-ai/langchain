@@ -313,7 +313,7 @@ def _convert_any_typed_dicts_to_pydantic(
         subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
-            for arg in type_args  # type: ignore[index]
+            for arg in type_args
         )
         return subscriptable_origin[type_args]  # type: ignore[index]
     return type_
