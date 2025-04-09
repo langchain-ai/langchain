@@ -98,7 +98,6 @@ ignore = [
     # TODO rules
     "A",
     "ANN401",
-    "ARG",
     "BLE",
     "ERA",
     "FBT001",
@@ -132,5 +131,6 @@ classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_ini
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D", "S",]
 "scripts/**" = [ "INP", "S",]

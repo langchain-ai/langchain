@@ -9,6 +9,7 @@ from typing import (
 import pytest
 from pydantic import BaseModel
 from syrupy import SnapshotAssertion
+from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import (
@@ -60,7 +61,7 @@ def chain() -> Runnable:
     )
 
 
-def _raise_error(inputs: dict) -> str:
+def _raise_error(_: dict) -> str:
     raise ValueError
 
 
@@ -259,17 +260,17 @@ async def test_abatch() -> None:
     _assert_potential_error(actual, expected)
 
 
-def _generate(input: Iterator) -> Iterator[str]:
+def _generate(_: Iterator) -> Iterator[str]:
     yield from "foo bar"
 
 
-def _generate_immediate_error(input: Iterator) -> Iterator[str]:
+def _generate_immediate_error(_: Iterator) -> Iterator[str]:
     msg = "immmediate error"
     raise ValueError(msg)
     yield ""
 
 
-def _generate_delayed_error(input: Iterator) -> Iterator[str]:
+def _generate_delayed_error(_: Iterator) -> Iterator[str]:
     yield ""
     msg = "delayed error"
     raise ValueError(msg)
@@ -288,18 +289,18 @@ def test_fallbacks_stream() -> None:
         list(runnable.stream({}))
 
 
-async def _agenerate(input: AsyncIterator) -> AsyncIterator[str]:
+async def _agenerate(_: AsyncIterator) -> AsyncIterator[str]:
     for c in "foo bar":
         yield c
 
 
-async def _agenerate_immediate_error(input: AsyncIterator) -> AsyncIterator[str]:
+async def _agenerate_immediate_error(_: AsyncIterator) -> AsyncIterator[str]:
     msg = "immmediate error"
     raise ValueError(msg)
     yield ""
 
 
-async def _agenerate_delayed_error(input: AsyncIterator) -> AsyncIterator[str]:
+async def _agenerate_delayed_error(_: AsyncIterator) -> AsyncIterator[str]:
     yield ""
     msg = "delayed error"
     raise ValueError(msg)
@@ -323,6 +324,7 @@ async def test_fallbacks_astream() -> None:
 class FakeStructuredOutputModel(BaseChatModel):
     foo: int
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -333,6 +335,7 @@ class FakeStructuredOutputModel(BaseChatModel):
         """Top Level call."""
         return ChatResult(generations=[])
 
+    @override
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
@@ -340,10 +343,11 @@ class FakeStructuredOutputModel(BaseChatModel):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
 
+    @override
     def with_structured_output(
         self, schema: Union[dict, type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
-        return RunnableLambda(lambda x: {"foo": self.foo})
+        return RunnableLambda(lambda _: {"foo": self.foo})
 
     @property
     def _llm_type(self) -> str:
@@ -353,6 +357,7 @@ class FakeStructuredOutputModel(BaseChatModel):
 class FakeModel(BaseChatModel):
     bar: int
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -363,6 +368,7 @@ class FakeModel(BaseChatModel):
         """Top Level call."""
         return ChatResult(generations=[])
 
+    @override
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],

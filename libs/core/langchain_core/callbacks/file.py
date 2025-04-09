@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
+from typing_extensions import override
+
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.utils.input import print_text
 
@@ -38,6 +40,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         """Destructor to cleanup when done."""
         self.file.close()
 
+    @override
     def on_chain_start(
         self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
     ) -> None:
@@ -61,6 +64,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             file=self.file,
         )
 
+    @override
     def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain.
 
@@ -70,6 +74,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         """
         print_text("\n\033[1m> Finished chain.\033[0m", end="\n", file=self.file)
 
+    @override
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
@@ -83,6 +88,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         """
         print_text(action.log, color=color or self.color, file=self.file)
 
+    @override
     def on_tool_end(
         self,
         output: str,
@@ -109,6 +115,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         if llm_prefix is not None:
             print_text(f"\n{llm_prefix}", file=self.file)
 
+    @override
     def on_text(
         self, text: str, color: Optional[str] = None, end: str = "", **kwargs: Any
     ) -> None:
@@ -123,6 +130,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         """
         print_text(text, color=color or self.color, end=end, file=self.file)
 
+    @override
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:

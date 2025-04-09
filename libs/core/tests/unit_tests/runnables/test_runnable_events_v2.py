@@ -17,6 +17,7 @@ from typing import (
 import pytest
 from blockbuster import BlockBuster
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -97,12 +98,12 @@ async def _collect_events(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(x: int) -> dict:
+    def foo(x: int) -> dict:  # noqa: ARG001
         """Foo."""
         return {"x": 5}
 
     @tool
-    def get_docs(x: int) -> list[Document]:
+    def get_docs(x: int) -> list[Document]:  # noqa: ARG001
         """Hello Doc."""
         return [Document(page_content="hello")]
 
@@ -465,7 +466,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
 
 
 async def test_event_stream_with_lambdas_from_lambda() -> None:
-    as_lambdas = RunnableLambda(lambda x: {"answer": "goodbye"}).with_config(
+    as_lambdas = RunnableLambda(lambda _: {"answer": "goodbye"}).with_config(
         {"run_name": "my_lambda"}
     )
     events = await _collect_events(
@@ -1043,7 +1044,7 @@ async def test_event_streaming_with_tools() -> None:
         return "hello"
 
     @tool
-    def with_callbacks(callbacks: Callbacks) -> str:
+    def with_callbacks(callbacks: Callbacks) -> str:  # noqa: ARG001
         """A tool that does nothing."""
         return "world"
 
@@ -1053,7 +1054,7 @@ async def test_event_streaming_with_tools() -> None:
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
+    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:  # noqa: ARG001
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
@@ -1165,6 +1166,7 @@ async def test_event_streaming_with_tools() -> None:
 class HardCodedRetriever(BaseRetriever):
     documents: list[Document]
 
+    @override
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
@@ -1553,10 +1555,10 @@ async def test_chain_ordering() -> None:
 async def test_event_stream_with_retry() -> None:
     """Test the event stream with a tool."""
 
-    def success(inputs: str) -> str:
+    def success(_: str) -> str:
         return "success"
 
-    def fail(inputs: str) -> None:
+    def fail(_: str) -> None:
         """Simple func."""
         msg = "fail"
         raise ValueError(msg)
@@ -2069,6 +2071,7 @@ class StreamingRunnable(Runnable[Input, Output]):
         """Initialize the runnable."""
         self.iterable = iterable
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -2084,6 +2087,7 @@ class StreamingRunnable(Runnable[Input, Output]):
     ) -> Iterator[Output]:
         raise NotImplementedError
 
+    @override
     async def astream(
         self,
         input: Input,
@@ -2323,7 +2327,7 @@ async def test_bad_parent_ids() -> None:
 async def test_runnable_generator() -> None:
     """Test async events from sync lambda."""
 
-    async def generator(inputs: AsyncIterator[str]) -> AsyncIterator[str]:
+    async def generator(_: AsyncIterator[str]) -> AsyncIterator[str]:
         yield "1"
         yield "2"
 

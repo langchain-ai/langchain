@@ -576,7 +576,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
         return {}
 
     def _get_invocation_params(
@@ -1246,6 +1246,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
+    @override
     def dict(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)

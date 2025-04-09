@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
+from typing_extensions import override
+
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.utils import print_text
 
@@ -22,6 +24,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """
         self.color = color
 
+    @override
     def on_chain_start(
         self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
     ) -> None:
@@ -41,6 +44,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
                 name = "<unknown>"
         print(f"\n\n\033[1m> Entering new {name} chain...\033[0m")  # noqa: T201
 
+    @override
     def on_chain_end(self, outputs: dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain.
 
@@ -50,6 +54,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """
         print("\n\033[1m> Finished chain.\033[0m")  # noqa: T201
 
+    @override
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
@@ -62,6 +67,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """
         print_text(action.log, color=color or self.color)
 
+    @override
     def on_tool_end(
         self,
         output: Any,
@@ -87,6 +93,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         if llm_prefix is not None:
             print_text(f"\n{llm_prefix}")
 
+    @override
     def on_text(
         self,
         text: str,
@@ -104,6 +111,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """
         print_text(text, color=color or self.color, end=end)
 
+    @override
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
