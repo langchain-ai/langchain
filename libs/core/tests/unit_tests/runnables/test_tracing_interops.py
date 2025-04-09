@@ -444,7 +444,7 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
         metadata={"some_foo": "some_bar"},
         tags=["afoo"],
     ):
-        collected: dict[str, RunTree] = {}  # noqa
+        collected: dict[str, RunTree] = {}
 
         def collect_run(run: RunTree) -> None:
             collected[str(run.id)] = run

@@ -4,16 +4,17 @@ import re
 from typing import Any, Union
 from unittest import mock
 
-import pydantic
 import pytest
+from packaging import version
 from syrupy import SnapshotAssertion
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
-PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 
 
 def test_prompt_valid() -> None:
@@ -117,7 +118,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_0"
         )
@@ -144,7 +145,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_2"
         )
@@ -168,7 +169,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_3"
         )
@@ -206,7 +207,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_4"
         )
@@ -224,7 +225,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     is a test."""  # noqa: W293
     )
     assert prompt.input_variables == ["foo"]
-    if PYDANTIC_VERSION >= (2, 9):
+    if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(prompt.get_input_jsonschema()) == snapshot(
             name="schema_5"
         )

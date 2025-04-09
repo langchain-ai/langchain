@@ -17,7 +17,7 @@ dependencies = [
     "pydantic<3.0.0,>=2.7.4; python_full_version >= \"3.12.4\"",
 ]
 name = "langchain-core"
-version = "0.3.50"
+version = "0.3.51"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -54,8 +54,8 @@ test = [
     "pytest-socket<1.0.0,>=0.7.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster~=1.5.18",
-    "numpy<2.0.0,>=1.24.0; python_version < \"3.12\"",
-    "numpy<3,>=1.26.0; python_version >= \"3.12\"",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
 ]
 test_integration = []
@@ -82,12 +82,15 @@ ignore = [
     "C90", # McCabe complexity
     "COM812", # Messes with the formatter
     "FA100", # Can't activate since we exclude UP007 for now
+    "FIX002", # Line contains TODO
     "ISC001", # Messes with the formatter
     "PERF203", # Rarely useful
     "PLR09", # Too many something (arg, statements, etc)
     "TC001", # Doesn't play well with Pydantic
     "TC002", # Doesn't play well with Pydantic
     "TC003", # Doesn't play well with Pydantic
+    "TD002", # Missing author in TODO
+    "TD003", # Missing issue link in TODO
     "UP007", # Doesn't play well with Pydantic in Python 3.9
 
     # TODO rules
@@ -96,16 +99,12 @@ ignore = [
     "ARG",
     "BLE",
     "ERA",
-    "DTZ",
     "FBT001",
     "FBT002",
-    "FIX",
-    "PGH",
+    "PGH003",
     "PLR",
-    "PYI",
     "RUF",
     "SLF",
-    "TD",
 ]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 flake8-annotations.allow-star-arg-any = true
