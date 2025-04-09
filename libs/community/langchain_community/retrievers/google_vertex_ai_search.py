@@ -167,6 +167,8 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             doc_metadata = document_dict.get("struct_data", {})
             doc_metadata["id"] = document_dict["id"]
             doc_metadata["source"] = derived_struct_data.get("link", "")
+            if derived_struct_data.get("title") is not None:
+                doc_metadata["title"] = derived_struct_data.get("title")
 
             if chunk_type not in derived_struct_data:
                 continue
