@@ -118,26 +118,23 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     }
                 except json.JSONDecodeError:
                     return None
+            elif self.args_only:
+                try:
+                    return json.loads(function_call["arguments"], strict=self.strict)
+                except (json.JSONDecodeError, TypeError) as exc:
+                    msg = f"Could not parse function call data: {exc}"
+                    raise OutputParserException(msg) from exc
             else:
-                if self.args_only:
-                    try:
-                        return json.loads(
+                try:
+                    return {
+                        **function_call,
+                        "arguments": json.loads(
                             function_call["arguments"], strict=self.strict
-                        )
-                    except (json.JSONDecodeError, TypeError) as exc:
-                        msg = f"Could not parse function call data: {exc}"
-                        raise OutputParserException(msg) from exc
-                else:
-                    try:
-                        return {
-                            **function_call,
-                            "arguments": json.loads(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
-                    except (json.JSONDecodeError, TypeError) as exc:
-                        msg = f"Could not parse function call data: {exc}"
-                        raise OutputParserException(msg) from exc
+                        ),
+                    }
+                except (json.JSONDecodeError, TypeError) as exc:
+                    msg = f"Could not parse function call data: {exc}"
+                    raise OutputParserException(msg) from exc
         except KeyError:
             return None
 

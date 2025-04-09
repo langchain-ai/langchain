@@ -37,11 +37,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """
         if "name" in kwargs:
             name = kwargs["name"]
+        elif serialized:
+            name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         else:
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-            else:
-                name = "<unknown>"
+            name = "<unknown>"
         print(f"\n\n\033[1m> Entering new {name} chain...\033[0m")  # noqa: T201
 
     @override

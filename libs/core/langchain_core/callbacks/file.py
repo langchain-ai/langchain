@@ -53,11 +53,10 @@ class FileCallbackHandler(BaseCallbackHandler):
         """
         if "name" in kwargs:
             name = kwargs["name"]
+        elif serialized:
+            name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         else:
-            if serialized:
-                name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-            else:
-                name = "<unknown>"
+            name = "<unknown>"
         print_text(
             f"\n\n\033[1m> Entering new {name} chain...\033[0m",
             end="\n",

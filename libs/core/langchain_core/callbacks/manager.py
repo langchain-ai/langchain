@@ -364,19 +364,16 @@ async def _ahandle_event_for_handler(
             event = getattr(handler, event_name)
             if asyncio.iscoroutinefunction(event):
                 await event(*args, **kwargs)
+            elif handler.run_inline:
+                event(*args, **kwargs)
             else:
-                if handler.run_inline:
-                    event(*args, **kwargs)
-                else:
-                    await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        cast(
-                            "Callable",
-                            functools.partial(
-                                copy_context().run, event, *args, **kwargs
-                            ),
-                        ),
-                    )
+                await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    cast(
+                        "Callable",
+                        functools.partial(copy_context().run, event, *args, **kwargs),
+                    ),
+                )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
             message_strings = [get_buffer_string(m) for m in args[1]]
@@ -2426,12 +2423,11 @@ def _configure(
                     for handler in callback_manager.handlers
                 ):
                     callback_manager.add_handler(var_handler, inheritable)
-            else:
-                if not any(
-                    isinstance(handler, handler_class)
-                    for handler in callback_manager.handlers
-                ):
-                    callback_manager.add_handler(var_handler, inheritable)
+            elif not any(
+                isinstance(handler, handler_class)
+                for handler in callback_manager.handlers
+            ):
+                callback_manager.add_handler(var_handler, inheritable)
     return callback_manager
 
 
