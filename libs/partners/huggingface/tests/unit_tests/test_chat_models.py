@@ -41,10 +41,7 @@ def test_create_chat_result(chat_hugging_face: Any) -> None:
     mock_response = {
         "choices": [
             {
-                "message": {
-                    "role": "assistant", 
-                    "content": "test message"
-                },
+                "message": {"role": "assistant", "content": "test message"},
                 "finish_reason": "test finish reason",
             }
         ],
@@ -149,7 +146,7 @@ def test_to_chatml_format_with_invalid_type(chat_hugging_face: Any) -> None:
         ),
         (
             {"role": "function", "content": "result", "name": "get_time"},
-            FunctionMessage, 
+            FunctionMessage,
             "result",
         ),
     ],
@@ -160,6 +157,7 @@ def test_convert_dict_to_message(
     result = _convert_dict_to_message(msg_dict)
     assert isinstance(result, expected_type)
     assert result.content == expected_content
+
 
 def tool_mock() -> Dict:
     return {"function": {"name": "test_tool"}}
