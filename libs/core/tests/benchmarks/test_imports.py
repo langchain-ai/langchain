@@ -1,0 +1,25 @@
+import subprocess
+import sys
+
+import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
+
+
+@pytest.mark.parametrize(
+    "import_path",
+    [
+        pytest.param(
+            "from langchain_core.messages import HumanMessage", id="HumanMessage"
+        ),
+        pytest.param("from langchain_core.tools import tool", id="tool"),
+        pytest.param(
+            "from langchain_core.callbacks import CallbackManager", id="CallbackManager"
+        ),
+        pytest.param("from langchain_core.runnables import Runnable", id="Runnable"),
+    ],
+)
+@pytest.mark.benchmark
+def test_import_time(benchmark: BenchmarkFixture, import_path: str) -> None:
+    @benchmark
+    def import_in_subprocess() -> None:
+        subprocess.run([sys.executable, "-c", import_path], check=False)
