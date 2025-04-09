@@ -15,8 +15,8 @@ jobs:
 
       - name: Check version equality
         run: |
-          PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
-          VERSION_PY_VERSION=$(grep -Po '(?<=^VERSION = ")[^"]*' version.py)
+          PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/core/pyproject.toml)
+          VERSION_PY_VERSION=$(grep -Po '(?<=^VERSION = ")[^"]*' libs/core/langchain_core/version.py)
 
           # Compare the two versions
           if [ "$PYPROJECT_VERSION" != "$VERSION_PY_VERSION" ]; then
