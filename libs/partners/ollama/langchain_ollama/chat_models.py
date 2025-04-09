@@ -743,6 +743,10 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
+                if chunk.generation_info and (
+                    model := chunk.generation_info.get("model")
+                ):
+                    chunk.generation_info["model_name"] = model  # backwards compat
                 if self.extract_reasoning:
                     message, is_thinking = self._extract_reasoning(
                         chunk.message, is_thinking
@@ -791,6 +795,10 @@ class ChatOllama(BaseChatModel):
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
                 )
+                if chunk.generation_info and (
+                    model := chunk.generation_info.get("model")
+                ):
+                    chunk.generation_info["model_name"] = model  # backwards compat
                 if self.extract_reasoning:
                     message, is_thinking = self._extract_reasoning(
                         chunk.message, is_thinking

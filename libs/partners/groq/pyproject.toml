@@ -23,6 +23,7 @@ test = [
     "pytest-mock<4.0.0,>=3.10.0",
     "pytest-watcher<1.0.0,>=0.3.4",
     "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-retry<1.8.0,>=1.7.0",
     "langchain-core",
     "langchain-tests",
 ]
