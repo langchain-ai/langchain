@@ -253,7 +253,7 @@ def _format_data_content_block(block: dict) -> dict:
 
 
 def _format_messages(
-    messages: List[BaseMessage],
+    messages: Sequence[BaseMessage],
 ) -> Tuple[Union[str, List[Dict], None], List[Dict]]:
     """Format messages for anthropic."""
 
