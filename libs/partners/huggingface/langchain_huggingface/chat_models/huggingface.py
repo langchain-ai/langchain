@@ -662,7 +662,12 @@ class ChatHuggingFace(BaseChatModel):
             stream_iter = self.llm._stream(
                 llm_input, stop=stop, run_manager=run_manager, **kwargs
             )
-            return generate_from_stream(stream_iter)
+            for chunk in stream_iter:  # chunk is a GenerationChunk
+                chat_chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(content=chunk.text),
+                    generation_info=chunk.generation_info,
+                )
+                yield chat_chunk
 
     async def _astream(
         self,
