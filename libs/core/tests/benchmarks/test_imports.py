@@ -20,6 +20,15 @@ from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore
             "from langchain_core.language_models import BaseChatModel",
             id="BaseChatModel",
         ),
+        pytest.param(
+            "from langchain_core.prompts import ChatPromptTemplate",
+            id="PromChatPromptTemplateptTemplate",
+        ),
+        pytest.param("from langchain_core.documents import Document", id="Document"),
+        pytest.param(
+            "from langchain_core.vectorstores import InMemoryVectorStore",
+            id="InMemoryVectorStore",
+        ),
     ],
 )
 @pytest.mark.benchmark
