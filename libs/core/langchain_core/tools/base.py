@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import functools
 import inspect
 import json
@@ -55,7 +54,7 @@ from langchain_core.runnables import (
     run_in_executor,
 )
 from langchain_core.runnables.config import set_config_context
-from langchain_core.runnables.utils import asyncio_accepts_context
+from langchain_core.runnables.utils import coro_with_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -146,7 +145,7 @@ def _infer_arg_descriptions(
     """Infer argument descriptions from a function's docstring."""
     if hasattr(inspect, "get_annotations"):
         # This is for python < 3.10
-        annotations = inspect.get_annotations(fn)  # type: ignore
+        annotations = inspect.get_annotations(fn)
     else:
         annotations = getattr(fn, "__annotations__", {})
     if parse_docstring:
@@ -243,7 +242,7 @@ def create_schema_from_function(
     sig = inspect.signature(func)
 
     if _function_annotations_are_pydantic_v1(sig, func):
-        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore
+        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
     else:
         # https://docs.pydantic.dev/latest/usage/validation_decorator/
         with warnings.catch_warnings():
@@ -251,7 +250,7 @@ def create_schema_from_function(
             # This code should be re-written to simply construct a pydantic model
             # using inspect.signature and create_model.
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
     # If qualified name has a ".", then it likely belongs in a class namespace
@@ -266,7 +265,7 @@ def create_schema_from_function(
         elif param.kind == param.VAR_KEYWORD:
             has_kwargs = True
 
-    inferred_model = validated.model  # type: ignore
+    inferred_model = validated.model
 
     if filter_args:
         filter_args_ = filter_args
@@ -854,10 +853,7 @@ class ChildTool(BaseTool):
                     tool_kwargs[config_param] = config
 
                 coro = self._arun(*tool_args, **tool_kwargs)
-                if asyncio_accepts_context():
-                    response = await asyncio.create_task(coro, context=context)  # type: ignore
-                else:
-                    response = await coro
+                response = await coro_with_context(coro, context)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     msg = (

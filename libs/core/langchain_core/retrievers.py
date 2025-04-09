@@ -190,7 +190,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             async def _aget_relevant_documents(
                 self: Self, query: str
             ) -> list[Document]:
-                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore
+                return await run_in_executor(None, self._get_relevant_documents, query)  # type: ignore[call-arg]
 
             cls._aget_relevant_documents = _aget_relevant_documents  # type: ignore[assignment]
 

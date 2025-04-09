@@ -54,7 +54,7 @@ class CustomAddTextsVectorstore(VectorStore):
 
     @classmethod
     @override
-    def from_texts(  # type: ignore
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
@@ -100,7 +100,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
 
     @classmethod
     @override
-    def from_texts(  # type: ignore
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
