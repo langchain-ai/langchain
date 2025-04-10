@@ -64,27 +64,21 @@ print(f"Found {len(results)} relevant documents")
 ## Configuration
 
 ### Connection Settings
-| Parameter         | Default        | Description                           |
-|-------------------|----------------|---------------------------------------|
-| `host`            | localhost      | Database server address               |
-| `port`            | 8888           | Database connection port              |
-| `user`            | gaussdb        | Database username                     |
-| `password`        | -              | Complex password string               |
-| `database`        | postgres       | Default database name                 |
-| `min_connections` | 1              | Connection pool minimum size          |
-| `max_connections` | 5              | Connection pool maximum size          |
 
-### Vector Parameters
-```python
-from langchain_opengauss import IndexType, VectorType, DistanceStrategy
-
-OpenGaussSettings(
-    index_type=IndexType.HNSW,       # HNSW or IVFFLAT
-    vector_type=VectorType.vector,   # 32/64-bit floating point vectors
-    distance_strategy=DistanceStrategy.COSINE,
-    embedding_dimension=1536         # Max 2000 dimensions
-)
-```
+| Parameter           | Default                 | Description                                            |
+|---------------------|-------------------------|--------------------------------------------------------|
+| `host`              | localhost               | Database server address                                |
+| `port`              | 8888                    | Database connection port                               |
+| `user`              | gaussdb                 | Database username                                      |
+| `password`          | -                       | Complex password string                                |
+| `database`          | postgres                | Default database name                                  |
+| `min_connections`   | 1                       | Connection pool minimum size                           |
+| `max_connections`   | 5                       | Connection pool maximum size                           |
+| `table_name`        | langchain_docs          | Name of the table for storing vector data and metadata |
+| `index_type`        | IndexType.HNSW          |Vector index algorithm type. Options: HNSW or IVFFLAT\nDefault is HNSW.|
+| `vector_type`       | VectorType.vector       |Type of vector representation to use. Default is Vector.|
+| `distance_strategy` | DistanceStrategy.COSINE |Vector similarity metric to use for retrieval. Options: euclidean (L2 distance), cosine (angular distance, ideal for text embeddings), manhattan (L1 distance for sparse data), negative_inner_product (dot product for normalized vectors).\n Default is cosine.|
+|`embedding_dimension`| 1536                    |Dimensionality of the vector embeddings.|
 
 ## Advanced Usage
 
@@ -142,13 +136,13 @@ OpenGaussSettings(
 ## API Reference
 
 ### Core Methods
-| Method                          | Description                                   |
-|---------------------------------|-----------------------------------------------|
-| `add_documents(docs, **kwargs)` | Insert documents with automatic embedding     |
-| `similarity_search(query, k)`   | Basic vector similarity search                |
-| `similarity_search_with_score`  | Return (document, similarity_score) tuples   |
-| `delete(ids)`                   | Remove documents by ID list                  |
-| `drop_table()`                  | Delete entire collection                     |
+| Method                         | Description                                   |
+|--------------------------------|-----------------------------------------------|
+| `add_documents`                | Insert documents with automatic embedding     |
+| `similarity_search `           | Basic vector similarity search                |
+| `similarity_search_with_score` | Return (document, similarity_score) tuples   |
+| `delete`                       | Remove documents by ID list                  |
+| `drop_table`                   | Delete entire collection                     |
 
 ## Limitations
 - `bit` and `sparsevec` vector types currently in development
