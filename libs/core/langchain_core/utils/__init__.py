@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from langchain_core.utils.iter import batch_iterate
     from langchain_core.utils.loading import try_load_from_hub
     from langchain_core.utils.pydantic import pre_init
-    from langchain_core.utils.requests import raise_for_status_with_text
     from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
     from langchain_core.utils.utils import (
         build_extra_kwargs,
@@ -33,6 +32,7 @@ if TYPE_CHECKING:
         get_pydantic_field_names,
         guard_import,
         mock_now,
+        raise_for_status_with_text,
         secret_from_env,
         xor_args,
     )
@@ -80,7 +80,6 @@ _dynamic_imports: dict[str, str] = {
     "batch_iterate": "iter",
     "try_load_from_hub": "loading",
     "pre_init": "pydantic",
-    "raise_for_status_with_text": "requests",
     "comma_list": "strings",
     "stringify_dict": "strings",
     "stringify_value": "strings",
@@ -93,6 +92,7 @@ _dynamic_imports: dict[str, str] = {
     "mock_now": "utils",
     "secret_from_env": "utils",
     "xor_args": "utils",
+    "raise_for_status_with_text": "utils",
 }
 
 __getattr__ = create_dynamic_getattr(
