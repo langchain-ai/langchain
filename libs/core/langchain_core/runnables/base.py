@@ -1742,6 +1742,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         retry_if_exception_type: tuple[type[BaseException], ...] = (Exception,),
         wait_exponential_jitter: bool = True,
+        exponential_jitter_params: Optional[dict[str, Any]] = None,
         stop_after_attempt: int = 3,
     ) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original Runnable on exceptions.
@@ -1792,6 +1793,9 @@ class Runnable(Generic[Input, Output], ABC):
             wait_exponential_jitter: Whether to add jitter to the wait time
                                      between retries
             stop_after_attempt: The maximum number of attempts to make before giving up
+            exponential_jitter_params: Parameters for tenacity.wait_exponential_jitter.
+                Namely: ``initial``, ``max``, ``exp_base``, and ``jitter``
+                (all float values).
 
         Returns:
             A new Runnable that retries the original Runnable on exceptions.
@@ -1805,6 +1809,7 @@ class Runnable(Generic[Input, Output], ABC):
             retry_exception_types=retry_if_exception_type,
             wait_exponential_jitter=wait_exponential_jitter,
             max_attempt_number=stop_after_attempt,
+            exponential_jitter_params=exponential_jitter_params,
         )
 
     def map(self) -> Runnable[list[Input], list[Output]]:
