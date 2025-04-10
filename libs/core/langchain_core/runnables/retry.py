@@ -127,11 +127,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
             kwargs["stop"] = stop_after_attempt(self.max_attempt_number)
 
         if self.wait_exponential_jitter:
-            if self.exponential_jitter_params:
-                jitter_kwargs = self.exponential_jitter_params
-            else:
-                jitter_kwargs = {}
-            kwargs["wait"] = wait_exponential_jitter(**jitter_kwargs)
+            kwargs["wait"] = wait_exponential_jitter(**(self.exponential_jitter_params or {}))
 
         if self.retry_exception_types:
             kwargs["retry"] = retry_if_exception_type(self.retry_exception_types)
