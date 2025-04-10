@@ -4,17 +4,45 @@ from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import TypedDict
+
+
+class JiraOauth2Token(TypedDict):
+    """Jira OAuth2 token."""
+
+    access_token: str
+    """Jira OAuth2 access token."""
+    token_type: str
+    """Jira OAuth2 token type ('bearer' or other)."""
+
+
+class JiraOauth2(TypedDict):
+    """Jira OAuth2."""
+
+    client_id: str
+    """Jira OAuth2 client ID."""
+    token: JiraOauth2Token
+    """Jira OAuth2 token."""
 
 
 # TODO: think about error handling, more specific api specs, and jql/project limits
 class JiraAPIWrapper(BaseModel):
-    """Wrapper for Jira API."""
+    """
+    Wrapper for Jira API. You can connect to Jira with either an API token or OAuth2.
+    - with API token, you need to provide the JIRA_USERNAME and JIRA_API_TOKEN environment variables or arguments.
+    ex: JIRA_USERNAME=your_username JIRA_API_TOKEN=your_api_token
+    - with OAuth2, you need to provide the JIRA_OAUTH2 environment variable or argument as a dict having as fields
+    "client_id" and "token" which is a dict containing at least "access_token" and "token_type".
+    ex: JIRA_OAUTH2='{"client_id": "your_client_id", "token": {"access_token": "your_access_token", "token_type": "bearer"}}'
+    """
 
     jira: Any = None  #: :meta private:
     confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
-    jira_oauth_dict: Optional[Union[Dict[str, Union[str, Dict[str, str]]], str]] = None
+    """Jira API token when you choose to connect to Jira with api token."""
+    jira_oauth2: Optional[Union[JiraOauth2, str]] = None
+    """Jira OAuth2 token when you choose to connect to Jira with oauth2."""
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
 
@@ -36,23 +64,23 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_api_token"] = jira_api_token
 
-        jira_oauth_dict = get_from_dict_or_env(
-            values, "jira_oauth_dict", "JIRA_OAUTH_DICT", default=""
+        jira_oauth2 = get_from_dict_or_env(
+            values, "jira_oauth2", "JIRA_OAUTH2", default=""
         )
-        values["jira_oauth_dict"] = jira_oauth_dict
+        values["jira_oauth2"] = jira_oauth2
 
-        if jira_oauth_dict and isinstance(jira_oauth_dict, str):
+        if jira_oauth2 and isinstance(jira_oauth2, str):
             try:
                 import json
 
-                jira_oauth_dict = json.loads(jira_oauth_dict)
+                jira_oauth2 = json.loads(jira_oauth2)
             except ImportError:
                 raise ImportError(
                     "json is not installed. Please install it with `pip install json`"
                 )
             except json.decoder.JSONDecodeError as e:
                 raise ValueError(
-                    f"The format of the JIRA_OAUTH_DICT string is "
+                    f"The format of the JIRA_OAUTH2 string is "
                     f"not a valid dictionary: {e}"
                 )
 
@@ -68,9 +96,9 @@ class JiraAPIWrapper(BaseModel):
         jira_cloud = jira_cloud_str.lower() == "true"
         values["jira_cloud"] = jira_cloud
 
-        if jira_api_token and jira_oauth_dict:
+        if jira_api_token and jira_oauth2:
             raise ValueError(
-                "You have to provide either a jira_api_token or a jira_oauth_dict. "
+                "You have to provide either a jira_api_token or a jira_oauth2. "
                 "Not both."
             )
 
@@ -103,15 +131,15 @@ class JiraAPIWrapper(BaseModel):
                 password=jira_api_token,
                 cloud=jira_cloud,
             )
-        elif jira_oauth_dict:
+        elif jira_oauth2:
             jira = Jira(
                 url=jira_instance_url,
-                oauth2=jira_oauth_dict,
+                oauth2=jira_oauth2,
                 cloud=jira_cloud,
             )
             confluence = Confluence(
                 url=jira_instance_url,
-                oauth2=jira_oauth_dict,
+                oauth2=jira_oauth2,
                 cloud=jira_cloud,
             )
 

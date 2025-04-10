@@ -73,7 +73,7 @@ class TestJiraAPIWrapper:
         oauth_string = json.dumps(oauth_dict)
 
         JiraAPIWrapper(
-            jira_oauth_dict=oauth_string,
+            jira_oauth2=oauth_string,
             jira_instance_url="https://test.atlassian.net",
             jira_cloud=False,
         )
