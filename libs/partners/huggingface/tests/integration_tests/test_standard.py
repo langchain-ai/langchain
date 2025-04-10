@@ -73,10 +73,6 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     ) -> None:
         super().test_structured_few_shot_examples(model, my_adder_tool=my_adder_tool)
 
-    @pytest.mark.xfail(reason=("Not implemented"))
-    def test_tool_choice(self, tool_calling_model: BaseChatModel) -> None:
-        super().test_tool_choice(tool_calling_model)
-
     @property
     def has_tool_choice(self) -> bool:
         return False

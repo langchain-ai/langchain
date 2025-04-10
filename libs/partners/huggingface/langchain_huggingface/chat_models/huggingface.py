@@ -956,9 +956,9 @@ class ChatHuggingFace(BaseChatModel):
                     "Pydantic schema is not supported for function calling"
                 )
             else:
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=tool_name, first_tool_only=True
-                )
+                output_parser: Union[
+                    JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
+                ] = JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
         elif method == "json_schema":
             if schema is None:
                 raise ValueError(
@@ -973,10 +973,12 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser = (
+            output_parser: Union[  # type: ignore[no-redef]
+                JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
+            ] = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
-                else JsonOutputParser()
+                else JsonOutputParser()  # type: ignore[arg-type]
             )
         elif method == "json_mode":
             llm = self.bind(
@@ -986,10 +988,12 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser = (
+            output_parser: Union[  # type: ignore[no-redef]
+                JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
+            ] = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
-                else JsonOutputParser()
+                else JsonOutputParser()  # type: ignore[arg-type]
             )
         else:
             raise ValueError(

@@ -212,7 +212,7 @@ class HuggingFaceEndpoint(LLM):
             model=self.model,
             timeout=self.timeout,
             api_key=huggingfacehub_api_token,
-            provider=self.provider,
+            provider=self.provider,  # type: ignore[arg-type]
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
@@ -225,7 +225,7 @@ class HuggingFaceEndpoint(LLM):
             model=self.model,
             timeout=self.timeout,
             api_key=huggingfacehub_api_token,
-            provider=self.provider,
+            provider=self.provider,  # type: ignore[arg-type]
             **{
                 key: value
                 for key, value in self.server_kwargs.items()
