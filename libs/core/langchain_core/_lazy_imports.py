@@ -17,22 +17,15 @@ def create_dynamic_getattr(
 
     def _dynamic_getattr(attr_name: str) -> object:
         module_name = dynamic_imports.get(attr_name)
-        if module_name is None:
-            import_error_msg = (
-                f"cannot import name '{attr_name}' from '{package_name}.{module_path}'"
-            )
-            raise ImportError(import_error_msg)
 
-        if module_name == "__module__":
-            attr = import_module(f".{module_path}.{attr_name}", package=package_name)
-            globals()[attr_name] = attr
-            return attr
+        if module_name == "__module__" or module_name is None:
+            module = import_module(f".{module_path}.{attr_name}", package=package_name)
+            globals()[attr_name] = module
+            return module
 
         module = import_module(f".{module_path}.{module_name}", package=package_name)
         attr = getattr(module, attr_name)
-
-        g = globals()
-        g[attr_name] = attr
+        globals()[attr_name] = attr
 
         # TODO: determine if we want to do this eagerly
         # for k, v_module_name in dynamic_imports.items():

@@ -22,7 +22,7 @@ from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore
         ),
         pytest.param(
             "from langchain_core.prompts import ChatPromptTemplate",
-            id="PromChatPromptTemplateptTemplate",
+            id="ChatPromptTemplate",
         ),
         pytest.param("from langchain_core.documents import Document", id="Document"),
         pytest.param(

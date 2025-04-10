@@ -53,7 +53,7 @@ _dynamic_imports: dict[str, str] = {
     "LangChainDeprecationWarning": "deprecation",
     "deprecated": "deprecation",
     "surface_langchain_deprecation_warnings": "deprecation",
-    "suppress_langchain_deprecation_warnings": "deprecation",
+    "suppress_langchain_deprecation_warning": "deprecation",
     "warn_deprecated": "deprecation",
 }
 
